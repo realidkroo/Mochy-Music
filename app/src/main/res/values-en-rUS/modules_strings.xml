@@ -52,5 +52,18 @@
     <string name="module_remove">Remove this module</string>
     <string name="module_apple_limits">Not available: lossless, Dolby Atmos and Apple\'s Spatial mix (Apple only encodes those for its own DRM, FairPlay) and downloads (web players get no offline licenses).</string>
     <string name="quality_module_stream">Stream</string>
+    <string name="web_quality_lossless">Lossless</string>
+    <string name="web_quality_lossless_detail">CD-quality FLAC when the service has it.</string>
+    <string name="web_quality_hires">Hi-Res</string>
+    <string name="web_quality_hires_detail">24-bit FLAC when there\'s one. If this phone can\'t decode it, the CD-quality one plays.</string>
+    <string name="web_quality_high">High</string>
+    <string name="web_quality_high_detail">Around 320 kbps, a lot less data.</string>
+    <string name="web_quality_low">Low</string>
+    <string name="web_quality_low_detail">For slow or metered networks.</string>
+    <string name="web_mix">Dolby Atmos</string>
+    <string name="web_mix_stereo">Stereo</string>
+    <string name="web_mix_stereo_detail">The usual mix, lossless when the service has it.</string>
+    <string name="web_mix_atmos">Atmos</string>
+    <string name="web_mix_atmos_detail">The Dolby Atmos mix when the service has one. It isn\'t lossless, and a phone that can\'t decode it gets stereo.</string>
     <string name="quality_provider_footnote">Tap YouTube Music to turn it on or off, or a module to open its page. Drag a handle to change the order: each song plays from the first one that\'s on and has it. Modules you\'ve switched off aren\'t listed here.</string>
 </resources>
