@@ -116,8 +116,11 @@ internal class SongShareSession(val song: MediaMetadata) {
     // set once the timeline has been moved by hand, so a late lyrics load doesn't pull the window somewhere else
     var windowTouched = false
 
-    // the song plays while a page with the picture on it is up
+    // a page with the picture on it is up and wants the song playing under it
     var previewWanted by mutableStateOf(false)
+
+    // mochy is the app in front; leaving for instagram or anywhere else stops the song
+    var onScreen by mutableStateOf(true)
 
     var background by mutableStateOf<SongBackground>(SongBackground.Still(ShareBackground.FromMusic))
 
@@ -133,6 +136,9 @@ internal class SongShareSession(val song: MediaMetadata) {
 
     val hasVideoBackground: Boolean get() = background is SongBackground.Video
     val isVideo: Boolean get() = hasVideoBackground || shareAsVideo
+
+    // only a video share has a song to hear; a picture stays quiet and leaves the app's own music alone
+    val previewPlays: Boolean get() = isVideo && previewWanted && onScreen
 
     // the background moved and zoomed by hand: zoom from 1, offsets as fractions of the picture
     var bgZoom by mutableFloatStateOf(1f)

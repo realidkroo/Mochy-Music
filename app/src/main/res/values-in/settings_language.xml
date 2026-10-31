@@ -43,6 +43,9 @@
     <string name="playback_keep_playing">Tetap putar saat aplikasi ditutup</string>
     <string name="playback_keep_playing_desc">Lanjutkan pemutaran setelah aplikasi dihapus dari daftar terbaru</string>
     <string name="playback_keep_playing_detail">Lanjutkan pemutaran di latar belakang saat aplikasi dihapus dari daftar terbaru</string>
+    <string name="playback_mix_other_apps">Putar bersama aplikasi lain</string>
+    <string name="playback_mix_other_apps_desc">Tetap putar saat aplikasi lain mengeluarkan suara</string>
+    <string name="playback_mix_other_apps_detail">Mochy tidak berhenti saat video, game, atau aplikasi musik lain mulai diputar, dan tidak menghentikan mereka juga. Musik tetap dijeda saat ada panggilan telepon dan lanjut lagi setelah panggilan selesai.</string>
     <string name="playback_save_state">Simpan keadaan terakhir pemutar</string>
     <string name="playback_save_state_desc">Jika nonaktif, lagu yang telah diputar akan dihapus saat aplikasi ditutup</string>
     <string name="playback_save_state_detail">Jika dinonaktifkan, lagu yang telah diputar akan dihapus saat aplikasi ditutup</string>

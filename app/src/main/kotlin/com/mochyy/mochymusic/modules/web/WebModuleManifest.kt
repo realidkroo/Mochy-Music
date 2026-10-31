@@ -5,6 +5,7 @@ package com.mochyy.mochymusic.modules.web
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -20,7 +21,23 @@ internal data class WebModuleManifest(
     // plain names ("search", "stream", "lyrics"), some services write objects with a name instead
     val resources: List<JsonElement> = emptyList(),
     val look: Map<String, JsonPrimitive> = emptyMap(),
+    // the service's own settings, sent on every call; mochy has no form for them so each goes as its default
+    val settings: List<Setting> = emptyList(),
 ) {
+    @Serializable
+    data class Setting(
+        val key: String = "",
+        val default: JsonElement? = null,
+        // each option is a plain value or an object with a value, services write both
+        val options: List<JsonElement> = emptyList(),
+    ) {
+        val defaultValue: String? get() = default.queryValue()
+
+        val values: List<String> get() = options.mapNotNull { (it as? JsonObject)?.get("value").queryValue() ?: it.queryValue() }
+    }
+
+    fun setting(key: String): Setting? = settings.firstOrNull { it.key.equals(key, ignoreCase = true) }
+
     val resourceNames: Set<String>
         get() = resources.mapNotNull { element ->
             ((element as? JsonPrimitive) ?: ((element as? JsonObject)?.get("name") as? JsonPrimitive))?.contentOrNull?.lowercase()
@@ -55,3 +72,7 @@ internal data class WebModuleManifest(
         }
     }
 }
+
+// a json value as it goes in a query string: 320 stays 320, never 320.0; null and objects have no such form
+private fun JsonElement?.queryValue(): String? =
+    (this as? JsonPrimitive)?.takeIf { it !is JsonNull }?.content?.takeIf { it.isNotBlank() }

@@ -4,6 +4,8 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,6 +15,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -25,6 +29,7 @@ import androidx.compose.ui.graphics.vector.VectorGroup
 import androidx.compose.ui.graphics.vector.VectorPath
 import androidx.compose.ui.graphics.vector.toPath
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.Dp
 import com.mochyy.mochymusic.R
 
 // how small play and pause get before they swap and spring back
@@ -200,4 +205,27 @@ private fun DrawScope.skipTriangle(
     }) {
         drawPath(shapes.skip, color, alpha = alpha)
     }
+}
+
+// the flagship's play and pause on its own, for any style's button: the triangle is height tall and squashes as it swaps
+@Composable
+internal fun AnimatedPlayGlyph(playing: Boolean, color: Color, height: Dp, modifier: Modifier = Modifier) {
+    val shapes = rememberTransportShapes()
+    val glyph = rememberPlayGlyph(playing)
+    Spacer(
+        modifier = modifier
+            .size(height)
+            .drawBehind { drawPlayGlyph(shapes, glyph, size.height / shapes.playSize.height, color) },
+    )
+}
+
+// the flagship's two skip triangles on their own, width across, running a step each time cycle steps
+@Composable
+internal fun AnimatedSkipGlyph(cycle: SkipCycleState, backwards: Boolean, color: Color, width: Dp, modifier: Modifier = Modifier) {
+    val shapes = rememberTransportShapes()
+    Spacer(
+        modifier = modifier
+            .size(width, width * (shapes.skipSize.height / shapes.pairWidth))
+            .drawBehind { drawSkipGlyph(shapes, cycle.phase(), size.width / shapes.pairWidth, color, backwards) },
+    )
 }

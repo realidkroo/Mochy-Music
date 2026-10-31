@@ -52,5 +52,18 @@
     <string name="module_remove">Hapus modul ini</string>
     <string name="module_apple_limits">Tidak tersedia: lossless, Dolby Atmos, dan Spatial mix Apple (Apple hanya mengodekannya untuk DRM miliknya, FairPlay) serta unduhan (pemutar web tidak mendapat lisensi offline).</string>
     <string name="quality_module_stream">Stream</string>
+    <string name="web_quality_lossless">Lossless</string>
+    <string name="web_quality_lossless_detail">FLAC kualitas CD kalau layanannya punya.</string>
+    <string name="web_quality_hires">Hi-Res</string>
+    <string name="web_quality_hires_detail">FLAC 24-bit kalau ada. Kalau ponsel ini tidak bisa memutarnya, yang kualitas CD yang diputar.</string>
+    <string name="web_quality_high">Tinggi</string>
+    <string name="web_quality_high_detail">Sekitar 320 kbps, jauh lebih hemat data.</string>
+    <string name="web_quality_low">Rendah</string>
+    <string name="web_quality_low_detail">Untuk jaringan yang lambat atau berkuota.</string>
+    <string name="web_mix">Dolby Atmos</string>
+    <string name="web_mix_stereo">Stereo</string>
+    <string name="web_mix_stereo_detail">Mix biasa, lossless kalau layanannya punya.</string>
+    <string name="web_mix_atmos">Atmos</string>
+    <string name="web_mix_atmos_detail">Mix Dolby Atmos kalau layanannya punya. Tidak lossless, dan ponsel yang tidak bisa memutarnya mendapat stereo.</string>
     <string name="quality_provider_footnote">Ketuk YouTube Music untuk menyalakan atau mematikannya, atau ketuk modul untuk membuka halamannya. Seret pegangannya untuk mengubah urutan: setiap lagu diputar dari yang pertama aktif dan memilikinya. Modul yang kamu matikan tidak ditampilkan di sini.</string>
 </resources>

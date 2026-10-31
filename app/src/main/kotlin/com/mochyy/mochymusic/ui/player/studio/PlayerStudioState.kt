@@ -64,6 +64,12 @@ class Motion internal constructor(private val scope: CoroutineScope, initial: Fl
 
     val settling: Boolean get() = job?.isActive == true
 
+    // holds it where it is, the way a finger catches a card that's still gliding
+    fun stop() {
+        job?.cancel()
+        job = null
+    }
+
     fun animateTo(target: Float, velocity: Float = 0f, spec: AnimationSpec<Float> = StudioSpring, onEnd: (() -> Unit)? = null) {
         job?.cancel()
         val from = state.floatValue
@@ -314,6 +320,9 @@ class PlayerStudioState internal constructor(
                 backdrop.animateTo(0f); middle.animateTo(0f); menu.animateTo(0f); bar.animateTo(0f)
             }
             StudioStage.EDIT -> {
+                // the editor works on the live card, so the cards line up on it even if something nudged them on the way in
+                page.animateTo(liveColumn.toFloat())
+                rows(liveColumn).animateTo(liveRow.toFloat())
                 selector.animateTo(0f); edit.animateTo(1f); cover.animateTo(0f)
                 backdrop.animateTo(0f); middle.animateTo(0f); menu.animateTo(0f); bar.animateTo(0f)
                 coverPage.animateTo(coverCommitted.toFloat()); backdropPage.animateTo(backdropCommitted.toFloat())

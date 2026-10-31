@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,8 +72,8 @@ internal fun PopupSheetState.showEditor(session: SongShareSession) {
 
 @Composable
 private fun ColumnScope.EditorContent(session: SongShareSession, popup: PopupSheetState) {
-    PlaysThePreview(session)
     val live = popup.rememberIsFront()
+    PlaysThePreview(session, front = live)
     val pick = session.pick
     val cinematic = session.cinematic && pick != null
     // a video background plays a part of the song, so it gets the timeline; a still one is a picture
@@ -112,13 +113,11 @@ private fun ColumnScope.EditorContent(session: SongShareSession, popup: PopupShe
     Spacer(Modifier.height(8.dp))
 }
 
-// the song plays while the editor is up, and stops when you step back out of it
+// the song plays while the editor is up, starts again each time it comes back to the front (the share page leaves it paused after handing off), and stops when you step back out of it
 @Composable
-private fun PlaysThePreview(session: SongShareSession) {
-    DisposableEffect(session) {
-        session.previewWanted = true
-        onDispose { session.previewWanted = false }
-    }
+private fun PlaysThePreview(session: SongShareSession, front: Boolean) {
+    LaunchedEffect(front) { if (front) session.previewWanted = true }
+    DisposableEffect(session) { onDispose { session.previewWanted = false } }
 }
 
 @Composable
@@ -229,7 +228,7 @@ private fun CardCloseUp(session: SongShareSession, live: Boolean) {
                     positionMs = if (live) session.playheadMs else resting,
                     layers = ShareLayers.Everything,
                     moving = live && session.isVideo,
-                    video = { ShareVideoLayer(session, playing = live && session.previewWanted) },
+                    video = { ShareVideoLayer(session, playing = live && session.previewPlays) },
                     modifier = Modifier
                         .wrapContentSize(Alignment.TopStart, unbounded = true)
                         .offset(x = -ShareWidth * bounds.left, y = -ShareHeight * bounds.top),

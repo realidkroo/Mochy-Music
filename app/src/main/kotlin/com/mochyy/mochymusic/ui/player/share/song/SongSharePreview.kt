@@ -95,7 +95,7 @@ internal fun SongSharePreview(
                 reportsCard = true,
                 onCardTap = onCardTap,
                 regions = regions,
-                video = { ShareVideoLayer(session, playing = live && session.previewWanted) },
+                video = { ShareVideoLayer(session, playing = live && session.previewPlays) },
                 modifier = if (movable) {
                     Modifier.pointerInput(session) {
                         detectTransformGestures { _, pan, zoom, _ ->

@@ -58,6 +58,16 @@ Updating works the same way: install the new apk over the old one and your libra
 > Only download Mochy from the releases page of this repo. A random mediafire or telegram link could be a modified app, and then your logins would not be safe.
 
 ---
+
+## Some Prview 
+
+<img width="1799" height="927" alt="Frame 289" src="https://github.com/user-attachments/assets/c4c122ed-b86c-44e4-a618-417f5287bc98" />
+<img width="1799" height="927" alt="Frame 287" src="https://github.com/user-attachments/assets/186be8ac-ff3e-4e2a-ab7e-ae80bc9da7e7" />
+<img width="1799" height="927" alt="Frame 290" src="https://github.com/user-attachments/assets/c394603c-7aa7-4d78-8688-38a6c6e42232" />
+<img width="1799" height="927" alt="Frame 288" src="https://github.com/user-attachments/assets/06f5c13a-b8f1-4ecf-85aa-b17d020db5c8" />
+
+---
+
 ## How to build it yourself
 
 You only need this if you want to change the code. If you just want to use the app, use the install steps above.
@@ -133,16 +143,6 @@ Mochy is an independent, unofficial project made for personal and educational us
 - You are responsible for how you use the app, including the terms of service of the accounts and services you connect and the copyright laws where you live.
 - Importing from other services (Spotify, etc.) uses your own account. Don't share your login data or tokens with anyone.
 - Importing music MAY need your own account with its password. WE'RE NEVER see your password.
-
----
-## Some Prview 
-
-<img width="1799" height="927" alt="Frame 289" src="https://github.com/user-attachments/assets/c4c122ed-b86c-44e4-a618-417f5287bc98" />
-<img width="1799" height="927" alt="Frame 287" src="https://github.com/user-attachments/assets/186be8ac-ff3e-4e2a-ab7e-ae80bc9da7e7" />
-<img width="1799" height="927" alt="Frame 290" src="https://github.com/user-attachments/assets/c394603c-7aa7-4d78-8688-38a6c6e42232" />
-<img width="1799" height="927" alt="Frame 288" src="https://github.com/user-attachments/assets/06f5c13a-b8f1-4ecf-85aa-b17d020db5c8" />
-
----
 
 # FAQ
 ## Q

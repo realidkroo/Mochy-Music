@@ -205,6 +205,8 @@ internal class MusicVolume(private val audio: AudioManager) {
 
     val shown: Float get() = dragging ?: level
 
+    val isDragging: Boolean get() = dragging != null
+
     fun read(): Float = audio.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat() / steps
 
     fun refresh() {

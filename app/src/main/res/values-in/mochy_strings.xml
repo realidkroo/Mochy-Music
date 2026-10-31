@@ -956,10 +956,13 @@
     <string name="song_share_quality">Kualitas</string>
     <string name="song_share_quality_4k">4K</string>
     <string name="song_share_quality_1080">1080p</string>
+    <string name="song_share_quality_best">Terbaik</string>
+    <string name="song_share_quality_standard">Standar</string>
     <string name="song_share_making_video">Membuat videomu… %1$d%%</string>
     <string name="song_share_making_picture">Membuat gambarmu…</string>
     <string name="song_share_saved">Juga disimpan ke galerimu</string>
     <string name="song_share_failed">Gagal membuatnya. Periksa koneksimu lalu coba lagi.</string>
+    <string name="song_share_failed_retry">Kali ini gagal dibuat. Coba lagi ya.</string>
     <string name="song_share_app_instagram">Instagram</string>
     <string name="song_share_app_whatsapp">WhatsApp</string>
     <string name="song_share_app_facebook">Facebook</string>
@@ -998,4 +1001,5 @@
     <string name="about_song_nothing_yet">%1$s belum punya cerita tentang lagu ini.</string>
     <string name="not_recommended_menu">Jangan rekomendasikan lagi</string>
     <string name="not_recommended_done">Kami tidak akan merekomendasikan lagu ini lagi</string>
+    <string name="atmos_streaming_note">Apple hanya mengodekan Atmos untuk FairPlay dan Monochrome mengalirkan FLAC stereo, jadi Atmos datang dari modul yang ditambahkan lewat tautan: setel pilihan Dolby Atmos-nya ke Atmos. File surround milikmu juga dirender.</string>
 </resources>

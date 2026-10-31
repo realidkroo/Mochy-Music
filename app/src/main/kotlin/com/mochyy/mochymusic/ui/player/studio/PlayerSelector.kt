@@ -71,6 +71,10 @@ import com.mochyy.mochymusic.ui.utils.stableStatusBars
 // a card a row above the one in view is gone: it fades as it slides up out of the way
 private fun rowLeaving(row: Int, rowPosition: Float): Float = (1f - (rowPosition - row)).coerceIn(0f, 1f)
 
+// the live card's own variants fade as the cards grow back into the player, or they'd slide down across it
+private fun variantFade(column: Int, row: Int, studio: PlayerStudioState, e: Float): Float =
+    if (column == studio.liveColumn && row != studio.liveRow) ease((e - 0.35f) / 0.5f) else 1f
+
 /** the selector's geometry at progress [e] (0 the full player, 1 cards) on a [w] x [h] screen */
 internal class CardGeometry(val e: Float, val w: Float, val h: Float, gapPx: Float) {
     val scale = 1f + (CardScale - 1f) * e
@@ -177,19 +181,26 @@ fun PlayerSelectorOverlay(
         fun geometry() = CardGeometry(studio.selector.value, w, h, gapPx)
         // where the cards sit once the selector is up: the dots and the buttons hang under them
         val restingBottomPx = CardGeometry(1f, w, h, gapPx).let { it.centerY + it.cardH / 2f }
+        // the band the cards own for taps: under the header, above the dots and the buttons
+        val cardsTopPx = with(density) { (statusTop + 50.dp).toPx() }
+        val cardsBottomPx = restingBottomPx + with(density) { 18.dp.toPx() }
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .then(
-                    if (!active) Modifier else Modifier.pointerInput(columnCount, w) {
+                    if (!active) Modifier else Modifier.pointerInput(columnCount, w, h, cardsTopPx) {
                         awaitEachGesture {
                             val down = awaitFirstDown(requireUnconsumed = false)
                             val tracker = VelocityTracker()
                             tracker.addPointerInputChange(down)
-                            val startPage = studio.page.value
                             val column = focusedColumn
                             val rows = studio.rows(column)
+                            // a touch while the cards still glide catches them, and isn't a tap on whatever was passing under it
+                            val caught = studio.page.settling || rows.settling
+                            studio.page.stop()
+                            rows.stop()
+                            val startPage = studio.page.value
                             val startRow = rows.value
                             val lastRow = studio.rowCount(column) - 1
                             var dx = 0f
@@ -235,22 +246,37 @@ fun PlayerSelectorOverlay(
                                 }
                             }
                             val velocity = tracker.calculateVelocity()
+                            // a column's rows can be moved while the page is caught between two columns, so it lands on one after
+                            fun settlePage() {
+                                if (abs(studio.page.value - column) > 0.0005f) studio.page.animateTo(column.toFloat())
+                            }
                             when (mode) {
                                 0 -> if (released) {
-                                    val y = down.position.y
-                                    val tappedColumn = (studio.page.value + (down.position.x - w / 2f) / resting.stride).roundToInt()
+                                    if (caught) {
+                                        studio.page.animateTo(studio.page.value.roundToInt().coerceIn(0, lastColumn).toFloat())
+                                        rows.animateTo(rows.value.roundToInt().coerceIn(0, lastRow).toFloat())
+                                        return@awaitEachGesture
+                                    }
+                                    val tap = down.position
+                                    // the header, the dots and the buttons take their own taps, the cards behind them never see one
+                                    if (tap.y < cardsTopPx || tap.y > cardsBottomPx) return@awaitEachGesture
+                                    val position = studio.page.value
+                                    val tappedColumn = (position + (tap.x - w / 2f) / resting.stride).roundToInt()
                                     if (tappedColumn !in 0..lastColumn) return@awaitEachGesture
                                     val rowPosition = studio.rows(tappedColumn).value
-                                    val tappedRow = (rowPosition + (y - resting.centerY) / resting.strideY).roundToInt()
+                                    val tappedRow = (rowPosition + (tap.y - resting.centerY) / resting.strideY).roundToInt()
                                     if (tappedRow !in 0 until studio.rowCount(tappedColumn)) return@awaitEachGesture
-                                    val onCard = abs(y - resting.centerY(tappedRow, rowPosition)) < resting.cardH / 2f
-                                    if (!onCard) return@awaitEachGesture
-                                    if (tappedColumn == focusedColumn && tappedRow != rowPosition.roundToInt()) {
-                                        // a tap on the variant peeking below brings it up
-                                        studio.rows(tappedColumn).animateTo(tappedRow.toFloat())
-                                    } else {
-                                        // a tap on a card puts that style on: the player grows out of it
-                                        currentOnSet(studio.styleAt(tappedColumn, tappedRow), 0f)
+                                    val onCard = abs(tap.x - resting.centerX(tappedColumn, position)) < resting.cardW / 2f &&
+                                        abs(tap.y - resting.centerY(tappedRow, rowPosition)) < resting.cardH / 2f
+                                    // a card slid up out of the way has faded out, there's nothing there to tap
+                                    if (!onCard || rowLeaving(tappedRow, rowPosition) < 0.5f) return@awaitEachGesture
+                                    when {
+                                        // a card at the side comes to the middle first, so a style never goes on by accident
+                                        tappedColumn != focusedColumn -> studio.page.animateTo(tappedColumn.toFloat())
+                                        // the variant peeking in comes up
+                                        tappedRow != rowPosition.roundToInt() -> studio.rows(tappedColumn).animateTo(tappedRow.toFloat())
+                                        // the card in view puts that style on: the player grows out of it
+                                        else -> currentOnSet(studio.styleAt(tappedColumn, tappedRow), 0f)
                                     }
                                 }
                                 1 -> {
@@ -266,6 +292,7 @@ fun PlayerSelectorOverlay(
                                         currentOnSet(studio.styleAt(column, 0), sinkVelocity)
                                     } else {
                                         studio.selector.animateTo(1f, velocity = sinkVelocity)
+                                        settlePage()
                                     }
                                 } else {
                                     // a quick flick moves on a variant, a slow one settles on the nearest; either way it keeps the finger's speed
@@ -277,6 +304,7 @@ fun PlayerSelectorOverlay(
                                         else -> position.roundToInt().toFloat()
                                     }.coerceIn(0f, lastRow.toFloat())
                                     rows.animateTo(target, velocity = rowVelocity)
+                                    settlePage()
                                 }
                             }
                         }
@@ -299,7 +327,7 @@ fun PlayerSelectorOverlay(
                                 // style is being built behind it: then its card covers it, and
                                 // fades into it as it grows
                                 val live = index == studio.livePage
-                                val leaving = rowLeaving(row, rowPosition)
+                                val leaving = rowLeaving(row, rowPosition) * variantFade(column, row, studio, g.e)
                                 val visible = g.visible(column, position) && g.visibleY(row, rowPosition) && leaving > 0f &&
                                     (!live || studio.handoff.value > 0.001f)
                                 alpha = if (!visible) 0f else if (live) studio.handoff.value.coerceIn(0f, 1f) * leaving else leaving
@@ -341,7 +369,7 @@ fun PlayerSelectorOverlay(
                     val cx = g.centerX(column, position)
                     val cy = g.centerY(row, rowPosition)
                     drawRoundRect(
-                        color = Color.White.copy(alpha = 0.16f * e * rowLeaving(row, rowPosition)),
+                        color = Color.White.copy(alpha = 0.16f * e * rowLeaving(row, rowPosition) * variantFade(column, row, studio, e)),
                         topLeft = Offset(cx - g.cardW / 2f + stroke / 2f, cy - g.cardH / 2f + stroke / 2f),
                         size = Size(g.cardW - stroke, g.cardH - stroke),
                         cornerRadius = CornerRadius(radius),
@@ -356,7 +384,8 @@ fun PlayerSelectorOverlay(
                     val dot = 8.dp.toPx()
                     val step = 17.dp.toPx()
                     val x = (w - g.cardW) / 4f
-                    val top = g.centerY - g.cardH / 2f + 26.dp.toPx()
+                    // centred on the card's height, beside the card in view
+                    val top = g.centerY - (count - 1) * step / 2f
                     val rowPosition = studio.rows(column).value.coerceIn(0f, (count - 1).toFloat())
                     repeat(count) { i ->
                         val near = (1f - abs(rowPosition - i)).coerceIn(0f, 1f)
@@ -474,9 +503,9 @@ fun PlayerSelectorOverlay(
                         .padding(horizontal = 30.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (style?.editable == true) {
-                        CardButton("Edit", enabled = active, onClick = { onEdit(focused) }, modifier = Modifier.weight(1f))
-                    }
+                    // edit stays in its place, only dimmed where there's nothing to edit, so set never moves under the finger
+                    val editable = style?.editable == true
+                    CardButton("Edit", enabled = active && editable, dimmed = !editable, onClick = { onEdit(focused) }, modifier = Modifier.weight(1f))
                     CardButton("Set", enabled = active, onClick = { currentOnSet(focused, 0f) }, modifier = Modifier.weight(1f))
                 }
             }
@@ -490,15 +519,16 @@ private fun CardButton(
     enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    dimmed: Boolean = false,
 ) {
     Box(
         modifier = modifier
             .height(40.dp)
             .clip(RoundedCornerShape(50))
-            .background(Color.White.copy(alpha = 0.15f))
+            .background(Color.White.copy(alpha = if (dimmed) 0.06f else 0.15f))
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text = label, color = Color.White, style = studioText(StudioType.Button))
+        Text(text = label, color = Color.White.copy(alpha = if (dimmed) 0.35f else 1f), style = studioText(StudioType.Button))
     }
 }

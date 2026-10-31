@@ -55,8 +55,21 @@ internal class OffscreenFrames(
 
     // the gpu draws blur and shaders like the screen does; some phones hand back an empty frame from it, and those draw in software instead
     private var onGpu = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-    private var software: Bitmap? = null
-    private var lastGpuFrame: Bitmap? = null
+    private var gpuFrame: Bitmap? = null
+
+    // two buffers taking turns, so a software frame that fails halfway never spoils the last good one
+    private val softwareFrames = arrayOfNulls<Bitmap>(2)
+    private var softwareTurn = 0
+
+    // stands in for a frame that couldn't be drawn, so the card never drops out of a video
+    var lastFrame: FrameImage? = null
+        private set
+
+    // how the frames went, for the log once an export is done
+    private var gpuFrames = 0
+    private var softwareFrameCount = 0
+    private var stoodIn = 0
+    private var softwareFailed = false
 
     private val view = ComposeView(host.context).apply {
         setParentCompositionContext(recomposer)
@@ -84,35 +97,35 @@ internal class OffscreenFrames(
         nextTurn()
     }
 
-    // a few still frames for the picture to settle into place, then a check that something was really drawn; a gpu frame that comes back empty switches to software
+    // a few still frames for the picture to settle into place; every one is checked, so a phone whose gpu hands back empty frames is caught here
     suspend fun warmUp(frames: Int) {
         repeat(frames) {
             advance(0.0)
             capture()
         }
-        if (onGpu && capture().isBlank()) {
-            Log.w(Tag, "The gpu frame came back empty, drawing the share in software instead")
-            onGpu = false
-        }
-        check(!capture().isBlank()) { "The share's picture came out empty" }
     }
 
-    // the composable as it looks right now
+    // the composable as it looks right now; a frame that comes out empty or broken is drawn again in software, and if even that fails the last good one stands in
     suspend fun capture(): FrameImage {
         layOut()
         if (onGpu && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val frame = runCatching { captureOnGpu() }
-                .onFailure { Log.w(Tag, "Drawing the share on the gpu failed, using software", it) }
-                .getOrNull()
-            if (frame != null) return frame
+            captureOnGpu()?.let { return it }
             onGpu = false
         }
-        return captureInSoftware()
+        captureInSoftware()?.let { return it }
+        stoodIn++
+        return checkNotNull(lastFrame) { "The share's picture came out empty" }
     }
 
+    // one line for the log, so a phone where the card goes missing shows which way its frames were drawn
+    fun summary(): String = "gpu frames $gpuFrames, software frames $softwareFrameCount, stood in for $stoodIn, now on ${if (onGpu) "gpu" else "software"}"
+
     fun release() {
-        lastGpuFrame?.recycle()
-        lastGpuFrame = null
+        gpuFrame?.recycle()
+        gpuFrame = null
+        softwareFrames.forEach { it?.recycle() }
+        softwareFrames.fill(null)
+        lastFrame = null
         view.disposeComposition()
         host.removeView(view)
         recomposer.cancel()
@@ -133,26 +146,48 @@ internal class OffscreenFrames(
         suspendCancellableCoroutine { continuation -> main.post { continuation.resume(Unit) } }
     }
 
-    // the same way compose takes a picture of a layer: the view drawn into a picture that the gpu turns into a bitmap, then copied out for the encoder
+    // the same way compose takes a picture of a layer: the view drawn into a picture that the gpu turns into a bitmap, then copied out for the encoder; null when that fails or comes back empty
     @RequiresApi(Build.VERSION_CODES.P)
-    private fun captureOnGpu(): FrameImage {
-        val drawn = Bitmap.createBitmap(ViewPicture(view, width, height))
-        val copy = try {
-            drawn.copy(Bitmap.Config.ARGB_8888, false)
-        } finally {
-            drawn.recycle()
+    private fun captureOnGpu(): FrameImage? {
+        val copy = runCatching {
+            val drawn = Bitmap.createBitmap(ViewPicture(view, width, height))
+            try {
+                checkNotNull(drawn.copy(Bitmap.Config.ARGB_8888, false)) { "The gpu frame couldn't be read back" }
+            } finally {
+                drawn.recycle()
+            }
+        }.onFailure { Log.w(Tag, "Drawing the share on the gpu failed, using software", it) }.getOrNull() ?: return null
+        val frame = FrameImage(copy, width, height)
+        if (frame.isBlank()) {
+            Log.w(Tag, "The gpu frame came back empty after $gpuFrames good ones, drawing the share in software instead")
+            copy.recycle()
+            return null
         }
         // the frame before has been handed to the encoder by now; its memory goes straight back
-        lastGpuFrame?.recycle()
-        lastGpuFrame = copy
-        return FrameImage(copy, width, height)
+        gpuFrame?.recycle()
+        gpuFrame = copy
+        gpuFrames++
+        lastFrame = frame
+        return frame
     }
 
-    private fun captureInSoftware(): FrameImage {
-        val bitmap = software ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { software = it }
-        bitmap.eraseColor(Color.TRANSPARENT)
-        view.draw(Canvas(bitmap))
-        return FrameImage(bitmap, width, height)
+    private fun captureInSoftware(): FrameImage? {
+        val bitmap = softwareFrames[softwareTurn]
+            ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { softwareFrames[softwareTurn] = it }
+        val frame = runCatching {
+            bitmap.eraseColor(Color.TRANSPARENT)
+            view.draw(Canvas(bitmap))
+            FrameImage(bitmap, width, height)
+        }.onFailure {
+            // logged once; a draw that fails keeps failing, and 600 copies of it would bury everything else
+            if (!softwareFailed) Log.w(Tag, "Drawing the share in software failed", it)
+            softwareFailed = true
+        }.getOrNull()
+        if (frame == null || frame.isBlank()) return null
+        softwareTurn = 1 - softwareTurn
+        softwareFrameCount++
+        lastFrame = frame
+        return frame
     }
 }
 

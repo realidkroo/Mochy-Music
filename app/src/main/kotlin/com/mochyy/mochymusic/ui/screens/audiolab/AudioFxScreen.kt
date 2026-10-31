@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -297,7 +298,7 @@ private fun AtmosCard(viewModel: AudioLabViewModel) {
         options = {},
         footer = {
             Text(
-                "No streaming source sends Atmos to Android right now: Apple encodes it for FairPlay only, and Monochrome streams stereo FLAC. Your own surround files are rendered.",
+                stringResource(R.string.atmos_streaming_note),
                 fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 16.sp, color = LabColors.Secondary,
                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
             )

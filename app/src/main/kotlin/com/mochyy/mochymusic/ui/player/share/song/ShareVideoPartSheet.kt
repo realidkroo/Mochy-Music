@@ -73,7 +73,7 @@ private fun VideoPartContent(session: SongShareSession) {
                 .clip(RoundedCornerShape(28.dp))
                 .background(Color(0xFF2C2C2E)),
         ) {
-            ShareVideoLayer(session, playing = true, source = own)
+            ShareVideoLayer(session, playing = session.onScreen, source = own)
         }
         Spacer(Modifier.height(14.dp))
         Text(

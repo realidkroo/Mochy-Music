@@ -49,6 +49,7 @@ import com.mochyy.mochymusic.constants.LocalSongAutoMetadataKey
 import com.mochyy.mochymusic.constants.LyricsHighBloomKey
 import com.mochyy.mochymusic.constants.LyricsMotionStyle
 import com.mochyy.mochymusic.constants.LyricsMotionStyleKey
+import com.mochyy.mochymusic.constants.MixWithOtherAppsKey
 import com.mochyy.mochymusic.constants.OfflineModeKey
 import com.mochyy.mochymusic.constants.PersistentQueueKey
 import com.mochyy.mochymusic.constants.PlayVideoBackgroundKey
@@ -138,6 +139,7 @@ private fun generalItems(): List<SettingsItem> {
     val (noticeHidden, onNoticeHidden) = rememberPreference(HideUpdateNoticeKey, defaultValue = false)
     val (offlineMode, onOfflineModeChange) = rememberPreference(OfflineModeKey, defaultValue = false)
     val (stopOnTaskRemoved, onStopOnTaskRemoved) = rememberPreference(StopPlaybackOnTaskRemovedKey, defaultValue = false)
+    val (mixWithOtherApps, onMixWithOtherAppsChange) = rememberPreference(MixWithOtherAppsKey, defaultValue = false)
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(PersistentQueueKey, defaultValue = true)
     // the launch check's notification reads its own switch, so it follows this one too
     val setNoticeHidden = { hidden: Boolean ->
@@ -170,6 +172,15 @@ private fun generalItems(): List<SettingsItem> {
             icon = painterResource(R.drawable.clear_all),
             checked = !stopOnTaskRemoved,
             onCheckedChange = { onStopOnTaskRemoved(!it) },
+        ),
+        switchItem(
+            key = "Play alongside other apps",
+            title = stringResource(R.string.playback_mix_other_apps),
+            description = stringResource(R.string.playback_mix_other_apps_desc),
+            detail = stringResource(R.string.playback_mix_other_apps_detail),
+            icon = painterResource(R.drawable.volume_up),
+            checked = mixWithOtherApps,
+            onCheckedChange = onMixWithOtherAppsChange,
         ),
         switchItem(
             key = "Save Player's last state",

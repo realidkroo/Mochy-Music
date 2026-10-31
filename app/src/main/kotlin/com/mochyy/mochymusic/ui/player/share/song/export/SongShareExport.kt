@@ -8,6 +8,7 @@ import android.graphics.Matrix
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -76,6 +77,8 @@ import kotlin.coroutines.resumeWithException
 
 private const val ExportDir = "song_share"
 
+private const val Tag = "SongShare"
+
 // how many still frames the picture gets to settle into place before the first real one
 private const val WarmUpFrames = 3
 
@@ -131,12 +134,12 @@ internal suspend fun exportStill(
     val frames = OffscreenFrames(host, quality.width, quality.height) {
         ExportPicture(session, theme, quality.width, { session.windowStartMs }, layers, moving = false)
     }
-    val bitmap = try {
+    try {
         frames.warmUp(WarmUpFrames)
         val frame = frames.capture()
         // cinematic words have no card to crop to: the sticker is the whole picture, see-through round the words
         val bounds = session.cardBounds.takeIf { cropToCard && session.hasCard }
-        if (bounds != null) {
+        val picture = if (bounds != null) {
             val left = (bounds.left * frame.width).toInt().coerceIn(0, frame.width - 1)
             val top = (bounds.top * frame.height).toInt().coerceIn(0, frame.height - 1)
             val right = (bounds.right * frame.width).toInt().coerceIn(left + 1, frame.width)
@@ -145,11 +148,12 @@ internal suspend fun exportStill(
         } else {
             Bitmap.createBitmap(frame.bitmap, 0, 0, frame.width, frame.height)
         }
+        // written before the frames are let go: android hands back the frame itself when the crop is the whole of it, and letting go recycles it
+        return withContext(Dispatchers.IO) {
+            newExportFile(context, "png").also { file -> file.outputStream().use { picture.compress(Bitmap.CompressFormat.PNG, 100, it) } }
+        }
     } finally {
         frames.release()
-    }
-    return withContext(Dispatchers.IO) {
-        newExportFile(context, "png").also { file -> file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) } }
     }
 }
 
@@ -179,10 +183,10 @@ internal suspend fun exportVideo(
     val frames = composeLayers?.let { picked ->
         OffscreenFrames(host, width, height) { ExportPicture(session, theme, width, { playhead.longValue }, picked, moving = true) }
     }
+    val totalFrames = (session.windowLengthMs * fps / 1000L).coerceAtLeast(1L)
+    val source = frames?.let { ExportFrames(it, playhead, session.windowStartMs, job, totalFrames) }
     try {
         frames?.warmUp(WarmUpFrames)
-        val totalFrames = (session.windowLengthMs * fps / 1000L).coerceAtLeast(1L)
-        val source = frames?.let { ExportFrames(it, playhead, session.windowStartMs, job, totalFrames) }
         val foreground = source?.let { listOf(ForegroundEffect(it::frameAt)) }.orEmpty()
         val frost = if (background != null && layers.card && layers.glass) cardFrost(session, width, height) else null
 
@@ -232,6 +236,8 @@ internal suspend fun exportVideo(
         runTransformer(context, composition, out, sources, quality, fps, job, trackProgress = source == null)
         return out
     } finally {
+        // kept in release builds, so a phone where the card goes missing can say why
+        frames?.let { Log.i(Tag, "Share video ${width}x$height at $fps fps: ${it.summary()}, ${source?.summary()}") }
         frames?.release()
     }
 }

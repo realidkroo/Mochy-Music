@@ -87,6 +87,8 @@ import com.mochyy.mochymusic.constants.FlagshipTransportLayout
 import com.mochyy.mochymusic.constants.FlagshipTransportLayoutKey
 import com.mochyy.mochymusic.ui.player.flagship.FlagshipBarHeight
 import com.mochyy.mochymusic.ui.player.flagship.FlagshipBottomBar
+import com.mochyy.mochymusic.ui.player.flagship.FlagshipPillLook
+import com.mochyy.mochymusic.ui.player.flagship.FlagshipPillMorphSurface
 import com.mochyy.mochymusic.ui.player.flagship.FlagshipTransportRow
 import com.mochyy.mochymusic.ui.player.flagship.ControlsShade
 import com.mochyy.mochymusic.ui.player.flagship.CoverFrost
@@ -351,6 +353,9 @@ private fun PlayerSheet(
     val barLifted by remember { derivedStateOf { studioPieces.liftedPart == LiftedPart.BAR } }
     val showDeck = showPlayerBottomCard && barStyle == PlayerBottomBarStyle.STACK
     val showVolumeBar = barStyle == PlayerBottomBarStyle.VOLUME
+    // the flagship's bar has no card to grow a page from, so the page grows out of the pill's lyrics or queue half
+    val pillMorph = isFlagship && showVolumeBar
+    val pageLook = if (pillMorph) FlagshipPillLook else cardLook
     // a style stored by the ones these replaced lands on its successor
     val (storedPlayerStyle, onStoredPlayerStyle) = rememberPreference(com.mochyy.mochymusic.constants.PlayerStyleKey, "")
     LaunchedEffect(storedPlayerStyle) {
@@ -1029,7 +1034,8 @@ private fun PlayerSheet(
 
             // The card growing into the page, under it: its glass widens to the full screen while
             // the player behind dims a touch. Only there while a page is growing or shrinking.
-            ExpandingCardSurface(transition = transition, morph = morph, look = cardLook)
+            if (pillMorph) FlagshipPillMorphSurface(transition = transition, morph = morph)
+            else ExpandingCardSurface(transition = transition, morph = morph, look = cardLook)
 
             // Unmounted while the player is collapsed - even though the page itself is remembered -
             // because its lines keep per-frame clocks of their own that would otherwise tick away
@@ -1050,7 +1056,7 @@ private fun PlayerSheet(
                     onSwitchSource = { showLyricsSource = true },
                     modifier = Modifier
                         .fillMaxSize()
-                        .pageTransitionLayer(PlayerPage.LYRICS, transition, morph, cardLook) { lyricsPageProgress },
+                        .pageTransitionLayer(PlayerPage.LYRICS, transition, morph, pageLook) { lyricsPageProgress },
                 )
             }
 
@@ -1067,7 +1073,7 @@ private fun PlayerSheet(
                     morph = morph,
                     modifier = Modifier
                         .fillMaxSize()
-                        .pageTransitionLayer(PlayerPage.QUEUE, transition, morph, cardLook) { queuePageProgress },
+                        .pageTransitionLayer(PlayerPage.QUEUE, transition, morph, pageLook) { queuePageProgress },
                 )
             }
 
@@ -1148,6 +1154,7 @@ private fun PlayerSheet(
                         onAction = onMenuAction,
                         // the page grows out of the button that was tapped, not out of a card that isn't there
                         onPageFrom = { morph.cardRect = it },
+                        pages = transition,
                         modifier = volumeBarModifier,
                     )
                 } else {
@@ -1184,10 +1191,14 @@ private fun PlayerSheet(
             val transportGap = (screenHeight * 0.19f - 37.dp - belowControls + TransportGapAboveRow + controlsDrawShift) / 2f
             // What's left of the gap above once the bar's own lift and the draw shift are counted.
             val transportSpacer = (transportGap - SeekBarLift - controlsDrawShift).coerceAtLeast(0.dp)
+            // the buttons sit halfway between the seek bar and the bottom part: once the spacer above runs out they'd sit low, so they're lifted by half the difference
+            val gapAboveButtons = transportSpacer + SeekBarLift + controlsDrawShift
+            val gapBelowButtons = transportGap.coerceAtLeast(0.dp)
+            val buttonsLift = (gapAboveButtons - gapBelowButtons) / 2f
             // how far the editor's hold may move the controls, and pull the card taller
             androidx.compose.runtime.SideEffect {
                 layoutTweaks.setLimits(
-                    roomAboveBar = transportGap.coerceAtLeast(0.dp),
+                    roomAboveBar = (gapAboveButtons + gapBelowButtons) / 2f,
                     screenHeightPx = with(density) { screenHeight.toPx() },
                     density = density,
                     controlsMovable = !isTurntable,
@@ -1465,6 +1476,11 @@ private fun PlayerSheet(
                 Spacer(modifier = Modifier.height(transportSpacer))
 
                 val transportModifier = Modifier
+                    // the editor moves the seek bar; the buttons follow it halfway, and meet a taller card halfway, so they stay in the middle
+                    .offset {
+                        val follow = (layoutTweaks.controlsOffset() + layoutTweaks.cardGrowth()) / 2f
+                        androidx.compose.ui.unit.IntOffset(0, (-buttonsLift.toPx() - follow).roundToInt())
+                    }
                     .studioAnchor(studioAnchors) { it.transport }
                     .studioTransportLayer(studioParts)
                     .studioPiece(studioPieces, StudioPieces.TRANSPORT)

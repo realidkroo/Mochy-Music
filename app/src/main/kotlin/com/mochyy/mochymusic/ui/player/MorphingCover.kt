@@ -51,6 +51,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -106,6 +107,9 @@ import com.mochyy.mochymusic.ui.component.DownscaledBlur
 import com.mochyy.mochymusic.ui.component.rememberCoverBlurAvailable
 import kotlinx.coroutines.flow.collectLatest
 import kotlin.math.roundToInt
+import com.mochyy.mochymusic.ui.player.flagship.AnimatedPlayGlyph
+import com.mochyy.mochymusic.ui.player.flagship.AnimatedSkipGlyph
+import com.mochyy.mochymusic.ui.player.flagship.SkipCycleState
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
@@ -1132,12 +1136,22 @@ fun MorphingCover(
                     alpha = (1f - (p / 0.5f)).coerceIn(0f, 1f)
                 }
         ) {
-            MiniPlayerButton(
-                iconRes = if (playbackState == Player.STATE_ENDED) R.drawable.replay
-                else if (isPlaying) R.drawable.ic_untitled_pause
-                else R.drawable.ic_untitled_play,
-                onClick = { playerConnection?.togglePlayPause() },
-            )
+            MiniPlayerButton(onClick = { playerConnection?.togglePlayPause() }) {
+                val tint = MaterialTheme.colorScheme.onSurface
+                // replay pops in for a finished song; play and pause swap with the flagship's squash
+                AnimatedContent(
+                    targetState = playbackState == Player.STATE_ENDED,
+                    transitionSpec = { MiniIconSwap },
+                    contentAlignment = Alignment.Center,
+                    label = "miniPlayerIcon",
+                ) { ended ->
+                    if (ended) {
+                        Icon(painter = painterResource(R.drawable.replay), contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+                    } else {
+                        AnimatedPlayGlyph(playing = isPlaying, color = tint, height = MiniPlayHeight)
+                    }
+                }
+            }
         }
 
         Box(
@@ -1158,10 +1172,16 @@ fun MorphingCover(
                     alpha = (1f - (p / 0.5f)).coerceIn(0f, 1f)
                 }
         ) {
+            val skipScope = rememberCoroutineScope()
+            val skipCycle = remember { SkipCycleState() }
             MiniPlayerButton(
-                iconRes = R.drawable.ic_untitled_skip_next,
-                onClick = { playerConnection?.player?.seekToNext() },
-            )
+                onClick = {
+                    skipScope.launch { skipCycle.step() }
+                    playerConnection?.player?.seekToNext()
+                },
+            ) {
+                AnimatedSkipGlyph(cycle = skipCycle, backwards = false, color = MaterialTheme.colorScheme.onSurface, width = MiniSkipWidth)
+            }
         }
     }
 }
@@ -1177,18 +1197,19 @@ private val MiniButtonHighlight = RoundedHighlight(
     color = ChromeHighlightColor,
 )
 
+// the old icons' size in their 20dp box: the play triangle nearly as tall, the skip pair nearly as wide
+private val MiniPlayHeight = 19.dp
+private val MiniSkipWidth = 19.dp
+
 /** Play turning into pause (and back) pops the new icon in from small as the old one shrinks away. */
 private val MiniIconSwap = (fadeIn(tween(160)) + scaleIn(tween(220, easing = FastOutSlowInEasing), initialScale = 0.6f)) togetherWith
     (fadeOut(tween(120)) + scaleOut(tween(160), targetScale = 0.6f))
 
-/**
- * One of the mini player's buttons. A round highlight comes up under the finger and the button
- * squishes with it, and a new icon pops in instead of swapping in a single frame.
- */
+// one of the mini player's buttons: a round highlight comes up under the finger and the button squishes with it
 @Composable
 private fun MiniPlayerButton(
-    iconRes: Int,
     onClick: () -> Unit,
+    icon: @Composable () -> Unit,
 ) {
     val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Box(
@@ -1202,19 +1223,7 @@ private fun MiniPlayerButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        AnimatedContent(
-            targetState = iconRes,
-            transitionSpec = { MiniIconSwap },
-            contentAlignment = Alignment.Center,
-            label = "miniPlayerIcon",
-        ) { res ->
-            Icon(
-                painter = painterResource(res),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(20.dp),
-            )
-        }
+        icon()
     }
 }
 

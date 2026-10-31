@@ -21,13 +21,17 @@ object DeviceDecoders {
 
     /** [codec] ("FLAC", "ALAC"...) at [sampleRateHz], or at any rate when 0 */
     fun canPlay(codec: String?, sampleRateHz: Int = 0): Boolean {
-        val mime = when (codec?.uppercase()) {
-            "FLAC" -> "audio/flac"
-            "ALAC" -> "audio/alac"
+        val mimes = when (codec?.uppercase()) {
+            "FLAC" -> listOf("audio/flac")
+            "ALAC" -> listOf("audio/alac")
+            // media3 plays atmos on a plain e-ac-3 decoder too, it just folds the height channels into the bed
+            "DOLBY ATMOS" -> listOf("audio/eac3-joc", "audio/eac3")
+            "E-AC-3" -> listOf("audio/eac3")
+            "AC-3" -> listOf("audio/ac3")
             // AAC and the rest: every phone decodes them
             else -> return true
         }
-        return known.getOrPut("$mime@$sampleRateHz") { hasDecoder(mime, sampleRateHz) }
+        return mimes.any { mime -> known.getOrPut("$mime@$sampleRateHz") { hasDecoder(mime, sampleRateHz) } }
     }
 
     /** a decoder for [mime] that takes [sampleRateHz] (any rate when 0); true when it can't be told */

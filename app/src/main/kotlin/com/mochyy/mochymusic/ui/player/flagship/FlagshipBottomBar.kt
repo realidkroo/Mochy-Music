@@ -4,7 +4,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -40,12 +38,14 @@ import androidx.compose.material.icons.rounded.Usb
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,8 +65,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.res.stringResource
@@ -87,14 +85,15 @@ import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.playback.audio.AudioOutputs
+import com.mochyy.mochymusic.ui.player.PlayerPageTransition
 import com.mochyy.mochymusic.ui.player.rememberMusicVolume
 import com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
+import com.mochyy.mochymusic.ui.utils.rubberBand
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.abs
-import kotlin.math.sign
 
 // the volume's row, the room under it and the pills' row (the pill is drawn smaller inside, the rest is touch room)
 private val VolumeRowHeight = 28.dp
@@ -102,8 +101,8 @@ private val PillGap = 15.dp
 private val PillTouchHeight = 41.dp
 
 // the pills as the design has them: 294 by 67 of its 1172 units across
-private val PillHeight = 23.dp
-private val PillWidth = 99.dp
+internal val PillHeight = 23.dp
+internal val PillWidth = 99.dp
 
 // the bar from the top of the volume line to the bottom of its pills' touch room
 internal val FlagshipBarHeight = VolumeRowHeight + PillGap + PillTouchHeight
@@ -115,8 +114,7 @@ private val FlagshipBarBottomGap = 8.dp
 private val BarInset = 18.dp
 
 // barely there, so the picture behind shows through
-private val PillFill = Color.White.copy(alpha = 0.1f)
-private val PillLit = Color.White.copy(alpha = 0.2f)
+internal val PillFill = Color.White.copy(alpha = 0.1f)
 
 // the volume line at rest and while it's held, and how far past its end it can be stretched
 private val TrackThin = 6.5.dp
@@ -124,6 +122,9 @@ private val TrackThick = 12.dp
 private val StretchMax = 26.dp
 private val SpeakerSize = 15.dp
 private val SpeakerGap = 10.dp
+
+// no bounce, about a third of a second, quick enough that a held volume key never lags behind
+private val VolumeGlide = spring<Float>(dampingRatio = 1f, stiffness = 400f)
 
 private val PillText = TextStyle(
     fontFamily = InterFontFamily,
@@ -142,7 +143,7 @@ internal fun flagshipBarFootprint(): Dp =
 
 // the new flagship's bottom bar: the phone's volume, then where the music plays and the lyrics and queue
 @Composable
-fun FlagshipBottomBar(
+internal fun FlagshipBottomBar(
     isActive: (PlayerMenuAction) -> Boolean,
     onAction: (PlayerMenuAction) -> Unit,
     modifier: Modifier = Modifier,
@@ -152,6 +153,8 @@ fun FlagshipBottomBar(
     preview: Boolean = false,
     // told where the lyrics or queue button is (root px) just before it opens its page, so the page grows out of it
     onPageFrom: (Rect) -> Unit = {},
+    // the lyrics and queue pages, so the pill can come apart as one grows out of it; the selector's still picture has none
+    pages: PlayerPageTransition? = null,
 ) {
     if (LocalPlayerConnection.current == null) return
     val visible by remember { derivedStateOf { progressProvider() > 0.98f } }
@@ -173,7 +176,12 @@ fun FlagshipBottomBar(
         ) {
             OutputPill(onClick = { onAction(PlayerMenuAction.OUTPUT) }, modifier = Modifier.weight(1f, fill = false))
             Spacer(Modifier.width(12.dp))
-            PagesPill(isActive = isActive, onAction = onAction, onPageFrom = onPageFrom)
+            PagesPill(
+                isActive = isActive,
+                onAction = onAction,
+                onPageFrom = onPageFrom,
+                pages = pages,
+            )
         }
     }
 }
@@ -187,6 +195,15 @@ private fun AppleVolume(listening: Boolean) {
     val held = remember { Animatable(0f) }
     val stretch = remember { mutableFloatStateOf(0f) }
     val settle = remember { arrayOfNulls<Job>(1) }
+    // the volume the line shows, so the volume keys slide it along instead of jumping it a step at a time
+    val line = remember(volume) { Animatable(volume.shown) }
+    LaunchedEffect(volume) {
+        snapshotFlow { volume.shown }.collect { target ->
+            // a fresh launch per change keeps the speed it had, so holding a key glides in one go
+            if (volume.isDragging) launch { line.snapTo(target) }
+            else launch { line.animateTo(target, VolumeGlide) }
+        }
+    }
     val quiet = rememberVectorPainter(
         if (volume.shown <= 0f) ImageVector.vectorResource(R.drawable.volume_off)
         else ImageVector.vectorResource(R.drawable.volume_down)
@@ -211,7 +228,8 @@ private fun AppleVolume(listening: Boolean) {
                     settle[0]?.cancel()
                     scope.launch { held.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 500f)) }
                     val track = (size.width - (SpeakerSize + SpeakerGap).toPx() * 2f).coerceAtLeast(1f)
-                    val start = volume.shown
+                    // grab the line where it's drawn, even if it's still gliding after a key press
+                    val start = line.value
                     fun follow() {
                         val raw = start + travelled / track
                         volume.drag(raw.coerceIn(0f, 1f))
@@ -265,7 +283,7 @@ private fun AppleVolume(listening: Boolean) {
                     val radius = CornerRadius(thickness / 2f)
                     val top = cy - thickness / 2f
                     drawRoundRect(Color.White.copy(alpha = 0.22f + 0.08f * h), Offset(left, top), Size(right - left, thickness), radius)
-                    val filled = (right - left) * volume.shown.coerceIn(0f, 1f)
+                    val filled = (right - left) * line.value.coerceIn(0f, 1f)
                     if (filled > 0.5f) {
                         drawRoundRect(Color.White, Offset(left, top), Size(filled.coerceAtLeast(thickness), thickness), radius)
                     }
@@ -284,13 +302,6 @@ private fun DrawScope.speaker(painter: Painter, x: Float, cy: Float, sizePx: Flo
             with(painter) { draw(Size(sizePx, sizePx), alpha = alpha, colorFilter = tint) }
         }
     }
-}
-
-// the iphone's rubber band: the further past the end, the less each move adds, never more than reach
-private fun rubberBand(over: Float, reach: Float): Float {
-    if (over == 0f) return 0f
-    val d = abs(over)
-    return sign(over) * (1f - 1f / (d * 0.55f / reach + 1f)) * reach
 }
 
 // where the music is coming out right now, as the phone, the headphones, a bluetooth name or a cast receiver
@@ -344,82 +355,9 @@ private fun OutputPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-// lyrics and queue in one pill split by a hairline, the open page's half lit
-@Composable
-private fun PagesPill(
-    isActive: (PlayerMenuAction) -> Boolean,
-    onAction: (PlayerMenuAction) -> Unit,
-    onPageFrom: (Rect) -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .width(PillWidth)
-            .height(PillHeight)
-            .clip(RoundedCornerShape(50))
-            .background(PillFill),
-    ) {
-        PillHalf(
-            painter = painterResource(R.drawable.flagship_lyrics),
-            lit = isActive(PlayerMenuAction.LYRICS),
-            description = stringResource(R.string.flagship_lyrics),
-            onClick = { from ->
-                onPageFrom(from)
-                onAction(PlayerMenuAction.LYRICS)
-            },
-        )
-        Box(
-            modifier = Modifier
-                .width(1.dp)
-                .height(15.5.dp)
-                .background(Color.White.copy(alpha = 0.38f)),
-        )
-        PillHalf(
-            painter = painterResource(R.drawable.flagship_queue),
-            lit = isActive(PlayerMenuAction.QUEUE),
-            description = stringResource(R.string.flagship_queue),
-            onClick = { from ->
-                onPageFrom(from)
-                onAction(PlayerMenuAction.QUEUE)
-            },
-        )
-    }
-}
-
-@Composable
-private fun RowScope.PillHalf(
-    painter: Painter,
-    lit: Boolean,
-    description: String,
-    onClick: (Rect) -> Unit,
-) {
-    val source = remember { MutableInteractionSource() }
-    // a plain holder, not state: it's only read when the half is tapped
-    val bounds = remember { arrayOf(Rect.Zero) }
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .weight(1f)
-            .fillMaxHeight()
-            .onGloballyPositioned { bounds[0] = it.boundsInRoot() }
-            .background(if (lit) PillLit else Color.Transparent)
-            .clickable(interactionSource = source, indication = null) { onClick(bounds[0]) }
-            .semantics {
-                contentDescription = description
-                role = Role.Button
-            },
-    ) {
-        Image(
-            painter = painter,
-            contentDescription = null,
-            modifier = Modifier.size(12.5.dp).pressShrink(source),
-        )
-    }
-}
-
 // a little squish under the finger, read while drawing only
 @Composable
-private fun Modifier.pressShrink(source: MutableInteractionSource): Modifier {
+internal fun Modifier.pressShrink(source: MutableInteractionSource): Modifier {
     val pressed by source.collectIsPressedAsState()
     val scale = animateFloatAsState(
         targetValue = if (pressed) 0.9f else 1f,

@@ -125,6 +125,7 @@ import com.mochyy.mochymusic.constants.MediaSessionConstants.CommandToggleShuffl
 import com.mochyy.mochymusic.constants.MediaSessionConstants.CommandToggleStartRadio
 import com.mochyy.mochymusic.constants.OfflineModeKey
 import com.mochyy.mochymusic.constants.PauseListenHistoryKey
+import com.mochyy.mochymusic.constants.MixWithOtherAppsKey
 import com.mochyy.mochymusic.constants.PauseOnMute
 import com.mochyy.mochymusic.constants.PersistentQueueKey
 import com.mochyy.mochymusic.constants.InfiniteQueueKey
@@ -318,6 +319,9 @@ class MusicService :
     private var wasPlayingBeforeAudioFocusLoss = false
     private var hasAudioFocus = false
     private var reentrantFocusGain = false
+    private var mixWithOtherApps = false
+    private var wasPlayingBeforeCall = false
+    private val callWatcher by lazy { CallWatcher(this, ::onCallChanged) }
     private var wasPlayingBeforeVolumeMute = false
     private var isPausedByVolumeMute = false
     var preferredDeviceId: Int? = null
@@ -1024,6 +1028,14 @@ class MusicService :
                 }
             }
 
+        dataStore.data
+            .map { it[MixWithOtherAppsKey] ?: false }
+            .distinctUntilChanged()
+            .collect(scope) { mix ->
+                mixWithOtherApps = mix
+                if (mix) startMixingWithOtherApps() else stopMixingWithOtherApps()
+            }
+
         combine(
             currentFormat,
             dataStore.data
@@ -1387,6 +1399,8 @@ class MusicService :
     }
 
     private fun handleAudioFocusChange(focusChange: Int) {
+        // a callback still on its way after mixing let go of focus, it would pause us for the other app
+        if (mixWithOtherApps) return
         when (focusChange) {
 
             AudioManager.AUDIOFOCUS_GAIN,
@@ -1456,6 +1470,8 @@ class MusicService :
     }
 
     private fun requestAudioFocus(): Boolean {
+        // mixing never asks, holding focus is exactly what lets android pause or fade us for another app
+        if (mixWithOtherApps) return true
         if (hasAudioFocus) return true
 
         val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -1480,18 +1496,44 @@ class MusicService :
     }
 
     private fun abandonAudioFocus() {
-        if (hasAudioFocus) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                audioFocusRequest?.let { request ->
-                    audioManager.abandonAudioFocusRequest(request)
-                    hasAudioFocus = false
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                legacyFocusListener?.let { audioManager.abandonAudioFocus(it) }
-                hasAudioFocus = false
-            }
+        // let go even after a short loss, or the request stays queued and android hands focus back later
+        if (!::audioManager.isInitialized) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+        } else {
+            @Suppress("DEPRECATION")
+            legacyFocusListener?.let { audioManager.abandonAudioFocus(it) }
         }
+        hasAudioFocus = false
+    }
+
+    // holding focus while mixing would get us faded out on android 12+ the moment another app starts
+    private fun startMixingWithOtherApps() {
+        abandonAudioFocus()
+        wasPlayingBeforeAudioFocusLoss = false
+        if (lastAudioFocusState == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+            player.volume = if (isMuted.value) 0f else playerVolume.value
+        }
+        lastAudioFocusState = AudioManager.AUDIOFOCUS_NONE
+        callWatcher.start()
+    }
+
+    private fun stopMixingWithOtherApps() {
+        callWatcher.stop()
+        wasPlayingBeforeCall = false
+        if (player.playWhenReady) requestAudioFocus()
+    }
+
+    // while mixing nothing else pauses us for a call, so do it here and pick the song back up after
+    private fun onCallChanged(inCall: Boolean) {
+        if (inCall) {
+            wasPlayingBeforeCall = player.playWhenReady
+            if (wasPlayingBeforeCall) player.pause()
+            return
+        }
+        if (!wasPlayingBeforeCall) return
+        wasPlayingBeforeCall = false
+        if (castConnectionHandler?.isCasting?.value != true) player.play()
     }
 
     private fun clearPersistedQueueFiles() {
@@ -4057,6 +4099,7 @@ class MusicService :
         // sends the last stretch of the song that was playing while the player can still say where it stopped
         playReporter.onSongStop()
         connectivityObserver.unregister()
+        callWatcher.stop()
         abandonAudioFocus()
         releaseLoudnessEnhancer()
         crossmixDirector.release()

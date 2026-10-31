@@ -226,7 +226,8 @@ fun EditTiles(parts: StudioParts, modifier: Modifier = Modifier) {
             val hasBar by remember(parts) { derivedStateOf { parts.layout().barTile != null } }
             TileTarget({ parts.layout().coverTile }) { studio.go(StudioStage.COVER) }
             TileTarget({ parts.layout().middleTile }, controlsHold) { studio.go(StudioStage.MIDDLE) }
-            TileTarget({ parts.layout().controlsTile }, controlsHold) { studio.openSheet(StudioSheet.CONTROLS) }
+            // the seek bar's tile is the handle; the buttons follow it on their own, so theirs only opens its sheet
+            TileTarget({ parts.layout().controlsTile }) { studio.openSheet(StudioSheet.CONTROLS) }
             if (hasBar) TileTarget({ parts.layout().barTile ?: Rect.Zero }, cardHold) { studio.go(StudioStage.BAR) }
         }
     }
@@ -405,10 +406,9 @@ private fun DrawScope.drawHoldMarks(parts: StudioParts, glow: Float) {
         HeldPart.CONTROLS -> {
             drawTileOutline(l.middleTile, a * 0.5f, HeldTileInk)
             drawTileOutline(l.controlsTile, a * 0.5f, HeldTileInk)
+            // both on the seek bar's tile, the part the finger moves: above it, and inside its bottom between the two times
             drawChevron(Offset(l.middleTile.center.x, l.middleTile.top - gap), up = true, alpha = dim(tweaks.canMoveControls(up = true)))
-            // in the room above the bar when there's one, else just under the play buttons
-            val belowY = l.barTile?.let { (l.controlsTile.bottom + it.top) / 2f } ?: (l.controlsTile.bottom + gap)
-            drawChevron(Offset(l.controlsTile.center.x, belowY), up = false, alpha = dim(tweaks.canMoveControls(up = false)))
+            drawChevron(Offset(l.middleTile.center.x, l.middleTile.bottom - gap), up = false, alpha = dim(tweaks.canMoveControls(up = false)))
         }
         HeldPart.CARD -> l.barTile?.let { bar ->
             drawTileOutline(bar, a * 0.5f, HeldTileInk)

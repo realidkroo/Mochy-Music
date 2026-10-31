@@ -29,6 +29,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.mochyy.mochymusic.LocalDatabase
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.constants.ElementBlurKey
@@ -48,7 +51,6 @@ import com.mochyy.mochymusic.ui.player.share.showLinePicker
 import com.mochyy.mochymusic.utils.rememberEnumPreference
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -190,31 +192,55 @@ private fun ReadLyricsLook(session: SongShareSession) {
     }
 }
 
-// the share's own player for the song; the app's playback pauses while it plays and carries on after
+// the share's own player for the song; it stays quiet until a video share plays, and only then pauses the app's music, which carries on once the share closes
 @Composable
 private fun SongPreviewAudio(session: SongShareSession) {
     val context = LocalContext.current
     val playerConnection = LocalPlayerConnection.current ?: return
+    WatchesTheApp(session)
+    // set once the share's song has paused the app's own, so closing the share plays it again
+    val pausedTheApp = remember { booleanArrayOf(false) }
     DisposableEffect(session) {
         val preview = SongPreviewPlayer(context, playerConnection.service.shareDataSourceFactory())
         session.preview = preview
-        val wasPlaying = playerConnection.player.isPlaying
-        if (wasPlaying) playerConnection.player.pause()
         onDispose {
             session.preview = null
             preview.release()
-            if (wasPlaying) playerConnection.player.play()
+            if (pausedTheApp[0]) playerConnection.player.play()
         }
     }
-    // the window it loops follows the timeline once the finger lets go
     LaunchedEffect(session) {
         val item = session.song.toMediaItem()
-        snapshotFlow { session.windowStartMs to session.windowLengthMs }.collect { (start, length) ->
-            session.preview?.load(item, start, length, play = session.previewWanted)
+        // nothing loads until the song first plays, so a picture never fetches it at all
+        var loaded: Pair<Long, Long>? = null
+        snapshotFlow { Triple(session.previewPlays, session.windowStartMs, session.windowLengthMs) }.collect { (plays, start, length) ->
+            val preview = session.preview ?: return@collect
+            if (plays && playerConnection.player.isPlaying) {
+                // the two would play over each other
+                playerConnection.player.pause()
+                pausedTheApp[0] = true
+            }
+            if (loaded == null && !plays) return@collect
+            // the window it loops follows the timeline once the finger lets go
+            val window = start to length
+            if (loaded != window) {
+                preview.load(item, start, length, play = plays)
+                loaded = window
+            } else {
+                preview.setPlaying(plays)
+            }
         }
     }
-    LaunchedEffect(session) {
-        snapshotFlow { session.previewWanted }.drop(1).collect { session.preview?.setPlaying(it) }
+}
+
+// the share's song stops the moment you leave mochy, say for instagram, so it never loops on under the app you post from
+@Composable
+private fun WatchesTheApp(session: SongShareSession) {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, session) {
+        val observer = LifecycleEventObserver { _, _ -> session.onScreen = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
     }
 }
 

@@ -89,6 +89,7 @@ internal class ExportFrames(
     private val main = Handler(Looper.getMainLooper())
     private var lastPtsUs = -1L
     private var drawn = 0L
+    private var failed = 0
 
     // called on the gl thread; waits in short steps so a cancel always gets through
     fun frameAt(presentationTimeUs: Long): FrameImage? {
@@ -98,8 +99,12 @@ internal class ExportFrames(
         main.post {
             frames.scope.launch(start = CoroutineStart.UNDISPATCHED) {
                 result = runCatching { draw(presentationTimeUs) }
-                    .onFailure { Log.e("SongShare", "Couldn't draw the share's frame at $presentationTimeUs us", it) }
-                    .getOrNull()
+                    .onFailure {
+                        if (failed == 0) Log.e("SongShare", "Couldn't draw the share's frame at $presentationTimeUs us", it)
+                        failed++
+                    }
+                    // the frame before stands in, so the card stays in the video instead of blinking out
+                    .getOrElse { frames.lastFrame }
                 done.countDown()
             }
         }
@@ -108,6 +113,8 @@ internal class ExportFrames(
         }
         return result
     }
+
+    fun summary(): String = "handed over $drawn frames, $failed failed to draw"
 
     private suspend fun draw(presentationTimeUs: Long): FrameImage {
         val stepMs = if (lastPtsUs < 0L) 0.0 else (presentationTimeUs - lastPtsUs) / 1000.0

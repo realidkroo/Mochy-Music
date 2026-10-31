@@ -79,6 +79,8 @@ val ThumbnailCornerRadiusKey = floatPreferencesKey("thumbnailCornerRadius")
 val CropAlbumArtKey = booleanPreferencesKey("cropAlbumArt")
 val SeekExtraSeconds = booleanPreferencesKey("seekExtraSeconds")
 val PauseOnMute = booleanPreferencesKey("pauseOnMute")
+// keep playing when another app makes sound, and don't pause that app either
+val MixWithOtherAppsKey = booleanPreferencesKey("mixWithOtherApps")
 val ResumeOnBluetoothConnectKey = booleanPreferencesKey("resumeOnBluetoothConnect")
 val StopPlaybackOnTaskRemovedKey = booleanPreferencesKey("stopPlaybackOnTaskRemoved")
 val KeepScreenOn = booleanPreferencesKey("keepScreenOn")
@@ -659,8 +661,8 @@ enum class PlayerStyle(val displayName: String, val selectorName: String) {
             listOf(VIDEO),
             listOf(IPOD),
             listOf(POSTER),
-            listOf(TIMELINE),
-            listOf(LYRICS),
+            // the lyrics stage sits under the timeline, the way the classic sits under the flagship
+            listOf(TIMELINE, LYRICS),
         )
     }
 }

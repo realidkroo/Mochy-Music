@@ -3,6 +3,7 @@
 package com.mochyy.mochymusic.ui.player.share.song
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -55,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.media3.datasource.DataSource
+import androidx.media3.transformer.ExportException
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.AppSwitch
@@ -80,7 +82,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import timber.log.Timber
+import java.io.FileNotFoundException
+import java.io.IOException
 
 // "Share to": the finished picture, the three apps, and export and share for everything else
 internal fun PopupSheetState.showSendPage(session: SongShareSession) {
@@ -123,20 +126,23 @@ private class SendState(val session: SongShareSession) {
         )
         job = request.job
         note = null
-        // the song stops while the export reads it, so the two don't fight over the phone
+        // the song stops while the export reads it, so the two don't fight over the phone, and stays stopped once it's handed to another app
         val wasPlaying = session.previewWanted
         session.previewWanted = false
         running = scope.launch {
+            var handedOff = false
             try {
                 note = request.work()
+                handedOff = true
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
-                Timber.tag("SongShare").e(e, "Share export failed")
-                note = R.string.song_share_failed
+                // kept in release builds, where timber logs nothing
+                Log.e("SongShare", "Share export failed", e)
+                note = if (e.isConnectionProblem()) R.string.song_share_failed else R.string.song_share_failed_retry
             } finally {
                 job = null
-                session.previewWanted = wasPlaying
+                if (!handedOff) session.previewWanted = wasPlaying
             }
         }
     }
@@ -145,6 +151,12 @@ private class SendState(val session: SongShareSession) {
         job?.cancelled = true
         running?.cancel()
     }
+}
+
+// only a failure to load something is worth blaming on the connection; a picture is made entirely on the phone
+private fun Throwable.isConnectionProblem(): Boolean = generateSequence(this) { it.cause }.any { cause ->
+    cause is IOException && cause !is FileNotFoundException ||
+        cause is ExportException && cause.errorCode in ExportException.ERROR_CODE_IO_UNSPECIFIED..ExportException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE
 }
 
 @Composable
@@ -221,7 +233,7 @@ private fun SendContent(send: SendState, live: Boolean) {
             }
         }
         Spacer(Modifier.height(16.dp))
-        QualityPicker(send, canUltraHd)
+        QualityPicker(send, canUltraHd, video)
         Divider()
         when {
             send.working -> ExportProgress(send.progress, video)
@@ -338,11 +350,17 @@ private fun AppTile(app: ShareApp, enabled: Boolean, onClick: () -> Unit) {
     }
 }
 
+// a video is named the way videos are (4k, 1080p); a picture just says which one is sharper
 @Composable
-private fun QualityPicker(send: SendState, canUltraHd: Boolean) {
+private fun QualityPicker(send: SendState, canUltraHd: Boolean, video: Boolean) {
+    val labels = if (video) {
+        listOf(ShareQuality.UltraHd to R.string.song_share_quality_4k, ShareQuality.FullHd to R.string.song_share_quality_1080)
+    } else {
+        listOf(ShareQuality.UltraHd to R.string.song_share_quality_best, ShareQuality.FullHd to R.string.song_share_quality_standard)
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         Caption(stringResource(R.string.song_share_quality))
-        listOf(ShareQuality.UltraHd to R.string.song_share_quality_4k, ShareQuality.FullHd to R.string.song_share_quality_1080).forEach { (quality, label) ->
+        labels.forEach { (quality, label) ->
             val on = send.quality == quality
             val enabled = !send.working && (quality != ShareQuality.UltraHd || canUltraHd)
             Text(

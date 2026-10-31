@@ -24,22 +24,13 @@ import com.mochyy.mochymusic.utils.rememberPreference
 /** How much taller than usual the card can be pulled: room for a reading, a translation and the next line. */
 internal val CardGrowthMax = 72.dp
 
-/** The play buttons always keep this much room above the bottom bar. */
+/** The play buttons always keep this much room above the bottom bar, and below the seek bar. */
 private val MinGapAboveBar = 12.dp
 
 /** The part of the flagship a finger is holding in the editor. */
 enum class HeldPart { CONTROLS, CARD }
 
-/**
- * The two parts of the flagship the editor lets you hold and drag.
- *
- * - The controls (title row, seek bar and play buttons) go up and down. The cover's region ends
- *   where they start, so moving them zooms the cover in or out.
- * - The card deck gets taller, to show more of the lyrics. It takes the empty room above it first,
- *   then pushes the controls (and so the bottom of the cover) up.
- *
- * Read only while laying out or drawing, never while composing, so a drag just moves things.
- */
+// what the editor lets you hold and drag: the seek bar up and down (the buttons follow halfway, the cover zooms with it) and the card deck taller; read only while laying out or drawing
 @Stable
 class PlayerLayoutTweaks internal constructor() {
     /** where the controls were put, px below their usual place (negative is higher) */
@@ -73,10 +64,7 @@ class PlayerLayoutTweaks internal constructor() {
     /** saves both values, in px; set by [rememberPlayerLayoutTweaks] */
     internal var save: (shift: Float, growth: Float) -> Unit = { _, _ -> }
 
-    /**
-     * Where the parts may go, from the player's layout: [roomAboveBar] between the play buttons
-     * and the bottom bar, and the screen's height for how small or big the cover may get.
-     */
+    // where the parts may go: roomAboveBar is the gap either side of the centred play buttons, and the screen's height bounds the cover
     internal fun setLimits(
         roomAboveBar: Dp,
         screenHeightPx: Float,
@@ -84,7 +72,8 @@ class PlayerLayoutTweaks internal constructor() {
         controlsMovable: Boolean,
         cardGrowable: Boolean,
     ) = with(density) {
-        slack = (roomAboveBar - MinGapAboveBar).toPx().coerceAtLeast(0f)
+        // the buttons only move half as far, so each gap shrinks by half a move: the controls can go twice the spare room
+        slack = ((roomAboveBar - MinGapAboveBar) * 2f).toPx().coerceAtLeast(0f)
         highest = (MinCoverRegionFraction - CoverRegionFraction) * screenHeightPx
         lowest = (MaxCoverRegionFraction - CoverRegionFraction) * screenHeightPx
         growthMax = CardGrowthMax.toPx()

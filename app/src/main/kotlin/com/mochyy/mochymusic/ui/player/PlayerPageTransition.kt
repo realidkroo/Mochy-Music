@@ -441,7 +441,7 @@ internal fun CardMorphState.cardRectOr(width: Float, height: Float, density: Den
     }
 
 /** How dark the player behind gets at the middle of the motion. Back to clear at either end. */
-private const val BehindDimPeak = 0.22f
+internal const val BehindDimPeak = 0.22f
 
 /**
  * The card's glass growing into the full screen, under the page that grows with it, plus a light

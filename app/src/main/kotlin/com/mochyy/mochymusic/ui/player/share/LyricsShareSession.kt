@@ -26,7 +26,7 @@ internal data class ShareSong(val title: String, val artist: String, val thumbna
 
 /** Each style holds as many words as still read well on the picture. */
 internal enum class ShareStyle(val maxWords: Int) {
-    Card(14),
+    Card(25),
     Cinematic(40),
 }
 

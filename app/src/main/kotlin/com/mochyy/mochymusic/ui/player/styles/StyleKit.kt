@@ -71,6 +71,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import com.mochyy.mochymusic.ui.player.flagship.AnimatedPlayGlyph
+import com.mochyy.mochymusic.ui.player.flagship.AnimatedSkipGlyph
+import com.mochyy.mochymusic.ui.player.flagship.SkipCycleState
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -256,7 +259,7 @@ fun Modifier.progressSplit(
 /** a small round button: the alternate styles' only controls */
 @Composable
 fun StyleCircle(
-    @DrawableRes icon: Int,
+    @DrawableRes icon: Int = 0,
     tones: StyleTones,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -266,6 +269,8 @@ fun StyleCircle(
     pill: Boolean = false,
     /** a toggle that's on (shuffle, repeat): a brighter fill */
     active: Boolean = false,
+    // drawn in place of the icon, in the icon's colour: the transport's animated glyphs
+    glyph: (@Composable (Color) -> Unit)? = null,
 ) {
     val press = remember { Animatable(1f) }
     val scope = rememberCoroutineScope()
@@ -303,16 +308,21 @@ fun StyleCircle(
             },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = null,
-            tint = when {
-                active -> Color.White
-                pill -> Color.White.copy(alpha = 0.9f)
-                else -> tones.ink
-            },
-            modifier = Modifier.size(if (pill) 20.dp else size * 0.5f),
-        )
+        val tint = when {
+            active -> Color.White
+            pill -> Color.White.copy(alpha = 0.9f)
+            else -> tones.ink
+        }
+        if (glyph != null) {
+            glyph(tint)
+        } else {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(if (pill) 20.dp else size * 0.5f),
+            )
+        }
     }
 }
 
@@ -329,23 +339,34 @@ private class MenuItem(
     val onClick: () -> Unit,
 )
 
+// the glyphs' size in a circle: the play triangle about as tall as the old icon, the skip pair a little wider than it
+private const val CirclePlayHeight = 0.48f
+private const val CircleSkipWidth = 0.46f
+
 /** previous, play/pause and next as three [StyleCircle]s, laid out by the caller's [Row] or [Column] */
 @Composable
 fun TransportCircles(tones: StyleTones, size: Dp = 30.dp, vertical: Boolean = false, spacing: Dp = 8.dp) {
     val connection = LocalPlayerConnection.current ?: return
     val transport by connection.uiState.transportState.collectAsState()
+    val scope = rememberCoroutineScope()
+    // the flagship's running triangles, each a step on with every press
+    val previous = remember { SkipCycleState() }
+    val next = remember { SkipCycleState() }
     val content: @Composable () -> Unit = {
         StyleCircle(
-            icon = R.drawable.skip_previous,
             tones = tones,
             size = size,
             enabled = transport.canSkipPrevious,
-            onClick = connection::seekToPrevious,
+            onClick = {
+                scope.launch { previous.step() }
+                connection.seekToPrevious()
+            },
+            glyph = { tint -> AnimatedSkipGlyph(cycle = previous, backwards = true, color = tint, width = size * CircleSkipWidth) },
         )
         StyleCircle(
-            icon = if (transport.isPlaying) R.drawable.pause else R.drawable.play,
             tones = tones,
             size = size,
+            glyph = { tint -> AnimatedPlayGlyph(playing = transport.isPlaying, color = tint, height = size * CirclePlayHeight) },
             onClick = {
                 if (transport.playbackState == Player.STATE_ENDED) {
                     connection.player.seekTo(0, 0)
@@ -356,11 +377,14 @@ fun TransportCircles(tones: StyleTones, size: Dp = 30.dp, vertical: Boolean = fa
             },
         )
         StyleCircle(
-            icon = R.drawable.skip_next,
             tones = tones,
             size = size,
             enabled = transport.canSkipNext,
-            onClick = connection::seekToNext,
+            onClick = {
+                scope.launch { next.step() }
+                connection.seekToNext()
+            },
+            glyph = { tint -> AnimatedSkipGlyph(cycle = next, backwards = false, color = tint, width = size * CircleSkipWidth) },
         )
     }
     if (vertical) {

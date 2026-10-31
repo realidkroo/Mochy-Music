@@ -7,13 +7,17 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +34,7 @@ import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -39,6 +44,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
@@ -49,6 +55,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.TextStyle
@@ -60,8 +68,12 @@ import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.constants.PlayerHorizontalPadding
 import com.mochyy.mochymusic.ui.component.SeekBarExpandSpring
 import com.mochyy.mochymusic.utils.makeTimeString
+import com.mochyy.mochymusic.ui.utils.rubberBand
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.exp
 
@@ -188,8 +200,13 @@ fun PlayerProgressSlider(
     }
 
     val trackInteractionSource = remember { MutableInteractionSource() }
-    val isTrackDragged by trackInteractionSource.collectIsDraggedAsState()
+    val draggedState = trackInteractionSource.collectIsDraggedAsState()
+    val isTrackDragged by draggedState
     val isTrackPressed by trackInteractionSource.collectIsPressedAsState()
+    // how far a drag past either end has stretched the bar out after the finger, the way the volume line does; read while drawing only
+    val stretch = remember { mutableFloatStateOf(0f) }
+    val stretchScope = rememberCoroutineScope()
+    val stretchSettle = remember { arrayOfNulls<Job>(1) }
     val held = isTrackDragged || isTrackPressed
     // the bar opening under the finger, read only while drawing: the bar, its thumb and the times all ride it
     val expand = animateFloatAsState(
@@ -229,6 +246,7 @@ fun PlayerProgressSlider(
                 .then(onSeekBarPlaced?.let { Modifier.onGloballyPositioned(it) } ?: Modifier)
                 .then(seekBarModifier)
                 .streamFailureOverlay(failureProgress)
+                .seekStretch(stretch, draggedState, stretchSettle, stretchScope)
         )
     }
 
@@ -245,7 +263,7 @@ fun PlayerProgressSlider(
             targetState = if (failureLabel != null) FailureKey else if (showLoading) LoadingKey else null,
             transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) },
             label = "seekTimeLoading",
-            modifier = Modifier.timeLift(expand, pivotX = 0f),
+            modifier = Modifier.timeLift(expand, pivotX = 0f) { minOf(stretch.floatValue, 0f) },
         ) { state ->
             if (state == LoadingKey) {
                 LoadingLabel(style = timeStyle, color = restColor)
@@ -267,7 +285,7 @@ fun PlayerProgressSlider(
             color = timeColor,
             modifier = (onEndTimePlaced?.let { Modifier.onGloballyPositioned(it) } ?: Modifier)
                 .then(endTimeModifier)
-                .timeLift(expand, pivotX = 1f),
+                .timeLift(expand, pivotX = 1f) { maxOf(stretch.floatValue, 0f) },
         )
     }
 }
@@ -285,15 +303,63 @@ private fun TimeText(text: State<String>, style: TextStyle, color: ColorProducer
     )
 }
 
-// the times drop and grow a touch as the bar opens, pinned to their outer edge so they never crowd the middle
-private fun Modifier.timeLift(expand: State<Float>, pivotX: Float): Modifier = graphicsLayer {
+// the times drop and grow a touch as the bar opens, pinned to their outer edge so they never crowd the middle, and ride along when the bar is stretched their way
+private fun Modifier.timeLift(expand: State<Float>, pivotX: Float, stretched: () -> Float): Modifier = graphicsLayer {
     val open = expand.value
+    translationX = stretched()
     translationY = TimeDrop.toPx() * open
     val s = 1f + TimeGrow * open
     scaleX = s
     scaleY = s
     transformOrigin = TransformOrigin(pivotX, 0.5f)
 }
+
+// a drag past either end pulls the bar this far at most, then it springs back with a bounce on letting go
+private val SeekStretchMax = 26.dp
+private val SeekStretchBack = spring<Float>(dampingRatio = 0.45f, stiffness = 420f)
+
+// the finger past an end stretches the bar out after it, a little thinner like a band pulled tight
+private fun Modifier.seekStretch(
+    stretch: MutableFloatState,
+    dragged: State<Boolean>,
+    settle: Array<Job?>,
+    scope: CoroutineScope,
+): Modifier = this
+    .pointerInput(Unit) {
+        val reach = SeekStretchMax.toPx()
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false)
+            settle[0]?.cancel()
+            // only watching: the slider still takes the drag, this just sees where the finger has gone
+            while (true) {
+                val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull() ?: break
+                if (!change.pressed) break
+                val x = change.position.x
+                val over = when {
+                    !dragged.value -> 0f
+                    x > size.width -> x - size.width
+                    x < 0f -> x
+                    else -> 0f
+                }
+                stretch.floatValue = rubberBand(over, reach)
+            }
+            val from = stretch.floatValue
+            if (from != 0f) {
+                settle[0] = scope.launch {
+                    animate(from, 0f, animationSpec = SeekStretchBack) { value, _ -> stretch.floatValue = value }
+                }
+            }
+        }
+    }
+    .graphicsLayer {
+        val s = stretch.floatValue
+        if (s == 0f || size.width <= 0f) return@graphicsLayer
+        val pull = (abs(s) / SeekStretchMax.toPx()).coerceIn(0f, 1f)
+        scaleX = (size.width + abs(s)) / size.width
+        scaleY = 1f - 0.18f * pull
+        // grows out from the far end, toward the finger
+        transformOrigin = TransformOrigin(if (s > 0f) 0f else 1f, 0.5f)
+    }
 
 private val TimeDrop = 4.dp
 private const val TimeGrow = 0.1f

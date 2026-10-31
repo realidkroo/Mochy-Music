@@ -177,7 +177,7 @@ class ModuleRegistry @Inject constructor(
             }
         }.getOrElse { return@withContext LinkCheck.Unreachable }
         val manifest = WebModuleManifest.parse(text) ?: return@withContext LinkCheck.NotAModule
-        val found = WebModule(base, manifest)
+        val found = WebModule(base, manifest, context.resources)
         if (found.adds.isEmpty()) return@withContext LinkCheck.NotAModule
         LinkCheck.Ready(base, text, found.info.name, found.adds, alreadyAdded = module(found.info.id) != null)
     }
@@ -185,7 +185,7 @@ class ModuleRegistry @Inject constructor(
     /** adds a checked link as a module, switched off until the user turns it on; gives back its id */
     fun install(ready: LinkCheck.Ready): String {
         val manifest = requireNotNull(WebModuleManifest.parse(ready.manifestText))
-        val module = WebModule(ready.base, manifest)
+        val module = WebModule(ready.base, manifest, context.resources)
         val id = module.info.id
         synchronized(this) {
             val saved = savedWebModules().filter { it.optString("base") != ready.base }
@@ -231,7 +231,7 @@ class ModuleRegistry @Inject constructor(
         val web = savedWebModules().mapNotNull { saved ->
             val base = saved.optString("base").takeIf { it.isNotBlank() } ?: return@mapNotNull null
             val manifest = WebModuleManifest.parse(saved.optString("manifest")) ?: return@mapNotNull null
-            WebModule(base, manifest) to ModuleOrigin.Web(base)
+            WebModule(base, manifest, context.resources) to ModuleOrigin.Web(base)
         }
         // a module app replaces the built-in module with its id, so a module can be updated on its own
         val appIds = apps.map { it.first.info.id }.toSet()

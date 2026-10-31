@@ -157,14 +157,15 @@ internal fun PopupSheetState.showStylePage(session: SongShareSession) {
 // "Edit background" asks this first: a moving background, or a still one
 internal fun PopupSheetState.showBackgroundType(session: SongShareSession) {
     val popup = this
-    show(buttonBar = { GoBackButton(popup::dismiss) }) {
+    lateinit var typePage: PopupSheetHandle
+    typePage = showWithHandle(buttonBar = { GoBackButton(popup::dismiss) }) {
         ShareTitle(stringResource(R.string.song_share_type_title), stringResource(R.string.song_share_type_subtitle))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(bottom = 20.dp)) {
             ChoiceTile(
                 title = stringResource(R.string.song_share_type_video),
                 subtitle = stringResource(R.string.song_share_type_video_hint),
                 selected = session.hasVideoBackground,
-                onClick = { popup.showBackgroundPager(session, video = true) },
+                onClick = { popup.showBackgroundPager(session, video = true, typePage) },
             ) {
                 AsyncImage(
                     model = session.song.thumbnailUrl?.resize(544, 544),
@@ -183,7 +184,7 @@ internal fun PopupSheetState.showBackgroundType(session: SongShareSession) {
                 title = stringResource(R.string.song_share_type_still),
                 subtitle = stringResource(R.string.song_share_type_still_hint),
                 selected = !session.hasVideoBackground,
-                onClick = { popup.showBackgroundPager(session, video = false) },
+                onClick = { popup.showBackgroundPager(session, video = false, typePage) },
             ) { BackdropOf(session.lastStill, session.song.thumbnailUrl, session.palette, animate = false) }
         }
     }

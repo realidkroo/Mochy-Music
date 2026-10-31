@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.ui.component.PopupSheetHandle
 import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.SheetPillButton
 import com.mochyy.mochymusic.ui.player.share.AddCircle
@@ -83,10 +84,15 @@ private enum class BackgroundPage(@StringRes val label: Int, @StringRes val hint
     Colour(R.string.song_share_bg_colour, null, video = false),
 }
 
-// after the type page: swipe between that kind's backgrounds, and the page you land on is used at once
-internal fun PopupSheetState.showBackgroundPager(session: SongShareSession, video: Boolean) {
+// after the type page: swipe between that kind's backgrounds, and the page you land on is used at once; ok goes straight back to the editor, back goes to the type page
+internal fun PopupSheetState.showBackgroundPager(session: SongShareSession, video: Boolean, typePage: PopupSheetHandle) {
     val popup = this
-    show(buttonBar = { SheetPillButton(text = stringResource(R.string.song_share_ok), onClick = popup::dismiss) }) {
+    lateinit var pager: PopupSheetHandle
+    val done = {
+        pager.dismiss()
+        typePage.dismiss()
+    }
+    pager = showWithHandle(buttonBar = { SheetPillButton(text = stringResource(R.string.song_share_ok), onClick = done) }) {
         SongBackgroundContent(session, popup, video)
     }
 }
@@ -186,15 +192,15 @@ private fun SongBackgroundContent(session: SongShareSession, popup: PopupSheetSt
                     BackgroundPage.OwnVideo -> {
                         val own = session.lastOwnVideo
                         if (own != null) {
-                            if (current) ShareVideoLayer(session, playing = true, source = own) else CoverStill(session)
+                            if (current) ShareVideoLayer(session, playing = session.onScreen, source = own) else CoverStill(session)
                         } else {
                             AddCircle(contentDescription = stringResource(R.string.song_share_bg_pick_video), onClick = pickVideo)
                         }
                     }
                     BackgroundPage.MusicVideo ->
-                        if (current) ShareVideoLayer(session, playing = true, source = ShareVideoSource.MusicVideo) else CoverStill(session)
+                        if (current) ShareVideoLayer(session, playing = session.onScreen, source = ShareVideoSource.MusicVideo) else CoverStill(session)
                     BackgroundPage.AnimatedCover ->
-                        if (current) ShareVideoLayer(session, playing = true, source = ShareVideoSource.AnimatedCover) else CoverStill(session)
+                        if (current) ShareVideoLayer(session, playing = session.onScreen, source = ShareVideoSource.AnimatedCover) else CoverStill(session)
                     BackgroundPage.Music -> BackdropOf(ShareBackground.FromMusic, session.song.thumbnailUrl, session.palette, animate = true)
                     BackgroundPage.Colour -> BackdropOf(ShareBackground.Solid(colour), null, session.palette, animate = false)
                     BackgroundPage.Picture -> {

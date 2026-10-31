@@ -2,10 +2,6 @@
 
 package com.mochyy.mochymusic.ui.player
 
-import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
-import androidx.compose.animation.graphics.res.animatedVectorResource
-import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
-import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,7 +10,6 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -25,17 +20,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
         import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +46,10 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.PlayerHorizontalPadding
 import com.mochyy.mochymusic.extensions.togglePlayPause
 import com.mochyy.mochymusic.ui.component.tapOrHold
+import com.mochyy.mochymusic.ui.player.flagship.AnimatedPlayGlyph
+import com.mochyy.mochymusic.ui.player.flagship.AnimatedSkipGlyph
+import com.mochyy.mochymusic.ui.player.flagship.SkipCycleState
+import kotlinx.coroutines.launch
 
 @Composable
 fun PlayerControls(
@@ -177,7 +174,7 @@ fun PlayerTransportRow(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth()
         ) {
             AnimatedPressScaleSkipButton(
-                icon = R.drawable.avd_skip_previous,
+                backwards = true,
                 onClick = playerConnection::seekToPrevious,
                 enabled = transportState.canSkipPrevious,
                 tint = Color.White,
@@ -206,7 +203,7 @@ fun PlayerTransportRow(modifier: Modifier = Modifier) {
             )
 
             AnimatedPressScaleSkipButton(
-                icon = R.drawable.avd_skip_next,
+                backwards = false,
                 onClick = playerConnection::seekToNext,
                 enabled = transportState.canSkipNext,
                 tint = Color.White,
@@ -221,10 +218,9 @@ fun PlayerTransportRow(modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(ExperimentalAnimationGraphicsApi::class)
 @Composable
 internal fun AnimatedPressScaleSkipButton(
-    icon: Int,
+    backwards: Boolean,
     tint: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -239,7 +235,9 @@ internal fun AnimatedPressScaleSkipButton(
     /** How often the arrow replays while held - quicker for faster. */
     holdPulseMs: Long = 600L,
 ) {
-    var trigger by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
+    // the flagship's running triangles, a step on with every press
+    val cycle = remember { SkipCycleState() }
     var holding by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -251,7 +249,7 @@ internal fun AnimatedPressScaleSkipButton(
     // The arrow keeps playing while held, so the button itself shows it's fast-forwarding.
     LaunchedEffect(holding) {
         while (holding) {
-            trigger++
+            launch { cycle.step() }
             kotlinx.coroutines.delay(holdPulseMs)
         }
     }
@@ -280,7 +278,7 @@ internal fun AnimatedPressScaleSkipButton(
             .tapOrHold(
                 enabled = enabled,
                 onTap = {
-                    trigger++
+                    scope.launch { cycle.step() }
                     onClick()
                 },
                 onHoldStart = onHoldStart?.let { start ->
@@ -316,28 +314,11 @@ internal fun AnimatedPressScaleSkipButton(
                     .padding(horizontal = 9.dp, vertical = 2.dp),
             )
         }
-        val avd = AnimatedImageVector.animatedVectorResource(icon)
-        key(trigger) {
-            var atEnd by remember { mutableStateOf(false) }
-            LaunchedEffect(Unit) {
-                if (trigger > 0) atEnd = true
-            }
-            val painter = rememberAnimatedVectorPainter(avd, atEnd)
-            Image(
-                painter = painter,
-                contentDescription = null,
-                colorFilter = ColorFilter.tint(tint),
-
-                modifier = Modifier
-
-                    .requiredWidth(iconSize * SkipIconWidthFactor)
-                    .aspectRatio(SkipIconAspect)
-            )
-        }
+        // as wide across as the old arrows were
+        AnimatedSkipGlyph(cycle = cycle, backwards = backwards, color = tint, width = iconSize * SkipPairWidth)
     }
 }
 
-@OptIn(ExperimentalAnimationGraphicsApi::class)
 @Composable
 internal fun AnimatedPressScalePlayPauseButton(
     isPlaying: Boolean,
@@ -382,18 +363,12 @@ internal fun AnimatedPressScalePlayPauseButton(
                 modifier = Modifier.size(iconSize)
             )
         } else {
-            val avd = AnimatedImageVector.animatedVectorResource(R.drawable.avd_play_to_pause)
-            val painter = rememberAnimatedVectorPainter(avd, atEnd = isPlaying)
-            Image(
-                painter = painter,
-                contentDescription = null,
-                colorFilter = ColorFilter.tint(tint),
-                modifier = Modifier.size(iconSize)
-            )
+            // the flagship's squash and bounce, its triangle as tall as the old one
+            AnimatedPlayGlyph(playing = isPlaying, color = tint, height = iconSize * PlayTriangleHeight)
         }
     }
 }
 
-private const val SkipIconAspect = 100f / 64f
-
-private const val SkipIconWidthFactor = 2f
+// how much of the old icon's box its triangles took: the pair was about its width across, the play triangle half its height
+private const val SkipPairWidth = 0.96f
+private const val PlayTriangleHeight = 0.5f

@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +64,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.mochyy.mochymusic.ui.player.flagship.AnimatedPlayGlyph
+import com.mochyy.mochymusic.ui.player.flagship.AnimatedSkipGlyph
+import com.mochyy.mochymusic.ui.player.flagship.SkipCycleState
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.player.PressScaleActionButton
@@ -76,6 +80,7 @@ import com.mochyy.mochymusic.utils.makeTimeString
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 // the controls line up with the artwork on the left and the seek bar's end on the right
 private val EdgeStart = 48.dp
@@ -208,6 +213,10 @@ internal fun BoxScope.VideoTransport(
     val visible by rememberControlsVisible(controls)
     if (!visible) return
     val connection = LocalPlayerConnection.current ?: return
+    val scope = rememberCoroutineScope()
+    // the flagship's running triangles, each a step on with every press
+    val previous = remember { SkipCycleState() }
+    val next = remember { SkipCycleState() }
     Row(
         horizontalArrangement = Arrangement.spacedBy(TransportGap),
         verticalAlignment = Alignment.CenterVertically,
@@ -221,34 +230,47 @@ internal fun BoxScope.VideoTransport(
                 scaleY = scale
             },
     ) {
-        TransportButton(R.drawable.ic_untitled_skip_previous, stringResource(R.string.previous), SkipSize, 30.dp, null) {
+        TransportButton(
+            label = stringResource(R.string.previous),
+            size = SkipSize,
+            background = null,
+            glyph = { AnimatedSkipGlyph(cycle = previous, backwards = true, color = Color.White, width = GlyphSize) },
+        ) {
             state.touched()
+            scope.launch { previous.step() }
             connection.seekToPrevious()
         }
         TransportButton(
-            icon = if (isPlaying) R.drawable.ic_untitled_pause else R.drawable.ic_untitled_play,
             label = stringResource(if (isPlaying) R.string.pause else R.string.play),
             size = PlaySize,
-            iconSize = 30.dp,
             background = Color.Black.copy(alpha = 0.3f),
+            glyph = { AnimatedPlayGlyph(playing = isPlaying, color = Color.White, height = GlyphSize) },
         ) {
             state.touched()
             connection.togglePlayPause()
         }
-        TransportButton(R.drawable.ic_untitled_skip_next, stringResource(R.string.next), SkipSize, 30.dp, null) {
+        TransportButton(
+            label = stringResource(R.string.next),
+            size = SkipSize,
+            background = null,
+            glyph = { AnimatedSkipGlyph(cycle = next, backwards = false, color = Color.White, width = GlyphSize) },
+        ) {
             state.touched()
+            scope.launch { next.step() }
             connection.seekToNext()
         }
     }
 }
 
+// the old 30dp icons' size: the play triangle about as tall, the skip pair about as wide
+private val GlyphSize = 29.dp
+
 @Composable
 private fun TransportButton(
-    icon: Int,
     label: String,
     size: Dp,
-    iconSize: Dp,
     background: Color?,
+    glyph: @Composable () -> Unit,
     onClick: () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -271,12 +293,7 @@ private fun TransportButton(
                 }
                 .then(if (background != null) Modifier.clip(CircleShape).background(background) else Modifier),
         ) {
-            Image(
-                painter = painterResource(icon),
-                contentDescription = null,
-                colorFilter = ColorFilter.tint(Color.White),
-                modifier = Modifier.size(iconSize),
-            )
+            glyph()
         }
     }
 }
