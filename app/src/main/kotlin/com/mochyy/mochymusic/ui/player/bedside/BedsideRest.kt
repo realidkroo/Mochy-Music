@@ -15,7 +15,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -29,14 +31,22 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.ColorUtils
+import com.mochyy.mochymusic.LocalArtworkColor
+import com.mochyy.mochymusic.constants.BedsideKeepAwakeKey
+import com.mochyy.mochymusic.constants.BedsideLockScreenKey
+import com.mochyy.mochymusic.constants.BedsideNightTint
+import com.mochyy.mochymusic.constants.BedsideNightTintKey
+import com.mochyy.mochymusic.constants.BedsideScreenSaverKey
 import com.mochyy.mochymusic.ui.player.styles.rememberStyleShowing
+import com.mochyy.mochymusic.utils.rememberEnumPreference
+import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.random.Random
 
-// the warm orange the bedside settles into at night
-internal val BedsideOrange = Color(0xFFFF8A3D)
+// the soft warm orange the bedside settles into at night, the salmon of the mockups
+internal val BedsideOrange = Color(0xFFF4A68C)
 
 private const val DotsLingerMs = 1_400L
 private const val ChromeLingerMs = 4_000L
@@ -147,19 +157,18 @@ internal fun Modifier.watchTouches(rest: BedsideRest): Modifier = pointerInput(r
     }
 }
 
-// buttons fade with the chrome, and while hidden a touch only wakes the screen so a sleepy tap never skips a song
-internal fun Modifier.bedsideChrome(rest: BedsideRest): Modifier = this
-    .graphicsLayer {
-        alpha = rest.chrome.value
-        compositingStrategy = CompositingStrategy.ModulateAlpha
-    }
-    .pointerInput(rest) {
-        awaitPointerEventScope {
-            while (true) {
-                val event = awaitPointerEvent(PointerEventPass.Initial)
-                if (!rest.chromeShown) event.changes.forEach { it.consume() }
-            }
-        }
+// buttons fade with the chrome but still take the very first tap, hidden or not; swallowing it to wake the screen made every button need two
+internal fun Modifier.bedsideChrome(rest: BedsideRest): Modifier = graphicsLayer {
+    alpha = rest.chrome.value
+    compositingStrategy = CompositingStrategy.ModulateAlpha
+}
+
+// tints and dims everything drawn inside while the bedside rests, at draw time, so plain white content needs to know nothing about the night
+internal fun Modifier.nightTint(ink: BedsideInk): Modifier = this
+    .graphicsLayer { compositingStrategy = if (ink.tinting()) CompositingStrategy.Offscreen else CompositingStrategy.Auto }
+    .drawWithContent {
+        drawContent()
+        if (ink.tinting()) drawRect(ink.ink(), blendMode = BlendMode.Modulate)
     }
 
 // the colour of everything on the bedside: white while awake, the night tint and the saver's dim once it rests
@@ -180,6 +189,21 @@ internal class BedsideInk(
     val soft = ColorProducer { ink().let { it.copy(alpha = it.alpha * SoftAlpha) } }
 
     private fun brightness(sleep: Float, dim: Float) = if (saver.value) 1f - dim * sleep else 1f
+
+    // whether resting has changed anything yet, so an awake screen skips the tint layer entirely
+    fun tinting(): Boolean = rest.sleep.value > 0f && (tint.value != null || saver.value)
+
+    // pictures inside a night tint layer only lose their colour; the layer itself does the tint and the dim
+    private var greyAmount = -1f
+    private var grey: ColorFilter? = null
+
+    fun greyFilter(): ColorFilter? {
+        val amount = if (tint.value == null) 0f else rest.sleep.value
+        if (amount == 0f) return null
+        if (amount == greyAmount) return grey
+        greyAmount = amount
+        return ColorFilter.colorMatrix(tintMatrix(Color.White, amount, 1f)).also { grey = it }
+    }
 
     // the last filter built, so a still cover doesn't make a new one every time it's drawn
     private var builtAmount = -1f
@@ -229,4 +253,28 @@ private fun tintMatrix(tint: Color, amount: Float, bright: Float): ColorMatrix {
     }
     values[18] = 1f
     return ColorMatrix(values)
+}
+
+// what both bedside styles set up the same way: the resting timers, the night colours, whether the phone is locked, and the window flags
+@Stable
+internal class BedsideNight(val rest: BedsideRest, val ink: BedsideInk, val locked: Boolean)
+
+@Composable
+internal fun rememberBedsideNight(live: Boolean): BedsideNight {
+    val tintChoice by rememberEnumPreference(BedsideNightTintKey, BedsideNightTint.ORANGE)
+    val saver by rememberPreference(BedsideScreenSaverKey, defaultValue = true)
+    val keepAwake by rememberPreference(BedsideKeepAwakeKey, defaultValue = true)
+    val overLockScreen by rememberPreference(BedsideLockScreenKey, defaultValue = true)
+    val seed = LocalArtworkColor.current
+    val coverHue = remember(seed) { coverTint(seed) }
+    val tint = when (tintChoice) {
+        BedsideNightTint.OFF -> null
+        BedsideNightTint.ORANGE -> BedsideOrange
+        BedsideNightTint.COVER -> coverHue
+    }
+    val rest = rememberBedsideRest(live, saver)
+    val ink = rememberBedsideInk(rest, tint, saver)
+    val locked = if (live) rememberPhoneLocked().value else false
+    if (live) BedsideWindowFlags(keepAwake, overLockScreen && LockScreenSupported)
+    return remember(rest, ink, locked) { BedsideNight(rest, ink, locked) }
 }

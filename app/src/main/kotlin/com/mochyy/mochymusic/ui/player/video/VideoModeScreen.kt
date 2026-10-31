@@ -172,6 +172,8 @@ private fun VideoModeScreen(actions: StyleActions, modifier: Modifier) {
     )
 
     var showAddToPlaylist by remember { mutableStateOf(false) }
+    // the lyrics, the queue and the sheets in here fling the right way, though the whole frame is turned
+    com.mochyy.mochymusic.ui.player.styles.TurnedFlingFix()
     // its own sheet host, inside the turned frame, so "add to playlist" opens the right way up
     val menuSheets = remember { PopupSheetState() }
 

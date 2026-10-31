@@ -58,6 +58,8 @@ import com.mochyy.mochymusic.constants.EnableElementBlurAnimatorKey
 import com.mochyy.mochymusic.constants.EnableProgressiveBlurKey
 import com.mochyy.mochymusic.constants.LyricsMotionStyle
 import com.mochyy.mochymusic.constants.LyricsMotionStyleKey
+import com.mochyy.mochymusic.constants.PlayerNavBarDefault
+import com.mochyy.mochymusic.constants.PlayerNavBarKey
 import com.mochyy.mochymusic.constants.PlayerStatusBarDefault
 import com.mochyy.mochymusic.constants.PlayerStatusBarKey
 import com.mochyy.mochymusic.ui.component.AppSwitch
@@ -255,6 +257,26 @@ internal fun TopBarSection(modifier: Modifier = Modifier) {
     }
 }
 
+// the phone's navigation bar under the open player
+@Composable
+internal fun BottomBarSection(modifier: Modifier = Modifier) {
+    val (shown, onShown) = rememberPreference(PlayerNavBarKey, defaultValue = PlayerNavBarDefault)
+    EffectCard(
+        title = stringResource(R.string.customise_bottom_bar),
+        checked = shown,
+        onCheckedChange = onShown,
+        floatingPreview = true,
+        preview = { NavBarPreview(shown) },
+        modifier = modifier,
+    ) {
+        Text(
+            text = stringResource(R.string.customise_bottom_bar_desc),
+            style = CaptionStyle,
+            color = Color.White.copy(alpha = 0.5f),
+        )
+    }
+}
+
 // a card with a switch in its corner, what it controls on the left and a live preview peeking up on the right
 @Composable
 private fun EffectCard(
@@ -264,6 +286,7 @@ private fun EffectCard(
     modifier: Modifier = Modifier,
     value: String? = null,
     previewWidth: androidx.compose.ui.unit.Dp = PreviewWidth,
+    floatingPreview: Boolean = false,
     preview: @Composable BoxScope.() -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -278,6 +301,7 @@ private fun EffectCard(
             modifier = Modifier.align(Alignment.BottomEnd),
             width = previewWidth,
             top = 58.dp,
+            floating = floatingPreview,
             content = preview,
         )
         Text(

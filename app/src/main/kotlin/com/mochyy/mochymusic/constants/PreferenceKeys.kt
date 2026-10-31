@@ -636,9 +636,17 @@ enum class PlayerStyle(val displayName: String, val selectorName: String) {
     TIMELINE("Timeline", "Timeline"),
     LYRICS("Lyrics", "Lyrics stage"),
     // a big quiet clock for the nightstand, with the song a swipe away, that can stay up over the lock screen
-    BEDSIDE("Bedside", "Bedside");
+    BEDSIDE("Bedside clock", "Big clock"),
+    // the nightstand as two tiles side by side, the music on one and the lyrics or a clock on the other, each scrolled on its own
+    BEDSIDE_TILES("Bedside", "Bedside");
 
-    val editable: Boolean get() = this == FLAGSHIP || this == CLASSIC || this == TURNTABLE || this == POSTER || this == IPOD || this == BEDSIDE
+    val editable: Boolean get() = this == FLAGSHIP || this == CLASSIC || this == TURNTABLE || this == POSTER || this == IPOD || isBedside
+
+    // the two nightstand styles share their sheet, their night look and their lock screen rules
+    val isBedside: Boolean get() = this == BEDSIDE || this == BEDSIDE_TILES
+
+    // laid out sideways until someone turns it upright, the way a phone stands on a nightstand
+    val startsSideways: Boolean get() = this == BEDSIDE_TILES
 
     /** drawn by the flagship's own player (cover, controls, card), not a design of its own */
     val flagshipFamily: Boolean get() = this == FLAGSHIP || this == CLASSIC || this == TURNTABLE
@@ -662,7 +670,8 @@ enum class PlayerStyle(val displayName: String, val selectorName: String) {
             listOf(TURNTABLE),
             listOf(VIDEO),
             listOf(IPOD),
-            listOf(BEDSIDE),
+            // the tiles first, the single big clock a swipe down under them
+            listOf(BEDSIDE_TILES, BEDSIDE),
             listOf(POSTER),
             // the lyrics stage sits under the timeline, the way the classic sits under the flagship
             listOf(TIMELINE, LYRICS),
@@ -709,6 +718,13 @@ val BedsideKeepAwakeKey = booleanPreferencesKey("bedsideKeepAwake")
 
 // lock the phone with the bedside open and it's still there over the lock screen when the screen wakes
 val BedsideLockScreenKey = booleanPreferencesKey("bedsideLockScreen")
+
+// "not now" on the bedside's lock screen prompt, so it asks once and then leaves it to the sheet
+val BedsideLockPromptDismissedKey = booleanPreferencesKey("bedsideLockPromptDismissed")
+
+// the page each bedside tile was left on, so it opens where it was
+val BedsideMusicTilePageKey = intPreferencesKey("bedsideMusicTilePage")
+val BedsideInfoTilePageKey = intPreferencesKey("bedsideInfoTilePage")
 
 /** whether [style] is shown turned sideways (its content rotated a quarter turn) */
 fun playerStyleRotatedKey(style: PlayerStyle) = booleanPreferencesKey("playerStyleRotated_${style.name}")
@@ -1231,6 +1247,9 @@ val AnimationSpeedKey = floatPreferencesKey("animationSpeed")
 val PlayerStatusBarKey = booleanPreferencesKey("playerStatusBar")
 // out of the box the open player runs to the top of the screen with the status bar hidden
 const val PlayerStatusBarDefault = false
+// the phone's navigation bar under the open player, off hides it like the player always has
+val PlayerNavBarKey = booleanPreferencesKey("playerNavBar")
+const val PlayerNavBarDefault = false
 // settings rows show only their titles, holding a row still shows what it does
 val HideSettingsDescriptionsKey = booleanPreferencesKey("hideSettingsDescriptions")
 // no update popup on home and no update notification, the updater page still shows what's new when opened

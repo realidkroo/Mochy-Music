@@ -671,6 +671,10 @@ class MusicService :
      */
     private val songStreamHeaders = java.util.concurrent.ConcurrentHashMap<String, Map<String, String>>()
 
+    // songs youtube refused that play their music video's sound instead, said once each time one starts
+    private val musicVideoAudioSongs = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+    private var lastMusicVideoNoticeId: String? = null
+
     private val bypassCacheForQualityChange = mutableSetOf<String>()
 
     private var currentMediaIdRetryCount = mutableMapOf<String, Int>()
@@ -2777,6 +2781,7 @@ class MusicService :
         previousMediaItemIndex = player.currentMediaItemIndex
 
         mediaItem?.mediaId?.let { announceStreamSource(it) }
+        mediaItem?.mediaId?.let { announceMusicVideoAudio(it) }
 
         setupLoudnessEnhancer()
 
@@ -3804,6 +3809,13 @@ class MusicService :
                 songUrlCache[mediaId] =
                     streamUrl to System.currentTimeMillis() + (nonNullPlayback.streamExpiresInSeconds * 1000L)
                 songStreamHeaders[mediaId] = nonNullPlayback.streamHeaders
+                if (nonNullPlayback.fromMusicVideo) {
+                    musicVideoAudioSongs += mediaId
+                    // this runs ahead for the next song too, which hears about it when it starts
+                    scope.launch { if (player.currentMediaItem?.mediaId == mediaId) announceMusicVideoAudio(mediaId) }
+                } else {
+                    musicVideoAudioSongs -= mediaId
+                }
 
                 return@Factory dataSpec
                     .withUri(streamUrl.toUri())
@@ -3811,6 +3823,17 @@ class MusicService :
                     .withRequestHeaders(dataSpec.httpRequestHeaders + nonNullPlayback.streamHeaders)
             }
         }
+    }
+
+    private fun announceMusicVideoAudio(mediaId: String) {
+        // any other song in between means the next time this one starts it's said again
+        if (mediaId !in musicVideoAudioSongs) {
+            lastMusicVideoNoticeId = null
+            return
+        }
+        if (lastMusicVideoNoticeId == mediaId) return
+        lastMusicVideoNoticeId = mediaId
+        showBanner(getString(R.string.playing_music_video_audio))
     }
 
     private fun announceStreamSource(mediaId: String) {

@@ -14,3 +14,5 @@ files:
     translation: /app/src/main/res/values-%android_code%/audiopass_strings.xml
   - source: /app/src/main/res/values/modules_strings.xml
     translation: /app/src/main/res/values-%android_code%/modules_strings.xml
+  - source: /app/src/main/res/values/player_bedside_strings.xml
+    translation: /app/src/main/res/values-%android_code%/player_bedside_strings.xml

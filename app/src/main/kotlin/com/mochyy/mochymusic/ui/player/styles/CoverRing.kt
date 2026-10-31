@@ -342,7 +342,7 @@ private class RingGeometry(val circle: RingCircle, val size: Size, density: Floa
 }
 
 /** the bars' levels: what the sound says, and what's drawn, easing toward it */
-private class BarLevels {
+internal class BarLevels {
     var count = 28
         private set
     private var targets = FloatArray(count)

@@ -76,6 +76,8 @@ internal class BedsideTime(
     // am or pm on a 12 hour phone, nothing on a 24 hour one
     val period: String?,
     val date: String,
+    // the weekday and the day alone, for the tiles' smaller clocks
+    val shortDate: String,
     val hour: Int,
     val minute: Int,
 )
@@ -92,6 +94,7 @@ private fun bedsideTime(context: Context, millis: Long): BedsideTime {
         minutes = minute.toString().padStart(2, '0'),
         period = if (is24) null else DateFormat.format("a", calendar).toString(),
         date = DateFormat.format(datePattern, calendar).toString(),
+        shortDate = DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEd"), calendar).toString(),
         hour = hour,
         minute = minute,
     )
@@ -190,73 +193,82 @@ private fun StackedFace(time: BedsideTime, ink: BedsideInk, modifier: Modifier) 
     }
 }
 
-// a quiet dial: sixty ticks, two hands that step on with a little settle, and the date beside it
+// a quiet dial with the date beside it
 @Composable
 private fun AnalogFace(time: BedsideTime, ink: BedsideInk, modifier: Modifier) {
+    BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        val landscape = maxWidth > maxHeight
+        val dial = if (landscape) maxHeight * 0.78f else minOf(maxWidth * 0.78f, maxHeight * 0.5f)
+        val date: @Composable () -> Unit = {
+            BasicText(time.date, style = labelStyle(dial * 0.07f), color = ink.soft)
+        }
+        if (landscape) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(dial * 0.16f)) {
+                AnalogDial(time, ink, Modifier.size(dial))
+                date()
+            }
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(dial * 0.1f)) {
+                AnalogDial(time, ink, Modifier.size(dial))
+                date()
+            }
+        }
+    }
+}
+
+// sixty ticks and two hands that step on with a little settle; ring draws every tick the same, the tiles' look
+@Composable
+internal fun AnalogDial(time: BedsideTime, ink: BedsideInk, modifier: Modifier, ring: Boolean = false) {
     val minuteTurn = remember { Animatable(minuteAngle(time)) }
     val hourTurn = remember { Animatable(hourAngle(time)) }
     LaunchedEffect(time.hour, time.minute) {
         launch { minuteTurn.animateTo(minuteTurn.value + turnBetween(minuteTurn.value, minuteAngle(time)), HandSpring) }
         launch { hourTurn.animateTo(hourTurn.value + turnBetween(hourTurn.value, hourAngle(time)), HandSpring) }
     }
-    BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        val landscape = maxWidth > maxHeight
-        val dial = if (landscape) maxHeight * 0.78f else minOf(maxWidth * 0.78f, maxHeight * 0.5f)
-        val face: @Composable () -> Unit = {
-            Spacer(Modifier.size(dial).drawWithCache {
-                val r = size.minDimension / 2f
-                val c = Offset(size.width / 2f, size.height / 2f)
-                // the ticks' ends, worked out once for the size rather than on every redraw
-                val ticks = FloatArray(60 * 4)
-                for (i in 0 until 60) {
-                    val a = Math.toRadians(i * 6.0 - 90.0)
-                    val inner = if (i % 5 == 0) r * 0.84f else r * 0.92f
-                    ticks[i * 4] = c.x + cos(a).toFloat() * inner
-                    ticks[i * 4 + 1] = c.y + sin(a).toFloat() * inner
-                    ticks[i * 4 + 2] = c.x + cos(a).toFloat() * r * 0.98f
-                    ticks[i * 4 + 3] = c.y + sin(a).toFloat() * r * 0.98f
-                }
-                val major = r * 0.022f
-                val minor = r * 0.01f
-                onDrawBehind {
-                    val colour = ink.ink()
-                    val faint = colour.copy(alpha = colour.alpha * 0.35f)
-                    for (i in 0 until 60) {
-                        val bold = i % 5 == 0
-                        drawLine(
-                            color = if (bold) colour else faint,
-                            start = Offset(ticks[i * 4], ticks[i * 4 + 1]),
-                            end = Offset(ticks[i * 4 + 2], ticks[i * 4 + 3]),
-                            strokeWidth = if (bold) major else minor,
-                            cap = StrokeCap.Round,
-                        )
-                    }
-                    rotate(hourTurn.value, c) {
-                        drawLine(colour, c, Offset(c.x, c.y - r * 0.5f), strokeWidth = r * 0.055f, cap = StrokeCap.Round)
-                    }
-                    rotate(minuteTurn.value, c) {
-                        drawLine(colour, c, Offset(c.x, c.y - r * 0.78f), strokeWidth = r * 0.032f, cap = StrokeCap.Round)
-                    }
-                    drawCircle(colour, r * 0.045f, c)
-                    drawCircle(Color.Black, r * 0.018f, c)
-                }
-            })
-        }
-        val date: @Composable () -> Unit = {
-            BasicText(time.date, style = labelStyle(dial * 0.07f), color = ink.soft)
-        }
-        if (landscape) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(dial * 0.16f)) {
-                face()
-                date()
+    Spacer(modifier.drawWithCache {
+        val r = size.minDimension / 2f
+        val c = Offset(size.width / 2f, size.height / 2f)
+        // the ticks' ends, worked out once for the size rather than on every redraw
+        val ticks = FloatArray(60 * 4)
+        for (i in 0 until 60) {
+            val a = Math.toRadians(i * 6.0 - 90.0)
+            val inner = when {
+                ring -> r * 0.86f
+                i % 5 == 0 -> r * 0.84f
+                else -> r * 0.92f
             }
-        } else {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(dial * 0.1f)) {
-                face()
-                date()
+            ticks[i * 4] = c.x + cos(a).toFloat() * inner
+            ticks[i * 4 + 1] = c.y + sin(a).toFloat() * inner
+            ticks[i * 4 + 2] = c.x + cos(a).toFloat() * r * 0.98f
+            ticks[i * 4 + 3] = c.y + sin(a).toFloat() * r * 0.98f
+        }
+        val major = r * if (ring) 0.03f else 0.022f
+        val minor = r * if (ring) 0.03f else 0.01f
+        onDrawBehind {
+            val colour = ink.ink()
+            val faint = colour.copy(alpha = colour.alpha * if (ring) 0.55f else 0.35f)
+            for (i in 0 until 60) {
+                val bold = !ring && i % 5 == 0
+                drawLine(
+                    color = if (bold) colour else faint,
+                    start = Offset(ticks[i * 4], ticks[i * 4 + 1]),
+                    end = Offset(ticks[i * 4 + 2], ticks[i * 4 + 3]),
+                    strokeWidth = if (bold) major else minor,
+                    cap = StrokeCap.Round,
+                )
+            }
+            rotate(hourTurn.value, c) {
+                drawLine(colour, c, Offset(c.x, c.y - r * 0.48f), strokeWidth = r * if (ring) 0.075f else 0.055f, cap = StrokeCap.Round)
+            }
+            rotate(minuteTurn.value, c) {
+                drawLine(colour, c, Offset(c.x, c.y - r * 0.74f), strokeWidth = r * if (ring) 0.06f else 0.032f, cap = StrokeCap.Round)
+            }
+            if (!ring) {
+                drawCircle(colour, r * 0.045f, c)
+                drawCircle(Color.Black, r * 0.018f, c)
             }
         }
-    }
+    })
 }
 
 // the time in heavy numbers with the song's cover showing through them, plain ink until the cover arrives
@@ -292,7 +304,7 @@ private fun CoverFace(time: BedsideTime, ink: BedsideInk, cover: Painter, modifi
 
 // each digit slides up into place when it changes while the others hold still
 @Composable
-private fun FlipDigits(text: String, style: TextStyle, color: ColorProducer) {
+internal fun FlipDigits(text: String, style: TextStyle, color: ColorProducer) {
     Row {
         text.forEachIndexed { index, char ->
             // counted from the right, so the minutes keep their places when the hour gains a digit
@@ -325,7 +337,7 @@ private fun turnBetween(from: Float, to: Float): Float = ((to - from) % 360f + 5
 
 // tabular numbers, so a 1 turning into a 2 never shifts the rest of the time sideways
 @Composable
-private fun clockStyle(size: Dp, weight: FontWeight, lineHeight: Float = 1f): TextStyle {
+internal fun clockStyle(size: Dp, weight: FontWeight, lineHeight: Float = 1f): TextStyle {
     val sp = dpToSp(size)
     return TextStyle(
         fontFamily = InterFontFamily,

@@ -14,12 +14,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.LocalArtworkColor
 import com.mochyy.mochymusic.R
-import com.mochyy.mochymusic.constants.BedsideClockFace
-import com.mochyy.mochymusic.constants.BedsideClockFaceKey
 import com.mochyy.mochymusic.constants.BedsideKeepAwakeKey
 import com.mochyy.mochymusic.constants.BedsideLockScreenKey
 import com.mochyy.mochymusic.constants.BedsideNightTint
@@ -28,27 +27,19 @@ import com.mochyy.mochymusic.constants.BedsideScreenSaverKey
 import com.mochyy.mochymusic.ui.player.bedside.BedsideOrange
 import com.mochyy.mochymusic.ui.player.bedside.LockScreenSupported
 import com.mochyy.mochymusic.ui.player.bedside.coverTint
+import com.mochyy.mochymusic.ui.player.bedside.openLockScreenAccess
+import com.mochyy.mochymusic.ui.player.bedside.rememberLockScreenAccess
 import com.mochyy.mochymusic.ui.player.customize.CoverOption
 import com.mochyy.mochymusic.utils.rememberEnumPreference
+import com.mochyy.mochymusic.utils.rememberPreference
 
-// the bedside's sheet: which clock, what it turns into when left alone, and how it treats the screen
+// both bedside styles' sheet: what they turn into when left alone and how they treat the screen; the clock faces are swiped on the clock itself
 @Composable
 internal fun ColumnScope.BedsideOptions() {
-    var face by rememberEnumPreference(BedsideClockFaceKey, BedsideClockFace.BIG)
     var tint by rememberEnumPreference(BedsideNightTintKey, BedsideNightTint.ORANGE)
     val seed = LocalArtworkColor.current
     val coverHue = remember(seed) { coverTint(seed) }
     OptionSheet(title = stringResource(R.string.bedside_sheet_title)) {
-        BedsideClockFace.entries.forEachIndexed { index, option ->
-            OptionRow(
-                selected = face == option,
-                onClick = { face = option },
-                caption = if (index == 0) stringResource(R.string.bedside_clock_caption) else null,
-                compact = true,
-            ) {
-                TwoLines(stringResource(option.title), stringResource(option.caption))
-            }
-        }
         BedsideNightTint.entries.forEachIndexed { index, option ->
             OptionRow(
                 selected = tint == option,
@@ -85,35 +76,31 @@ internal fun ColumnScope.BedsideOptions() {
                 default = true,
             ),
         )
-        if (LockScreenSupported) {
-            SwitchRow(
-                CoverOption.Switch(
-                    title = stringResource(R.string.bedside_lock_screen),
-                    description = stringResource(R.string.bedside_lock_screen_caption),
-                    icon = R.drawable.lock,
-                    key = BedsideLockScreenKey,
-                    default = true,
-                ),
-            )
-        }
+        if (LockScreenSupported) LockScreenRows()
     }
 }
 
-private val BedsideClockFace.title: Int
-    get() = when (this) {
-        BedsideClockFace.BIG -> R.string.bedside_face_big
-        BedsideClockFace.STACKED -> R.string.bedside_face_stacked
-        BedsideClockFace.ANALOG -> R.string.bedside_face_analog
-        BedsideClockFace.COVER -> R.string.bedside_face_cover
+// the lock screen switch, and under it a way to the phone's own switch when that one is still off
+@Composable
+private fun LockScreenRows() {
+    val context = LocalContext.current
+    val wanted by rememberPreference(BedsideLockScreenKey, defaultValue = true)
+    val allowed by rememberLockScreenAccess()
+    SwitchRow(
+        CoverOption.Switch(
+            title = stringResource(R.string.bedside_lock_screen),
+            description = stringResource(R.string.bedside_lock_screen_caption),
+            icon = R.drawable.lock,
+            key = BedsideLockScreenKey,
+            default = true,
+        ),
+    )
+    if (wanted && !allowed) {
+        OptionRow(selected = false, onClick = { openLockScreenAccess(context) }, tag = stringResource(R.string.bedside_lock_blocked_tag)) {
+            TwoLines(stringResource(R.string.bedside_lock_blocked), stringResource(R.string.bedside_lock_blocked_caption))
+        }
     }
-
-private val BedsideClockFace.caption: Int
-    get() = when (this) {
-        BedsideClockFace.BIG -> R.string.bedside_face_big_caption
-        BedsideClockFace.STACKED -> R.string.bedside_face_stacked_caption
-        BedsideClockFace.ANALOG -> R.string.bedside_face_analog_caption
-        BedsideClockFace.COVER -> R.string.bedside_face_cover_caption
-    }
+}
 
 private val BedsideNightTint.title: Int
     get() = when (this) {

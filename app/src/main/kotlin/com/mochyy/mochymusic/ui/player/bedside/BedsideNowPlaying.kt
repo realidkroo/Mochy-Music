@@ -16,11 +16,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -68,7 +71,7 @@ private const val ProgressTickMs = 1_000L
 
 // what the bedside shows of one song
 @Immutable
-private class BedsideSong(val title: String, val artist: String, val artwork: String?)
+internal class BedsideSong(val title: String, val artist: String, val artwork: String?)
 
 // the song half: its cover, title and artist, a thin line for how far in, and the buttons once it's touched
 @Composable
@@ -139,7 +142,7 @@ private fun SongDetails(
             }
         }
         Spacer(Modifier.height(titleSize * 0.9f))
-        ProgressLine(ink, visible, Modifier.fillMaxWidth().height(4.dp))
+        ProgressLine(rememberBedsideProgress(visible), ink::ink, Modifier.fillMaxWidth().height(4.dp))
         if (!preview) {
             Spacer(Modifier.height(titleSize * 0.9f))
             Box(Modifier.bedsideChrome(rest)) { TransportCircles(tones, size = 46.dp, spacing = 16.dp) }
@@ -156,7 +159,7 @@ private fun CoverSlots(carousel: SongCarousel?, track: TrackInfo, ink: BedsideIn
 
 // the playing song, and while a swipe slides the row the one coming in beside it, each with its own words and cover
 @Composable
-private fun SongSlots(
+internal fun SongSlots(
     carousel: SongCarousel?,
     track: TrackInfo,
     content: @Composable (song: BedsideSong, slotModifier: Modifier) -> Unit,
@@ -191,41 +194,55 @@ private fun BedsideCover(url: String?, ink: BedsideInk, modifier: Modifier) {
     )
 }
 
-// how far into the song, moving once a second and only while it can be seen, so a whole night of music costs next to nothing
+// how far into the song, read once a second and only while it can be seen, so a whole night of music costs next to nothing
+@Stable
+internal class BedsideProgress {
+    var positionMs by mutableLongStateOf(0L)
+    var durationMs by mutableLongStateOf(0L)
+    val fraction: Float get() = if (durationMs > 0L) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+}
+
 @Composable
-private fun ProgressLine(ink: BedsideInk, visible: () -> Boolean, modifier: Modifier) {
+internal fun rememberBedsideProgress(visible: () -> Boolean): BedsideProgress {
     val connection = LocalPlayerConnection.current
-    val fraction = remember { mutableFloatStateOf(0f) }
+    val progress = remember { BedsideProgress() }
     val showing = rememberStyleShowing()
+    val currentVisible by rememberUpdatedState(visible)
     LaunchedEffect(connection) {
         val ui = connection?.uiState ?: return@LaunchedEffect
         combine(
             ui.transportState.map { it.isPlaying }.distinctUntilChanged(),
-            snapshotFlow { showing() && visible() }.distinctUntilChanged(),
+            snapshotFlow { showing() && currentVisible() }.distinctUntilChanged(),
         ) { playing, shown -> playing to shown }
             .collectLatest { (playing, shown) ->
                 if (!shown) return@collectLatest
                 if (!playing) {
                     // paused, it only moves when someone seeks
                     ui.progressState.map { it.position to it.duration }.distinctUntilChanged().collect { (position, duration) ->
-                        fraction.floatValue = if (duration > 0L) (position.toFloat() / duration).coerceIn(0f, 1f) else 0f
+                        progress.positionMs = position
+                        progress.durationMs = duration
                     }
                     return@collectLatest
                 }
                 while (true) {
                     val player = connection.player
-                    val duration = player.duration
-                    fraction.floatValue = if (duration > 0L) (player.currentPosition.toFloat() / duration).coerceIn(0f, 1f) else 0f
+                    progress.positionMs = player.currentPosition
+                    progress.durationMs = player.duration.coerceAtLeast(0L)
                     delay(ProgressTickMs)
                 }
             }
     }
+    return progress
+}
+
+@Composable
+internal fun ProgressLine(progress: BedsideProgress, colour: () -> Color, modifier: Modifier) {
     Box(
         modifier.drawBehind {
             val corner = CornerRadius(size.height / 2f)
-            val colour = ink.ink()
-            drawRoundRect(colour.copy(alpha = colour.alpha * 0.22f), cornerRadius = corner)
-            drawRoundRect(colour, size = size.copy(width = size.width * fraction.floatValue), cornerRadius = corner)
+            val ink = colour()
+            drawRoundRect(ink.copy(alpha = ink.alpha * 0.22f), cornerRadius = corner)
+            drawRoundRect(ink, size = size.copy(width = size.width * progress.fraction), cornerRadius = corner)
         },
     )
 }

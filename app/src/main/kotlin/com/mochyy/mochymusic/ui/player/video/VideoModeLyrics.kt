@@ -489,12 +489,39 @@ internal fun VideoPaneLyrics(
     positionProvider: () -> Long,
     modifier: Modifier = Modifier,
 ) {
+    FollowingLyrics(
+        lyrics = lyrics,
+        look = look,
+        restingOffset = paneRestingOffset(frame),
+        bottomPadding = (frame.height - PaneListTop) * 0.6f,
+        positionProvider = positionProvider,
+        modifier = modifier.fillMaxSize().padding(top = PaneListTop),
+        opening = { state.pane.value },
+        flyingLine = { state.flyingLine },
+    )
+}
+
+// the song's lines in a list that follows the music, for the video pane and the bedside; opening and flyingLine are the pane's rise and the line flying into it
+@Composable
+internal fun FollowingLyrics(
+    lyrics: VideoLyrics,
+    look: VideoLyricLook,
+    restingOffset: Dp,
+    bottomPadding: Dp,
+    positionProvider: () -> Long,
+    modifier: Modifier = Modifier,
+    opening: () -> Float = { 1f },
+    flyingLine: () -> Int = { -1 },
+    userScroll: Boolean = true,
+    // laid over the finished lines while drawing, so a colour fade never recomposes them
+    tint: (() -> Color)? = null,
+) {
     val connection = LocalPlayerConnection.current ?: return
     val lines = lyrics.lines
     val unsynced = lyrics.unsynced
     val density = LocalDensity.current
 
-    Box(modifier = modifier.fillMaxSize().padding(top = PaneListTop)) {
+    Box(modifier = modifier) {
         if (lines.isEmpty()) {
             if (!lyrics.loaded) {
                 LyricsLoadingDots(modifier = Modifier.align(Alignment.Center))
@@ -549,7 +576,7 @@ internal fun VideoPaneLyrics(
             }
         }
 
-        val restingPx = with(density) { paneRestingOffset(frame).roundToPx() }
+        val restingPx = with(density) { restingOffset.roundToPx() }
         val cascade = look.motion.risesWords
         LaunchedEffect(followPlayback, lines, look.motion) {
             if (!followPlayback) return@LaunchedEffect
@@ -560,7 +587,7 @@ internal fun VideoPaneLyrics(
                 try {
                     isAutoScrolling = true
                     // still opening or closing: the line goes straight to its place, the flight needs it there
-                    if (state.pane.value < 0.999f) {
+                    if (opening() < 0.999f) {
                         listState.scrollToItem(targetRow, 0)
                         return@collectLatest
                     }
@@ -602,7 +629,7 @@ internal fun VideoPaneLyrics(
         val risePx = with(density) { PaneRise.toPx() }
         // the pane opens: each row rises into place, the further from the sung line the later
         fun androidx.compose.ui.graphics.GraphicsLayerScope.enter(rowIndex: Int) {
-            val p = state.pane.value
+            val p = opening()
             if (p >= 0.999f) return
             val distance = abs(rowIndex - anchorRow).coerceAtMost(6)
             val delay = distance * PaneRowDelay
@@ -614,7 +641,8 @@ internal fun VideoPaneLyrics(
         ProvideVideoLyricScale {
             LazyColumn(
                 state = listState,
-                contentPadding = PaddingValues(top = paneRestingOffset(frame), bottom = (frame.height - PaneListTop) * 0.6f),
+                contentPadding = PaddingValues(top = restingOffset, bottom = bottomPadding),
+                userScrollEnabled = userScroll,
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
@@ -628,6 +656,7 @@ internal fun VideoPaneLyrics(
                         onDrawWithContent {
                             drawContent()
                             drawRect(brush = fade, blendMode = BlendMode.DstIn)
+                            tint?.let { drawRect(it(), blendMode = BlendMode.Modulate) }
                         }
                     },
             ) {
@@ -678,7 +707,7 @@ internal fun VideoPaneLyrics(
                                 modifier = Modifier.graphicsLayer {
                                     translationY = stagger.lagOf(rowIndex)
                                     // the bottom line is flying into this very row; it shows once that has landed
-                                    if (index == state.flyingLine && state.pane.value < 0.999f) {
+                                    if (index == flyingLine() && opening() < 0.999f) {
                                         alpha = 0f
                                     } else {
                                         enter(rowIndex)

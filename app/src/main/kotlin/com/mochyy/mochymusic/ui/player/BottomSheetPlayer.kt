@@ -416,6 +416,8 @@ private fun PlayerSheet(
             ?: PlayerStyle.fromStored(videoModeReturn)
         onPlayerStyleChange(back ?: PlayerStyle.FLAGSHIP)
     }
+    // whether the style on now is turned sideways; only the styles with a rotate item ever turn this on
+    val (styleTurned) = com.mochyy.mochymusic.ui.player.styles.rememberStyleRotation(playerStyle)
     // the song's whole lyrics, opened over an alternate style from its ••• menu
     var styleLyricsOpen by remember { mutableStateOf(false) }
     // that page fully up: the style under it stops drawing
@@ -938,7 +940,7 @@ private fun PlayerSheet(
                         // the full video mode is turned sideways and has its own pull to close, so a sideways swipe on it
                         // (a vertical one to this) mustn't close the player; the bedside's swipes are its pages, and it closes itself
                         .pointerInput(styleOpen, playerStyle) {
-                            if (!styleOpen || playerStyle == PlayerStyle.VIDEO || playerStyle == PlayerStyle.BEDSIDE) return@pointerInput
+                            if (!styleOpen || playerStyle == PlayerStyle.VIDEO || playerStyle.isBedside) return@pointerInput
                             val closePx = 8.dp.toPx()
                             var pulled = 0f
                             var closing = false
@@ -990,7 +992,7 @@ private fun PlayerSheet(
                     onSwitchSource = { showLyricsSource = true },
                 )
                 // the ipod, the full video mode and the bedside each have their own close, a bar over them would just be in the way
-                if (playerStyle != PlayerStyle.IPOD && playerStyle != PlayerStyle.VIDEO && playerStyle != PlayerStyle.BEDSIDE) PlayerHandle(
+                if (playerStyle != PlayerStyle.IPOD && playerStyle != PlayerStyle.VIDEO && !playerStyle.isBedside) PlayerHandle(
                     state = handleState,
                     sheet = state,
                     statusBarTop = statusBarTopInset,
@@ -1574,61 +1576,64 @@ private fun PlayerSheet(
         // and back belongs to the app.
         PageBackHandler(state, pageOpen = showQueue || showLyrics) { transition.close() }
 
-        if (showSleepTimer) {
-            com.mochyy.mochymusic.ui.player.menu.SleepTimerSheet(
-                onDismiss = { showSleepTimer = false }
-            )
-        }
+        // a style turned sideways gets these turned with it, each a floating card the right way up, the way the full video mode opens its own
+        com.mochyy.mochymusic.ui.player.styles.TurnedSheets(turned = styleTurned && playerStyle != PlayerStyle.VIDEO) {
+            if (showSleepTimer) {
+                com.mochyy.mochymusic.ui.player.menu.SleepTimerSheet(
+                    onDismiss = { showSleepTimer = false }
+                )
+            }
 
-        if (showSongDetails) {
-            // Opening an artist or the album leaves the player: it closes on its way to the page,
-            // the way the song menus' "view artist" does
-            com.mochyy.mochymusic.ui.player.menu.SongDetailsSheet(
-                onDismiss = { showSongDetails = false },
-                onOpenArtist = { artistId ->
-                    showSongDetails = false
-                    navController.navigate("artist/$artistId")
-                    state.collapseSoft()
-                },
-                onOpenAlbum = { albumId ->
-                    showSongDetails = false
-                    navController.navigate("album/$albumId")
-                    state.collapseSoft()
-                },
-            )
-        }
+            if (showSongDetails) {
+                // Opening an artist or the album leaves the player: it closes on its way to the page,
+                // the way the song menus' "view artist" does
+                com.mochyy.mochymusic.ui.player.menu.SongDetailsSheet(
+                    onDismiss = { showSongDetails = false },
+                    onOpenArtist = { artistId ->
+                        showSongDetails = false
+                        navController.navigate("artist/$artistId")
+                        state.collapseSoft()
+                    },
+                    onOpenAlbum = { albumId ->
+                        showSongDetails = false
+                        navController.navigate("album/$albumId")
+                        state.collapseSoft()
+                    },
+                )
+            }
 
-        if (showStreamInfo) {
-            com.mochyy.mochymusic.ui.player.info.StreamInfoSheet(onDismiss = { showStreamInfo = false })
-        }
+            if (showStreamInfo) {
+                com.mochyy.mochymusic.ui.player.info.StreamInfoSheet(onDismiss = { showStreamInfo = false })
+            }
 
-        if (showActionMenu) {
-            PlayerActionMenu(
-                fromLyrics = menuFromLyrics,
-                onFullVideo = enterVideoMode,
-                onDismiss = {
-                    showActionMenu = false
-                    menuReveal.floatValue = 0f
-                },
-                onEditPlayer = {
-                    // Same destination as a long press: the selector, the player shrinking into
-                    // its card. Jumping straight into the editor skipped the choice of style.
-                    openStudio()
-                },
-                onReveal = { menuReveal.floatValue = it },
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+            if (showActionMenu) {
+                PlayerActionMenu(
+                    fromLyrics = menuFromLyrics,
+                    onFullVideo = enterVideoMode,
+                    onDismiss = {
+                        showActionMenu = false
+                        menuReveal.floatValue = 0f
+                    },
+                    onEditPlayer = {
+                        // Same destination as a long press: the selector, the player shrinking into
+                        // its card. Jumping straight into the editor skipped the choice of style.
+                        openStudio()
+                    },
+                    onReveal = { menuReveal.floatValue = it },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
 
-        if (showPlaybackSpeed) {
-            com.mochyy.mochymusic.ui.player.menu.PlaybackSpeedSheet(onDismiss = { showPlaybackSpeed = false })
-        }
-        if (showDeviceOutput) {
-            com.mochyy.mochymusic.ui.player.menu.DeviceOutputSheet(onDismiss = { showDeviceOutput = false })
-        }
-        // opened by "Switch" at the end of the lyrics page
-        if (showLyricsSource) {
-            com.mochyy.mochymusic.ui.player.menu.LyricsProviderSheet(onDismiss = { showLyricsSource = false })
+            if (showPlaybackSpeed) {
+                com.mochyy.mochymusic.ui.player.menu.PlaybackSpeedSheet(onDismiss = { showPlaybackSpeed = false })
+            }
+            if (showDeviceOutput) {
+                com.mochyy.mochymusic.ui.player.menu.DeviceOutputSheet(onDismiss = { showDeviceOutput = false })
+            }
+            // opened by "Switch" at the end of the lyrics page
+            if (showLyricsSource) {
+                com.mochyy.mochymusic.ui.player.menu.LyricsProviderSheet(onDismiss = { showLyricsSource = false })
+            }
         }
 
         // the player studio, over the player: the selector, the editor's header and editors, its sheets
@@ -1656,10 +1661,11 @@ private fun PlayerSheet(
                     studio.settleOn(focused, restyled) {
                         studio.openSheet(com.mochyy.mochymusic.ui.player.studio.StudioSheet.IPOD)
                     }
-                } else if (playerStyles.getOrNull(focused) == PlayerStyle.BEDSIDE) {
-                    // the clock faces, the night look and the screen options, in a sheet over the clock itself
-                    val restyled = playerStyle != PlayerStyle.BEDSIDE
-                    if (restyled) onPlayerStyleChange(PlayerStyle.BEDSIDE)
+                } else if (playerStyles.getOrNull(focused)?.isBedside == true) {
+                    // either bedside: the night look and the screen options, in a sheet over the style itself
+                    val bedside = playerStyles[focused]
+                    val restyled = playerStyle != bedside
+                    if (restyled) onPlayerStyleChange(bedside)
                     studio.settleOn(focused, restyled) {
                         studio.openSheet(com.mochyy.mochymusic.ui.player.studio.StudioSheet.BEDSIDE)
                     }
@@ -1680,7 +1686,7 @@ private fun PlayerSheet(
             },
         )
         // the Poster's, the iPod's and the bedside's sheets, each over its own style
-        if (playerStyle == PlayerStyle.POSTER || playerStyle == PlayerStyle.IPOD || playerStyle == PlayerStyle.BEDSIDE) {
+        if (playerStyle == PlayerStyle.POSTER || playerStyle == PlayerStyle.IPOD || playerStyle.isBedside) {
             com.mochyy.mochymusic.ui.player.studio.StyleSheets(studio)
         }
         if (playerStyle.flagshipFamily) {
@@ -1813,7 +1819,7 @@ private fun ExpandMenuOverlay(
             isRendered = true
             launch {
                 bgAlpha.animateTo(
-                    targetValue = 0.62f,
+                    targetValue = com.mochyy.mochymusic.ui.player.styles.ChevronMenuDim,
                     animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))
                 )
             }

@@ -482,10 +482,33 @@ private fun relatedItems(navController: NavController): List<SettingsItem> = lis
             )
         },
     ),
+    SettingsItem(
+        title = { Text(stringResource(R.string.settings_hide_bottom_bar)) },
+        highlightKey = "Hide Bottom Bar navigation bar player",
+        descriptionText = stringResource(R.string.settings_hide_bottom_bar_desc),
+        searchText = stringResource(R.string.settings_hide_bottom_bar),
+        icon = painterResource(R.drawable.tune),
+        iconShape = CircleShape,
+        onClick = {
+            SettingsHighlight.pending = BottomBarHighlightKey
+            navController.navigate("customisation_settings")
+        },
+        trailingContent = {
+            Icon(
+                painter = painterResource(R.drawable.navigate_next),
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.5f),
+                modifier = Modifier.size(20.dp),
+            )
+        },
+    ),
 )
 
 // what customize answers to when a search or the related row asks for its top bar card
 const val TopBarHighlightKey = "Top Bar on player"
+
+// the same for its bottom bar card
+const val BottomBarHighlightKey = "Bottom Bar on player"
 
 // a row title with its value on the right, for the rows with a slider under them
 @Composable

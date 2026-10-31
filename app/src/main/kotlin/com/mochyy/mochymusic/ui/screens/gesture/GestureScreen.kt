@@ -87,6 +87,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.drawscope.Stroke
 import com.mochyy.mochymusic.ui.component.SettingsHighlight
 import com.mochyy.mochymusic.ui.component.SubSettingsSearchBar
+import com.mochyy.mochymusic.ui.screens.settings.BottomBarHighlightKey
 import com.mochyy.mochymusic.ui.screens.settings.TopBarHighlightKey
 import kotlinx.coroutines.delay
 
@@ -117,6 +118,7 @@ private enum class CustomiseSection(@StringRes val titleRes: Int, val keys: List
     ANIMATION(R.string.appearance_animation, listOf("Animation", "Animation speed"), "animation speed motion transitions off faster slower"),
     LYRICS(R.string.appearance_lyrics_animation, listOf("Lyrics animation"), "lyrics animation style 1 2 boring plain shader glow wave"),
     TOP_BAR(R.string.customise_top_bar, listOf(TopBarHighlightKey), "top bar status bar player clock battery icons hide"),
+    BOTTOM_BAR(R.string.customise_bottom_bar, listOf(BottomBarHighlightKey), "bottom bar navigation bar nav buttons gesture handle back home recents player hide"),
     GESTURE(R.string.customise_gesture, listOf("Gesture", "Swipe right", "Swipe left", "Swipe down anywhere to close"), "gesture swipe left right slide songs player close down");
 
     // every word typed has to show up in the section's english words, its names, or its title in the app's language
@@ -128,7 +130,7 @@ private enum class CustomiseSection(@StringRes val titleRes: Int, val keys: List
     }
 }
 
-// settings > customisation: cover rounding, style pickers, blur, animation, lyrics, the player's top bar and song swipe gestures
+// settings > customisation: cover rounding, style pickers, blur, animation, lyrics, the player's top and bottom bars and song swipe gestures
 @Composable
 fun CustomisationScreen(navController: NavController) {
     var query by remember { mutableStateOf("") }
@@ -222,6 +224,7 @@ private fun CustomiseSectionContent(section: CustomiseSection) {
         CustomiseSection.ANIMATION -> AnimationSection()
         CustomiseSection.LYRICS -> LyricsStyleSection(modifier = pagerBleed)
         CustomiseSection.TOP_BAR -> TopBarSection()
+        CustomiseSection.BOTTOM_BAR -> BottomBarSection()
         CustomiseSection.GESTURE -> GestureSection()
     }
 }

@@ -1352,19 +1352,21 @@ class MainActivity : ComponentActivity() {
             com.mochyy.mochymusic.constants.PlayerStyle.FLAGSHIP,
         )
         // and the bedside is a clock on the nightstand, a row of notifications over it would only glow in the dark
-        val hideStatusBar = !statusBarShown || playerStyle == com.mochyy.mochymusic.constants.PlayerStyle.VIDEO ||
-            playerStyle == com.mochyy.mochymusic.constants.PlayerStyle.BEDSIDE
+        val hideStatusBar = !statusBarShown || playerStyle == com.mochyy.mochymusic.constants.PlayerStyle.VIDEO || playerStyle.isBedside
+        // customize's bottom bar brings the navigation bar back, except where it would cut into the video or glow by the bed
+        val (navBarShown) = rememberPreference(com.mochyy.mochymusic.constants.PlayerNavBarKey, defaultValue = com.mochyy.mochymusic.constants.PlayerNavBarDefault)
+        val hideNavBar = !navBarShown || playerStyle == com.mochyy.mochymusic.constants.PlayerStyle.VIDEO || playerStyle.isBedside
         // Back in the app (from Home, the recents, a dialog) it's hidden again: with
         // gesture navigation a swipe from the bottom brings it back for good (see
         // playerNavBarBehavior).
         val windowFocused = LocalWindowInfo.current.isWindowFocused
-        LaunchedEffect(playerOpen, playerHeadingDown, windowFocused) {
+        LaunchedEffect(playerOpen, playerHeadingDown, windowFocused, hideNavBar) {
             val controller = WindowCompat.getInsetsController(window, window.decorView.rootView)
             // one behaviour for both bars, set only here: the ipod used to set its own and broke the back swipe on gesture navigation
-            if (playerOpen) {
+            if (playerOpen && hideNavBar) {
                 controller.systemBarsBehavior = window.playerNavBarBehavior()
                 controller.hide(WindowInsetsCompat.Type.navigationBars())
-            } else if (playerHeadingDown) {
+            } else if (playerHeadingDown || !hideNavBar) {
                 controller.show(WindowInsetsCompat.Type.navigationBars())
             }
         }
@@ -1389,8 +1391,8 @@ class MainActivity : ComponentActivity() {
         // A bar a swipe brought back while the player stays open (Samsung's swipe-from-
         // bottom gestures) goes away again after a moment, as the transient one does.
         val navBarsShown = WindowInsets.areNavigationBarsVisible
-        LaunchedEffect(playerOpen, navBarsShown) {
-            if (!playerOpen || !navBarsShown) return@LaunchedEffect
+        LaunchedEffect(playerOpen, navBarsShown, hideNavBar) {
+            if (!playerOpen || !navBarsShown || !hideNavBar) return@LaunchedEffect
             delay(2_500)
             WindowCompat.getInsetsController(window, window.decorView.rootView)
                 .hide(WindowInsetsCompat.Type.navigationBars())

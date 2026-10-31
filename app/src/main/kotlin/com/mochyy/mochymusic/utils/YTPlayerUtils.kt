@@ -161,6 +161,8 @@ object YTPlayerUtils {
         val streamExpiresInSeconds: Int,
         val streamClient: String = "unknown",
         val streamHeaders: Map<String, String> = emptyMap(),
+        // youtube refused the song, so this is its music video's sound
+        val fromMusicVideo: Boolean = false,
     )
 
     /**
@@ -199,6 +201,7 @@ object YTPlayerUtils {
         connectivityManager: ConnectivityManager,
     ): Result<PlaybackData> {
         val firstAttempt = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager)
+            .orStandIn(videoId, audioQuality, connectivityManager)
 
         // a rate limit is the whole network, not the session: rotating asks YouTube again and
         // retrying walks every client again, which only keeps the limit in place
@@ -210,12 +213,41 @@ object YTPlayerUtils {
             BotDetectionMitigator.rotateGuestSession()
             val retryResult = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager)
             retryResult.onSuccess { BotDetectionMitigator.notifyPlaybackSuccess() }
-            return retryResult
+            return retryResult.unwrapRefusal()
         }
 
         firstAttempt.onSuccess { BotDetectionMitigator.notifyPlaybackSuccess() }
-        return firstAttempt
+        return firstAttempt.unwrapRefusal()
     }
+
+    // youtube turns a few uploads away from every client we have ("please sign in"), but the artist's other upload of the song usually plays
+    private suspend fun Result<PlaybackData>.orStandIn(
+        videoId: String,
+        audioQuality: AudioQuality,
+        connectivityManager: ConnectivityManager,
+    ): Result<PlaybackData> {
+        val details = (exceptionOrNull() as? UploadRefusedException)?.videoDetails ?: return this
+        val title = details.title ?: return this
+        val artist = details.author ?: return this
+        val length = details.lengthSeconds.toIntOrNull() ?: return this
+
+        for (standIn in SongVersions.otherUploads(videoId, title, artist, length).take(MAX_STAND_INS)) {
+            val attempt = resolvePlaybackData(standIn.id, null, audioQuality, connectivityManager)
+            if (attempt.exceptionOrNull() is YouTubeRateLimitedException) return attempt
+            val data = attempt.getOrNull() ?: continue
+            Timber.tag(logTag).i("YouTube refused $videoId, playing its other upload ${standIn.id}")
+            PlaybackLogManager.log(PlaybackLogLevel.INFO, "Playing another upload", "$videoId -> ${standIn.id}")
+            // the song keeps its own details, and the play isn't reported as the stand-in's
+            return Result.success(
+                data.copy(videoDetails = details, playbackTracking = null, fromMusicVideo = standIn.isVideoSong),
+            )
+        }
+        return this
+    }
+
+    // the refusal only carried the song's details to the stand-in lookup, callers get the error it wraps
+    private fun Result<PlaybackData>.unwrapRefusal(): Result<PlaybackData> =
+        (exceptionOrNull() as? UploadRefusedException)?.let { Result.failure(it.failure) } ?: this
 
     private suspend fun resolvePlaybackData(
         videoId: String,
@@ -250,6 +282,8 @@ object YTPlayerUtils {
 
         // why each client couldn't play, in the order tried: what the error says when none can
         val failures = mutableListOf<String>()
+        // false to the end means youtube refused the upload itself, not just how we asked for it
+        var anyClientServed = false
 
         var poToken: PoTokenResult? = null
         val sessionId = if (isLoggedIn) YouTube.dataSyncId else YouTube.visitorData
@@ -411,6 +445,7 @@ object YTPlayerUtils {
             }
 
             if (streamPlayerResponse?.playabilityStatus?.status == "OK") {
+                anyClientServed = true
                 Timber.tag(logTag).d("Player response status OK for client: ${if (clientIndex == -1) MAIN_CLIENT.clientName else STREAM_FALLBACK_CLIENTS[clientIndex].clientName}")
                 PlaybackLogManager.log(PlaybackLogLevel.INFO, "Player response OK", if (clientIndex == -1) MAIN_CLIENT.clientName else STREAM_FALLBACK_CLIENTS[clientIndex].clientName)
 
@@ -572,10 +607,16 @@ object YTPlayerUtils {
             }
             val summary = failureSummary(failures)
             val last = streamPlayerResponse
-            if (last != null && last.playabilityStatus.status != "OK") {
-                throw PlaybackException(summary, null, PlaybackException.ERROR_CODE_REMOTE_ERROR)
+            val failure = if (last != null && last.playabilityStatus.status != "OK") {
+                PlaybackException(summary, null, PlaybackException.ERROR_CODE_REMOTE_ERROR)
+            } else {
+                Exception(summary)
             }
-            throw Exception(summary)
+            // a user's own upload is never swapped for someone else's copy
+            if (!anyClientServed && !isUploadedTrack && !isPrivateTrack) {
+                throw UploadRefusedException(failure, mainPlayerResponse.videoDetails)
+            }
+            throw failure
         }
 
         if (streamPlayerResponse == null) {
@@ -987,6 +1028,15 @@ object YTPlayerUtils {
 
     /** Past the ~786 KB an untokened url serves; probed when the song's length isn't known. */
     private const val UNTOKENED_WINDOW_PROBE_BYTE = 1_048_576L
+
+    // each stand-in costs another walk through every client, so only the closest few are tried
+    private const val MAX_STAND_INS = 2
+
+    // no client got as far as a stream, so another upload of the song is worth a try before failing
+    private class UploadRefusedException(
+        val failure: Exception,
+        val videoDetails: PlayerResponse.VideoDetails?,
+    ) : Exception(failure.message, failure)
 
     /** One line for the notification: the first client's reason, which is the main client's. */
     private fun failureSummary(failures: List<String>): String {

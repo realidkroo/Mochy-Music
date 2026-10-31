@@ -326,6 +326,9 @@ fun StyleCircle(
     }
 }
 
+// how dark the screen goes behind a chevron menu, the flagship's and the styles' alike
+internal const val ChevronMenuDim = 0.72f
+
 /** the Turntable's pill fill */
 private val PillFill = Color.White.copy(alpha = 0.08f)
 /** a toggle that's on, as bright as the flagship's chevron menu shows one */
@@ -411,7 +414,7 @@ class StyleActions(
 /** whether [style] is turned sideways, and the switch for it */
 @Composable
 fun rememberStyleRotation(style: PlayerStyle): Pair<Boolean, (Boolean) -> Unit> {
-    val (rotated, onRotated) = rememberPreference(playerStyleRotatedKey(style), defaultValue = false)
+    val (rotated, onRotated) = rememberPreference(playerStyleRotatedKey(style), defaultValue = style.startsSideways)
     return rotated to onRotated
 }
 
@@ -519,28 +522,28 @@ fun BoxScope.StyleMenu(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .drawBehind { drawRect(Color.Black.copy(alpha = 0.42f * reveal.value.coerceIn(0f, 1f))) }
+                .drawBehind { drawRect(Color.Black.copy(alpha = ChevronMenuDim * reveal.value.coerceIn(0f, 1f))) }
                 .pointerInput(Unit) { detectTapGestures { onOpenChange(false) } },
         )
         val connection = LocalPlayerConnection.current
         val transport = connection?.uiState?.transportState?.collectAsState()?.value
+        // the styles have no shuffle or repeat buttons of their own, so each is a row of the list here, staying open when tapped so the change shows
+        val shuffleAndRepeat = if (connection != null && transport != null) listOf(
+            MenuItem("Shuffle", R.drawable.shuffle, active = transport.shuffleModeEnabled) {
+                connection.player.shuffleModeEnabled = !connection.player.shuffleModeEnabled
+            },
+            MenuItem(
+                label = if (transport.repeatMode == Player.REPEAT_MODE_ONE) "Repeat one" else "Repeat",
+                icon = if (transport.repeatMode == Player.REPEAT_MODE_ONE) R.drawable.repeat_one else R.drawable.repeat,
+                active = transport.repeatMode != Player.REPEAT_MODE_OFF,
+            ) { connection.player.toggleRepeatMode() },
+        ) else emptyList()
         val rows = listOfNotNull(
-            actions.onLyrics?.let { open -> listOf(MenuItem("Lyrics", R.drawable.lyrics) { onOpenChange(false); open() }) },
-            // the styles have no shuffle or repeat buttons of their own. The two share a row so the
-            // menu still fits a turned style, and stay open when tapped so the change shows.
-            if (connection != null && transport != null) listOf(
-                MenuItem("Shuffle", R.drawable.shuffle, active = transport.shuffleModeEnabled) {
-                    connection.player.shuffleModeEnabled = !connection.player.shuffleModeEnabled
-                },
-                MenuItem(
-                    label = if (transport.repeatMode == Player.REPEAT_MODE_ONE) "Repeat one" else "Repeat",
-                    icon = if (transport.repeatMode == Player.REPEAT_MODE_ONE) R.drawable.repeat_one else R.drawable.repeat,
-                    active = transport.repeatMode != Player.REPEAT_MODE_OFF,
-                ) { connection.player.toggleRepeatMode() },
-            ) else null,
-            listOf(MenuItem("Other menu", R.drawable.more_horiz) { onOpenChange(false); actions.onOtherMenu() }),
-            listOf(MenuItem(if (rotated) "Turn upright" else "Rotate", R.drawable.screen_rotation) { onOpenChange(false); onRotate(!rotated) }),
-            listOf(MenuItem("Edit player", R.drawable.tune) { onOpenChange(false); actions.onEditPlayer() }),
+            actions.onLyrics?.let { open -> MenuItem("Lyrics", R.drawable.lyrics) { onOpenChange(false); open() } },
+        ) + shuffleAndRepeat + listOf(
+            MenuItem("Other menu", R.drawable.more_horiz) { onOpenChange(false); actions.onOtherMenu() },
+            MenuItem(if (rotated) "Turn upright" else "Rotate", R.drawable.screen_rotation) { onOpenChange(false); onRotate(!rotated) },
+            MenuItem("Edit player", R.drawable.tune) { onOpenChange(false); actions.onEditPlayer() },
         )
         val itemGap = 10.dp
         Column(
@@ -554,7 +557,7 @@ fun BoxScope.StyleMenu(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(itemGap),
         ) {
-            rows.forEachIndexed { index, row ->
+            rows.forEachIndexed { index, item ->
                 // nearest the button first
                 val order = if (atBottom) rows.size - 1 - index else index
                 Row(
@@ -572,11 +575,8 @@ fun BoxScope.StyleMenu(
                         transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0.5f)
                     },
                 ) {
-                    row.forEachIndexed { k, item ->
-                        if (k > 0) Spacer(Modifier.width(4.dp))
-                        Text(text = item.label, color = if (pill) Color.White else tones.ink, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.05).em, fontFamily = com.mochyy.mochymusic.ui.theme.InterFontFamily)
-                        StyleCircle(icon = item.icon, tones = tones, size = buttonSize + 6.dp, onClick = item.onClick, pill = pill, active = item.active)
-                    }
+                    Text(text = item.label, color = if (pill) Color.White else tones.ink, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.05).em, fontFamily = com.mochyy.mochymusic.ui.theme.InterFontFamily)
+                    StyleCircle(icon = item.icon, tones = tones, size = buttonSize + 6.dp, onClick = item.onClick, pill = pill, active = item.active)
                 }
             }
         }

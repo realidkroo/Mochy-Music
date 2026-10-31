@@ -21,6 +21,7 @@ import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 
 /**
  * lists the app puts together itself (YouTube's feed rows, the charts) play songs, not videos. a
@@ -62,6 +63,32 @@ object SongVersions {
 
     // the album version of a music video known only by its name and artists, for lining the video up with it; null when there isn't one
     suspend fun songVersionId(videoTitle: String, artists: String): String? = gate.withPermit { findSong(videoTitle, artists) }?.id
+
+    // the artist's other uploads of the same song (another release, its music video), closest length first, for when youtube won't serve this one
+    suspend fun otherUploads(videoId: String, title: String, artists: String, lengthSeconds: Int): List<SongItem> {
+        val artist = normalizeCanvasArtistName(artists.removeSuffix(" - Topic"))
+        val name = normalizeCanvasSongTitle(stripArtistPrefix(title, artist))
+        if (name.length < 2 || artist.length < 2) return emptyList()
+
+        val found = coroutineScope {
+            listOf(YouTube.SearchFilter.FILTER_SONG, YouTube.SearchFilter.FILTER_VIDEO).map { filter ->
+                async { YouTube.search("$name $artist", filter).getOrNull()?.items.orEmpty() }
+            }.awaitAll().flatten()
+        }
+        val wantsOtherTake = OtherTake.containsMatchIn(title)
+        return found.asSequence()
+            .filterIsInstance<SongItem>()
+            .filter { it.id != videoId }
+            // a longer intro or outro would leave the lyrics out of step
+            .filter { song -> song.duration?.let { abs(it - lengthSeconds) <= STAND_IN_LENGTH_SLACK_SECONDS } == true }
+            .filter { sameTitle(normalizeCanvasSongTitle(stripArtistPrefix(it.title, artist)), name) }
+            // an upload from anyone but the artist is a lyric video, a cover or a karaoke track
+            .filter { song -> song.artists.any { sameArtist(normalizeCanvasArtistName(it.name), artist) } }
+            .filter { wantsOtherTake || !OtherTake.containsMatchIn("${it.title} ${it.album?.name.orEmpty()}") }
+            .sortedBy { abs((it.duration ?: 0) - lengthSeconds) }
+            .distinctBy { it.id }
+            .toList()
+    }
 
     private suspend fun findSong(video: SongItem): SongItem? = findSong(video.title, video.artists.joinToString { it.name })
 
@@ -121,4 +148,12 @@ object SongVersions {
 
     private fun sameArtist(a: String, b: String) =
         a.isNotEmpty() && b.isNotEmpty() && (a.contains(b, ignoreCase = true) || b.contains(a, ignoreCase = true))
+
+    // words that mean a different recording of the song, in its title or its album's name
+    private val OtherTake = Regex(
+        "\\b(?:live|acoustic|karaoke|instrumental|cover|remix|sped ?up|slowed|reverb|nightcore|piano|demo|8d)\\b",
+        RegexOption.IGNORE_CASE,
+    )
+
+    private const val STAND_IN_LENGTH_SLACK_SECONDS = 10
 }

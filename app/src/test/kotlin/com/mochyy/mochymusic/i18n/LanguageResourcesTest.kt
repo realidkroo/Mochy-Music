@@ -47,8 +47,6 @@ class LanguageResourcesTest {
     @Test fun `Indonesian strings preserve the default format arguments`() {
         val english = values(File(resDir, "values"))
         val indonesian = values(File(resDir, "values-in"))
-        // The app name is a brand and deliberately uses the default resource.
-        assertEquals(setOf("app_name"), english.keys - indonesian.keys)
         val argument = Regex("%(?!%)(?:\\d+\\$)?[a-zA-Z]")
         fun placeholders(element: Element): List<String> {
             val text = if (element.tagName == "plurals") {

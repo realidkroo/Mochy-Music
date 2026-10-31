@@ -52,25 +52,31 @@ internal fun PreviewFrame(
     modifier: Modifier = Modifier,
     width: Dp = PreviewWidth,
     top: Dp = 23.dp,
+    // the whole screen, lifted off the card's foot, for a preview whose point sits at its bottom edge
+    floating: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
         modifier = modifier
-            .padding(top = top, end = 18.dp)
+            .padding(top = top, end = 18.dp, bottom = if (floating) 18.dp else 0.dp)
             .width(width)
             .fillMaxHeight()
-            .clip(FrameShape)
+            .clip(if (floating) FloatingFrameShape else FrameShape)
             .background(FrameFill)
-            .drawWithCache {
-                val top = size.height * 0.72f
-                val foot = Brush.verticalGradient(0f to Color.Transparent, 1f to LabColors.Card, startY = top, endY = size.height)
-                onDrawWithContent {
-                    drawContent()
-                    drawRect(foot, topLeft = Offset(0f, top))
-                }
-            },
+            .then(if (floating) Modifier else SinkingFoot),
         content = content,
     )
+}
+
+private val FloatingFrameShape = RoundedCornerShape(15.dp)
+
+private val SinkingFoot = Modifier.drawWithCache {
+    val top = size.height * 0.72f
+    val foot = Brush.verticalGradient(0f to Color.Transparent, 1f to LabColors.Card, startY = top, endY = size.height)
+    onDrawWithContent {
+        drawContent()
+        drawRect(foot, topLeft = Offset(0f, top))
+    }
 }
 
 @Composable
@@ -127,6 +133,25 @@ internal fun PlayerStylePreview(style: PlayerStyle) {
                 Bar(40.dp, 26.dp, Bone)
                 Bar(5.dp, 5.dp, Bone)
                 Bar(40.dp, 26.dp, Bone)
+            }
+        }
+        // the cover on one side, a stacked clock on black on the other
+        PlayerStyle.BEDSIDE_TILES -> Column(Modifier.fillMaxSize().background(Color.Black)) {
+            Box(Modifier.fillMaxWidth().weight(1f).background(ArtFill)) {
+                Column(Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = 10.dp)) {
+                    Bar(64.dp, 7.dp)
+                    Spacer(Modifier.height(6.dp))
+                    Bar(PreviewWidth - 36.dp, 2.5.dp, Bone)
+                }
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterVertically),
+                modifier = Modifier.fillMaxWidth().weight(1f),
+            ) {
+                Bar(24.dp, 4.dp, BoneDim)
+                Bar(40.dp, 22.dp, Bone)
+                Bar(40.dp, 22.dp, Bone)
             }
         }
         PlayerStyle.LYRICS -> Column(

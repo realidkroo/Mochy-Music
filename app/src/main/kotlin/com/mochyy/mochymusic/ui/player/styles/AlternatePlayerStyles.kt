@@ -78,6 +78,7 @@ fun AlternatePlayerStyle(
         PlayerStyle.IPOD -> com.mochyy.mochymusic.ui.player.ipod.IpodPlayerStyle(modifier, preview)
         PlayerStyle.VIDEO -> com.mochyy.mochymusic.ui.player.video.VideoPlayerStyle(actions, modifier, preview)
         PlayerStyle.BEDSIDE -> com.mochyy.mochymusic.ui.player.bedside.BedsidePlayerStyle(actions, modifier, preview)
+        PlayerStyle.BEDSIDE_TILES -> com.mochyy.mochymusic.ui.player.bedside.BedsideTilesStyle(actions, modifier, preview)
         PlayerStyle.FLAGSHIP, PlayerStyle.CLASSIC, PlayerStyle.TURNTABLE -> Unit
     }
 }
@@ -152,6 +153,8 @@ private fun StyleFrame(
     val connection = LocalPlayerConnection.current
     val (rotated, setRotated) = rememberStyleRotation(style)
     var menuOpen by remember { mutableStateOf(false) }
+    // turned sideways, its lists still fling the way the finger went
+    TurnedFlingFix(active = rotated && !preview)
     RotatingFrame(
         rotated = rotated,
         tones = tones,

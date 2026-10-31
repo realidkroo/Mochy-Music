@@ -38,10 +38,16 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -354,3 +360,52 @@ internal fun StatusBarPreview(shown: Boolean) {
         TitleBars(Modifier.padding(start = 10.dp))
     }
 }
+
+// a tiny open player with the phone's recents, home and back buttons along its foot, sinking away when the bottom bar is off
+@Composable
+internal fun NavBarPreview(shown: Boolean) {
+    val visible by animateFloatAsState(if (shown) 1f else 0f, tween(260), label = "navBarPreview")
+    Spacer(
+        Modifier
+            .fillMaxSize()
+            .drawWithCache {
+                val stripHeight = 21.dp.toPx()
+                val lip = 2.dp.toPx()
+                val strip = Brush.verticalGradient(listOf(Color(0xFF707072), Color(0xFF505052)), startY = 0f, endY = stripHeight)
+                val centerY = stripHeight / 2f
+                val spacing = 38.dp.toPx()
+                val recentsX = size.width / 2f - spacing
+                val backX = size.width / 2f + spacing
+                val lineHalf = 5.5.dp.toPx()
+                val lineGap = 1.9.dp.toPx()
+                val lineWidth = 1.dp.toPx()
+                val back = Path().apply {
+                    moveTo(backX - 4.5.dp.toPx(), centerY)
+                    lineTo(backX + 4.5.dp.toPx(), centerY - 5.dp.toPx())
+                    lineTo(backX + 4.5.dp.toPx(), centerY + 5.dp.toPx())
+                    close()
+                }
+                val roundedTip = Stroke(width = 1.5.dp.toPx(), join = StrokeJoin.Round)
+                onDrawBehind {
+                    drawRect(NavPreviewScreen)
+                    // read here, so the slide only redraws
+                    val shownBy = visible
+                    if (shownBy == 0f) return@onDrawBehind
+                    translate(top = size.height - stripHeight - lip + (1f - shownBy) * 8.dp.toPx()) {
+                        drawRect(strip, size = Size(size.width, stripHeight), alpha = shownBy)
+                        drawRect(NavPreviewLip, topLeft = Offset(0f, stripHeight), size = Size(size.width, lip), alpha = shownBy)
+                        drawLine(Color.White, Offset(recentsX - lineHalf, centerY - lineGap), Offset(recentsX + lineHalf, centerY - lineGap), strokeWidth = lineWidth, alpha = shownBy)
+                        drawLine(Color.White, Offset(recentsX - lineHalf, centerY + lineGap), Offset(recentsX + lineHalf, centerY + lineGap), strokeWidth = lineWidth, alpha = shownBy)
+                        drawCircle(NavPreviewIcon, radius = 5.dp.toPx(), center = Offset(size.width / 2f, centerY), alpha = shownBy)
+                        drawPath(back, NavPreviewIcon, alpha = shownBy)
+                        drawPath(back, NavPreviewIcon, alpha = shownBy, style = roundedTip)
+                    }
+                }
+            },
+    )
+}
+
+// the player's screen in the bottom bar preview, shaded under where the phone's top edge would be
+private val NavPreviewScreen = Brush.verticalGradient(0f to FrameFill, 0.13f to Color(0xFF545456))
+private val NavPreviewLip = Color(0xFF414143)
+private val NavPreviewIcon = Color(0xFFD9D9D9)
