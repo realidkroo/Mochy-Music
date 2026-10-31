@@ -1,6 +1,5 @@
 package com.mochyy.mochymusic.ui.screens.settings
 
-import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -13,12 +12,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.HighQuality
-import androidx.compose.material.icons.rounded.Usb
-import androidx.compose.material.icons.rounded.Waves
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,14 +31,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.CanvasThumbnailAnimationKey
 import com.mochyy.mochymusic.constants.CanvasWifiOnlyKey
 import com.mochyy.mochymusic.constants.DisableVideoAutoplayKey
 import com.mochyy.mochymusic.constants.DontSkipOnFailureKey
-import com.mochyy.mochymusic.constants.HiFiResamplerKey
-import com.mochyy.mochymusic.constants.HiResOutputKey
 import com.mochyy.mochymusic.constants.HideSettingsDescriptionsKey
 import com.mochyy.mochymusic.constants.HideUpdateNoticeKey
 import com.mochyy.mochymusic.constants.LocalSongAutoMetadataKey
@@ -53,7 +46,6 @@ import com.mochyy.mochymusic.constants.MixWithOtherAppsKey
 import com.mochyy.mochymusic.constants.OfflineModeKey
 import com.mochyy.mochymusic.constants.PersistentQueueKey
 import com.mochyy.mochymusic.constants.PlayVideoBackgroundKey
-import com.mochyy.mochymusic.constants.PreferUsbDacKey
 import com.mochyy.mochymusic.constants.SYSTEM_DEFAULT
 import com.mochyy.mochymusic.constants.ShowFormatBadgeKey
 import com.mochyy.mochymusic.constants.ShowFormatSampleRateKey
@@ -61,7 +53,6 @@ import com.mochyy.mochymusic.constants.SkipSilenceKey
 import com.mochyy.mochymusic.constants.StopPlaybackOnTaskRemovedKey
 import com.mochyy.mochymusic.constants.StreamFailureTimeoutKey
 import com.mochyy.mochymusic.constants.SyncLyricsToVideoKey
-import com.mochyy.mochymusic.constants.UsbPassthroughKey
 import com.mochyy.mochymusic.constants.VideoQuality
 import com.mochyy.mochymusic.constants.VideoQualityKey
 import com.mochyy.mochymusic.constants.YouTubeCaptionTranslationKey
@@ -70,7 +61,6 @@ import com.mochyy.mochymusic.constants.YtVideoBackgroundLyricsSyncKey
 import com.mochyy.mochymusic.core.updater.saveUpdateNotificationsSetting
 import com.mochyy.mochymusic.i18n.AppLanguage
 import com.mochyy.mochymusic.i18n.activityOrNull
-import com.mochyy.mochymusic.playback.audio.AudioOutputs
 import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.component.DefaultPlayerSeekBarSlider
 import com.mochyy.mochymusic.ui.component.SettingsGroup
@@ -83,7 +73,6 @@ import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.utils.rememberEnumPreference
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 // settings > app behaviour: how the app and the player act, what used to be general, playback and most of appearance
@@ -100,7 +89,6 @@ fun AppBehaviourSettingsScreen(navController: NavController) {
         Section(stringResource(R.string.settings_local_section), localItems().matching(query))
         Section(stringResource(R.string.settings_player_behaviour), playerBehaviourItems().matching(query))
         Section(stringResource(R.string.settings_on_the_player), playerLookItems().matching(query))
-        Section(stringResource(R.string.playback_output), outputItems().matching(query))
         Section(stringResource(R.string.settings_other), otherItems().matching(query))
         Section(stringResource(R.string.settings_related), relatedItems(navController).matching(query))
         Spacer(Modifier.height(140.dp))
@@ -440,56 +428,6 @@ private fun videoQualityItem(): SettingsItem {
 }
 
 @Composable
-private fun outputItems(): List<SettingsItem> {
-    val (preferUsbDac, onPreferUsbDacChange) = rememberPreference(PreferUsbDacKey, defaultValue = false)
-    val (usbPassthrough, onUsbPassthroughChange) = rememberPreference(UsbPassthroughKey, defaultValue = false)
-    val (hiResOutput, onHiResOutputChange) = rememberPreference(HiResOutputKey, defaultValue = false)
-    val (hiFiResampler, onHiFiResamplerChange) = rememberPreference(HiFiResamplerKey, defaultValue = false)
-    val outputs = LocalPlayerConnection.current?.service?.audioOutputs
-    val devices by remember(outputs) { outputs?.devices ?: MutableStateFlow(emptyList()) }.collectAsState()
-    val dacName = devices.firstOrNull { it.kind == AudioOutputs.Kind.USB }?.name?.ifBlank { "USB DAC" }
-    return listOfNotNull(
-        switchItem(
-            key = "Prefer USB DAC",
-            title = stringResource(R.string.playback_usb_prefer),
-            description = dacName?.let { stringResource(R.string.playback_usb_connected, it) } ?: stringResource(R.string.playback_usb_prefer_desc),
-            detail = stringResource(R.string.playback_usb_prefer_detail),
-            icon = rememberVectorPainter(Icons.Rounded.Usb),
-            checked = preferUsbDac,
-            onCheckedChange = onPreferUsbDacChange,
-        ),
-        // the dac's own mixer settings only exist on android 14 and up, so older phones don't see the row at all
-        switchItem(
-            key = "USB DAC passthrough",
-            title = stringResource(R.string.playback_usb_passthrough),
-            description = stringResource(R.string.playback_usb_passthrough_desc),
-            detail = stringResource(R.string.playback_usb_passthrough_detail),
-            icon = rememberVectorPainter(Icons.Rounded.GraphicEq),
-            checked = usbPassthrough,
-            onCheckedChange = onUsbPassthroughChange,
-        ).takeIf { Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE },
-        switchItem(
-            key = "Hi-res output",
-            title = stringResource(R.string.playback_hires),
-            description = stringResource(R.string.playback_hires_desc),
-            detail = stringResource(R.string.playback_hires_detail),
-            icon = rememberVectorPainter(Icons.Rounded.HighQuality),
-            checked = hiResOutput,
-            onCheckedChange = onHiResOutputChange,
-        ),
-        switchItem(
-            key = "Hi-fi resampler",
-            title = stringResource(R.string.playback_hifi),
-            description = stringResource(R.string.playback_hifi_desc),
-            detail = stringResource(R.string.playback_hifi_detail),
-            icon = rememberVectorPainter(Icons.Rounded.Waves),
-            checked = hiFiResampler,
-            onCheckedChange = onHiFiResamplerChange,
-        ),
-    )
-}
-
-@Composable
 private fun otherItems(): List<SettingsItem> {
     val (hideDescriptions, onHideDescriptions) = rememberPreference(HideSettingsDescriptionsKey, defaultValue = false)
     return listOf(
@@ -507,6 +445,23 @@ private fun otherItems(): List<SettingsItem> {
 // settings that live on another page but people look for here
 @Composable
 private fun relatedItems(navController: NavController): List<SettingsItem> = listOf(
+    SettingsItem(
+        title = { Text(stringResource(R.string.audiopass_hub_title)) },
+        highlightKey = "Audio Pass output usb dac",
+        descriptionText = stringResource(R.string.settings_audio_pass_desc),
+        searchText = stringResource(R.string.audiopass_hub_title),
+        icon = rememberVectorPainter(Icons.Rounded.GraphicEq),
+        iconShape = CircleShape,
+        onClick = { navController.navigate("audio_pass") },
+        trailingContent = {
+            Icon(
+                painter = painterResource(R.drawable.navigate_next),
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.5f),
+                modifier = Modifier.size(20.dp),
+            )
+        },
+    ),
     SettingsItem(
         title = { Text(stringResource(R.string.settings_hide_top_bar)) },
         highlightKey = "Hide Top Bar status bar player",

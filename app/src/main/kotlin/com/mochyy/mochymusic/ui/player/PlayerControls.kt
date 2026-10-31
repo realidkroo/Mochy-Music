@@ -2,6 +2,10 @@
 
 package com.mochyy.mochymusic.ui.player
 
+import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,6 +14,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -20,13 +25,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
         import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -103,7 +111,11 @@ internal class HoldSpeed(private val player: androidx.media3.exoplayer.ExoPlayer
 }
 
 @Composable
-fun PlayerTransportRow(modifier: Modifier = Modifier) {
+fun PlayerTransportRow(
+    modifier: Modifier = Modifier,
+    // the flagship's animated buttons, for the turntable when this row shows over its pages; the classic keeps its own
+    flagshipGlyph: Boolean = false,
+) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val transportState by playerConnection.uiState.transportState.collectAsState()
 
@@ -174,7 +186,7 @@ fun PlayerTransportRow(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth()
         ) {
             AnimatedPressScaleSkipButton(
-                backwards = true,
+                icon = R.drawable.avd_skip_previous,
                 onClick = playerConnection::seekToPrevious,
                 enabled = transportState.canSkipPrevious,
                 tint = Color.White,
@@ -183,6 +195,7 @@ fun PlayerTransportRow(modifier: Modifier = Modifier) {
                 onHoldEnd = hold.onHoldEnd,
                 holdLabel = "0.5\u00D7",
                 holdPulseMs = 900L,
+                flagshipGlyph = flagshipGlyph,
                 modifier = Modifier.size(buttonSize)
             )
 
@@ -199,11 +212,12 @@ fun PlayerTransportRow(modifier: Modifier = Modifier) {
                 },
                 tint = Color.White,
                 iconSize = iconSize,
+                flagshipGlyph = flagshipGlyph,
                 modifier = Modifier.size(buttonSize)
             )
 
             AnimatedPressScaleSkipButton(
-                backwards = false,
+                icon = R.drawable.avd_skip_next,
                 onClick = playerConnection::seekToNext,
                 enabled = transportState.canSkipNext,
                 tint = Color.White,
@@ -212,15 +226,17 @@ fun PlayerTransportRow(modifier: Modifier = Modifier) {
                 onHoldEnd = hold.onHoldEnd,
                 holdLabel = "2\u00D7",
                 holdPulseMs = 420L,
+                flagshipGlyph = flagshipGlyph,
                 modifier = Modifier.size(buttonSize)
             )
         }
     }
 }
 
+@OptIn(ExperimentalAnimationGraphicsApi::class)
 @Composable
 internal fun AnimatedPressScaleSkipButton(
-    backwards: Boolean,
+    icon: Int,
     tint: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -234,10 +250,12 @@ internal fun AnimatedPressScaleSkipButton(
     holdLabel: String? = null,
     /** How often the arrow replays while held - quicker for faster. */
     holdPulseMs: Long = 600L,
+    // the flagship's running triangles in place of the arrow; the turntable wears them, the classic keeps its own
+    flagshipGlyph: Boolean = false,
 ) {
-    val scope = rememberCoroutineScope()
-    // the flagship's running triangles, a step on with every press
+    var trigger by remember { mutableIntStateOf(0) }
     val cycle = remember { SkipCycleState() }
+    val scope = rememberCoroutineScope()
     var holding by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -249,7 +267,8 @@ internal fun AnimatedPressScaleSkipButton(
     // The arrow keeps playing while held, so the button itself shows it's fast-forwarding.
     LaunchedEffect(holding) {
         while (holding) {
-            launch { cycle.step() }
+            trigger++
+            if (flagshipGlyph) launch { cycle.step() }
             kotlinx.coroutines.delay(holdPulseMs)
         }
     }
@@ -278,7 +297,8 @@ internal fun AnimatedPressScaleSkipButton(
             .tapOrHold(
                 enabled = enabled,
                 onTap = {
-                    scope.launch { cycle.step() }
+                    trigger++
+                    if (flagshipGlyph) scope.launch { cycle.step() }
                     onClick()
                 },
                 onHoldStart = onHoldStart?.let { start ->
@@ -314,11 +334,33 @@ internal fun AnimatedPressScaleSkipButton(
                     .padding(horizontal = 9.dp, vertical = 2.dp),
             )
         }
-        // as wide across as the old arrows were
-        AnimatedSkipGlyph(cycle = cycle, backwards = backwards, color = tint, width = iconSize * SkipPairWidth)
+        if (flagshipGlyph) {
+            // as wide across as the arrow's triangles were
+            AnimatedSkipGlyph(cycle = cycle, backwards = icon == R.drawable.avd_skip_previous, color = tint, width = iconSize * SkipPairWidth)
+            return@Box
+        }
+        val avd = AnimatedImageVector.animatedVectorResource(icon)
+        key(trigger) {
+            var atEnd by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                if (trigger > 0) atEnd = true
+            }
+            val painter = rememberAnimatedVectorPainter(avd, atEnd)
+            Image(
+                painter = painter,
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(tint),
+
+                modifier = Modifier
+
+                    .requiredWidth(iconSize * SkipIconWidthFactor)
+                    .aspectRatio(SkipIconAspect)
+            )
+        }
     }
 }
 
+@OptIn(ExperimentalAnimationGraphicsApi::class)
 @Composable
 internal fun AnimatedPressScalePlayPauseButton(
     isPlaying: Boolean,
@@ -329,6 +371,8 @@ internal fun AnimatedPressScalePlayPauseButton(
     iconSize: Dp = 28.dp,
     containerColor: Color = Color.Transparent,
     enabled: Boolean = true,
+    // the flagship's squash and bounce in place of the morphing icon; the turntable wears it, the classic keeps its own
+    flagshipGlyph: Boolean = false,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -362,13 +406,25 @@ internal fun AnimatedPressScalePlayPauseButton(
                 colorFilter = ColorFilter.tint(tint),
                 modifier = Modifier.size(iconSize)
             )
-        } else {
-            // the flagship's squash and bounce, its triangle as tall as the old one
+        } else if (flagshipGlyph) {
             AnimatedPlayGlyph(playing = isPlaying, color = tint, height = iconSize * PlayTriangleHeight)
+        } else {
+            val avd = AnimatedImageVector.animatedVectorResource(R.drawable.avd_play_to_pause)
+            val painter = rememberAnimatedVectorPainter(avd, atEnd = isPlaying)
+            Image(
+                painter = painter,
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(tint),
+                modifier = Modifier.size(iconSize)
+            )
         }
     }
 }
 
-// how much of the old icon's box its triangles took: the pair was about its width across, the play triangle half its height
+private const val SkipIconAspect = 100f / 64f
+
+private const val SkipIconWidthFactor = 2f
+
+// the flagship glyphs sized to the old icons: the arrow's triangles span about its width, the play triangle half its height
 private const val SkipPairWidth = 0.96f
 private const val PlayTriangleHeight = 0.5f

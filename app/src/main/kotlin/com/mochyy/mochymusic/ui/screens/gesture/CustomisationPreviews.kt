@@ -116,6 +116,19 @@ internal fun PlayerStylePreview(style: PlayerStyle) {
             }
             Box(Modifier.align(Alignment.BottomEnd).padding(end = 14.dp, bottom = 8.dp)) { Bar(40.dp, 3.dp, BoneDim) }
         }
+        // a big quiet time on black, the date small over it
+        PlayerStyle.BEDSIDE -> Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+            modifier = Modifier.fillMaxSize().background(Color.Black),
+        ) {
+            Bar(46.dp, 5.dp, BoneDim)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Bar(40.dp, 26.dp, Bone)
+                Bar(5.dp, 5.dp, Bone)
+                Bar(40.dp, 26.dp, Bone)
+            }
+        }
         PlayerStyle.LYRICS -> Column(
             verticalArrangement = Arrangement.spacedBy(7.dp),
             modifier = Modifier.fillMaxSize().padding(start = 12.dp, top = 18.dp),

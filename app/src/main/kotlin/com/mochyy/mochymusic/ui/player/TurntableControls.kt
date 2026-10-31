@@ -150,7 +150,8 @@ fun TurntablePills(modifier: Modifier = Modifier, likeBurst: LikeBurstState? = n
         }
         Pill {
             AnimatedPressScaleSkipButton(
-                backwards = true,
+                icon = R.drawable.avd_skip_previous,
+                flagshipGlyph = true,
                 onClick = connection::seekToPrevious,
                 enabled = transport.canSkipPrevious,
                 tint = Color.White,
@@ -164,6 +165,7 @@ fun TurntablePills(modifier: Modifier = Modifier, likeBurst: LikeBurstState? = n
         }
         Pill {
             AnimatedPressScalePlayPauseButton(
+                flagshipGlyph = true,
                 isPlaying = transport.isPlaying,
                 playbackState = transport.playbackState,
                 onClick = {
@@ -181,7 +183,8 @@ fun TurntablePills(modifier: Modifier = Modifier, likeBurst: LikeBurstState? = n
         }
         Pill {
             AnimatedPressScaleSkipButton(
-                backwards = false,
+                icon = R.drawable.avd_skip_next,
+                flagshipGlyph = true,
                 onClick = connection::seekToNext,
                 enabled = transport.canSkipNext,
                 tint = Color.White,

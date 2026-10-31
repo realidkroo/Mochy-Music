@@ -1351,7 +1351,9 @@ class MainActivity : ComponentActivity() {
             com.mochyy.mochymusic.constants.PlayerStyleKey,
             com.mochyy.mochymusic.constants.PlayerStyle.FLAGSHIP,
         )
-        val hideStatusBar = !statusBarShown || playerStyle == com.mochyy.mochymusic.constants.PlayerStyle.VIDEO
+        // and the bedside is a clock on the nightstand, a row of notifications over it would only glow in the dark
+        val hideStatusBar = !statusBarShown || playerStyle == com.mochyy.mochymusic.constants.PlayerStyle.VIDEO ||
+            playerStyle == com.mochyy.mochymusic.constants.PlayerStyle.BEDSIDE
         // Back in the app (from Home, the recents, a dialog) it's hidden again: with
         // gesture navigation a swipe from the bottom brings it back for good (see
         // playerNavBarBehavior).

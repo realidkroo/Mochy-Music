@@ -66,6 +66,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.joinAll
 import androidx.navigation.NavController
@@ -935,9 +936,9 @@ private fun PlayerSheet(
                             }
                         }
                         // the full video mode is turned sideways and has its own pull to close, so a sideways swipe on it
-                        // (a vertical one to this) mustn't close the player
+                        // (a vertical one to this) mustn't close the player; the bedside's swipes are its pages, and it closes itself
                         .pointerInput(styleOpen, playerStyle) {
-                            if (!styleOpen || playerStyle == PlayerStyle.VIDEO) return@pointerInput
+                            if (!styleOpen || playerStyle == PlayerStyle.VIDEO || playerStyle == PlayerStyle.BEDSIDE) return@pointerInput
                             val closePx = 8.dp.toPx()
                             var pulled = 0f
                             var closing = false
@@ -988,8 +989,8 @@ private fun PlayerSheet(
                     onCoveredChange = { styleCovered = it },
                     onSwitchSource = { showLyricsSource = true },
                 )
-                // the ipod has its own chevron on its body and the full video mode its own close, a bar over them would just be in the way
-                if (playerStyle != PlayerStyle.IPOD && playerStyle != PlayerStyle.VIDEO) PlayerHandle(
+                // the ipod, the full video mode and the bedside each have their own close, a bar over them would just be in the way
+                if (playerStyle != PlayerStyle.IPOD && playerStyle != PlayerStyle.VIDEO && playerStyle != PlayerStyle.BEDSIDE) PlayerHandle(
                     state = handleState,
                     sheet = state,
                     statusBarTop = statusBarTopInset,
@@ -1487,7 +1488,7 @@ private fun PlayerSheet(
                 if (isFlagship) {
                     FlagshipTransportRow(layout = transportLayout, modifier = transportModifier)
                 } else {
-                    PlayerTransportRow(modifier = transportModifier)
+                    PlayerTransportRow(modifier = transportModifier, flagshipGlyph = isTurntable)
                 }
             }
 
@@ -1655,6 +1656,13 @@ private fun PlayerSheet(
                     studio.settleOn(focused, restyled) {
                         studio.openSheet(com.mochyy.mochymusic.ui.player.studio.StudioSheet.IPOD)
                     }
+                } else if (playerStyles.getOrNull(focused) == PlayerStyle.BEDSIDE) {
+                    // the clock faces, the night look and the screen options, in a sheet over the clock itself
+                    val restyled = playerStyle != PlayerStyle.BEDSIDE
+                    if (restyled) onPlayerStyleChange(PlayerStyle.BEDSIDE)
+                    studio.settleOn(focused, restyled) {
+                        studio.openSheet(com.mochyy.mochymusic.ui.player.studio.StudioSheet.BEDSIDE)
+                    }
                 } else if (playerStyles.getOrNull(focused) == PlayerStyle.TURNTABLE) {
                     // its one edit is the disc label: back to the player, with the label's sheet
                     val restyled = playerStyle != PlayerStyle.TURNTABLE
@@ -1671,8 +1679,8 @@ private fun PlayerSheet(
                 }
             },
         )
-        // the Poster's sheet, over the poster itself
-        if (playerStyle == PlayerStyle.POSTER || playerStyle == PlayerStyle.IPOD) {
+        // the Poster's, the iPod's and the bedside's sheets, each over its own style
+        if (playerStyle == PlayerStyle.POSTER || playerStyle == PlayerStyle.IPOD || playerStyle == PlayerStyle.BEDSIDE) {
             com.mochyy.mochymusic.ui.player.studio.StyleSheets(studio)
         }
         if (playerStyle.flagshipFamily) {
@@ -1961,8 +1969,11 @@ private fun ExpandMenuOverlay(
                                 text = item.first,
                                 color = Color.White,
                                 fontSize = 14.sp,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                // its own style drops the app's font, so inter bold and the app's tight spacing are set here
                                 style = androidx.compose.ui.text.TextStyle(
+                                    fontFamily = com.mochyy.mochymusic.ui.theme.InterFontFamily,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                    letterSpacing = (-0.05).em,
                                     shadow = androidx.compose.ui.graphics.Shadow(
                                         color = Color.Black.copy(alpha = 0.75f),
                                         offset = androidx.compose.ui.geometry.Offset(0f, 2f),

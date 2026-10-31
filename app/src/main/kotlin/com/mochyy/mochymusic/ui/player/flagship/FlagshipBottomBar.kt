@@ -55,18 +55,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
@@ -120,7 +114,6 @@ internal val PillFill = Color.White.copy(alpha = 0.1f)
 private val TrackThin = 6.5.dp
 private val TrackThick = 12.dp
 private val StretchMax = 26.dp
-private val SpeakerSize = 15.dp
 private val SpeakerGap = 10.dp
 
 // no bounce, about a third of a second, quick enough that a held volume key never lags behind
@@ -199,16 +192,13 @@ private fun AppleVolume(listening: Boolean) {
     val line = remember(volume) { Animatable(volume.shown) }
     LaunchedEffect(volume) {
         snapshotFlow { volume.shown }.collect { target ->
+            // under the finger the line is drawn straight from the drag, so nothing needs launching on every move
+            if (volume.isDragging) return@collect
             // a fresh launch per change keeps the speed it had, so holding a key glides in one go
-            if (volume.isDragging) launch { line.snapTo(target) }
-            else launch { line.animateTo(target, VolumeGlide) }
+            launch { line.animateTo(target, VolumeGlide) }
         }
     }
-    val quiet = rememberVectorPainter(
-        if (volume.shown <= 0f) ImageVector.vectorResource(R.drawable.volume_off)
-        else ImageVector.vectorResource(R.drawable.volume_down)
-    )
-    val loud = rememberVectorPainter(ImageVector.vectorResource(R.drawable.volume_up))
+    val speakers = rememberSpeakerMotion(volume)
     val description = stringResource(R.string.flagship_volume)
 
     Spacer(
@@ -227,7 +217,7 @@ private fun AppleVolume(listening: Boolean) {
                     } ?: return@awaitEachGesture
                     settle[0]?.cancel()
                     scope.launch { held.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 500f)) }
-                    val track = (size.width - (SpeakerSize + SpeakerGap).toPx() * 2f).coerceAtLeast(1f)
+                    val track = (size.width - speakersWidth(SpeakerHeight.toPx()) - SpeakerGap.toPx() * 2f).coerceAtLeast(1f)
                     // grab the line where it's drawn, even if it's still gliding after a key press
                     val start = line.value
                     fun follow() {
@@ -246,6 +236,9 @@ private fun AppleVolume(listening: Boolean) {
                         change.consume()
                         follow()
                     }
+                    // the line glides on from where the finger left it, onto the step the phone took
+                    val lifted = volume.shown
+                    scope.launch { line.snapTo(lifted) }
                     volume.release()
                     // a bouncy spring back, the way the iphone's slider snaps home
                     val from = stretch.floatValue
@@ -267,42 +260,48 @@ private fun AppleVolume(listening: Boolean) {
                 }
             }
             .drawWithCache {
-                val iconPx = SpeakerSize.toPx()
+                val iconPx = SpeakerHeight.toPx()
+                val quietPx = QuietSpeakerWidth * iconPx
+                val loudPx = LoudSpeakerWidth * iconPx
                 val gapPx = SpeakerGap.toPx()
                 val reach = StretchMax.toPx()
-                val tint = ColorFilter.tint(Color.White)
+                val body = speakerBody(iconPx)
+                val stroke = waveStroke(iconPx)
                 onDrawBehind {
                     val h = held.value.coerceIn(0f, 1.2f)
                     val s = stretch.floatValue
                     val pull = (abs(s) / reach).coerceIn(0f, 1f)
                     val cy = size.height / 2f
-                    val left = iconPx + gapPx + minOf(s, 0f)
-                    val right = size.width - iconPx - gapPx + maxOf(s, 0f)
+                    val left = quietPx + gapPx + minOf(s, 0f)
+                    val right = size.width - loudPx - gapPx + maxOf(s, 0f)
                     // a little thinner the further it's stretched, like a band pulled tight
                     val thickness = (TrackThin.toPx() + (TrackThick.toPx() - TrackThin.toPx()) * h) * (1f - 0.18f * pull)
                     val radius = CornerRadius(thickness / 2f)
                     val top = cy - thickness / 2f
                     drawRoundRect(Color.White.copy(alpha = 0.22f + 0.08f * h), Offset(left, top), Size(right - left, thickness), radius)
-                    val filled = (right - left) * line.value.coerceIn(0f, 1f)
+                    val level = if (volume.isDragging) volume.shown else line.value
+                    val filled = (right - left) * level.coerceIn(0f, 1f)
                     if (filled > 0.5f) {
                         drawRoundRect(Color.White, Offset(left, top), Size(filled.coerceAtLeast(thickness), thickness), radius)
                     }
                     val alpha = 0.6f + 0.4f * h.coerceAtMost(1f)
-                    speaker(quiet, x = minOf(s, 0f) * 0.55f, cy, iconPx, grow = 1f + 0.1f * h + 0.12f * if (s < 0f) pull else 0f, alpha, tint)
-                    speaker(loud, x = size.width - iconPx + maxOf(s, 0f) * 0.55f, cy, iconPx, grow = 1f + 0.1f * h + 0.12f * if (s > 0f) pull else 0f, alpha, tint)
+                    drawQuietSpeaker(
+                        body, x = minOf(s, 0f) * 0.55f, cy, iconPx,
+                        grow = 1f + 0.1f * h + 0.12f * if (s < 0f) pull else 0f,
+                        alpha = alpha, mute = speakers.mute.value,
+                    )
+                    drawLoudSpeaker(
+                        body, stroke, x = size.width - loudPx + maxOf(s, 0f) * 0.55f, cy, iconPx,
+                        grow = 1f + 0.1f * h + 0.12f * if (s > 0f) pull else 0f,
+                        alpha = alpha, level = level, echo = speakers.echo.value,
+                    )
                 }
             },
     )
 }
 
-// a speaker icon at x, centred on cy, grown about its own centre
-private fun DrawScope.speaker(painter: Painter, x: Float, cy: Float, sizePx: Float, grow: Float, alpha: Float, tint: ColorFilter) {
-    translate(x, cy - sizePx / 2f) {
-        scale(grow, grow, Offset(sizePx / 2f, sizePx / 2f)) {
-            with(painter) { draw(Size(sizePx, sizePx), alpha = alpha, colorFilter = tint) }
-        }
-    }
-}
+// both speakers side by side, so the line knows how much of the row is its own
+private fun speakersWidth(heightPx: Float): Float = (QuietSpeakerWidth + LoudSpeakerWidth) * heightPx
 
 // where the music is coming out right now, as the phone, the headphones, a bluetooth name or a cast receiver
 @Composable

@@ -35,7 +35,7 @@ import kotlin.math.abs
 enum class StudioStage { PLAYER, SELECTOR, EDIT, COVER, MIDDLE, MENU, BAR }
 
 /** the sheets the editor opens over itself */
-enum class StudioSheet { CONTROLS, SEEKBAR, END_TIME, MENU_SLOT, COVER_OPTIONS, DISC_LABEL, POSTER, IPOD }
+enum class StudioSheet { CONTROLS, SEEKBAR, END_TIME, MENU_SLOT, COVER_OPTIONS, DISC_LABEL, POSTER, IPOD, BEDSIDE }
 
 /** frames the selector's cards get to be built before the player shrinks into them */
 private const val PrepareFrames = 2

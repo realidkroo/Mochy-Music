@@ -244,9 +244,10 @@ fun PlayerProgressSlider(
                 .padding(horizontal = PlayerHorizontalPadding)
                 .onSizeChanged { fill.widthPx = it.width.toFloat() }
                 .then(onSeekBarPlaced?.let { Modifier.onGloballyPositioned(it) } ?: Modifier)
+                // outside the failure overlay's offscreen layer, which cut the stretched ends off at the bar's own edges
+                .seekStretch(stretch, draggedState, stretchSettle, stretchScope)
                 .then(seekBarModifier)
                 .streamFailureOverlay(failureProgress)
-                .seekStretch(stretch, draggedState, stretchSettle, stretchScope)
         )
     }
 

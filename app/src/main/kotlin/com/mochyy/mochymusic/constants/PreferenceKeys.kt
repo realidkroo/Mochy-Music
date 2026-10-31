@@ -634,9 +634,11 @@ enum class PlayerStyle(val displayName: String, val selectorName: String) {
     IPOD("iPod", "iPod"),
     POSTER("Poster", "Poster"),
     TIMELINE("Timeline", "Timeline"),
-    LYRICS("Lyrics", "Lyrics stage");
+    LYRICS("Lyrics", "Lyrics stage"),
+    // a big quiet clock for the nightstand, with the song a swipe away, that can stay up over the lock screen
+    BEDSIDE("Bedside", "Bedside");
 
-    val editable: Boolean get() = this == FLAGSHIP || this == CLASSIC || this == TURNTABLE || this == POSTER || this == IPOD
+    val editable: Boolean get() = this == FLAGSHIP || this == CLASSIC || this == TURNTABLE || this == POSTER || this == IPOD || this == BEDSIDE
 
     /** drawn by the flagship's own player (cover, controls, card), not a design of its own */
     val flagshipFamily: Boolean get() = this == FLAGSHIP || this == CLASSIC || this == TURNTABLE
@@ -660,6 +662,7 @@ enum class PlayerStyle(val displayName: String, val selectorName: String) {
             listOf(TURNTABLE),
             listOf(VIDEO),
             listOf(IPOD),
+            listOf(BEDSIDE),
             listOf(POSTER),
             // the lyrics stage sits under the timeline, the way the classic sits under the flagship
             listOf(TIMELINE, LYRICS),
@@ -687,6 +690,25 @@ val IpodShadowKey = booleanPreferencesKey("ipodShadow")
 
 /** the Poster's bars round its cover, moving with the music; off until turned on in its editor */
 val PosterVisualizerKey = booleanPreferencesKey("posterVisualizer")
+
+// the bedside's clock faces, swiped through sideways on the clock or picked in its sheet
+enum class BedsideClockFace { BIG, STACKED, ANALOG, COVER }
+
+val BedsideClockFaceKey = stringPreferencesKey("bedsideClockFace")
+
+// the colour the bedside settles into once it's left alone: none, a warm orange, or the cover's own hue
+enum class BedsideNightTint { OFF, ORANGE, COVER }
+
+val BedsideNightTintKey = stringPreferencesKey("bedsideNightTint")
+
+// left alone, the bedside dims and drifts a few pixels now and then so an oled screen doesn't burn in overnight
+val BedsideScreenSaverKey = booleanPreferencesKey("bedsideScreenSaver")
+
+// the phone doesn't sleep while the bedside is open, on out of the box
+val BedsideKeepAwakeKey = booleanPreferencesKey("bedsideKeepAwake")
+
+// lock the phone with the bedside open and it's still there over the lock screen when the screen wakes
+val BedsideLockScreenKey = booleanPreferencesKey("bedsideLockScreen")
 
 /** whether [style] is shown turned sideways (its content rotated a quarter turn) */
 fun playerStyleRotatedKey(style: PlayerStyle) = booleanPreferencesKey("playerStyleRotated_${style.name}")

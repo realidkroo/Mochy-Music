@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- the bedside player style: a big clock for the nightstand -->
+    <string name="bedside_close">Tutup pemutar</string>
+    <string name="bedside_unlock_to_close">Buka kunci untuk menutup pemutar</string>
+    <string name="bedside_more">Lainnya</string>
+
+    <!-- the bedside's sheet in the player editor -->
+    <string name="bedside_sheet_title">Jam samping tempat tidur</string>
+    <string name="bedside_clock_caption">Jam</string>
+    <string name="bedside_face_big">Besar</string>
+    <string name="bedside_face_big_caption">Jam memenuhi layar, tanggal di atasnya</string>
+    <string name="bedside_face_stacked">Bertumpuk</string>
+    <string name="bedside_face_stacked_caption">Jam di atas menit, setinggi mungkin</string>
+    <string name="bedside_face_analog">Analog</string>
+    <string name="bedside_face_analog_caption">Dua jarum di muka jam yang tenang</string>
+    <string name="bedside_face_cover">Sampul</string>
+    <string name="bedside_face_cover_caption">Angkanya diisi sampul lagu</string>
+    <string name="bedside_rest_caption">Saat dibiarkan</string>
+    <string name="bedside_tint_off">Tetap putih</string>
+    <string name="bedside_tint_off_caption">Warnanya tidak berubah</string>
+    <string name="bedside_tint_orange">Oranye hangat</string>
+    <string name="bedside_tint_orange_caption">Semuanya jadi oranye lembut, nyaman untuk mata yang mengantuk</string>
+    <string name="bedside_tint_cover">Warna sampul</string>
+    <string name="bedside_tint_cover_caption">Semuanya mengikuti warna sampul lagu</string>
+    <string name="bedside_saver">Penghemat layar</string>
+    <string name="bedside_saver_caption">Meredup dan bergeser sedikit sesekali, agar layar tidak burn-in</string>
+    <string name="bedside_keep_awake">Biarkan layar menyala</string>
+    <string name="bedside_keep_awake_caption">Ponsel tidak akan tidur selama ini terbuka</string>
+    <string name="bedside_lock_screen">Tampilkan di layar kunci</string>
+    <string name="bedside_lock_screen_caption">Kunci ponsel saat ini terbuka, dan jam tetap ada saat layar menyala lagi</string>
+</resources>

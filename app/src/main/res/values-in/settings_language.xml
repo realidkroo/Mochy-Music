@@ -52,19 +52,9 @@
     <string name="playback_skip_silence">Lewati bagian hening</string>
     <string name="playback_skip_silence_desc">Lewati jeda hening dalam lagu</string>
     <string name="playback_usb_prefer">Utamakan DAC USB</string>
-    <string name="playback_usb_connected">%1$s terhubung</string>
-    <string name="playback_usb_prefer_desc">Putar melalui DAC USB saat perangkat terhubung</string>
-    <string name="playback_usb_prefer_detail">Kirim musik ke DAC USB yang terhubung meskipun Bluetooth atau headphone lain tersambung. Saat DAC dicabut, keluaran musik kembali ke perangkat sebelumnya.</string>
     <string name="playback_usb_passthrough">Passthrough DAC USB</string>
-    <string name="playback_usb_passthrough_desc">Setiap lagu menggunakan laju sampelnya sendiri; bit-perfect jika suara tidak diubah</string>
-    <string name="playback_usb_passthrough_detail" formatted="false">Meminta DAC menggunakan laju sampel asli lagu, bukan 48 kHz dari Android, sehingga tidak dilakukan resampling. Jika equalizer dan efek dimatikan serta volume 100%, lagu dikirim secara bit-perfect. Saat fitur ini aktif, tombol volume ponsel dapat mengatur volume DAC.</string>
     <string name="playback_hires">Keluaran hi-res</string>
-    <string name="playback_hires_desc">Pertahankan detail penuh lagu 24-bit sebagai float 32-bit</string>
-    <string name="playback_hires_detail">Kirim lagu hi-res ke speaker sebagai float 32-bit, bukan dipotong menjadi 16-bit. Fitur ini hanya aktif jika equalizer, Audio FX, Crossmix, fade berlapis, haptik, lewati bagian hening, dan perubahan kecepatan dimatikan karena fitur-fitur tersebut bekerja dalam 16-bit. Jika salah satunya diaktifkan, lagu tetap diputar dalam 16-bit dengan semua efek.</string>
     <string name="playback_hifi">Resampler hi-fi</string>
-    <string name="playback_hifi_desc">Filter Mochy mengubah laju sampel lagu agar sesuai dengan speaker</string>
-    <string name="playback_hifi_detail">Sebagian besar lagu menggunakan 44,1 kHz sedangkan ponsel memutar pada 48 kHz, sehingga perlu dikonversi. Saat aktif, Mochy menggunakan filter berkualitas tinggi sendiri (datar hingga 20 kHz, redaman 120 dB, float 32-bit), bukan menyerahkannya ke ponsel. Fitur ini bekerja pada speaker dan jack headphone. Bluetooth dan USB tidak diubah: laju Bluetooth tidak dapat dibaca dengan andal, sedangkan USB memiliki passthrough. Fitur ini sedikit menambah penggunaan baterai.</string>
-    <string name="playback_output">Keluaran</string>
     <string name="settings_app_behaviour">Perilaku aplikasi</string>
     <string name="settings_local_section">Pengaturan lokal</string>
     <string name="settings_player_behaviour">Perilaku pemutar</string>
@@ -75,6 +65,7 @@
     <string name="settings_hide_descriptions_desc">Hanya judul yang tampil, tahan pengaturan untuk membaca fungsinya</string>
     <string name="settings_hide_top_bar">Sembunyikan bilah atas</string>
     <string name="settings_hide_top_bar_desc">Bilah status ponsel di atas pemutar, ada di Kustomisasi</string>
+    <string name="settings_audio_pass_desc">Keluaran, DAC USB, dan pemutaran bit-perfect, ada di Audio Lab</string>
     <string name="settings_rec_blur">Atur pengaturan blur</string>
     <string name="settings_rec_crossfade">Atur pengaturan crossfade</string>
     <string name="settings_rec_equalizer">Atur pengaturan equalizer</string>

@@ -432,8 +432,16 @@ fun Modifier.styleGestures(
         .pointerInput(enabled, interactive) {
             whileStyleInteractive(interactive) { detectTapGestures(onDoubleTap = { onToggle() }) }
         }
-        .then(
-            if (carousel == null) Modifier else Modifier.pointerInput(enabled, interactive, carousel) {
+        .styleSongSwipe(interactive, carousel, player)
+
+// the sideways swipe alone, for a style that wants its own taps
+fun Modifier.styleSongSwipe(
+    interactive: () -> Boolean,
+    carousel: com.mochyy.mochymusic.ui.player.SongCarousel?,
+    player: () -> androidx.media3.common.Player?,
+): Modifier =
+    this.then(
+            if (carousel == null) Modifier else Modifier.pointerInput(interactive, carousel) {
                 val tracker = androidx.compose.ui.input.pointer.util.VelocityTracker()
                 val flingPx = SwipeFling.toPx()
                 var travelled = 0f
@@ -566,7 +574,7 @@ fun BoxScope.StyleMenu(
                 ) {
                     row.forEachIndexed { k, item ->
                         if (k > 0) Spacer(Modifier.width(4.dp))
-                        Text(text = item.label, color = if (pill) Color.White else tones.ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.05).em, fontFamily = com.mochyy.mochymusic.ui.theme.InterFontFamily)
+                        Text(text = item.label, color = if (pill) Color.White else tones.ink, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.05).em, fontFamily = com.mochyy.mochymusic.ui.theme.InterFontFamily)
                         StyleCircle(icon = item.icon, tones = tones, size = buttonSize + 6.dp, onClick = item.onClick, pill = pill, active = item.active)
                     }
                 }

@@ -343,7 +343,7 @@ private fun QualityRow(title: String, description: String?, selected: Boolean, o
                 text = title,
                 color = Color.White,
                 fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Bold,
             )
             if (description != null) {
                 Text(
