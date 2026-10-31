@@ -65,6 +65,8 @@
     <string name="settings_hide_descriptions_desc">Only the titles show, hold a setting to read what it does</string>
     <string name="settings_hide_top_bar">Hide Top Bar</string>
     <string name="settings_hide_top_bar_desc">The phone\'s status bar over the player, in Customize</string>
+    <string name="settings_hide_bottom_bar">Hide Bottom Bar</string>
+    <string name="settings_hide_bottom_bar_desc">The phone\'s navigation bar under the player, in Customize</string>
     <string name="settings_audio_pass_desc">Output, USB DAC and bit-perfect playback, in Audio Lab</string>
     <string name="settings_rec_blur">Configure Blur settings</string>
     <string name="settings_rec_crossfade">Configure Crossfade settings</string>
@@ -97,6 +99,8 @@
     <string name="customise_style_plain">Plain</string>
     <string name="customise_top_bar">Top Bar on player</string>
     <string name="customise_top_bar_desc">The clock and icons over the open player. Off, every player style runs to the top of the screen</string>
+    <string name="customise_bottom_bar">Bottom Bar on player</string>
+    <string name="customise_bottom_bar_desc">The phone\'s navigation buttons under the open player. Off, the player runs to the bottom of the screen</string>
     <string name="customise_gesture">Gesture</string>
     <string name="customise_swipe_right">Swipe right</string>
     <string name="customise_swipe_right_desc">Slide a song in any list to the right</string>
