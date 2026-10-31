@@ -74,6 +74,7 @@ import kotlinx.coroutines.flow.map
 import com.mochyy.mochymusic.ui.player.flagship.AnimatedPlayGlyph
 import com.mochyy.mochymusic.ui.player.flagship.AnimatedSkipGlyph
 import com.mochyy.mochymusic.ui.player.flagship.SkipCycleState
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -94,8 +95,13 @@ val LocalStyleInteractive = androidx.compose.runtime.compositionLocalOf<() -> Bo
 internal suspend fun PointerInputScope.whileStyleInteractive(
     interactive: () -> Boolean,
     detect: suspend PointerInputScope.() -> Unit,
-) {
-    snapshotFlow { interactive() }.collectLatest { on -> if (on) detect() }
+): Unit = kotlinx.coroutines.coroutineScope {
+    var listening: kotlinx.coroutines.Job? = null
+    // started in place, not through collectLatest: its hop to the next dispatch let the touch that wakes this handler (every button's first tap) go by unheard
+    snapshotFlow { interactive() }.collect { on ->
+        listening?.cancelAndJoin()
+        listening = if (on) launch(start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED) { this@whileStyleInteractive.detect() } else null
+    }
 }
 
 /**

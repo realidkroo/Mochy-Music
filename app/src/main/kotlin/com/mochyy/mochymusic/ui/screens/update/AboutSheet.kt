@@ -229,6 +229,15 @@ private val Licenses = listOf(
     ),
 )
 
+//  this guy promote the app
+private val ExtraContributors = listOf(
+    ContributorEntry(
+        login = "swtstvn",
+        avatarUrl = githubAvatarUrl("swtstvn"),
+        profileUrl = "https://github.com/swtstvn",
+    ),
+)
+
 private val FallbackContributors = listOf(
     ContributorEntry(
         login = "realidkroo",
@@ -240,7 +249,7 @@ private val FallbackContributors = listOf(
         avatarUrl = githubAvatarUrl("realkeichi"),
         profileUrl = "https://github.com/realkeichi",
     ),
-)
+) + ExtraContributors
 
 // kept in memory for the session so reopening the about sheet never hits github twice
 @Volatile
@@ -274,7 +283,10 @@ private suspend fun fetchContributors(): List<ContributorEntry> {
                         val html = obj.optString("html_url").ifBlank { "https://github.com/$login" }
                         add(ContributorEntry(login = login, avatarUrl = avatar, profileUrl = html))
                     }
-                }.ifEmpty { FallbackContributors }.also { cachedContributors = it }
+                }.ifEmpty { FallbackContributors }
+                    .plus(ExtraContributors)
+                    .distinctBy { it.login.lowercase() }
+                    .also { cachedContributors = it }
             } finally {
                 conn.disconnect()
             }
