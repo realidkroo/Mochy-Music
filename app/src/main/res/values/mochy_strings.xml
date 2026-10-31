@@ -1069,10 +1069,13 @@
     <string name="song_share_quality">Quality</string>
     <string name="song_share_quality_4k">4K</string>
     <string name="song_share_quality_1080">1080p</string>
+    <string name="song_share_quality_best">Best</string>
+    <string name="song_share_quality_standard">Standard</string>
     <string name="song_share_making_video">Making your video… %1$d%%</string>
     <string name="song_share_making_picture">Making your picture…</string>
     <string name="song_share_saved">Saved to your gallery too</string>
     <string name="song_share_failed">Couldn\'t make it. Check your connection and try again.</string>
+    <string name="song_share_failed_retry">Couldn\'t make it this time. Please try again.</string>
     <string name="song_share_app_instagram">Instagram</string>
     <string name="song_share_app_whatsapp">WhatsApp</string>
     <string name="song_share_app_facebook">Facebook</string>
@@ -1114,4 +1117,5 @@
     <string name="about_song_nothing_yet">%1$s doesn\'t have anything about this song yet.</string>
     <string name="not_recommended_menu">Don\'t recommend this again</string>
     <string name="not_recommended_done">We won\'t recommend this song again</string>
+    <string name="atmos_streaming_note">Apple encodes Atmos for FairPlay only and Monochrome streams stereo FLAC, so Atmos comes from a module added from a link: set its Dolby Atmos choice to Atmos. Your own surround files are rendered too.</string>
 </resources>
