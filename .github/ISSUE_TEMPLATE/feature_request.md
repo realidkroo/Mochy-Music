@@ -27,3 +27,4 @@ type: Feature
 
 tick this/mark this with x pls
 [ ] I will not mad when the feature will be not added shortly/forever.
+[ ] Im not writing this using LLM. if im using LLM I will not crying for the post to be closed with no respond
