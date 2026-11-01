@@ -1,4 +1,4 @@
-<img width="1799" height="927" alt="Frame 286" src="https://github.com/user-attachments/assets/e793be23-be42-4b16-aa0d-bd8656026ecb" />
+<img width="1799" height="927" alt="fdb" src="https://github.com/user-attachments/assets/98652d23-a7cd-4c6f-945e-96a85273f61f" />
 
 <div align="center">
 
@@ -65,6 +65,10 @@ Updating works the same way: install the new apk over the old one and your libra
 <img width="1799" height="927" alt="Frame 287" src="https://github.com/user-attachments/assets/186be8ac-ff3e-4e2a-ab7e-ae80bc9da7e7" />
 <img width="1799" height="927" alt="Frame 290" src="https://github.com/user-attachments/assets/c394603c-7aa7-4d78-8688-38a6c6e42232" />
 <img width="1799" height="927" alt="Frame 288" src="https://github.com/user-attachments/assets/06f5c13a-b8f1-4ecf-85aa-b17d020db5c8" />
+<img width="1799" height="927" alt="Frame 331" src="https://github.com/user-attachments/assets/71c5ee7e-75c1-479f-8075-039bab4f7fe7" />
+<img width="1799" height="927" alt="Frame 332" src="https://github.com/user-attachments/assets/e8c2084f-68ec-4959-a881-03a3b93df292" />
+<img width="1799" height="927" alt="Frame 333" src="https://github.com/user-attachments/assets/50580702-6bc9-4204-8665-b7d6c6390f78" />
+
 
 ---
 
