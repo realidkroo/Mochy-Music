@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- the bedside player style: a big clock for the nightstand -->
+    <string name="bedside_close">Close the player</string>
+    <string name="bedside_unlock_to_close">Unlock to close the player</string>
+    <string name="bedside_more">More</string>
+    <string name="bedside_like">Like</string>
+    <string name="bedside_now_playing">Now playing</string>
+
+    <!-- asked once over the bedside when the phone keeps apps off the lock screen (MIUI and HyperOS do, until you allow it) -->
+    <string name="bedside_lock_ask_title">Keep the clock on your lock screen?</string>
+    <string name="bedside_lock_ask_body">Your phone keeps apps off the lock screen until you allow it. On the next screen, turn on \"Show on Lock screen\".</string>
+    <string name="bedside_lock_ask_allow">Allow</string>
+    <string name="bedside_lock_ask_later">Not now</string>
+
+    <!-- the bedside's sheet in the player editor -->
+    <string name="bedside_sheet_title">The bedside</string>
+    <string name="bedside_rest_caption">When you leave it alone</string>
+    <string name="bedside_tint_off">Stay white</string>
+    <string name="bedside_tint_off_caption">The colours don\'t change</string>
+    <string name="bedside_tint_orange">Warm orange</string>
+    <string name="bedside_tint_orange_caption">Everything turns a soft orange, easy on sleepy eyes</string>
+    <string name="bedside_tint_cover">Cover colour</string>
+    <string name="bedside_tint_cover_caption">Everything takes the colour of the song\'s cover</string>
+    <string name="bedside_saver">Screen saver</string>
+    <string name="bedside_saver_caption">Dims and moves a little now and then, so the screen doesn\'t burn in</string>
+    <string name="bedside_keep_awake">Keep the screen on</string>
+    <string name="bedside_keep_awake_caption">The phone won\'t go to sleep while this is open</string>
+    <string name="bedside_lock_screen">Show on the lock screen</string>
+    <string name="bedside_lock_screen_caption">Lock the phone with this open and it\'s still here when the screen wakes</string>
+    <string name="bedside_lock_blocked">Your phone is blocking this</string>
+    <string name="bedside_lock_blocked_caption">Tap to turn on \"Show on Lock screen\" for Mochy</string>
+    <string name="bedside_lock_blocked_tag">FIX</string>
+</resources>
