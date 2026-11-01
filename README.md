@@ -71,6 +71,42 @@ Updating works the same way: install the new apk over the old one and your libra
 
 
 ---
+# FAQ
+Q - Is it safe to log in? (read this before signing in)
+A - Tbh, you never have to log in to use this thing btw. Search, play, lyrics and downloads work without an account. Signing in is only for syncing your YouTube Music library, importing playlists from Spotify / Apple Music / Tidal, and Discord status
+
+**How the sign-in works**
+- Mochy opens the real login page of the service (for example accounts.google.com or open.spotify.com) inside the app. You type your password into **their** page, not into a Mochy form.
+- After you log in, the app keeps the session token or cookie that the service gives out, so you stay signed in. Your password is not what gets saved.
+- That session stays on your phone, in the app's private storage. Mochy has no account system of its own and does not run a server that collects logins.
+- The tokens are meant to be used only to talk to the service you signed in to (for example Spotify's own site to read your playlists).
+- The app is open source under GPL-3.0 so you do not have to take my word for it, you can always read exactly what it does with them :)
+
+Q - Pls add liquid glass
+A - No, and not now. maybe in form of modules created by someone in the future
+
+Q - Monochrome/flac stream doesnt work
+A - The server down, its on their side not us. use other anvailable sources, join our discord
+
+Q - Animation is too slow, can you speed it up?
+A - You can speed it up on customize page.
+
+Q - Official Desktop app?
+A - Later
+
+Q - App too laggy, how to fix?
+A - Disabling blur will helps
+
+Q - Can i contribute?
+A - Ofc
+
+Q - Can you add less spacing for the player
+A - You can customize it yourself
+
+Q - I hate this app, i dont want to use it
+A - Nobody is forcing you to use this
+
+---
 
 ## How to build it yourself
 
@@ -152,32 +188,6 @@ Mochy is an independent, unofficial project made for personal and educational us
 - You are responsible for how you use the app, including the terms of service of the accounts and services you connect and the copyright laws where you live.
 - Importing from other services (Spotify, etc.) uses your own account. Don't share your login data or tokens with anyone.
 - Importing music MAY need your own account with its password. WE'RE NEVER see your password.
-
-# FAQ
-## Q
-## 1.Is it safe to log in? (read this before signing in)
-
-## A
-Tbh, you never have to log in to use this thing btw. Search, play, lyrics and downloads work without an account. Signing in is only for syncing your YouTube Music library, importing playlists from Spotify / Apple Music / Tidal, and Discord status
-
-**How the sign-in works**
-- Mochy opens the real login page of the service (for example accounts.google.com or open.spotify.com) inside the app. You type your password into **their** page, not into a Mochy form.
-- After you log in, the app keeps the session token or cookie that the service gives out, so you stay signed in. Your password is not what gets saved.
-- That session stays on your phone, in the app's private storage. Mochy has no account system of its own and does not run a server that collects logins.
-- The tokens are meant to be used only to talk to the service you signed in to (for example Spotify's own site to read your playlists).
-- The app is open source under GPL-3.0 so you do not have to take my word for it, you can always read exactly what it does with them :)
-
-## Q
-## 2. Pls add liquid glass
-
-## A
-No, and not now. maybe in form of modules created by someone in the future
-
-## Q
-## 3. Monochrome/flac stream doesnt work
-
-## A
-The server down, its on their side not us. use other anvailable sources, join our discord
 
 ---
 
