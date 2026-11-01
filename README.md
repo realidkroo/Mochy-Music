@@ -41,7 +41,7 @@
 
 
 > [!WARNING]
-> This app still on beta!, expect some bugs! reporting it will be useful too.
+> This app still on beta!, expect some bugs! reporting it will be useful too!!!
 
 ---
 
@@ -55,7 +55,7 @@
 Updating works the same way: install the new apk over the old one and your library stays.
 
 > [!TIP]
-> Only download Mochy from the releases page of this repo. A random mediafire or telegram link could be a modified app, and then your logins would not be safe.
+> Only download Mochy from the releases page of this repo. A random mediafire or telegram link could be a modified app, and then your logins would not be safe, pls avoid those
 
 ---
 
@@ -77,7 +77,7 @@ Updating works the same way: install the new apk over the old one and your libra
 You only need this if you want to change the code. If you just want to use the app, use the install steps above.
 
 ### What you need
-- A Mac, Linux or Windows computer (the script below is for Mac and Linux, on Windows use WSL or Android Studio)
+- A Mac, Linux or Windows computer with screen
 - [Android Studio](https://developer.android.com/studio) (latest stable). It brings JDK 21 and the Android SDK with it
 - Android SDK 36 and NDK `27.0.12077973`. Android Studio offers to download both the first time you open the project
 - About 10 gb free disk space, the first build downloads a lottt
@@ -106,11 +106,11 @@ Handy options (see `./build.sh --help` for all of them):
 | Command | What it does |
 |---|---|
 | `./build.sh --debug -i` | debug build, installs and opens it on your phone |
-| `./build.sh --release -cc` | release build for arm64 and universal (slow, R8 takes about 5 minutes) |
+| `./build.sh --release -cc` | release build for arm64 and universal |
 | `./build.sh -fd --release` | F-Droid flavor, without the self-update permission |
 | `./build.sh -k` | stops stuck Gradle builds |
 
-Use **debug** while you are playing around, it builds much faster. A debug build installs next to the real app (`com.example.mochy.debug`), so it will not touch your normal install, but it is also a bit slower to run.
+Use **debug** while you are playing around, it builds much much faster. A debug build installs next to the real app (`com.example.mochy.debug`), so it will not touch your normal install, but it is also a bit slower to run.
 
 ### Optional keys
 Mochy builds fine without these, only the matching feature is switched off. Put them in `local.properties` (it is never committed):
@@ -130,6 +130,11 @@ Never commit your keys. Libre.fm works without any key.
 - Still stuck? Open an [issue](https://github.com/realidkroo/mochy-music/issues) with the error text.
 
 Want to send a fix? Read [CONTRIBUTING](.github/CONTRIBUTING.md) first.
+
+---
+## How to build module?
+im working on it wait
+
 ---
 ## Wants to help? bug report? report it on issues!
 
@@ -172,7 +177,7 @@ No, and not now. maybe in form of modules created by someone in the future
 ## 3. Monochrome/flac stream doesnt work
 
 ## A
-The server down, its on their side not us. use other anvailable sources
+The server down, its on their side not us. use other anvailable sources, join our discord
 
 ---
 
@@ -210,5 +215,5 @@ These are the open source apis and server we get gets its lyrics, streams and da
 </a>
 
 <div align="center">
-  <sub>star the repo plssss!</sub>
+  <sub>star the repo plssss apreciate it!!!!!</sub>
 </div>
