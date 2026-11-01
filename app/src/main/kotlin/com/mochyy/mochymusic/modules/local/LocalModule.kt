@@ -1,4 +1,4 @@
-// a module added from a zip with no service behind it: only a look, so nothing of it ever reaches the network
+// a module added from a zip with no service behind it: a look, a player, a font, pages, nothing that ever reaches the network
 
 package com.mochyy.mochymusic.modules.local
 
@@ -7,9 +7,14 @@ import com.mochyy.mochymusic.module.LookModule
 import com.mochyy.mochymusic.module.ModuleHost
 import com.mochyy.mochymusic.module.ModuleInfo
 import com.mochyy.mochymusic.module.NO_ACCOUNT_LABEL
+import com.mochyy.mochymusic.modules.skin.ModuleSkin
+import com.mochyy.mochymusic.modules.skin.SkinParser
+import com.mochyy.mochymusic.modules.skin.SkinSource
+import com.mochyy.mochymusic.modules.skin.appliedLook
 import com.mochyy.mochymusic.modules.web.WebModuleManifest
+import java.io.File
 
-internal class LocalModule(manifest: WebModuleManifest) : LookModule {
+internal class LocalModule(manifest: WebModuleManifest, files: File?) : LookModule, SkinSource {
 
     override val info = ModuleInfo(
         id = idFor(manifest),
@@ -19,7 +24,9 @@ internal class LocalModule(manifest: WebModuleManifest) : LookModule {
         author = manifest.author,
     )
 
-    override val look: Map<String, String> = manifest.lookValues
+    override val skin: ModuleSkin? = SkinParser.parse(info.id, info.name, manifest.player, manifest.font, manifest.pages, files, base = null)
+
+    override val look: Map<String, String> = appliedLook(manifest.lookValues, skin)
 
     override fun attach(host: ModuleHost) = Unit
 

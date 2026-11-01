@@ -636,7 +636,9 @@ enum class PlayerStyle(val displayName: String, val selectorName: String) {
     // a big quiet clock for the nightstand, with the song a swipe away, that can stay up over the lock screen
     BEDSIDE("Bedside clock", "Big clock"),
     // the nightstand as two tiles side by side, the music on one and the lyrics or a clock on the other, each scrolled on its own
-    BEDSIDE_TILES("Bedside", "Bedside");
+    BEDSIDE_TILES("Bedside", "Bedside"),
+    // a look module's own player, drawn from its layout; kept last so the others keep their places, and only offered while such a module is on
+    MODULE("Module", "Module");
 
     val editable: Boolean get() = this == FLAGSHIP || this == CLASSIC || this == TURNTABLE || this == POSTER || this == IPOD || isBedside
 

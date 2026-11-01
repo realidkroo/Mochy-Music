@@ -79,15 +79,16 @@ fun AlternatePlayerStyle(
         PlayerStyle.VIDEO -> com.mochyy.mochymusic.ui.player.video.VideoPlayerStyle(actions, modifier, preview)
         PlayerStyle.BEDSIDE -> com.mochyy.mochymusic.ui.player.bedside.BedsidePlayerStyle(actions, modifier, preview)
         PlayerStyle.BEDSIDE_TILES -> com.mochyy.mochymusic.ui.player.bedside.BedsideTilesStyle(actions, modifier, preview)
+        PlayerStyle.MODULE -> ModulePlayerStyle(actions, modifier, preview)
         PlayerStyle.FLAGSHIP, PlayerStyle.CLASSIC, PlayerStyle.TURNTABLE -> Unit
     }
 }
 
 /** what every alternate style reads from the player */
-private class StyleTrack(val title: String, val artist: String, val album: String, val artwork: String?)
+internal class StyleTrack(val title: String, val artist: String, val album: String, val artwork: String?)
 
 @Composable
-private fun rememberStyleTrack(): StyleTrack {
+internal fun rememberStyleTrack(): StyleTrack {
     val connection = LocalPlayerConnection.current ?: return StyleTrack("", "", "", null)
     val track by connection.uiState.trackInfo.collectAsState()
     return remember(track) { StyleTrack(track.title, track.artist, track.album, track.thumbnailUrl) }
@@ -97,14 +98,14 @@ private fun rememberStyleTrack(): StyleTrack {
  * The player's row of songs on the live player; a selector card shows the playing song, still.
  */
 @Composable
-private fun rememberStyleCarousel(preview: Boolean): com.mochyy.mochymusic.ui.player.SongCarousel? =
+internal fun rememberStyleCarousel(preview: Boolean): com.mochyy.mochymusic.ui.player.SongCarousel? =
     if (preview) null else com.mochyy.mochymusic.ui.player.LocalSongCarousel.current
 
 /** a song's synced lines, and which song they're for */
-private class StyleLyrics(val mediaId: String?, val lines: List<LyricsEntry>)
+internal class StyleLyrics(val mediaId: String?, val lines: List<LyricsEntry>)
 
 /** what a style shows for one song in the row: its details, and its lyrics once it has played */
-private class StyleSong(val track: StyleTrack, val lines: List<LyricsEntry>)
+internal class StyleSong(val track: StyleTrack, val lines: List<LyricsEntry>)
 
 /**
  * [content] once per song on screen, riding the row: the playing song, and the one coming in or
@@ -113,7 +114,7 @@ private class StyleSong(val track: StyleTrack, val lines: List<LyricsEntry>)
  * Without a row (a selector card) it's the playing song alone.
  */
 @Composable
-private fun StyleSongs(
+internal fun StyleSongs(
     carousel: com.mochyy.mochymusic.ui.player.SongCarousel?,
     track: StyleTrack,
     lyrics: StyleLyrics,
@@ -141,7 +142,7 @@ private fun StyleSongs(
 
 /** the frame every style is drawn in: tones, gestures, rotation, the ••• menu's state */
 @Composable
-private fun StyleFrame(
+internal fun StyleFrame(
     style: PlayerStyle,
     preview: Boolean,
     modifier: Modifier,
@@ -220,10 +221,10 @@ private fun backdropTime(frameTimeNanos: Long): Float =
  * Insets the way they fall on a style: upright, the status bar is at its top and the navigation
  * bar at its bottom; turned sideways, those same bars run down its left and right edges.
  */
-private class StyleInsets(val start: Dp, val top: Dp, val end: Dp, val bottom: Dp)
+internal class StyleInsets(val start: Dp, val top: Dp, val end: Dp, val bottom: Dp)
 
 @Composable
-private fun styleInsets(landscape: Boolean): StyleInsets {
+internal fun styleInsets(landscape: Boolean): StyleInsets {
     val status = WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding()
     val nav = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     return if (landscape) StyleInsets(start = status, top = 0.dp, end = nav, bottom = 0.dp)
@@ -586,7 +587,7 @@ private fun CreditLine(text: String, color: Color, style: androidx.compose.ui.te
  * a selector card). Lyrics without timings show nothing here: a style performs lines in time.
  */
 @Composable
-private fun rememberStyleLyrics(readings: Boolean): StyleLyrics {
+internal fun rememberStyleLyrics(readings: Boolean): StyleLyrics {
     val connection = LocalPlayerConnection.current
     val lyricsEntity = connection?.currentLyrics?.collectAsState(initial = null)?.value
     val all = remember(lyricsEntity?.lyrics) {
@@ -936,7 +937,7 @@ private fun RidingTimes(
 
 /** the played time on its own, so the second ticking over recomposes this text and nothing around it */
 @Composable
-private fun PlayedTime(position: LivePosition, color: Color, style: androidx.compose.ui.text.TextStyle, modifier: Modifier) {
+internal fun PlayedTime(position: LivePosition, color: Color, style: androidx.compose.ui.text.TextStyle, modifier: Modifier) {
     val seconds = rememberPlayedSeconds(position)
     Text(
         text = makeTimeString(seconds * 1_000L),

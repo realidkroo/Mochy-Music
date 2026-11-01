@@ -94,12 +94,14 @@ fun MochyTheme(
         }
     }
 
+    val font = InterFontFamily
+    val typography = remember(font) { appTypography(font) }
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = AppTypography,
+        typography = typography,
     ) {
         ProvideTextStyle(
-            value = AppTypography.bodyLarge,
+            value = typography.bodyLarge,
             content = content
         )
     }

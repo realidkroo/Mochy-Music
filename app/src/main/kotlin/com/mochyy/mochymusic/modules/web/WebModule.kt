@@ -24,6 +24,10 @@ import com.mochyy.mochymusic.module.StreamOption
 import com.mochyy.mochymusic.module.TrackMatcher
 import com.mochyy.mochymusic.module.TrackQuery
 import com.mochyy.mochymusic.modules.DeviceDecoders
+import com.mochyy.mochymusic.modules.skin.ModuleSkin
+import com.mochyy.mochymusic.modules.skin.SkinParser
+import com.mochyy.mochymusic.modules.skin.SkinSource
+import com.mochyy.mochymusic.modules.skin.appliedLook
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -31,6 +35,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
+import java.io.File
 import java.net.URI
 import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
@@ -39,7 +44,9 @@ internal class WebModule(
     val base: String,
     private val manifest: WebModuleManifest,
     private val resources: Resources,
-) : SourceModule, LyricsModule, LookModule {
+    // the pictures and fonts a zip brought, when it came as one
+    files: File? = null,
+) : SourceModule, LyricsModule, LookModule, SkinSource {
 
     private val siteName = runCatching { URI(base).host }.getOrNull().orEmpty()
 
@@ -51,13 +58,15 @@ internal class WebModule(
         author = manifest.author,
     )
 
+    override val skin: ModuleSkin? = SkinParser.parse(info.id, info.name, manifest.player, manifest.font, manifest.pages, files, base)
+
     override val adds: Set<ModuleFeature> = buildSet {
         if (manifest.playsSongs) add(ModuleFeature.AudioSource)
         if (manifest.hasLyrics) add(ModuleFeature.Lyrics)
-        if (manifest.look.isNotEmpty()) add(ModuleFeature.Look)
+        if (manifest.look.isNotEmpty() || skin != null) add(ModuleFeature.Look)
     }
 
-    override val look: Map<String, String> = manifest.lookValues
+    override val look: Map<String, String> = appliedLook(manifest.lookValues, skin)
 
     // read from resources each time so the chips follow the app's language
     override val choices: List<ModuleChoice>

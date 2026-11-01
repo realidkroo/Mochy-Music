@@ -6,7 +6,7 @@ A **module** adds something to Mochy without an app update. One module can add a
 |---|---|
 | **Songs** | Asks it for the song that's playing (in the provider order), and plays the stream itself, so every Audio Lab effect still works. |
 | **Lyrics** | Puts it first among the lyrics sources while it's on. |
-| **A look** | Changes Mochy's look settings (player style, home style, blur, corners…) while it's on, and gives the user's own settings back when it goes off. |
+| **A look** | Restyles Mochy while it's on: its settings (player style, colours, blur, corners…), **a player of its own**, **its own font**, **pictures** and **pages**. Everything goes back the way it was when it's turned off. |
 
 One switch turns a module on or off. Off means gone everywhere: from Audio Quality, the provider order, the download order, the lyrics sources and the look. Every new module starts **off**, so adding one never changes anything until the user turns it on.
 
@@ -17,7 +17,7 @@ One switch turns a module on or off. Off means gone everywhere: from Audio Quali
 1. [Pick the kind of module you need](#1-pick-the-kind-of-module-you-need)
 2. [Your first module in two minutes: a look in a zip](#2-your-first-module-in-two-minutes-a-look-in-a-zip)
 3. [manifest.json, field by field](#3-manifestjson-field-by-field)
-4. [Changing the interface: look settings](#4-changing-the-interface-look-settings)
+4. [Changing the interface: looks, players, fonts and pages](#4-changing-the-interface-looks-players-fonts-and-pages)
 5. [A module that plays songs or lyrics (a web module)](#5-a-module-that-plays-songs-or-lyrics-a-web-module)
 6. [Zip modules](#6-zip-modules)
 7. [Putting your module in the catalog](#7-putting-your-module-in-the-catalog)
@@ -33,7 +33,7 @@ One switch turns a module on or off. Off means gone everywhere: from Audio Quali
 
 | You want to… | Make a… | Needs a server? | Who can make it |
 |---|---|---|---|
-| Restyle Mochy | **Look**, as a zip or a `manifest.json` link | No | Anyone |
+| Restyle Mochy, design your own player, add pages | **Look**, as a zip (or a `manifest.json` link) | No | Anyone |
 | Add songs or lyrics from a service | **Web module**: a link to a small HTTP service | Yes | Anyone |
 | Share a web module as one file | **Zip with a `url`** | Yes (the service it names) | Anyone |
 | Add another Monochrome server | Not a module: Monochrome's page, **Servers** | No | Anyone |
@@ -87,44 +87,267 @@ Every module, whether it comes as a link or a zip, describes itself with one `ma
 | `description` | No | One line about what it does. |
 | `author` | No | You. |
 | `resources` | No | What it does: `"search"` + `"stream"` make it play songs, `"lyrics"` makes it a lyrics source. Plain names or `{ "name": "search" }` both work. |
-| `look` | No | Look settings, see [section 4](#4-changing-the-interface-look-settings). |
+| `look` | No | Look settings, see [section 4.1](#41-look-settings). |
+| `player` | No | A player of your own, see [section 4.2](#42-a-player-of-your-own). |
+| `font` | No | Your own font, zip only, see [section 4.3](#43-your-own-font). |
+| `pages` | No | Pages of your own, see [section 4.5](#45-pages). |
 | `settings` | No | Your service's own settings, see [section 5](#5-a-module-that-plays-songs-or-lyrics-a-web-module). |
 | `url` | Zip only | The service a zip module plays from. A link module doesn't need it, since its link *is* the service. |
 
 Two rules worth knowing:
 
-- **A manifest with no `resources` and no `look` is read as a song source**, because that's what most services of this kind are.
-- **A website's own `manifest.json` is turned away.** Websites have one for "install to home screen", with `start_url`, `display`, `short_name` or `icons`. If your manifest has any of those, and no `resources` or `look`, Mochy says "That's a website, not a module". Don't use those field names in a module manifest.
+- **A manifest with no `resources` and nothing that changes the look (`look`, `player`, `font`, `pages`) is read as a song source**, because that's what most services of this kind are.
+- **A website's own `manifest.json` is turned away.** Websites have one for "install to home screen", with `start_url`, `display`, `short_name` or `icons`. If your manifest has any of those and none of `resources`, `look`, `player`, `font` or `pages`, Mochy says "That's a website, not a module". Don't use those field names in a module manifest.
 
 Fields Mochy doesn't know are ignored, so you can keep your own notes in there.
 
 ---
 
-## 4. Changing the interface: look settings
+## 4. Changing the interface: looks, players, fonts and pages
+
+A look can do five things, in any mix:
+
+| | Where it goes in `manifest.json` | Works from |
+|---|---|---|
+| [4.1 Change Mochy's settings](#41-look-settings) | `look` | a zip or a link |
+| [4.2 Bring a player of its own](#42-a-player-of-your-own) | `player` | a zip or a link |
+| [4.3 Bring its own font](#43-your-own-font) | `font` | a zip only |
+| [4.4 Use its own pictures](#44-pictures) | paths in `player` and `pages` | a zip, or a link with pictures beside its manifest |
+| [4.5 Add pages](#45-pages) | `pages` | a zip or a link |
+
+How looks behave:
+
+- **Only one look is on at a time.** Turning a second one on turns the first off and gives its settings back first. A module with *only* pages doesn't count as a look here, so it can stay on next to one.
+- **The user always wins.** If someone changes a setting by hand while your look is on, they keep their value when your look goes off.
+- **It survives restarts.** Mochy remembers what each look replaced, so turning it off after a restart still gives the right settings back.
+- **Nothing runs.** A look is a description. Mochy draws it with its own parts, so it stays smooth on slow phones and can't break anything.
+
+### 4.1 Look settings
 
 A look may change **only** these settings, so a module can restyle Mochy but never reach accounts, the network or playback. Values are written as text (`"true"`, `"12"`, `"FLAGSHIP"`). Keys must be spelled exactly as below, while style names may be any case. A value that's out of range is simply ignored.
 
 | Key | Values | What it changes |
 |---|---|---|
-| `playerStyle` | `FLAGSHIP`, `CLASSIC`, `TURNTABLE`, `VIDEO`, `IPOD`, `POSTER`, `TIMELINE`, `LYRICS`, `BEDSIDE`, `BEDSIDE_TILES` | The now-playing screen |
+| `playerStyle` | `FLAGSHIP`, `CLASSIC`, `TURNTABLE`, `VIDEO`, `IPOD`, `POSTER`, `TIMELINE`, `LYRICS`, `BEDSIDE`, `BEDSIDE_TILES`, `MODULE` | The now-playing screen. `MODULE` is your own player from 4.2, and is picked for you when you bring one. |
 | `homeStyle` | `MOCHYY`, `LISTEN_NOW`, `HOP_IN` | The home page layout |
 | `playlistStyle` | `FLOW`, `CLASSIC`, `MINIMAL` | How playlists and albums are laid out |
 | `thumbnailCornerRadius` | `0` to `45` | How round covers are |
 | `lyricsMotionStyle` | `MOTION`, `LEGACY`, `BORING`, `PLAIN` | How lyrics animate |
+| `accentColor` | `"#RRGGBB"` | The app's accent colour. Setting it also turns off "colours from the cover", unless you set `dynamicTheme` yourself. |
+| `dynamicTheme` | `true`, `false` | The app's colours following the playing cover |
+| `pureBlack` | `true`, `false` | True black backgrounds |
+| `flagshipBackground` | `AMBIENT`, `APPLE_MUSIC`, `COVER_GRADIENT`, `DARK_GRADIENT`, `SOLID` | The Flagship player's background |
+| `playerBackground` | the same names | The Classic player's background |
+| `ipodTheme` | `SILVER`, `BLACK`, `U2`, `TRUE_DARK` | The iPod player's body |
+| `ipodWheelColor` | `THEME`, `WHITE`, `BLACK`, `RED` | The iPod's click wheel |
 | `blurQuality` | `LOW`, `HIGH` | Cheaper or nicer glass |
 | `blurStrengthPx` | `10` to `50` | How strong the glass blur is |
 | `enableProgressiveBlur` | `true`, `false` | Blur that grows towards edges |
 | `elementBlur` | `true`, `false` | Blur on moving elements |
-| `pureBlack` | `true`, `false` | True black backgrounds |
 
-How looks behave:
+A look made only of settings can also be added from a link to its `manifest.json`, for example a raw GitHub link like `https://raw.githubusercontent.com/you/midnight/main/manifest.json`. Want a setting that isn't in this list? It has to be added to Mochy first, see [section 11](#adding-a-look-setting).
 
-- **Only one look is on at a time.** Turning a second one on turns the first off and gives its settings back first.
-- **The user always wins.** If someone changes a setting by hand while your look is on, they keep their value when your look goes off.
-- **It survives restarts.** Mochy remembers what each look replaced, so turning it off after a restart still gives the right settings back.
-- A look can be added from a zip ([section 2](#2-your-first-module-in-two-minutes-a-look-in-a-zip)) **or** from a link to its `manifest.json`, for example a raw GitHub link like `https://raw.githubusercontent.com/you/midnight/main/manifest.json`.
+### 4.2 A player of your own
 
-Want a setting that isn't in this list? It has to be added to Mochy first, see [section 11](#adding-a-look-setting).
+`player` describes a whole now-playing screen. While your look is on, it's the first style in the player's style selector (hold the player to open it) under the name you give it. Mochy switches to it when your look turns on, and back to the user's style when it goes off.
+
+Your player gets everything the other styles have, for free: swipe sideways to change song (your cover and words ride along), tap to play or pause, swipe down to close, the ••• menu (lyrics, song info, turning sideways), and its clocks resting while it's hidden.
+
+```json
+"player": {
+  "name": "Vinyl",
+  "background": { "type": "blurredCover", "dim": 0.35 },
+  "padding": 28,
+  "align": "center",
+  "blocks": [
+    { "type": "space", "grow": true },
+    { "type": "cover", "shape": "circle", "size": 0.78, "spin": true },
+    { "type": "space", "size": 28 },
+    { "type": "title", "size": 26, "weight": "bold" },
+    { "type": "artist" },
+    { "type": "space", "size": 20 },
+    { "type": "progress", "style": "line" },
+    { "type": "space", "size": 12 },
+    { "type": "controls", "size": 56 },
+    { "type": "space", "grow": true }
+  ]
+}
+```
+
+The blocks are laid out top to bottom, in order. Use `"space"` with `"grow": true` to push things apart; two growing spaces around everything centre it on the screen.
+
+**The player itself**
+
+| Field | Values | Default |
+|---|---|---|
+| `name` | Shown in the style selector | your module's name |
+| `background` | see below | `ambient` |
+| `padding` | Space at the sides, `0` to `64` | `24` |
+| `align` | `start`, `center`, `end`: where blocks and text sit | `center` |
+| `blocks` | The list of blocks below. At least one. Up to 40. | |
+
+**Backgrounds** (`"background": { "type": … }`)
+
+| `type` | What it is | Extra fields |
+|---|---|---|
+| `ambient` | The cover's colours drifting slowly (the Flagship's) | |
+| `blurredCover` | The cover, blurred across the screen | |
+| `darkGradient` | A dark gradient | |
+| `solid` | Plain dark | |
+| `tones` | The song's two tones, split where the song is (like Timeline) | |
+| `color` | One colour | `color` |
+| `gradient` | Top-to-bottom gradient | `colors`: 2 to 6 colours |
+| `image` | Your picture, cropped to fill | `image` (see [4.4](#44-pictures)) |
+
+Every background takes `"dim"`, from `0` to `0.9`, a black veil over it so text stays readable.
+
+**Blocks**
+
+| `type` | What it shows | Fields (default) |
+|---|---|---|
+| `cover` | The song's cover | `shape`: `rounded`, `circle`, `square` (`rounded`) · `corner`: `0`–`80` (`18`) · `size`: share of the width, `0.1`–`1` (`0.8`) · `spin`: turns like a record while playing (`false`) · `frame`: a picture drawn over it, which stays still while the cover spins · `shadow` (`false`) |
+| `title` | The song's title | text fields (`24`, `bold`, `ink`) |
+| `artist` | The artists | text fields (`16`, `medium`, `inkSoft`) |
+| `album` | The album | text fields (`14`, `medium`, `inkSoft`) |
+| `text` | Your own words | `text`, plus text fields (`14`, `medium`, `inkSoft`) |
+| `image` | Your picture | `image` · `height`: `8`–`600` (`120`) · `width` (full width) · `corner` (`12`) |
+| `progress` | Where the song is, tap or drag to seek | `style`: `line`, `thick`, `pill` (`line`) · `color` (`ink`) · `track` (`chip`) · `times`: show the times (`true`) · `seek` (`true`) |
+| `controls` | Previous, play/pause, next | `size`: `28`–`96` (`48`) · `style`: `circles` or `plain` (`circles`) · `color`: the circles' fill · `icon`: the icons' colour |
+| `lyrics` | The song's synced lyrics, sung through | `height`: `60`–`600` (`160`) · `size`: `14`–`60` (`28`) · `color` (`ink`) |
+| `space` | Empty space | `size`: `0`–`300` (`16`) · `grow`: take all the space left (`false`) |
+| `row` | Its own `blocks`, side by side | `blocks` · `gap` (`12`). Words, bars and columns share the width; covers, pictures and buttons keep their size. |
+| `column` | Its own `blocks`, stacked (handy inside a row) | `blocks` · `gap` (`12`) |
+
+Rows and columns can go three deep. A block Mochy doesn't know is skipped, so a newer layout still opens on an older Mochy.
+
+**Text fields** (for `title`, `artist`, `album`, `text`): `size` (`8`–`72`), `weight` (`thin`, `light`, `normal`, `medium`, `semibold`, `bold`, `black`), `color`, `lines` (`1`–`4`, longer text ends in "…"), `upper` (`true` for CAPITALS), `align` (`start`, `center`, `end`).
+
+**Colours**: a fixed colour like `"#FFFFFF"`, `"#80FFFFFF"` (with transparency), or one that follows the song:
+
+| Name | What it is |
+|---|---|
+| `ink` | The style's main text colour |
+| `inkSoft` | Softer text |
+| `played` / `remaining` | The song's two tones, from its cover |
+| `chip` | The faint fill behind buttons |
+| `cover` | The cover's main colour |
+| `accent` | The app's accent colour |
+
+A small example of a row, the cover beside the words:
+
+```json
+{ "type": "row", "gap": 14, "blocks": [
+  { "type": "cover", "size": 0.22, "corner": 10 },
+  { "type": "column", "gap": 2, "blocks": [
+    { "type": "title", "size": 18, "align": "start" },
+    { "type": "artist", "size": 14, "align": "start" }
+  ]}
+]}
+```
+
+### 4.3 Your own font
+
+```json
+"font": { "regular": "fonts/Lora-Regular.ttf", "bold": "fonts/Lora-Bold.ttf" }
+```
+
+While your look is on, the whole app uses this font, your player included. `.ttf` and `.otf` work. `bold` is optional: without it, bold text is drawn thicker from the regular one. On Android 7 only the regular file is used. A font has to be a file on the phone, so it only works from a zip. A broken font file is skipped, and the app keeps its own.
+
+### 4.4 Pictures
+
+Anywhere a block or background takes a picture (`image`, `frame`), you can write:
+
+- **A path in your zip**, relative to `manifest.json`: `"images/wood.webp"`. Pictures in `.png`, `.jpg`, `.webp` and `.gif` are unpacked when the zip is added.
+- **A link**: `"https://example.com/wood.webp"`.
+- **For a module added from a link**, a path is read next to its manifest. With `https://you.github.io/vinyl/manifest.json`, `"images/wood.webp"` is `https://you.github.io/vinyl/images/wood.webp`.
+
+Keep pictures small. A phone screen is about 1080 pixels wide, so a 1080×2400 background is plenty, and `.webp` is the smallest.
+
+### 4.5 Pages
+
+A look can add pages of its own: an about page, a "start here", your favourite playlists. They're listed on your module's page under **Pages** while it's on, built from these blocks:
+
+```json
+"pages": [
+  {
+    "id": "about",
+    "title": "Vinyl Night",
+    "blocks": [
+      { "type": "image", "image": "images/banner.webp", "height": 160 },
+      { "type": "heading", "text": "Welcome" },
+      { "type": "text", "text": "A warm look for late nights." },
+      { "type": "playlist", "id": "PLxxxxxxxx", "title": "Late night picks", "subtitle": "40 songs" },
+      { "type": "song", "id": "dQw4w9WgXcQ", "title": "A song to start with", "artist": "Someone" },
+      { "type": "button", "text": "Join us on Discord", "link": "https://discord.gg/NTmqVphbRY" }
+    ]
+  }
+]
+```
+
+| `type` | What it shows | Fields |
+|---|---|---|
+| `heading` | A big line | `text` |
+| `text` | A paragraph | `text` (up to 2000 characters) |
+| `image` | A picture, full width | `image` · `height`: `40`–`400` (`160`) · `corner` (`16`) |
+| `button` | A button that opens a web page | `text` · `link` (must start with `https://` or `http://`) |
+| `song` | Plays a song | `id` (its YouTube Music video id) · `title` · `artist` |
+| `playlist` | Opens a playlist | `id` (its YouTube Music playlist id) · `title` · `subtitle` |
+| `album` | Opens an album | `id` (its browse id, `MPREb_…`) · `title` · `subtitle` |
+| `artist` | Opens an artist | `id` (its channel id, `UC…`) · `title` |
+| `search` | Opens a search | `query` · `title` |
+| `divider` | A thin line | |
+| `space` | Empty space | `size`: `0`–`120` (`16`) |
+
+A page `id` uses `a`–`z`, `0`–`9`, `-` and `_`. You can have up to 12 pages with 80 blocks each. The ids are in the song's, playlist's or album's YouTube Music link: `music.youtube.com/watch?v=`**`id`**, `music.youtube.com/playlist?list=`**`id`**, `music.youtube.com/browse/`**`id`**, `music.youtube.com/channel/`**`id`**.
+
+### 4.6 Putting it together
+
+```
+vinyl-night.zip
+└── vinyl-night/
+    ├── manifest.json
+    ├── fonts/
+    │   ├── Lora-Regular.ttf
+    │   └── Lora-Bold.ttf
+    └── images/
+        ├── wood.webp
+        ├── rim.png
+        └── banner.webp
+```
+
+```json
+{
+  "id": "vinyl-night",
+  "name": "Vinyl Night",
+  "version": "1.0",
+  "description": "A record player in warm wood, with its own font",
+  "author": "you",
+  "look": { "accentColor": "#E8B86B", "pureBlack": "true" },
+  "font": { "regular": "fonts/Lora-Regular.ttf", "bold": "fonts/Lora-Bold.ttf" },
+  "player": {
+    "name": "Vinyl Night",
+    "background": { "type": "image", "image": "images/wood.webp", "dim": 0.35 },
+    "blocks": [
+      { "type": "space", "grow": true },
+      { "type": "cover", "shape": "circle", "size": 0.8, "spin": true, "frame": "images/rim.png" },
+      { "type": "space", "size": 28 },
+      { "type": "title", "size": 26, "weight": "bold", "color": "#F6E7CF" },
+      { "type": "artist", "color": "#C9B79C" },
+      { "type": "space", "size": 18 },
+      { "type": "progress", "color": "accent", "track": "#33FFFFFF" },
+      { "type": "space", "size": 10 },
+      { "type": "controls", "size": 58, "color": "#22E8B86B", "icon": "#F6E7CF" },
+      { "type": "space", "grow": true }
+    ]
+  },
+  "pages": [
+    { "id": "about", "title": "Vinyl Night", "blocks": [
+      { "type": "image", "image": "images/banner.webp" },
+      { "type": "text", "text": "Made for late nights. Turn it off any time and your own look comes back." }
+    ]}
+  ]
+}
+```
 
 ---
 
@@ -273,8 +496,8 @@ my-module.zip
     └── manifest.json    ← or inside one folder, the way most zip tools pack a folder
 ```
 
-- **Only `manifest.json` is read.** Nothing else in the zip is unpacked or used, so don't bother adding pictures or code. Hidden macOS files (`__MACOSX`) are fine.
-- **A look-only zip lives on the phone.** It never touches the network, and its page has no server to check.
+- **Pictures and fonts are unpacked, nothing else.** `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.ttf` and `.otf` files in the manifest's folder (and the folders under it) are copied into Mochy when the zip is added, keeping their paths. Everything else, like code or text files, is ignored. Hidden macOS files (`__MACOSX`, `._…`) are skipped.
+- **A zip without a `url` lives on the phone.** It never touches the network, and its page has no server to check.
 - **A zip that plays songs or lyrics needs a `url`:**
 
   ```json
@@ -287,7 +510,8 @@ my-module.zip
   ```
 
   It's then added just like pasting `https://my-flac.example`: the same calls, the same quality choices. The difference is that the manifest comes from the file. Without a `url`, Mochy says the zip "doesn't say where from".
-- **Limits:** the manifest must be under 256 KB, and Mochy only looks through the first 200 entries in the zip.
+- **Limits:** the manifest must be under 256 KB, and Mochy only looks through the first 200 entries for it. Pictures and fonts: up to 200 files, 8 MB each and 30 MB in all; a file over the limit is left out.
+- **Removing** the module deletes its unpacked pictures and fonts too.
 - **Updating:** importing a zip with the same `id` again updates the module.
 - **Backups:** modules added from a zip are kept in Mochy's backup like every other module.
 
@@ -386,7 +610,7 @@ For everyone making a module:
 - [ ] **Bump `version`** whenever you change your manifest.
 - [ ] **Never put secrets in a manifest you share.** If your link carries a personal key (some debrid services put an API key in the path), that link *is* a password. Anyone who has it can use your account. Don't post it publicly, and get a new key if you did.
 - [ ] **Don't pretend to be someone else.** No other service's name or logo as your own.
-- [ ] **Looks only use the keys in [section 4](#4-changing-the-interface-look-settings).** Anything else is ignored.
+- [ ] **Looks only use the keys in [section 4](#41-look-settings).** Anything else is ignored.
 
 ---
 
@@ -404,7 +628,11 @@ This part is for people working on Mochy itself. Follow the repo's `CLAUDE.md` e
 | Every module, its switch and choices; adding from a link or a zip | `app/.../modules/ModuleRegistry.kt` |
 | Provider order, download order, and the walk down each | `app/.../modules/SourceModules.kt` |
 | Link modules (manifest + HTTP calls) | `app/.../modules/web/WebModuleManifest.kt`, `WebModule.kt` |
-| Look-only zip modules | `app/.../modules/local/LocalModule.kt` |
+| Zip modules without a service | `app/.../modules/local/LocalModule.kt` |
+| Skins: the model, the parser, unpacking a zip, the look that's on | `app/.../modules/skin/` (`ModuleSkin.kt`, `SkinParser.kt`, `SkinFiles.kt`, `ActiveSkin.kt`) |
+| The module player style | `app/.../ui/player/styles/ModulePlayerStyle.kt` |
+| Module pages | `app/.../ui/screens/settings/modules/ModulePageScreen.kt` |
+| A look's font across the app | `LookFont` in `app/.../ui/theme/Type.kt` |
 | Looks: applying and giving settings back | `app/.../modules/ModuleLooks.kt` |
 | The catalog | `modules/catalog.json` (read by `app/.../modules/ModuleCatalog.kt`) |
 | Pages | `app/.../ui/screens/settings/modules/` |
@@ -430,9 +658,18 @@ After a bump, every module app has to be rebuilt against the new `:modules:api`.
 
 1. Add the key to `LookSetting` in `MochyModule.kt`, with a one-line comment saying its values.
 2. Add it to `ModuleLooks.Settings` in the app, with the preference key it writes and a parser that turns away anything out of range (`enumName<…>`, `number(it, min..max)` or `bool`).
-3. Add a row to the table in [section 4](#4-changing-the-interface-look-settings).
+3. Add a row to the table in [section 4](#41-look-settings).
 
 A look can never reach anything that isn't in `ModuleLooks.Settings`. That's the safety line, so keep it to look settings: no accounts, no network, no playback.
+
+### Adding a player block, a background or a page block
+
+1. Add it to the model in `ModuleSkin.kt` (`SkinBlock`, `SkinBackground` or `PageBlock`).
+2. Read it in `SkinParser.kt`. Give every field a default, and clamp every number, so a typo can't break the player.
+3. Draw it in `ModulePlayerStyle.kt` or `ModulePageScreen.kt`. Follow `CLAUDE.md`'s smoothness rules: read the playback position and anything else that changes every frame inside `drawBehind`/`graphicsLayer`, never in composition; pause any loop while the style is hidden (`rememberStyleShowing`, `LocalAppContentObscured`) and wrap it in `damageBoundary()`; use the GlassKit helpers for blur.
+4. Add a case to `app/src/test/.../modules/skin/SkinParserTest.kt`, and a row to [section 4](#4-changing-the-interface-looks-players-fonts-and-pages).
+
+An older Mochy skips a block it doesn't know, so adding one never breaks older layouts. Renaming or removing one does, so don't.
 
 ### Changing what a link or zip module can do
 
@@ -477,5 +714,10 @@ Build against `:modules:api` as `compileOnly`, since Mochy already has those cla
 | The test finds the song but it never plays from your module | Check the stream call with `curl -I`: it must give audio (200 or 206), not a web page or an error. Check that the codec and sample rate are ones the phone can decode. |
 | Songs come from YouTube instead | Your module is below YouTube in the provider order, it's switched off, or it was skipped for 10 minutes after not answering. `adb logcat -s SourceModules` says which. |
 | Downloads don't use your module | Check the **download order**, not the provider order. Also, an HLS/DASH stream can't be downloaded: give one whole file. |
-| The look didn't change something | The key isn't in [section 4](#4-changing-the-interface-look-settings), the value is out of range, or the user changed that setting by hand. |
+| The look didn't change something | The key isn't in [section 4.1](#41-look-settings), the value is out of range, or the user changed that setting by hand. |
+| My player doesn't show up | Your look has to be **on**. `player` needs at least one block Mochy knows. Then hold the player: your style is the first in the selector. |
+| A block is missing from my player | Its `type` is misspelled or unknown, so it was skipped. Check the tables in [4.2](#42-a-player-of-your-own). |
+| My picture doesn't show | The path is relative to `manifest.json` and case-sensitive, and the file must be `.png`, `.jpg`, `.webp` or `.gif` under 8 MB. For a link module, the picture must be reachable next to the manifest. |
+| My font isn't used | Fonts only work from a zip, as `.ttf` or `.otf`, and the `regular` path must point at the file. A broken font is skipped. |
+| My page isn't listed | Its `id` may only use `a`–`z`, `0`–`9`, `-` and `_`, and it needs at least one block. Pages only open while the module is on. |
 | "… didn't answer" under the module's name | Your server didn't answer. It's tried again after 10 minutes, or right away with **Check server**. |

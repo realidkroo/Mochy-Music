@@ -26,6 +26,9 @@ import com.mochyy.mochymusic.module.applemusic.AppleMusicModule
 import com.mochyy.mochymusic.module.jiosaavn.JioSaavnModule
 import com.mochyy.mochymusic.module.monochrome.MonochromeModule
 import com.mochyy.mochymusic.modules.local.LocalModule
+import com.mochyy.mochymusic.modules.skin.ActiveSkin
+import com.mochyy.mochymusic.modules.skin.SkinFiles
+import com.mochyy.mochymusic.modules.skin.SkinSource
 import com.mochyy.mochymusic.modules.web.WebModule
 import com.mochyy.mochymusic.modules.web.WebModuleManifest
 import com.mochyy.mochymusic.utils.dataStore
@@ -121,12 +124,12 @@ class ModuleRegistry @Inject constructor(
     fun setEnabled(id: String, on: Boolean) {
         val module = module(id)
         prefs.edit { putBoolean("enabled_$id", on) }
-        if (module is LookModule && ModuleFeature.Look in module.adds) {
+        if (module is LookModule && restyles(module)) {
             scope.launch {
                 if (on) {
                     // one look at a time: the one already on gives the user's settings back first
                     modules.map { it.first }
-                        .filter { it.info.id != id && it is LookModule && ModuleFeature.Look in it.adds && isEnabled(it.info.id) }
+                        .filter { it.info.id != id && restyles(it) && isEnabled(it.info.id) }
                         .forEach { other ->
                             prefs.edit { putBoolean("enabled_${other.info.id}", false) }
                             looks.restore(other.info.id, (other as LookModule).look)
@@ -140,6 +143,10 @@ class ModuleRegistry @Inject constructor(
         }
         refresh()
     }
+
+    // a look that changes settings, the player or the font; only one of those is on at a time, a module with only pages doesn't count
+    private fun restyles(module: MochyModule): Boolean =
+        module is LookModule && ModuleFeature.Look in module.adds && (module.look.isNotEmpty() || (module as? SkinSource)?.skin?.restyles == true)
 
     fun picks(id: String): Map<String, String> {
         val module = module(id) ?: return emptyMap()
@@ -158,6 +165,8 @@ class ModuleRegistry @Inject constructor(
             ModuleEntry(module, origin, isEnabled(module.info.id), picks(module.info.id), module.accountState())
         }
         _entries.value = list
+        // the look that's on now, for the player's module style and the app's font
+        ActiveSkin.publish(list.firstOrNull { it.active && (it.module as? SkinSource)?.skin?.restyles == true }?.let { (it.module as SkinSource).skin }, scope)
         LyricsProviderRegistry.setModuleProviders(
             list.filter { it.active && it.adds(ModuleFeature.Lyrics) }.mapNotNull { (it.module as? LyricsModule)?.let(::ModuleLyricsProvider) },
         )
@@ -175,6 +184,9 @@ class ModuleRegistry @Inject constructor(
             val adds: Set<ModuleFeature>,
             val alreadyAdded: Boolean,
             val from: String,
+            // the zip it came in and the manifest's folder inside it, to unpack its pictures and fonts from on install
+            val zip: Uri? = null,
+            val zipRoot: String = "",
         ) : LinkCheck
         data object NotALink : LinkCheck
         data object Unreachable : LinkCheck
@@ -202,27 +214,27 @@ class ModuleRegistry @Inject constructor(
 
     /** reads a module's zip without adding anything: its manifest.json, and the service it names when it plays songs or lyrics */
     suspend fun checkZip(uri: Uri): LinkCheck = withContext(Dispatchers.IO) {
-        val text = runCatching { manifestInZip(uri) }.getOrNull() ?: return@withContext LinkCheck.NotAZip
+        val (text, root) = runCatching { manifestInZip(uri) }.getOrNull() ?: return@withContext LinkCheck.NotAZip
         val manifest = WebModuleManifest.parse(text) ?: return@withContext LinkCheck.NotAModule
         val service = manifest.url?.let { WebModuleManifest.baseOf(it) ?: return@withContext LinkCheck.NotALink }
         if (service != null) {
             val found = WebModule(service, manifest, context.resources)
             if (found.adds.isEmpty()) return@withContext LinkCheck.NotAModule
-            return@withContext LinkCheck.Ready(service, text, found.info.name, found.adds, module(found.info.id) != null, from = service.substringAfter("://"))
+            return@withContext LinkCheck.Ready(service, text, found.info.name, found.adds, module(found.info.id) != null, service.substringAfter("://"), uri, root)
         }
         // songs and lyrics have to come from somewhere, a file on its own can only hold a look
         if (manifest.resourceNames.any { it in ServiceResources }) return@withContext LinkCheck.NeedsUrl
-        if (manifest.look.isEmpty()) return@withContext LinkCheck.NotAModule
-        val local = LocalModule(manifest)
-        LinkCheck.Ready(null, text, local.info.name, local.adds, module(local.info.id) != null, from = fileNameOf(uri))
+        if (!manifest.changesLook) return@withContext LinkCheck.NotAModule
+        val local = LocalModule(manifest, files = null)
+        LinkCheck.Ready(null, text, local.info.name, local.adds, module(local.info.id) != null, fileNameOf(uri), uri, root)
     }
 
-    // the zip's manifest.json, at its root or in the one folder most zip tools wrap things in; nothing else inside is read or unpacked
-    private fun manifestInZip(uri: Uri): String? = context.contentResolver.openInputStream(uri)?.use { raw ->
+    // the zip's manifest.json and the folder it sits in, at its root or in the one folder most zip tools wrap things in
+    private fun manifestInZip(uri: Uri): Pair<String, String>? = context.contentResolver.openInputStream(uri)?.use { raw ->
         ZipInputStream(raw.buffered()).use { zip ->
-            generateSequence { zip.nextEntry }.take(MaxZipEntries).firstOrNull { entry ->
+            val entry = generateSequence { zip.nextEntry }.take(MaxZipEntries).firstOrNull { entry ->
                 val parts = entry.name.trimStart('/').split('/')
-                !entry.isDirectory && parts.last() == "manifest.json" && parts.size <= 2
+                !entry.isDirectory && parts.last() == "manifest.json" && parts.size <= 2 && parts.first() != "__MACOSX"
             } ?: return null
             val out = ByteArrayOutputStream()
             val buffer = ByteArray(8 * 1024)
@@ -233,7 +245,7 @@ class ModuleRegistry @Inject constructor(
                 // a manifest is a few kilobytes, anything this big is something else
                 if (out.size() > MaxManifestBytes) return null
             }
-            out.toString(Charsets.UTF_8.name())
+            out.toString(Charsets.UTF_8.name()) to entry.name.trimStart('/').removeSuffix("manifest.json")
         }
     }
 
@@ -243,14 +255,18 @@ class ModuleRegistry @Inject constructor(
         }
     }.getOrNull() ?: uri.lastPathSegment.orEmpty()
 
-    /** adds a checked link or zip as a module, switched off until the user turns it on; gives back its id */
+    /** adds a checked link or zip as a module, switched off until the user turns it on; gives back its id. unpacks a zip's files, so not on the main thread */
     fun install(ready: LinkCheck.Ready): String {
         val manifest = requireNotNull(WebModuleManifest.parse(ready.manifestText))
         val base = ready.base
+        val newId = if (base != null) WebModuleManifest.idFor(base, manifest) else LocalModule.idFor(manifest)
+        // the zip's pictures and fonts go in first, so the module is built with them in place; a link brings none, and old ones go
+        val files = ready.zip?.let { SkinFiles.unpack(context, it, newId, ready.zipRoot) }
+        if (ready.zip == null) SkinFiles.delete(context, newId)
         val (module, origin) = if (base != null) {
-            WebModule(base, manifest, context.resources) to ModuleOrigin.Web(base)
+            WebModule(base, manifest, context.resources, files) to ModuleOrigin.Web(base)
         } else {
-            LocalModule(manifest) to ModuleOrigin.File(ready.from)
+            LocalModule(manifest, files) to ModuleOrigin.File(ready.from)
         }
         val id = module.info.id
         synchronized(this) {
@@ -275,6 +291,7 @@ class ModuleRegistry @Inject constructor(
         if (origin !is ModuleOrigin.Web && origin !is ModuleOrigin.File) return
         scope.launch {
             if (module is LookModule) looks.restore(id, module.look)
+            SkinFiles.delete(context, id)
         }
         module.signOut()
         synchronized(this) {
@@ -310,11 +327,11 @@ class ModuleRegistry @Inject constructor(
         val web = kept.mapNotNull { saved ->
             val base = saved.optString("base").takeIf { it.isNotBlank() } ?: return@mapNotNull null
             val manifest = WebModuleManifest.parse(saved.optString("manifest")) ?: return@mapNotNull null
-            WebModule(base, manifest, context.resources) to ModuleOrigin.Web(base)
+            WebModule(base, manifest, context.resources, filesFor(WebModuleManifest.idFor(base, manifest))) to ModuleOrigin.Web(base)
         }
         val local = savedLocalModules().mapNotNull { saved ->
             val manifest = WebModuleManifest.parse(saved.optString("manifest")) ?: return@mapNotNull null
-            LocalModule(manifest) to ModuleOrigin.File(saved.optString("file"))
+            LocalModule(manifest, filesFor(LocalModule.idFor(manifest))) to ModuleOrigin.File(saved.optString("file"))
         }
         // a module app replaces the built-in module with its id, so a module can be updated on its own
         val appIds = apps.map { it.first.info.id }.toSet()
@@ -323,6 +340,9 @@ class ModuleRegistry @Inject constructor(
             .distinctBy { it.first.info.id }
             .onEach { (module, _) -> module.attach(hostFor(module)) }
     }
+
+    // the pictures and fonts a module's zip brought, when it came as one
+    private fun filesFor(id: String): java.io.File? = SkinFiles.folderFor(context, id).takeIf { it.isDirectory }
 
     /** monochrome used to be built into playback with its own switch; it carries over, once */
     private fun migrateMonochromeSwitch() {

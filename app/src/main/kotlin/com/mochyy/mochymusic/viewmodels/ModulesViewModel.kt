@@ -168,11 +168,16 @@ class ModulesViewModel @Inject constructor(
     suspend fun checkZip(uri: android.net.Uri): ModuleRegistry.LinkCheck = registry.checkZip(uri)
 
     /** adds a checked module, switched off so nothing changes until the user turns it on; gives back its id */
-    fun install(ready: ModuleRegistry.LinkCheck.Ready): String {
-        val id = registry.install(ready)
+    suspend fun install(ready: ModuleRegistry.LinkCheck.Ready): String {
+        // a zip's pictures and fonts are unpacked on the way in
+        val id = withContext(Dispatchers.IO) { registry.install(ready) }
         modules.refresh()
         return id
     }
+
+    /** a module's skin (its player, font and pages), when it brings one */
+    fun skinOf(id: String): com.mochyy.mochymusic.modules.skin.ModuleSkin? =
+        (registry.module(id) as? com.mochyy.mochymusic.modules.skin.SkinSource)?.skin
 
     fun remove(id: String) {
         registry.remove(id)

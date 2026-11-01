@@ -3,6 +3,7 @@
 package com.mochyy.mochymusic.modules
 
 import android.content.Context
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.edit
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
@@ -10,19 +11,29 @@ import androidx.datastore.preferences.core.edit
 import com.mochyy.mochymusic.constants.BlurQuality
 import com.mochyy.mochymusic.constants.BlurQualityKey
 import com.mochyy.mochymusic.constants.BlurStrengthPxKey
+import com.mochyy.mochymusic.constants.DynamicThemeKey
 import com.mochyy.mochymusic.constants.ElementBlurKey
 import com.mochyy.mochymusic.constants.EnableProgressiveBlurKey
+import com.mochyy.mochymusic.constants.FlagshipBackgroundStyleKey
 import com.mochyy.mochymusic.constants.HomeStyle
 import com.mochyy.mochymusic.constants.HomeStyleKey
+import com.mochyy.mochymusic.constants.IpodTheme
+import com.mochyy.mochymusic.constants.IpodThemeKey
+import com.mochyy.mochymusic.constants.IpodWheelColor
+import com.mochyy.mochymusic.constants.IpodWheelColorKey
 import com.mochyy.mochymusic.constants.LyricsMotionStyle
 import com.mochyy.mochymusic.constants.LyricsMotionStyleKey
+import com.mochyy.mochymusic.constants.PlayerBackgroundStyle
+import com.mochyy.mochymusic.constants.PlayerBackgroundStyleKey
 import com.mochyy.mochymusic.constants.PlayerStyle
 import com.mochyy.mochymusic.constants.PlayerStyleKey
 import com.mochyy.mochymusic.constants.PlaylistStyle
 import com.mochyy.mochymusic.constants.PlaylistStyleKey
 import com.mochyy.mochymusic.constants.PureBlackKey
+import com.mochyy.mochymusic.constants.SelectedThemeColorKey
 import com.mochyy.mochymusic.constants.ThumbnailCornerRadiusKey
 import com.mochyy.mochymusic.module.LookSetting
+import com.mochyy.mochymusic.modules.skin.parseHexColor
 import com.mochyy.mochymusic.utils.dataStore
 import org.json.JSONObject
 
@@ -92,6 +103,12 @@ internal class ModuleLooks(private val context: Context) {
             LookSetting.PROGRESSIVE_BLUR to Setting(EnableProgressiveBlurKey) { bool(it) },
             LookSetting.ELEMENT_BLUR to Setting(ElementBlurKey) { bool(it) },
             LookSetting.PURE_BLACK to Setting(PureBlackKey) { bool(it) },
+            LookSetting.ACCENT_COLOR to Setting(SelectedThemeColorKey) { parseHexColor(it)?.toArgb() },
+            LookSetting.DYNAMIC_THEME to Setting(DynamicThemeKey) { bool(it) },
+            LookSetting.PLAYER_BACKGROUND to Setting(PlayerBackgroundStyleKey) { enumName<PlayerBackgroundStyle>(it) },
+            LookSetting.FLAGSHIP_BACKGROUND to Setting(FlagshipBackgroundStyleKey) { enumName<PlayerBackgroundStyle>(it) },
+            LookSetting.IPOD_THEME to Setting(IpodThemeKey) { enumName<IpodTheme>(it) },
+            LookSetting.IPOD_WHEEL to Setting(IpodWheelColorKey) { enumName<IpodWheelColor>(it) },
         )
     }
 }

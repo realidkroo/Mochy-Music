@@ -25,6 +25,10 @@ internal data class WebModuleManifest(
     val settings: List<Setting> = emptyList(),
     // only read from a zip: the service the module plays from, since a file has no link of its own
     val url: String? = null,
+    // a skin: a player of its own, a font from the zip, pages; read as raw json so one bad part can't sink the whole manifest
+    val player: JsonElement? = null,
+    val font: JsonElement? = null,
+    val pages: JsonElement? = null,
 ) {
     @Serializable
     data class Setting(
@@ -45,8 +49,11 @@ internal data class WebModuleManifest(
             ((element as? JsonPrimitive) ?: ((element as? JsonObject)?.get("name") as? JsonPrimitive))?.contentOrNull?.lowercase()
         }.toSet()
 
+    // anything that changes how mochy looks: settings, a player, a font, pages
+    val changesLook: Boolean get() = look.isNotEmpty() || player != null || font != null || pages != null
+
     // a manifest that lists nothing is an audio source, that's what most services of this kind are
-    val playsSongs: Boolean get() = (resourceNames.isEmpty() && look.isEmpty()) || "search" in resourceNames
+    val playsSongs: Boolean get() = (resourceNames.isEmpty() && !changesLook) || "search" in resourceNames
 
     val hasLyrics: Boolean get() = "lyrics" in resourceNames
 
@@ -62,10 +69,11 @@ internal data class WebModuleManifest(
         // a site's own manifest.json, the one for installing it to a home screen, has a start page and icons but asks for nothing a module does
         fun isWebsite(text: String): Boolean {
             val root = runCatching { json.parseToJsonElement(text) as? JsonObject }.getOrNull() ?: return false
-            return "resources" !in root && "look" !in root && SiteKeys.any { it in root }
+            return ModuleKeys.none { it in root } && SiteKeys.any { it in root }
         }
 
         private val SiteKeys = listOf("start_url", "display", "short_name", "icons")
+        private val ModuleKeys = listOf("resources", "look", "player", "font", "pages")
 
         // people paste the manifest's own link as often as the service's, both end up as the service's base
         fun baseOf(link: String): String? {

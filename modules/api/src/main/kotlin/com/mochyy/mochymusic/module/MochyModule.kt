@@ -240,4 +240,16 @@ object LookSetting {
     const val ELEMENT_BLUR = "elementBlur"
     /** true or false */
     const val PURE_BLACK = "pureBlack"
+    /** the app's accent as "#RRGGBB"; a look that sets it also turns the cover-coloured theme off unless it says otherwise */
+    const val ACCENT_COLOR = "accentColor"
+    /** true or false: the app's colours following the playing cover */
+    const val DYNAMIC_THEME = "dynamicTheme"
+    /** the classic player's background: COVER_GRADIENT, SOLID, DARK_GRADIENT, APPLE_MUSIC, AMBIENT */
+    const val PLAYER_BACKGROUND = "playerBackground"
+    /** the flagship's background, the same names */
+    const val FLAGSHIP_BACKGROUND = "flagshipBackground"
+    /** SILVER, BLACK, U2 or TRUE_DARK */
+    const val IPOD_THEME = "ipodTheme"
+    /** THEME, WHITE, BLACK or RED */
+    const val IPOD_WHEEL = "ipodWheelColor"
 }

@@ -143,7 +143,11 @@ private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) ->
         if (confirming != null) {
             ConfirmAdd(
                 ready = confirming,
-                onAdd = { onAdded(viewModel.install(confirming)) },
+                adding = checking,
+                onAdd = {
+                    checking = true
+                    scope.launch { onAdded(viewModel.install(confirming)) }
+                },
                 onCancel = { ready = null },
             )
             return@Column
@@ -241,7 +245,7 @@ private fun CatalogRow(item: CatalogModule, enabled: Boolean, onClick: () -> Uni
 
 /** what the link turned out to be, and one last yes before it's added */
 @Composable
-private fun ConfirmAdd(ready: LinkCheck.Ready, onAdd: () -> Unit, onCancel: () -> Unit) {
+private fun ConfirmAdd(ready: LinkCheck.Ready, adding: Boolean, onAdd: () -> Unit, onCancel: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -268,7 +272,7 @@ private fun ConfirmAdd(ready: LinkCheck.Ready, onAdd: () -> Unit, onCancel: () -
         )
     }
     Spacer(Modifier.height(16.dp))
-    SheetPillButton(text = stringResource(R.string.modules_add, ready.name), onClick = onAdd)
+    SheetPillButton(text = stringResource(if (adding) R.string.modules_adding else R.string.modules_add, ready.name), onClick = onAdd, enabled = !adding)
     Text(
         stringResource(R.string.modules_cancel),
         color = SearchColors.Secondary,

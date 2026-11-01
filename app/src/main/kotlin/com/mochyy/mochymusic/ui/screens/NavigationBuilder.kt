@@ -522,6 +522,17 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     composable(
+        route = com.mochyy.mochymusic.ui.screens.settings.modules.ModulePageRoutePattern,
+        arguments = listOf(navArgument("id") { type = NavType.StringType }, navArgument("page") { type = NavType.StringType }),
+    ) { entry ->
+        com.mochyy.mochymusic.ui.screens.settings.modules.ModulePageScreen(
+            navController = navController,
+            id = entry.arguments?.getString("id").orEmpty(),
+            pageId = entry.arguments?.getString("page").orEmpty(),
+        )
+    }
+
+    composable(
         route = "browse/{browseId}",
         arguments = listOf(
             navArgument("browseId") {

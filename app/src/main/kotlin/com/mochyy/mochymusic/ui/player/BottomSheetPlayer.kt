@@ -271,8 +271,13 @@ private fun PlayerSheet(
     val (showPlayerBottomCard) = rememberPreference(ShowPlayerBottomCardKey, defaultValue = true)
 
     // the player studio: the selector the player shrinks into, and the flagship's in-place editor
+    // a look module with a player of its own puts that style first in the selector, for as long as it's on
+    val hasModuleStyle = com.mochyy.mochymusic.modules.skin.ActiveSkin.current?.player != null
     // the selector's columns, as indexes into PlayerStyle.entries: the flagship with its older layouts under it
-    val selectorColumns = remember { PlayerStyle.selectorColumns.map { column -> column.map { it.ordinal } } }
+    val selectorColumns = remember(hasModuleStyle) {
+        val columns = if (hasModuleStyle) listOf(listOf(PlayerStyle.MODULE)) + PlayerStyle.selectorColumns else PlayerStyle.selectorColumns
+        columns.map { column -> column.map { it.ordinal } }
+    }
     val studio = com.mochyy.mochymusic.ui.player.studio.rememberPlayerStudioState(selectorColumns)
     val studioAnchors = remember { com.mochyy.mochymusic.ui.player.studio.StudioAnchors() }
     val studioParts = com.mochyy.mochymusic.ui.player.studio.rememberStudioParts(studio, studioAnchors)
@@ -318,7 +323,8 @@ private fun PlayerSheet(
     // settings file is written, which landed in the middle of the player growing back out of its
     // card - the old style grew, then the new one was built mid-spring, and the spring stuttered.
     var pickedPlayerStyle by remember { mutableStateOf<PlayerStyle?>(null) }
-    val playerStyle = pickedPlayerStyle ?: savedPlayerStyle
+    // the module style draws the look that's on; with none on, the flagship stands in
+    val playerStyle = (pickedPlayerStyle ?: savedPlayerStyle).let { if (it == PlayerStyle.MODULE && !hasModuleStyle) PlayerStyle.FLAGSHIP else it }
     LaunchedEffect(savedPlayerStyle) {
         if (savedPlayerStyle == pickedPlayerStyle) pickedPlayerStyle = null
     }
@@ -370,7 +376,8 @@ private fun PlayerSheet(
     LaunchedEffect(studioEngaged) {
         if (studioEngaged) transition.close()
     }
-    val playerStyles = remember { com.mochyy.mochymusic.constants.PlayerStyle.entries.toList() }
+    // the module style is last among the entries, so leaving it out keeps every other style's index
+    val playerStyles = remember(hasModuleStyle) { PlayerStyle.entries.filter { it != PlayerStyle.MODULE || hasModuleStyle } }
     val currentPlayerStyleForStudio by androidx.compose.runtime.rememberUpdatedState(playerStyle)
     val openStudio: () -> Unit = remember(studio) {
         {

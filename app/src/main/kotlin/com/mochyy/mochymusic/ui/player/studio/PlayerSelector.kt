@@ -452,7 +452,11 @@ fun PlayerSelectorOverlay(
                 ) {
                     Text("Styles", color = Color.White, style = studioText(StudioType.Title, FontWeight.Bold))
                     AnimatedContent(
-                        targetState = styles.getOrNull(focused)?.selectorName.orEmpty(),
+                        // the module style goes by the name its look gives it
+                        targetState = styles.getOrNull(focused)?.let { style ->
+                            if (style == PlayerStyle.MODULE) com.mochyy.mochymusic.modules.skin.ActiveSkin.current?.player?.name ?: style.selectorName
+                            else style.selectorName
+                        }.orEmpty(),
                         transitionSpec = {
                             (slideInVertically(tween(320)) { it } + fadeIn(tween(240))) togetherWith
                                 (slideOutVertically(tween(280)) { -it } + fadeOut(tween(180)))

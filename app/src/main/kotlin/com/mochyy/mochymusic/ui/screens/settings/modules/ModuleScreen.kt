@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -97,6 +98,7 @@ fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesVie
         Spacer(Modifier.height(16.dp))
         Choices(entry) { choice, option -> viewModel.setPick(id, choice, option) }
         if (entry.module is ServerListModule) Servers(id, viewModel)
+        Pages(entry, viewModel) { page -> navController.navigate(modulePageRoute(id, page)) }
         if (entry.adds(ModuleFeature.AudioSource)) {
             PlaybackTest(entry, viewModel)
             Spacer(Modifier.height(12.dp))
@@ -209,6 +211,26 @@ private fun Choices(entry: ModuleEntry, onPick: (choice: String, option: String)
         }
         Spacer(Modifier.height(16.dp))
     }
+}
+
+/** the pages a look module brings, there to open while it's on */
+@Composable
+private fun Pages(entry: ModuleEntry, viewModel: ModulesViewModel, onOpen: (String) -> Unit) {
+    val pages = remember(entry.id) { viewModel.skinOf(entry.id)?.pages.orEmpty() }
+    if (pages.isEmpty()) return
+    LabSectionLabel(stringResource(R.string.module_pages))
+    LabCard(padding = 10.dp) {
+        pages.forEach { page ->
+            LabTextAction(page.title, R.drawable.navigate_next, enabled = entry.enabled) { onOpen(page.id) }
+        }
+    }
+    if (!entry.enabled) {
+        Text(
+            stringResource(R.string.module_pages_off), fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 17.sp,
+            color = LabColors.Secondary, modifier = Modifier.padding(top = 8.dp, start = 6.dp, end = 6.dp),
+        )
+    }
+    Spacer(Modifier.height(16.dp))
 }
 
 /** the servers the module plays from, the ones people added first, and adding another */
