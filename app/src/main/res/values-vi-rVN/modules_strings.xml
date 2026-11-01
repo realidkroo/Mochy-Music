@@ -5,7 +5,7 @@
     <string name="module_adds_lyrics">Lyrics</string>
     <string name="module_adds_look">Look</string>
     <string name="modules_beta">BETA</string>
-    <string name="modules_intro">Modules add things to Mochy: new places to play songs from, new lyrics and new looks. Turn one off and everything it added goes away with it, from Audio Quality too.</string>
+    <string name="modules_intro">new looks, new sources, new lyrics as modules. 3rd party..</string>
     <string name="module_status_signed_out">Not signed in</string>
     <string name="module_status_expired">Sign in again · %1$s</string>
     <string name="module_status_on">On · %1$s</string>
@@ -16,6 +16,7 @@
     <string name="module_by">%1$s · by %2$s</string>
     <string name="modules_find_more">Find more sources</string>
     <string name="modules_find_more_desc">Add a module from the catalog or from a link</string>
+    <string name="modules_bar">Find more modules on Mochy’s Bar &lt;3</string>
     <string name="modules_find_more_body">A module is a service someone else runs. Mochy only asks it for songs, lyrics or a look, and it can\'t touch anything else in the app.</string>
     <string name="modules_add_from_link">Add from a link</string>
     <string name="modules_link_hint">https://…</string>
@@ -24,6 +25,7 @@
     <string name="modules_link_not_a_link">That doesn\'t look like a link. It should start with https://</string>
     <string name="modules_link_unreachable">Couldn\'t reach that link. Check it and your connection, then try again.</string>
     <string name="modules_link_not_a_module">That link answered, but it isn\'t a module Mochy can use.</string>
+    <string name="modules_link_website">That\'s a website, not a module. If it\'s a Monochrome site, add it on Monochrome\'s page under Servers instead.</string>
     <string name="modules_catalog">From the catalog</string>
     <string name="modules_catalog_failed">Couldn\'t load the catalog. Check your connection and open this again.</string>
     <string name="modules_catalog_empty">Nothing in the catalog yet. Paste a module\'s link above to add it.</string>
@@ -37,6 +39,17 @@
     <string name="module_sign_in_refused">%1$s didn\'t take that sign-in. %2$s</string>
     <string name="module_check_account">Check account</string>
     <string name="module_check_server">Check server</string>
+    <string name="module_checking">Checking…</string>
+    <string name="module_servers">Servers</string>
+    <string name="module_servers_body">Each song plays from the first server that has it, starting with the ones you added. Found a Monochrome site that works? Add it here and Mochy finds the server it plays from.</string>
+    <string name="module_server_built_in">Built in</string>
+    <string name="module_server_remove">Remove %1$s</string>
+    <string name="module_server_add">Add a server</string>
+    <string name="module_server_add_body">Paste a Monochrome site, or its server\'s own link. Mochy checks that it can search there before adding it.</string>
+    <string name="module_server_add_button">Find and add</string>
+    <string name="module_server_finding">Looking for its server…</string>
+    <string name="module_server_not_found">Couldn\'t find a Monochrome server there. Try the site\'s main page, or the server\'s own link.</string>
+    <string name="module_server_already_added">That server is already on the list.</string>
     <string name="module_sign_out">Sign out</string>
     <string name="module_use">Use %1$s</string>
     <string name="module_use_sign_in_first">Sign in first, then turn it on here.</string>
