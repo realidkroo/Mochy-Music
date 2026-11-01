@@ -33,6 +33,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.LocalPlayerAwareWindowInsets
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.discord.DiscordLogin
 import com.mochyy.mochymusic.discord.NowPlaying
 import com.mochyy.mochymusic.discord.PresenceConnection
@@ -240,6 +242,14 @@ private fun CustomizeSection(
             onValueChange = { seconds -> edit { copy(refreshSeconds = seconds) } },
         )
     }
+
+    DiscordSectionTitle(stringResource(R.string.discord_behaviour))
+    DiscordSwitchCard(
+        title = stringResource(R.string.discord_clear_on_pause),
+        description = stringResource(R.string.discord_clear_on_pause_desc),
+        checked = settings.clearOnPause,
+        onCheckedChange = { on -> edit { copy(clearOnPause = on) } },
+    )
 
     DiscordSectionTitle("Activity")
     DiscordCard {

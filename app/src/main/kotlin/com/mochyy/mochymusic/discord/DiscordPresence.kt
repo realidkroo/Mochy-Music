@@ -124,7 +124,8 @@ class DiscordPresence @Inject constructor(
                     hide()
                     _connection.value = PresenceConnection.Off
                 }
-                track == null || OfflineMode.isOn -> {
+                // paused with "clear status when paused" on: down at once, and playing again brings it back
+                track == null || OfflineMode.isOn || (!track.isPlaying && settings.clearOnPause) -> {
                     hide()
                     _connection.value = PresenceConnection.Idle
                 }

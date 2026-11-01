@@ -72,6 +72,7 @@ import com.mochyy.mochymusic.discord.PresenceImage
 import com.mochyy.mochymusic.discord.PresenceSettings
 import com.mochyy.mochymusic.discord.PresenceText
 import com.mochyy.mochymusic.discord.SpinStyle
+import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
@@ -129,6 +130,35 @@ internal fun DiscordCard(
 @Composable
 internal fun DiscordCardTitle(text: String) {
     Text(text, color = DiscordColors.Primary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+}
+
+/** a card that turns one behaviour on or off, with a line saying what it does */
+@Composable
+internal fun DiscordSwitchCard(
+    title: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    DiscordCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .padding(end = 12.dp),
+            ) {
+                DiscordCardTitle(title)
+                Text(
+                    text = description,
+                    color = DiscordColors.Secondary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            AppSwitch(checked = checked, onCheckedChange = onCheckedChange)
+        }
+    }
 }
 
 /** the small grey "string" / "action" labels inside the button cards */

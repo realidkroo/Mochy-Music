@@ -12,6 +12,7 @@ import com.mochyy.mochymusic.constants.DiscordButton1TargetKey
 import com.mochyy.mochymusic.constants.DiscordButton1TextKey
 import com.mochyy.mochymusic.constants.DiscordButton2TargetKey
 import com.mochyy.mochymusic.constants.DiscordButton2TextKey
+import com.mochyy.mochymusic.constants.DiscordClearOnPauseKey
 import com.mochyy.mochymusic.constants.DiscordDetailsKey
 import com.mochyy.mochymusic.constants.DiscordLargeImageKey
 import com.mochyy.mochymusic.constants.DiscordLargeTextKey
@@ -81,6 +82,8 @@ data class PresenceSettings(
     val spinSeconds: Int = DefaultSpinSeconds,
     /** frames per second of the rotating artwork's GIF, one of [SpinFpsSteps] */
     val spinFps: Int = DefaultSpinFps,
+    /** off the profile the moment the music pauses, rather than staying up frozen for a while */
+    val clearOnPause: Boolean = false,
 ) {
     val spin: SpinStyle get() = SpinStyle(spinSeconds, spinFps)
 
@@ -101,6 +104,7 @@ data class PresenceSettings(
         prefs[DiscordButton2TargetKey] = button2.target.name
         prefs[DiscordSpinSecondsKey] = spinSeconds
         prefs[DiscordSpinFpsKey] = spinFps
+        prefs[DiscordClearOnPauseKey] = clearOnPause
     }
 
     companion object {
@@ -144,6 +148,7 @@ data class PresenceSettings(
             ),
             spinSeconds = (prefs[DiscordSpinSecondsKey] ?: Defaults.spinSeconds).coerceIn(MinSpinSeconds, MaxSpinSeconds),
             spinFps = prefs[DiscordSpinFpsKey]?.takeIf { it in SpinFpsSteps } ?: Defaults.spinFps,
+            clearOnPause = prefs[DiscordClearOnPauseKey] ?: Defaults.clearOnPause,
         )
 
         private inline fun <reified T : Enum<T>> enumOf(name: String?, fallback: T): T =

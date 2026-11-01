@@ -312,6 +312,8 @@ val DiscordButton1TextKey = stringPreferencesKey("discordPresenceButton1Text")
 val DiscordButton1TargetKey = stringPreferencesKey("discordPresenceButton1Target")
 val DiscordButton2TextKey = stringPreferencesKey("discordPresenceButton2Text")
 val DiscordButton2TargetKey = stringPreferencesKey("discordPresenceButton2Target")
+// the status comes down the moment the music pauses, instead of staying up frozen for ten minutes
+val DiscordClearOnPauseKey = booleanPreferencesKey("discordPresenceClearOnPause")
 
 val EnableGoogleCastKey = booleanPreferencesKey("enableGoogleCast")
 
