@@ -1,4 +1,4 @@
-// the small pieces the modules list and a module's page share: its logo, what it adds, the beta mark and its status line
+// the small pieces the modules list and a module's page share: its logo, what it adds and its status line
 
 package com.mochyy.mochymusic.ui.screens.settings.modules
 
@@ -91,36 +91,12 @@ internal fun FeatureChips(adds: Set<ModuleFeature>, modifier: Modifier = Modifie
     }
 }
 
-/** a little flask and "beta": the modules system is still settling */
-@Composable
-internal fun BetaBadge(modifier: Modifier = Modifier) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .clip(RoundedCornerShape(50))
-            .background(Color(0xFF3A2F12))
-            .padding(start = 8.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),
-    ) {
-        Icon(painterResource(R.drawable.flask), null, tint = BetaYellow, modifier = Modifier.size(13.dp))
-        Spacer(Modifier.width(5.dp))
-        Text(
-            stringResource(R.string.modules_beta),
-            fontFamily = InterFontFamily,
-            fontWeight = FontWeight.Bold,
-            fontSize = 11.sp,
-            letterSpacing = 0.8.sp,
-            color = BetaYellow,
-        )
-    }
-}
-
-private val BetaYellow = Color(0xFFF2D46B)
-
 /** on or off, and the account it's on, in one short line */
 @Composable
 internal fun moduleStatus(entry: ModuleEntry): String = when (val account = entry.account) {
     AccountState.SignedOut -> stringResource(R.string.module_status_signed_out)
-    is AccountState.Expired -> stringResource(R.string.module_status_expired, account.reason)
+    // a module with no account can't be signed in again, its reason is only that the server didn't answer
+    is AccountState.Expired -> if (entry.module.signIn == null) account.reason else stringResource(R.string.module_status_expired, account.reason)
     is AccountState.SignedIn -> stringResource(if (entry.enabled) R.string.module_status_on else R.string.module_status_off, account.label)
 }
 

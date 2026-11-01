@@ -4593,6 +4593,8 @@ class MusicService :
         stream: com.mochyy.mochymusic.module.SourceStream,
     ): com.mochyy.mochymusic.playback.custom.CustomStreamResult {
         resolvedSourceIds[mediaId] = module.info.id
+        // the youtube path saves the song, a module has to as well or its plays never reach history
+        scope.launch(Dispatchers.IO) { recoverSong(mediaId) }
         val cacheKey = "$ModuleCacheKeyPrefix${module.info.id}|$mediaId"
         moduleStreamHeaders[cacheKey] = stream.headers
         streamFacts.update { it + (mediaId to StreamFacts(codec = stream.codec, fromModule = true)) }
@@ -4612,16 +4614,25 @@ class MusicService :
         _playingFrom.update { if (it[mediaId] == from) it else it + (mediaId to from) }
     }
 
-    /** the song as a module looks for it */
-    private suspend fun trackQueryOf(mediaId: String): com.mochyy.mochymusic.module.TrackQuery? =
+    /** the song as a module looks for it: its saved row, or the queue's own copy for a song played straight from search that isn't saved yet */
+    private suspend fun trackQueryOf(mediaId: String): com.mochyy.mochymusic.module.TrackQuery? {
         database.song(mediaId).first()?.let {
-            com.mochyy.mochymusic.module.TrackQuery(
+            return com.mochyy.mochymusic.module.TrackQuery(
                 title = it.song.title,
                 artists = it.artists.map { a -> a.name },
                 album = it.song.albumName ?: it.album?.title,
                 durationMs = it.song.duration.takeIf { d -> d > 0 }?.times(1000L),
             )
         }
+        // only the youtube path saves a new song, so without this every module was passed over for it
+        val queued = withContext(Dispatchers.Main) { player.findNextMediaItemById(mediaId)?.metadata } ?: return null
+        return com.mochyy.mochymusic.module.TrackQuery(
+            title = queued.title,
+            artists = queued.artists.map { it.name },
+            album = queued.album?.title,
+            durationMs = queued.duration.takeIf { it > 0 }?.times(1000L),
+        )
+    }
 
     /** one ask of [module] for the song, passing over a stream this phone has no decoder for */
     private suspend fun resolveWith(module: com.mochyy.mochymusic.module.SourceModule, mediaId: String): com.mochyy.mochymusic.module.SourceStream? {

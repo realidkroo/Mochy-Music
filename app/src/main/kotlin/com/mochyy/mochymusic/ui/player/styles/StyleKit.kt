@@ -219,18 +219,21 @@ fun rememberLivePosition(animated: Boolean = true): LivePosition {
             }
     }
     return remember(connection) {
-        LivePosition(read = { connection?.player?.currentPosition ?: 0L }, tick = { tick.longValue })
+        // the player's own position only moves every 10 ms or so, which judders at 120 hz; this one moves on the frame's time
+        val clock = com.mochyy.mochymusic.ui.player.PlaybackClock({ connection?.player })
+        LivePosition(read = clock, tick = { tick.longValue })
     }
 }
 
-/**
- * Whether any of the open player is on screen. A style is still composed while it's collapsed into
- * the mini player, and holds its clocks still there. Read it in effects and gestures, not composition.
- */
+// true while something fills the screen over the style (its whole lyrics page), so its clocks rest the way they do in the mini player
+val LocalStyleCovered = androidx.compose.runtime.compositionLocalOf<() -> Boolean> { { false } }
+
+/** whether the style can be seen: it stays composed in the mini player and under its lyrics page, with its clocks held still. read it in effects and gestures, not composition */
 @Composable
 internal fun rememberStyleShowing(): () -> Boolean {
     val sheet = LocalPlayerBottomSheetState.current
-    return remember(sheet) { { sheet == null || sheet.progress > 0f } }
+    val covered = LocalStyleCovered.current
+    return remember(sheet, covered) { { (sheet == null || sheet.progress > 0f) && !covered() } }
 }
 
 /** the song's length in ms, never 0 */

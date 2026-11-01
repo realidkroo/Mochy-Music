@@ -9,13 +9,11 @@ package com.mochyy.mochymusic.ui.player.share
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,16 +26,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mochyy.mochymusic.ui.component.BetaBadge
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-private val BetaYellow = Color(0xFFF5E27A)
 internal val ShareMuted = Color(0xFF9A9AA0)
 
 // A picker row, shared with the flying line so it lands on exactly this.
@@ -113,16 +110,7 @@ internal fun ShareTitle(
             )
             if (beta) {
                 Spacer(Modifier.width(12.dp))
-                Text(
-                    "BETA",
-                    color = BetaYellow,
-                    fontSize = 11.sp,
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier
-                        .border(1.dp, BetaYellow.copy(alpha = 0.8f), CircleShape)
-                        .padding(horizontal = 12.dp, vertical = 3.dp),
-                )
+                BetaBadge()
             }
         }
         if (subtitleSlot != null) {

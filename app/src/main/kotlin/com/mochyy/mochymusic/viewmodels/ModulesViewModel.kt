@@ -11,7 +11,10 @@ import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import com.mochyy.mochymusic.module.AccountState
 import com.mochyy.mochymusic.module.DiagnosticStep
+import com.mochyy.mochymusic.module.ModuleServer
 import com.mochyy.mochymusic.module.ResolveResult
+import com.mochyy.mochymusic.module.ServerListModule
+import com.mochyy.mochymusic.module.ServerProblem
 import com.mochyy.mochymusic.module.StreamDrm
 import com.mochyy.mochymusic.module.TrackQuery
 import com.mochyy.mochymusic.modules.CatalogModule
@@ -60,6 +63,13 @@ class ModulesViewModel @Inject constructor(
     private val _testing = MutableStateFlow(false)
     val testing: StateFlow<Boolean> = _testing.asStateFlow()
 
+    // true while a check-server or check-account press is waiting on the service
+    private val _checking = MutableStateFlow(false)
+    val checking: StateFlow<Boolean> = _checking.asStateFlow()
+
+    private val _servers = MutableStateFlow<List<ModuleServer>>(emptyList())
+    val servers: StateFlow<List<ModuleServer>> = _servers.asStateFlow()
+
     private var testJob: Job? = null
     private var signedIn = false
 
@@ -78,10 +88,34 @@ class ModulesViewModel @Inject constructor(
     }
 
     fun verify(id: String) {
+        if (_checking.value) return
+        _checking.value = true
         viewModelScope.launch {
             withContext(Dispatchers.IO) { runCatching { registry.module(id)?.verifyAccount() } }
             modules.refresh()
+            _checking.value = false
         }
+    }
+
+    // ---- a module's servers ----
+
+    fun loadServers(id: String) {
+        _servers.value = (registry.module(id) as? ServerListModule)?.servers.orEmpty()
+    }
+
+    /** checks the link and adds the server it finds; null once it's in, otherwise why not */
+    suspend fun addServer(id: String, link: String): ServerProblem? {
+        val module = registry.module(id) as? ServerListModule ?: return ServerProblem.NotAServer
+        val problem = withContext(Dispatchers.IO) { runCatching { module.addServer(link) }.getOrDefault(ServerProblem.Unreachable) }
+        loadServers(id)
+        modules.refresh()
+        return problem
+    }
+
+    fun removeServer(id: String, url: String) {
+        (registry.module(id) as? ServerListModule)?.removeServer(url)
+        loadServers(id)
+        modules.refresh()
     }
 
     /** a header from the sign-in page; [onDone] runs once, when the account is in */

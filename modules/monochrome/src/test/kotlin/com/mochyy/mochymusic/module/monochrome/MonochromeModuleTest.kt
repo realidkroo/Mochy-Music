@@ -4,8 +4,10 @@ import com.mochyy.mochymusic.module.AccountState
 import com.mochyy.mochymusic.module.HttpRequest
 import com.mochyy.mochymusic.module.HttpResponse
 import com.mochyy.mochymusic.module.ModuleHost
+import com.mochyy.mochymusic.module.ModuleServer
 import com.mochyy.mochymusic.module.ModuleStorage
 import com.mochyy.mochymusic.module.ResolveResult
+import com.mochyy.mochymusic.module.ServerProblem
 import com.mochyy.mochymusic.module.StreamFormat
 import com.mochyy.mochymusic.module.TrackQuery
 import kotlinx.coroutines.runBlocking
@@ -109,11 +111,83 @@ class MonochromeModuleTest {
     @Test
     fun `an old unreachable mark is tried again`() {
         val (module, host) = module()
-        host.storage.set("unreachable", "Monochrome's server didn't answer")
-        host.storage.set("unreachable_at", (System.currentTimeMillis() - 11 * 60 * 1000).toString())
+        host.storage.set("unreachable@https://tracks.monochrome.st", "tracks.monochrome.st didn't answer")
+        host.storage.set("unreachable_at@https://tracks.monochrome.st", (System.currentTimeMillis() - 11 * 60 * 1000).toString())
         assertTrue(module.accountState() is AccountState.SignedIn)
-        // a mark from before marks had a time is old too
-        host.storage.set("unreachable_at", null)
+        // a mark with no time is old too
+        host.storage.set("unreachable_at@https://tracks.monochrome.st", null)
+        assertTrue(module.accountState() is AccountState.SignedIn)
+    }
+
+    // the audio relay indiachrome plays from, as it answered on 2026-11-01
+    private val relaySearch =
+        """{"data":[{"id":"r1","title":"Eastside","artist":"benny blanco&Halsey&Khalid","album":"Eastside","duration":173,"subtitle":""}]}"""
+
+    private fun relay(request: HttpRequest): HttpResponse? {
+        if (!request.url.startsWith("https://audio-relay.example.dev")) return null
+        // like the real one, it turns away anyone who doesn't say which api they speak
+        if (request.headers["X-Relay-Client"] != "relay/2") return HttpResponse(404, "{\"error\":\"not found\"}".toByteArray())
+        return when {
+            "/search?" in request.url -> HttpResponse(200, relaySearch.toByteArray())
+            "/s/r1?q=flac" in request.url -> HttpResponse(206, eastsideHead, mapOf("x-relay-stream" to "https://audio-relay.example.dev/s/token"))
+            else -> HttpResponse(404, ByteArray(0))
+        }
+    }
+
+    // a monochrome fork: a page that answers every path with itself, and a script naming its relay
+    private fun site(request: HttpRequest): HttpResponse? = when {
+        request.url.startsWith("https://audio-relay.example.dev") -> relay(request)
+        request.url == "https://fork.example.dev/assets/index-abc.js" ->
+            HttpResponse(200, """const a="https://fonts.googleapis.com",b="https://audio-relay.example.dev",c="https://canvas-relay.example.dev";""".toByteArray())
+        request.url.startsWith("https://fork.example.dev") ->
+            HttpResponse(200, """<!doctype html><html><head><script type="module" crossorigin src="./assets/index-abc.js"></script></head></html>""".toByteArray())
+        request.url.startsWith("https://canvas-relay.example.dev") -> HttpResponse(404, ByteArray(0))
+        else -> null
+    }
+
+    @Test
+    fun `a relay server is found from its own link and plays from the link it hands back`() = runBlocking {
+        val (module, _) = module(::relay)
+        assertNull(module.addServer("audio-relay.example.dev"))
+        val stream = (module.resolve(eastside, emptyMap()) as ResolveResult.Found).stream
+        assertEquals("https://audio-relay.example.dev/s/token", stream.url)
+        assertEquals("FLAC", stream.qualityLabel)
+        assertEquals("benny blanco, Halsey, Khalid", stream.matched.artist)
+    }
+
+    @Test
+    fun `a site link finds the server its scripts name, and it's remembered`() = runBlocking {
+        val (module, host) = module(::site)
+        assertNull(module.addServer("https://fork.example.dev/search/what%20if%20i%20call"))
+        val server = ModuleServer("https://audio-relay.example.dev", "fork.example.dev", builtIn = false)
+        assertEquals(listOf(server, ModuleServer("https://tracks.monochrome.st", "tracks.monochrome.st", builtIn = true)), module.servers)
+        assertEquals(ServerProblem.AlreadyAdded, module.addServer("fork.example.dev"))
+        // a restart reads it back from storage
+        assertEquals(server, MonochromeModule().also { it.attach(host) }.servers.first())
+        module.removeServer(server.url)
+        assertEquals(1, module.servers.size)
+    }
+
+    @Test
+    fun `a page with no server in it isn't added`() = runBlocking {
+        val (module, _) = module { request ->
+            if (request.url.startsWith("https://plain.example.dev")) HttpResponse(200, "<html>hi</html>".toByteArray()) else null
+        }
+        assertEquals(ServerProblem.NotAServer, module.addServer("plain.example.dev"))
+        assertEquals(ServerProblem.NotALink, module.addServer("   "))
+        assertEquals(1, module.servers.size)
+    }
+
+    @Test
+    fun `while one server is down the next one plays`() = runBlocking {
+        var relayUp = true
+        val (module, _) = module { request ->
+            if (!relayUp && "audio-relay" in request.url) throw java.io.IOException("timeout") else relay(request)
+        }
+        assertNull(module.addServer("audio-relay.example.dev"))
+        relayUp = false
+        val stream = (module.resolve(eastside, emptyMap()) as ResolveResult.Found).stream
+        assertEquals("https://tracks.monochrome.st/track/157948484734181376", stream.url)
         assertTrue(module.accountState() is AccountState.SignedIn)
     }
 

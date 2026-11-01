@@ -469,7 +469,8 @@ private fun DrawScope.ringLabel(
     measurer: TextMeasurer,
     style: TextStyle,
 ) {
-    val layout = measurer.measure(text, style.copy(color = style.color.copy(alpha = shown)))
+    // measured at full colour and faded as it's drawn: a fading colour in the style missed the measurer's cache every frame of the bar coming out
+    val layout = measurer.measure(text, style)
     // clear of the round cap by a little, sliding in from further out as it appears
     val gapPx = (layout.size.width / 2f) + (8f + 10f * (1f - shown)).dp.toPx()
     val gapDegrees = Math.toDegrees((gapPx / r).toDouble()).toFloat()
@@ -483,7 +484,7 @@ private fun DrawScope.ringLabel(
     while (turn < -90f) turn += 180f
     rotate(turn, at) {
         scale(s, s, at) {
-            drawText(layout, topLeft = Offset(at.x - layout.size.width / 2f, at.y - layout.size.height / 2f))
+            drawText(layout, topLeft = Offset(at.x - layout.size.width / 2f, at.y - layout.size.height / 2f), alpha = shown)
         }
     }
 }

@@ -1,13 +1,15 @@
-// settings → modules: every module mochy has, what each adds, and a way to find more
+// settings → modules: every module mochy has, what each adds, and ways to find more
 
 package com.mochyy.mochymusic.ui.screens.settings.modules
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,6 +29,8 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,10 +40,13 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.core.updater.DiscordUrl
 import com.mochyy.mochymusic.modules.ModuleEntry
+import com.mochyy.mochymusic.ui.component.BetaBadge
 import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 import com.mochyy.mochymusic.ui.component.SubSettingsScaffold
 import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
+import com.mochyy.mochymusic.ui.screens.settings.devspace.openDevUrl
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.viewmodels.ModulesViewModel
 
@@ -53,6 +60,7 @@ private val RowShape = RoundedCornerShape(24.dp)
 fun ModulesScreen(navController: NavController, viewModel: ModulesViewModel = hiltViewModel()) {
     val entries by viewModel.entries.collectAsState()
     val overlay = LocalZoomOutOverlayState.current
+    val context = LocalContext.current
     SubSettingsScaffold(title = stringResource(R.string.settings_modules_category), onBack = { navController.navigateUp() }) {
         BetaBadge()
         Spacer(Modifier.height(10.dp))
@@ -69,6 +77,8 @@ fun ModulesScreen(navController: NavController, viewModel: ModulesViewModel = hi
         FindMoreButton {
             overlay.showFindModulesSheet(viewModel) { id -> navController.navigate(moduleRoute(id)) }
         }
+        Spacer(Modifier.height(10.dp))
+        ModulesBarBanner { context.openDevUrl(DiscordUrl) }
         Spacer(Modifier.height(120.dp))
     }
 }
@@ -131,5 +141,33 @@ private fun FindMoreButton(onClick: () -> Unit) {
             Text(stringResource(R.string.modules_find_more_desc), fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 16.sp, color = LabColors.Secondary)
         }
         Icon(painterResource(R.drawable.add), null, tint = LabColors.Secondary, modifier = Modifier.size(20.dp))
+    }
+}
+
+/** mochy peeking up from the bottom of the card, leading to the discord server where people share modules */
+@Composable
+private fun ModulesBarBanner(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp)
+            .clip(RowShape)
+            .background(LabColors.Card)
+            .clickable(onClick = onClick)
+            .padding(start = 24.dp, end = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // the drawing ends at her jacket, so sitting on the card's bottom edge cuts her off there like the design
+        Image(
+            painterResource(R.drawable.modules_bar_mochy), null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.align(Alignment.Bottom).padding(top = 8.dp).fillMaxHeight(),
+        )
+        Spacer(Modifier.width(22.dp))
+        Text(
+            stringResource(R.string.modules_bar),
+            fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 22.sp,
+            letterSpacing = (-0.6).sp, color = Color.White, modifier = Modifier.weight(1f),
+        )
     }
 }

@@ -55,7 +55,7 @@ import com.mochyy.mochymusic.ui.screens.search.SearchColors
 import com.mochyy.mochymusic.viewmodels.ModulesViewModel
 import kotlinx.coroutines.launch
 
-private val ProblemColor = Color(0xFFFF8A80)
+internal val ProblemColor = Color(0xFFFF8A80)
 
 /** opens the sheet; [onAdded] gets the new module's id once it's in, to open its page */
 fun PopupSheetState.showFindModulesSheet(viewModel: ModulesViewModel, onAdded: (String) -> Unit) {
@@ -92,6 +92,7 @@ private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) ->
                 LinkCheck.NotALink -> problem = context.getString(R.string.modules_link_not_a_link)
                 LinkCheck.Unreachable -> problem = context.getString(R.string.modules_link_unreachable)
                 LinkCheck.NotAModule -> problem = context.getString(R.string.modules_link_not_a_module)
+                LinkCheck.Website -> problem = context.getString(R.string.modules_link_website)
             }
             checking = false
         }

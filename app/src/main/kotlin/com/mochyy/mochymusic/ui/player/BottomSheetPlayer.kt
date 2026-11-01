@@ -420,8 +420,9 @@ private fun PlayerSheet(
     val (styleTurned) = com.mochyy.mochymusic.ui.player.styles.rememberStyleRotation(playerStyle)
     // the song's whole lyrics, opened over an alternate style from its ••• menu
     var styleLyricsOpen by remember { mutableStateOf(false) }
-    // that page fully up: the style under it stops drawing
+    // that page fully up: the style under it stops drawing, and its clocks stop with it
     var styleCovered by remember { mutableStateOf(false) }
+    val styleCoveredNow = remember { { styleCovered } }
     val styleActions = remember(openStudio) {
         com.mochyy.mochymusic.ui.player.styles.StyleActions(
             onOtherMenu = {
@@ -971,6 +972,7 @@ private fun PlayerSheet(
                 ) {
                     androidx.compose.runtime.CompositionLocalProvider(
                         com.mochyy.mochymusic.ui.player.styles.LocalStyleInteractive provides styleInteractive,
+                        com.mochyy.mochymusic.ui.player.styles.LocalStyleCovered provides styleCoveredNow,
                     ) {
                         com.mochyy.mochymusic.ui.player.styles.AlternatePlayerStyle(
                             style = playerStyle,

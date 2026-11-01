@@ -5,7 +5,7 @@
     <string name="module_adds_lyrics">Lyrics</string>
     <string name="module_adds_look">Look</string>
     <string name="modules_beta">BETA</string>
-    <string name="modules_intro">Modules add things to Mochy: new places to play songs from, new lyrics and new looks. Turn one off and everything it added goes away with it, from Audio Quality too.</string>
+    <string name="modules_intro">new looks, new sources, new lyrics as modules. 3rd party..</string>
     <string name="module_status_signed_out">Not signed in</string>
     <string name="module_status_expired">Sign in again · %1$s</string>
     <string name="module_status_on">On · %1$s</string>

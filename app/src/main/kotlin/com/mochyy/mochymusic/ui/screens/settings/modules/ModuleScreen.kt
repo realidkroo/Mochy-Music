@@ -1,4 +1,4 @@
-// one module's page: its account, its switch, its choices, a playback test for the ones that play songs, and removing one added from a link
+// one module's page: its account, its switch, its choices, its servers, a playback test for the ones that play songs, and removing one added from a link
 
 package com.mochyy.mochymusic.ui.screens.settings.modules
 
@@ -21,6 +21,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -40,6 +41,8 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.module.AccountState
 import com.mochyy.mochymusic.module.DiagnosticStep
 import com.mochyy.mochymusic.module.ModuleFeature
+import com.mochyy.mochymusic.module.ModuleServer
+import com.mochyy.mochymusic.module.ServerListModule
 import com.mochyy.mochymusic.module.TrackQuery
 import com.mochyy.mochymusic.module.applemusic.AppleMusicModule
 import com.mochyy.mochymusic.modules.ModuleEntry
@@ -59,6 +62,7 @@ import com.mochyy.mochymusic.viewmodels.ModulesViewModel
 @Composable
 fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesViewModel = hiltViewModel()) {
     val entries by viewModel.entries.collectAsState()
+    val checking by viewModel.checking.collectAsState()
     val entry = entries.firstOrNull { it.id == id }
     val context = LocalContext.current
     val overlay = LocalZoomOutOverlayState.current
@@ -83,6 +87,7 @@ fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesVie
         if (entry == null) return@SubSettingsScaffold
         AccountCard(
             entry = entry,
+            checking = checking,
             onSignIn = ::signIn,
             onCheck = { viewModel.verify(id) },
             onSignOut = { viewModel.signOut(id) },
@@ -91,6 +96,7 @@ fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesVie
         UseCard(entry) { viewModel.setEnabled(id, it) }
         Spacer(Modifier.height(16.dp))
         Choices(entry) { choice, option -> viewModel.setPick(id, choice, option) }
+        if (entry.module is ServerListModule) Servers(id, viewModel)
         if (entry.adds(ModuleFeature.AudioSource)) {
             PlaybackTest(entry, viewModel)
             Spacer(Modifier.height(12.dp))
@@ -111,7 +117,7 @@ fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesVie
 
 /** the module, its status, and signing in or checking it */
 @Composable
-private fun AccountCard(entry: ModuleEntry, onSignIn: () -> Unit, onCheck: () -> Unit, onSignOut: () -> Unit) {
+private fun AccountCard(entry: ModuleEntry, checking: Boolean, onSignIn: () -> Unit, onCheck: () -> Unit, onSignOut: () -> Unit) {
     val module = entry.module
     val needsAccount = module.signIn != null
     LabCard(padding = 16.dp) {
@@ -143,8 +149,13 @@ private fun AccountCard(entry: ModuleEntry, onSignIn: () -> Unit, onCheck: () ->
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 LabTextAction(
-                    stringResource(if (needsAccount) R.string.module_check_account else R.string.module_check_server),
+                    when {
+                        checking -> stringResource(R.string.module_checking)
+                        needsAccount -> stringResource(R.string.module_check_account)
+                        else -> stringResource(R.string.module_check_server)
+                    },
                     R.drawable.refresh,
+                    busy = checking,
                     onClick = onCheck,
                 )
                 Spacer(Modifier.weight(1f))
@@ -195,6 +206,57 @@ private fun Choices(entry: ModuleEntry, onPick: (choice: String, option: String)
             )
         }
         Spacer(Modifier.height(16.dp))
+    }
+}
+
+/** the servers the module plays from, the ones people added first, and adding another */
+@Composable
+private fun Servers(id: String, viewModel: ModulesViewModel) {
+    val servers by viewModel.servers.collectAsState()
+    val overlay = LocalZoomOutOverlayState.current
+    LaunchedEffect(id) { viewModel.loadServers(id) }
+
+    LabSectionLabel(stringResource(R.string.module_servers))
+    LabCard(padding = 10.dp) {
+        servers.forEach { server ->
+            ServerRow(server, onRemove = { viewModel.removeServer(id, server.url) })
+        }
+        LabTextAction(stringResource(R.string.module_server_add), R.drawable.add) {
+            overlay.showAddServerSheet(id, viewModel)
+        }
+    }
+    Text(
+        stringResource(R.string.module_servers_body), fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 17.sp,
+        color = LabColors.Secondary, modifier = Modifier.padding(top = 8.dp, start = 6.dp, end = 6.dp),
+    )
+    Spacer(Modifier.height(16.dp))
+}
+
+@Composable
+private fun ServerRow(server: ModuleServer, onRemove: () -> Unit) {
+    val address = server.url.substringAfter("://")
+    // a server found through a site goes by the site's name, with its own address under it
+    val detail = when {
+        server.builtIn -> stringResource(R.string.module_server_built_in)
+        server.name != address -> address
+        else -> null
+    }
+    Row(Modifier.fillMaxWidth().padding(start = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(server.name.ifBlank { address }, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color.White)
+            detail?.let { Text(it, fontFamily = InterFontFamily, fontSize = 12.sp, color = LabColors.Secondary) }
+        }
+        if (!server.builtIn) {
+            Box(
+                Modifier.size(36.dp).clip(RoundedCornerShape(18.dp)).clickable(onClick = onRemove),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painterResource(R.drawable.close), stringResource(R.string.module_server_remove, server.name),
+                    tint = LabColors.Secondary, modifier = Modifier.size(16.dp),
+                )
+            }
+        }
     }
 }
 

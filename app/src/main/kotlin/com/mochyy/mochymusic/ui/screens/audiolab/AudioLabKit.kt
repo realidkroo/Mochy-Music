@@ -4,9 +4,13 @@ package com.mochyy.mochymusic.ui.screens.audiolab
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.EnterExitState
@@ -271,17 +275,24 @@ fun LabSectionLabel(text: String, modifier: Modifier = Modifier, actions: @Compo
     }
 }
 
+/** [busy] spins the icon and holds off taps, so a press that waits on the network shows it's working */
 @Composable
-fun LabTextAction(text: String, iconRes: Int? = null, enabled: Boolean = true, onClick: () -> Unit) {
+fun LabTextAction(text: String, iconRes: Int? = null, enabled: Boolean = true, busy: Boolean = false, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
-            .clickable(enabled = enabled, onClick = onClick)
+            .clickable(enabled = enabled && !busy, onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (iconRes != null) {
-            Icon(painterResource(iconRes), null, tint = if (enabled) Color.White else LabColors.Faint, modifier = Modifier.size(16.dp))
+            // the turn is read in the layer, so spinning never recomposes the row
+            val turn = if (busy) rememberInfiniteTransition(label = "busy")
+                .animateFloat(0f, 360f, infiniteRepeatable(tween(800, easing = LinearEasing)), label = "turn") else null
+            Icon(
+                painterResource(iconRes), null, tint = if (enabled) Color.White else LabColors.Faint,
+                modifier = Modifier.size(16.dp).graphicsLayer { rotationZ = turn?.value ?: 0f },
+            )
             Spacer(Modifier.width(6.dp))
         }
         Text(text, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,

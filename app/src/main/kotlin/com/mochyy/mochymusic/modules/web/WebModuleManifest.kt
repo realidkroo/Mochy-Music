@@ -54,6 +54,14 @@ internal data class WebModuleManifest(
         fun parse(text: String): WebModuleManifest? = runCatching { json.decodeFromString(serializer(), text) }.getOrNull()
             ?.takeIf { it.name.isNotBlank() || it.id.isNotBlank() }
 
+        // a site's own manifest.json, the one for installing it to a home screen, has a start page and icons but asks for nothing a module does
+        fun isWebsite(text: String): Boolean {
+            val root = runCatching { json.parseToJsonElement(text) as? JsonObject }.getOrNull() ?: return false
+            return "resources" !in root && "look" !in root && SiteKeys.any { it in root }
+        }
+
+        private val SiteKeys = listOf("start_url", "display", "short_name", "icons")
+
         // people paste the manifest's own link as often as the service's, both end up as the service's base
         fun baseOf(link: String): String? {
             var text = link.trim()

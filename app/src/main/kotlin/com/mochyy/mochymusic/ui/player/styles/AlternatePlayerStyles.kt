@@ -867,8 +867,6 @@ private fun RidingTimes(
 ) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
-    val seconds = rememberPlayedSeconds(position)
-    val elapsed = makeTimeString(seconds * 1_000L)
     val total = makeTimeString(duration)
     val circle = rememberResponsive().dp(0.078f, 28.dp, 40.dp)
     val timeStyle = posterType(rememberResponsive().sp(0.185f, 56f, 96f), FontWeight.Bold)
@@ -898,12 +896,10 @@ private fun RidingTimes(
             val startPx = with(density) { (insets.start + 24.dp).toPx() }
             val bottomPx = with(density) { 16.dp.toPx() }
             // the elapsed time: above the line, or left of it
-            Text(
-                text = elapsed,
+            PlayedTime(
+                position = position,
                 color = tones.ink,
                 style = timeStyle,
-                maxLines = 1,
-                softWrap = false,
                 modifier = Modifier.layout { measurable, constraints ->
                     val p = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
                     layout(constraints.maxWidth, constraints.maxHeight) {
@@ -936,4 +932,18 @@ private fun RidingTimes(
             content()
         }
     }
+}
+
+/** the played time on its own, so the second ticking over recomposes this text and nothing around it */
+@Composable
+private fun PlayedTime(position: LivePosition, color: Color, style: androidx.compose.ui.text.TextStyle, modifier: Modifier) {
+    val seconds = rememberPlayedSeconds(position)
+    Text(
+        text = makeTimeString(seconds * 1_000L),
+        color = color,
+        style = style,
+        maxLines = 1,
+        softWrap = false,
+        modifier = modifier,
+    )
 }

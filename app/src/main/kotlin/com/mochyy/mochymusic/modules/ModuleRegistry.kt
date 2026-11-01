@@ -165,6 +165,7 @@ class ModuleRegistry @Inject constructor(
         data object NotALink : LinkCheck
         data object Unreachable : LinkCheck
         data object NotAModule : LinkCheck
+        data object Website : LinkCheck
     }
 
     /** fetches the link's manifest.json without adding anything */
@@ -176,6 +177,7 @@ class ModuleRegistry @Inject constructor(
                 response.body.string()
             }
         }.getOrElse { return@withContext LinkCheck.Unreachable }
+        if (WebModuleManifest.isWebsite(text)) return@withContext LinkCheck.Website
         val manifest = WebModuleManifest.parse(text) ?: return@withContext LinkCheck.NotAModule
         val found = WebModule(base, manifest, context.resources)
         if (found.adds.isEmpty()) return@withContext LinkCheck.NotAModule
@@ -228,7 +230,10 @@ class ModuleRegistry @Inject constructor(
     private fun load(): List<Pair<MochyModule, ModuleOrigin>> {
         val builtIn = listOf<MochyModule>(AppleMusicModule(), MonochromeModule(), JioSaavnModule()).map { it to ModuleOrigin.BuiltIn }
         val apps = discover()
-        val web = savedWebModules().mapNotNull { saved ->
+        // sites that got in as modules before they were turned away; they never played a song, so they go
+        val (sites, kept) = savedWebModules().partition { WebModuleManifest.isWebsite(it.optString("manifest")) }
+        if (sites.isNotEmpty()) prefs.edit { putString(WebModulesKey, JSONArray(kept).toString()) }
+        val web = kept.mapNotNull { saved ->
             val base = saved.optString("base").takeIf { it.isNotBlank() } ?: return@mapNotNull null
             val manifest = WebModuleManifest.parse(saved.optString("manifest")) ?: return@mapNotNull null
             WebModule(base, manifest, context.resources) to ModuleOrigin.Web(base)
@@ -265,7 +270,7 @@ class ModuleRegistry @Inject constructor(
             val body = request.body?.toRequestBody(request.contentType?.toMediaTypeOrNull())
             builder.method(request.method, if (request.method == "GET") null else body ?: ByteArray(0).toRequestBody())
             client.newCall(builder.build()).execute().use { response ->
-                return HttpResponse(response.code, response.body.bytes())
+                return HttpResponse(response.code, response.body.bytes(), response.headers.associate { (name, value) -> name.lowercase() to value })
             }
         }
 

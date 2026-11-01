@@ -44,9 +44,12 @@ class HttpRequest(
     val contentType: String? = null,
 )
 
-class HttpResponse(val code: Int, val body: ByteArray) {
+// headers come with lowercase names, read them through header()
+class HttpResponse(val code: Int, val body: ByteArray, val headers: Map<String, String> = emptyMap()) {
     val ok: Boolean get() = code in 200..299
     val text: String get() = body.decodeToString()
+
+    fun header(name: String): String? = headers[name.lowercase()]
 }
 
 /** The track Mochy wants to play, as Mochy knows it. */
@@ -181,6 +184,22 @@ interface SourceModule : MochyModule {
 
     /** the module's own checks, step by step, for the test button; the host adds the CDM part */
     suspend fun diagnose(track: TrackQuery, picks: Map<String, String>, report: (DiagnosticStep) -> Unit): ResolveResult
+}
+
+/** a server a module plays from, as its page lists it; the built-in ones can't be removed */
+data class ModuleServer(val url: String, val name: String, val builtIn: Boolean)
+
+/** why a link didn't become one of a module's servers */
+enum class ServerProblem { NotALink, Unreachable, NotAServer, AlreadyAdded }
+
+/** a module that plays from several servers, people can add the ones they find */
+interface ServerListModule : MochyModule {
+    val servers: List<ModuleServer>
+
+    /** checks the link, a server's own or a site that plays from one, and adds what it finds; null once it's in */
+    suspend fun addServer(link: String): ServerProblem?
+
+    fun removeServer(url: String)
 }
 
 /** a lyrics source, it joins the ones mochy already asks while the module is on */
