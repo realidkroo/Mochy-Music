@@ -13,6 +13,7 @@
     <string name="module_origin_built_in">Built in · v%1$s</string>
     <string name="module_origin_app">Module app · v%1$s</string>
     <string name="module_origin_web">From a link · v%1$s</string>
+    <string name="module_origin_file">From a file · v%1$s</string>
     <string name="module_by">%1$s · by %2$s</string>
     <string name="modules_find_more">Find more sources</string>
     <string name="modules_find_more_desc">Add a module from the catalog or from a link</string>
@@ -26,12 +27,18 @@
     <string name="modules_link_unreachable">Couldn\'t reach that link. Check it and your connection, then try again.</string>
     <string name="modules_link_not_a_module">That link answered, but it isn\'t a module Mochy can use.</string>
     <string name="modules_link_website">That\'s a website, not a module. If it\'s a Monochrome site, add it on Monochrome\'s page under Servers instead.</string>
+    <string name="modules_add_from_file">Add from a file</string>
+    <string name="modules_add_from_file_body">A module someone sent you as a .zip. A look works straight from the file. One that plays songs or lyrics still needs its service online.</string>
+    <string name="modules_choose_zip">Choose a .zip</string>
+    <string name="modules_file_not_a_zip">That file isn\'t a module. A module\'s .zip has a manifest.json inside it.</string>
+    <string name="modules_file_needs_url">This module plays songs or lyrics, but its .zip doesn\'t say where from. Its manifest.json needs a \"url\" pointing at its service.</string>
     <string name="modules_catalog">From the catalog</string>
     <string name="modules_catalog_failed">Couldn\'t load the catalog. Check your connection and open this again.</string>
     <string name="modules_catalog_empty">Nothing in the catalog yet. Paste a module\'s link above to add it.</string>
     <string name="modules_confirm_add">It starts switched off, so nothing changes until you turn it on from its page.</string>
     <string name="modules_confirm_update">You already have this one. Adding it again updates it to what the link says now.</string>
     <string name="modules_add">Add %1$s</string>
+    <string name="modules_adding">Adding %1$s…</string>
     <string name="modules_cancel">Not now</string>
     <string name="module_sign_in_to">Sign in to %1$s</string>
     <string name="module_sign_in_again">Sign in again</string>
@@ -41,6 +48,9 @@
     <string name="module_check_server">Check server</string>
     <string name="module_checking">Checking…</string>
     <string name="module_servers">Servers</string>
+    <string name="module_pages">Pages</string>
+    <string name="module_pages_off">Turn the module on to open its pages.</string>
+    <string name="module_page_missing">This page isn\'t here anymore. Turn its module back on, or add the module again.</string>
     <string name="module_servers_body">Each song plays from the first server that has it, starting with the ones you added. Found a Monochrome site that works? Add it here and Mochy finds the server it plays from.</string>
     <string name="module_server_built_in">Built in</string>
     <string name="module_server_remove">Remove %1$s</string>
@@ -79,4 +89,8 @@
     <string name="web_mix_atmos">Atmos</string>
     <string name="web_mix_atmos_detail">The Dolby Atmos mix when the service has one. It isn\'t lossless, and a phone that can\'t decode it gets stereo.</string>
     <string name="quality_provider_footnote">Tap YouTube Music to turn it on or off, or a module to open its page. Drag a handle to change the order: each song plays from the first one that\'s on and has it. Modules you\'ve switched off aren\'t listed here.</string>
+    <string name="quality_download_footnote">How songs downloaded from YouTube are saved, from now on. Downloads already made stay as they are.</string>
+    <string name="quality_download_order">Download order</string>
+    <string name="quality_download_order_youtube">Downloads what the others can\'t</string>
+    <string name="quality_download_order_footnote">Each download comes from the first provider here that has the song as one whole file. Streams that come in pieces, or that need a license, are skipped. YouTube is always here for downloads, even when it\'s off for playing.</string>
 </resources>
