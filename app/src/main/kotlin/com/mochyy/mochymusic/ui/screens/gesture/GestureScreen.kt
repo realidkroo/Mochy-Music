@@ -109,6 +109,7 @@ fun GestureScreen(navController: NavController) = CustomisationScreen(navControl
 
 // the customize page's parts in order, with what a search or a settings result can find each one by
 private enum class CustomiseSection(@StringRes val titleRes: Int, val keys: List<String>, val words: String) {
+    ICONS(R.string.customise_icons, listOf("Icons", "App icon"), "icon icons app launcher home screen mochy outline anime material you white black dark transparent"),
     ROUNDING(R.string.customise_cover_rounding, listOf("Cover rounding"), "cover rounding corner radius square rounded art"),
     PLAYLIST(R.string.customise_playlist_styles, listOf("Playlist styles"), "playlist styles flow classic minimal header"),
     PLAYER(R.string.customise_player_styles, listOf("Player styles"), "player styles flagship turntable ipod poster timeline lyrics editor customize"),
@@ -120,6 +121,9 @@ private enum class CustomiseSection(@StringRes val titleRes: Int, val keys: List
     TOP_BAR(R.string.customise_top_bar, listOf(TopBarHighlightKey), "top bar status bar player clock battery icons hide"),
     BOTTOM_BAR(R.string.customise_bottom_bar, listOf(BottomBarHighlightKey), "bottom bar navigation bar nav buttons gesture handle back home recents player hide"),
     GESTURE(R.string.customise_gesture, listOf("Gesture", "Swipe right", "Swipe left", "Swipe down anywhere to close"), "gesture swipe left right slide songs player close down");
+
+    // launcher icons only switch on android 8+, where launchers draw adaptive icons
+    val available: Boolean get() = this != ICONS || android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
 
     // every word typed has to show up in the section's english words, its names, or its title in the app's language
     fun matches(query: String, shownTitle: String): Boolean {
@@ -137,7 +141,7 @@ fun CustomisationScreen(navController: NavController) {
     val statusTop = WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding()
     val bottomInset = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
     val titles = CustomiseSection.entries.associateWith { stringResource(it.titleRes) }
-    val shown = CustomiseSection.entries.filter { it.matches(query, titles.getValue(it)) }
+    val shown = CustomiseSection.entries.filter { it.available && it.matches(query, titles.getValue(it)) }
 
     // a plain black page like the mock: back button, the title, the search, then the cards
     Box(
@@ -184,6 +188,7 @@ fun CustomisationScreen(navController: NavController) {
 private fun CustomiseSectionContent(section: CustomiseSection) {
     val pagerBleed = Modifier.bleedHorizontally(CustomisePageMargin)
     when (section) {
+        CustomiseSection.ICONS -> IconsSection()
         CustomiseSection.ROUNDING -> {
             val (coverRadiusPx, onCoverRadiusChange) = rememberPreference(ThumbnailCornerRadiusKey, defaultValue = 25f)
             CoverRoundingSection(

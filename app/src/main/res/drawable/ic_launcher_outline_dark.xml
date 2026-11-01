@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the outline mark in dark strokes for light icon backgrounds, ic_launcher_monochrome recoloured -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="292"
+    android:viewportHeight="292">
+    <group
+        android:translateX="28.5"
+        android:translateY="28.5">
+        <path
+            android:pathData="M163.5 96.3493C180.167 105.972 180.167 130.028 163.5 139.651L108 171.694C91.3333 181.316 70.5 169.288 70.5 150.043V85.9569C70.5 66.7119 91.3333 54.6838 108 64.3063L163.5 96.3493Z"
+            android:fillColor="#00000000"
+            android:strokeColor="#212121"
+            android:strokeWidth="19"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M97 112L108.5 98L120 112"
+            android:fillColor="#00000000"
+            android:strokeColor="#212121"
+            android:strokeWidth="11"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M110.325 125C111.871 133.439 121.868 148.704 142.944 149.92"
+            android:fillColor="#00000000"
+            android:strokeColor="#212121"
+            android:strokeWidth="11"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+</vector>

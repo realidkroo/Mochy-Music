@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- the anime icons' splash: no icon of its own, so the system shows the launcher icon it was opened from and the intro bounces out of it -->
+    <style name="Theme.App.Starting.Icon" parent="Theme.App.Starting">
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+
     <!-- Widget Theme for Android 12+ with Dynamic Colors -->
     <style name="Theme.Widget.mochy" parent="@android:style/Theme.DeviceDefault.DayNight">
         <item name="android:fontFamily">@font/inter</item>

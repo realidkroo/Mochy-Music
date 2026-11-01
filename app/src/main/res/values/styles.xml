@@ -6,6 +6,9 @@
         <item name="postSplashScreenTheme">@style/Theme.mochy</item>
     </style>
 
+    <!-- the anime icons' splash, only told apart on android 12+ (values-v31) -->
+    <style name="Theme.App.Starting.Icon" parent="Theme.App.Starting" />
+
     <style name="Theme.mochy" parent="android:Theme.Material.NoActionBar">
         <item name="android:fontFamily">@font/inter</item>
         <item name="fontFamily">@font/inter</item>

@@ -393,6 +393,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         introRequested = savedInstanceState == null && intent?.action == Intent.ACTION_MAIN
         if (introRequested) LaunchGate.begin() else LaunchGate.skip()
+        // kept in step with the icon in use, in case it was switched some way other than customisation
+        com.mochyy.mochymusic.utils.AppIcons.syncSplash(this)
         // the first start after an import says so once the intro is out of the way
         com.mochyy.mochymusic.importer.transfer.TransferRestore.takeRestoredNote(this)?.let { note ->
             lifecycleScope.launch {
@@ -621,7 +623,9 @@ class MainActivity : ComponentActivity() {
                     val plays = introRequested && (tabOpenedFromShortcut ?: defaultOpenTab) == NavigationTab.HOME
                     introPlays = plays
                     if (introRequested && !plays) LaunchGate.skip()
-                    LaunchIntroState(plays)
+                    // an anime icon's splash shows the icon itself, so the intro bounces out of it; every other launch starts from the bare mark
+                    val icon = com.mochyy.mochymusic.utils.AppIcons.launchedFrom(intent)?.takeIf(com.mochyy.mochymusic.utils.AppIcons::splashShows)
+                    LaunchIntroState(plays, icon)
                 }
 
                 val topLevelScreens = remember {

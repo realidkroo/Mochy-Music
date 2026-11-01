@@ -39,7 +39,7 @@ One switch turns a module on or off. Off means gone everywhere: from Audio Quali
 | Add another Monochrome server | Not a module: Monochrome's page, **Servers** | No | Anyone |
 | Ship code that runs inside Mochy | **Built-in module** or **module app** | No | Mochy developers only |
 
-Nothing from a look, a web module or a zip runs inside Mochy. They only hand back JSON, stream links and look values, so anyone can make one and nobody has to be trusted with the app. Code that runs inside Mochy (built-in modules and module apps) is only loaded when it's signed with Mochy's own key. See [section 11](#11-for-mochy-developers-changing-the-module-interface).
+Nothing from a look, a web module or a zip runs inside Mochy. They only hand back JSON, stream links and look values, so anyone can make one and nobody has to be trusted with the app. Code that runs inside Mochy (built-in modules and module apps) is only loaded when it's signed with Mochy's own key. See [section 11](#11-for-mochy-developers-changing-the-module-interface)
 
 ---
 
@@ -71,13 +71,13 @@ Nothing from a look, a web module or a zip runs inside Mochy. They only hand bac
 
 4. Mochy shows what the module adds. Tap **Add**, open its page and turn it on. Turn it off and your own settings come back.
 
-That's a whole module. No server, no code.
+That's a whole module
 
 ---
 
 ## 3. manifest.json, field by field
 
-Every module, whether it comes as a link or a zip, describes itself with one `manifest.json`.
+Every module, whether it comes as a link or a zip, describes itself with one `manifest.json`
 
 | Field | Required | What it's for |
 |---|---|---|
@@ -99,7 +99,7 @@ Two rules worth knowing:
 - **A manifest with no `resources` and nothing that changes the look (`look`, `player`, `font`, `pages`) is read as a song source**, because that's what most services of this kind are.
 - **A website's own `manifest.json` is turned away.** Websites have one for "install to home screen", with `start_url`, `display`, `short_name` or `icons`. If your manifest has any of those and none of `resources`, `look`, `player`, `font` or `pages`, Mochy says "That's a website, not a module". Don't use those field names in a module manifest.
 
-Fields Mochy doesn't know are ignored, so you can keep your own notes in there.
+Fields Mochy doesn't know are ignored, btw
 
 ---
 
@@ -109,22 +109,22 @@ A look can do five things, in any mix:
 
 | | Where it goes in `manifest.json` | Works from |
 |---|---|---|
-| [4.1 Change Mochy's settings](#41-look-settings) | `look` | a zip or a link |
-| [4.2 Bring a player of its own](#42-a-player-of-your-own) | `player` | a zip or a link |
+| [4.1 Change Mochy's settings](#41-look-settings) | `look` | a zip / a link |
+| [4.2 Bring a player of its own](#42-a-player-of-your-own) | `player` | a zip / a link |
 | [4.3 Bring its own font](#43-your-own-font) | `font` | a zip only |
 | [4.4 Use its own pictures](#44-pictures) | paths in `player` and `pages` | a zip, or a link with pictures beside its manifest |
-| [4.5 Add pages](#45-pages) | `pages` | a zip or a link |
+| [4.5 Add pages](#45-pages) | `pages` | a zip / a link |
 
 How looks behave:
 
-- **Only one look is on at a time.** Turning a second one on turns the first off and gives its settings back first. A module with *only* pages doesn't count as a look here, so it can stay on next to one.
+- **Only one look is on at a time** Turning a second one on turns the first off and gives its settings back first. A module with *only* pages doesn't count as a look here, so it can stay on next to one
 - **The user always wins.** If someone changes a setting by hand while your look is on, they keep their value when your look goes off.
-- **It survives restarts.** Mochy remembers what each look replaced, so turning it off after a restart still gives the right settings back.
-- **Nothing runs.** A look is a description. Mochy draws it with its own parts, so it stays smooth on slow phones and can't break anything.
+- **It survives restarts.** Mochy remembers what each look replaced, so turning it off after a restart still gives the right settings back
+- **Nothing runs.** A look is a description. Mochy draws it with its own parts, so it stays smooth on slow phones and can't break anything
 
 ### 4.1 Look settings
 
-A look may change **only** these settings, so a module can restyle Mochy but never reach accounts, the network or playback. Values are written as text (`"true"`, `"12"`, `"FLAGSHIP"`). Keys must be spelled exactly as below, while style names may be any case. A value that's out of range is simply ignored.
+A look may change **only** these settings, so a module can restyle Mochy but never reach accounts, the network or playback. Values are written as text (`"true"`, `"12"`, `"FLAGSHIP"`). Keys must be spelled exactly as below, while style names may be any case. A value that's out of range is simply ignored
 
 | Key | Values | What it changes |
 |---|---|---|
@@ -174,7 +174,7 @@ Your player gets everything the other styles have, for free: swipe sideways to c
 }
 ```
 
-The blocks are laid out top to bottom, in order. Use `"space"` with `"grow": true` to push things apart; two growing spaces around everything centre it on the screen.
+The blocks are laid out top to bottom, in order. Use `"space"` with `"grow": true` to push things apart, two growing spaces around everything centre it on the screen
 
 **The player itself**
 
