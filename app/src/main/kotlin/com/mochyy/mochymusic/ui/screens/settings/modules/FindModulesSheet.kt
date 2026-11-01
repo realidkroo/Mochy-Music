@@ -1,7 +1,10 @@
-// "find more sources": add a module from a pasted link or from mochy's catalog, after seeing what it adds
+// "find more sources": add a module from a pasted link, a zip on the phone or mochy's catalog, after seeing what it adds
 
 package com.mochyy.mochymusic.ui.screens.settings.modules
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,6 +60,9 @@ import kotlinx.coroutines.launch
 
 internal val ProblemColor = Color(0xFFFF8A80)
 
+// file managers name a zip in a few ways, and some only know it as bytes
+private val ZipTypes = arrayOf("application/zip", "application/x-zip-compressed", "application/x-zip", "application/octet-stream")
+
 /** opens the sheet; [onAdded] gets the new module's id once it's in, to open its page */
 fun PopupSheetState.showFindModulesSheet(viewModel: ModulesViewModel, onAdded: (String) -> Unit) {
     var sheet: PopupSheetHandle? = null
@@ -76,26 +82,50 @@ private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) ->
     var link by rememberSaveable { mutableStateOf("") }
     var checking by remember { mutableStateOf(false) }
     var problem by remember { mutableStateOf<String?>(null) }
+    // a problem shows under whichever of the two, the link or the file, it came from
+    var problemFromFile by remember { mutableStateOf(false) }
     var ready by remember { mutableStateOf<LinkCheck.Ready?>(null) }
     var catalog by remember { mutableStateOf<Result<List<CatalogModule>>?>(null) }
 
     LaunchedEffect(Unit) { catalog = viewModel.catalog() }
+
+    fun show(result: LinkCheck) {
+        when (result) {
+            is LinkCheck.Ready -> ready = result
+            LinkCheck.NotALink -> problem = context.getString(R.string.modules_link_not_a_link)
+            LinkCheck.Unreachable -> problem = context.getString(R.string.modules_link_unreachable)
+            LinkCheck.NotAModule -> problem = context.getString(R.string.modules_link_not_a_module)
+            LinkCheck.Website -> problem = context.getString(R.string.modules_link_website)
+            LinkCheck.NotAZip -> problem = context.getString(R.string.modules_file_not_a_zip)
+            LinkCheck.NeedsUrl -> problem = context.getString(R.string.modules_file_needs_url)
+        }
+    }
 
     fun check(target: String) {
         if (checking || target.isBlank()) return
         keyboard?.hide()
         checking = true
         problem = null
+        problemFromFile = false
         scope.launch {
-            when (val result = viewModel.check(target)) {
-                is LinkCheck.Ready -> ready = result
-                LinkCheck.NotALink -> problem = context.getString(R.string.modules_link_not_a_link)
-                LinkCheck.Unreachable -> problem = context.getString(R.string.modules_link_unreachable)
-                LinkCheck.NotAModule -> problem = context.getString(R.string.modules_link_not_a_module)
-                LinkCheck.Website -> problem = context.getString(R.string.modules_link_website)
-            }
+            show(viewModel.check(target))
             checking = false
         }
+    }
+
+    fun checkFile(uri: Uri) {
+        if (checking) return
+        checking = true
+        problem = null
+        problemFromFile = true
+        scope.launch {
+            show(viewModel.checkZip(uri))
+            checking = false
+        }
+    }
+
+    val zipPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) checkFile(uri)
     }
 
     Column(
@@ -131,9 +161,7 @@ private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) ->
             keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { check(link) }),
         )
-        problem?.let {
-            Text(it, color = ProblemColor, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 10.dp, start = 4.dp))
-        }
+        problem?.takeIf { !problemFromFile }?.let { ProblemText(it) }
         Spacer(Modifier.height(14.dp))
         SheetPillButton(
             text = stringResource(if (checking) R.string.modules_link_checking else R.string.modules_link_check),
@@ -142,10 +170,27 @@ private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) ->
         )
 
         Spacer(Modifier.height(26.dp))
+        SheetLabel(stringResource(R.string.modules_add_from_file))
+        Spacer(Modifier.height(8.dp))
+        Text(stringResource(R.string.modules_add_from_file_body), color = SearchColors.Secondary, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(horizontal = 4.dp))
+        Spacer(Modifier.height(12.dp))
+        SheetPillButton(
+            text = stringResource(R.string.modules_choose_zip),
+            onClick = { zipPicker.launch(ZipTypes) },
+            enabled = !checking,
+        )
+        problem?.takeIf { problemFromFile }?.let { ProblemText(it) }
+
+        Spacer(Modifier.height(26.dp))
         SheetLabel(stringResource(R.string.modules_catalog))
         Spacer(Modifier.height(10.dp))
         CatalogList(catalog, busy = checking, onPick = { check(it.url) })
     }
+}
+
+@Composable
+private fun ProblemText(text: String) {
+    Text(text, color = ProblemColor, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 10.dp, start = 4.dp))
 }
 
 @Composable
@@ -205,11 +250,11 @@ private fun ConfirmAdd(ready: LinkCheck.Ready, onAdd: () -> Unit, onCancel: () -
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            ModuleLogo(ready.base, ready.name, size = 46)
+            ModuleLogo(ready.from, ready.name, size = 46)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(ready.name, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-                Text(ready.base.removePrefix("https://"), color = SearchColors.Secondary, fontSize = 12.sp)
+                Text(ready.from, color = SearchColors.Secondary, fontSize = 12.sp)
             }
         }
         Spacer(Modifier.height(12.dp))

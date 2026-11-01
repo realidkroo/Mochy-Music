@@ -299,21 +299,8 @@ private fun ChannelBadge(latest: GithubRelease?) {
         },
         label = "channelBadge",
     ) { text ->
-        // beta and nightly wear the same flask badge as the rest of the app's unfinished parts
-        if (text == StableLabel) {
-            Text(
-                text,
-                color = StableGreen,
-                fontSize = 12.sp,
-                fontFamily = FontFamily.Monospace,
-                letterSpacing = 1.sp,
-                modifier = Modifier
-                    .border(1.dp, StableGreen.copy(alpha = 0.8f), CircleShape)
-                    .padding(horizontal = 14.dp, vertical = 4.dp),
-            )
-        } else {
-            BetaBadge(label = text)
-        }
+        // the same outlined tag as every other beta mark in the app, green while this build is stable
+        if (text == StableLabel) BetaBadge(label = text, color = StableGreen) else BetaBadge(label = text)
     }
 }
 

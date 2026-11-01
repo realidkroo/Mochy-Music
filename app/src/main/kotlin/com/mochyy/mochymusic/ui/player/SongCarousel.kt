@@ -85,6 +85,9 @@ private const val SkipSpeed = 0.06f
 // a skip the player never confirms stops holding the row on its song after this long
 private const val SkipConfirmMs = 1_200L
 
+// about how long a glide of one song takes to come to rest; a song changing later than this lands on a row that has stopped
+private const val GlideStillMs = 400L
+
 // let go past half a song and it moves on; short of that it eases back, unless it was flicked
 private const val SwipeCommit = 0.5f
 
@@ -251,15 +254,39 @@ class SongCarousel internal constructor(private val scope: CoroutineScope) {
     private fun firePendingSkip() {
         val skip = pendingSkip ?: return
         pendingSkip = null
-        expectedStep = pendingTarget
+        expect(pendingTarget, SkipConfirmMs)
+        skip()
+    }
+
+    // holds the row on [target] until the queue says the song changed, or [confirmMs] goes by without it
+    private fun expect(target: Int, confirmMs: Long) {
+        expectedStep = target
         confirmJob?.cancel()
         confirmJob = scope.launch {
-            delay(SkipConfirmMs)
+            delay(confirmMs)
             // the player never moved on: back to the song that's playing
             expectedStep = null
             settle()
         }
-        skip()
+    }
+
+    /** a skip button: the row glides on at once and [skip] waits until it's still, so the new song's work never lands on the glide; if a fade out holds the song back past the glide anyway ([songChangesAfterMs]), [skip] goes at once so the fade starts with the press */
+    fun skipToNext(player: Player?, songChangesAfterMs: Long, skip: () -> Unit) {
+        // mid-swipe, at the end of the queue or with a skip already on its way: straight through, and the row follows the songs
+        if (dragging || player?.hasNextMediaItem() != true || pendingSkip != null || expectedStep != null) {
+            firePendingSkip()
+            skip()
+            return
+        }
+        val target = step + 1
+        if (songChangesAfterMs >= GlideStillMs) {
+            expect(target, SkipConfirmMs + songChangesAfterMs)
+            skip()
+        } else {
+            pendingTarget = target
+            pendingSkip = skip
+        }
+        glideTo(target)
     }
 
     // one critically damped spring, stepped per frame with long frames capped, so the row never jumps; the skip waits for it to be still

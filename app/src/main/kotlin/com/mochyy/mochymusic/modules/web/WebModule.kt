@@ -57,7 +57,7 @@ internal class WebModule(
         if (manifest.look.isNotEmpty()) add(ModuleFeature.Look)
     }
 
-    override val look: Map<String, String> = manifest.look.mapNotNull { (key, value) -> value.contentOrNull?.let { key to it } }.toMap()
+    override val look: Map<String, String> = manifest.lookValues
 
     // read from resources each time so the chips follow the app's language
     override val choices: List<ModuleChoice>

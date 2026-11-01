@@ -13,9 +13,11 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -95,6 +97,8 @@ fun SubSettingsScaffold(
     searchBar: (@Composable () -> Unit)? = null,
     /** the page this one sits under, written beside the back button ("‹ Audio Lab") */
     backLabel: String? = null,
+    /** a small mark beside the title, like a beta tag; it fades as the title shrinks into the bar */
+    titleBadge: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scrollState = rememberScrollState()
@@ -231,12 +235,8 @@ fun SubSettingsScaffold(
                 )
             }
 
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .onSizeChanged { titleHeightPx = it.height }
                     .graphicsLayer {
@@ -263,8 +263,21 @@ fun SubSettingsScaffold(
                         } else {
                             null
                         }
-                    }
-            )
+                    },
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (titleBadge != null) {
+                    Spacer(Modifier.width(12.dp))
+                    Box(Modifier.graphicsLayer { alpha = (1f - collapseProgress * 2.5f).coerceIn(0f, 1f) }) { titleBadge() }
+                }
+            }
         }
 
         if (searchBar != null) {

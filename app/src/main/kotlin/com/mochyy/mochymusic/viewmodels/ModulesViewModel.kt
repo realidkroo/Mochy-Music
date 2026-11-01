@@ -50,6 +50,11 @@ class ModulesViewModel @Inject constructor(
     /** reorders only the providers a page shows, the switched-off modules it hides keep their places */
     fun setVisibleOrder(ids: List<String>) = modules.setVisibleOrder(ids)
 
+    /** the order downloads are looked for in, apart from the one songs play in */
+    val downloadOrder = modules.downloadOrder
+
+    fun setVisibleDownloadOrder(ids: List<String>) = modules.setVisibleDownloadOrder(ids)
+
     /** YouTube Music's switch; it's not a module, so it isn't in [entries] */
     val youTubeEnabled = modules.youTubeEnabled
 
@@ -159,6 +164,8 @@ class ModulesViewModel @Inject constructor(
     // ---- finding and adding modules ----
 
     suspend fun check(link: String): ModuleRegistry.LinkCheck = registry.check(link)
+
+    suspend fun checkZip(uri: android.net.Uri): ModuleRegistry.LinkCheck = registry.checkZip(uri)
 
     /** adds a checked module, switched off so nothing changes until the user turns it on; gives back its id */
     fun install(ready: ModuleRegistry.LinkCheck.Ready): String {

@@ -61,9 +61,14 @@ fun ModulesScreen(navController: NavController, viewModel: ModulesViewModel = hi
     val entries by viewModel.entries.collectAsState()
     val overlay = LocalZoomOutOverlayState.current
     val context = LocalContext.current
-    SubSettingsScaffold(title = stringResource(R.string.settings_modules_category), onBack = { navController.navigateUp() }) {
-        BetaBadge()
-        Spacer(Modifier.height(10.dp))
+    SubSettingsScaffold(
+        title = stringResource(R.string.settings_modules_category),
+        onBack = { navController.navigateUp() },
+        titleBadge = { BetaBadge() },
+    ) {
+        // mochy's bar is where people share modules, so it leads the page
+        ModulesBarBanner { context.openDevUrl(DiscordUrl) }
+        Spacer(Modifier.height(16.dp))
         Text(
             stringResource(R.string.modules_intro),
             fontFamily = InterFontFamily, fontSize = 14.sp, lineHeight = 19.sp, color = LabColors.Secondary,
@@ -77,8 +82,6 @@ fun ModulesScreen(navController: NavController, viewModel: ModulesViewModel = hi
         FindMoreButton {
             overlay.showFindModulesSheet(viewModel) { id -> navController.navigate(moduleRoute(id)) }
         }
-        Spacer(Modifier.height(10.dp))
-        ModulesBarBanner { context.openDevUrl(DiscordUrl) }
         Spacer(Modifier.height(120.dp))
     }
 }

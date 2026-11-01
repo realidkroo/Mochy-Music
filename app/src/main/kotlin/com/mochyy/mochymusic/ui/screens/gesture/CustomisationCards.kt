@@ -66,8 +66,8 @@ import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-// how far the customize page's cards sit in from the screen's sides
-internal val CustomisePageMargin = 36.dp
+// how far the customize page's cards sit in from the screen's sides, the same as every other settings page
+internal val CustomisePageMargin = 20.dp
 
 // the slider runs from a square corner to this many px
 internal const val MaxCoverRadius = 45f

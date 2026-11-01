@@ -141,6 +141,13 @@ class TransportTransitions(
 
     fun skipNext() = skip(previous = false)
 
+    // how long a skip pressed now keeps the old song on, fading, before it changes; 0 when it changes at once
+    fun skipDelayMs(): Long {
+        val player = host.player
+        if (!player.playWhenReady || !shouldFade(player) || phase == Phase.Skipping) return 0L
+        return (min(lengthMs / 2f, SkipOutMaxMs) + TailSettleMs).toLong()
+    }
+
     fun skipPrevious() = skip(previous = true)
 
     // a seek, a stop or a new queue: drop any fade and put the volume back

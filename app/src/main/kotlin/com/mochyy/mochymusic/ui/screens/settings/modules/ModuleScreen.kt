@@ -1,4 +1,4 @@
-// one module's page: its account, its switch, its choices, its servers, a playback test for the ones that play songs, and removing one added from a link
+// one module's page: its account, its switch, its choices, its servers, a playback test for the ones that play songs, and removing one added from a link or a zip
 
 package com.mochyy.mochymusic.ui.screens.settings.modules
 
@@ -101,7 +101,7 @@ fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesVie
             PlaybackTest(entry, viewModel)
             Spacer(Modifier.height(12.dp))
         }
-        if (entry.origin is ModuleOrigin.Web) {
+        if (entry.origin is ModuleOrigin.Web || entry.origin is ModuleOrigin.File) {
             LabCard(padding = 10.dp) {
                 LabTextAction(stringResource(R.string.module_remove), R.drawable.delete) {
                     viewModel.remove(id)
@@ -139,6 +139,8 @@ private fun AccountCard(entry: ModuleEntry, checking: Boolean, onSignIn: () -> U
             module.info.author?.let { stringResource(R.string.module_by, origin, it) } ?: origin,
             fontFamily = InterFontFamily, fontSize = 11.sp, color = LabColors.Faint,
         )
+        // a look from a zip has no server and no account, so there's nothing to check or sign into
+        if (entry.origin is ModuleOrigin.File) return@LabCard
         Spacer(Modifier.height(14.dp))
         if (needsAccount && entry.account !is AccountState.SignedIn) {
             PrimaryButton(

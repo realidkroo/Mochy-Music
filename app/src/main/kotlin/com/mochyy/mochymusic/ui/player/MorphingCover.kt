@@ -1177,7 +1177,15 @@ fun MorphingCover(
             MiniPlayerButton(
                 onClick = {
                     skipScope.launch { skipCycle.step() }
-                    playerConnection?.player?.seekToNext()
+                    playerConnection?.let { connection ->
+                        // through the same skip as every other button (its fade, the cast), with the row gliding first so the song change can't make it stutter
+                        val row = currentCarousel
+                        if (row == null) {
+                            connection.seekToNext()
+                        } else {
+                            row.skipToNext(connection.player, connection.service.transport.skipDelayMs()) { connection.seekToNext() }
+                        }
+                    }
                 },
             ) {
                 AnimatedSkipGlyph(cycle = skipCycle, backwards = false, color = MaterialTheme.colorScheme.onSurface, width = MiniSkipWidth)

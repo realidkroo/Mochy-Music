@@ -23,10 +23,7 @@ import com.mochyy.mochymusic.constants.DownloadQuality
 import com.mochyy.mochymusic.constants.DownloadQualityKey
 import com.mochyy.mochymusic.constants.IpVersionKey
 import com.mochyy.mochymusic.constants.OfflineModeKey
-import com.mochyy.mochymusic.module.ResolveResult
-import com.mochyy.mochymusic.module.StreamFormat
 import com.mochyy.mochymusic.module.TrackQuery
-import com.mochyy.mochymusic.module.monochrome.MonochromeModule
 import com.mochyy.mochymusic.modules.SourceModules
 import com.mochyy.mochymusic.utils.dataStore
 import com.music.innertube.models.IpVersion
@@ -91,14 +88,16 @@ constructor(
     /** Each song's stream url and when it stops working (ms since 1970); read on the download threads. */
     private val songUrlCache = java.util.concurrent.ConcurrentHashMap<String, Pair<String, Long>>()
 
-    /** Songs whose Monochrome download failed: their next try comes from YouTube instead. */
-    private val losslessFailed = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+    // the providers each song's download already failed from, so its next try goes further down the download order
+    private val failedProviders = java.util.concurrent.ConcurrentHashMap<String, Set<String>>()
 
     /** Per-track stream request headers, so a cached url is replayed with its client's Origin. */
     private val songStreamHeaders = java.util.concurrent.ConcurrentHashMap<String, Map<String, String>>()
 
-    /** Monochrome's FLAC for each song being downloaded lossless: its url and request headers. */
-    private val losslessStreams = java.util.concurrent.ConcurrentHashMap<String, Pair<String, Map<String, String>>>()
+    /** a module's file for each song being downloaded from one, looked up once since the download opens it more than once */
+    private class ModuleDownload(val providerId: String, val url: String, val headers: Map<String, String>)
+
+    private val moduleDownloads = java.util.concurrent.ConcurrentHashMap<String, ModuleDownload>()
 
     /** The YouTube format each download started in, so a resumed one can't carry on in another. */
     private val downloadItags = java.util.concurrent.ConcurrentHashMap<String, Int>()
@@ -147,13 +146,11 @@ constructor(
         ) { dataSpec ->
             val mediaId = dataSpec.key ?: error("No media id")
 
-            if (downloadQuality == DownloadQuality.LOSSLESS && mediaId !in losslessFailed) {
-                losslessStream(mediaId)?.let { (url, headers) ->
-                    return@Factory dataSpec.buildUpon()
-                        .setUri(url.toUri())
-                        .setHttpRequestHeaders(dataSpec.httpRequestHeaders + headers)
-                        .build()
-                }
+            moduleDownload(mediaId)?.let { found ->
+                return@Factory dataSpec.buildUpon()
+                    .setUri(found.url.toUri())
+                    .setHttpRequestHeaders(dataSpec.httpRequestHeaders + found.headers)
+                    .build()
             }
 
             // only while it still works. This used to keep the url's lifetime instead of when it ends,
@@ -273,7 +270,8 @@ constructor(
                                 Download.STATE_COMPLETED -> {
                                     database.updateDownloadedInfo(download.request.id, true, LocalDateTime.now())
                                     recordDownloadedLength(download)
-                                    losslessStreams.remove(download.request.id)
+                                    moduleDownloads.remove(download.request.id)
+                                    failedProviders.remove(download.request.id)
                                     downloadItags.remove(download.request.id)
                                     saveLyrics(download.request.id)
                                 }
@@ -327,29 +325,18 @@ constructor(
         }
     }
 
-    /**
-     * A failed download tries again with a fresh stream: the url it had may be the reason. One that
-     * failed from Monochrome comes from YouTube next time. What it got so far is thrown away too:
-     * the next try may get another format, and carrying on from these bytes would mix the two.
-     */
+    // a failed download retries with a fresh stream from the next provider down, and drops its bytes so two formats never get glued together
     private fun forgetStream(mediaId: String) {
         songUrlCache.remove(mediaId)
         songStreamHeaders.remove(mediaId)
         downloadItags.remove(mediaId)
-        if (losslessStreams.remove(mediaId) != null) losslessFailed += mediaId
+        moduleDownloads.remove(mediaId)?.let { failed -> failedProviders.merge(mediaId, setOf(failed.providerId)) { a, b -> a + b } }
         runCatching { downloadCache.removeResource(mediaId) }
     }
 
-    /**
-     * Monochrome's FLAC of [mediaId], for a lossless download: null when Monochrome doesn't have the
-     * song (or can't be reached), and the song downloads from YouTube at High instead. Looked up
-     * once per song: the download opens the stream more than once.
-     */
-    private fun losslessStream(mediaId: String): Pair<String, Map<String, String>>? {
-        losslessStreams[mediaId]?.let { return it }
-        // a module switched off is detached everywhere, downloads too
-        if (!sourceModules.isEnabled(MonochromeModule.Id)) return null
-        val module = sourceModules.module(MonochromeModule.Id) ?: return null
+    /** the first module in the download order with a whole file of [mediaId]; null when youtube comes first or nothing else has it */
+    private fun moduleDownload(mediaId: String): ModuleDownload? {
+        moduleDownloads[mediaId]?.let { return it }
         val song = runBlocking(Dispatchers.IO) { database.song(mediaId).first() } ?: return null
         val track = TrackQuery(
             title = song.song.title,
@@ -357,13 +344,9 @@ constructor(
             album = song.song.albumName ?: song.album?.title,
             durationMs = song.song.duration.takeIf { it > 0 }?.times(1000L),
         )
-        val found = runBlocking(Dispatchers.IO) {
-            runCatching { module.resolve(track, sourceModules.picks(MonochromeModule.Id)) }.getOrNull()
-        } as? ResolveResult.Found ?: return null
-        // a file to download, not a playlist of segments or something only a CDM can open
-        if (found.stream.format != StreamFormat.Progressive || found.stream.drm != null) return null
-        // a FLAC this phone can't decode would download fine and then play in silence
-        if (!com.mochyy.mochymusic.modules.DeviceDecoders.canPlay(found.stream)) return null
+        val route = runBlocking(Dispatchers.IO) { sourceModules.downloadRoute(track, failedProviders[mediaId].orEmpty()) }
+        val (module, stream) = route as? SourceModules.Route.Module ?: return null
+        val (mimeType, codecs) = savedFormatOf(stream.codec)
 
         database.query {
             // the length is filled in when the download finishes: see recordDownloadedLength
@@ -371,10 +354,10 @@ constructor(
                 FormatEntity(
                     id = mediaId,
                     itag = -1,
-                    mimeType = "audio/flac",
-                    codecs = "flac",
+                    mimeType = mimeType,
+                    codecs = codecs,
                     bitrate = 0,
-                    sampleRate = null,
+                    sampleRate = stream.sampleRateHz,
                     contentLength = 0L,
                     loudnessDb = null,
                     perceptualLoudnessDb = null,
@@ -383,7 +366,18 @@ constructor(
             )
             if (song.song.dateDownload == null) upsert(song.song.copy(dateDownload = LocalDateTime.now()))
         }
-        return (found.stream.url to found.stream.headers).also { losslessStreams[mediaId] = it }
+        return ModuleDownload(module.info.id, stream.url, stream.headers).also { moduleDownloads[mediaId] = it }
+    }
+
+    // the saved file as the format badges read it, a mime type and a codec, from the codec the module named
+    private fun savedFormatOf(codec: String?): Pair<String, String> = when (codec?.uppercase()) {
+        "FLAC" -> "audio/flac" to "flac"
+        "ALAC" -> "audio/mp4" to "alac"
+        "AAC", "HE-AAC" -> "audio/mp4" to "aac"
+        "MP3" -> "audio/mpeg" to "mp3"
+        "OPUS" -> "audio/ogg" to "opus"
+        "E-AC-3", "DOLBY ATMOS" -> "audio/mp4" to "ec-3"
+        else -> "audio/*" to codec?.lowercase().orEmpty()
     }
 
     /** One lyrics lookup at a time: an album finishing downloading would otherwise ask every provider at once per song. */
@@ -419,7 +413,7 @@ constructor(
 
     private val DownloadQuality.youTubeQuality: AudioQuality
         get() = when (this) {
-            DownloadQuality.LOSSLESS, DownloadQuality.HIGH -> AudioQuality.HIGH
+            DownloadQuality.HIGH -> AudioQuality.HIGH
             DownloadQuality.MEDIUM -> AudioQuality.MEDIUM
             DownloadQuality.LOW -> AudioQuality.LOW
         }

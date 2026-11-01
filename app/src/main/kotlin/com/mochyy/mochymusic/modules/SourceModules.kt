@@ -1,4 +1,4 @@
-// where songs play from: the provider order over youtube and the modules that add audio, and the walk down it for each song
+// where songs play and download from: the provider order and the download order over youtube and the modules that add audio, and the walk down each
 
 package com.mochyy.mochymusic.modules
 
@@ -9,6 +9,7 @@ import com.mochyy.mochymusic.module.ModuleFeature
 import com.mochyy.mochymusic.module.ResolveResult
 import com.mochyy.mochymusic.module.SourceModule
 import com.mochyy.mochymusic.module.SourceStream
+import com.mochyy.mochymusic.module.StreamFormat
 import com.mochyy.mochymusic.module.TrackQuery
 import com.mochyy.mochymusic.module.applemusic.AppleMusicModule
 import com.mochyy.mochymusic.module.monochrome.MonochromeModule
@@ -59,15 +60,41 @@ class SourceModules @Inject constructor(
     }
 
     /** a new order for the providers a page shows; the ones it hides (modules switched off) keep their places */
-    fun setVisibleOrder(visible: List<String>) {
+    fun setVisibleOrder(visible: List<String>) = setOrder(reorderVisible(_order.value, visible))
+
+    // downloads walk their own order, started as a copy of the playback one, since a kept file may want another source than what plays
+    private val _downloadOrder = MutableStateFlow(readDownloadOrder())
+
+    val downloadOrder: StateFlow<List<String>> = _downloadOrder.asStateFlow()
+
+    private fun readDownloadOrder(): List<String> {
+        val saved = prefs.getString("download_order", null)?.split(',')?.filter { it.isNotBlank() }
+        if (saved != null) return (saved + KnownOrder).distinct()
+        val copy = _order.value
+        prefs.edit { putString("download_order", copy.joinToString(",")) }
+        return copy
+    }
+
+    fun setDownloadOrder(ids: List<String>) {
+        val full = (ids + _downloadOrder.value).distinct()
+        prefs.edit { putString("download_order", full.joinToString(",")) }
+        _downloadOrder.value = full
+    }
+
+    fun setVisibleDownloadOrder(visible: List<String>) = setDownloadOrder(reorderVisible(_downloadOrder.value, visible))
+
+    private fun reorderVisible(current: List<String>, visible: List<String>): List<String> {
         val shown = visible.toSet()
         val reordered = ArrayDeque(visible)
-        setOrder(_order.value.map { if (it in shown && reordered.isNotEmpty()) reordered.removeFirst() else it } + reordered)
+        return current.map { if (it in shown && reordered.isNotEmpty()) reordered.removeFirst() else it } + reordered
     }
 
     /** whether [id] can play anything now: YouTube while it's on, a module when on and signed in */
     fun isUsable(id: String): Boolean = isEnabled(id) &&
         (id == YouTubeId || module(id)?.accountState() is AccountState.SignedIn)
+
+    /** whether [id] can give a download: youtube always, since downloads have always fallen back to it, a module when on and signed in */
+    fun isUsableForDownload(id: String): Boolean = id == YouTubeId || isUsable(id)
 
     fun nameOf(id: String): String = if (id == YouTubeId) "YouTube Music" else module(id)?.info?.name ?: id
 
@@ -89,9 +116,34 @@ class SourceModules @Inject constructor(
         track: TrackQuery?,
         skip: Set<String>,
         onUndecodable: (id: String, stream: SourceStream) -> Unit = { _, _ -> },
+    ): Route = walk(_order.value, track, skip, ::isUsable) { id, stream ->
+        // a stream this phone has no decoder for would play in silence: the next provider has it
+        DeviceDecoders.canPlay(stream).also { playable ->
+            if (!playable) {
+                android.util.Log.i(Tag, "$id: ${track?.title}: this phone can't decode ${stream.codec} at ${stream.sampleRateHz} Hz, passing over")
+                onUndecodable(id, stream)
+            }
+        }
+    }
+
+    /** the download order's walk: the first provider that gives one whole file this phone can play, else youtube */
+    suspend fun downloadRoute(track: TrackQuery?, skip: Set<String>): Route =
+        walk(_downloadOrder.value, track, skip, ::isUsableForDownload) { id, stream ->
+            // a download is saved as one file, so a stream in pieces or one only a cdm can open can't be kept
+            (stream.format == StreamFormat.Progressive && stream.drm == null && DeviceDecoders.canPlay(stream)).also { savable ->
+                if (!savable) android.util.Log.i(Tag, "$id: ${track?.title}: can't download a ${stream.format} ${stream.codec} stream, passing over")
+            }
+        }
+
+    private suspend fun walk(
+        order: List<String>,
+        track: TrackQuery?,
+        skip: Set<String>,
+        usable: (String) -> Boolean,
+        accept: (id: String, stream: SourceStream) -> Boolean,
     ): Route = withContext(Dispatchers.IO) {
-        for (id in _order.value) {
-            if (id in skip || !isUsable(id)) continue
+        for (id in order) {
+            if (id in skip || !usable(id)) continue
             if (id == YouTubeId) return@withContext Route.YouTube
             val module = module(id) ?: continue
             if (track == null) continue
@@ -100,12 +152,7 @@ class SourceModules @Inject constructor(
                 .getOrNull()
             when (result) {
                 is ResolveResult.Found -> {
-                    // a stream this phone has no decoder for would play in silence: the next provider has it
-                    if (!DeviceDecoders.canPlay(result.stream)) {
-                        android.util.Log.i(Tag, "$id: ${track.title}: this phone can't decode ${result.stream.codec} at ${result.stream.sampleRateHz} Hz, passing over")
-                        onUndecodable(id, result.stream)
-                        continue
-                    }
+                    if (!accept(id, result.stream)) continue
                     android.util.Log.i(Tag, "$id: ${track.title} -> ${result.stream.matched.title} (${result.stream.qualityLabel})")
                     return@withContext Route.Module(module, result.stream)
                 }
@@ -143,13 +190,17 @@ class SourceModules @Inject constructor(
 
     fun refresh() {
         registry.refresh()
-        // a module installed since: into the order just ahead of youtube
-        val missing = registry.all().filter { ModuleFeature.AudioSource in it.adds }.map { it.info.id }.filter { it !in _order.value }
-        if (missing.isNotEmpty()) {
-            val current = _order.value
-            val at = current.indexOf(YouTubeId).let { if (it < 0) current.size else it }
-            setOrder(current.take(at) + missing + current.drop(at))
-        }
+        val installed = registry.all().filter { ModuleFeature.AudioSource in it.adds }.map { it.info.id }
+        slotIn(installed, _order.value, ::setOrder)
+        slotIn(installed, _downloadOrder.value, ::setDownloadOrder)
+    }
+
+    // a module installed since goes into an order just ahead of youtube
+    private fun slotIn(installed: List<String>, current: List<String>, save: (List<String>) -> Unit) {
+        val missing = installed.filter { it !in current }
+        if (missing.isEmpty()) return
+        val at = current.indexOf(YouTubeId).let { if (it < 0) current.size else it }
+        save(current.take(at) + missing + current.drop(at))
     }
 
     companion object {

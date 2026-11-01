@@ -1,4 +1,4 @@
-// every module mochy has: built in, installed as its own app, or added from a link, with each one's switch and choices
+// every module mochy has: built in, installed as its own app, added from a link or from a zip, with each one's switch and choices
 
 package com.mochyy.mochymusic.modules
 
@@ -6,6 +6,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.core.content.edit
 import com.mochyy.mochymusic.constants.EnableMonochromeBackendKey
 import com.mochyy.mochymusic.lyrics.LyricsProviderRegistry
@@ -23,6 +25,7 @@ import com.mochyy.mochymusic.module.ModuleStorage
 import com.mochyy.mochymusic.module.applemusic.AppleMusicModule
 import com.mochyy.mochymusic.module.jiosaavn.JioSaavnModule
 import com.mochyy.mochymusic.module.monochrome.MonochromeModule
+import com.mochyy.mochymusic.modules.local.LocalModule
 import com.mochyy.mochymusic.modules.web.WebModule
 import com.mochyy.mochymusic.modules.web.WebModuleManifest
 import com.mochyy.mochymusic.utils.dataStore
@@ -44,8 +47,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import java.util.zip.ZipInputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -54,6 +59,7 @@ sealed interface ModuleOrigin {
     data object BuiltIn : ModuleOrigin
     data class App(val packageName: String) : ModuleOrigin
     data class Web(val base: String) : ModuleOrigin
+    data class File(val fileName: String) : ModuleOrigin
 }
 
 /** a module as the settings show it */
@@ -159,13 +165,23 @@ class ModuleRegistry @Inject constructor(
 
     // ---- modules added from a link ------------------------------------------------------------
 
-    /** what a link answered, for the sheet to say before anything is added */
+    /** what a link or a zip turned out to be, for the sheet to say before anything is added */
     sealed interface LinkCheck {
-        data class Ready(val base: String, val manifestText: String, val name: String, val adds: Set<ModuleFeature>, val alreadyAdded: Boolean) : LinkCheck
+        /** [base] is the service it plays from, null for a look that lives in its file; [from] is what the sheet shows it came from */
+        data class Ready(
+            val base: String?,
+            val manifestText: String,
+            val name: String,
+            val adds: Set<ModuleFeature>,
+            val alreadyAdded: Boolean,
+            val from: String,
+        ) : LinkCheck
         data object NotALink : LinkCheck
         data object Unreachable : LinkCheck
         data object NotAModule : LinkCheck
         data object Website : LinkCheck
+        data object NotAZip : LinkCheck
+        data object NeedsUrl : LinkCheck
     }
 
     /** fetches the link's manifest.json without adding anything */
@@ -181,36 +197,90 @@ class ModuleRegistry @Inject constructor(
         val manifest = WebModuleManifest.parse(text) ?: return@withContext LinkCheck.NotAModule
         val found = WebModule(base, manifest, context.resources)
         if (found.adds.isEmpty()) return@withContext LinkCheck.NotAModule
-        LinkCheck.Ready(base, text, found.info.name, found.adds, alreadyAdded = module(found.info.id) != null)
+        LinkCheck.Ready(base, text, found.info.name, found.adds, alreadyAdded = module(found.info.id) != null, from = base.substringAfter("://"))
     }
 
-    /** adds a checked link as a module, switched off until the user turns it on; gives back its id */
+    /** reads a module's zip without adding anything: its manifest.json, and the service it names when it plays songs or lyrics */
+    suspend fun checkZip(uri: Uri): LinkCheck = withContext(Dispatchers.IO) {
+        val text = runCatching { manifestInZip(uri) }.getOrNull() ?: return@withContext LinkCheck.NotAZip
+        val manifest = WebModuleManifest.parse(text) ?: return@withContext LinkCheck.NotAModule
+        val service = manifest.url?.let { WebModuleManifest.baseOf(it) ?: return@withContext LinkCheck.NotALink }
+        if (service != null) {
+            val found = WebModule(service, manifest, context.resources)
+            if (found.adds.isEmpty()) return@withContext LinkCheck.NotAModule
+            return@withContext LinkCheck.Ready(service, text, found.info.name, found.adds, module(found.info.id) != null, from = service.substringAfter("://"))
+        }
+        // songs and lyrics have to come from somewhere, a file on its own can only hold a look
+        if (manifest.resourceNames.any { it in ServiceResources }) return@withContext LinkCheck.NeedsUrl
+        if (manifest.look.isEmpty()) return@withContext LinkCheck.NotAModule
+        val local = LocalModule(manifest)
+        LinkCheck.Ready(null, text, local.info.name, local.adds, module(local.info.id) != null, from = fileNameOf(uri))
+    }
+
+    // the zip's manifest.json, at its root or in the one folder most zip tools wrap things in; nothing else inside is read or unpacked
+    private fun manifestInZip(uri: Uri): String? = context.contentResolver.openInputStream(uri)?.use { raw ->
+        ZipInputStream(raw.buffered()).use { zip ->
+            generateSequence { zip.nextEntry }.take(MaxZipEntries).firstOrNull { entry ->
+                val parts = entry.name.trimStart('/').split('/')
+                !entry.isDirectory && parts.last() == "manifest.json" && parts.size <= 2
+            } ?: return null
+            val out = ByteArrayOutputStream()
+            val buffer = ByteArray(8 * 1024)
+            while (true) {
+                val read = zip.read(buffer)
+                if (read < 0) break
+                out.write(buffer, 0, read)
+                // a manifest is a few kilobytes, anything this big is something else
+                if (out.size() > MaxManifestBytes) return null
+            }
+            out.toString(Charsets.UTF_8.name())
+        }
+    }
+
+    private fun fileNameOf(uri: Uri): String = runCatching {
+        context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
+        }
+    }.getOrNull() ?: uri.lastPathSegment.orEmpty()
+
+    /** adds a checked link or zip as a module, switched off until the user turns it on; gives back its id */
     fun install(ready: LinkCheck.Ready): String {
         val manifest = requireNotNull(WebModuleManifest.parse(ready.manifestText))
-        val module = WebModule(ready.base, manifest, context.resources)
+        val base = ready.base
+        val (module, origin) = if (base != null) {
+            WebModule(base, manifest, context.resources) to ModuleOrigin.Web(base)
+        } else {
+            LocalModule(manifest) to ModuleOrigin.File(ready.from)
+        }
         val id = module.info.id
         synchronized(this) {
-            val saved = savedWebModules().filter { it.optString("base") != ready.base }
-            prefs.edit { putString(WebModulesKey, JSONArray(saved + JSONObject().put("base", ready.base).put("manifest", ready.manifestText)).toString()) }
+            if (base != null) {
+                val saved = savedWebModules().filter { it.optString("base") != base }
+                prefs.edit { putString(WebModulesKey, JSONArray(saved + JSONObject().put("base", base).put("manifest", ready.manifestText)).toString()) }
+            } else {
+                val saved = savedLocalModules().filter { it.optString("id") != id }
+                val entry = JSONObject().put("id", id).put("file", ready.from).put("manifest", ready.manifestText)
+                prefs.edit { putString(LocalModulesKey, JSONArray(saved + entry).toString()) }
+            }
             module.attach(hostFor(module))
-            loaded = modules.filter { it.first.info.id != id } + (module to ModuleOrigin.Web(ready.base))
+            loaded = modules.filter { it.first.info.id != id } + (module to origin)
         }
         refresh()
         return id
     }
 
-    /** takes a module added from a link away for good, its look and lyrics go with it */
+    /** takes a module added from a link or a zip away for good, its look and lyrics go with it */
     fun remove(id: String) {
         val (module, origin) = modules.firstOrNull { it.first.info.id == id } ?: return
-        if (origin !is ModuleOrigin.Web) return
+        if (origin !is ModuleOrigin.Web && origin !is ModuleOrigin.File) return
         scope.launch {
             if (module is LookModule) looks.restore(id, module.look)
         }
         module.signOut()
         synchronized(this) {
-            val saved = savedWebModules().filter { it.optString("base") != origin.base }
             prefs.edit {
-                putString(WebModulesKey, JSONArray(saved).toString())
+                if (origin is ModuleOrigin.Web) putString(WebModulesKey, JSONArray(savedWebModules().filter { it.optString("base") != origin.base }).toString())
+                else putString(LocalModulesKey, JSONArray(savedLocalModules().filter { it.optString("id") != id }).toString())
                 remove("enabled_$id")
                 module.choices.forEach { remove("pick_${id}_${it.id}") }
             }
@@ -220,8 +290,12 @@ class ModuleRegistry @Inject constructor(
         refresh()
     }
 
-    private fun savedWebModules(): List<JSONObject> = runCatching {
-        val array = JSONArray(prefs.getString(WebModulesKey, "[]"))
+    private fun savedWebModules(): List<JSONObject> = savedList(WebModulesKey)
+
+    private fun savedLocalModules(): List<JSONObject> = savedList(LocalModulesKey)
+
+    private fun savedList(key: String): List<JSONObject> = runCatching {
+        val array = JSONArray(prefs.getString(key, "[]"))
         (0 until array.length()).map { array.getJSONObject(it) }
     }.getOrDefault(emptyList())
 
@@ -238,10 +312,14 @@ class ModuleRegistry @Inject constructor(
             val manifest = WebModuleManifest.parse(saved.optString("manifest")) ?: return@mapNotNull null
             WebModule(base, manifest, context.resources) to ModuleOrigin.Web(base)
         }
+        val local = savedLocalModules().mapNotNull { saved ->
+            val manifest = WebModuleManifest.parse(saved.optString("manifest")) ?: return@mapNotNull null
+            LocalModule(manifest) to ModuleOrigin.File(saved.optString("file"))
+        }
         // a module app replaces the built-in module with its id, so a module can be updated on its own
         val appIds = apps.map { it.first.info.id }.toSet()
         migrateMonochromeSwitch()
-        return (builtIn.filter { it.first.info.id !in appIds } + apps + web)
+        return (builtIn.filter { it.first.info.id !in appIds } + apps + web + local)
             .distinctBy { it.first.info.id }
             .onEach { (module, _) -> module.attach(hostFor(module)) }
     }
@@ -307,6 +385,11 @@ class ModuleRegistry @Inject constructor(
     companion object {
         private const val Tag = "ModuleRegistry"
         private const val WebModulesKey = "web_modules"
+        private const val LocalModulesKey = "local_modules"
+        // a zip is only searched this far for its manifest, and a manifest bigger than this isn't one
+        private const val MaxZipEntries = 200
+        private const val MaxManifestBytes = 256 * 1024
+        private val ServiceResources = setOf("search", "stream", "lyrics")
         const val ModuleAction = "com.mochyy.mochymusic.SOURCE_MODULE"
         const val EntryMetaKey = "com.mochyy.mochymusic.module.entry"
     }

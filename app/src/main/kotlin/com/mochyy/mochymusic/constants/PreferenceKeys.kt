@@ -171,14 +171,10 @@ enum class AudioQuality {
         get() = this == LOSSLESS || this == HI_RES_LOSSLESS || this == DOLBY_ATMOS
 }
 
-/**
- * What songs are downloaded as, apart from what they stream as. Lossless is Monochrome's FLAC, for
- * the songs Monochrome has; the rest come from YouTube at High.
- */
+// what a download from youtube is saved as; which provider a download comes from is the download order
 val DownloadQualityKey = stringPreferencesKey("downloadQuality")
 
 enum class DownloadQuality(val title: String, val description: String) {
-    LOSSLESS("Lossless", "FLAC from Monochrome, CD quality or better. Songs it doesn't have download at High"),
     HIGH("High", "The best YouTube has: ~160 kbps Opus"),
     MEDIUM("Medium", "Around 128 kbps, half the space"),
     LOW("Low", "The smallest files, ~50–70 kbps"),

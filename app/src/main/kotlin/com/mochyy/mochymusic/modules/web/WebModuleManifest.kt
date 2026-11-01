@@ -23,6 +23,8 @@ internal data class WebModuleManifest(
     val look: Map<String, JsonPrimitive> = emptyMap(),
     // the service's own settings, sent on every call; mochy has no form for them so each goes as its default
     val settings: List<Setting> = emptyList(),
+    // only read from a zip: the service the module plays from, since a file has no link of its own
+    val url: String? = null,
 ) {
     @Serializable
     data class Setting(
@@ -47,6 +49,9 @@ internal data class WebModuleManifest(
     val playsSongs: Boolean get() = (resourceNames.isEmpty() && look.isEmpty()) || "search" in resourceNames
 
     val hasLyrics: Boolean get() = "lyrics" in resourceNames
+
+    // the look as plain text, values that aren't text or numbers dropped
+    val lookValues: Map<String, String> get() = look.mapNotNull { (key, value) -> value.contentOrNull?.let { key to it } }.toMap()
 
     companion object {
         private val json = Json { ignoreUnknownKeys = true; isLenient = true }

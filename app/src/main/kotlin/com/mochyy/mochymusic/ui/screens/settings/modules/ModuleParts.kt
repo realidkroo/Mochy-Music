@@ -107,6 +107,7 @@ internal fun moduleOrigin(entry: ModuleEntry): String = stringResource(
         ModuleOrigin.BuiltIn -> R.string.module_origin_built_in
         is ModuleOrigin.App -> R.string.module_origin_app
         is ModuleOrigin.Web -> R.string.module_origin_web
+        is ModuleOrigin.File -> R.string.module_origin_file
     },
     entry.module.info.version,
 )

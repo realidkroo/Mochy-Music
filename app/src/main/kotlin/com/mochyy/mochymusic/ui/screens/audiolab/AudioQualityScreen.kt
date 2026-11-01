@@ -1,4 +1,4 @@
-// audio lab's quality page: streaming tiers per provider, download quality and the provider order
+// audio lab's quality page: streaming tiers per provider, download quality, and the orders songs play and download in
 
 package com.mochyy.mochymusic.ui.screens.audiolab
 
@@ -85,6 +85,7 @@ fun AudioQualityScreen(navController: NavController, modules: ModulesViewModel =
     val quality = if (stored.usesMonochrome) AudioQuality.HIGH else stored
     val entries by modules.entries.collectAsState()
     val order by modules.order.collectAsState()
+    val downloadOrder by modules.downloadOrder.collectAsState()
     val youTubeOn by modules.youTubeEnabled.collectAsState()
     val context = LocalContext.current
     val metered = remember { (context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager)?.isActiveNetworkMetered == true }
@@ -96,6 +97,7 @@ fun AudioQualityScreen(navController: NavController, modules: ModulesViewModel =
     // a module that's switched off isn't part of this page at all, only youtube and the modules that are on show up
     val shownModules = entries.filter { it.enabled && it.adds(ModuleFeature.AudioSource) }
     val shownOrder = order.filter { id -> id == SourceModules.YouTubeId || shownModules.any { it.id == id } }
+    val shownDownloadOrder = downloadOrder.filter { id -> id == SourceModules.YouTubeId || shownModules.any { it.id == id } }
     // the first provider in the order that's on plays everything it has
     val first = order.firstOrNull(usable)
     val effective = when (first) {
@@ -169,7 +171,7 @@ fun AudioQualityScreen(navController: NavController, modules: ModulesViewModel =
             }
         }
 
-        // downloads are saved apart from what plays: lossless downloads monochrome's flac whatever the provider order says, since a download is kept
+        // what a download from youtube is saved as; the download order below picks where each download comes from
         Spacer(Modifier.height(24.dp))
         LabSheetTitle("Download")
         LabGroup {
@@ -179,7 +181,7 @@ fun AudioQualityScreen(navController: NavController, modules: ModulesViewModel =
                 }
             }
         }
-        Footnote("For songs downloaded from now on. Downloads already made stay as they are.")
+        Footnote(stringResource(R.string.quality_download_footnote))
 
         Spacer(Modifier.height(24.dp))
         LabSheetTitle("Provider")
@@ -206,6 +208,29 @@ fun AudioQualityScreen(navController: NavController, modules: ModulesViewModel =
             onReorder = modules::setVisibleOrder,
         )
         Footnote(stringResource(R.string.quality_provider_footnote))
+
+        Spacer(Modifier.height(24.dp))
+        LabSheetTitle(stringResource(R.string.quality_download_order))
+        val youTubeForDownloads = stringResource(R.string.quality_download_order_youtube)
+        ProviderOrder(
+            order = shownDownloadOrder,
+            name = modules::nameOf,
+            logo = ::providerLogo,
+            usable = { id -> id == SourceModules.YouTubeId || usable(id) },
+            status = { id ->
+                if (id == SourceModules.YouTubeId) {
+                    youTubeForDownloads
+                } else {
+                    entries.firstOrNull { it.module.info.id == id }?.let(::moduleStatus) ?: "Not installed"
+                }
+            },
+            // youtube is always there for downloads, so only a module's row has somewhere to go
+            onTap = { id ->
+                if (id != SourceModules.YouTubeId) navController.navigate(com.mochyy.mochymusic.ui.screens.settings.modules.moduleRoute(id))
+            },
+            onReorder = modules::setVisibleDownloadOrder,
+        )
+        Footnote(stringResource(R.string.quality_download_order_footnote))
     }
 }
 

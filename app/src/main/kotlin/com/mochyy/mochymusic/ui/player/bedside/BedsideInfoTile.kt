@@ -2,6 +2,7 @@ package com.mochyy.mochymusic.ui.player.bedside
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +25,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.ui.component.damageBoundary
@@ -117,8 +119,8 @@ private fun AnalogTile(time: BedsideTime, ink: BedsideInk, modifier: Modifier) {
 @Composable
 private fun BarsTile(time: BedsideTime, ink: BedsideInk, live: Boolean, visible: () -> Boolean, padding: BedsideInsets, modifier: Modifier) {
     BoxWithConstraints(modifier) {
-        val digits = minOf(maxHeight * 0.17f, maxWidth * 0.15f)
-        Box(Modifier.align(Alignment.TopEnd).padding(top = padding.top + 30.dp, end = padding.end + 34.dp)) {
+        val digits = smallClockSize()
+        Box(Modifier.align(Alignment.TopEnd).smallClockCorner(padding)) {
             FlipDigits("${time.hours}:${time.minutes}", clockStyle(digits, FontWeight.ExtraBold), ink.main)
         }
         BedsideBars(
@@ -134,22 +136,19 @@ private fun BarsTile(time: BedsideTime, ink: BedsideInk, live: Boolean, visible:
     }
 }
 
-// the ring dial in the room above the bars, where the small digits sit on the page before
+// the ring dial small in the top corner, in the digits' place on the page before, so the clock holds still as the page turns
 @Composable
 private fun DialBarsTile(time: BedsideTime, ink: BedsideInk, live: Boolean, visible: () -> Boolean, padding: BedsideInsets, modifier: Modifier) {
     BoxWithConstraints(modifier) {
-        val barsHeight = maxHeight * 0.4f
-        val dial = minOf((maxHeight - barsHeight - padding.top) * 0.82f, maxWidth * 0.6f)
-        Box(
+        AnalogDial(
+            time,
+            ink,
             Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .height(maxHeight - barsHeight)
-                .padding(top = padding.top, end = padding.end + 22.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            AnalogDial(time, ink, Modifier.size(dial), ring = true)
-        }
+                .align(Alignment.TopEnd)
+                .smallClockCorner(padding)
+                .size(smallClockSize() * DialToDigits),
+            ring = true,
+        )
         BedsideBars(
             ink = ink,
             live = live,
@@ -157,11 +156,21 @@ private fun DialBarsTile(time: BedsideTime, ink: BedsideInk, live: Boolean, visi
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .height(barsHeight)
+                .height(maxHeight * 0.4f)
                 .padding(horizontal = 12.dp),
         )
     }
 }
+
+// a round dial looks smaller than numbers of the same height, so it's set a little taller than the digits
+private const val DialToDigits = 1.2f
+
+// how tall the small clock over the bars is, the digits and the dial alike
+private fun BoxWithConstraintsScope.smallClockSize(): Dp = minOf(maxHeight * 0.17f, maxWidth * 0.15f)
+
+// where the small clock sits over the bars, the same on both bar pages
+private fun Modifier.smallClockCorner(padding: BedsideInsets): Modifier =
+    padding(top = padding.top + 30.dp, end = padding.end + 34.dp)
 
 // bars rising from under the tile's edge with the music, low notes on the left; they only run while the page is in view and the song moves them
 @Composable
