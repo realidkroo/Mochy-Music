@@ -73,6 +73,7 @@ Updating works the same way: install the new apk over the old one and your libra
 ---
 # FAQ
 Q - Is it safe to log in? (read this before signing in)
+
 A - Tbh, you never have to log in to use this thing btw. Search, play, lyrics and downloads work without an account. Signing in is only for syncing your YouTube Music library, importing playlists from Spotify / Apple Music / Tidal, and Discord status
 
 **How the sign-in works**
@@ -82,25 +83,39 @@ A - Tbh, you never have to log in to use this thing btw. Search, play, lyrics an
 - The tokens are meant to be used only to talk to the service you signed in to (for example Spotify's own site to read your playlists).
 - The app is open source under GPL-3.0 so you do not have to take my word for it, you can always read exactly what it does with them :)
 
+
 Q - Pls add liquid glass
+
 A - No, and not now. maybe in form of modules created by someone in the future
 
+
 Q - Monochrome/flac stream doesnt work
+
 A - The server down, its on their side not us. use other anvailable sources, join our discord
 
+
 Q - Animation is too slow, can you speed it up?
+
 A - You can speed it up on customize page.
 
+
 Q - Official Desktop app?
+
 A - Later
 
+
 Q - App too laggy, how to fix?
+
 A - Disabling blur will helps
 
+
 Q - Can i contribute?
+
 A - Ofc
 
+
 Q - Can you add less spacing for the player
+
 A - You can customize it yourself
 
 Q - I hate this app, i dont want to use it
