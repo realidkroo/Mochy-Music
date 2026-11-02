@@ -1,4 +1,4 @@
-<img width="1799" height="927" alt="Frame 286" src="https://github.com/user-attachments/assets/e793be23-be42-4b16-aa0d-bd8656026ecb" />
+<img width="1799" height="927" alt="fdb" src="https://github.com/user-attachments/assets/98652d23-a7cd-4c6f-945e-96a85273f61f" />
 
 <div align="center">
 
@@ -41,7 +41,7 @@
 
 
 > [!WARNING]
-> This app still on beta!, expect some bugs! reporting it will be useful too.
+> This app still on beta!, expect some bugs! reporting it will be useful too!!!
 
 ---
 
@@ -55,7 +55,7 @@
 Updating works the same way: install the new apk over the old one and your library stays.
 
 > [!TIP]
-> Only download Mochy from the releases page of this repo. A random mediafire or telegram link could be a modified app, and then your logins would not be safe.
+> Only download Mochy from the releases page of this repo. A random mediafire or telegram link could be a modified app, and then your logins would not be safe, pls avoid those
 
 ---
 
@@ -65,6 +65,61 @@ Updating works the same way: install the new apk over the old one and your libra
 <img width="1799" height="927" alt="Frame 287" src="https://github.com/user-attachments/assets/186be8ac-ff3e-4e2a-ab7e-ae80bc9da7e7" />
 <img width="1799" height="927" alt="Frame 290" src="https://github.com/user-attachments/assets/c394603c-7aa7-4d78-8688-38a6c6e42232" />
 <img width="1799" height="927" alt="Frame 288" src="https://github.com/user-attachments/assets/06f5c13a-b8f1-4ecf-85aa-b17d020db5c8" />
+<img width="1799" height="927" alt="Frame 331" src="https://github.com/user-attachments/assets/71c5ee7e-75c1-479f-8075-039bab4f7fe7" />
+<img width="1799" height="927" alt="Frame 332" src="https://github.com/user-attachments/assets/e8c2084f-68ec-4959-a881-03a3b93df292" />
+<img width="1799" height="927" alt="Frame 333" src="https://github.com/user-attachments/assets/50580702-6bc9-4204-8665-b7d6c6390f78" />
+
+
+---
+# FAQ
+Q - Is it safe to log in? (read this before signing in)
+
+A - Tbh, you never have to log in to use this thing btw. Search, play, lyrics and downloads work without an account. Signing in is only for syncing your YouTube Music library, importing playlists from Spotify / Apple Music / Tidal, and Discord status
+
+**How the sign-in works**
+- Mochy opens the real login page of the service (for example accounts.google.com or open.spotify.com) inside the app. You type your password into **their** page, not into a Mochy form.
+- After you log in, the app keeps the session token or cookie that the service gives out, so you stay signed in. Your password is not what gets saved.
+- That session stays on your phone, in the app's private storage. Mochy has no account system of its own and does not run a server that collects logins.
+- The tokens are meant to be used only to talk to the service you signed in to (for example Spotify's own site to read your playlists).
+- The app is open source under GPL-3.0 so you do not have to take my word for it, you can always read exactly what it does with them :)
+
+
+Q - Pls add liquid glass
+
+A - No, and not now. maybe in form of modules created by someone in the future
+
+
+Q - Monochrome/flac stream doesnt work
+
+A - The server down, its on their side not us. use other anvailable sources, join our discord
+
+
+Q - Animation is too slow, can you speed it up?
+
+A - You can speed it up on customize page.
+
+
+Q - Official Desktop app?
+
+A - Later
+
+
+Q - App too laggy, how to fix?
+
+A - Disabling blur will helps
+
+
+Q - Can i contribute?
+
+A - Ofc
+
+
+Q - Can you add less spacing for the player
+
+A - You can customize it yourself
+
+Q - I hate this app, i dont want to use it
+A - Nobody is forcing you to use this
 
 ---
 
@@ -73,7 +128,7 @@ Updating works the same way: install the new apk over the old one and your libra
 You only need this if you want to change the code. If you just want to use the app, use the install steps above.
 
 ### What you need
-- A Mac, Linux or Windows computer (the script below is for Mac and Linux, on Windows use WSL or Android Studio)
+- A Mac, Linux or Windows computer with screen
 - [Android Studio](https://developer.android.com/studio) (latest stable). It brings JDK 21 and the Android SDK with it
 - Android SDK 36 and NDK `27.0.12077973`. Android Studio offers to download both the first time you open the project
 - About 10 gb free disk space, the first build downloads a lottt
@@ -102,11 +157,11 @@ Handy options (see `./build.sh --help` for all of them):
 | Command | What it does |
 |---|---|
 | `./build.sh --debug -i` | debug build, installs and opens it on your phone |
-| `./build.sh --release -cc` | release build for arm64 and universal (slow, R8 takes about 5 minutes) |
+| `./build.sh --release -cc` | release build for arm64 and universal |
 | `./build.sh -fd --release` | F-Droid flavor, without the self-update permission |
 | `./build.sh -k` | stops stuck Gradle builds |
 
-Use **debug** while you are playing around, it builds much faster. A debug build installs next to the real app (`com.example.mochy.debug`), so it will not touch your normal install, but it is also a bit slower to run.
+Use **debug** while you are playing around, it builds much much faster. A debug build installs next to the real app (`com.example.mochy.debug`), so it will not touch your normal install, but it is also a bit slower to run.
 
 ### Optional keys
 Mochy builds fine without these, only the matching feature is switched off. Put them in `local.properties` (it is never committed):
@@ -126,6 +181,11 @@ Never commit your keys. Libre.fm works without any key.
 - Still stuck? Open an [issue](https://github.com/realidkroo/mochy-music/issues) with the error text.
 
 Want to send a fix? Read [CONTRIBUTING](.github/CONTRIBUTING.md) first.
+
+---
+## How to build module?
+im working on it wait
+
 ---
 ## Wants to help? bug report? report it on issues!
 
@@ -143,32 +203,6 @@ Mochy is an independent, unofficial project made for personal and educational us
 - You are responsible for how you use the app, including the terms of service of the accounts and services you connect and the copyright laws where you live.
 - Importing from other services (Spotify, etc.) uses your own account. Don't share your login data or tokens with anyone.
 - Importing music MAY need your own account with its password. WE'RE NEVER see your password.
-
-# FAQ
-## Q
-## 1.Is it safe to log in? (read this before signing in)
-
-## A
-Tbh, you never have to log in to use this thing btw. Search, play, lyrics and downloads work without an account. Signing in is only for syncing your YouTube Music library, importing playlists from Spotify / Apple Music / Tidal, and Discord status
-
-**How the sign-in works**
-- Mochy opens the real login page of the service (for example accounts.google.com or open.spotify.com) inside the app. You type your password into **their** page, not into a Mochy form.
-- After you log in, the app keeps the session token or cookie that the service gives out, so you stay signed in. Your password is not what gets saved.
-- That session stays on your phone, in the app's private storage. Mochy has no account system of its own and does not run a server that collects logins.
-- The tokens are meant to be used only to talk to the service you signed in to (for example Spotify's own site to read your playlists).
-- The app is open source under GPL-3.0 so you do not have to take my word for it, you can always read exactly what it does with them :)
-
-## Q
-## 2. Pls add liquid glass
-
-## A
-No, and not now. maybe in form of modules created by someone in the future
-
-## Q
-## 3. Monochrome/flac stream doesnt work
-
-## A
-The server down, its on their side not us. use other anvailable sources
 
 ---
 
@@ -206,5 +240,5 @@ These are the open source apis and server we get gets its lyrics, streams and da
 </a>
 
 <div align="center">
-  <sub>star the repo plssss!</sub>
+  <sub>star the repo plssss apreciate it!!!!!</sub>
 </div>
