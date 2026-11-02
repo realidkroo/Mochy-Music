@@ -49,6 +49,9 @@
     <string name="library_empty_import">Nothing here yet. Import your music above to fill your library.</string>
     <string name="library_pinned">Pinned</string>
     <string name="library_recently_added">Recently added</string>
+    <string name="library_albums_subtitle">Albums you saved, and the ones the songs you added come from.</string>
+    <string name="library_albums_search">Find an album listed here</string>
+    <string name="library_imported_albums_subtitle">Albums with songs you imported from %1$s.</string>
     <string name="search_top_result">Top result</string>
     <string name="search_offline_no_matches">Offline mode: nothing in your library matches</string>
 </resources>
