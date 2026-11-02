@@ -1,0 +1,15 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "It works! The real app will grow from here." : {
+
+    },
+    "Mochy" : {
+      "shouldTranslate" : false
+    },
+    "Running on iOS %@" : {
+
+    }
+  },
+  "version" : "1.0"
+}

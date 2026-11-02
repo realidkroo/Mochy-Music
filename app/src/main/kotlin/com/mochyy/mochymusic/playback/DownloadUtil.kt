@@ -17,6 +17,7 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
+import com.mochyy.mochymusic.utils.followAppProxy
 import com.music.innertube.YouTube
 import com.mochyy.mochymusic.constants.AudioQuality
 import com.mochyy.mochymusic.constants.DownloadQuality
@@ -133,14 +134,7 @@ constructor(
                             }
                         }
                     })
-                    .proxy(YouTube.proxy)
-                    .proxyAuthenticator { _, response ->
-                        YouTube.proxyAuth?.let { auth ->
-                            response.request.newBuilder()
-                                .header("Proxy-Authorization", auth)
-                                .build()
-                        } ?: response.request
-                    }
+                    .followAppProxy()
                     .build(),
             ),
         ) { dataSpec ->

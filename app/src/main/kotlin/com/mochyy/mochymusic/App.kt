@@ -8,7 +8,6 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
-import android.widget.Toast
 import androidx.datastore.preferences.core.edit
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -28,11 +27,12 @@ import com.mochyy.mochymusic.constants.*
 import com.mochyy.mochymusic.di.ApplicationScope
 import com.mochyy.mochymusic.i18n.AppLanguage
 import com.mochyy.mochymusic.extensions.toEnum
-import com.mochyy.mochymusic.extensions.toInetSocketAddress
 import com.mochyy.mochymusic.utils.CrashHandler
 import com.mochyy.mochymusic.utils.PreferencesCache
 import com.mochyy.mochymusic.utils.cipher.CipherDeobfuscator
 import com.mochyy.mochymusic.utils.dataStore
+import com.mochyy.mochymusic.utils.AppProxy
+import com.mochyy.mochymusic.utils.BotDetectionMitigator
 import com.mochyy.mochymusic.utils.reportException
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -43,11 +43,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import okhttp3.Credentials
 import timber.log.Timber
-import java.net.Authenticator
-import java.net.PasswordAuthentication
-import java.net.Proxy
 import javax.inject.Inject
 
 // how long after the launch intro the PoToken WebView may boot (Home's reveal runs ~1s)
@@ -165,32 +161,8 @@ class App : Application(), SingletonImageLoader.Factory {
             KuGou.useTraditionalChinese = true
         }
 
-        if (settings[ProxyEnabledKey] == true) {
-            val username = settings[ProxyUsernameKey].orEmpty()
-            val password = settings[ProxyPasswordKey].orEmpty()
-            val type = settings[ProxyTypeKey].toEnum(defaultValue = Proxy.Type.HTTP)
-
-            if (username.isNotEmpty() || password.isNotEmpty()) {
-                if (type == Proxy.Type.HTTP) {
-                    YouTube.proxyAuth = Credentials.basic(username, password)
-                } else {
-                    Authenticator.setDefault(object : Authenticator() {
-                        override fun getPasswordAuthentication(): PasswordAuthentication =
-                            PasswordAuthentication(username, password.toCharArray())
-                    })
-                }
-            }
-            try {
-                settings[ProxyUrlKey]?.let {
-                    YouTube.proxy = Proxy(type, it.toInetSocketAddress())
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(this@App, getString(R.string.failed_to_parse_proxy), Toast.LENGTH_SHORT).show()
-                }
-                reportException(e)
-            }
-        }
+        // before anything asks youtube, so the first requests already go through the proxy
+        AppProxy.apply(AppProxy.configFrom(settings))
 
         YouTube.useLoginForBrowse = settings[UseLoginForBrowse] ?: true
         YouTube.ipVersion = settings[IpVersionKey]?.toEnum(defaultValue = IpVersion.AUTO) ?: IpVersion.AUTO
@@ -273,6 +245,16 @@ class App : Application(), SingletonImageLoader.Factory {
                             ?: systemLocale.language.takeIf { it in LanguageCodeToName }
                             ?: "en"
                     )
+                }
+        }
+
+        applicationScope.launch(Dispatchers.IO) {
+            dataStore.data
+                .map { AppProxy.configFrom(it) }
+                .distinctUntilChanged()
+                .collect { config ->
+                    // a new way out gets a fresh guest session too, the old one may be what youtube flagged
+                    if (AppProxy.apply(config) && YouTube.cookie == null) BotDetectionMitigator.rotateGuestSession()
                 }
         }
 

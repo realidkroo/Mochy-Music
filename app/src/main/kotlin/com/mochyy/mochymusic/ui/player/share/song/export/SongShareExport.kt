@@ -47,7 +47,6 @@ import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.ProgressHolder
 import androidx.media3.transformer.Transformer
 import androidx.media3.transformer.VideoEncoderSettings
-import com.music.innertube.YouTube
 import com.mochyy.mochymusic.extensions.toMediaItem
 import com.mochyy.mochymusic.ui.component.LocalBlurQuality
 import com.mochyy.mochymusic.constants.BlurQuality
@@ -64,6 +63,7 @@ import com.mochyy.mochymusic.ui.player.share.song.clippedItem
 import com.mochyy.mochymusic.ui.player.share.song.found
 import com.mochyy.mochymusic.ui.player.share.song.freshMusicVideo
 import com.mochyy.mochymusic.ui.player.share.song.trackFor
+import com.mochyy.mochymusic.utils.followAppProxy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -318,7 +318,7 @@ private fun newExportFile(context: Context, extension: String): File {
 }
 
 private fun webSources(context: Context, headers: Map<String, String>): MediaSource.Factory {
-    val http = OkHttpDataSource.Factory(OkHttpClient.Builder().proxy(YouTube.proxy).build()).setDefaultRequestProperties(headers)
+    val http = OkHttpDataSource.Factory(OkHttpClient.Builder().followAppProxy().build()).setDefaultRequestProperties(headers)
     return DefaultMediaSourceFactory(DefaultDataSource.Factory(context, http))
 }
 

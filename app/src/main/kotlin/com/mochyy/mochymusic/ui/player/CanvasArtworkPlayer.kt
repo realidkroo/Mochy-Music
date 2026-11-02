@@ -36,7 +36,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.AspectRatioFrameLayout
-import com.music.innertube.YouTube
+import com.mochyy.mochymusic.utils.followAppProxy
 import com.music.innertube.models.YouTubeClient
 import okhttp3.OkHttpClient
 import java.util.Locale
@@ -100,7 +100,7 @@ fun CanvasArtworkPlayer(
         remember {
             OkHttpClient
                 .Builder()
-                .proxy(YouTube.proxy)
+                .followAppProxy()
                 .addInterceptor { chain ->
                     val request = chain.request()
                     val host = request.url.host

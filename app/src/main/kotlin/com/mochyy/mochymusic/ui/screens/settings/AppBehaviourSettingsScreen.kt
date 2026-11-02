@@ -46,6 +46,8 @@ import com.mochyy.mochymusic.constants.LyricsMotionStyleKey
 import com.mochyy.mochymusic.constants.MixWithOtherAppsKey
 import com.mochyy.mochymusic.constants.OfflineModeKey
 import com.mochyy.mochymusic.constants.PersistentQueueKey
+import com.mochyy.mochymusic.constants.ProxyEnabledKey
+import com.mochyy.mochymusic.constants.ProxyUrlKey
 import com.mochyy.mochymusic.constants.PlayVideoBackgroundKey
 import com.mochyy.mochymusic.constants.SYSTEM_DEFAULT
 import com.mochyy.mochymusic.constants.ShowFormatBadgeKey
@@ -72,6 +74,7 @@ import com.mochyy.mochymusic.ui.component.SubSettingsScaffold
 import com.mochyy.mochymusic.ui.component.SubSettingsSearchBar
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.utils.rememberEnumPreference
+import com.mochyy.mochymusic.utils.AppProxy
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -86,7 +89,7 @@ fun AppBehaviourSettingsScreen(navController: NavController) {
         onBack = { navController.navigateUp() },
         searchBar = { SubSettingsSearchBar(query = query, onQueryChange = { query = it }) },
     ) {
-        Section(stringResource(R.string.general_app_settings), generalItems().matching(query))
+        Section(stringResource(R.string.general_app_settings), generalItems(navController).matching(query))
         Section(stringResource(R.string.settings_local_section), localItems().matching(query))
         Section(stringResource(R.string.settings_player_behaviour), playerBehaviourItems().matching(query))
         Section(stringResource(R.string.settings_on_the_player), playerLookItems().matching(query))
@@ -123,7 +126,7 @@ private fun List<SettingsItem>.matching(query: String): List<SettingsItem> {
 }
 
 @Composable
-private fun generalItems(): List<SettingsItem> {
+private fun generalItems(navController: NavController): List<SettingsItem> {
     val context = LocalContext.current
     val (noticeHidden, onNoticeHidden) = rememberPreference(HideUpdateNoticeKey, defaultValue = false)
     val (offlineMode, onOfflineModeChange) = rememberPreference(OfflineModeKey, defaultValue = false)
@@ -131,6 +134,8 @@ private fun generalItems(): List<SettingsItem> {
     val (mixWithOtherApps, onMixWithOtherAppsChange) = rememberPreference(MixWithOtherAppsKey, defaultValue = false)
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(PersistentQueueKey, defaultValue = true)
     val (albumsFromLikes, onAlbumsFromLikesChange) = rememberPreference(AlbumsFromLikedSongsKey, defaultValue = false)
+    val (proxyOn) = rememberPreference(ProxyEnabledKey, defaultValue = false)
+    val (proxyAddress) = rememberPreference(ProxyUrlKey, defaultValue = "")
     // the launch check's notification reads its own switch, so it follows this one too
     val setNoticeHidden = { hidden: Boolean ->
         onNoticeHidden(hidden)
@@ -153,6 +158,27 @@ private fun generalItems(): List<SettingsItem> {
             icon = painterResource(R.drawable.download),
             checked = offlineMode,
             onCheckedChange = onOfflineModeChange,
+        ),
+        SettingsItem(
+            title = { Text(stringResource(R.string.proxy)) },
+            highlightKey = "Proxy",
+            descriptionText = if (proxyOn && AppProxy.parseAddress(proxyAddress) != null) {
+                stringResource(R.string.proxy_status_on, proxyAddress)
+            } else {
+                stringResource(R.string.proxy_status_off)
+            },
+            searchText = stringResource(R.string.proxy),
+            icon = painterResource(R.drawable.wifi_proxy),
+            iconShape = CircleShape,
+            onClick = { navController.navigate(ProxySettingsRoute) },
+            trailingContent = {
+                Icon(
+                    painter = painterResource(R.drawable.navigate_next),
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.5f),
+                    modifier = Modifier.size(20.dp),
+                )
+            },
         ),
         switchItem(
             key = "Keep playing even when closed",

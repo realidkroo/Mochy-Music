@@ -419,6 +419,10 @@ fun NavGraphBuilder.navigationBuilder(
         com.mochyy.mochymusic.ui.screens.settings.integrations.ScrobbleServiceScreen(navController = navController, site = site)
     }
 
+    composable(com.mochyy.mochymusic.ui.screens.settings.ProxySettingsRoute) {
+        com.mochyy.mochymusic.ui.screens.settings.ProxySettingsScreen(navController = navController)
+    }
+
     composable("crossmix_settings") {
         com.mochyy.mochymusic.ui.screens.settings.CrossmixSettingsScreen(navController = navController)
     }

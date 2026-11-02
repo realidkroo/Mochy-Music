@@ -27,9 +27,9 @@ import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.dash.manifest.DashManifestParser
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import com.music.innertube.YouTube
 import com.mochyy.mochymusic.constants.VideoQuality
 import com.mochyy.mochymusic.utils.VideoStreams
+import com.mochyy.mochymusic.utils.followAppProxy
 import okhttp3.OkHttpClient
 import kotlin.math.abs
 
@@ -69,12 +69,7 @@ private object YouTubeVideoThread {
 private object YouTubeVideoHttp {
     val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
-            .proxy(YouTube.proxy)
-            .proxyAuthenticator { _, response ->
-                YouTube.proxyAuth?.let { auth ->
-                    response.request.newBuilder().header("Proxy-Authorization", auth).build()
-                }
-            }
+            .followAppProxy()
             .build()
     }
 }
