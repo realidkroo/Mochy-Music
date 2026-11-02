@@ -73,6 +73,7 @@ object ImportedVersions {
                 update(
                     new.copy(
                         inLibrary = new.inLibrary ?: old.inLibrary,
+                        addedByLike = if (new.inLibrary != null) new.addedByLike else old.addedByLike,
                         liked = new.liked || old.liked,
                         likedDate = new.likedDate ?: old.likedDate,
                     ),

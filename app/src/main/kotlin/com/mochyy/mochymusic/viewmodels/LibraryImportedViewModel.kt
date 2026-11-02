@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mochyy.mochymusic.db.MusicDatabase
+import com.mochyy.mochymusic.db.entities.Album
 import com.mochyy.mochymusic.db.entities.Song
 import com.mochyy.mochymusic.importer.ImportSource
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,5 +28,9 @@ constructor(
     val source: ImportSource? = ImportSource.fromKey(savedStateHandle.get<String>("source"))
 
     val songs: StateFlow<List<Song>> = (source?.let { database.importedSongsByNameAsc(it.key) } ?: flowOf(emptyList<Song>()))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    // the albums this service's songs come from, for its albums card
+    val albums: StateFlow<List<Album>> = (source?.let { database.importedAlbums(it.key) } ?: flowOf(emptyList<Album>()))
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 }

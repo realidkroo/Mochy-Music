@@ -561,7 +561,8 @@ class SyncUtils @Inject constructor(
                                 if (dbSong == null) {
                                     insert(song.toMediaMetadata()) { it.toggleLibrary() }
                                 } else if (dbSong.song.inLibrary == null) {
-                                    update(dbSong.song.toggleLibrary())
+                                    // youtube puts every liked song in its library, those keep their album out like a like here does
+                                    update(dbSong.song.toggleLibrary(byLike = dbSong.song.liked))
                                 }
                             }
                             delay(DB_OPERATION_DELAY_MS)

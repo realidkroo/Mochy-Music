@@ -2,9 +2,11 @@
 
 package com.mochyy.mochymusic.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mochyy.mochymusic.constants.AlbumSortType
+import com.mochyy.mochymusic.constants.AlbumsFromLikedSongsKey
 import com.mochyy.mochymusic.constants.ArtistSortType
 import com.mochyy.mochymusic.constants.PlaylistSortType
 import com.mochyy.mochymusic.constants.SongSortType
@@ -15,17 +17,21 @@ import com.mochyy.mochymusic.db.entities.SpeedDialItem
 import com.mochyy.mochymusic.importer.ImportProgress
 import com.mochyy.mochymusic.importer.ImportSource
 import com.mochyy.mochymusic.importer.MusicImportService
+import com.mochyy.mochymusic.importer.groupLocalAlbums
 import com.mochyy.mochymusic.playback.CachedSongs
 import com.mochyy.mochymusic.utils.ArtistImageResolver
+import com.mochyy.mochymusic.utils.dataStore
 import com.music.innertube.YouTube
 import com.music.innertube.models.YTItem
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
@@ -51,6 +57,7 @@ import javax.inject.Inject
 class LibraryHomeViewModel
 @Inject
 constructor(
+    @ApplicationContext private val context: Context,
     private val database: MusicDatabase,
     private val importService: MusicImportService,
     private val cachedSongs: CachedSongs,
@@ -66,13 +73,19 @@ constructor(
     val artists = database.artists(ArtistSortType.CREATE_DATE, true)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    // saved albums first, newest on top, then the ones your songs come from; a saved album used to be missing here
-    val albums = combine(
-        database.albumsLiked(AlbumSortType.CREATE_DATE, true),
-        database.albums(AlbumSortType.CREATE_DATE, true),
-    ) { saved, library ->
-        (saved.sortedByDescending { it.album.bookmarkedAt } + library).distinctBy { it.id }
-    }
+    // saved albums first, newest on top, then the ones your added songs come from, liked ones too when the old way is on
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val albums = context.dataStore.data
+        .map { it[AlbumsFromLikedSongsKey] ?: false }
+        .distinctUntilChanged()
+        .flatMapLatest { withLiked ->
+            combine(
+                database.albumsLiked(AlbumSortType.CREATE_DATE, true),
+                database.albumsFromLibrarySongs(withLiked),
+            ) { saved, library ->
+                (saved.sortedByDescending { it.album.bookmarkedAt } + library).distinctBy { it.id }
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val playlists = database.playlists(PlaylistSortType.CREATE_DATE, true)
@@ -109,6 +122,18 @@ constructor(
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    // how many albums each service's songs come from, with the newest few covers, for the imported tab
+    val importedAlbums: StateFlow<Map<ImportSource, ImportedAlbums>> = database.importedAlbumRows()
+        .map { rows ->
+            rows.groupBy { it.source }
+                .mapNotNull { (key, albums) ->
+                    ImportSource.fromKey(key)?.let { it to ImportedAlbums(albums.size, albums.take(4).map { album -> album.thumbnailUrl }) }
+                }
+                .toMap()
+        }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** The service each imported playlist came from, by playlist id, for the Imported tab's Playlists. */
     val playlistSources: StateFlow<Map<String, ImportSource>> = database.importedPlaylists()
@@ -151,6 +176,17 @@ constructor(
         viewModelScope.launch(Dispatchers.IO) {
             runCatching { importService.repairEarlierImports() }
                 .onFailure { timber.log.Timber.w(it, "Repairing earlier imports failed") }
+        }
+
+        // a song's album is only stored once opened, so this makes sure every library song's album has a row to show
+        viewModelScope.launch(Dispatchers.IO) {
+            database.librarySongCount().distinctUntilChanged().collect { database.addMissingLibraryAlbums() }
+        }
+
+        // files imported before local albums existed get theirs here, after that it finds nothing to do
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { groupLocalAlbums(context, database) }
+                .onFailure { timber.log.Timber.w(it, "Grouping local albums failed") }
         }
 
         // Local artists are included: a downloaded song that never went into the library has
@@ -218,6 +254,13 @@ constructor(
         }
     }
 }
+
+// a service's albums card on the imported tab
+@androidx.compose.runtime.Immutable
+data class ImportedAlbums(
+    val count: Int,
+    val covers: List<String?>,
+)
 
 /** What a service's card in the Library shows. */
 @androidx.compose.runtime.Immutable

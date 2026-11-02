@@ -365,6 +365,17 @@ fun NavGraphBuilder.navigationBuilder(
         }
     }
 
+    // the Imported tab's Albums cards: the albums one service's songs come from
+    coverSourceComposable(
+        route = "library/imported/{source}/albums",
+        arguments = listOf(navArgument("source") { type = NavType.StringType }),
+    ) {
+        com.mochyy.mochymusic.ui.screens.library.LibraryAlbumsScreen(
+            navController = navController,
+            source = com.mochyy.mochymusic.importer.ImportSource.fromKey(it.arguments?.getString("source")),
+        )
+    }
+
     composable(Screens.Settings.route) {
         ProfileScreen(navController = navController)
     }
@@ -819,6 +830,10 @@ internal data class LocalAudioMetadata(
     val bitrate: Int?,
     val sampleRate: Int?,
     val embeddedArtwork: ByteArray?,
+    val albumArtist: String? = null,
+    val trackNumber: Int? = null,
+    val discNumber: Int? = null,
+    val year: Int? = null,
 )
 
 internal fun extractAudioMetadata(
@@ -847,6 +862,8 @@ internal fun extractAudioMetadata(
             } else null
         } catch (_: Exception) { null }
         val embeddedArtwork = try { retriever.embeddedPicture } catch (_: Exception) { null }
+        // track and disc tags often read "3/12", the part before the slash is the number
+        fun number(key: Int) = retriever.extractMetadata(key)?.substringBefore('/')?.trim()?.toIntOrNull()
         LocalAudioMetadata(
             title = title,
             artist = artist,
@@ -856,6 +873,10 @@ internal fun extractAudioMetadata(
             bitrate = bitrate,
             sampleRate = sampleRate,
             embeddedArtwork = embeddedArtwork,
+            albumArtist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST),
+            trackNumber = number(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER),
+            discNumber = number(MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER),
+            year = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR)?.take(4)?.toIntOrNull(),
         )
     } catch (e: Exception) {
 

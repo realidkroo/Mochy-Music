@@ -52,7 +52,10 @@ data class SongEntity(
     @ColumnInfo(name = "isVideo", defaultValue = false.toString())
     val isVideo: Boolean = false,
     @ColumnInfo(name = "localUri", defaultValue = "NULL")
-    val localUri: String? = null
+    val localUri: String? = null,
+    // in the library only because it was liked, so its album stays out of Albums unless the old way is on
+    @ColumnInfo(defaultValue = "0")
+    val addedByLike: Boolean = false,
 ) {
     fun localToggleLike() = copy(
         liked = !liked,
@@ -62,17 +65,20 @@ data class SongEntity(
     fun toggleLike() = copy(
         liked = !liked,
         likedDate = if (!liked) LocalDateTime.now() else null,
-        inLibrary = if (!liked) inLibrary ?: LocalDateTime.now() else inLibrary
+        inLibrary = if (!liked) inLibrary ?: LocalDateTime.now() else inLibrary,
+        addedByLike = if (!liked && inLibrary == null) true else addedByLike,
     ).also {
         CoroutineScope(Dispatchers.IO).launch {
             YouTube.likeVideo(id, !liked)
         }
     }
 
-    fun toggleLibrary(syncToYouTube: Boolean = true) = copy(
+    // byLike is for the youtube sync, where a liked song lands in the library on its own
+    fun toggleLibrary(syncToYouTube: Boolean = true, byLike: Boolean = false) = copy(
         liked = if (inLibrary == null) liked else false,
         inLibrary = if (inLibrary == null) LocalDateTime.now() else null,
-        likedDate = if (inLibrary == null) likedDate else null
+        likedDate = if (inLibrary == null) likedDate else null,
+        addedByLike = inLibrary == null && byLike,
     ).also {
         if (syncToYouTube) {
             CoroutineScope(Dispatchers.IO).launch {

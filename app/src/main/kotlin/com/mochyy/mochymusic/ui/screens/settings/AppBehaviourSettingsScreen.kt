@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.constants.AlbumsFromLikedSongsKey
 import com.mochyy.mochymusic.constants.CanvasThumbnailAnimationKey
 import com.mochyy.mochymusic.constants.CanvasWifiOnlyKey
 import com.mochyy.mochymusic.constants.DisableVideoAutoplayKey
@@ -129,6 +130,7 @@ private fun generalItems(): List<SettingsItem> {
     val (stopOnTaskRemoved, onStopOnTaskRemoved) = rememberPreference(StopPlaybackOnTaskRemovedKey, defaultValue = false)
     val (mixWithOtherApps, onMixWithOtherAppsChange) = rememberPreference(MixWithOtherAppsKey, defaultValue = false)
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(PersistentQueueKey, defaultValue = true)
+    val (albumsFromLikes, onAlbumsFromLikesChange) = rememberPreference(AlbumsFromLikedSongsKey, defaultValue = false)
     // the launch check's notification reads its own switch, so it follows this one too
     val setNoticeHidden = { hidden: Boolean ->
         onNoticeHidden(hidden)
@@ -178,6 +180,15 @@ private fun generalItems(): List<SettingsItem> {
             icon = painterResource(R.drawable.cached),
             checked = persistentQueue,
             onCheckedChange = onPersistentQueueChange,
+        ),
+        switchItem(
+            key = "Albums from liked songs",
+            title = stringResource(R.string.settings_albums_from_likes),
+            description = stringResource(R.string.settings_albums_from_likes_desc),
+            detail = stringResource(R.string.settings_albums_from_likes_detail),
+            icon = painterResource(R.drawable.album),
+            checked = albumsFromLikes,
+            onCheckedChange = onAlbumsFromLikesChange,
         ),
     )
 }

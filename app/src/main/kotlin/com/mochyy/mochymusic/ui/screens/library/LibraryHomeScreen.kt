@@ -75,6 +75,7 @@ fun LibraryHomeScreen(
     val likedSongs by viewModel.likedSongs.collectAsState()
     val importedSources by viewModel.importedSources.collectAsState()
     val playlistSources by viewModel.playlistSources.collectAsState()
+    val importedAlbums by viewModel.importedAlbums.collectAsState()
     val importProgress by viewModel.importProgress.collectAsState()
     val downloads by importViewModel.downloads.collectAsState()
     val localImports by importViewModel.localImports.collectAsState()
@@ -99,8 +100,8 @@ fun LibraryHomeScreen(
             else -> searchLibrary(q, songs, artists, albums, playlists)
         }
     }
-    val services = remember(importedSources, playlists, playlistSources) {
-        importedServices(importedSources, playlists, playlistSources)
+    val services = remember(importedSources, playlists, playlistSources, importedAlbums) {
+        importedServices(importedSources, playlists, playlistSources, importedAlbums)
     }
 
     val listState = rememberLazyListState()
@@ -237,6 +238,7 @@ fun LibraryHomeScreen(
                     onOpenImportProgress = openImportProgress,
                     onOpenSongs = { navController.navigate("library/imported/${it.key}") },
                     onOpenPlaylists = { navController.navigate("library/imported/${it.key}/playlists") },
+                    onOpenAlbums = { navController.navigate("library/imported/${it.key}/albums") },
                     onManage = {
                         menuState.showManageImportsSheet(
                             sources = services.filterNot { it.isEmpty }.map { it.source },

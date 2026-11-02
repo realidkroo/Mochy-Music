@@ -106,7 +106,7 @@ class MusicDatabase(
 }
 
 // bump this with every schema change and add its migration to AllMigrations, the import checks old exports against it too
-const val MusicDatabaseVersion = 41
+const val MusicDatabaseVersion = 42
 
 @Database(
     entities = [
@@ -196,6 +196,7 @@ val AllMigrations: Array<Migration>
         MIGRATION_38_39,
         MIGRATION_39_40,
         MIGRATION_40_41,
+        MIGRATION_41_42,
     )
 
 val MIGRATION_1_2 =
@@ -845,6 +846,26 @@ val MIGRATION_40_41 =
             if ("lastSyncedAt" !in columns) db.execSQL("ALTER TABLE `imported_playlist` ADD COLUMN `lastSyncedAt` INTEGER")
             db.execSQL(
                 "CREATE TABLE IF NOT EXISTS `imported_playlist_track` (`playlistId` TEXT NOT NULL, `trackKey` TEXT NOT NULL, PRIMARY KEY(`playlistId`, `trackKey`))",
+            )
+        }
+    }
+
+val MIGRATION_41_42 =
+    object : Migration(41, 42) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // checked first like 40 -> 41, adding a column that's already there fails into the destructive reset
+            val columns = db.query("PRAGMA table_info(`song`)").use { cursor ->
+                val name = cursor.getColumnIndex("name")
+                buildSet { while (cursor.moveToNext()) add(cursor.getString(name)) }
+            }
+            if ("addedByLike" !in columns) db.execSQL("ALTER TABLE `song` ADD COLUMN `addedByLike` INTEGER NOT NULL DEFAULT 0")
+            // best guess for songs already in: a like put it in when both dates match, or youtube sync brought the like, and imports or files never count
+            db.execSQL(
+                "UPDATE `song` SET `addedByLike` = 1 " +
+                    "WHERE `inLibrary` IS NOT NULL AND `liked` AND NOT `isLocal` " +
+                    "AND `id` NOT IN (SELECT `songId` FROM `imported_song` WHERE `source` != 'youtube_music') " +
+                    "AND (`likedDate` IS NULL OR ABS(`likedDate` - `inLibrary`) < 5000 " +
+                    "OR `id` IN (SELECT `songId` FROM `imported_song` WHERE `source` = 'youtube_music'))",
             )
         }
     }

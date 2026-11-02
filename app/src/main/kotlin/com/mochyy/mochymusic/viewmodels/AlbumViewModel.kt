@@ -58,6 +58,8 @@ constructor(
     private fun load() {
         viewModelScope.launch {
             val album = database.album(albumId).first()
+            // a local album only lives on this phone, youtube would answer not found and the album would get deleted below
+            if (album?.album?.isLocal == true) return@launch
             if (album?.description != null) {
                 description.value = album.description
             }

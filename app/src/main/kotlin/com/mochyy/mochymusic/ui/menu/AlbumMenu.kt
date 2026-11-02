@@ -344,26 +344,29 @@ fun AlbumMenu(
                                 }
                             }
                         ),
-                    NewAction(
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.share),
-                                contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
-                        text = stringResource(R.string.share),
-                        onClick = {
-                            onDismiss()
-                            val intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/playlist?list=${album.album.playlistId}")
+                    // only an album youtube knows has a link, a local album or one not opened yet has none
+                    album.album.playlistId?.let { listId ->
+                        NewAction(
+                            icon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.share),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(28.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            text = stringResource(R.string.share),
+                            onClick = {
+                                onDismiss()
+                                val intent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/playlist?list=$listId")
+                                }
+                                context.startActivity(Intent.createChooser(intent, null))
                             }
-                            context.startActivity(Intent.createChooser(intent, null))
-                        }
-                    ),
+                        )
+                    },
                     NewAction(
                         icon = {
                             Icon(
@@ -485,6 +488,9 @@ fun AlbumMenu(
                 )
             )
         }
+
+        // a local album is already on the phone, so there's nothing to download or refetch from youtube
+        if (album.album.isLocal) return@LazyColumn
 
         item { Spacer(modifier = Modifier.height(12.dp)) }
 

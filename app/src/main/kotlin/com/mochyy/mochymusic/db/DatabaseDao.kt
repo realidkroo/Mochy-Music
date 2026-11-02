@@ -39,6 +39,7 @@ import com.mochyy.mochymusic.db.entities.ImportSessionSong
 import com.mochyy.mochymusic.db.entities.ImportedPlaylist
 import com.mochyy.mochymusic.db.entities.ImportedPlaylistTrack
 import com.mochyy.mochymusic.db.entities.ImportedSong
+import com.mochyy.mochymusic.db.entities.ImportedAlbumRow
 import com.mochyy.mochymusic.db.entities.ImportedSourceCount
 import com.mochyy.mochymusic.db.entities.PlaylistEvent
 import com.mochyy.mochymusic.db.entities.PlaylistSong
@@ -1064,6 +1065,63 @@ interface DatabaseDao {
     @Query("SELECT * FROM album_artist_map WHERE albumId = :albumId")
     fun albumArtistMaps(albumId: String): List<AlbumArtistMap>
 
+    // the albums your library songs come from, a song that's only in through a like counts when withLiked is on (the old way)
+    @Transaction
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query(
+        "SELECT * FROM album WHERE EXISTS(SELECT 1 FROM song WHERE song.albumId = album.id " +
+            "AND song.inLibrary IS NOT NULL AND (:withLiked OR NOT song.addedByLike)) ORDER BY rowId DESC"
+    )
+    fun albumsFromLibrarySongs(withLiked: Boolean): Flow<List<Album>>
+
+    @Query("SELECT COUNT(*) FROM song WHERE inLibrary IS NOT NULL OR liked")
+    fun librarySongCount(): Flow<Int>
+
+    // an album is only stored once something opens or saves it, so a song's album that was never opened gets a stand-in the album page fills in later
+    @Query(
+        "INSERT OR IGNORE INTO album (id, title, thumbnailUrl, songCount, duration, lastUpdateTime) " +
+            "SELECT albumId, albumName, thumbnailUrl, 0, 0, :now FROM song " +
+            "WHERE (inLibrary IS NOT NULL OR liked) AND albumId IS NOT NULL AND albumName IS NOT NULL AND albumName != '' " +
+            "GROUP BY albumId"
+    )
+    fun addMissingAlbumRows(now: LocalDateTime)
+
+    // a stand-in album borrows its song's main artist until its page brings the real ones
+    @Query(
+        "INSERT OR IGNORE INTO album_artist_map (albumId, artistId, `order`) " +
+            "SELECT song.albumId, song_artist_map.artistId, 0 FROM song " +
+            "JOIN song_artist_map ON song_artist_map.songId = song.id AND song_artist_map.position = 0 " +
+            "JOIN album ON album.id = song.albumId " +
+            "WHERE (song.inLibrary IS NOT NULL OR song.liked) " +
+            "AND NOT EXISTS(SELECT 1 FROM album_artist_map WHERE album_artist_map.albumId = song.albumId) " +
+            "GROUP BY song.albumId"
+    )
+    fun addMissingAlbumArtists()
+
+    @Transaction
+    fun addMissingLibraryAlbums() {
+        addMissingAlbumRows(LocalDateTime.now())
+        addMissingAlbumArtists()
+    }
+
+    @Query("UPDATE song SET albumId = :albumId WHERE id = :songId")
+    fun setSongAlbum(songId: String, albumId: String)
+
+    // counts a local album's songs and length again, and takes the first cover and year any of its files has
+    @Query(
+        "UPDATE album SET " +
+            "songCount = (SELECT COUNT(*) FROM song_album_map WHERE albumId = :albumId), " +
+            "duration = (SELECT COALESCE(SUM(song.duration), 0) FROM song " +
+            "JOIN song_album_map ON song_album_map.songId = song.id WHERE song_album_map.albumId = :albumId), " +
+            "thumbnailUrl = COALESCE(thumbnailUrl, :thumbnailUrl), year = COALESCE(year, :year) " +
+            "WHERE id = :albumId"
+    )
+    fun refreshLocalAlbum(albumId: String, thumbnailUrl: String?, year: Int?)
+
+    @Transaction
+    @Query("SELECT * FROM song WHERE isLocal AND albumId IS NULL AND albumName IS NOT NULL AND albumName != ''")
+    suspend fun localSongsWithoutAlbum(): List<Song>
+
     @Transaction
     @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL ORDER BY rowId")
     fun playlistsByCreateDateAsc(): Flow<List<Playlist>>
@@ -1357,7 +1415,7 @@ interface DatabaseDao {
     }
 
     @Transaction
-    @Query("UPDATE song SET inLibrary = :inLibrary WHERE id = :songId")
+    @Query("UPDATE song SET inLibrary = :inLibrary, addedByLike = 0 WHERE id = :songId")
     fun inLibrary(
         songId: String,
         inLibrary: LocalDateTime?,
@@ -1632,6 +1690,24 @@ interface DatabaseDao {
             "ORDER BY song.title"
     )
     fun importedSongsByNameAsc(source: String): Flow<List<Song>>
+
+    // one row per service and album, newest import first, for the imported tab's album cards
+    @Query(
+        "SELECT imported_song.source AS source, album.thumbnailUrl AS thumbnailUrl FROM imported_song " +
+            "JOIN song ON song.id = imported_song.songId JOIN album ON album.id = song.albumId " +
+            "WHERE song.inLibrary IS NOT NULL OR song.liked " +
+            "GROUP BY imported_song.source, album.id ORDER BY MAX(imported_song.importedAt) DESC"
+    )
+    fun importedAlbumRows(): Flow<List<ImportedAlbumRow>>
+
+    @Transaction
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query(
+        "SELECT * FROM album WHERE EXISTS(SELECT 1 FROM song JOIN imported_song ON imported_song.songId = song.id " +
+            "WHERE song.albumId = album.id AND imported_song.source = :source " +
+            "AND (song.inLibrary IS NOT NULL OR song.liked)) ORDER BY title"
+    )
+    fun importedAlbums(source: String): Flow<List<Album>>
 
     /** Every song that was imported from anywhere, for the library sync to leave alone. */
     @Query("SELECT DISTINCT songId FROM imported_song")

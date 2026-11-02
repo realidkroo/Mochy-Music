@@ -357,6 +357,8 @@ val MixSortDescendingKey = booleanPreferencesKey("albumSortDescending")
 val SongFilterKey = stringPreferencesKey("songFilter")
 val ArtistFilterKey = stringPreferencesKey("artistFilter")
 val AlbumFilterKey = stringPreferencesKey("albumFilter")
+// the old way: a song in the library only because you liked it still brings its album into Albums
+val AlbumsFromLikedSongsKey = booleanPreferencesKey("albumsFromLikedSongs")
 
 val LastLikeSongSyncKey = longPreferencesKey("last_like_song_sync")
 val LastLibSongSyncKey = longPreferencesKey("last_library_song_sync")

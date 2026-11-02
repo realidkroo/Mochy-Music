@@ -239,7 +239,8 @@ internal class ImportSteps(
             songIds.distinct().forEach { id ->
                 val song = getSongById(id)?.song ?: return@forEach
                 val adding = song.inLibrary == null
-                if (adding) update(song.copy(inLibrary = addedAt[id] ?: now))
+                // imported on purpose, so its album shows in Albums even when a like put it in first
+                if (adding || song.addedByLike) update(song.copy(inLibrary = song.inLibrary ?: addedAt[id] ?: now, addedByLike = false))
                 insert(ImportedSong(songId = id, source = from, importedAt = now))
                 // the first step to touch a song records it; a later one finds it already in
                 if (session != null) insert(ImportSessionSong(session, id, addedToLibrary = adding, liked = false))

@@ -49,6 +49,9 @@
     <string name="playback_save_state">Save Player\'s last state</string>
     <string name="playback_save_state_desc">Off clears played tracks on close</string>
     <string name="playback_save_state_detail">Turning this off removes the songs you already played when you close the app</string>
+    <string name="settings_albums_from_likes">Albums from liked songs</string>
+    <string name="settings_albums_from_likes_desc">Liking a song also adds its album</string>
+    <string name="settings_albums_from_likes_detail">This is how Mochy used to work: every song you like brings its album into Albums. When it\'s off, Albums works like Apple Music and shows the albums you saved, plus the albums of songs you added, imported or keep on this phone.</string>
     <string name="playback_skip_silence">Skip Silence</string>
     <string name="playback_skip_silence_desc">Jump over the quiet gaps in songs</string>
     <string name="playback_usb_prefer">Prefer USB DAC</string>
