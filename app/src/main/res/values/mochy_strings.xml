@@ -1000,12 +1000,14 @@
     <string name="video_mode_volume">Volume</string>
     <string name="video_quality">Video quality</string>
     <string name="video_quality_auto">Auto</string>
-    <string name="video_quality_auto_desc">Drops to a lower picture when your connection slows down, so the video keeps moving instead of freezing</string>
+    <string name="video_quality_auto_desc">Drops lower on slow internet so it won\'t freeze</string>
     <string name="video_quality_auto_now">Auto · %1$s</string>
     <string name="video_quality_size">%1$dp</string>
-    <string name="video_quality_fixed_desc">Stays at this size. On a slow connection the video may stop to load</string>
-    <string name="video_quality_settings_desc">How sharp YouTube videos play. Auto keeps them smooth on a slow connection</string>
-    <string name="video_quality_not_loaded">The sizes show up once the video has loaded</string>
+    <string name="video_quality_fixed_desc">Stays here, may pause to load on slow internet</string>
+    <string name="video_quality_settings_desc">How sharp YouTube videos look</string>
+    <string name="video_quality_not_loaded">Sizes show up once the video loads</string>
+    <string name="video_quality_4k">4K</string>
+    <string name="video_quality_sharp_desc">If the video and your phone can, uses way more data</string>
     <string name="video_mode_song_info">Song info</string>
     <string name="video_mode_whole_video">Show the whole video</string>
     <string name="video_mode_whole_video_desc">Off, the video is zoomed in to fill the screen</string>
@@ -1017,6 +1019,11 @@
     <string name="song_share_menu">share song</string>
     <!-- the player's menu: opens the equalizer page -->
     <string name="player_menu_equalizer">Equalizer</string>
+    <!-- casting to a chromecast or a dlna tv or speaker from the device sheet -->
+    <string name="cast_couldnt_connect">Couldn\'t connect to %1$s. Make sure it\'s on and on the same Wi-Fi.</string>
+    <string name="cast_song_failed">%1$s couldn\'t play this song.</string>
+    <string name="cast_lost">Lost the connection to %1$s. Playing here instead.</string>
+    <string name="cast_connecting">Connecting…</string>
     <string name="song_share_music_title">Share music</string>
     <string name="song_share_music_only">Music only</string>
     <string name="song_share_music_only_hint">The song on a card</string>
