@@ -414,6 +414,13 @@ private fun PlayerSheet(
         kotlinx.coroutines.delay(180)
         openStudio()
     }
+    // the equalizer page, from the options sheet or a round button: the player steps down so it's in view
+    val openEqualizer: () -> Unit = {
+        showActionMenu = false
+        showExpandMenu = false
+        navController.navigate("equalizer")
+        state.collapseSoft()
+    }
     // the full video mode, from the options sheet or the chevron while a youtube video plays
     val enterVideoMode: () -> Unit = {
         showActionMenu = false
@@ -823,6 +830,7 @@ private fun PlayerSheet(
                 com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.LYRICS -> transition.open(PlayerPage.LYRICS)
                 com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.QUEUE -> transition.open(PlayerPage.QUEUE)
                 com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.SPEED -> showPlaybackSpeed = true
+                com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.EQUALIZER -> openEqualizer()
                 com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.OUTPUT -> showDeviceOutput = true
                 com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.FULL_VIDEO -> enterVideoMode()
                 else -> menuExtras.run(action)
@@ -1623,6 +1631,7 @@ private fun PlayerSheet(
                 PlayerActionMenu(
                     fromLyrics = menuFromLyrics,
                     onFullVideo = enterVideoMode,
+                    onEqualizer = openEqualizer,
                     onDismiss = {
                         showActionMenu = false
                         menuReveal.floatValue = 0f

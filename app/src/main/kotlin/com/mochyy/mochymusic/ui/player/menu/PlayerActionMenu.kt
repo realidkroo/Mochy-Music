@@ -90,6 +90,8 @@ fun PlayerActionMenu(
     onReveal: ((Float) -> Unit)? = null,
     // turns the player into the full video mode; no row without it
     onFullVideo: (() -> Unit)? = null,
+    // opens the equalizer page; no row without it
+    onEqualizer: (() -> Unit)? = null,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val trackInfo by playerConnection.uiState.trackInfo.collectAsState()
@@ -308,6 +310,17 @@ fun PlayerActionMenu(
                     title = "Playback speed and tempo",
                     onClick = { showPlaybackSpeed = true },
                 )
+                if (onEqualizer != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    MenuRow(
+                        icon = R.drawable.equalizer,
+                        title = androidx.compose.ui.res.stringResource(R.string.player_menu_equalizer),
+                        onClick = {
+                            onDismiss()
+                            onEqualizer()
+                        },
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(SectionGap))
 
