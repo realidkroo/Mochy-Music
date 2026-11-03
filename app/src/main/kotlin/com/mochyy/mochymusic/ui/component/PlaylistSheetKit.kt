@@ -216,6 +216,7 @@ internal fun SheetOptionRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    subtitleLines: Int = 1,
     enabled: Boolean = true,
     leading: @Composable () -> Unit,
     trailing: (@Composable RowScope.() -> Unit)? = null,
@@ -251,7 +252,7 @@ internal fun SheetOptionRow(
                     text = subtitle,
                     color = Color.White.copy(alpha = 0.55f),
                     fontSize = 12.sp,
-                    maxLines = 1,
+                    maxLines = subtitleLines,
                     overflow = TextOverflow.Ellipsis,
                 )
             }

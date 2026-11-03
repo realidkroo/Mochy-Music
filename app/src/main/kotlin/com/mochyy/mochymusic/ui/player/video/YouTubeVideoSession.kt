@@ -29,6 +29,7 @@ import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.mochyy.mochymusic.constants.VideoQuality
 import com.mochyy.mochymusic.utils.VideoStreams
+import com.mochyy.mochymusic.utils.VideoTrack
 import com.mochyy.mochymusic.utils.followAppProxy
 import okhttp3.OkHttpClient
 import kotlin.math.abs
@@ -119,6 +120,8 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
     private var autoCap = 1080
     // the size a whole-file video was loaded at; 0 when the player picks sizes itself
     private var wholeFileSide = 0
+    // h264 or the vp9/av1 family past 1080p, whichever the loaded source was built from
+    private var loadedFamily: List<VideoTrack>? = null
     private var seekStartedAt = 0L
     private var seekLatencyMs = 600.0
     private var speed = 1f
@@ -159,7 +162,7 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
     fun load(streams: VideoStreams, quality: VideoQuality, autoCap: Int, startMs: Long) {
         if (loaded == streams) return
         loaded = streams
-        sizes = streams.tracks.map { it.shortSide }.distinct().sortedDescending()
+        sizes = streams.sizes
         handler.post {
             if (released) return@post
             this.streams = streams
@@ -180,8 +183,9 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
         val p = player ?: return@post
         applyQuality(p)
         val s = streams ?: return@post
-        // a whole-file video can't change size by itself: load the other size right where the picture is
-        if (wholeFileSide != 0 && s.trackFor(capShortSide())?.shortSide != wholeFileSide) {
+        // a whole-file video can't change size by itself, nor can a manifest change codec: load the other one right where the picture is
+        val otherFamily = s.tracksFor(capShortSide()) !== loadedFamily
+        if (otherFamily || (wholeFileSide != 0 && s.trackFor(capShortSide())?.shortSide != wholeFileSide)) {
             seekStartedAt = SystemClock.elapsedRealtime()
             p.setMediaSource(mediaSourceFor(s), p.currentPosition)
             p.prepare()
@@ -265,7 +269,9 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
 
     private fun mediaSourceFor(s: VideoStreams): MediaSource {
         val dataSource = OkHttpDataSource.Factory(YouTubeVideoHttp.client).setDefaultRequestProperties(s.headers)
-        val manifest = VideoDash.manifest(s)?.let { xml ->
+        val family = s.tracksFor(capShortSide())
+        loadedFamily = family
+        val manifest = VideoDash.manifest(family, s.durationMs)?.let { xml ->
             runCatching { DashManifestParser().parse(ManifestUri, xml.byteInputStream()) }.getOrNull()
         }
         if (manifest != null) {

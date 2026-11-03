@@ -34,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -121,6 +122,10 @@ fun SubSettingsScaffold(
 
     val statusBarTop = WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding()
     val totalHeaderHeight = statusBarTop + ExpandedHeaderHeight
+    // a highlighted row lands a little under the collapsed header, where it's in plain view
+    val settingsScroll = remember(scrollState, statusBarTop) {
+        SettingsScroll(scrollState, statusBarTop + HeaderTopPadding + BackButtonSize + 20.dp)
+    }
 
     var searchOverlayVisible by remember { mutableStateOf(false) }
 
@@ -158,7 +163,7 @@ fun SubSettingsScaffold(
                 Spacer(modifier = Modifier.height(SearchBarHeight + 16.dp))
             }
 
-            content()
+            CompositionLocalProvider(LocalSettingsScroll provides settingsScroll) { content() }
 
             Spacer(modifier = Modifier.height(bottomInset.calculateBottomPadding() + 24.dp))
         }

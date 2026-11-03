@@ -55,7 +55,7 @@ constructor(
                             .onSuccess {
                                 val hideExplicit = context.dataStore.get(HideExplicitKey, false)
                                 val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
-                                val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
+                                val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, true)
                                 summaryPage =
                                     it.filterExplicit(
                                         hideExplicit,
@@ -71,7 +71,7 @@ constructor(
                             .onSuccess { result ->
                                 val hideExplicit = context.dataStore.get(HideExplicitKey, false)
                                 val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
-                                val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
+                                val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, true)
                                 viewStateMap[filter.value] =
                                     ItemsPage(
                                         result.items
@@ -103,7 +103,7 @@ constructor(
                     YouTube.searchContinuation(continuation).getOrNull() ?: return@launch
                 val hideExplicit = context.dataStore.get(HideExplicitKey, false)
                 val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
-                val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
+                val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, true)
                 val newItems = searchResult.items
                     .filterExplicit(hideExplicit)
                     .filterVideoSongs(hideVideoSongs)

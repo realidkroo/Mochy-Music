@@ -1,16 +1,17 @@
 package com.mochyy.mochymusic.ui.player.video
 
-import com.mochyy.mochymusic.utils.VideoStreams
+import com.mochyy.mochymusic.utils.VideoTrack
+import com.mochyy.mochymusic.utils.chunked
 import java.util.Locale
 
 // a dash manifest written from the sizes youtube handed us, so exoplayer can fetch small pieces and change size on its own
 internal object VideoDash {
-    fun manifest(streams: VideoStreams): String? {
-        if (!streams.chunked || streams.durationMs <= 0L) return null
+    fun manifest(family: List<VideoTrack>, durationMs: Long): String? {
+        if (!family.chunked || durationMs <= 0L) return null
         // one codec per manifest, the player can only glide between sizes of the same kind
-        val mimeType = streams.tracks.first().mimeType
-        val tracks = streams.tracks.filter { it.mimeType == mimeType }
-        val duration = seconds(streams.durationMs)
+        val mimeType = family.first().mimeType
+        val tracks = family.filter { it.mimeType == mimeType }
+        val duration = seconds(durationMs)
         return buildString {
             append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
             append("<MPD xmlns=\"urn:mpeg:dash:schema:mpd:2011\" profiles=\"urn:mpeg:dash:profile:isoff-on-demand:2011\"")

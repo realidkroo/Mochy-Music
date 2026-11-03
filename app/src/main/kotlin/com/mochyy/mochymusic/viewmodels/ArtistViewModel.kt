@@ -151,7 +151,7 @@ class ArtistViewModel @Inject constructor(
                     Triple(
                         it[HideExplicitKey] ?: false,
                         it[HideVideoSongsKey] ?: false,
-                        it[HideYoutubeShortsKey] ?: false
+                        it[HideYoutubeShortsKey] ?: true
                     )
                 }
                 .distinctUntilChanged()
@@ -178,7 +178,7 @@ class ArtistViewModel @Inject constructor(
         viewModelScope.launch {
             val hideExplicit = context.dataStore.get(HideExplicitKey, false)
             val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
-            val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
+            val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, true)
             YouTube.artist(artistId)
                 .onSuccess { page ->
                     val filteredSections = page.sections

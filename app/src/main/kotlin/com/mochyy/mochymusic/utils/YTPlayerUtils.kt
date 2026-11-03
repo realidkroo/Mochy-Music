@@ -368,7 +368,8 @@ object YTPlayerUtils {
 
         val audioConfig = metadataResponse?.playerConfig?.audioConfig ?: mainPlayerResponse.playerConfig?.audioConfig
         val videoDetails = metadataResponse?.videoDetails ?: mainPlayerResponse.videoDetails
-        val playbackTracking = metadataResponse?.playbackTracking ?: mainPlayerResponse.playbackTracking
+        // signed in, only the signed-in lookup's links count a play on the account; visionos ones would land in an anonymous history
+        val playbackTracking = if (isLoggedIn) metadataResponse?.playbackTracking else mainPlayerResponse.playbackTracking
         var format: PlayerResponse.StreamingData.Format? = null
         var streamUrl: String? = null
         var streamExpiresInSeconds: Int? = null
@@ -722,13 +723,13 @@ object YTPlayerUtils {
             return null
         }
         val streaming = response.streamingData ?: return null
-        val tracks = pickVideoFamily(streaming.adaptiveFormats).mapNotNull { format ->
+        suspend fun trackOf(format: PlayerResponse.StreamingData.Format): VideoTrack? {
             var url = runCatching { findUrlOrNull(format, videoId, response, skipNewPipe = false) }.getOrNull()
-                ?: return@mapNotNull null
+                ?: return null
             if (client.useWebPoTokens) {
                 url = runCatching { EjsNTransformSolver.transformNParamInUrl(url) }.getOrDefault(url)
             }
-            VideoTrack(
+            return VideoTrack(
                 itag = format.itag,
                 url = url,
                 mimeType = format.containerType(),
@@ -742,6 +743,7 @@ object YTPlayerUtils {
                 contentLength = format.contentLength,
             )
         }
+        val tracks = pickVideoFamily(streaming.adaptiveFormats).mapNotNull { trackOf(it) }
         if (tracks.isEmpty()) {
             Timber.tag(logTag).d("resolveVideoStreams: client ${client.clientName} had no video format")
             return null
@@ -756,12 +758,14 @@ object YTPlayerUtils {
         val durationMs = streaming.adaptiveFormats.firstNotNullOfOrNull { it.approxDurationMs?.toLongOrNull() }
             ?: response.videoDetails?.lengthSeconds?.toLongOrNull()?.times(1000L)
             ?: 0L
+        val sharpTracks = pickSharpFamily(streaming.adaptiveFormats, tracks.last().shortSide).mapNotNull { trackOf(it) }
         return VideoStreams(
             videoId = videoId,
             tracks = tracks,
             headers = headers,
             expiresAtMs = System.currentTimeMillis() + streaming.expiresInSeconds * 1000L,
             durationMs = durationMs,
+            sharpTracks = sharpTracks,
         )
     }
 

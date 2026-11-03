@@ -401,6 +401,583 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity-alias>
+        <!-- each icon type on each custom colour, picked from the swatches under Customize -->
+        <activity-alias
+            android:name=".IconMarkRed"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_mark_custom_red"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_mark_custom_red"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconMarkOrange"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_mark_custom_orange"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_mark_custom_orange"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconMarkYellow"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_mark_custom_yellow"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_mark_custom_yellow"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconMarkGreen"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_mark_custom_green"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_mark_custom_green"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconMarkTeal"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_mark_custom_teal"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_mark_custom_teal"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconMarkSky"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_mark_custom_sky"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_mark_custom_sky"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconMarkBlue"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_mark_custom_blue"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_mark_custom_blue"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconMarkIndigo"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_mark_custom_indigo"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_mark_custom_indigo"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconMarkPurple"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_mark_custom_purple"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_mark_custom_purple"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconMarkPink"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_mark_custom_pink"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_mark_custom_pink"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconMarkGraphite"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_mark_custom_graphite"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_mark_custom_graphite"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconMarkCream"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_mark_custom_cream"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_mark_custom_cream"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOutlineRed"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_outline_custom_red"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_outline_custom_red"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOutlineOrange"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_outline_custom_orange"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_outline_custom_orange"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOutlineYellow"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_outline_custom_yellow"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_outline_custom_yellow"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOutlineGreen"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_outline_custom_green"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_outline_custom_green"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOutlineTeal"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_outline_custom_teal"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_outline_custom_teal"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOutlineSky"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_outline_custom_sky"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_outline_custom_sky"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOutlineBlue"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_outline_custom_blue"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_outline_custom_blue"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOutlineIndigo"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_outline_custom_indigo"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_outline_custom_indigo"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOutlinePurple"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_outline_custom_purple"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_outline_custom_purple"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOutlinePink"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_outline_custom_pink"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_outline_custom_pink"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOutlineGraphite"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_outline_custom_graphite"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_outline_custom_graphite"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOutlineCream"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_outline_custom_cream"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_outline_custom_cream"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconAnimeRed"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_anime_custom_red"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_anime_custom_red"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconAnimeOrange"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_anime_custom_orange"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_anime_custom_orange"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconAnimeYellow"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_anime_custom_yellow"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_anime_custom_yellow"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconAnimeGreen"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_anime_custom_green"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_anime_custom_green"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconAnimeTeal"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_anime_custom_teal"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_anime_custom_teal"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconAnimeSky"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_anime_custom_sky"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_anime_custom_sky"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconAnimeBlue"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_anime_custom_blue"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_anime_custom_blue"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconAnimeIndigo"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_anime_custom_indigo"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_anime_custom_indigo"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconAnimePurple"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_anime_custom_purple"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_anime_custom_purple"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconAnimePink"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_anime_custom_pink"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_anime_custom_pink"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconAnimeGraphite"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_anime_custom_graphite"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_anime_custom_graphite"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".IconAnimeCream"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/app_icon_anime_custom_cream"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/app_icon_anime_custom_cream"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- launcher icon: the mark on custom purple; the themed layer stays the mark so android 13's themed icons still work -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/app_icon_custom_purple" />
+    <foreground android:drawable="@drawable/ic_launcher_mark" />
+    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
+</adaptive-icon>

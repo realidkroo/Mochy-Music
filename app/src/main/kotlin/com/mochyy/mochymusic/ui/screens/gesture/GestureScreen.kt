@@ -28,12 +28,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.annotation.StringRes
@@ -83,14 +86,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.drawscope.Stroke
+import com.mochyy.mochymusic.ui.component.LocalSettingsScroll
 import com.mochyy.mochymusic.ui.component.SettingsHighlight
+import com.mochyy.mochymusic.ui.component.SettingsPlacement
+import com.mochyy.mochymusic.ui.component.SettingsScroll
+import com.mochyy.mochymusic.ui.component.reveal
 import com.mochyy.mochymusic.ui.component.SubSettingsSearchBar
 import com.mochyy.mochymusic.ui.screens.settings.BottomBarHighlightKey
 import com.mochyy.mochymusic.ui.screens.settings.TopBarHighlightKey
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
 
 private val CardPadding = 20.dp
 
@@ -143,42 +152,47 @@ fun CustomisationScreen(navController: NavController) {
     val bottomInset = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
     val titles = CustomiseSection.entries.associateWith { stringResource(it.titleRes) }
     val shown = CustomiseSection.entries.filter { it.available && it.matches(query, titles.getValue(it)) }
+    val scroll = rememberScrollState()
+    // nothing stays pinned over this page, so a highlighted section lands just under the status bar
+    val settingsScroll = remember(scroll, statusTop) { SettingsScroll(scroll, statusTop + 16.dp) }
 
     // a plain black page like the mock: back button, the title, the search, then the cards
-    Box(
-        contentAlignment = Alignment.TopCenter,
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .verticalScroll(rememberScrollState()),
-    ) {
-        Column(
+    CompositionLocalProvider(LocalSettingsScroll provides settingsScroll) {
+        Box(
+            contentAlignment = Alignment.TopCenter,
             modifier = Modifier
-                .widthIn(max = PageMaxWidth)
-                .fillMaxWidth()
-                .padding(horizontal = CustomisePageMargin)
-                .padding(top = statusTop + 18.dp, bottom = bottomInset + 32.dp),
+                .fillMaxSize()
+                .background(Color.Black)
+                .verticalScroll(scroll),
         ) {
-            LabBackButton(onBack = { navController.navigateUp() })
-            Spacer(Modifier.height(14.dp))
-            Text(text = stringResource(R.string.customise_title), style = PageTitleStyle, color = Color.White)
-            Spacer(Modifier.height(16.dp))
-            SubSettingsSearchBar(query = query, onQueryChange = { query = it })
-            Spacer(Modifier.height(18.dp))
+            Column(
+                modifier = Modifier
+                    .widthIn(max = PageMaxWidth)
+                    .fillMaxWidth()
+                    .padding(horizontal = CustomisePageMargin)
+                    .padding(top = statusTop + 18.dp, bottom = bottomInset + 32.dp),
+            ) {
+                LabBackButton(onBack = { navController.navigateUp() })
+                Spacer(Modifier.height(14.dp))
+                Text(text = stringResource(R.string.customise_title), style = PageTitleStyle, color = Color.White)
+                Spacer(Modifier.height(16.dp))
+                SubSettingsSearchBar(query = query, onQueryChange = { query = it })
+                Spacer(Modifier.height(18.dp))
 
-            if (shown.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.customise_nothing_matches, query),
-                    fontFamily = InterFontFamily,
-                    fontSize = 15.sp,
-                    color = Color.White.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
-                )
-            }
-            shown.forEachIndexed { index, section ->
-                if (index > 0) SectionRule()
-                Box(Modifier.highlightTarget(section.keys)) {
-                    CustomiseSectionContent(section)
+                if (shown.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.customise_nothing_matches, query),
+                        fontFamily = InterFontFamily,
+                        fontSize = 15.sp,
+                        color = Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
+                    )
+                }
+                shown.forEachIndexed { index, section ->
+                    if (index > 0) SectionRule()
+                    Box(Modifier.highlightTarget(section.keys)) {
+                        CustomiseSectionContent(section)
+                    }
                 }
             }
         }
@@ -191,7 +205,7 @@ private fun CustomiseSectionContent(section: CustomiseSection) {
     when (section) {
         CustomiseSection.ICONS -> IconsSection()
         CustomiseSection.ROUNDING -> {
-            val (coverRadiusPx, onCoverRadiusChange) = rememberPreference(ThumbnailCornerRadiusKey, defaultValue = 25f)
+            val (coverRadiusPx, onCoverRadiusChange) = rememberPreference(ThumbnailCornerRadiusKey, defaultValue = DefaultCoverRadius)
             CoverRoundingSection(
                 radiusPx = coverRadiusPx,
                 onRadiusChange = { next ->
@@ -298,18 +312,24 @@ private fun GestureSection() {
 private fun Modifier.highlightTarget(keys: List<String>): Modifier {
     val requester = remember { BringIntoViewRequester() }
     val flash = remember { Animatable(0f) }
-    LaunchedEffect(SettingsHighlight.pending) {
-        val pending = SettingsHighlight.pending ?: return@LaunchedEffect
-        if (pending !in keys) return@LaunchedEffect
-        SettingsHighlight.pending = null
-        // let the page finish opening first, or it scrolls while still sliding in
-        delay(320)
-        requester.bringIntoView()
-        flash.animateTo(1f, tween(220))
-        flash.animateTo(0f, tween(900))
+    val settingsScroll = LocalSettingsScroll.current
+    val density = LocalDensity.current
+    val placement = remember { SettingsPlacement() }
+    LaunchedEffect(keys) {
+        // watched, not keyed on: clearing the request restarted the effect and cut it off before it scrolled
+        snapshotFlow { SettingsHighlight.pending }.filter { it in keys }.collect {
+            SettingsHighlight.pending = null
+            // let the page finish opening first, or it scrolls while still sliding in
+            delay(320)
+            val target = placement.coords
+            if (settingsScroll != null && target != null) settingsScroll.reveal(target, density) else requester.bringIntoView()
+            flash.animateTo(1f, tween(220))
+            flash.animateTo(0f, tween(900))
+        }
     }
     return this
         .bringIntoViewRequester(requester)
+        .onPlaced { placement.coords = it }
         .drawWithContent {
             drawContent()
             val a = flash.value

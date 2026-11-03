@@ -58,6 +58,7 @@ import com.mochyy.mochymusic.ui.player.menu.MenuSheetSurface
 import com.mochyy.mochymusic.ui.player.menu.PlaybackSpeedSheet
 import com.mochyy.mochymusic.ui.player.menu.SleepTimerSheet
 import com.mochyy.mochymusic.ui.player.menu.rememberMenuSheetStack
+import com.mochyy.mochymusic.ui.screens.settings.videoSizeName
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.ui.utils.resize
 import com.mochyy.mochymusic.utils.rememberEnumPreference
@@ -255,10 +256,10 @@ private fun TrailingValue(text: String) {
 // what the quality reads as: "Auto · 720p" while auto is playing a size, otherwise the size itself
 @Composable
 internal fun qualityLabel(quality: VideoQuality, session: YouTubeVideoSession?): String {
-    if (quality != VideoQuality.AUTO) return stringResource(R.string.video_quality_size, quality.shortSide)
+    if (quality != VideoQuality.AUTO) return videoSizeName(quality.shortSide)
     val playing = session?.playingShortSide ?: 0
     return if (playing > 0) {
-        stringResource(R.string.video_quality_auto_now, stringResource(R.string.video_quality_size, playing))
+        stringResource(R.string.video_quality_auto_now, videoSizeName(playing))
     } else {
         stringResource(R.string.video_quality_auto)
     }
@@ -296,11 +297,12 @@ internal fun VideoQualitySheet(session: YouTubeVideoSession?, onDismiss: () -> U
                     title = if (option == VideoQuality.AUTO) {
                         qualityLabel(VideoQuality.AUTO, session)
                     } else {
-                        stringResource(R.string.video_quality_size, option.shortSide)
+                        videoSizeName(option.shortSide)
                     },
                     description = when {
                         option == VideoQuality.AUTO -> stringResource(R.string.video_quality_auto_desc)
                         option == quality -> stringResource(R.string.video_quality_fixed_desc)
+                        option.shortSide > 1080 -> stringResource(R.string.video_quality_sharp_desc)
                         else -> null
                     },
                     selected = option == quality,

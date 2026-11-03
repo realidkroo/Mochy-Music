@@ -12,16 +12,21 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.widget.ImageView
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,41 +42,54 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.PopupSheetHandle
 import com.mochyy.mochymusic.ui.component.PopupSheetState
+import com.mochyy.mochymusic.ui.component.SheetLabel
+import com.mochyy.mochymusic.ui.component.SheetOptionRow
 import com.mochyy.mochymusic.ui.component.SheetPillButton
+import com.mochyy.mochymusic.ui.player.LarpLevel
+import com.mochyy.mochymusic.ui.player.larpQualityText
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private const val LarpAspect = 220f / 287f
 
-// 67
-fun PopupSheetState.showLarpSheet(onLarp: () -> Unit) {
+// 67, at the level picked here
+fun PopupSheetState.showLarpSheet(current: LarpLevel, onLarp: (LarpLevel) -> Unit) {
+    // shared by the levels and the pinned button, which compose apart
+    val picked = mutableStateOf(current)
     var sheet: PopupSheetHandle? = null
-    sheet = showWithHandle {
-        LarpSheetContent(
-            onLarp = {
-                onLarp()
-                sheet?.dismiss()
-            },
-        )
+    sheet = showWithHandle(
+        buttonBar = {
+            SheetPillButton(
+                text = stringResource(R.string.larp_sheet_button),
+                onClick = {
+                    onLarp(picked.value)
+                    sheet?.dismiss()
+                },
+            )
+        },
+    ) {
+        LarpSheetContent(picked)
     }
 }
 
 @Composable
-private fun LarpSheetContent(onLarp: () -> Unit) {
+private fun LarpSheetContent(picked: MutableState<LarpLevel>) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
+            // the picture and four levels are taller than a small phone's sheet
+            .verticalScroll(rememberScrollState())
             .padding(bottom = 12.dp),
     ) {
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
         LarpPicture(
             Modifier
-                .fillMaxWidth(0.56f)
+                .fillMaxWidth(0.44f)
                 .aspectRatio(LarpAspect),
         )
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(24.dp))
         Text(
             text = stringResource(R.string.larp_sheet_title),
             color = Color.White,
@@ -92,8 +110,24 @@ private fun LarpSheetContent(onLarp: () -> Unit) {
             letterSpacing = (-0.02).em,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(56.dp))
-        SheetPillButton(text = stringResource(R.string.larp_sheet_button), onClick = onLarp)
+        Spacer(Modifier.height(24.dp))
+        LarpLevels(picked)
+    }
+}
+
+@Composable
+private fun LarpLevels(picked: MutableState<LarpLevel>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        SheetLabel(stringResource(R.string.larp_sheet_levels), Modifier.padding(start = 4.dp, bottom = 4.dp))
+        for (level in LarpLevel.entries) {
+            SheetOptionRow(
+                title = stringResource(level.title),
+                subtitle = stringResource(R.string.larp_level_summary, level.ordinal + 1, larpQualityText(level), stringResource(level.dac)),
+                subtitleLines = 2,
+                onClick = { picked.value = level },
+                leading = { ChoiceMark(picked.value == level) },
+            )
+        }
     }
 }
 
