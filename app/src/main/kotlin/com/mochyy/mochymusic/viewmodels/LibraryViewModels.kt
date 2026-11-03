@@ -245,7 +245,7 @@ constructor(
                 Triple(
                     it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CREATE_DATE),
                     it[PlaylistSortDescendingKey] ?: true,
-                    it[HideYoutubeShortsKey] ?: false
+                    it[HideYoutubeShortsKey] ?: true
                 )
             }.distinctUntilChanged()
             .flatMapLatest { (sortType, descending, hideYoutubeShorts) ->
@@ -334,7 +334,7 @@ constructor(
             database.albumsLiked(AlbumSortType.CREATE_DATE, true).map { it.filterExplicitAlbums(hideExplicit) }
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     var playlists = context.dataStore.data
-        .map { it[HideYoutubeShortsKey] ?: false }
+        .map { it[HideYoutubeShortsKey] ?: true }
         .distinctUntilChanged()
         .flatMapLatest { hideYoutubeShorts ->
             database.playlists(PlaylistSortType.CREATE_DATE, true).map { it.filterYoutubeShorts(hideYoutubeShorts) }

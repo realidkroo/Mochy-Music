@@ -39,6 +39,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -88,12 +91,16 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
     val castTargets by remember { cast?.targets ?: MutableStateFlow(emptyList()) }.collectAsState()
     val castingTo by remember { cast?.castDeviceName ?: MutableStateFlow(null) }.collectAsState()
     val isCasting by remember { cast?.isCasting ?: MutableStateFlow(false) }.collectAsState()
+    val isConnecting by remember { cast?.isConnecting ?: MutableStateFlow(false) }.collectAsState()
+    // the receiver tapped last, so its row can say it's connecting (a tv launching its player takes a few seconds)
+    var tappedTarget by remember { mutableStateOf<String?>(null) }
     val (passthrough) = rememberPreference(UsbPassthroughKey, false)
     val anyChosen = devices.any { it.isChosen }
-    // larping, whatever is really playing turns into a wadax fed straight from mochy
-    val larping = com.mochyy.mochymusic.ui.player.rememberLarpMode()
-    val larpName = androidx.compose.ui.res.stringResource(R.string.larp_dac_name)
-    val larpDetail = androidx.compose.ui.res.stringResource(R.string.larp_dac_detail)
+    // larping, whatever is really playing turns into the level's dac, fed straight from mochy
+    val larp = com.mochyy.mochymusic.ui.player.rememberLarpMode()
+    val larping = larp != null
+    val larpName = larp?.let { androidx.compose.ui.res.stringResource(it.dac) }.orEmpty()
+    val larpDetail = larp?.let { com.mochyy.mochymusic.ui.player.larpDacDetail(it) }.orEmpty()
 
     // receivers are only looked for while this is open: discovery keeps the wifi radio busy
     DisposableEffect(cast) {
@@ -177,11 +184,15 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
                         )
                     }
                     castTargets.filter { it.name != castingTo }.forEach { target ->
+                        val connecting = isConnecting && tappedTarget == target.id
                         DeviceRow(
                             label = target.name,
-                            detail = target.detail ?: "Cast",
+                            detail = if (connecting) stringResource(R.string.cast_connecting) else target.detail ?: "Cast",
                             icon = Icons.Rounded.Cast,
-                            onClick = { cast?.connectTo(target.id) },
+                            onClick = {
+                                tappedTarget = target.id
+                                cast?.connectTo(target.id)
+                            },
                         )
                     }
                 }

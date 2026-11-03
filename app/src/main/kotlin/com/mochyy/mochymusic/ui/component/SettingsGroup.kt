@@ -17,6 +17,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import com.mochyy.mochymusic.R
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +40,7 @@ import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -209,13 +212,23 @@ private fun SettingsItemRow(
         com.mochyy.mochymusic.constants.HideSettingsDescriptionsKey,
         defaultValue = true,
     )
-    // A row arrived at from settings search claims the request the first time it composes, flashes
-    // briefly, then clears it - so the highlight fires once rather than every time the page opens.
+    // a row arrived at from search or a related link claims the request once, scrolls into view and flashes
     val key = item.highlightKey
-    androidx.compose.runtime.LaunchedEffect(key, SettingsHighlight.pending) {
-        if (key != null && SettingsHighlight.pending == key) {
+    val requester = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+    val settingsScroll = LocalSettingsScroll.current
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val placement = remember { SettingsPlacement() }
+    androidx.compose.runtime.LaunchedEffect(key) {
+        if (key == null) return@LaunchedEffect
+        // watched, not keyed on: clearing the request restarted the effect, so the row never scrolled and stayed lit
+        androidx.compose.runtime.snapshotFlow { SettingsHighlight.pending }.collect { pending ->
+            if (pending != key) return@collect
             SettingsHighlight.pending = null
             SettingsHighlight.active = key
+            // let the page finish opening first, or it scrolls while still sliding in
+            kotlinx.coroutines.delay(320)
+            val target = placement.coords
+            if (settingsScroll != null && target != null) settingsScroll.reveal(target, density) else requester.bringIntoView()
             kotlinx.coroutines.delay(2400)
             if (SettingsHighlight.active == key) SettingsHighlight.active = null
         }
@@ -232,6 +245,8 @@ private fun SettingsItemRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .bringIntoViewRequester(requester)
+            .onPlaced { placement.coords = it }
             .drawBehind {
                 if (highlightAlpha > 0.01f) {
                     drawRect(color = highlightColor.copy(alpha = 0.22f * highlightAlpha))

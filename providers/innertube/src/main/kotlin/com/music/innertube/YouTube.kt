@@ -1115,23 +1115,65 @@ object YouTube {
         }
     }
 
-    suspend fun musicHistory(hlOverride: String? = null) = runCatching {
-        val response = innerTube.browse(
+    // the history, read [maxRequests] pages deep: the first page only holds the latest few buckets, older ones (and the rest of a long bucket) come as continuations
+    suspend fun musicHistory(hlOverride: String? = null, maxRequests: Int = 1) = runCatching {
+        suspend fun page(browseId: String?, continuation: String?) = innerTube.browse(
             client = WEB_REMIX,
-            browseId = "FEmusic_history",
+            browseId = browseId,
+            continuation = continuation,
             setLogin = true,
             hlOverride = hlOverride,
         ).body<BrowseResponse>()
 
-        HistoryPage(
-            sections = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
-                ?.tabRenderer?.content?.sectionListRenderer?.contents
-                ?.mapNotNull {
-                    it.musicShelfRenderer?.let { musicShelfRenderer ->
-                        HistoryPage.fromMusicShelfRenderer(musicShelfRenderer)
-                    }
-                }
-        )
+        val sections = mutableListOf<Pair<String, MutableList<SongItem>>>()
+        // more of a shelf already read, as (shelf, token), read before going further back
+        val shelfContinuations = ArrayDeque<Pair<Int, String>>()
+
+        fun addShelf(shelf: MusicShelfRenderer) {
+            val section = HistoryPage.fromMusicShelfRenderer(shelf) ?: return
+            // a bucket cut across two pages comes back as two shelves with the same title
+            val index = if (sections.lastOrNull()?.first == section.title) {
+                sections.last().second += section.songs
+                sections.lastIndex
+            } else {
+                sections += section.title to section.songs.toMutableList()
+                sections.lastIndex
+            }
+            (shelf.continuations?.getContinuation() ?: shelf.contents?.getContinuation())?.let { shelfContinuations.addLast(index to it) }
+        }
+
+        val first = page("FEmusic_history", null)
+        val list = first.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer
+        list?.contents?.forEach { content -> content.musicShelfRenderer?.let(::addShelf) }
+        var listContinuation = list?.continuations?.getContinuation()
+        val seen = HashSet<String>()
+
+        var requests = 1
+        while (requests < maxRequests) {
+            val shelf = shelfContinuations.removeFirstOrNull()
+            if (shelf != null) {
+                if (!seen.add(shelf.second)) continue
+                val response = page(null, shelf.second)
+                requests++
+                val shelfContinuation = response.continuationContents?.musicShelfContinuation
+                val items = shelfContinuation?.contents
+                    ?: response.onResponseReceivedActions?.firstOrNull()?.appendContinuationItemsAction?.continuationItems
+                    ?: emptyList()
+                sections[shelf.first].second += HistoryPage.songsOf(items)
+                (shelfContinuation?.continuations?.getContinuation() ?: items.getContinuation())
+                    ?.let { shelfContinuations.addFirst(shelf.first to it) }
+                continue
+            }
+            val token = listContinuation ?: break
+            if (!seen.add(token)) break
+            val response = page(null, token)
+            requests++
+            val more = response.continuationContents?.sectionListContinuation
+            more?.contents?.forEach { content -> content.musicShelfRenderer?.let(::addShelf) }
+            listContinuation = more?.continuations?.getContinuation()
+        }
+
+        HistoryPage(sections = sections.map { (title, songs) -> HistoryPage.HistorySection(title, songs) })
     }
 
     suspend fun likeVideo(videoId: String, like: Boolean) = runCatching {

@@ -74,6 +74,9 @@ import kotlin.math.roundToInt
 private const val MinBlurStrength = 10f
 private const val MaxBlurStrength = 50f
 
+// the glass's strength until someone moves the slider, and where the reset puts it back
+private const val DefaultBlurStrength = 25f
+
 // the blur card leaves this much room for its preview, narrower than a style card's so the switches fit beside it
 private val BlurPreviewWidth = 104.dp
 
@@ -91,16 +94,26 @@ internal fun BlurSection(modifier: Modifier = Modifier) {
     val (disableBlur, onDisableBlur) = rememberPreference(DisableBlurKey, defaultValue = false)
     val (progressive, onProgressive) = rememberPreference(EnableProgressiveBlurKey, defaultValue = true)
     val (quality, onQuality) = rememberEnumPreference(BlurQualityKey, com.mochyy.mochymusic.ui.component.DefaultBlurQuality)
-    val (strength, onStrength) = rememberPreference(BlurStrengthPxKey, defaultValue = 25f)
+    val (strength, onStrength) = rememberPreference(BlurStrengthPxKey, defaultValue = DefaultBlurStrength)
     val haptic = LocalHapticFeedback.current
     var lastTick by remember { mutableIntStateOf((strength / 5f).roundToInt()) }
     val blurOn = !disableBlur
+    val defaultQuality = com.mochyy.mochymusic.ui.component.DefaultBlurQuality
+    val changed = disableBlur || !progressive || quality != defaultQuality || kotlin.math.abs(strength - DefaultBlurStrength) >= 0.5f
 
     Column(modifier.fillMaxWidth()) {
         EffectCard(
             title = stringResource(R.string.appearance_blur),
             checked = blurOn,
             onCheckedChange = { onDisableBlur(!it) },
+            canReset = changed,
+            onReset = {
+                onDisableBlur(false)
+                onProgressive(true)
+                onQuality(defaultQuality)
+                onStrength(DefaultBlurStrength)
+                lastTick = (DefaultBlurStrength / 5f).roundToInt()
+            },
             preview = { BlurPreview() },
             previewWidth = BlurPreviewWidth,
         ) {
@@ -287,6 +300,8 @@ private fun EffectCard(
     value: String? = null,
     previewWidth: androidx.compose.ui.unit.Dp = PreviewWidth,
     floatingPreview: Boolean = false,
+    canReset: Boolean = false,
+    onReset: (() -> Unit)? = null,
     preview: @Composable BoxScope.() -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -304,12 +319,7 @@ private fun EffectCard(
             floating = floatingPreview,
             content = preview,
         )
-        Text(
-            text = title,
-            style = CardLabelStyle,
-            color = Color.White.copy(alpha = 0.9f),
-            modifier = Modifier.padding(start = CardTextInset, top = CardTextInset),
-        )
+        CardTitle(title = title, canReset = canReset, onReset = onReset)
         AppSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange,

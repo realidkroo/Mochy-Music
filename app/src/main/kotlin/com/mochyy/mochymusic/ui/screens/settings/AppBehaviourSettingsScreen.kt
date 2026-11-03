@@ -40,6 +40,7 @@ import com.mochyy.mochymusic.constants.DisableVideoAutoplayKey
 import com.mochyy.mochymusic.constants.DontSkipOnFailureKey
 import com.mochyy.mochymusic.constants.HideSettingsDescriptionsKey
 import com.mochyy.mochymusic.constants.HideUpdateNoticeKey
+import com.mochyy.mochymusic.constants.LarpLevelKey
 import com.mochyy.mochymusic.constants.LarpModeKey
 import com.mochyy.mochymusic.constants.LocalSongAutoMetadataKey
 import com.mochyy.mochymusic.constants.LyricsHighBloomKey
@@ -67,6 +68,7 @@ import com.mochyy.mochymusic.core.updater.saveUpdateNotificationsSetting
 import com.mochyy.mochymusic.i18n.AppLanguage
 import com.mochyy.mochymusic.i18n.activityOrNull
 import com.mochyy.mochymusic.ui.component.AppSwitch
+import com.mochyy.mochymusic.ui.player.LarpLevel
 import com.mochyy.mochymusic.ui.component.DefaultPlayerSeekBarSlider
 import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 import com.mochyy.mochymusic.ui.component.SettingsGroup
@@ -136,19 +138,30 @@ private fun List<SettingsItem>.matching(query: String): List<SettingsItem> {
 @Composable
 private fun larpItems(): List<SettingsItem> {
     val (larping, setLarping) = rememberPreference(LarpModeKey, defaultValue = false)
+    val (level, setLevel) = rememberEnumPreference(LarpLevelKey, defaultValue = LarpLevel.MAXXING)
     val overlay = LocalZoomOutOverlayState.current
     // the design's plain circle, nothing drawn in it
     val blank = remember { ColorPainter(Color.Transparent) }
+    val openSheet = {
+        overlay.showLarpSheet(current = level) { picked ->
+            setLevel(picked)
+            setLarping(true)
+        }
+    }
+    val title = stringResource(R.string.larp_mode)
     return listOf(
-        switchItem(
-            key = "Larp mode",
-            title = stringResource(R.string.larp_mode),
-            description = stringResource(R.string.larp_mode_desc),
+        // the row opens the sheet to change level too, the switch only turns it off without asking
+        SettingsItem(
+            title = { Text(title) },
+            highlightKey = "Larp mode",
+            searchText = title,
+            descriptionText = if (larping) stringResource(level.title) else stringResource(R.string.larp_mode_desc),
             detail = stringResource(R.string.larp_mode_detail),
             icon = blank,
-            checked = larping,
-            onCheckedChange = { on ->
-                if (on) overlay.showLarpSheet(onLarp = { setLarping(true) }) else setLarping(false)
+            iconShape = CircleShape,
+            onClick = openSheet,
+            trailingContent = {
+                AppSwitch(checked = larping, onCheckedChange = { on -> if (on) openSheet() else setLarping(false) })
             },
         ),
     )
@@ -251,32 +264,25 @@ private fun generalItems(navController: NavController): List<SettingsItem> {
 // the app's own language, apart from the phone's; android 13+ keeps it in the system's per-app setting too
 @Composable
 private fun languageItem(): SettingsItem {
-    var showDialog by remember { mutableStateOf(false) }
+    val overlay = LocalZoomOutOverlayState.current
     val context = LocalContext.current
     val activity = remember(context) { context.activityOrNull() }
     val language = remember(context) { AppLanguage.selection(context) }
     val languageName = if (language == SYSTEM_DEFAULT) stringResource(R.string.system_default) else appLanguageNativeName(language)
     val failure = stringResource(R.string.app_language_update_failed)
     val scope = rememberCoroutineScope()
-    if (showDialog) {
-        AppLanguageDialog(
-            selected = language,
-            onDismiss = { showDialog = false },
-            onSelect = { tag ->
-                showDialog = false
-                if (tag != language && activity != null) {
-                    scope.launch {
-                        try {
-                            AppLanguage.select(activity, tag)
-                        } catch (cancelled: CancellationException) {
-                            throw cancelled
-                        } catch (_: Exception) {
-                            Toast.makeText(context, failure, Toast.LENGTH_LONG).show()
-                        }
-                    }
+    val pick = { tag: String ->
+        if (tag != language && activity != null) {
+            scope.launch {
+                try {
+                    AppLanguage.select(activity, tag)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    Toast.makeText(context, failure, Toast.LENGTH_LONG).show()
                 }
-            },
-        )
+            }
+        }
     }
     return SettingsItem(
         title = { Text(stringResource(R.string.app_language)) },
@@ -286,7 +292,7 @@ private fun languageItem(): SettingsItem {
         icon = painterResource(R.drawable.translate),
         iconShape = CircleShape,
         enabled = activity != null,
-        onClick = { showDialog = true },
+        onClick = { overlay.showAppLanguageSheet(selected = language, onSelect = { pick(it) }) },
     )
 }
 
@@ -469,17 +475,7 @@ private fun playerLookItems(): List<SettingsItem> {
 @Composable
 private fun videoQualityItem(): SettingsItem {
     val (quality, onQuality) = rememberEnumPreference(VideoQualityKey, defaultValue = VideoQuality.AUTO)
-    var showDialog by remember { mutableStateOf(false) }
-    if (showDialog) {
-        VideoQualityDialog(
-            selected = quality,
-            onSelect = {
-                onQuality(it)
-                showDialog = false
-            },
-            onDismiss = { showDialog = false },
-        )
-    }
+    val overlay = LocalZoomOutOverlayState.current
     val title = stringResource(R.string.video_quality)
     return SettingsItem(
         title = { Text(title) },
@@ -489,7 +485,7 @@ private fun videoQualityItem(): SettingsItem {
         searchText = title,
         icon = rememberVectorPainter(Icons.Rounded.HighQuality),
         iconShape = CircleShape,
-        onClick = { showDialog = true },
+        onClick = { overlay.showVideoQualitySheet(selected = quality, onSelect = onQuality) },
     )
 }
 

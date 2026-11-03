@@ -305,9 +305,9 @@ private fun TitleLines(mediaId: String, title: String, artist: String, modifier:
     val (showSampleRate) = rememberPreference(ShowFormatSampleRateKey, defaultValue = false)
     Column(modifier = modifier) {
         val facts by remember(mediaId) { connection.streamFacts(mediaId) }.collectAsState(initial = null)
-        val larping = rememberLarpMode()
+        val larp = rememberLarpMode()
         val badge = when {
-            larping -> larpBadgeText()
+            larp != null -> larpBadgeText(larp)
             showBadge -> streamBadgeText(facts, showSampleRate)
             else -> null
         }

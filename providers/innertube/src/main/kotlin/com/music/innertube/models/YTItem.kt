@@ -1,6 +1,7 @@
 package com.music.innertube.models
 
 import com.music.innertube.models.WatchEndpoint.WatchEndpointMusicSupportedConfigs.WatchEndpointMusicConfig.Companion.MUSIC_VIDEO_TYPE_ATV
+import com.music.innertube.models.WatchEndpoint.WatchEndpointMusicSupportedConfigs.WatchEndpointMusicConfig.Companion.MUSIC_VIDEO_TYPE_UGC
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -113,20 +114,42 @@ fun <T : YTItem> List<T>.filterVideoSongs(disableVideos: Boolean = false) =
         this
     }
 
+// youtube music doesn't mark shorts; in its video search every real short was a fan upload of 1:16 or less, and no other video was under 2:30
+private const val SHORT_MAX_SECONDS = 90
+
+private val SHORTS_HASHTAG = Regex("(?i)#shorts?\\b")
+
+// a youtube short, told by its #shorts tag or by being a fan upload barely a minute long; songs and official videos never count
+val SongItem.isLikelyShort: Boolean
+    get() = isVideoSong && (SHORTS_HASHTAG.containsMatchIn(title) ||
+        (musicVideoType == MUSIC_VIDEO_TYPE_UGC && duration != null && duration <= SHORT_MAX_SECONDS))
+
 fun <T : YTItem> List<T>.filterYoutubeShorts(enabled: Boolean = false) =
     if (enabled) {
-        filterNot { it is PlaylistItem && it.id.startsWith("SS") }
+        filterNot { (it is PlaylistItem && it.id.startsWith("SS")) || (it is SongItem && it.isLikelyShort) }
     } else {
         this
     }
 
-private val AI_GENERATED_TITLE_PATTERN = Regex(
-    "(?i)\\b(ai\\s*cover|ai\\s*generated|ai\\s*music|ai\\s*remix|suno\\s*ai|udio|made\\s*with\\s*ai)\\b"
+// words that give away music made with ai; "suno" alone is hindi for "listen", so only "suno ai" counts
+private val AI_GENERATED_PATTERN = Regex(
+    "(?i)\\b(ai[\\s-]*(covers?|generated|music|remix|version|voice|vocals?)|suno\\s*ai|udio|(made|created|generated|produced)\\s*(with|by|using)\\s*ai)\\b|[(\\[]\\s*ai\\s*[)\\]]"
 )
+
+// whether a title or a name says it was made with ai
+fun isAiGeneratedText(text: String?): Boolean = text != null && AI_GENERATED_PATTERN.containsMatchIn(text)
+
+// the title, and the artist, album or playlist owner's name too: most ai channels say so in their name, not in every title
+fun YTItem.looksAiGenerated(): Boolean = isAiGeneratedText(title) || when (this) {
+    is SongItem -> artists.any { isAiGeneratedText(it.name) } || isAiGeneratedText(album?.name)
+    is AlbumItem -> artists.orEmpty().any { isAiGeneratedText(it.name) }
+    is PlaylistItem -> isAiGeneratedText(author?.name)
+    else -> false
+}
 
 fun <T : YTItem> List<T>.filterAiGenerated(enabled: Boolean = false) =
     if (enabled) {
-        filterNot { AI_GENERATED_TITLE_PATTERN.containsMatchIn(it.title) }
+        filterNot { it.looksAiGenerated() }
     } else {
         this
     }

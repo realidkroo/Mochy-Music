@@ -22,12 +22,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,6 +63,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.PlayerStyle
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.mochyy.mochymusic.ui.component.pressBounce
 import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
@@ -71,6 +76,9 @@ internal val CustomisePageMargin = 20.dp
 
 // the slider runs from a square corner to this many px
 internal const val MaxCoverRadius = 45f
+
+// how round covers are until someone changes it, and where the reset puts them back
+internal const val DefaultCoverRadius = 25f
 
 internal val CardShape = RoundedCornerShape(22.dp)
 internal val SliderCardShape = RoundedCornerShape(20.dp)
@@ -140,11 +148,10 @@ fun CoverRoundingSection(
                 .background(LabColors.Card),
         ) {
             RoundingSwatch(radiusPx = radiusPx, modifier = Modifier.matchParentSize())
-            Text(
-                text = stringResource(R.string.customise_cover_rounding),
-                style = CardLabelStyle,
-                color = Color.White.copy(alpha = 0.9f),
-                modifier = Modifier.padding(start = CardTextInset, top = CardTextInset),
+            CardTitle(
+                title = stringResource(R.string.customise_cover_rounding),
+                canReset = kotlin.math.abs(radiusPx - DefaultCoverRadius) >= 0.5f,
+                onReset = { onRadiusChange(DefaultCoverRadius) },
             )
             BasicText(
                 text = "${radiusPx.roundToInt()}px",
@@ -173,6 +180,32 @@ fun CoverRoundingSection(
                 onRadiusChange(next)
             },
         )
+    }
+}
+
+// a big card's title in its top left, with a small reset after it; the reset fades and stops while everything is at its default
+@Composable
+internal fun CardTitle(title: String, canReset: Boolean, onReset: (() -> Unit)?) {
+    val haptic = LocalHapticFeedback.current
+    Row(modifier = Modifier.padding(start = CardTextInset, top = CardTextInset)) {
+        Text(text = title, style = CardLabelStyle, color = Color.White.copy(alpha = 0.9f))
+        if (onReset != null) {
+            Icon(
+                painter = painterResource(R.drawable.refresh),
+                contentDescription = stringResource(R.string.customise_reset),
+                tint = Color.White.copy(alpha = if (canReset) 0.8f else 0.25f),
+                modifier = Modifier
+                    // lifted so the icon sits on the title's first line, not below it
+                    .offset(x = 2.dp, y = (-9).dp)
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .clickable(enabled = canReset) {
+                        haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                        onReset()
+                    }
+                    .padding(8.dp),
+            )
+        }
     }
 }
 

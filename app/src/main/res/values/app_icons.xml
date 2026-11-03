@@ -4,4 +4,18 @@
     <color name="app_icon_white">#D9D9D9</color>
     <color name="app_icon_black">#000000</color>
     <color name="app_icon_material">#4E7D55</color>
+
+    <!-- the custom backgrounds under customize: a launcher can't recolour an icon, so each is its own icon (utils/AppIcons.kt) -->
+    <color name="app_icon_custom_red">#E5484D</color>
+    <color name="app_icon_custom_orange">#F76B15</color>
+    <color name="app_icon_custom_yellow">#FFC53D</color>
+    <color name="app_icon_custom_green">#46A758</color>
+    <color name="app_icon_custom_teal">#12A594</color>
+    <color name="app_icon_custom_sky">#68DDFD</color>
+    <color name="app_icon_custom_blue">#0090FF</color>
+    <color name="app_icon_custom_indigo">#3E63DD</color>
+    <color name="app_icon_custom_purple">#8E4EC6</color>
+    <color name="app_icon_custom_pink">#E93D82</color>
+    <color name="app_icon_custom_graphite">#2E3135</color>
+    <color name="app_icon_custom_cream">#F1E7D0</color>
 </resources>

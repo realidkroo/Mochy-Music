@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_language_search">Search languages</string>
-    <string name="app_language_follow_device">Follow device language</string>
-    <string name="app_language_incomplete">Some translations are incomplete; missing text appears in English.</string>
+    <string name="app_language_follow_device">Same as your phone</string>
+    <string name="app_language_incomplete">Some text may still be in English</string>
     <string name="app_language_update_failed">Could not change the app language. Please try again.</string>
     <string name="general_app_settings">General app settings</string>
     <string name="settings_updates_notice">Disable app update notices</string>

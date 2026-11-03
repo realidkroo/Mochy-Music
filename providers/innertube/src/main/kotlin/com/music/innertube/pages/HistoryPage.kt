@@ -20,16 +20,21 @@ data class HistoryPage(
     )
 
     companion object {
-        fun fromMusicShelfRenderer(renderer: MusicShelfRenderer): HistorySection {
-            return HistorySection(
-                title = renderer.title?.runs?.firstOrNull()?.text!!,
-                songs = renderer.contents?.getItems()?.mapNotNull {
-                    fromMusicResponsiveListItemRenderer(it)
-                }!!
-            )
+        // null for a shelf with no title; one shelf like that used to fail the whole history
+        fun fromMusicShelfRenderer(renderer: MusicShelfRenderer): HistorySection? {
+            val title = renderer.title?.runs?.joinToString("") { it.text }?.takeIf { it.isNotBlank() } ?: return null
+            return HistorySection(title = title, songs = songsOf(renderer.contents.orEmpty()))
         }
 
+        fun songsOf(contents: List<MusicShelfRenderer.Content>): List<SongItem> =
+            contents.getItems().mapNotNull { fromMusicResponsiveListItemRenderer(it) }
+
         private fun fromMusicResponsiveListItemRenderer(renderer: MusicResponsiveListItemRenderer): SongItem? {
+            // a video in the history can carry its id only on its play button
+            val videoId = renderer.playlistItemData?.videoId
+                ?: renderer.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint?.videoId
+                ?: renderer.navigationEndpoint?.watchEndpoint?.videoId
+                ?: return null
 
             val libraryTokens = PageHelper.extractLibraryTokensFromMenuItems(renderer.menu?.menuRenderer?.items)
 
@@ -41,7 +46,7 @@ data class HistoryPage(
                 ?.splitBySeparator()
 
             return SongItem(
-                id = renderer.playlistItemData?.videoId ?: return null,
+                id = videoId,
                 title = renderer.flexColumns.firstOrNull()
                     ?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.firstOrNull()
                     ?.text ?: return null,
@@ -60,7 +65,8 @@ data class HistoryPage(
                 duration = renderer.fixedColumns?.firstOrNull()?.musicResponsiveListItemFlexColumnRenderer
                     ?.text?.runs?.firstOrNull()?.text?.parseTime(),
                 musicVideoType = renderer.musicVideoType,
-                thumbnail = renderer.thumbnail?.musicThumbnailRenderer?.getThumbnailUrl() ?: return null,
+                // a missing cover is no reason to lose the play
+                thumbnail = renderer.thumbnail?.musicThumbnailRenderer?.getThumbnailUrl() ?: "",
                 explicit = renderer.badges?.find {
                     it.musicInlineBadgeRenderer?.icon?.iconType == "MUSIC_EXPLICIT_BADGE"
                 } != null,

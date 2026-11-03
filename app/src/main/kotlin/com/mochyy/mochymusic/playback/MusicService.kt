@@ -271,6 +271,9 @@ private const val INSTANT_SILENCE_SKIP_SETTLE_MS = 350L
 // how often at most a speed or pitch being dragged reaches the player; quick enough to feel live
 private const val SpeedApplyGapMs = 60L
 
+// the longest the playback loop may sleep while playing; the position the lyrics, seek bar and video sync read only moves when it wakes
+private const val PositionWakeUs = 100_000L
+
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @androidx.annotation.OptIn(UnstableApi::class)
 /** A stream that failed at [startedAt] (elapsedRealtime) and skips to the next track [timeoutMs] later. */
@@ -3999,6 +4002,10 @@ class MusicService :
                         songs?.sourceFormat = formatHolder.format
                         return super.onInputFormatChanged(formatHolder)
                     }
+
+                    // the loop sleeps half the audio buffer, and speed on the audio track sizes that for 8x, so it slept a whole second and the position went that stale
+                    override fun getDurationToProgressUs(positionUs: Long, elapsedRealtimeUs: Long, isOnBufferAvailableListenerRegistered: Boolean): Long =
+                        minOf(super.getDurationToProgressUs(positionUs, elapsedRealtimeUs, isOnBufferAvailableListenerRegistered), PositionWakeUs)
                 })
             }
         }.apply {
@@ -4251,6 +4258,25 @@ class MusicService :
                 timber.log.Timber.e(e, "Failed to get stream URL for Cast")
                 null
             }
+        }
+    }
+
+    /** a song's stream for a cast receiver: the link it fetches itself, and the kind of file behind it */
+    data class CastStream(val url: String, val mimeType: String)
+
+    // the receiver fetches the song itself, so it needs to be told what it is: an opus stream sent as mp4 won't play on most tvs
+    suspend fun getCastStream(mediaId: String): CastStream? = withContext(Dispatchers.IO) {
+        try {
+            YTPlayerUtils.playerResponseForPlayback(
+                videoId = mediaId,
+                audioQuality = audioQuality,
+                connectivityManager = connectivityManager,
+            ).getOrNull()?.let { data ->
+                CastStream(data.streamUrl, data.format.mimeType.substringBefore(';').trim().ifBlank { "audio/mp4" })
+            }
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "Failed to get a stream for casting")
+            null
         }
     }
 

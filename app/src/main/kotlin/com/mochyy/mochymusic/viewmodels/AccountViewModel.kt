@@ -40,7 +40,7 @@ class AccountViewModel @Inject constructor(
     val selectedContentType = MutableStateFlow(AccountContentType.PLAYLISTS)
 
     private suspend fun loadPlaylists() {
-        val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
+        val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, true)
         YouTube.library("FEmusic_liked_playlists").completed().onSuccess {
             playlists.value = it.items.filterIsInstance<PlaylistItem>()
                 .filterNot { it.id == "SE" }
@@ -71,7 +71,7 @@ class AccountViewModel @Inject constructor(
 
         viewModelScope.launch(Dispatchers.IO) {
             context.dataStore.data
-                .map { it[HideYoutubeShortsKey] ?: false }
+                .map { it[HideYoutubeShortsKey] ?: true }
                 .distinctUntilChanged()
                 .collect {
                     if (playlists.value != null) {

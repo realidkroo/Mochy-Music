@@ -294,9 +294,9 @@ private fun SongLines(
         val facts by remember(mediaId) {
             playerConnection.streamFacts(mediaId)
         }.collectAsState(initial = null)
-        val larping = rememberLarpMode()
+        val larp = rememberLarpMode()
         val badge = when {
-            larping -> larpBadgeText()
+            larp != null -> larpBadgeText(larp)
             showFormatBadge -> streamBadgeText(facts, showSampleRate)
             else -> null
         }

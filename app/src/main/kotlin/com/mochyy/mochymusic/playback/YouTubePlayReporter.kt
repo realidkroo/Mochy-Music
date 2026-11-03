@@ -151,7 +151,14 @@ class YouTubePlayReporter(
         if (offered != null && SystemClock.elapsedRealtime() - offered.offeredAt <= TRACKING_FRESH_MS) {
             return CompletableDeferred(offered.tracking)
         }
-        return network.async { YTPlayerUtils.playerResponseForMetadata(videoId).getOrNull()?.playbackTracking }
+        return network.async {
+            // one failed ask shouldn't lose the play, so it's tried again a couple of times
+            repeat(TRACKING_TRIES) { attempt ->
+                if (attempt > 0) delay(TRACKING_RETRY_MS * attempt)
+                YTPlayerUtils.playerResponseForMetadata(videoId).getOrNull()?.playbackTracking?.let { return@async it }
+            }
+            null
+        }
     }
 
     // the same fields youtube's own player sends with its watch time, all in seconds
@@ -175,6 +182,9 @@ class YouTubePlayReporter(
 
         // play links older than this get asked for again, so a report never rides on a stale ask
         private const val TRACKING_FRESH_MS = 15 * 60_000L
+
+        private const val TRACKING_TRIES = 3
+        private const val TRACKING_RETRY_MS = 5_000L
     }
 }
 
