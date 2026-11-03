@@ -155,4 +155,6 @@
     <string name="customise_player_gestures_desc">How the open player answers your swipes</string>
     <string name="customise_swipe_down_anywhere">Swipe down anywhere to close</string>
     <string name="customise_swipe_down_anywhere_desc">Otherwise only from the top of the player and its cover</string>
+    <string name="customise_swipe_up_follows">Open with your finger</string>
+    <string name="customise_swipe_up_follows_desc">Swiping up the mini player carries the player with you, and it opens as fast as you swipe</string>
 </resources>
