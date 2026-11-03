@@ -51,11 +51,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
 import androidx.media3.common.Player
@@ -584,7 +582,7 @@ fun BoxScope.StyleMenu(
                         transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0.5f)
                     },
                 ) {
-                    Text(text = item.label, color = if (pill) Color.White else tones.ink, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.05).em, fontFamily = com.mochyy.mochymusic.ui.theme.InterFontFamily)
+                    Text(text = item.label, style = com.mochyy.mochymusic.ui.player.chevronMenuLabelStyle(if (pill) Color.White else tones.ink, 13.sp))
                     StyleCircle(icon = item.icon, tones = tones, size = buttonSize + 6.dp, onClick = item.onClick, pill = pill, active = item.active)
                 }
             }

@@ -66,7 +66,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.joinAll
 import androidx.navigation.NavController
@@ -1995,19 +1994,7 @@ private fun ExpandMenuOverlay(
                             val label: @Composable () -> Unit = {
                             androidx.compose.material3.Text(
                                 text = item.first,
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                // its own style drops the app's font, so inter bold and the app's tight spacing are set here
-                                style = androidx.compose.ui.text.TextStyle(
-                                    fontFamily = com.mochyy.mochymusic.ui.theme.InterFontFamily,
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                    letterSpacing = (-0.05).em,
-                                    shadow = androidx.compose.ui.graphics.Shadow(
-                                        color = Color.Black.copy(alpha = 0.75f),
-                                        offset = androidx.compose.ui.geometry.Offset(0f, 2f),
-                                        blurRadius = 8f
-                                    )
-                                ),
+                                style = chevronMenuLabelStyle(Color.White, 14.sp),
                                 modifier = Modifier.padding(start = if (fromLeft) 4.dp else 0.dp, end = if (fromLeft) 0.dp else 4.dp)
                             )
                             }

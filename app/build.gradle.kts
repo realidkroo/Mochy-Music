@@ -28,7 +28,7 @@ extensions.configure<ApplicationExtension> {
         minSdk = 24
         targetSdk = 36
         versionCode = 73
-        versionName = "8.3.2 build#1224"
+        versionName = "8.3.1 build#1224"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -170,6 +170,7 @@ extensions.configure<ApplicationExtension> {
             isShrinkResources = true
             isCrunchPngs = false
             isDebuggable = false
+            isProfileable = true // TEMP-PROFILE
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
