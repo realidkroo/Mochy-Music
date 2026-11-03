@@ -237,8 +237,21 @@ internal fun glassDownscale(effectiveRadius: Float, low: Boolean = false): Int =
 }
 
 /** The blur quality chosen in Appearance, for every glass surface under it. */
-val LocalBlurQuality = androidx.compose.runtime.staticCompositionLocalOf {
-    com.mochyy.mochymusic.constants.BlurQuality.HIGH
+val LocalBlurQuality = androidx.compose.runtime.staticCompositionLocalOf { DefaultBlurQuality }
+
+// flagship chips that don't always declare a performance class; anything else waits for one
+private val StrongGlassChips = listOf(
+    "sm8350", "sm8450", "sm8475", "sm8550", "sm8635", "sm8650", "sm8750", // snapdragon 888 up to 8 elite
+    "mt6983", "mt6985", "mt6989", "mt6991", // dimensity 9000 up to 9400
+)
+
+/** the quality a phone starts on until someone picks one in Customisation */
+val DefaultBlurQuality: com.mochyy.mochymusic.constants.BlurQuality by lazy {
+    val soc = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MODEL.lowercase(java.util.Locale.ROOT) else ""
+    // high's glass took 11 to 15 ms of gpu per scroll frame on a mid-range 120 hz phone, more than a frame has
+    val strong = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+        (Build.VERSION.MEDIA_PERFORMANCE_CLASS >= Build.VERSION_CODES.S || StrongGlassChips.any { soc.startsWith(it) })
+    if (strong) com.mochyy.mochymusic.constants.BlurQuality.HIGH else com.mochyy.mochymusic.constants.BlurQuality.LOW
 }
 
 /** Lays its content out [margin] px bigger on every side, centred over the space it takes. */

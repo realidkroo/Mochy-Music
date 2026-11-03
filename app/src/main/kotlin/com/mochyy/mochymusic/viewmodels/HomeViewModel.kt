@@ -73,6 +73,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.async
@@ -130,6 +131,7 @@ class HomeViewModel @Inject constructor(
     /** Library artists (onboarding's picks on a new install), for the hero before there's any history. */
     val libraryArtists = database.artists(com.mochyy.mochymusic.constants.ArtistSortType.CREATE_DATE, true)
         .map { artists -> artists.filter { it.artist.isYouTubeArtist }.take(5) }
+        .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Lazily, emptyList())
     val homePage = MutableStateFlow<HomePage?>(null)
     val explorePage = MutableStateFlow<ExplorePage?>(null)
@@ -163,17 +165,31 @@ class HomeViewModel @Inject constructor(
                 }
                 .toMap()
         }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    // the feed's other all-video shelves, already turned into banners: cleaning each title builds a regex, which hitched the frame the row scrolled in
+    val feedVideoRows: StateFlow<Map<Int, List<HomeVideo>>> = homePage
+        .map { page ->
+            page?.sections.orEmpty()
+                .mapIndexedNotNull { index, section ->
+                    if (ArtistVideos.feedShelfKind(section.title, section.items) != FeedVideoKind.Other) return@mapIndexedNotNull null
+                    index to section.items.filterIsInstance<SongItem>().map(ArtistVideos::feedVideo)
+                }
+                .toMap()
+        }
+        .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     // YouTube's "Live performances" and "Music videos for you" fold into Home's rows of the same
     // name, so each shows once
     val liveRow: StateFlow<List<HomeVideo>?> = combine(liveShows, homePage, feedVideoKinds) { own, page, kinds ->
         ArtistVideos.merge(own, feedVideos(page, kinds, FeedVideoKind.Live))
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val musicVideoRow: StateFlow<List<HomeVideo>?> = combine(musicVideos, homePage, feedVideoKinds) { own, page, kinds ->
         ArtistVideos.merge(own, feedVideos(page, kinds, FeedVideoKind.MusicVideos))
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     private fun feedVideos(page: HomePage?, kinds: Map<Int, FeedVideoKind>, kind: FeedVideoKind): List<HomeVideo> =
         page?.sections.orEmpty().flatMapIndexed { index, section ->
@@ -200,6 +216,7 @@ class HomeViewModel @Inject constructor(
 
     val lastPlayedSong = database.recentEvents(1)
         .map { it.firstOrNull()?.song?.toMediaMetadata() }
+        .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     val speedDialItems: StateFlow<List<YTItem>> =
@@ -285,7 +302,7 @@ class HomeViewModel @Inject constructor(
             }
 
             filled.take(targetSize)
-        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     suspend fun getRandomItem(): YTItem? {
         try {

@@ -64,8 +64,6 @@ data class DiscGeometry(
 
     val art: Float,
 
-    val spindle: Float,
-
     val plateOffsetX: Float,
     val plateOffsetY: Float,
 
@@ -95,7 +93,6 @@ fun discGeometryFor(style: PlayerCoverStyle): DiscGeometry = when (style) {
         centerX = 0.5f,
         centerY = 0.5f,
         art = 0.88f,
-        spindle = 0.20f,
         plateOffsetX = -0.30f,
         plateOffsetY = -0.30f,
         plateWidth = 0.26f,
@@ -107,7 +104,6 @@ fun discGeometryFor(style: PlayerCoverStyle): DiscGeometry = when (style) {
         centerX = 0.5f,
         centerY = 0.5f,
         art = 0.44f,
-        spindle = 0.13f,
         plateOffsetX = -0.29f,
         plateOffsetY = -0.22f,
         plateWidth = 0.28f,
@@ -119,7 +115,6 @@ fun discGeometryFor(style: PlayerCoverStyle): DiscGeometry = when (style) {
         centerX = 0.24f,
         centerY = 0.20f,
         art = 0.95f,
-        spindle = 0.17f,
         plateOffsetX = 0.02f,
         plateOffsetY = 0.30f,
         plateWidth = 0.22f,
@@ -131,7 +126,6 @@ fun discGeometryFor(style: PlayerCoverStyle): DiscGeometry = when (style) {
         centerX = 0.22f,
         centerY = 0.18f,
         art = 0.42f,
-        spindle = 0.11f,
         plateOffsetX = 0.06f,
         plateOffsetY = 0.28f,
         plateWidth = 0.24f,
@@ -146,7 +140,6 @@ fun discGeometryFor(style: PlayerCoverStyle): DiscGeometry = when (style) {
         centerX = 0.43f,
         centerY = 0.5f,
         art = 0.40f,
-        spindle = 0.12f,
         plateOffsetX = -0.28f,
         plateOffsetY = -0.22f,
         plateWidth = 0.28f,
@@ -163,8 +156,6 @@ fun discGeometryFor(style: PlayerCoverStyle): DiscGeometry = when (style) {
         centerX = 0.162f,
         centerY = 0.5f,
         art = 0.526f,
-        // no pin through the middle: on a record this size it read as a ball on the cover
-        spindle = 0f,
         plateOffsetX = 0f,
         plateOffsetY = 0f,
         plateWidth = 0f,
@@ -178,7 +169,6 @@ fun discGeometryFor(style: PlayerCoverStyle): DiscGeometry = when (style) {
         centerX = 0.5f,
         centerY = 0.5f,
         art = 0.88f,
-        spindle = 0.20f,
         plateOffsetX = 0f,
         plateOffsetY = 0f,
         plateWidth = 0.26f,
@@ -319,13 +309,12 @@ fun DiscCover(
             )
         }
 
-        // Over the turning label, and still: paper takes the light softly, its edge sits a hair
-        // below the vinyl, and the spindle is a polished pin through the middle.
-        Canvas(modifier = platterModifier) {
-            val r = size.minDimension / 2f
-            val center = Offset(size.width / 2f, size.height / 2f)
-            val labelR = r * geometry.art
-            if (realistic) {
+        // over the turning label and still: the paper takes the light softly and its edge sits a hair below the vinyl, with no pin through the middle
+        if (realistic) {
+            Canvas(modifier = platterModifier) {
+                val r = size.minDimension / 2f
+                val center = Offset(size.width / 2f, size.height / 2f)
+                val labelR = r * geometry.art
                 drawCircle(
                     brush = Brush.radialGradient(
                         0f to Color.White.copy(alpha = 0.10f),
@@ -344,21 +333,6 @@ fun DiscCover(
                         radius = labelR,
                     ),
                     radius = labelR,
-                    center = center,
-                )
-            }
-            if (geometry.spindle > 0f) {
-                val spindleR = r * geometry.spindle.coerceAtMost(0.045f)
-                drawCircle(color = Color.Black.copy(alpha = 0.5f), radius = spindleR * 1.35f, center = center + Offset(spindleR * 0.15f, spindleR * 0.3f))
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        0f to Color(0xFFE9EAEE),
-                        0.45f to Color(0xFF8D9096),
-                        1f to Color(0xFF2B2C30),
-                        center = center + Offset(-spindleR * 0.35f, -spindleR * 0.4f),
-                        radius = spindleR * 1.3f,
-                    ),
-                    radius = spindleR,
                     center = center,
                 )
             }

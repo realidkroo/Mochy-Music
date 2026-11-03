@@ -351,17 +351,19 @@ private fun PlayerSheet(
     // what sits under the play buttons: the card deck or the volume bar, again each flagship with its own
     val (classicBarStyle, onClassicBarStyle) = rememberEnumPreference(PlayerBottomBarStyleKey, PlayerBottomBarStyle.STACK)
     val (flagshipBarStyle, onFlagshipBarStyle) = rememberEnumPreference(FlagshipBottomBarStyleKey, PlayerBottomBarStyle.STACK)
+    // the Turntable is built on the new flagship, so it takes the new bottom bar rather than the classic's
+    val newBottomBar = isFlagship || isTurntable
     // the card under the buttons: the classic's glass, or the new flagship's faint outlined one
-    val cardLook = if (isFlagship) FlagshipCardLook else ClassicCardLook
-    val barStyle = if (isFlagship) flagshipBarStyle else classicBarStyle
-    val onBarStyle: (PlayerBottomBarStyle) -> Unit = if (isFlagship) onFlagshipBarStyle else onClassicBarStyle
+    val cardLook = if (newBottomBar) FlagshipCardLook else ClassicCardLook
+    val barStyle = if (newBottomBar) flagshipBarStyle else classicBarStyle
+    val onBarStyle: (PlayerBottomBarStyle) -> Unit = if (newBottomBar) onFlagshipBarStyle else onClassicBarStyle
     StudioCameraEffect(studio, studioCapture, studioPieces, barStyle)
     // while the bar is edited both its styles are built, each lifted off the player for the editor
     val barLifted by remember { derivedStateOf { studioPieces.liftedPart == LiftedPart.BAR } }
     val showDeck = showPlayerBottomCard && barStyle == PlayerBottomBarStyle.STACK
     val showVolumeBar = barStyle == PlayerBottomBarStyle.VOLUME
     // the flagship's bar has no card to grow a page from, so the page grows out of the pill's lyrics or queue half
-    val pillMorph = isFlagship && showVolumeBar
+    val pillMorph = newBottomBar && showVolumeBar
     val pageLook = if (pillMorph) FlagshipPillLook else cardLook
     // a style stored by the ones these replaced lands on its successor
     val (storedPlayerStyle, onStoredPlayerStyle) = rememberPreference(com.mochyy.mochymusic.constants.PlayerStyleKey, "")
@@ -1132,8 +1134,7 @@ private fun PlayerSheet(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
 
-                        // the new flagship's card sits further in, as its design has it
-                        .padding(horizontal = if (isFlagship) 38.dp else 26.dp)
+                        .padding(horizontal = 26.dp)
                         .then(Modifier.studioAnchor(studioAnchors) { it.card })
                         .then(Modifier.studioBarLayer(studioParts) { it.card })
                         .then(Modifier.studioPiece(studioPieces, StudioPieces.CARD_STACK))
@@ -1150,7 +1151,7 @@ private fun PlayerSheet(
                 val volumeBarModifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(
-                        bottom = if (isFlagship) flagshipBarFootprint() - FlagshipBarHeight
+                        bottom = if (newBottomBar) flagshipBarFootprint() - FlagshipBarHeight
                         else playerVolumeBarFootprint() - PlayerVolumeBarHeight
                     )
                     .padding(horizontal = 26.dp)
@@ -1162,7 +1163,7 @@ private fun PlayerSheet(
                         translationY = controlsHidden * size.height * 0.75f
                         letTouchesThroughWhenHidden()
                     }
-                if (isFlagship) {
+                if (newBottomBar) {
                     FlagshipBottomBar(
                         progressProvider = progressProvider,
                         isActive = ::menuActionActive,
@@ -1198,7 +1199,7 @@ private fun PlayerSheet(
             // open and the start of every close, for a value the card layout never uses. (The
             // volume bar reads its size as if it were showing, which stays put through all that.)
             val belowControls = when {
-                showVolumeBar && isFlagship -> flagshipBarFootprint()
+                showVolumeBar && newBottomBar -> flagshipBarFootprint()
                 showVolumeBar -> playerVolumeBarFootprint()
                 showPlayerBottomCard -> PlayerDeckHeight
                 else -> WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 8.dp

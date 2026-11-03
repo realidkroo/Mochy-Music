@@ -150,7 +150,7 @@ fun LabToggleRow(
 ) {
     val (hideDescriptions) = com.mochyy.mochymusic.utils.rememberPreference(
         com.mochyy.mochymusic.constants.HideSettingsDescriptionsKey,
-        defaultValue = false,
+        defaultValue = true,
     )
     Row(
         modifier = modifier

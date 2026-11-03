@@ -291,7 +291,6 @@ fun OnlineSearchResult(
                                     ResultRow(
                                         item = item,
                                         isActive = mediaMetadata?.id == item.id,
-                                        isPlaying = isPlaying,
                                         onClick = { onItemClick(item) },
                                         onLongClick = { onItemLongClick(item) },
                                         onMenu = { onItemLongClick(item) },
@@ -336,7 +335,6 @@ fun OnlineSearchResult(
                             ResultRow(
                                 item = item,
                                 isActive = mediaMetadata?.id == item.id,
-                                isPlaying = isPlaying,
                                 onClick = { onItemClick(item) },
                                 onLongClick = { onItemLongClick(item) },
                                 onMenu = { onItemLongClick(item) },
@@ -528,11 +526,11 @@ private fun TopResultCard(
     }
 }
 
+// no play state here: rows only tint the active title, so a play or pause leaves every row alone
 @Composable
 private fun ResultRow(
     item: YTItem,
     isActive: Boolean,
-    isPlaying: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onMenu: () -> Unit,

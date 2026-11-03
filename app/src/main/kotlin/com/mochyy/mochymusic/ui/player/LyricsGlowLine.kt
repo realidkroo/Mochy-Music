@@ -49,6 +49,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -236,6 +237,9 @@ fun LyricsGlowLine(
 
     /** Holding the line: the lyrics page opens sharing with it. */
     onLongClick: (() -> Unit)? = null,
+
+    /** told where the words start across the row (px from its left edge), for the line the card grows into */
+    onTextStart: ((Float) -> Unit)? = null,
 ) {
     val wordMotion = motionStyle.risesWords
     val targetAlpha = restingAlphaOf(state)
@@ -307,9 +311,14 @@ fun LyricsGlowLine(
     // kept above the sweep/plain switch, so the line already has its bold breaks the moment it goes plain again
     val steadyWrap = rememberSteadyWrap(leadText, leadStyle.copy(fontWeight = FontWeight.Bold))
 
+    // the row's own frame, so a centred or right-aligned line can say where its words start inside it
+    val rowCoords = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
+    val tapPadPx = with(androidx.compose.ui.platform.LocalDensity.current) { LyricsTapPadH.toPx() }
+
     Column(
         horizontalAlignment = columnAlign,
         modifier = modifier
+            .then(if (onTextStart != null) Modifier.onPlaced { rowCoords[0] = it } else Modifier)
             // a row repaints alone, so one moving line doesn't redraw every other row of the list
             .layerBleed(DamageBleed)
             .damageBoundary()
@@ -346,7 +355,17 @@ fun LyricsGlowLine(
     //
     // It sits BEHIND the text rather than around it. Clipping the line to the rounded highlight
     // also clipped the words: a letter that rose or swelled into a corner was sliced off.
-    Box {
+    Box(
+        modifier = if (onTextStart != null) {
+            Modifier.onPlaced { box ->
+                val row = rowCoords[0]
+                // measured inside the row, so the flight's own layer around it can't move the answer
+                if (row != null && row.isAttached) onTextStart(row.localPositionOf(box, Offset.Zero).x + tapPadPx)
+            }
+        } else {
+            Modifier
+        },
+    ) {
     Spacer(
         modifier = Modifier
             .matchParentSize()

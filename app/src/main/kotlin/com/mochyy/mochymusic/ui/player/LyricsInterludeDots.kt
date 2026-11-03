@@ -43,7 +43,9 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.ui.component.damageBoundary
 import kotlinx.coroutines.delay
@@ -129,7 +131,11 @@ fun LyricsInterludeDots(
     alignment: LyricsAlignment = LyricsAlignment.CENTER,
     /** Must be the recenter scroll's curve, so the collapse and the scroll are one motion. */
     collapseEasing: androidx.compose.animation.core.Easing = LyricsRecenterEasing,
+    /** told where the first dot's left edge and middle are inside the row (px), for the dots the card grows into */
+    onDotsStart: ((Offset) -> Unit)? = null,
 ) {
+    // the row's own frame, so the first dot can say where it sits inside it
+    val rowCoords = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
     val span = (endMs - startMs).coerceAtLeast(1L)
     val glowColor = remember(accentColor) { accentColor.asGlow() }
 
@@ -200,6 +206,7 @@ fun LyricsInterludeDots(
 
     Row(
         modifier = modifier
+            .then(if (onDotsStart != null) Modifier.onPlaced { rowCoords[0] = it } else Modifier)
             .fillMaxWidth()
             // The row's height is part of the list's layout, so it's set here rather than faked
             // with a translation: lines below really move to make room, and really take the space
@@ -228,6 +235,20 @@ fun LyricsInterludeDots(
             Spacer(
                 modifier = Modifier
                     .size(DotSize)
+                    .then(
+                        if (index == 0 && onDotsStart != null) {
+                            // before the dot's own bob and swell, so the point the card flies to holds still
+                            Modifier.onPlaced { dot ->
+                                val row = rowCoords[0]
+                                if (row != null && row.isAttached) {
+                                    val at = row.localPositionOf(dot, Offset.Zero)
+                                    onDotsStart(Offset(at.x, at.y + dot.size.height / 2f))
+                                }
+                            }
+                        } else {
+                            Modifier
+                        }
+                    )
                     .graphicsLayer {
                         val fill = fills[index].floatValue
                         // The finale lifts every dot, including lit ones, so the whole row pulses

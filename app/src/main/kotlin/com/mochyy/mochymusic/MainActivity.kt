@@ -872,7 +872,7 @@ class MainActivity : ComponentActivity() {
                 val gridItemSize by rememberEnumPreference(GridItemsSizeKey, GridItemSize.BIG)
                 val blurQuality by rememberEnumPreference(
                     com.mochyy.mochymusic.constants.BlurQualityKey,
-                    com.mochyy.mochymusic.constants.BlurQuality.HIGH,
+                    com.mochyy.mochymusic.ui.component.DefaultBlurQuality,
                 )
                 val swipeToSong by rememberPreference(SwipeToSongKey, false)
 

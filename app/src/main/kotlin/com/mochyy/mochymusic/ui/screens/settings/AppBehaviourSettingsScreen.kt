@@ -495,7 +495,7 @@ private fun videoQualityItem(): SettingsItem {
 
 @Composable
 private fun otherItems(): List<SettingsItem> {
-    val (hideDescriptions, onHideDescriptions) = rememberPreference(HideSettingsDescriptionsKey, defaultValue = false)
+    val (hideDescriptions, onHideDescriptions) = rememberPreference(HideSettingsDescriptionsKey, defaultValue = true)
     return listOf(
         switchItem(
             key = "Disable description on settings",

@@ -207,7 +207,7 @@ private fun SettingsItemRow(
     // app behaviour can hide the line under each title, holding the row still shows it
     val (hideDescriptions) = com.mochyy.mochymusic.utils.rememberPreference(
         com.mochyy.mochymusic.constants.HideSettingsDescriptionsKey,
-        defaultValue = false,
+        defaultValue = true,
     )
     // A row arrived at from settings search claims the request the first time it composes, flashes
     // briefly, then clears it - so the highlight fires once rather than every time the page opens.

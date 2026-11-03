@@ -2,8 +2,6 @@
 
 package com.mochyy.mochymusic.ui.component
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,31 +22,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
-import coil3.imageLoader
-import coil3.request.ImageRequest
-import coil3.request.allowHardware
-import coil3.toBitmap
 import com.mochyy.mochymusic.models.ArtistGroup
-import com.mochyy.mochymusic.ui.theme.PlayerColorExtractor
 import com.music.innertube.models.YTItem
 
 @Composable
@@ -58,45 +43,8 @@ fun ArtistListCard(
     onItemClick: (YTItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    var extractedColors by remember { mutableStateOf<List<Color>>(emptyList()) }
-
-    LaunchedEffect(group) {
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            try {
-                val thumbnails = mutableListOf<String>()
-                group.artistThumbnailUrl?.let { thumbnails.add(it) }
-                thumbnails.addAll(group.items.take(2).mapNotNull { it.thumbnail })
-
-                val colorsList = mutableListOf<Color>()
-                for (thumb in thumbnails) {
-                    val request = ImageRequest.Builder(context)
-                        .data(thumb)
-                        .size(100, 100)
-                        .allowHardware(false)
-                        .build()
-                    val result = context.imageLoader.execute(request)
-                    val bitmap = result.image?.toBitmap()
-
-                    if (bitmap != null) {
-                        val palette = Palette.from(bitmap)
-                            .maximumColorCount(4)
-                            .resizeBitmapArea(100 * 100)
-                            .generate()
-                        val colors = PlayerColorExtractor.extractGradientColors(
-                            palette = palette,
-                            fallbackColor = android.graphics.Color.DKGRAY
-                        )
-                        colorsList.addAll(colors.take(2))
-                    }
-                }
-                if (colorsList.isNotEmpty()) {
-                    extractedColors = colorsList.distinct().take(3)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+    val tintCovers = remember(group) {
+        listOfNotNull(group.artistThumbnailUrl) + group.items.take(2).mapNotNull { it.thumbnail }
     }
 
     Box(
@@ -106,42 +54,10 @@ fun ArtistListCard(
             .clip(RoundedCornerShape(20.dp))
             .clickable(onClick = onClick)
     ) {
-        val premiumDarkColors = listOf(
-            listOf(Color(0xFF2B1B38), Color(0xFF151521), Color.Black),
-            listOf(Color(0xFF1B2838), Color(0xFF0F1521), Color.Black),
-            listOf(Color(0xFF381B24), Color(0xFF1F0F15), Color.Black),
-            listOf(Color(0xFF1B382D), Color(0xFF0F1F17), Color.Black),
-            listOf(Color(0xFF2D2B55), Color(0xFF151521), Color.Black)
-        )
-        val fallbackColors = premiumDarkColors[(group.artistName.hashCode() and 0x7FFFFFFF) % premiumDarkColors.size]
-
-        val color1 by animateColorAsState(
-            targetValue = extractedColors.getOrNull(0)?.let {
-                Color(androidx.core.graphics.ColorUtils.blendARGB(it.toArgb(), android.graphics.Color.BLACK, 0.65f))
-            } ?: fallbackColors[0],
-            animationSpec = tween(800), label = ""
-        )
-        val color2 by animateColorAsState(
-            targetValue = extractedColors.getOrNull(1)?.let {
-                Color(androidx.core.graphics.ColorUtils.blendARGB(it.toArgb(), android.graphics.Color.BLACK, 0.75f))
-            } ?: fallbackColors[1],
-            animationSpec = tween(800), label = ""
-        )
-        val color3 by animateColorAsState(
-            targetValue = extractedColors.getOrNull(2)?.let {
-                Color(androidx.core.graphics.ColorUtils.blendARGB(it.toArgb(), android.graphics.Color.BLACK, 0.85f))
-            } ?: fallbackColors[2],
-            animationSpec = tween(800), label = ""
-        )
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(color1, color2, color3)
-                    )
-                )
+                .coverTintBackground(tintCovers, seed = group.artistName)
         )
 
         Column(modifier = Modifier.fillMaxSize()) {

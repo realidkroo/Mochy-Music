@@ -425,6 +425,7 @@ private const val SkipIconAspect = 100f / 64f
 
 private const val SkipIconWidthFactor = 2f
 
-// the flagship glyphs sized to the old icons: the arrow's triangles span about its width, the play triangle half its height
+// the flagship glyphs sized to the old icons: the arrow's triangles span about its width
 private const val SkipPairWidth = 0.96f
-private const val PlayTriangleHeight = 0.5f
+// play stands to the skip pair as in the flagship's own row (131.26 tall to a 157.32 wide pair); half the box read small beside the skips
+private const val PlayTriangleHeight = SkipPairWidth * (131.26f / 157.32f)

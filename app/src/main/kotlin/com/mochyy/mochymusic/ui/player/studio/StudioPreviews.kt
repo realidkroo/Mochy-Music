@@ -54,6 +54,9 @@ import androidx.compose.ui.graphics.Brush
 import com.mochyy.mochymusic.ui.player.PlayerProgressSlider
 import com.mochyy.mochymusic.ui.player.PlayerTransportRow
 import com.mochyy.mochymusic.ui.player.PlayerVolumeBar
+import com.mochyy.mochymusic.ui.player.FlagshipCardLook
+import com.mochyy.mochymusic.ui.player.PeekInset
+import com.mochyy.mochymusic.ui.player.PeekOffset
 import com.mochyy.mochymusic.ui.player.SongInfoRow
 import com.mochyy.mochymusic.ui.player.customize.DiscCoverStack
 import com.mochyy.mochymusic.ui.player.customize.PlayerBackgroundPreview
@@ -129,8 +132,10 @@ internal fun FlagshipPreview(
         if (flagship) FlagshipBackgroundStyleKey else PlayerBackgroundStyleKey,
         if (flagship) PlayerBackgroundStyle.AMBIENT else PlayerBackgroundStyle.COVER_GRADIENT,
     )
+    // the Turntable is built on the new flagship, so it shares the new bottom bar, as on the live player
+    val newBottomBar = flagship || turntable
     val barStyle by rememberEnumPreference(
-        if (flagship) FlagshipBottomBarStyleKey else PlayerBottomBarStyleKey,
+        if (newBottomBar) FlagshipBottomBarStyleKey else PlayerBottomBarStyleKey,
         PlayerBottomBarStyle.STACK,
     )
     val transportLayout by rememberEnumPreference(FlagshipTransportLayoutKey, FlagshipTransportLayout.THREE)
@@ -191,7 +196,7 @@ internal fun FlagshipPreview(
             Spacer(Modifier.height(22.dp))
             if (flagship) FlagshipTransportRow(layout = transportLayout) else PlayerTransportRow()
         }
-        if (flagship && barStyle == PlayerBottomBarStyle.VOLUME) {
+        if (newBottomBar && barStyle == PlayerBottomBarStyle.VOLUME) {
             FlagshipBottomBar(
                 isActive = { false },
                 onAction = {},
@@ -209,17 +214,29 @@ internal fun FlagshipPreview(
                     .align(Alignment.BottomCenter)
                     .padding(start = 26.dp, end = 26.dp, bottom = navBottom + 14.dp),
             )
-        } else if (flagship) {
-            // the new flagship's card: faint, outlined, running off the bottom
+        } else if (newBottomBar) {
+            // the new card: faint, outlined, running off the bottom, with the card behind peeking over it like the live deck
+            val look = FlagshipCardLook
+            val shape = RoundedCornerShape(topStart = look.corner, topEnd = look.corner)
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(start = 38.dp, end = 38.dp)
+                    .padding(start = 26.dp + PeekInset, end = 26.dp + PeekInset)
+                    .fillMaxWidth()
+                    .height(navBottom + 60.dp + PeekOffset)
+                    .clip(shape)
+                    .background(Color.White.copy(alpha = look.backFill))
+                    .border(look.borderWidth, Color.White.copy(alpha = look.backBorder), shape),
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(start = 26.dp, end = 26.dp)
                     .fillMaxWidth()
                     .height(navBottom + 60.dp)
-                    .clip(RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))
-                    .background(Color.White.copy(alpha = 0.04f))
-                    .border(1.35.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp)),
+                    .clip(shape)
+                    .background(Color.White.copy(alpha = look.frontFill))
+                    .border(look.borderWidth, Color.White.copy(alpha = look.frontBorder), shape),
             )
         } else {
             // the bottom card, as its glass plate

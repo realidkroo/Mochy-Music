@@ -136,8 +136,6 @@ fun HomeSectionTitle(
     label: String? = null,
     thumbnail: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
-    /** No longer drawn: the three dots beside the title are gone. Kept so callers needn't change. */
-    @Suppress("UNUSED_PARAMETER") onPlayAllClick: (() -> Unit)? = null,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -307,11 +305,7 @@ private val HomeVideoScrim = Brush.verticalGradient(
     0.52f to Color.Transparent,
 )
 
-/**
- * the wide banner for Live Shows and Music Videos: the video's frame fills the card and the title
- * sits over its top-left corner. the 1280px still goes on first; a video without one falls back to
- * the smaller still YouTube listed it with.
- */
+
 @Composable
 fun HomeVideoCard(
     title: String,

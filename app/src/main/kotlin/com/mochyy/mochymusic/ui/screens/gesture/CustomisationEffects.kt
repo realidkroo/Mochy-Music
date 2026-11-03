@@ -90,7 +90,7 @@ private val PillTextStyle = TextStyle(
 internal fun BlurSection(modifier: Modifier = Modifier) {
     val (disableBlur, onDisableBlur) = rememberPreference(DisableBlurKey, defaultValue = false)
     val (progressive, onProgressive) = rememberPreference(EnableProgressiveBlurKey, defaultValue = true)
-    val (quality, onQuality) = rememberEnumPreference(BlurQualityKey, BlurQuality.HIGH)
+    val (quality, onQuality) = rememberEnumPreference(BlurQualityKey, com.mochyy.mochymusic.ui.component.DefaultBlurQuality)
     val (strength, onStrength) = rememberPreference(BlurStrengthPxKey, defaultValue = 25f)
     val haptic = LocalHapticFeedback.current
     var lastTick by remember { mutableIntStateOf((strength / 5f).roundToInt()) }

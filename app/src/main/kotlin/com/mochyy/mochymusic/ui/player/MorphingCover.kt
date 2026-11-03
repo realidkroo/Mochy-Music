@@ -215,6 +215,8 @@ private class MorphEndpointsPx(
     val fullHeightPx: Float,
     /** the cover's box is a square stage, not the edge-to-edge region */
     val boxedStage: Boolean,
+    /** every cover but edge-to-edge travels at its mini size and only grows once it's nearly in place */
+    val growLate: Boolean,
     val statusTopPx: Float,
     /** 1dp in px */
     val dpPx: Float,
@@ -260,11 +262,23 @@ private val TurntableDim = Color.Black.copy(alpha = 0.58f)
 private fun lerpF(start: Float, stop: Float, fraction: Float): Float =
     start + (stop - start) * fraction
 
+// a late-growing cover starts growing once the sheet is this far open
+private const val LateGrowFrom = 0.7f
+
+// how far the cover has grown at sheet progress p; a late one keeps its mini size until it's nearly in place
+private fun coverGrowth(p: Float, growLate: Boolean): Float =
+    if (growLate) smoothstep((p - LateGrowFrom) / (1f - LateGrowFrom)) else p
+
+// how far the cover's middle has travelled; a late one eases out, so it's almost there by the time it grows
+private fun coverTravel(p: Float, growLate: Boolean): Float =
+    if (growLate) 1f - (1f - p) * (1f - p) else p
+
 private fun discWeight(
     progressProvider: () -> Float,
     lyricsProgressProvider: () -> Float,
 ): Float {
-    val expanded = ((progressProvider() - 0.55f) / 0.30f).coerceIn(0f, 1f)
+    // a record is never edge-to-edge, so it shows as its cover grows rather than while the thumbnail is still travelling
+    val expanded = ((coverGrowth(progressProvider(), growLate = true) - 0.55f) / 0.30f).coerceIn(0f, 1f)
     val lyrics = ((lyricsProgressProvider() - 0.10f) / 0.40f).coerceIn(0f, 1f)
     return expanded * (1f - lyrics)
 }
@@ -272,10 +286,13 @@ private fun discWeight(
 // where the cover's box is (x, y, width, height) at sheet progress p and lyrics progress lp
 private fun MorphEndpointsPx.artRect(p: Float, hOffset: Float, lp: Float): FloatArray {
     val (fullX, fullY, fullW, fullH) = fullArt()
-    val artW = lerpF(miniArtWidthPx, fullW, p)
-    val artH = lerpF(miniArtHeightPx, fullH, p)
-    val artX = lerpF(miniArtXPx, fullX, p) + hOffset
-    val artY = lerpF(miniArtYPx, fullY, p)
+    val grow = coverGrowth(p, growLate)
+    val travel = coverTravel(p, growLate)
+    val artW = lerpF(miniArtWidthPx, fullW, grow)
+    val artH = lerpF(miniArtHeightPx, fullH, grow)
+    // the middle travels and the size grows round it; with both on p that's the same straight line edge-to-edge always had
+    val artX = lerpF(miniArtXPx + miniArtWidthPx / 2f, fullX + fullW / 2f, travel) - artW / 2f + hOffset
+    val artY = lerpF(miniArtYPx + miniArtHeightPx / 2f, fullY + fullH / 2f, travel) - artH / 2f
     if (lp <= 0f) return floatArrayOf(artX, artY, artW, artH)
     val lyricsX = lerpF(miniArtXPx, lyricsArtXPx, p) + hOffset
     val lyricsY = lerpF(miniArtYPx, lyricsArtYPx, p)
@@ -553,6 +570,7 @@ fun MorphingCover(
                 miniHeightPx = endpoints.miniHeight.toPx(),
                 fullHeightPx = endpoints.fullHeight.toPx(),
                 boxedStage = coverStyle.usesBoxedStage,
+                growLate = coverStyle != PlayerCoverStyle.EDGE_TO_EDGE,
                 statusTopPx = statusBarTop.toPx(),
                 dpPx = density.density,
                 coverOffset = { currentCoverOffset() },
@@ -830,7 +848,8 @@ fun MorphingCover(
                         } else {
                             0.dp
                         }
-                        val base = lerp(ThumbnailCornerRadius, expandedRadius, p)
+                        // the corners round with the size, so a cover still travelling small keeps its thumbnail corners
+                        val base = lerp(ThumbnailCornerRadius, expandedRadius, coverGrowth(p, endpointsPx.growLate))
                         artShape.radius = lerp(base, LyricsHeaderCornerRadius, lyricsProgressProvider())
                         shape = artShape
                     }

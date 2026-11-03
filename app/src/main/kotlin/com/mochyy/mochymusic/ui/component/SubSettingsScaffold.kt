@@ -35,11 +35,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,13 +51,14 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.lerp as lerpDp
@@ -108,7 +111,9 @@ fun SubSettingsScaffold(
 
     // Latch-and-settle collapse, same as Library/Search: once the threshold is crossed the morph
     // always finishes smoothly, even after the user's finger lifts mid-scroll.
-    val collapseProgress by rememberScrollCollapseProgress(scrollState)
+    val collapse = rememberScrollCollapseProgress(scrollState)
+    // only ever read in layout, draw or a snapshot flow, so the 900 ms morph doesn't recompose the scaffold every frame
+    val collapseProgress by collapse
 
     var titleHeightPx by remember { mutableIntStateOf(0) }
 
@@ -131,8 +136,8 @@ fun SubSettingsScaffold(
     val collapsedBarX = screenWidth - PagePadding - BackButtonSize
     val collapsedBarY = statusBarTop + HeaderTopPadding
 
-    LaunchedEffect(collapseProgress) {
-        if (collapseProgress < 0.5f) searchOverlayVisible = false
+    LaunchedEffect(collapse) {
+        snapshotFlow { collapse.value < 0.5f }.collect { opened -> if (opened) searchOverlayVisible = false }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -281,11 +286,7 @@ fun SubSettingsScaffold(
         }
 
         if (searchBar != null) {
-            val p = collapseProgress
-            val pillX = lerpDp(expandedBarX, collapsedBarX, p)
-            val pillY = lerpDp(expandedBarY, collapsedBarY, p)
-            val pillWidth = lerpDp(expandedBarWidth, BackButtonSize, p)
-            val pillHeight = lerpDp(SearchBarHeight, BackButtonSize, p)
+            val iconTappable by remember { derivedStateOf { collapse.value > 0.6f } }
 
             // One element whose actual layout size and position are animated (a true warp, not a
             // scaled copy): the real search field fades out as it shrinks, an icon fades in on top
@@ -293,15 +294,28 @@ fun SubSettingsScaffold(
             // deforming into a circle rather than a new element appearing elsewhere.
             Box(
                 modifier = Modifier
-                    .offset(x = pillX, y = pillY)
-                    .size(width = pillWidth, height = pillHeight)
-                    .clip(RoundedCornerShape(lerpDp(26.dp, BackButtonSize / 2, p)))
+                    .layout { measurable, _ ->
+                        val p = collapse.value
+                        val width = lerpDp(expandedBarWidth, BackButtonSize, p).roundToPx()
+                        val height = lerpDp(SearchBarHeight, BackButtonSize, p).roundToPx()
+                        val placeable = measurable.measure(Constraints.fixed(width, height))
+                        layout(width, height) {
+                            placeable.place(
+                                lerpDp(expandedBarX, collapsedBarX, p).roundToPx(),
+                                lerpDp(expandedBarY, collapsedBarY, p).roundToPx(),
+                            )
+                        }
+                    }
+                    .graphicsLayer {
+                        shape = RoundedCornerShape(lerpDp(26.dp, BackButtonSize / 2, collapse.value))
+                        clip = true
+                    }
                     .background(Color(0xFF2C2C2E))
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer { alpha = (1f - p / 0.6f).coerceIn(0f, 1f) }
+                        .graphicsLayer { alpha = (1f - collapse.value / 0.6f).coerceIn(0f, 1f) }
                 ) {
                     searchBar()
                 }
@@ -309,9 +323,9 @@ fun SubSettingsScaffold(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer { alpha = ((p - 0.45f) / 0.55f).coerceIn(0f, 1f) }
+                        .graphicsLayer { alpha = ((collapse.value - 0.45f) / 0.55f).coerceIn(0f, 1f) }
                         .clip(CircleShape)
-                        .clickable(enabled = p > 0.6f) {
+                        .clickable(enabled = iconTappable) {
                             searchOverlayVisible = !searchOverlayVisible
                         },
                     contentAlignment = Alignment.Center

@@ -196,6 +196,9 @@ private const val TopFadeFraction = 0.10f
 private val LineAnchorX = LyricsHeaderArtX
 private val LineAnchorY = 16.dp + 20.dp
 
+// the card isn't showing a gap; the intro's gap is -1, so this can't be a row's index
+private const val NoCardGap = Int.MIN_VALUE
+
 private fun androidx.compose.ui.unit.Dp.toPx(density: androidx.compose.ui.unit.Density) =
     with(density) { this@toPx.toPx() }
 private const val BottomFadeStart = 0.62f
@@ -338,14 +341,17 @@ fun LyricsScreen(
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialRow)
     var followPlayback by remember { mutableStateOf(true) }
 
-    // The line the card is showing: the page's copy of it is what the card's line grows into.
-    val cardLine by remember(lines) { derivedStateOf { cardLyricLineIndex(lines, progress.position + lyricsOffsetMs) } }
+    // What the card is showing: the page's copy of it (a line, or the dots of a gap) is what the card grows into.
+    val cardSlot by remember(lines) { derivedStateOf { tickerSlot(lines, progress.position + lyricsOffsetMs) } }
+    val cardLine by remember { derivedStateOf { if (cardSlot.kind == TickerSlot.LINE) cardSlot.index else -1 } }
+    val cardGap by remember { derivedStateOf { if (cardSlot.kind == TickerSlot.GAP) cardSlot.index else NoCardGap } }
     // its row, read only inside layers so the card moving on doesn't recompose every row
     val cardLineRow by remember(rowOfLine) { derivedStateOf { rowOfLine.getOrNull(cardLine) ?: -1 } }
     if (morph != null) {
         LaunchedEffect(morph, lines) {
-            snapshotFlow { cardLine }.collect {
-                if (it < 0) morph.pageLyricAnchor = androidx.compose.ui.geometry.Offset.Unspecified
+            // a line or a gap row claims the anchor itself as it's placed; clearing it then raced that claim and lost the flight
+            snapshotFlow { cardSlot.kind == TickerSlot.LINE || cardSlot.kind == TickerSlot.GAP }.collect { claimed ->
+                if (!claimed) morph.pageLyricAnchor = androidx.compose.ui.geometry.Offset.Unspecified
             }
         }
     }
@@ -625,25 +631,62 @@ fun LyricsScreen(
                         contentType = { _, row -> if (row is LyricRow.Interlude) "interlude" else "lyric" },
                     ) { listIndex, row ->
                         when (row) {
-                            is LyricRow.Interlude -> LyricsInterludeDots(
-                                modifier = Modifier.graphicsLayer {
-                                    translationY = stagger.lagOf(listIndex)
-                                    applyPageRowEnter(enterProgressProvider(), listIndex - cardLineRow.coerceAtLeast(0))
-                                },
-                                startMs = row.startMs,
-                                endMs = row.endMs,
-                                // A provider, not the position itself: passing the value would
-                                // recompose this row on every playback tick.
-                                positionProvider = positionProvider,
-                                accentColor = accent,
-                                visible = activeInterlude == row.afterIndex,
-                                collapseEasing = recenterEasingFor(motionStyle),
-                                // The gap belongs to whoever sings next, so it waits on that
-                                // singer's side rather than always sitting down the middle.
-                                alignment = lines.getOrNull(row.afterIndex + 1)
-                                    ?.let { alignmentFor(it, useAgentAlignment, mirrored) }
-                                    ?: LyricsAlignment.CENTER,
-                            )
+                            is LyricRow.Interlude -> {
+                                // the card's dots grow into these when it's showing this gap
+                                val growsFromCard by remember(row, morph) {
+                                    derivedStateOf { morph != null && cardGap == row.afterIndex }
+                                }
+                                val dotsStart = remember { floatArrayOf(Float.NaN, Float.NaN) }
+                                LyricsInterludeDots(
+                                    modifier = Modifier
+                                        .then(
+                                            if (growsFromCard) {
+                                                Modifier.onGloballyPositioned { coords ->
+                                                    if (dotsStart[0].isNaN()) return@onGloballyPositioned
+                                                    // before the row's own layer, so the flight doesn't move the point it flies to
+                                                    val origin = coords.positionInRoot()
+                                                    morph!!.pageLyricAnchor = androidx.compose.ui.geometry.Offset(
+                                                        origin.x + dotsStart[0],
+                                                        origin.y + dotsStart[1],
+                                                    )
+                                                }
+                                            } else {
+                                                Modifier
+                                            }
+                                        )
+                                        .graphicsLayer {
+                                            translationY = stagger.lagOf(listIndex)
+                                            val e = enterProgressProvider()
+                                            // the card draws its dots at half size, the same as its line, so the line's scale fits them
+                                            val flew = growsFromCard && !dotsStart[0].isNaN() && applyCardFlight(
+                                                e = e,
+                                                cardAnchor = morph!!.cardLyricAnchor,
+                                                pageAnchor = morph.pageLyricAnchor,
+                                                localAnchor = androidx.compose.ui.geometry.Offset(dotsStart[0], dotsStart[1]),
+                                                cardToPage = CardToPageLyricScale,
+                                            )
+                                            if (!flew) applyPageRowEnter(e, listIndex - cardLineRow.coerceAtLeast(0))
+                                        },
+                                    onDotsStart = if (growsFromCard) {
+                                        { at -> dotsStart[0] = at.x; dotsStart[1] = at.y }
+                                    } else {
+                                        null
+                                    },
+                                    startMs = row.startMs,
+                                    endMs = row.endMs,
+                                    // A provider, not the position itself: passing the value would
+                                    // recompose this row on every playback tick.
+                                    positionProvider = positionProvider,
+                                    accentColor = accent,
+                                    visible = activeInterlude == row.afterIndex,
+                                    collapseEasing = recenterEasingFor(motionStyle),
+                                    // The gap belongs to whoever sings next, so it waits on that
+                                    // singer's side rather than always sitting down the middle.
+                                    alignment = lines.getOrNull(row.afterIndex + 1)
+                                        ?.let { alignmentFor(it, useAgentAlignment, mirrored) }
+                                        ?: LyricsAlignment.CENTER,
+                                )
+                            }
 
                             is LyricRow.Line -> {
                                 val index = row.index
@@ -663,13 +706,17 @@ fun LyricsScreen(
                                 val translated by entry.translatedTextFlow.collectAsState()
                                 val rowIndex = rowOfLine[index]
                                 val lineAlignment = alignmentFor(entry, useAgentAlignment, mirrored)
-                                // Only a start-aligned line has its text where the card's starts.
-                                val growsFromCard by remember(index, lines, lineAlignment, morph) {
-                                    derivedStateOf {
-                                        morph != null && index == cardLine && lineAlignment == LyricsAlignment.START
-                                    }
+                                // any alignment grows from the card: a centred or right-aligned line measures where its words start
+                                val growsFromCard by remember(index, lines, morph) {
+                                    derivedStateOf { morph != null && index == cardLine }
                                 }
+                                val textStart = remember { floatArrayOf(Float.NaN) }
                                 LyricsGlowLine(
+                                    onTextStart = if (growsFromCard) {
+                                        { x -> textStart[0] = x }
+                                    } else {
+                                        null
+                                    },
                                     modifier = Modifier
                                         .then(
                                             if (growsFromCard) {
@@ -677,8 +724,9 @@ fun LyricsScreen(
                                                     // Before this row's own layer, so the flight
                                                     // below doesn't move the point it flies to.
                                                     val origin = coords.positionInRoot()
+                                                    val startX = textStart[0].takeUnless { it.isNaN() } ?: LineAnchorX.toPx(density)
                                                     morph!!.pageLyricAnchor = androidx.compose.ui.geometry.Offset(
-                                                        origin.x + LineAnchorX.toPx(density),
+                                                        origin.x + startX,
                                                         origin.y + LineAnchorY.toPx(density),
                                                     )
                                                 }
@@ -697,7 +745,7 @@ fun LyricsScreen(
                                                 },
                                                 pageAnchor = morph.pageLyricAnchor,
                                                 localAnchor = androidx.compose.ui.geometry.Offset(
-                                                    LineAnchorX.toPx(),
+                                                    textStart[0].takeUnless { it.isNaN() } ?: LineAnchorX.toPx(),
                                                     LineAnchorY.toPx(),
                                                 ),
                                                 cardToPage = CardToPageLyricScale,

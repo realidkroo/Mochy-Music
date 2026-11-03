@@ -62,7 +62,7 @@ import com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction
 import kotlinx.coroutines.flow.collectLatest
 
 // the page's clip starts as the pill's round ends and squares off as it fills the screen, no outline
-internal val FlagshipPillLook = PlayerCardLook(PillHeight / 2, 0f, 0f, 0f, 0f, 0.dp, chevron = false)
+internal val FlagshipPillLook = PlayerCardLook(PillHeight / 2, 0f, 0f, 0f, 0f, 0.dp)
 
 internal val PillIconSize = 12.5.dp
 

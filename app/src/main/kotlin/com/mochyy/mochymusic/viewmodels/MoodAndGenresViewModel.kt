@@ -35,7 +35,8 @@ constructor() : ViewModel() {
     private val gate = Semaphore(3)
 
     init {
-        viewModelScope.launch {
+        // on io: the page is parsed where it's read, and on the main thread that hitched the search tab opening
+        viewModelScope.launch(Dispatchers.IO) {
             YouTube
                 .moodAndGenres()
                 .onSuccess {

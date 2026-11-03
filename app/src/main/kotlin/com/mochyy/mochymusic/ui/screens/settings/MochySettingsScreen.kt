@@ -32,6 +32,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -325,17 +326,15 @@ fun MochySettingsScreen(navController: NavController) {
         animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
         label = "contentAlpha"
     )
+    // flips only at the ends of the fade, so the page isn't recomposed on every frame of it
+    val showContent by remember { derivedStateOf { contentAlpha > 0.001f } }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black),
     ) {
-        // Scrollable content. glassRoot wraps only this box - never a sibling that also reads
-        // glassState to draw the blur, such as SearchGlassTopBar below - or that sibling's draw
-        // gets captured into its own backdrop RenderNode, which is a direct self-reference and
-        // crashes RenderThread with a native stack overflow (see SearchScreen.kt for the same
-        // split: glassRoot on the content box only, the glass top bar as a separate sibling).
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -421,7 +420,7 @@ fun MochySettingsScreen(navController: NavController) {
             }
 
             // Normal Settings Content (fades smoothly to black when search is focused)
-            if (contentAlpha > 0.001f) {
+            if (showContent) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

@@ -187,12 +187,6 @@ internal fun tickerSlot(lines: List<LyricsEntry>, position: Long): TickerSlot {
     return TickerSlot(TickerSlot.LINE, index)
 }
 
-/** The line the card is showing at [position], or -1 while it shows something else (a gap). */
-internal fun cardLyricLineIndex(lines: List<LyricsEntry>, position: Long): Int {
-    val slot = tickerSlot(lines, position)
-    return if (slot.kind == TickerSlot.LINE) slot.index else -1
-}
-
 /**
  * The lyrics page, card-sized: the current line with the same karaoke sweep and letter motion. A
  * line too long for the card slides left as it's sung, keeping the sweep in view, and each new line

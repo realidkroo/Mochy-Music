@@ -59,10 +59,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.drawscope.translate
-import com.mochyy.mochymusic.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -81,7 +77,7 @@ internal val PlayerCardHeight = 54.dp
 internal val PlayerCardCorner = 28.dp
 
 /** How far the card in front sits from the screen's bottom edge, back card included. */
-private val PeekOffset = 9.dp
+internal val PeekOffset = 9.dp
 
 /** The whole deck's height on screen: the card plus the back card peeking over it. */
 internal val PlayerDeckHeight = PlayerCardHeight + PeekOffset
@@ -97,7 +93,7 @@ private val BottomBleed = 100.dp
 private val ArtworkSize = 28.dp
 private val ArtworkShape = RoundedCornerShape(ArtworkSize * 0.3f)
 
-private val PeekInset = 10.dp
+internal val PeekInset = 10.dp
 
 private const val BackCardScale = 0.94f
 
@@ -112,20 +108,13 @@ internal class PlayerCardLook(
     val backFill: Float,
     val backBorder: Float,
     val borderWidth: Dp,
-    // a small chevron over the card, standing in for the card behind's peek
-    val chevron: Boolean,
 )
 
 // the classic's glassy card, the one behind peeking over it
-internal val ClassicCardLook = PlayerCardLook(PlayerCardCorner, 0.11f, 0.20f, 0.06f, 0.10f, 1.dp, chevron = false)
+internal val ClassicCardLook = PlayerCardLook(PlayerCardCorner, 0.11f, 0.20f, 0.06f, 0.10f, 1.dp)
 
-// the new flagship's, from its design: a 4% fill, a 12% outline, round corners, no card peeking behind, a chevron instead
-internal val FlagshipCardLook = PlayerCardLook(25.dp, 0.04f, 0.12f, 0f, 0f, 1.35.dp, chevron = true)
-
-// the chevron sits this far over the front card, at 28% white like the design's
-private val ChevronGap = 6.dp
-private val ChevronWidth = 20.dp
-private const val ChevronAlpha = 0.28f
+// the new flagship's faint 4% fill and 12% outline, layered and sized like the classic's, the card behind as much fainter as the classic's is
+internal val FlagshipCardLook = PlayerCardLook(PlayerCardCorner, 0.04f, 0.12f, 0.02f, 0.06f, 1.35.dp)
 
 /** Where each card's content starts, so a page can grow it from the right spot. */
 private val LyricContentStart = 18.dp
@@ -265,7 +254,6 @@ internal fun PlayerBottomCardStack(
         listOf(PlayerPage.QUEUE, PlayerPage.LYRICS)
     }
 
-    val chevron = if (look.chevron) painterResource(R.drawable.flagship_card_chevron) else null
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -274,18 +262,6 @@ internal fun PlayerBottomCardStack(
                 deckBounds[0] = coords.boundsInRoot()
                 publishCardRect()
             }
-            .then(
-                if (chevron == null) Modifier else Modifier.drawBehind {
-                    // gone as the card grows into its page
-                    val shown = 1f - transition.headerProgress.coerceIn(0f, 1f)
-                    if (shown <= 0.01f) return@drawBehind
-                    val w = ChevronWidth.toPx()
-                    val h = w * chevron.intrinsicSize.height / chevron.intrinsicSize.width
-                    translate((size.width - w) / 2f, PeekOffset.toPx() - ChevronGap.toPx() - h) {
-                        with(chevron) { draw(Size(w, h), alpha = ChevronAlpha * shown, colorFilter = ColorFilter.tint(Color.White)) }
-                    }
-                }
-            )
             // Directional on purpose. A plain vertical `draggable` claimed *every* drag that
             // began on the card, so touching it made the player impossible to swipe closed. The
             // flip only ever runs upward, so a downward drag is left unconsumed for the sheet.

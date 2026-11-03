@@ -276,7 +276,8 @@ class App : Application(), SingletonImageLoader.Factory {
             components {
                 add(SvgDecoder.Factory())
             }
-            crossfade(200)
+            // covers ease in as they arrive; coil skips the fade for ones already in memory, so scrolling back never flickers
+            crossfade(300)
             allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
 
             memoryCache {

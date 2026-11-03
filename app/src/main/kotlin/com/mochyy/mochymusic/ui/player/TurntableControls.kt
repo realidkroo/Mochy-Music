@@ -177,7 +177,8 @@ fun TurntablePills(modifier: Modifier = Modifier, likeBurst: LikeBurstState? = n
                     }
                 },
                 tint = Color.White,
-                iconSize = 26.dp,
+                // the skips' size, so play keeps the flagship's proportion to them
+                iconSize = 24.dp,
                 modifier = Modifier.fillMaxSize(),
             )
         }
