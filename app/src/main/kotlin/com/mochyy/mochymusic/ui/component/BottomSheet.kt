@@ -104,6 +104,9 @@ private val SheetReleaseSpeed = 300.dp
 // let go slower, and it closes once it was pulled this far down, as one swipe always has; less springs back open
 private val SheetCloseTravel = 36.dp
 
+// the mini player let go of slowly opens once it was pulled this far up; less drops back into the mini player
+private val SheetOpenTravel = 36.dp
+
 // how quickly a sheet let go of still settles (the soft spring's own pace); a faster finger raises it
 private const val SettleOmega = 8.94f
 private const val MaxSettleOmega = 42f
@@ -205,6 +208,11 @@ fun BottomSheet(
     val currentSwipe by androidx.compose.runtime.rememberUpdatedState(expandedSwipe)
     val currentSideSwipe by androidx.compose.runtime.rememberUpdatedState(collapsedSwipe)
     val currentOnTouchActivity by androidx.compose.runtime.rememberUpdatedState(onTouchActivity)
+    val (swipeUpFollows) = com.mochyy.mochymusic.utils.rememberPreference(
+        com.mochyy.mochymusic.constants.PlayerSwipeUpFollowsKey,
+        defaultValue = true,
+    )
+    val currentSwipeUpFollows by androidx.compose.runtime.rememberUpdatedState(swipeUpFollows)
 
     if (!isPillTransition) {
         Box(
@@ -482,6 +490,17 @@ fun BottomSheet(
                                 velocityY < -releaseSpeedPx -> false
                                 else -> travelled > closeTravelPx
                             }
+                            val openTravelPx = SheetOpenTravel.toPx()
+                            // the same for a mini player pulled up: quick enough up, or far enough up and not flicked back down
+                            fun opens(velocityY: Float, travelled: Float): Boolean = when {
+                                velocityY < -releaseSpeedPx -> true
+                                velocityY > releaseSpeedPx -> false
+                                else -> -travelled > openTravelPx
+                            }
+                            // the held sheet came up from the mini player, so letting go decides whether it opens
+                            var heldFromMini = false
+                            fun closesOnRelease(velocityY: Float, travelled: Float): Boolean =
+                                if (heldFromMini) !opens(velocityY, travelled) else closes(velocityY, travelled)
                             val flickTravelPx = SheetCloseFlickTravel.toPx()
                             val dismissPx = MiniPlayerDismissCommit.toPx()
                             // Whether this drag began on the open player (or one all but settled
@@ -555,7 +574,16 @@ fun BottomSheet(
                                         state.horizontalOffset += dragAmount.x * resistance
                                     } else {
                                         if ((dragAmount.y < -2f || pulledUp) && state.isCollapsed) {
-                                            state.expandSoft()
+                                            if (currentSwipeUpFollows) {
+                                                // the player rides the finger up out of the mini player, as slow or as fast as it goes
+                                                acted = true
+                                                holding = true
+                                                heldFromMini = true
+                                                state.hold()
+                                                state.dragHeld(dragAmount.y, pxPerDp)
+                                            } else {
+                                                state.expandSoft()
+                                            }
                                             change.consume()
                                         } else if (
                                             !acted && startedOpen && pulledDown &&
@@ -565,6 +593,7 @@ fun BottomSheet(
                                             // the player now rides the finger down into the mini player, as slow or as fast as it goes
                                             acted = true
                                             holding = true
+                                            heldFromMini = false
                                             state.hold()
                                             state.dragHeld(dragAmount.y, pxPerDp)
                                             change.consume()
@@ -589,7 +618,7 @@ fun BottomSheet(
                                     if (holding) {
                                         holding = false
                                         val velocityY = velocityTracker.calculateVelocity().y
-                                        state.release(velocityY, pxPerDp, collapse = closes(velocityY, dragSum.y))
+                                        state.release(velocityY, pxPerDp, collapse = closesOnRelease(velocityY, dragSum.y))
                                     }
                                     velocityTracker.resetTracking()
                                     swipe?.onEnd(0f)
@@ -605,7 +634,7 @@ fun BottomSheet(
                                         holding = false
                                         val velocityY = velocityTracker.calculateVelocity().y
                                         velocityTracker.resetTracking()
-                                        state.release(velocityY, pxPerDp, collapse = closes(velocityY, dragSum.y))
+                                        state.release(velocityY, pxPerDp, collapse = closesOnRelease(velocityY, dragSum.y))
                                         return@detectSheetDrag
                                     }
                                     swipe?.let { handler ->

@@ -15,6 +15,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
+import kotlin.io.path.createTempDirectory
 
 /** The module against tracks.monochrome.st's real search answer (captured 2026-10-12). */
 class MonochromeModuleTest {
@@ -36,6 +38,7 @@ class MonochromeModuleTest {
             return routes(request)
         }
         override fun log(message: String) = Unit
+        override val folder: File = createTempDirectory("monochrome").toFile()
     }
 
     private fun module(routes: (HttpRequest) -> HttpResponse? = { null }): Pair<MonochromeModule, FakeHost> {

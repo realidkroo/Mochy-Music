@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="larp_mode">Larp mode</string>
+    <string name="larp_mode_desc">Fill your 67 dopamine</string>
+    <string name="larp_mode_detail">Makes the player show off a little: FLAC at 768 kHz, straight into a Wadax Atlantis Reference. Nothing about the real sound changes.</string>
+
+    <string name="larp_sheet_image">There\'s no limit to the larp</string>
+    <string name="larp_sheet_title">This will change some info on the player. Ready to LARP?</string>
+    <string name="larp_sheet_body">Don\'t forget to turn it off :)</string>
+    <string name="larp_sheet_button">67</string>
+
+    <string name="larp_quality">FLAC · 32-bit · 768 kHz</string>
+    <string name="larp_dac_name">Wadax Atlantis Reference</string>
+    <string name="larp_dac_detail">Straight from Mochy, no decoder · 768 kHz · 32-bit · 1,000,000 W</string>
+
+    <string name="larp_card_format">.Flac</string>
+    <string name="larp_bit_depth">Bit depth</string>
+    <string name="larp_bit_depth_value">32-bit</string>
+    <string name="larp_sample_rate">Sample rate</string>
+    <string name="larp_sample_rate_value">768 kHz</string>
+    <string name="larp_bitrate">Bitrate</string>
+    <string name="larp_bitrate_value">49,152 kbps</string>
+    <string name="larp_channels">Channel type</string>
+    <string name="larp_channels_value">Stereo, tuned by hand</string>
+    <string name="larp_source">Source</string>
+    <string name="larp_source_value">The studio\'s own master tape</string>
+
+    <string name="larp_card_decoder">Decoder</string>
+    <string name="larp_decoder_name">Decoder name</string>
+    <string name="larp_decoder_name_value">None, Mochy streams it raw</string>
+    <string name="larp_runs_on">Runs on</string>
+    <string name="larp_runs_on_value">Pure dopamine</string>
+
+    <string name="larp_card_dsp">DSP</string>
+    <string name="larp_effects">Effects</string>
+    <string name="larp_effects_value">None, every bit lands the way the artist dreamt it</string>
+    <string name="larp_hi_res">Hi-res path</string>
+    <string name="larp_hi_res_value">64-bit float, straight through</string>
+
+    <string name="larp_card_output">Output</string>
+    <string name="larp_device">Device</string>
+    <string name="larp_route">Route</string>
+    <string name="larp_route_value">Mochy to the DAC, no decoder in between</string>
+    <string name="larp_dac_mixer">DAC mixer</string>
+    <string name="larp_dac_mixer_value">Bit-perfect, 768 kHz · 32-bit</string>
+    <string name="larp_power">Power</string>
+    <string name="larp_power_value">1,000,000 W</string>
+    <string name="larp_jitter">Jitter</string>
+    <string name="larp_jitter_value">0 ps</string>
+    <string name="larp_buffer">Buffer</string>
+    <string name="larp_buffer_value">0 ms, it plays before you press play</string>
+</resources>

@@ -304,7 +304,12 @@ private fun TitleLines(mediaId: String, title: String, artist: String, modifier:
     val (showSampleRate) = rememberPreference(ShowFormatSampleRateKey, defaultValue = false)
     Column(modifier = modifier) {
         val facts by remember(mediaId) { connection.streamFacts(mediaId) }.collectAsState(initial = null)
-        val badge = if (showBadge) streamBadgeText(facts, showSampleRate) else null
+        val larping = rememberLarpMode()
+        val badge = when {
+            larping -> larpBadgeText()
+            showBadge -> streamBadgeText(facts, showSampleRate)
+            else -> null
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             FadingOverflowText(
                 text = title,

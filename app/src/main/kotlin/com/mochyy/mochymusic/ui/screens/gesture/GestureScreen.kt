@@ -71,6 +71,7 @@ import com.mochyy.mochymusic.ui.screens.audiolab.LabCard
 import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.constants.PlayerSwipeDownAnywhereKey
+import com.mochyy.mochymusic.constants.PlayerSwipeUpFollowsKey
 import com.mochyy.mochymusic.ui.screens.audiolab.LabToggleRow
 import com.mochyy.mochymusic.utils.rememberEnumPreference
 import com.mochyy.mochymusic.utils.rememberPreference
@@ -451,6 +452,7 @@ private fun ActionOptionBadge(action: SongSwipeAction) {
 @Composable
 private fun PlayerGestureCard() {
     val (anywhere, setAnywhere) = rememberPreference(PlayerSwipeDownAnywhereKey, defaultValue = false)
+    val (follows, setFollows) = rememberPreference(PlayerSwipeUpFollowsKey, defaultValue = true)
     LabCard(padding = CardPadding) {
         Text(
             stringResource(R.string.customise_player_gestures),
@@ -474,6 +476,12 @@ private fun PlayerGestureCard() {
             subtitle = stringResource(R.string.customise_swipe_down_anywhere_desc),
             checked = anywhere,
             onCheckedChange = setAnywhere,
+        )
+        LabToggleRow(
+            title = stringResource(R.string.customise_swipe_up_follows),
+            subtitle = stringResource(R.string.customise_swipe_up_follows_desc),
+            checked = follows,
+            onCheckedChange = setFollows,
         )
     }
 }

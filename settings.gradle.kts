@@ -35,8 +35,9 @@ include(":providers:musixmatch")
 include(":providers:genius")
 include(":providers:wikipedia")
 
-// source modules: built in today, written so each can ship as its own APK later
+// source modules built into mochy, the api every module is written against, and the bridge to a module that brings its own code in a zip
 include(":modules:api")
+include(":modules:bridge")
 include(":modules:applemusic")
 include(":modules:monochrome")
 include(":modules:jiosaavn")

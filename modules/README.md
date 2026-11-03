@@ -36,10 +36,11 @@ One switch turns a module on or off. Off means gone everywhere: from Audio Quali
 | Restyle Mochy, design your own player, add pages | **Look**, as a zip (or a `manifest.json` link) | No | Anyone |
 | Add songs or lyrics from a service | **Web module**: a link to a small HTTP service | Yes | Anyone |
 | Share a web module as one file | **Zip with a `url`** | Yes (the service it names) | Anyone |
+| Add songs from a JavaScript script (`searchTracks` + `getTrackStreamUrl`) | **Script** for the **JS Modules** module: a `.js` in a zip or a link, added on its page | No (it reaches its own services) | Anyone |
 | Add another Monochrome server | Not a module: Monochrome's page, **Servers** | No | Anyone |
-| Ship code that runs inside Mochy | **Built-in module** or **module app** | No | Mochy developers only |
+| Ship code that runs inside Mochy | **Zip with its own code**, **built-in module** or **module app** | No | Mochy developers only |
 
-Nothing from a look, a web module or a zip runs inside Mochy. They only hand back JSON, stream links and look values, so anyone can make one and nobody has to be trusted with the app. Code that runs inside Mochy (built-in modules and module apps) is only loaded when it's signed with Mochy's own key. See [section 11](#11-for-mochy-developers-changing-the-module-interface)
+Nothing from a look, a web module or a plain zip runs inside Mochy. They only hand back JSON, stream links and look values, so anyone can make one and nobody has to be trusted with the app. Code that runs inside Mochy (a zip with its own code, built-in modules and module apps) is only loaded when it's signed with Mochy's own key, see [section 6.1](#61-zips-with-their-own-code) and [section 11](#11-for-mochy-developers-changing-the-module-interface). Scripts for JS Modules are JavaScript that runs sandboxed inside that module, with no access to the phone or the app, only to the internet through Mochy ([section 6.2](#62-scripts-for-js-modules)).
 
 ---
 
@@ -496,7 +497,7 @@ my-module.zip
     └── manifest.json    ← or inside one folder, the way most zip tools pack a folder
 ```
 
-- **Pictures and fonts are unpacked, nothing else.** `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.ttf` and `.otf` files in the manifest's folder (and the folders under it) are copied into Mochy when the zip is added, keeping their paths. Everything else, like code or text files, is ignored. Hidden macOS files (`__MACOSX`, `._…`) are skipped.
+- **Pictures and fonts are unpacked, nothing else.** `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.ttf` and `.otf` files in the manifest's folder (and the folders under it) are copied into Mochy when the zip is added, keeping their paths. Everything else, like loose code or text files, is ignored, apart from the signed code a `code` field names ([6.1](#61-zips-with-their-own-code)). Hidden macOS files (`__MACOSX`, `._…`) are skipped.
 - **A zip without a `url` lives on the phone.** It never touches the network, and its page has no server to check.
 - **A zip that plays songs or lyrics needs a `url`:**
 
@@ -514,6 +515,98 @@ my-module.zip
 - **Removing** the module deletes its unpacked pictures and fonts too.
 - **Updating:** importing a zip with the same `id` again updates the module.
 - **Backups:** modules added from a zip are kept in Mochy's backup like every other module.
+
+### 6.1 Zips with their own code
+
+A zip can also bring a whole module written in Kotlin against `:modules:api`, the same kind as a built-in one. Mochy only runs that code when it's signed with Mochy's own key, so only Mochy's developers can make one ([section 11](#zip-modules-with-their-own-code) says how).
+
+```
+js-modules.zip
+├── manifest.json     ← says "code": "module.apk"
+└── module.apk        ← the module's code, signed like Mochy, never installed
+```
+
+```json
+{
+  "id": "addons",
+  "name": "JS Modules",
+  "description": "Plays from the JavaScript scripts you add as zips or links.",
+  "resources": ["search", "stream"],
+  "code": "module.apk"
+}
+```
+
+- `name` and `resources` only fill in the sheet before it's added. Once it's in, the module says what it is and what it adds itself.
+- **Signed like your Mochy:** a debug Mochy takes a zip built with the debug key, a release Mochy one built with the release key. Any other zip gets "it has to be signed with the same key as your Mochy".
+- **It runs on its own copy of everything:** its own Kotlin, coroutines and libraries, in a class loader that can only see Android, Java and Mochy's bridge. Every call between the two goes across as JSON, so a different Kotlin version or Mochy's R8 can't break it.
+- **Updating:** adding a newer zip with the same `id` swaps the running copy straight away. Its switch and choices stay.
+- **Removing** deletes its code and everything it kept.
+- It takes the place of a built-in module with the same `id`, the way a module app does.
+- **Backups** carry it, since its code sits in Mochy's files. It's checked again every time it's loaded.
+
+### 6.2 Scripts for JS Modules
+
+**JS Modules** is a zip module that runs JavaScript scripts. It lives in its own project outside this repo (`mochy-js-modules`, next to the Mochy folder). A script exports two functions and fetches whatever it needs itself. Once JS Modules is added, add scripts on its page with **Add from a file or a link**: pick a zip, or paste a link to a zip, a script or an index. One zip can hold many scripts, and the module can hold as many as you like; every song asks them all at once.
+
+**The script:**
+
+```js
+// module.exports, export async function, export default {...} and export { a as b } all work
+module.exports = {
+  async searchTracks(query, limit, context) {
+    const quality = context.settings.quality.value;   // LOSSLESS, HI_RES_LOSSLESS, HIGH or LOW
+    const res = await fetch('https://my-flac.example/search?q=' + encodeURIComponent(query));
+    const data = await res.json();
+    return { tracks: data.items.map(t => ({
+      id: String(t.id), title: t.title, artist: t.artist, album: t.album,
+      duration: t.seconds,                 // seconds
+      audioQuality: 'LOSSLESS'             // optional, a row that says it's lossless wins a tie
+    })) };
+  },
+  async getTrackStreamUrl(id, quality, context) {
+    const res = await fetch('https://my-flac.example/stream/' + id + '?quality=' + quality);
+    const data = await res.json();
+    return { streamUrl: data.url, track: { mimeType: 'audio/flac', bitDepth: 16, sampleRate: 44100 } };
+  }
+};
+```
+
+- `searchTracks` answers `{ tracks: [...] }`; `artists: [...]` and `durationMs` are read too.
+- `getTrackStreamUrl` answers `{ streamUrl, track }`, or just the link as a string. An `.m3u8` or
+  `.mpd` link (or an HLS/DASH `mimeType`) plays as that kind of stream. `"encrypted": true` is passed
+  over.
+- The script can use `fetch` (text, JSON and binary bodies both ways: `arrayBuffer()`, `blob()`, a
+  `Uint8Array` as the body), `setTimeout`, `setInterval`, `console`, `URL`, `URLSearchParams`,
+  `Headers`, `AbortController`, `TextEncoder`/`TextDecoder`, `atob`/`btoa`, `crypto.randomUUID`,
+  `queueMicrotask`, `performance.now` and `structuredClone`. There's no `require` and no `import`.
+- A call that runs past 20 s is stopped. Timers never hold an answer up: one that isn't due yet runs
+  the next time the script is used.
+- Keep a login token in a top-level variable: the script keeps running between calls. A script gets
+  up to three interpreters side by side when several songs or downloads need it at once, and each
+  one starts the script once.
+
+**The zip:**
+
+```
+my-scripts.zip
+├── index.json        ← optional: names, authors, versions
+├── tidal.js
+└── qobuz.js
+```
+
+`index.json` lists the scripts under any `"category:…"` key:
+
+```json
+{ "category:music": [
+  { "id": "tidal", "name": "Tidal", "author": "someone", "version": "1.2",
+    "tags": ["LOSSLESS", "HI-RES"], "download": "tidal.js" }
+] }
+```
+
+`download` can also be a link, and then the script is fetched when it's added. Without an index,
+every `.js` that has both functions becomes a script named after its file. A `manifest.json` whose
+`main` names the script works too. Adding a script with the same id again updates it. A zip or link
+with no script but a web module's `manifest.json` is added as its own module instead.
 
 ---
 
@@ -625,6 +718,9 @@ This part is for people working on Mochy itself. Follow the repo's `CLAUDE.md` e
 | The contract every module follows | `modules/api/src/main/kotlin/com/mochyy/mochymusic/module/MochyModule.kt` |
 | The matcher every module uses | `modules/api/.../module/TrackMatcher.kt` |
 | Built-in modules | `modules/applemusic`, `modules/monochrome`, `modules/jiosaavn` |
+| The bridge to a zip's code: what crosses, the JSON, both sides | `modules/bridge` (`shared/Shared.kt`, `Wire.kt`, `ModuleSide.kt`, `BridgedModule.kt`) |
+| Checking, unpacking and starting a zip's code | `app/.../modules/code/CodeModules.kt` |
+| JS Modules: reading zips, the sandbox, asking every script | Not in this repo: its own project, `mochy-js-modules` next to the Mochy folder (`module/` and `zip/`) |
 | Every module, its switch and choices; adding from a link or a zip | `app/.../modules/ModuleRegistry.kt` |
 | Provider order, download order, and the walk down each | `app/.../modules/SourceModules.kt` |
 | Link modules (manifest + HTTP calls) | `app/.../modules/web/WebModuleManifest.kt`, `WebModule.kt` |
@@ -680,10 +776,21 @@ An older Mochy skips a block it doesn't know, so adding one never breaks older l
 ### Adding a built-in module
 
 1. Make a Gradle module `modules/<name>` that depends only on `:modules:api` (plus `kotlinx-serialization-json` if you need it). Add it to `settings.gradle.kts` and as a dependency of `:app`.
-2. Implement `SourceModule`, `LyricsModule` and/or `LookModule`. Do all HTTP through `host.http(…)` and keep state in `host.storage`.
+2. Implement `SourceModule`, `LyricsModule` and/or `LookModule`. Do all HTTP through `host.http(…)`, keep small state in `host.storage` and bigger files in `host.folder`.
 3. Add it to the built-in list in `ModuleRegistry.load()`.
 4. Give it a logo in `ModuleParts.logoFor` and `providerLogo` in `AudioQualityScreen.kt`, or it shows its first letter.
 5. Write tests with a fake host, the way `modules/monochrome/src/test/.../MonochromeModuleTest.kt` does, and run them with `./gradlew :modules:<name>:test`.
+
+### Zip modules with their own code
+
+These live outside this repo, so Mochy never compiles them. `mochy-js-modules` (next to the Mochy folder) is the one to copy:
+
+1. Its `mochy-api` and `mochy-bridge` projects compile Mochy's `modules/api` and `modules/bridge` straight from a Mochy checkout (`mochyDir` in its `gradle.properties`), so the zip always matches the Mochy it's for.
+2. `module/` is the module, written like a built-in one against the api, with a no-argument constructor.
+3. `zip/` is an Android app build that depends on `:module` and `:mochy-bridge`, with a manifest whose `<meta-data android:name="com.mochyy.mochymusic.module.entry">` names the module class, and a `manifest.json` with `"code": "module.apk"`.
+4. `./gradlew :zip:moduleZipDebug` makes the zip for a debug Mochy, `:zip:moduleZipRelease` (with the release key's environment set) the one for a release Mochy. It lands in `zip/build/outputs/module/`.
+
+Keep R8 off in the packing project: Mochy makes `ModuleSide` and your module class by name. Only `com.mochyy.mochymusic.module.bridge.shared` crosses between Mochy's class loader and the module's. It's kept by name in Mochy's R8 rules, and changing it means bumping `MODULE_API_VERSION`.
 
 ### Module apps
 
@@ -711,6 +818,8 @@ Build against `:modules:api` as `compileOnly`, since Mochy already has those cla
 | "That link answered, but it isn't a module Mochy can use" | The manifest has no `id` and no `name`, isn't valid JSON, or adds nothing. |
 | "That file isn't a module" | The zip has no `manifest.json` at its root or one folder in, or isn't a zip. |
 | "…its .zip doesn't say where from" | Your zip lists `search`, `stream` or `lyrics` but has no `url`. |
+| "…it has to be signed with the same key as your Mochy" | The zip's code was built with another key, like a debug zip on a release Mochy. Build it with the same build type and key as the Mochy it's for. |
+| "This module's code didn't start" | It was built for another `MODULE_API_VERSION`, or its `module.apk` has no entry `meta-data`. `adb logcat -s CodeModules` says which. |
 | The test finds the song but it never plays from your module | Check the stream call with `curl -I`: it must give audio (200 or 206), not a web page or an error. Check that the codec and sample rate are ones the phone can decode. |
 | Songs come from YouTube instead | Your module is below YouTube in the provider order, it's switched off, or it was skipped for 10 minutes after not answering. `adb logcat -s SourceModules` says which. |
 | Downloads don't use your module | Check the **download order**, not the provider order. Also, an HLS/DASH stream can't be downloaded: give one whole file. |

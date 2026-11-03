@@ -25,6 +25,8 @@ internal data class WebModuleManifest(
     val settings: List<Setting> = emptyList(),
     // only read from a zip: the service the module plays from, since a file has no link of its own
     val url: String? = null,
+    // only read from a zip: the apk inside it holding the module's own code, which mochy runs only when it's signed with mochy's key
+    val code: String? = null,
     // a skin: a player of its own, a font from the zip, pages; read as raw json so one bad part can't sink the whole manifest
     val player: JsonElement? = null,
     val font: JsonElement? = null,

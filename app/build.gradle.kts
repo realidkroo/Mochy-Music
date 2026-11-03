@@ -446,6 +446,7 @@ dependencies {
     implementation(project(":modules:applemusic"))
     implementation(project(":modules:monochrome"))
     implementation(project(":modules:jiosaavn"))
+    implementation(project(":modules:bridge"))
 
 
     implementation(libs.ktor.client.core)

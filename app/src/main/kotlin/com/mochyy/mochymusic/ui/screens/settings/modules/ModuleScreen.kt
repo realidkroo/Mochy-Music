@@ -1,4 +1,4 @@
-// one module's page: its account, its switch, its choices, its servers, a playback test for the ones that play songs, and removing one added from a link or a zip
+// one module's page: its account, its switch, its choices, its servers or the things people added to it, a playback test for the ones that play songs, and removing one added from a link or a zip
 
 package com.mochyy.mochymusic.ui.screens.settings.modules
 
@@ -41,6 +41,7 @@ import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.module.AccountState
 import com.mochyy.mochymusic.module.DiagnosticStep
+import com.mochyy.mochymusic.module.ItemListModule
 import com.mochyy.mochymusic.module.ModuleFeature
 import com.mochyy.mochymusic.module.ModuleServer
 import com.mochyy.mochymusic.module.ServerListModule
@@ -98,12 +99,13 @@ fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesVie
         Spacer(Modifier.height(16.dp))
         Choices(entry) { choice, option -> viewModel.setPick(id, choice, option) }
         if (entry.module is ServerListModule) Servers(id, viewModel)
+        (entry.module as? ItemListModule)?.let { Items(id, it, viewModel) }
         Pages(entry, viewModel) { page -> navController.navigate(modulePageRoute(id, page)) }
         if (entry.adds(ModuleFeature.AudioSource)) {
             PlaybackTest(entry, viewModel)
             Spacer(Modifier.height(12.dp))
         }
-        if (entry.origin is ModuleOrigin.Web || entry.origin is ModuleOrigin.File) {
+        if (entry.origin is ModuleOrigin.Web || entry.origin is ModuleOrigin.File || entry.origin is ModuleOrigin.Code) {
             LabCard(padding = 10.dp) {
                 LabTextAction(stringResource(R.string.module_remove), R.drawable.delete) {
                     viewModel.remove(id)
@@ -156,6 +158,7 @@ private fun AccountCard(entry: ModuleEntry, checking: Boolean, onSignIn: () -> U
                     when {
                         checking -> stringResource(R.string.module_checking)
                         needsAccount -> stringResource(R.string.module_check_account)
+                        module is ItemListModule -> stringResource(R.string.module_check_items, module.itemsLabel.lowercase())
                         else -> stringResource(R.string.module_check_server)
                     },
                     R.drawable.refresh,
@@ -265,18 +268,49 @@ private fun ServerRow(server: ModuleServer, onRemove: () -> Unit) {
         server.name != address -> address
         else -> null
     }
+    ListRow(server.name.ifBlank { address }, detail, onRemove.takeIf { !server.builtIn })
+}
+
+/** what people added to the module, under the name the module gives them, and adding more from a zip or a link */
+@Composable
+private fun Items(id: String, module: ItemListModule, viewModel: ModulesViewModel) {
+    val items by viewModel.items.collectAsState()
+    val overlay = LocalZoomOutOverlayState.current
+    LaunchedEffect(id) { viewModel.loadItems(id) }
+
+    LabSectionLabel(module.itemsLabel)
+    LabCard(padding = 10.dp) {
+        items.forEach { item ->
+            ListRow(item.name, item.detail.ifBlank { null }, onRemove = { viewModel.removeItem(id, item.id) })
+        }
+        LabTextAction(stringResource(R.string.module_items_add), R.drawable.add) {
+            overlay.showAddItemsSheet(id, module.info.name, viewModel)
+        }
+    }
+    if (module.itemsAbout.isNotBlank()) {
+        Text(
+            module.itemsAbout, fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 17.sp,
+            color = LabColors.Secondary, modifier = Modifier.padding(top = 8.dp, start = 6.dp, end = 6.dp),
+        )
+    }
+    Spacer(Modifier.height(16.dp))
+}
+
+/** a server or something added to the module: its name, a line under it, and a cross to remove it when it can go */
+@Composable
+private fun ListRow(name: String, detail: String?, onRemove: (() -> Unit)?) {
     Row(Modifier.fillMaxWidth().padding(start = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(server.name.ifBlank { address }, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color.White)
+            Text(name, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color.White)
             detail?.let { Text(it, fontFamily = InterFontFamily, fontSize = 12.sp, color = LabColors.Secondary) }
         }
-        if (!server.builtIn) {
+        if (onRemove != null) {
             Box(
                 Modifier.size(36.dp).clip(RoundedCornerShape(18.dp)).clickable(onClick = onRemove),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painterResource(R.drawable.close), stringResource(R.string.module_server_remove, server.name),
+                    painterResource(R.drawable.close), stringResource(R.string.module_server_remove, name),
                     tint = LabColors.Secondary, modifier = Modifier.size(16.dp),
                 )
             }

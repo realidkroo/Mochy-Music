@@ -138,7 +138,11 @@ private fun ProviderRow(service: MusicService, from: PlayingFrom?, onForce: () -
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            from.quality?.let {
+            // larping, the source swears it's handing over the master
+            val quality = if (com.mochyy.mochymusic.ui.player.rememberLarpMode()) {
+                androidx.compose.ui.res.stringResource(com.mochyy.mochymusic.R.string.larp_quality)
+            } else from.quality
+            quality?.let {
                 Text(text = it, color = InfoMuted, fontSize = 12.sp, lineHeight = 16.sp)
             }
             Spacer(Modifier.height(8.dp))
@@ -245,7 +249,9 @@ private fun rememberStatCards(service: MusicService, mediaId: String, durationMs
             floatAllowed = service.audioOutputs.floatAllowed,
         ),
     )
-    return remember(input) { buildStatCards(input) }
+    val cards = remember(input) { buildStatCards(input) }
+    // larping, the nerds get the wadax story instead
+    return if (com.mochyy.mochymusic.ui.player.rememberLarpMode()) com.mochyy.mochymusic.ui.player.larpStatCards() else cards
 }
 
 private val hardwareDecoders = ConcurrentHashMap<String, Boolean>()

@@ -1323,10 +1323,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // fastest mode at the current screen size, 0 (no preference) on android 15+ where adaptive refresh handles it
+    // fastest mode at the current screen size; android 15+ needs it too, left alone it kept lyrics and the turntable at 60hz on 120hz phones
     @Suppress("DEPRECATION")
     private fun highRefreshModeId(): Int {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) return 0
         return try {
             val display = window.windowManager.defaultDisplay
             val current = display.mode

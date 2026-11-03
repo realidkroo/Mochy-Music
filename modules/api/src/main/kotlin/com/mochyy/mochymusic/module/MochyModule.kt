@@ -2,6 +2,8 @@
 
 package com.mochyy.mochymusic.module
 
+import java.io.File
+
 const val MODULE_API_VERSION = 3
 
 data class ModuleInfo(
@@ -29,6 +31,9 @@ interface ModuleHost {
     fun http(request: HttpRequest): HttpResponse
 
     fun log(message: String)
+
+    /** a folder only this module uses, for things too big for [storage]: downloaded scripts, packs */
+    val folder: File
 }
 
 interface ModuleStorage {
@@ -200,6 +205,38 @@ interface ServerListModule : MochyModule {
     suspend fun addServer(link: String): ServerProblem?
 
     fun removeServer(url: String)
+}
+
+/** one thing people added to a module, as its page lists it */
+data class ModuleItem(val id: String, val name: String, val detail: String)
+
+/** why a zip or a link added nothing */
+enum class ItemProblem { NotAZip, NotALink, Unreachable, NothingFound, Broken, TooBig }
+
+/** what adding a zip or a link came to */
+sealed interface ItemsAdded {
+    /** the names of what came in, one already there is updated in place */
+    data class Added(val names: List<String>) : ItemsAdded
+    data class Problem(val problem: ItemProblem) : ItemsAdded
+}
+
+/** a module that holds things people bring as zips or links, as many as they like: scripts, packs */
+interface ItemListModule : MochyModule {
+    /** what the module calls them, the heading of their list on its page */
+    val itemsLabel: String
+
+    /** a line under the list saying what they do, blank for none */
+    val itemsAbout: String
+
+    val items: List<ModuleItem>
+
+    /** reads everything it can use in the zip and keeps it; [fileName] is only for its row */
+    suspend fun addZip(fileName: String, bytes: ByteArray): ItemsAdded
+
+    /** the same from a link: a zip, or one file */
+    suspend fun addLink(link: String): ItemsAdded
+
+    fun removeItem(id: String)
 }
 
 /** a lyrics source, it joins the ones mochy already asks while the module is on */

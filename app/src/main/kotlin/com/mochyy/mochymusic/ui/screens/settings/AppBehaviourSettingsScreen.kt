@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -39,6 +40,7 @@ import com.mochyy.mochymusic.constants.DisableVideoAutoplayKey
 import com.mochyy.mochymusic.constants.DontSkipOnFailureKey
 import com.mochyy.mochymusic.constants.HideSettingsDescriptionsKey
 import com.mochyy.mochymusic.constants.HideUpdateNoticeKey
+import com.mochyy.mochymusic.constants.LarpModeKey
 import com.mochyy.mochymusic.constants.LocalSongAutoMetadataKey
 import com.mochyy.mochymusic.constants.LyricsHighBloomKey
 import com.mochyy.mochymusic.constants.LyricsMotionStyle
@@ -66,6 +68,7 @@ import com.mochyy.mochymusic.i18n.AppLanguage
 import com.mochyy.mochymusic.i18n.activityOrNull
 import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.component.DefaultPlayerSeekBarSlider
+import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 import com.mochyy.mochymusic.ui.component.SettingsGroup
 import com.mochyy.mochymusic.ui.component.SettingsGroupStyle
 import com.mochyy.mochymusic.ui.component.SettingsHighlight
@@ -89,6 +92,8 @@ fun AppBehaviourSettingsScreen(navController: NavController) {
         onBack = { navController.navigateUp() },
         searchBar = { SubSettingsSearchBar(query = query, onQueryChange = { query = it }) },
     ) {
+        // larpaspriority
+        Section(title = null, items = larpItems().matching(query))
         Section(stringResource(R.string.general_app_settings), generalItems(navController).matching(query))
         Section(stringResource(R.string.settings_local_section), localItems().matching(query))
         Section(stringResource(R.string.settings_player_behaviour), playerBehaviourItems().matching(query))
@@ -99,18 +104,20 @@ fun AppBehaviourSettingsScreen(navController: NavController) {
     }
 }
 
-// a section's title and its grouped rows, left out whole when the search hides every row
+// a section's title (if it has one) and its grouped rows, left out whole when the search hides every row
 @Composable
-private fun Section(title: String, items: List<SettingsItem>) {
+private fun Section(title: String?, items: List<SettingsItem>) {
     if (items.isEmpty()) return
-    Text(
-        text = title,
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 15.sp,
-        color = Color.White,
-        modifier = Modifier.padding(bottom = 10.dp, start = 4.dp),
-    )
+    if (title != null) {
+        Text(
+            text = title,
+            fontFamily = InterFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 15.sp,
+            color = Color.White,
+            modifier = Modifier.padding(bottom = 10.dp, start = 4.dp),
+        )
+    }
     SettingsGroup(style = SettingsGroupStyle.Grouped, items = items)
     Spacer(Modifier.height(18.dp))
 }
@@ -123,6 +130,28 @@ private fun List<SettingsItem>.matching(query: String): List<SettingsItem> {
             it.descriptionText?.contains(query, ignoreCase = true) == true ||
             it.detail?.contains(query, ignoreCase = true) == true
     }
+}
+
+// there's no limit to the larp
+@Composable
+private fun larpItems(): List<SettingsItem> {
+    val (larping, setLarping) = rememberPreference(LarpModeKey, defaultValue = false)
+    val overlay = LocalZoomOutOverlayState.current
+    // the design's plain circle, nothing drawn in it
+    val blank = remember { ColorPainter(Color.Transparent) }
+    return listOf(
+        switchItem(
+            key = "Larp mode",
+            title = stringResource(R.string.larp_mode),
+            description = stringResource(R.string.larp_mode_desc),
+            detail = stringResource(R.string.larp_mode_detail),
+            icon = blank,
+            checked = larping,
+            onCheckedChange = { on ->
+                if (on) overlay.showLarpSheet(onLarp = { setLarping(true) }) else setLarping(false)
+            },
+        ),
+    )
 }
 
 @Composable

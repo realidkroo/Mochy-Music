@@ -16,6 +16,8 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
+import kotlin.io.path.createTempDirectory
 import java.util.Base64
 
 /**
@@ -41,6 +43,7 @@ class AppleMusicModuleTest {
             return routes(request)
         }
         override fun log(message: String) = Unit
+        override val folder: File = createTempDirectory("applemusic").toFile()
     }
 
     /** a developer token whose payload says it's good for a day */

@@ -61,7 +61,7 @@ import kotlinx.coroutines.launch
 internal val ProblemColor = Color(0xFFFF8A80)
 
 // file managers name a zip in a few ways, and some only know it as bytes
-private val ZipTypes = arrayOf("application/zip", "application/x-zip-compressed", "application/x-zip", "application/octet-stream")
+internal val ZipTypes = arrayOf("application/zip", "application/x-zip-compressed", "application/x-zip", "application/octet-stream")
 
 /** opens the sheet; [onAdded] gets the new module's id once it's in, to open its page */
 fun PopupSheetState.showFindModulesSheet(viewModel: ModulesViewModel, onAdded: (String) -> Unit) {
@@ -98,6 +98,7 @@ private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) ->
             LinkCheck.Website -> problem = context.getString(R.string.modules_link_website)
             LinkCheck.NotAZip -> problem = context.getString(R.string.modules_file_not_a_zip)
             LinkCheck.NeedsUrl -> problem = context.getString(R.string.modules_file_needs_url)
+            LinkCheck.NotSigned -> problem = context.getString(R.string.modules_file_not_signed)
         }
     }
 
@@ -146,7 +147,15 @@ private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) ->
                 adding = checking,
                 onAdd = {
                     checking = true
-                    scope.launch { onAdded(viewModel.install(confirming)) }
+                    scope.launch {
+                        val id = viewModel.install(confirming)
+                        if (id != null) return@launch onAdded(id)
+                        // only a zip's own code can fail here, so the problem shows under the file button
+                        checking = false
+                        ready = null
+                        problemFromFile = true
+                        problem = context.getString(R.string.modules_code_broken)
+                    }
                 },
                 onCancel = { ready = null },
             )
@@ -193,7 +202,7 @@ private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) ->
 }
 
 @Composable
-private fun ProblemText(text: String) {
+internal fun ProblemText(text: String) {
     Text(text, color = ProblemColor, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 10.dp, start = 4.dp))
 }
 

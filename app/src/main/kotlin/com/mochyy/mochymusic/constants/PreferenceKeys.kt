@@ -83,8 +83,12 @@ val MixWithOtherAppsKey = booleanPreferencesKey("mixWithOtherApps")
 val ResumeOnBluetoothConnectKey = booleanPreferencesKey("resumeOnBluetoothConnect")
 val StopPlaybackOnTaskRemovedKey = booleanPreferencesKey("stopPlaybackOnTaskRemoved")
 val KeepScreenOn = booleanPreferencesKey("keepScreenOn")
+// there's no limit to the larp
+val LarpModeKey = booleanPreferencesKey("larpMode")
 // a swipe down anywhere on the open player closes it, not only from its top and cover (#121)
 val PlayerSwipeDownAnywhereKey = booleanPreferencesKey("playerSwipeDownAnywhere")
+// pulling the mini player up carries the player on the finger and lets it go at the finger's speed; off, any pull up opens it on its own spring
+val PlayerSwipeUpFollowsKey = booleanPreferencesKey("playerSwipeUpFollows")
 val DeveloperModeKey = booleanPreferencesKey("developerMode")
 
 enum class SliderStyle {
@@ -92,7 +96,7 @@ enum class SliderStyle {
     WAVY,
     SLIM
 }
-
+// keep larping bud
 const val SYSTEM_DEFAULT = "SYSTEM_DEFAULT"
 val AppLanguageKey = stringPreferencesKey("appLanguage")
 val ContentLanguageKey = stringPreferencesKey("contentLanguage")

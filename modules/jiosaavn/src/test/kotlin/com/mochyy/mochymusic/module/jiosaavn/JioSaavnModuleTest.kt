@@ -10,6 +10,8 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
+import kotlin.io.path.createTempDirectory
 
 class JioSaavnModuleTest {
 
@@ -30,6 +32,7 @@ class JioSaavnModuleTest {
             return routes(request)
         }
         override fun log(message: String) = Unit
+        override val folder: File = createTempDirectory("jiosaavn").toFile()
     }
 
     private fun module(fileThere: Boolean = true): Pair<JioSaavnModule, FakeHost> {

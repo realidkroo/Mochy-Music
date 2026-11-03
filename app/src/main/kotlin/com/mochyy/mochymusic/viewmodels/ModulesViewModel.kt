@@ -11,6 +11,10 @@ import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import com.mochyy.mochymusic.module.AccountState
 import com.mochyy.mochymusic.module.DiagnosticStep
+import com.mochyy.mochymusic.module.ItemListModule
+import com.mochyy.mochymusic.module.ItemProblem
+import com.mochyy.mochymusic.module.ItemsAdded
+import com.mochyy.mochymusic.module.ModuleItem
 import com.mochyy.mochymusic.module.ModuleServer
 import com.mochyy.mochymusic.module.ResolveResult
 import com.mochyy.mochymusic.module.ServerListModule
@@ -75,6 +79,9 @@ class ModulesViewModel @Inject constructor(
     private val _servers = MutableStateFlow<List<ModuleServer>>(emptyList())
     val servers: StateFlow<List<ModuleServer>> = _servers.asStateFlow()
 
+    private val _items = MutableStateFlow<List<ModuleItem>>(emptyList())
+    val items: StateFlow<List<ModuleItem>> = _items.asStateFlow()
+
     private var testJob: Job? = null
     private var signedIn = false
 
@@ -123,6 +130,59 @@ class ModulesViewModel @Inject constructor(
         modules.refresh()
     }
 
+    // ---- what people added to a module ----
+
+    /** what adding to a module's list came to, for the sheet to say */
+    sealed interface ItemsOutcome {
+        data class Added(val names: List<String>) : ItemsOutcome
+        /** it was a web module and nothing the module could use, so it went in on its own like "find more sources" would add it */
+        data class AddedAsModule(val name: String) : ItemsOutcome
+        data class Problem(val problem: ItemProblem) : ItemsOutcome
+    }
+
+    fun loadItems(id: String) {
+        _items.value = (registry.module(id) as? ItemListModule)?.items.orEmpty()
+    }
+
+    suspend fun addItemsZip(id: String, uri: android.net.Uri): ItemsOutcome {
+        val module = registry.module(id) as? ItemListModule ?: return ItemsOutcome.Problem(ItemProblem.NothingFound)
+        val (name, bytes) = withContext(Dispatchers.IO) { registry.readFile(uri, MaxItemsZipBytes) } ?: return ItemsOutcome.Problem(ItemProblem.NotAZip)
+        if (bytes.size > MaxItemsZipBytes) return ItemsOutcome.Problem(ItemProblem.TooBig)
+        val added = withContext(Dispatchers.IO) { runCatching { module.addZip(name, bytes) }.getOrDefault(ItemsAdded.Problem(ItemProblem.Broken)) }
+        return settleItems(id, added, fallBackOn = setOf(ItemProblem.NothingFound)) { registry.checkZip(uri) }
+    }
+
+    suspend fun addItemsLink(id: String, link: String): ItemsOutcome {
+        val module = registry.module(id) as? ItemListModule ?: return ItemsOutcome.Problem(ItemProblem.NothingFound)
+        val added = withContext(Dispatchers.IO) { runCatching { module.addLink(link) }.getOrDefault(ItemsAdded.Problem(ItemProblem.Unreachable)) }
+        // a web module's own link often answers nothing at its root, only at its manifest.json
+        return settleItems(id, added, fallBackOn = setOf(ItemProblem.NothingFound, ItemProblem.Unreachable)) { registry.check(link) }
+    }
+
+    fun removeItem(id: String, itemId: String) {
+        (registry.module(id) as? ItemListModule)?.removeItem(itemId)
+        loadItems(id)
+        modules.refresh()
+    }
+
+    // something that plays over plain http is a web module, so when the module found nothing it could use it goes in that way, switched off like any new module
+    private suspend fun settleItems(
+        id: String,
+        added: ItemsAdded,
+        fallBackOn: Set<ItemProblem>,
+        asWebModule: suspend () -> ModuleRegistry.LinkCheck,
+    ): ItemsOutcome {
+        loadItems(id)
+        modules.refresh()
+        if (added is ItemsAdded.Added) return ItemsOutcome.Added(added.names)
+        val problem = (added as ItemsAdded.Problem).problem
+        if (problem !in fallBackOn) return ItemsOutcome.Problem(problem)
+        val check = runCatching { asWebModule() }.getOrNull()
+        if (check !is ModuleRegistry.LinkCheck.Ready || check.base == null) return ItemsOutcome.Problem(problem)
+        install(check)
+        return ItemsOutcome.AddedAsModule(check.name)
+    }
+
     /** a header from the sign-in page; [onDone] runs once, when the account is in */
     fun onSignInHeader(id: String, name: String, value: String, url: String, onDone: (AccountState) -> Unit) {
         val module = registry.module(id) ?: return
@@ -167,9 +227,9 @@ class ModulesViewModel @Inject constructor(
 
     suspend fun checkZip(uri: android.net.Uri): ModuleRegistry.LinkCheck = registry.checkZip(uri)
 
-    /** adds a checked module, switched off so nothing changes until the user turns it on; gives back its id */
-    suspend fun install(ready: ModuleRegistry.LinkCheck.Ready): String {
-        // a zip's pictures and fonts are unpacked on the way in
+    /** adds a checked module, switched off so nothing changes until the user turns it on; gives back its id, null when a zip's code wouldn't start */
+    suspend fun install(ready: ModuleRegistry.LinkCheck.Ready): String? {
+        // a zip's pictures and fonts are unpacked on the way in, and its code is copied and started
         val id = withContext(Dispatchers.IO) { registry.install(ready) }
         modules.refresh()
         return id
@@ -317,5 +377,7 @@ class ModulesViewModel @Inject constructor(
 
     private companion object {
         const val AppleApi = "https://amp-api.music.apple.com/"
+        // a zip for a module's list is read no further than this, the same ceiling the js modules put on one
+        const val MaxItemsZipBytes = 25 * 1024 * 1024
     }
 }

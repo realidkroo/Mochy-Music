@@ -275,80 +275,8 @@ private class MaskedEffectCache {
     var width = -1f
     var height = -1f
     var tileOrdinal = -1
-    var grow = -1
-    var across = false
-    var ramp = 1f
     var mask: Brush? = null
     var effect: RenderEffect? = null
-}
-
-// one separable gaussian pass whose radius grows row by row (maxRadius * t^2), or column by column with across, reaching full strength ramp of the way along; edges averaged from real pixels only
-private const val VariableBlurSource = """
-uniform shader content;
-uniform float2 dir;
-uniform float2 size;
-uniform float maxRadius;
-uniform float growDown;
-uniform float across;
-uniform float ramp;
-
-half4 main(float2 p) {
-    float along = clamp(mix(p.y / size.y, p.x / size.x, across), 0.0, 1.0);
-    if (growDown < 0.5) { along = 1.0 - along; }
-    float t = clamp(along / ramp, 0.0, 1.0);
-    float r = maxRadius * t * t;
-    if (r < 0.5) { return content.eval(p); }
-    float stepPx = (0.57735 * r + 0.5) * 0.25;
-    half4 sum = half4(0.0);
-    float total = 0.0;
-    for (int i = -12; i <= 12; i++) {
-        float2 q = p + dir * (float(i) * stepPx);
-        float inside = step(0.0, q.x) * step(q.x, size.x) * step(0.0, q.y) * step(q.y, size.y);
-        float w = exp(-0.03125 * float(i * i)) * inside;
-        sum += content.eval(q) * half(w);
-        total += w;
-    }
-    return sum / half(max(total, 0.0001));
-}
-"""
-
-// compiled once on first use; every effect built from it keeps the uniforms it was built with
-private object VariableBlurShader {
-    var shader: Any? = null
-}
-
-// sharp at one end and maxRadius at the other in one go; stacked faded copies made every bright edge bloom
-@RequiresApi(33)
-private fun variableBlurEffect(
-    maxRadius: Float,
-    width: Float,
-    height: Float,
-    growDown: Boolean,
-    mask: android.graphics.Shader?,
-    across: Boolean = false,
-    ramp: Float = 1f,
-): RenderEffect {
-    val shader = VariableBlurShader.shader ?: createAgslShader(VariableBlurSource).also { VariableBlurShader.shader = it }
-    shader.setAgslUniform("size", width, height)
-    shader.setAgslUniform("maxRadius", maxRadius)
-    shader.setAgslUniform("growDown", if (growDown) 1f else 0f)
-    shader.setAgslUniform("across", if (across) 1f else 0f)
-    shader.setAgslUniform("ramp", ramp.coerceIn(0.01f, 1f))
-    shader.setAgslUniform("dir", 1f, 0f)
-    val across = agslRenderEffect(shader, "content")
-    shader.setAgslUniform("dir", 0f, 1f)
-    val down = agslRenderEffect(shader, "content")
-    val blurred = android.graphics.RenderEffect.createChainEffect(down, across)
-    val effect = if (mask != null) {
-        android.graphics.RenderEffect.createBlendModeEffect(
-            blurred,
-            android.graphics.RenderEffect.createShaderEffect(mask),
-            android.graphics.BlendMode.DST_IN,
-        )
-    } else {
-        blurred
-    }
-    return effect.asComposeRenderEffect()
 }
 
 /**
@@ -393,6 +321,10 @@ internal fun DownscaledBlur(
     growRamp: Float = 1f,
     draw: DrawScope.(fullSize: Size) -> Unit,
 ) {
+    if (growDown != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ProgressiveBlurBands(radius, mask, modifier, offscreen, growDown, growAcross, growRamp, draw)
+        return
+    }
     val currentRadius by rememberUpdatedState(radius)
     val currentOffscreen by rememberUpdatedState(offscreen)
     // A radius that animates only re-lays this out when it crosses into another resolution step.
@@ -427,36 +359,12 @@ internal fun DownscaledBlur(
                     val r = currentRadius() / k
                     renderEffect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         val mode = tileMode ?: android.graphics.Shader.TileMode.DECAL
-                        if (growDown != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            val quantized = if (r > 0.5f) BlurEffectCache.quantize(r) else 0f
-                            val grow = if (growDown) 1 else 0
-                            val cache = maskCache
-                            if (cache.effect == null || cache.radius != quantized || cache.width != size.width ||
-                                cache.height != size.height || cache.grow != grow || cache.mask != mask ||
-                                cache.across != growAcross || cache.ramp != growRamp
-                            ) {
-                                cache.effect = variableBlurEffect(
-                                    quantized, size.width, size.height, growDown, (mask as? ShaderBrush)?.createShader(size),
-                                    across = growAcross,
-                                    ramp = growRamp,
-                                )
-                                cache.radius = quantized
-                                cache.width = size.width
-                                cache.height = size.height
-                                cache.grow = grow
-                                cache.across = growAcross
-                                cache.ramp = growRamp
-                                cache.tileOrdinal = -1
-                                cache.mask = mask
-                            }
-                            cache.effect
-                        } else if (mask is ShaderBrush) {
+                        if (mask is ShaderBrush) {
                             val quantized = if (r > 0.5f) BlurEffectCache.quantize(r) else 0f
                             val cache = maskCache
                             if (cache.effect == null || cache.radius != quantized || cache.width != size.width ||
                                 cache.height != size.height || cache.tileOrdinal != mode.ordinal || cache.mask != mask
                             ) {
-                                cache.grow = -1
                                 cache.effect = maskedBlurEffect(quantized, mode, mask.createShader(size))
                                 cache.radius = quantized
                                 cache.width = size.width

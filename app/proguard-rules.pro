@@ -148,6 +148,10 @@
     native <methods>;
 }
 
+## Modules from a zip
+# a zip module's own code reaches mochy only through these, by their original names
+-keep class com.mochyy.mochymusic.module.bridge.shared.** { *; }
+
 ## Kotlin Reflection Fix
 -keep class kotlin.Metadata { *; }
 -keep class kotlin.reflect.** { *; }

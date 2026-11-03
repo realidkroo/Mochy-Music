@@ -90,6 +90,10 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
     val isCasting by remember { cast?.isCasting ?: MutableStateFlow(false) }.collectAsState()
     val (passthrough) = rememberPreference(UsbPassthroughKey, false)
     val anyChosen = devices.any { it.isChosen }
+    // larping, whatever is really playing turns into a wadax fed straight from mochy
+    val larping = com.mochyy.mochymusic.ui.player.rememberLarpMode()
+    val larpName = androidx.compose.ui.res.stringResource(R.string.larp_dac_name)
+    val larpDetail = androidx.compose.ui.res.stringResource(R.string.larp_dac_detail)
 
     // receivers are only looked for while this is open: discovery keeps the wifi radio busy
     DisposableEffect(cast) {
@@ -144,10 +148,11 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
                     onClick = { service?.setPreferredAudioDevice(null) },
                 )
                 devices.forEach { device ->
+                    val larpRow = larping && device.isActive && !isCasting
                     DeviceRow(
-                        label = deviceLabel(device),
-                        detail = deviceDetail(device, passthrough),
-                        icon = device.kind.icon(),
+                        label = if (larpRow) larpName else deviceLabel(device),
+                        detail = if (larpRow) larpDetail else deviceDetail(device, passthrough),
+                        icon = if (larpRow) AudioOutputs.Kind.USB.icon() else device.kind.icon(),
                         selected = device.isChosen && !isCasting,
                         playing = device.isActive && !isCasting,
                         onClick = {

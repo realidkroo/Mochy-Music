@@ -480,6 +480,9 @@ private fun PlayerSheet(
     // it is: collapsed, the pages are unmounted (still remembered) and the seek bar holds still.
     val sheetShowing by remember(state) { derivedStateOf { state.progress > 0f } }
 
+    // the record and the lyrics move with no finger on them, which android 15+ otherwise draws at 60hz
+    com.mochyy.mochymusic.ui.utils.HighRefreshWhile { sheetShowing && transportState.isPlaying }
+
     // Settings > Customise > Gesture: a swipe down anywhere on the open player closes it (#121)
     val (swipeDownAnywhere) = rememberPreference(
         com.mochyy.mochymusic.constants.PlayerSwipeDownAnywhereKey,

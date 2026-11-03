@@ -294,7 +294,12 @@ private fun SongLines(
         val facts by remember(mediaId) {
             playerConnection.streamFacts(mediaId)
         }.collectAsState(initial = null)
-        val badge = if (showFormatBadge) streamBadgeText(facts, showSampleRate) else null
+        val larping = rememberLarpMode()
+        val badge = when {
+            larping -> larpBadgeText()
+            showFormatBadge -> streamBadgeText(facts, showSampleRate)
+            else -> null
+        }
         // what the badge said, so it can still say it while it leaves
         val lastBadge = remember { arrayOfNulls<String>(1) }
         if (badge != null) lastBadge[0] = badge

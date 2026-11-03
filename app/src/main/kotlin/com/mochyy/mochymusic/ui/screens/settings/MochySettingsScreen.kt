@@ -88,6 +88,7 @@ private val LocalizedSettingsTitles = mapOf(
     "Blur strength" to R.string.appearance_blur_strength,
     "Animation" to R.string.appearance_animation,
     "Lyrics animation" to R.string.appearance_lyrics_animation,
+    "Larp mode" to R.string.larp_mode,
     "Disable App Updates notice" to R.string.settings_updates_notice,
     "Offline mode" to R.string.settings_offline_mode,
     "Proxy" to R.string.proxy,
@@ -128,6 +129,7 @@ private val LocalizedSettingsTitles = mapOf(
     "Swipe right" to R.string.customise_swipe_right,
     "Swipe left" to R.string.customise_swipe_left,
     "Swipe down anywhere to close" to R.string.customise_swipe_down_anywhere,
+    "Open with your finger" to R.string.customise_swipe_up_follows,
 )
 private val LocalizedSettingsPages = mapOf(
     "App behaviour" to R.string.settings_app_behaviour,
@@ -158,9 +160,11 @@ private val SettingsIndex = listOf(
     SettingsEntry("Swipe right", "Customisation", "customisation_settings", "slide song list queue library download play next playlist details action"),
     SettingsEntry("Swipe left", "Customisation", "customisation_settings", "slide song list queue library download play next playlist details action"),
     SettingsEntry("Swipe down anywhere to close", "Customisation", "customisation_settings", "player close dismiss swipe down pull gesture anywhere"),
+    SettingsEntry("Open with your finger", "Customisation", "customisation_settings", "player open swipe up mini player follow finger speed velocity gesture"),
 
     // App behaviour
     SettingsEntry("App behaviour", "App behaviour", "general_settings", "general playback player behaviour"),
+    SettingsEntry("Larp mode", "App behaviour", "general_settings", "larp 67 flac 768 khz wadax atlantis dac hi-res lossless bit-perfect flex"),
     SettingsEntry("App language", "App behaviour", "general_settings", "language bahasa locale device system indonesia english translate", R.string.app_language),
     SettingsEntry("Disable App Updates notice", "App behaviour", "general_settings", "update popup notification updater"),
     SettingsEntry("Offline mode", "App behaviour", "general_settings", "play downloaded cache offline"),
