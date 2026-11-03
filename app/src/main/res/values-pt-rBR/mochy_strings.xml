@@ -943,6 +943,8 @@
     </plurals>
     <!-- song share: the share song pages from the player menu and the song menus -->
     <string name="song_share_menu">share song</string>
+    <!-- the player's menu: opens the equalizer page -->
+    <string name="player_menu_equalizer">Equalizer</string>
     <string name="song_share_music_title">Share music</string>
     <string name="song_share_music_only">Music only</string>
     <string name="song_share_music_only_hint">The song on a card</string>
