@@ -28,7 +28,7 @@
     <string name="modules_link_not_a_module">That link answered, but it isn\'t a module Mochy can use.</string>
     <string name="modules_link_website">That\'s a website, not a module. If it\'s a Monochrome site, add it on Monochrome\'s page under Servers instead.</string>
     <string name="modules_add_from_file">Add from a file</string>
-    <string name="modules_add_from_file_body">A module someone sent you as a .zip. A look works straight from the file. One that plays songs or lyrics still needs its service online.</string>
+    <string name="modules_add_from_file_body">A module someone sent you as a .zip. A look works straight from the file, and so does one that brings its own code. Others that play songs or lyrics need their service online.</string>
     <string name="modules_choose_zip">Choose a .zip</string>
     <string name="modules_file_not_a_zip">That file isn\'t a module. A module\'s .zip has a manifest.json inside it.</string>
     <string name="modules_file_needs_url">This module plays songs or lyrics, but its .zip doesn\'t say where from. Its manifest.json needs a \"url\" pointing at its service.</string>
@@ -51,7 +51,7 @@
     <string name="module_pages">Pages</string>
     <string name="module_pages_off">Turn the module on to open its pages.</string>
     <string name="module_page_missing">This page isn\'t here anymore. Turn its module back on, or add the module again.</string>
-    <string name="module_servers_body">Each song plays from the first server that has it, starting with the ones you added. Found a Monochrome site that works? Add it here and Mochy finds the server it plays from.</string>
+    <string name="module_servers_body">dont report to us when not working, report to the server owner. PLEASE FTSOG</string>
     <string name="module_server_built_in">Built in</string>
     <string name="module_server_remove">Remove %1$s</string>
     <string name="module_server_add">Add a server</string>
@@ -93,4 +93,18 @@
     <string name="quality_download_order">Download order</string>
     <string name="quality_download_order_youtube">Downloads what the others can\'t</string>
     <string name="quality_download_order_footnote">Each download comes from the first provider here that has the song as one whole file. Streams that come in pieces, or that need a license, are skipped. YouTube is always here for downloads, even when it\'s off for playing.</string>
+    <string name="module_check_items">Check %1$s</string>
+    <string name="module_items_add">Add from a file or a link</string>
+    <string name="module_items_add_to">Add to %1$s</string>
+    <string name="module_items_add_body">Pick a .zip, or paste a link to a zip or a single file. %1$s keeps whatever it can use from it.</string>
+    <string name="module_items_add_link">Add from the link</string>
+    <string name="module_items_adding">Adding…</string>
+    <string name="module_items_added">Added %1$s</string>
+    <string name="module_items_added_as_module">%1$s works from a link, so it was added as its own module. Turn it on from its page under Modules.</string>
+    <string name="module_items_not_a_zip">That file isn\'t a zip. Pick a .zip, or paste a link instead.</string>
+    <string name="module_items_nothing">There\'s nothing in there %1$s can use.</string>
+    <string name="module_items_broken">What\'s in there is broken, so it can\'t run. Ask whoever made it for a fixed copy.</string>
+    <string name="module_items_too_big">That\'s too big for %1$s to take.</string>
+    <string name="modules_file_not_signed">This module runs its own code, so it has to be signed with the same key as your Mochy, and this copy isn\'t. Get the one made for your build of Mochy.</string>
+    <string name="modules_code_broken">This module\'s code didn\'t start. It may be made for a different version of Mochy.</string>
 </resources>
