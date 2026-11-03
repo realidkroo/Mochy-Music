@@ -240,6 +240,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.first
@@ -266,6 +267,9 @@ private const val INSTANT_SILENCE_SKIP_STEP_MS = 15_000L
 /** A saved volume below this is taken as one saved while muted or mid-fade, not the user's own. */
 private const val MinRestoredVolume = 0.02f
 private const val INSTANT_SILENCE_SKIP_SETTLE_MS = 350L
+
+// how often at most a speed or pitch being dragged reaches the player; quick enough to feel live
+private const val SpeedApplyGapMs = 60L
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -842,10 +846,15 @@ class MusicService :
         // Audio FX's speed and pitch, on whichever player is playing. The equalizer and effects need
         // nothing here: the store hands them to the processors live, with no seek or reload.
         scope.launch {
-            audioLab.playback.collect { settings ->
-                val params = PlaybackParameters(settings.speed, settings.pitch)
-                if (player.playbackParameters != params) player.playbackParameters = params
-            }
+            // a dragged slider sends dozens of steps a second; the player takes the latest one at most every SpeedApplyGapMs
+            audioLab.playback
+                .map { settings -> PlaybackParameters(settings.speed, settings.pitch) }
+                .distinctUntilChanged()
+                .conflate()
+                .collect { params ->
+                    if (player.playbackParameters != params) player.playbackParameters = params
+                    delay(SpeedApplyGapMs)
+                }
         }
 
         scope.launch {
@@ -3952,7 +3961,8 @@ class MusicService :
                 .Builder(this@MusicService)
                 // float is only ever let through by PrecisionSink, while nothing it would skip is on
                 .setEnableFloatOutput(true)
-                .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                // speed and pitch go to the audio track: through sonic, every change drained and flushed every processor in front of it (equalizer, effects, crossmix), a cut in the sound each time and a crash when a slider was dragged
+                .setEnableAudioTrackPlaybackParams(true)
                 .setAudioProcessorChain(
                     DefaultAudioSink.DefaultAudioProcessorChain(
 
