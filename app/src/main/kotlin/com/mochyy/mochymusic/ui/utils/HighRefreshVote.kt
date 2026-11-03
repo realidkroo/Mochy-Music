@@ -41,7 +41,9 @@ fun HighRefreshWhile(active: () -> Boolean) {
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 private class HighRateVoter(root: ViewGroup) {
     private val pixel = View(root.context).apply {
-        requestedFrameRate = View.REQUESTED_FRAME_RATE_CATEGORY_HIGH
+        // the screen's own top rate: the "high" category is only 90 on some 120 hz phones (redmi note 13 pro), and 90 on a 120 hz panel judders
+        requestedFrameRate = root.display?.supportedModes?.maxOfOrNull { it.refreshRate }
+            ?.takeIf { it > 0f } ?: View.REQUESTED_FRAME_RATE_CATEGORY_HIGH
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
     }
     private var requests = 0

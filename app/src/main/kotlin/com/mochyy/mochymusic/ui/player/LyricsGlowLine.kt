@@ -710,6 +710,13 @@ private const val EdgeSoftChars = 1
 
 private const val EdgeSoftPx = 26f
 
+// about how wide a latin letter is, in ems; the sweep's soft edge and the glow's spans are no wider than this a character
+private const val LatinLetterEm = 0.55f
+
+// the text's own size in px, so a backing vocal's smaller letters are measured as themselves
+private fun androidx.compose.ui.unit.Density.fontPx(layout: TextLayoutResult): Float =
+    layout.layoutInput.style.fontSize.takeIf { it.isSp }?.toPx() ?: LyricsFontSize.toPx()
+
 private const val EdgeLeadPx = 6f
 
 private const val WaveCharsBehind = 4f
@@ -1158,7 +1165,13 @@ internal fun KaraokeSweepText(
                             (headOffset - EdgeSoftChars).coerceAtLeast(layout.getLineStart(headLine)),
                             true,
                         )
-                        val fromX = if ((headX - softFrom) * flow > 0f) softFrom else headX - EdgeSoftPx * flow
+                        // one character back, but no more than a latin letter: across a whole kanji the sung one and the one before it both sat half lit
+                        val softMax = fontPx(layout) * LatinLetterEm
+                        val fromX = if ((headX - softFrom) * flow > 0f) {
+                            headX - flow * minOf((headX - softFrom) * flow, softMax)
+                        } else {
+                            headX - EdgeSoftPx * flow
+                        }
                         val toX = headX + EdgeLeadPx * flow
 
                         sung.rewind()
@@ -1505,8 +1518,10 @@ private fun rememberBloomModifier(
         val headX = layout.sweepHeadX(h, headOffset, headLine, textLength, rtl)
         val lineStart = layout.getLineStart(headLine)
         val lineEnd = layout.getLineEnd(headLine, visibleEnd = true)
+        // capped at a latin letter: a line of kanji averages a whole em a character, and its glow trailed twice as far as on latin
         val charWidth = if (lineEnd > lineStart) {
-            (layout.getLineRight(headLine) - layout.getLineLeft(headLine)) / (lineEnd - lineStart)
+            ((layout.getLineRight(headLine) - layout.getLineLeft(headLine)) / (lineEnd - lineStart))
+                .coerceAtMost(fontPx(layout) * LatinLetterEm)
         } else {
             LyricsFontSize.toPx() * 0.5f
         }
@@ -1582,8 +1597,10 @@ private fun rememberLegacyWaveModifier(
 
         val lineStart = layout.getLineStart(headLine)
         val lineEnd = layout.getLineEnd(headLine, visibleEnd = true)
+        // capped at a latin letter: a line of kanji averages a whole em a character, and its glow trailed twice as far as on latin
         val charWidth = if (lineEnd > lineStart) {
-            (layout.getLineRight(headLine) - layout.getLineLeft(headLine)) / (lineEnd - lineStart)
+            ((layout.getLineRight(headLine) - layout.getLineLeft(headLine)) / (lineEnd - lineStart))
+                .coerceAtMost(fontPx(layout) * LatinLetterEm)
         } else {
             LyricsFontSize.toPx() * 0.5f
         }
@@ -1856,6 +1873,9 @@ private const val NoGapSec = 0.03
 private const val FastSecPerChar = 0.1f
 private const val SlowSecPerChar = 0.34f
 
+// a kanji, kana or hangul block is a whole syllable, about three latin letters' worth, so it's weighed as that much when telling a held note
+private const val SyllableGlyphWeight = 3
+
 private const val GlowAttackFraction = 0.35f
 private const val GlowReleaseFraction = 0.3f
 
@@ -1864,7 +1884,28 @@ private class TimedRange(
     val end: Int,
     val startTime: Double,
     val endTime: Double,
+    /** letters' worth of singing: a syllable glyph counts as [SyllableGlyphWeight], so one kanji sung at a normal pace isn't a held note */
+    val sungLength: Int,
 )
+
+internal fun sungLength(text: String, start: Int = 0, end: Int = text.length): Int {
+    var n = 0
+    var i = start
+    while (i < end) {
+        val cp = text.codePointAt(i)
+        n += if (isSyllableGlyph(cp)) SyllableGlyphWeight else 1
+        i += Character.charCount(cp)
+    }
+    return n.coerceAtLeast(1)
+}
+
+private fun isSyllableGlyph(codePoint: Int): Boolean = when (Character.UnicodeScript.of(codePoint)) {
+    Character.UnicodeScript.HAN,
+    Character.UnicodeScript.HIRAGANA,
+    Character.UnicodeScript.KATAKANA,
+    Character.UnicodeScript.HANGUL -> true
+    else -> false
+}
 
 internal fun karaokeFilledChars(
     text: String,
@@ -1927,7 +1968,7 @@ private fun rememberKaraokeHead(
             val start = if (trimmed.isEmpty()) -1 else text.indexOf(trimmed, searchFrom)
             if (start < 0) return@mapNotNull null
             searchFrom = start + trimmed.length
-            TimedRange(start, searchFrom, word.startTime, word.endTime)
+            TimedRange(start, searchFrom, word.startTime, word.endTime, sungLength(text, start, searchFrom))
         }
     }
 
@@ -1996,7 +2037,7 @@ private fun rememberKaraokeHead(
                         word.start + (length * within).toFloat()
                     }
 
-                    val secPerChar = (span / length).toFloat()
+                    val secPerChar = (span / word.sungLength).toFloat()
                     val hold = smoothstep(
                         (secPerChar - FastSecPerChar) / (SlowSecPerChar - FastSecPerChar)
                     )

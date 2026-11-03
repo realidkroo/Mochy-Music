@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.layout.layout
@@ -42,6 +44,7 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -71,6 +74,8 @@ internal fun posterType(size: TextUnit, weight: FontWeight = FontWeight.Bold) = 
     letterSpacing = (-0.035).em,
     platformStyle = PlatformTextStyle(includeFontPadding = false),
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
+    // these letters rise, zoom and slide every frame: snapped to whole pixels they shook against each other
+    textMotion = TextMotion.Animated,
 )
 
 /** whether [text] reads right to left (Arabic, Hebrew...), judged by its first letter that has a direction */
@@ -230,7 +235,10 @@ private fun titleFits(
 // ---- lyrics ------------------------------------------------------------------------------
 
 /** one word of a line, with when it's sung */
-private class TimedWord(val text: String, val startMs: Long, val endMs: Long)
+private class TimedWord(val text: String, val startMs: Long, val endMs: Long) {
+    // letters' worth of singing: a kanji or kana is a syllable's worth, so one sung at a normal pace isn't taken for a held note
+    val sungLength = com.mochyy.mochymusic.ui.player.sungLength(text)
+}
 
 /**
  * The words of [entry] with their timings: the line's own word timings when it has them, or the
@@ -275,9 +283,19 @@ private const val RiseSpanChars = 3.2f
 private const val GapExitDelayMs = 450L
 /** a word keeps its wave and glow this long after its last letter, fading out */
 private const val ActiveFadeMs = 450f
-/** a lit letter's glow: how much of its colour, and how soft as a share of the word's size */
-private const val GlowAlpha = 0.55f
-private const val GlowSoftness = 0.2f
+/** a lit letter's glow: how much of its colour, and how soft as a share of the word's size; tight, so it reads as light and not a smudge */
+private const val GlowAlpha = 0.6f
+private const val GlowSoftness = 0.13f
+/** the glow follows the voice: brightest on the letters just sung, easing off over this many behind */
+private const val GlowTrailChars = 2.5f
+/** what's left on the rest of the sung word while it's being sung */
+private const val GlowRest = 0.3f
+/** the glow is blurred at this share of the word's resolution: it's soft anyway, and a full-size blur every frame was most of the gpu's time */
+private const val GlowRes = 0.5f
+/** letters are drawn this much past their peak size, so a swell or an exit zoom never stretches them beyond their pixels */
+private const val GlyphOversample = 1.15f
+/** room round a letter's box, as a share of its size, for ink that reaches past it: accents, and strokes the tight line height trims */
+private const val GlyphPadShare = 0.3f
 /** fainter than this a letter doesn't glow at all */
 private const val GlowCutoff = 0.04f
 
@@ -320,6 +338,8 @@ private class WordCell(
     val bleed: Float,
     /** read right to left, so it lights from the right. Always one piece (see [letterBounds]) */
     val rtl: Boolean,
+    /** each letter drawn once into an alpha image (android 12+), so moving and zooming it never draws its shapes again */
+    val glyphs: Array<androidx.compose.ui.graphics.ImageBitmap>?,
 ) {
     // this frame's rise, zoom and glow for each letter, worked out once for both the glow and the letters
     val lift = FloatArray(letters.size)
@@ -561,6 +581,7 @@ private fun measureLine(
             letterSpacing = (-0.02).em,
             color = color,
             textAlign = align,
+            textMotion = TextMotion.Animated,
         )
         val layout = measurer.measure(
             text = text,
@@ -632,6 +653,10 @@ private fun measureLine(
                     charStart = charStart,
                     bleed = sizePx * 0.45f + with(density) { 14.dp.toPx() },
                     rtl = pieces == 1 && isRtlText(w.text),
+                    // below android 12 the glow is text shadows, which need the letters drawn as text
+                    glyphs = if (android.os.Build.VERSION.SDK_INT >= 31) {
+                        Array(letters.size) { k -> renderGlyph(letters[k], sizePx * GlyphPadShare, density) }
+                    } else null,
                 ).also { charStart += pieces }
             }
             return LineCells(cells, space, maxWidth, side, subs, subGap, visualOrder(words, rows))
@@ -639,6 +664,23 @@ private fun measureLine(
         base *= 0.88f
         attempt++
     }
+}
+
+// one letter into an alpha image, drawn once here off the main thread; the paint gives it its colour each time it's drawn
+private fun renderGlyph(layout: TextLayoutResult, padPx: Float, density: androidx.compose.ui.unit.Density): androidx.compose.ui.graphics.ImageBitmap {
+    val w = ((layout.size.width + padPx * 2f) * GlyphOversample).roundToInt().coerceAtLeast(1)
+    val h = ((layout.size.height + padPx * 2f) * GlyphOversample).roundToInt().coerceAtLeast(1)
+    val image = androidx.compose.ui.graphics.ImageBitmap(w, h, androidx.compose.ui.graphics.ImageBitmapConfig.Alpha8)
+    // an emphasised word rests well under its peak size: mipmaps keep it from shimmering as it shrinks
+    image.asAndroidBitmap().setHasMipMap(true)
+    androidx.compose.ui.graphics.drawscope.CanvasDrawScope().draw(
+        density, LayoutDirection.Ltr, androidx.compose.ui.graphics.Canvas(image), androidx.compose.ui.geometry.Size(w.toFloat(), h.toFloat()),
+    ) {
+        scale(GlyphOversample, GlyphOversample, pivot = Offset.Zero) {
+            drawText(layout, color = Color.White, topLeft = Offset(padPx, padPx))
+        }
+    }
+    return image
 }
 
 /**
@@ -960,29 +1002,45 @@ private fun LyricLine(
     // render effects arrived in android 12; before that the glow stays a text shadow
     val gpuGlow = android.os.Build.VERSION.SDK_INT >= 31
 
+    fun enterOf(order: Int, t: Long) = easeOutCubic((t - enterAt - order * EnterStaggerMs) / EnterMs)
+    fun exitOf(order: Int, t: Long) = if (exitAt == null) 0f else smoothstep((t - exitAt - order * ExitStaggerMs) / ExitMs)
+
+    /** how blurred the [order]th piece is as it comes in or goes, in px; drawn into a smaller layer of its own (see [drawBlurred]) */
+    fun blurOf(order: Int, t: Long): Float =
+        if (!gpuGlow || !com.mochyy.mochymusic.ui.utils.AppMotion.elementBlur) 0f
+        else (1f - enterOf(order, t)) * blurIn + exitOf(order, t) * blurOut
+
     /** the entrance and exit, for the [order]th piece of the line */
     fun GraphicsLayerScope.motion(order: Int, t: Long, liftPx: Float, x: Float, y: Float, bleed: Float, mayGlow: Boolean) {
-        val e = easeOutCubic((t - enterAt - order * EnterStaggerMs) / EnterMs)
-        val out = if (exitAt == null) 0f else smoothstep((t - exitAt - order * ExitStaggerMs) / ExitMs)
+        val e = enterOf(order, t)
+        val out = exitOf(order, t)
         translationX = x - bleed
         translationY = y + offsetY(t) - bleed + (1f - e) * liftPx * 0.55f - out * out * liftPx * 0.9f
         alpha = (e * (1f - out)).coerceIn(0f, 1f)
         val zoom = (0.94f + 0.06f * e) * (1f + 0.08f * out)
         scaleX = zoom
         scaleY = zoom
-        // one shared effect per step of radius: a new one every frame meant every word was blurred again every frame, even a word that hadn't changed
-        renderEffect = if (com.mochyy.mochymusic.ui.utils.AppMotion.elementBlur) {
-            BlurEffectCache.get((1f - e) * blurIn + out * blurOut, Shader.TileMode.DECAL)
-        } else null
-        // nearly in or out with no blur or glow under it, a piece's fade goes straight onto each letter instead of through a buffer of its own (lower, letters that touch would show their seams)
-        compositingStrategy = if (renderEffect == null && !mayGlow && alpha > 0.95f) CompositingStrategy.ModulateAlpha else CompositingStrategy.Auto
+        // the whole line zooms about one point, so its words keep their places to each other instead of each swelling about its own middle
+        val pivotX = when (cells.side) {
+            LineSide.LEFT -> 0f
+            LineSide.CENTER -> cells.maxWidth / 2f
+            LineSide.RIGHT -> cells.maxWidth
+        }
+        transformOrigin = androidx.compose.ui.graphics.TransformOrigin((pivotX - (x - bleed)) / size.width, (cells.totalHeight / 2f - (y - bleed)) / size.height)
+        // blurred, a piece is one draw of its blurred layer, so its fade goes straight onto that; nearly in or out with no glow it goes onto each letter (lower, letters that touch would show their seams)
+        val blurred = blurOf(order, t) > BlurShownPx
+        compositingStrategy = if (blurred || (!mayGlow && alpha > 0.95f)) CompositingStrategy.ModulateAlpha else CompositingStrategy.Auto
     }
 
     cells.words.forEachIndexed { w, cell ->
         androidx.compose.runtime.key(w) {
             // only while it's being sung does a word's picture change, so only then is it drawn again every frame
             val stage = remember(cells, w, position) { derivedStateOf { cells.stageAt(w, position.positionMs()) } }
+            // a word coming in or going is drawn again each frame of its blur, and stays a still picture otherwise
+            val blurring = remember(cells, w, position) { derivedStateOf { blurOf(w, position.positionMs()) > BlurShownPx } }
             val glowLayer = if (gpuGlow) rememberGraphicsLayer() else null
+            val blurLayer = if (gpuGlow) rememberGraphicsLayer() else null
+            val tint = remember(color) { androidx.compose.ui.graphics.ColorFilter.tint(color.copy(alpha = 1f)) }
             androidx.compose.foundation.layout.Spacer(
                 modifier = Modifier
                     .layout { measurable, _ ->
@@ -1002,9 +1060,15 @@ private fun LyricLine(
                     }
                     .drawBehind {
                         val now = stage.value
-                        val t = cells.drawTimeOf(w, now, if (now == WordStage.Live) position.positionMs() else 0L)
+                        val moving = blurring.value
+                        val clock = if (now == WordStage.Live || moving) position.positionMs() else 0L
+                        val t = cells.drawTimeOf(w, now, clock)
                         cells.frameAt(t)
-                        drawWord(cell, cells.scale[w], cells.headAt(t), t, color, dim, glowLayer)
+                        if (moving && blurLayer != null) {
+                            drawBlurred(blurLayer, blurOf(w, clock)) { drawWord(cell, cells.scale[w], cells.headAt(t), t, color, dim, glowLayer, tint) }
+                        } else {
+                            drawWord(cell, cells.scale[w], cells.headAt(t), t, color, dim, glowLayer, tint)
+                        }
                     },
             )
         }
@@ -1036,7 +1100,7 @@ private fun LyricLine(
 }
 
 /** one word this frame: its glow in a blurred layer under it ([glowLayer], android 12+), then its letters */
-private fun DrawScope.drawWord(cell: WordCell, scale: Float, head: Float, t: Long, color: Color, dim: Color, glowLayer: GraphicsLayer?) {
+private fun DrawScope.drawWord(cell: WordCell, scale: Float, head: Float, t: Long, color: Color, dim: Color, glowLayer: GraphicsLayer?, tint: androidx.compose.ui.graphics.ColorFilter) {
     val word = cell.word
     val n = cell.letters.size
     if (n == 0) return
@@ -1046,14 +1110,13 @@ private fun DrawScope.drawWord(cell: WordCell, scale: Float, head: Float, t: Lon
     // the lit edge: a soft gradient a letter and a bit wide, running just behind the singing and
     // carried past the last letter as the word finishes, so the whole word ends lit
     val soft = cell.width / n * 1.15f
-    val idx = k.toInt().coerceAtMost(n - 1)
-    val letterRight = if (idx + 1 < n) cell.letterX[idx + 1] else cell.width
-    val frontAtHead = if (k >= n) cell.width else cell.letterX[idx] + (letterRight - cell.letterX[idx]) * (k - idx)
+    // at an even pace across the word: letter by letter, a narrow i and a wide m took the same time and the edge sped up and slowed down
+    val frontAtHead = cell.width * through
     val front = frontAtHead + soft * through
     val litFrom = front - soft
     val span = (word.endMs - word.startMs).coerceAtLeast(1L).toFloat()
     // long notes swell and glow; quick ones don't
-    val hold = smoothstep((span / n - 140f) / 200f)
+    val hold = smoothstep((span / word.sungLength - 140f) / 200f)
     val within = ((t - word.startMs) / span).coerceIn(0f, 1f)
     val swellEnvelope = hold * smootherstep(within / 0.2f) * smootherstep((1f - within) / 0.12f)
     // the word being sung, easing in as the singing enters it and out after it's over
@@ -1073,18 +1136,24 @@ private fun DrawScope.drawWord(cell: WordCell, scale: Float, head: Float, t: Lon
         cell.lift[i] = (rise * 0.07f + wave * 0.025f + swell * 0.02f) * cell.sizePx
         cell.zoom[i] = 1f + wave * 0.035f + swell * 0.07f
         val lit = ((front - (lx + lw / 2f)) / soft).coerceIn(0f, 1f)
-        // a letter still to be sung never glows
-        val glow = if (lx >= front) 0f else (active * lit * 0.8f + swell * 0.5f).coerceIn(0f, 1f)
+        val since = k - (c + 0.5f)
+        val trail = if (since <= 0f) 1f else 1f - smootherstep(since / GlowTrailChars)
+        // a letter still to be sung never glows; a held note lights the whole word
+        val glow = if (lx >= front) 0f else (active * lit * (GlowRest + (1f - GlowRest) * trail) + swell * 0.6f).coerceIn(0f, 1f)
         cell.glow[i] = if (glow > GlowCutoff) glow else 0f
         if (glow > GlowCutoff) glowing = true
     }
     // the glowing letters once more in their glow colour, blurred on the gpu; as text shadows they were blurred again on the cpu every frame they moved
     if (glowing && glowLayer != null) {
-        glowLayer.renderEffect = BlurEffectCache.get(cell.sizePx * GlowSoftness * scale, Shader.TileMode.DECAL)
-        glowLayer.record { drawLetters(cell, scale, litFrom, front, color, dim, LetterPass.Glow) }
-        drawLayer(glowLayer)
+        // one radius for the word, so the glow doesn't step through blur sizes as an emphasised word grows
+        glowLayer.renderEffect = BlurEffectCache.get(cell.sizePx * GlowSoftness * GlowRes, Shader.TileMode.DECAL)
+        val half = androidx.compose.ui.unit.IntSize((size.width * GlowRes).roundToInt().coerceAtLeast(1), (size.height * GlowRes).roundToInt().coerceAtLeast(1))
+        glowLayer.record(half) {
+            scale(GlowRes, GlowRes, pivot = Offset.Zero) { drawLetters(cell, scale, litFrom, front, color, dim, LetterPass.Glow, tint) }
+        }
+        scale(1f / GlowRes, 1f / GlowRes, pivot = Offset.Zero) { drawLayer(glowLayer) }
     }
-    drawLetters(cell, scale, litFrom, front, color, dim, if (glowLayer == null) LetterPass.Shadowed else LetterPass.Plain)
+    drawLetters(cell, scale, litFrom, front, color, dim, if (glowLayer == null) LetterPass.Shadowed else LetterPass.Plain, tint)
 }
 
 /** which copy of a word's letters is drawn */
@@ -1098,7 +1167,9 @@ private enum class LetterPass {
 }
 
 /** [cell]'s letters where [drawWord] put them this frame, lit up to [litFrom] and fading to dim by [front] */
-private fun DrawScope.drawLetters(cell: WordCell, scale: Float, litFrom: Float, front: Float, color: Color, dim: Color, pass: LetterPass) {
+private fun DrawScope.drawLetters(cell: WordCell, scale: Float, litFrom: Float, front: Float, color: Color, dim: Color, pass: LetterPass, tint: androidx.compose.ui.graphics.ColorFilter) {
+    val glyphs = cell.glyphs
+    val pad = cell.sizePx * GlyphPadShare
     withTransform({
         translate(cell.bleed, cell.bleed)
         scale(scale, scale, pivot = Offset.Zero)
@@ -1119,6 +1190,31 @@ private fun DrawScope.drawLetters(cell: WordCell, scale: Float, litFrom: Float, 
                 translate(lx, -cell.lift[i])
                 scale(zoom, zoom, pivot = Offset(lw / 2f, lh * 0.85f))
             }) {
+                if (glyphs != null && pass != LetterPass.Shadowed) {
+                    val glyph = glyphs[i]
+                    when {
+                        pass == LetterPass.Glow -> drawGlyph(glyph, pad, GlowAlpha * glow, tint)
+                        lx + lw <= litFrom -> drawGlyph(glyph, pad, color.alpha, tint)
+                        lx >= front -> drawGlyph(glyph, pad, dim.alpha, tint)
+                        else -> {
+                            val litX = if (cell.rtl) cell.width - litFrom - lx else litFrom - lx
+                            val frontX = if (cell.rtl) cell.width - front - lx else front - lx
+                            // dim all over, then the lit copy faded out across the edge in a small layer of its own
+                            drawGlyph(glyph, pad, dim.alpha, tint)
+                            val box = androidx.compose.ui.geometry.Rect(-pad, -pad, lw + pad, lh + pad)
+                            drawContext.canvas.saveLayer(box, GlyphEdgePaint)
+                            drawGlyph(glyph, pad, color.alpha, tint)
+                            drawRect(
+                                brush = Brush.horizontalGradient(0f to Color.Black, 1f to Color.Transparent, startX = litX, endX = frontX),
+                                topLeft = box.topLeft,
+                                size = box.size,
+                                blendMode = androidx.compose.ui.graphics.BlendMode.DstIn,
+                            )
+                            drawContext.canvas.restore()
+                        }
+                    }
+                    return@withTransform
+                }
                 when {
                     lx + lw <= litFrom -> drawText(
                         layout,
@@ -1141,6 +1237,18 @@ private fun DrawScope.drawLetters(cell: WordCell, scale: Float, litFrom: Float, 
                 }
             }
         }
+    }
+}
+
+private val GlyphEdgePaint = androidx.compose.ui.graphics.Paint()
+
+// a letter's image where its text would have been drawn: back out of the room round it and the extra resolution it was drawn at
+private fun DrawScope.drawGlyph(glyph: androidx.compose.ui.graphics.ImageBitmap, pad: Float, alpha: Float, tint: androidx.compose.ui.graphics.ColorFilter) {
+    withTransform({
+        translate(-pad, -pad)
+        scale(1f / GlyphOversample, 1f / GlyphOversample, pivot = Offset.Zero)
+    }) {
+        drawImage(glyph, alpha = alpha, colorFilter = tint)
     }
 }
 
