@@ -64,6 +64,7 @@ import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.KeepScreenOn
 import com.mochyy.mochymusic.playback.ExoDownloadService
+import com.mochyy.mochymusic.playback.queues.YouTubeQueue
 import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.component.SheetActionCard
 import com.mochyy.mochymusic.ui.component.SheetActionCardRow
@@ -244,6 +245,18 @@ fun PlayerActionMenu(
 
                 // Saving the song somewhere is what people open this menu for most.
                 SheetActionCardRow {
+                    SheetActionCard(
+                        icon = R.drawable.radio,
+                        title = "Start Radio",
+                        enabled = currentMetadata != null,
+                        onClick = {
+                            currentMetadata?.let { metadata ->
+                                playerConnection.playQueue(YouTubeQueue.radio(metadata))
+                                onDismiss()
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
                     SheetActionCard(
                         icon = R.drawable.playlist_add,
                         title = "Add to playlist",
