@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.layout.layout
@@ -292,10 +291,6 @@ private const val GlowTrailChars = 2.5f
 private const val GlowRest = 0.3f
 /** the glow is blurred at this share of the word's resolution: it's soft anyway, and a full-size blur every frame was most of the gpu's time */
 private const val GlowRes = 0.5f
-/** letters are drawn this much past their peak size, so a swell or an exit zoom never stretches them beyond their pixels */
-private const val GlyphOversample = 1.15f
-/** room round a letter's box, as a share of its size, for ink that reaches past it: accents, and strokes the tight line height trims */
-private const val GlyphPadShare = 0.3f
 /** fainter than this a letter doesn't glow at all */
 private const val GlowCutoff = 0.04f
 
@@ -338,8 +333,6 @@ private class WordCell(
     val bleed: Float,
     /** read right to left, so it lights from the right. Always one piece (see [letterBounds]) */
     val rtl: Boolean,
-    /** each letter drawn once into an alpha image (android 12+), so moving and zooming it never draws its shapes again */
-    val glyphs: Array<androidx.compose.ui.graphics.ImageBitmap>?,
 ) {
     // this frame's rise, zoom and glow for each letter, worked out once for both the glow and the letters
     val lift = FloatArray(letters.size)
@@ -653,10 +646,6 @@ private fun measureLine(
                     charStart = charStart,
                     bleed = sizePx * 0.45f + with(density) { 14.dp.toPx() },
                     rtl = pieces == 1 && isRtlText(w.text),
-                    // below android 12 the glow is text shadows, which need the letters drawn as text
-                    glyphs = if (android.os.Build.VERSION.SDK_INT >= 31) {
-                        Array(letters.size) { k -> renderGlyph(letters[k], sizePx * GlyphPadShare, density) }
-                    } else null,
                 ).also { charStart += pieces }
             }
             return LineCells(cells, space, maxWidth, side, subs, subGap, visualOrder(words, rows))
@@ -664,23 +653,6 @@ private fun measureLine(
         base *= 0.88f
         attempt++
     }
-}
-
-// one letter into an alpha image, drawn once here off the main thread; the paint gives it its colour each time it's drawn
-private fun renderGlyph(layout: TextLayoutResult, padPx: Float, density: androidx.compose.ui.unit.Density): androidx.compose.ui.graphics.ImageBitmap {
-    val w = ((layout.size.width + padPx * 2f) * GlyphOversample).roundToInt().coerceAtLeast(1)
-    val h = ((layout.size.height + padPx * 2f) * GlyphOversample).roundToInt().coerceAtLeast(1)
-    val image = androidx.compose.ui.graphics.ImageBitmap(w, h, androidx.compose.ui.graphics.ImageBitmapConfig.Alpha8)
-    // an emphasised word rests well under its peak size: mipmaps keep it from shimmering as it shrinks
-    image.asAndroidBitmap().setHasMipMap(true)
-    androidx.compose.ui.graphics.drawscope.CanvasDrawScope().draw(
-        density, LayoutDirection.Ltr, androidx.compose.ui.graphics.Canvas(image), androidx.compose.ui.geometry.Size(w.toFloat(), h.toFloat()),
-    ) {
-        scale(GlyphOversample, GlyphOversample, pivot = Offset.Zero) {
-            drawText(layout, color = Color.White, topLeft = Offset(padPx, padPx))
-        }
-    }
-    return image
 }
 
 /**
@@ -1040,7 +1012,6 @@ private fun LyricLine(
             val blurring = remember(cells, w, position) { derivedStateOf { blurOf(w, position.positionMs()) > BlurShownPx } }
             val glowLayer = if (gpuGlow) rememberGraphicsLayer() else null
             val blurLayer = if (gpuGlow) rememberGraphicsLayer() else null
-            val tint = remember(color) { androidx.compose.ui.graphics.ColorFilter.tint(color.copy(alpha = 1f)) }
             androidx.compose.foundation.layout.Spacer(
                 modifier = Modifier
                     .layout { measurable, _ ->
@@ -1065,15 +1036,18 @@ private fun LyricLine(
                         val t = cells.drawTimeOf(w, now, clock)
                         cells.frameAt(t)
                         if (moving && blurLayer != null) {
-                            drawBlurred(blurLayer, blurOf(w, clock)) { drawWord(cell, cells.scale[w], cells.headAt(t), t, color, dim, glowLayer, tint) }
+                            drawBlurred(blurLayer, blurOf(w, clock)) { drawWord(cell, cells.scale[w], cells.headAt(t), t, color, dim, glowLayer) }
                         } else {
-                            drawWord(cell, cells.scale[w], cells.headAt(t), t, color, dim, glowLayer, tint)
+                            drawWord(cell, cells.scale[w], cells.headAt(t), t, color, dim, glowLayer)
                         }
                     },
             )
         }
     }
     cells.subs.forEachIndexed { k, sub ->
+        val order = cells.words.size + k
+        val blurring = remember(cells, k, position) { derivedStateOf { blurOf(order, position.positionMs()) > BlurShownPx } }
+        val blurLayer = if (gpuGlow) rememberGraphicsLayer() else null
         androidx.compose.foundation.layout.Spacer(
             modifier = Modifier
                 .layout { measurable, _ ->
@@ -1088,19 +1062,38 @@ private fun LyricLine(
                             val t = position.positionMs()
                             cells.frameAt(t)
                             // they come in just after the words, and go with them
-                            motion(cells.words.size + k, t, sub.layout.size.height * 1.6f, 0f, cells.subY[k], sub.bleed, mayGlow = false)
+                            motion(order, t, sub.layout.size.height * 1.6f, 0f, cells.subY[k], sub.bleed, mayGlow = false)
                         }
                     }
                 }
                 .drawBehind {
-                    drawText(sub.layout, color = color.copy(alpha = color.alpha * sub.alpha), topLeft = Offset(sub.bleed, sub.bleed), shadow = Shadow.None)
+                    val text: DrawScope.() -> Unit = {
+                        drawText(sub.layout, color = color.copy(alpha = color.alpha * sub.alpha), topLeft = Offset(sub.bleed, sub.bleed), shadow = Shadow.None)
+                    }
+                    if (blurring.value && blurLayer != null) drawBlurred(blurLayer, blurOf(order, position.positionMs()), text) else text()
                 },
         )
     }
 }
 
+/** under this a piece isn't blurred at all */
+private const val BlurShownPx = 0.5f
+
+/**
+ * [content] blurred by [radius] in a layer of its own, drawn at half size once the blur is wide
+ * enough to hide it: every word of a line blurred at full size, every frame of a line change, was
+ * most of the gpu's frame on the poster.
+ */
+private fun DrawScope.drawBlurred(layer: GraphicsLayer, radius: Float, content: DrawScope.() -> Unit) {
+    val res = if (radius >= 12f) 0.5f else 1f
+    layer.renderEffect = BlurEffectCache.get(radius * res, Shader.TileMode.DECAL)
+    val box = androidx.compose.ui.unit.IntSize((size.width * res).roundToInt().coerceAtLeast(1), (size.height * res).roundToInt().coerceAtLeast(1))
+    layer.record(box) { scale(res, res, pivot = Offset.Zero) { content() } }
+    scale(1f / res, 1f / res, pivot = Offset.Zero) { drawLayer(layer) }
+}
+
 /** one word this frame: its glow in a blurred layer under it ([glowLayer], android 12+), then its letters */
-private fun DrawScope.drawWord(cell: WordCell, scale: Float, head: Float, t: Long, color: Color, dim: Color, glowLayer: GraphicsLayer?, tint: androidx.compose.ui.graphics.ColorFilter) {
+private fun DrawScope.drawWord(cell: WordCell, scale: Float, head: Float, t: Long, color: Color, dim: Color, glowLayer: GraphicsLayer?) {
     val word = cell.word
     val n = cell.letters.size
     if (n == 0) return
@@ -1149,11 +1142,11 @@ private fun DrawScope.drawWord(cell: WordCell, scale: Float, head: Float, t: Lon
         glowLayer.renderEffect = BlurEffectCache.get(cell.sizePx * GlowSoftness * GlowRes, Shader.TileMode.DECAL)
         val half = androidx.compose.ui.unit.IntSize((size.width * GlowRes).roundToInt().coerceAtLeast(1), (size.height * GlowRes).roundToInt().coerceAtLeast(1))
         glowLayer.record(half) {
-            scale(GlowRes, GlowRes, pivot = Offset.Zero) { drawLetters(cell, scale, litFrom, front, color, dim, LetterPass.Glow, tint) }
+            scale(GlowRes, GlowRes, pivot = Offset.Zero) { drawLetters(cell, scale, litFrom, front, color, dim, LetterPass.Glow) }
         }
         scale(1f / GlowRes, 1f / GlowRes, pivot = Offset.Zero) { drawLayer(glowLayer) }
     }
-    drawLetters(cell, scale, litFrom, front, color, dim, if (glowLayer == null) LetterPass.Shadowed else LetterPass.Plain, tint)
+    drawLetters(cell, scale, litFrom, front, color, dim, if (glowLayer == null) LetterPass.Shadowed else LetterPass.Plain)
 }
 
 /** which copy of a word's letters is drawn */
@@ -1167,9 +1160,7 @@ private enum class LetterPass {
 }
 
 /** [cell]'s letters where [drawWord] put them this frame, lit up to [litFrom] and fading to dim by [front] */
-private fun DrawScope.drawLetters(cell: WordCell, scale: Float, litFrom: Float, front: Float, color: Color, dim: Color, pass: LetterPass, tint: androidx.compose.ui.graphics.ColorFilter) {
-    val glyphs = cell.glyphs
-    val pad = cell.sizePx * GlyphPadShare
+private fun DrawScope.drawLetters(cell: WordCell, scale: Float, litFrom: Float, front: Float, color: Color, dim: Color, pass: LetterPass) {
     withTransform({
         translate(cell.bleed, cell.bleed)
         scale(scale, scale, pivot = Offset.Zero)
@@ -1190,31 +1181,6 @@ private fun DrawScope.drawLetters(cell: WordCell, scale: Float, litFrom: Float, 
                 translate(lx, -cell.lift[i])
                 scale(zoom, zoom, pivot = Offset(lw / 2f, lh * 0.85f))
             }) {
-                if (glyphs != null && pass != LetterPass.Shadowed) {
-                    val glyph = glyphs[i]
-                    when {
-                        pass == LetterPass.Glow -> drawGlyph(glyph, pad, GlowAlpha * glow, tint)
-                        lx + lw <= litFrom -> drawGlyph(glyph, pad, color.alpha, tint)
-                        lx >= front -> drawGlyph(glyph, pad, dim.alpha, tint)
-                        else -> {
-                            val litX = if (cell.rtl) cell.width - litFrom - lx else litFrom - lx
-                            val frontX = if (cell.rtl) cell.width - front - lx else front - lx
-                            // dim all over, then the lit copy faded out across the edge in a small layer of its own
-                            drawGlyph(glyph, pad, dim.alpha, tint)
-                            val box = androidx.compose.ui.geometry.Rect(-pad, -pad, lw + pad, lh + pad)
-                            drawContext.canvas.saveLayer(box, GlyphEdgePaint)
-                            drawGlyph(glyph, pad, color.alpha, tint)
-                            drawRect(
-                                brush = Brush.horizontalGradient(0f to Color.Black, 1f to Color.Transparent, startX = litX, endX = frontX),
-                                topLeft = box.topLeft,
-                                size = box.size,
-                                blendMode = androidx.compose.ui.graphics.BlendMode.DstIn,
-                            )
-                            drawContext.canvas.restore()
-                        }
-                    }
-                    return@withTransform
-                }
                 when {
                     lx + lw <= litFrom -> drawText(
                         layout,
@@ -1237,18 +1203,6 @@ private fun DrawScope.drawLetters(cell: WordCell, scale: Float, litFrom: Float, 
                 }
             }
         }
-    }
-}
-
-private val GlyphEdgePaint = androidx.compose.ui.graphics.Paint()
-
-// a letter's image where its text would have been drawn: back out of the room round it and the extra resolution it was drawn at
-private fun DrawScope.drawGlyph(glyph: androidx.compose.ui.graphics.ImageBitmap, pad: Float, alpha: Float, tint: androidx.compose.ui.graphics.ColorFilter) {
-    withTransform({
-        translate(-pad, -pad)
-        scale(1f / GlyphOversample, 1f / GlyphOversample, pivot = Offset.Zero)
-    }) {
-        drawImage(glyph, alpha = alpha, colorFilter = tint)
     }
 }
 
