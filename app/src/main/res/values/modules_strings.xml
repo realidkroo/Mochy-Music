@@ -51,7 +51,7 @@
     <string name="module_pages">Pages</string>
     <string name="module_pages_off">Turn the module on to open its pages.</string>
     <string name="module_page_missing">This page isn\'t here anymore. Turn its module back on, or add the module again.</string>
-    <string name="module_servers_body">Each song plays from the first server that has it, starting with the ones you added. Found a Monochrome site that works? Add it here and Mochy finds the server it plays from.</string>
+    <string name="module_servers_body">dont report to us when not working, report to the server owner. PLEASE FTSOG</string>
     <string name="module_server_built_in">Built in</string>
     <string name="module_server_remove">Remove %1$s</string>
     <string name="module_server_add">Add a server</string>

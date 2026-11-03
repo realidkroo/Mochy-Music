@@ -334,7 +334,6 @@ fun MochySettingsScreen(navController: NavController) {
             .fillMaxSize()
             .background(Color.Black),
     ) {
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
