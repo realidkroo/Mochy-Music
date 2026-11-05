@@ -24,6 +24,7 @@ import com.mochyy.mochymusic.constants.SongSortType
 import com.mochyy.mochymusic.db.entities.Album
 import com.mochyy.mochymusic.db.entities.AlbumArtistMap
 import com.mochyy.mochymusic.db.entities.AlbumEntity
+import com.mochyy.mochymusic.db.entities.AlbumSongRow
 import com.mochyy.mochymusic.db.entities.AlbumWithSongs
 import com.mochyy.mochymusic.db.entities.Artist
 import com.mochyy.mochymusic.db.entities.ArtistEntity
@@ -224,7 +225,7 @@ interface DatabaseDao {
     fun likedSongsCount(): Flow<Int>
 
     @Transaction
-    @Query("SELECT song.* FROM song JOIN song_album_map ON song.id = song_album_map.songId WHERE song_album_map.albumId = :albumId")
+    @Query("SELECT song.* FROM song JOIN song_album_map ON song.id = song_album_map.songId WHERE song_album_map.albumId = :albumId ORDER BY song_album_map.`index`, song_album_map.rowid")
     fun albumSongs(albumId: String): Flow<List<Song>>
 
     @Transaction
@@ -1057,9 +1058,22 @@ interface DatabaseDao {
     @Query("SELECT * FROM album WHERE id = :id")
     fun album(id: String): Flow<Album?>
 
+    // The outer ORDER BY is needed because SQLite can flatten the sorted view's join.
     @Transaction
-    @Query("SELECT * FROM album WHERE id = :albumId")
-    fun albumWithSongs(albumId: String): Flow<AlbumWithSongs?>
+    @Query("""
+        SELECT album.*, song_album_map.songId AS mappedSongId
+        FROM album LEFT JOIN song_album_map ON album.id = song_album_map.albumId
+        WHERE album.id = :albumId
+        ORDER BY song_album_map.`index`, song_album_map.rowid
+    """)
+    fun albumSongRows(albumId: String): Flow<List<AlbumSongRow>>
+
+    fun albumWithSongs(albumId: String): Flow<AlbumWithSongs?> =
+        albumSongRows(albumId).map { rows ->
+            rows.firstOrNull()?.let { first ->
+                AlbumWithSongs(first.album, first.artists, rows.mapNotNull { it.song })
+            }
+        }
 
     @Transaction
     @Query("SELECT * FROM album_artist_map WHERE albumId = :albumId")
