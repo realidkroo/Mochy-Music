@@ -29,7 +29,7 @@
   <a href="https://github.com/realidkroo/mochy-music/blob/main/LICENSE">
     <img src="https://shieldcn.dev/github/license/realidkroo/mochy-music.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=b4befe" alt="License">
   </a>
-  <a href="https://github.com/realidkroo/mochy-music/blob/main/Roadmap.md">
+  <a href="https://www.figma.com/board/NWTElXRZ21LaaJotjuOe8D/Untitled?node-id=0-1&t=bMsq80RJXYybjXsh-1">
     <img src="https://shieldcn.dev/badge/Roadmap-View-313244.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=b4befe" alt="Roadmap">
   </a>
   <a href="https://discord.gg/4DAafDMxZb">
