@@ -2,7 +2,7 @@
 
 <div align="center">
 
-  <sub>Sleek modern cool music player for android, open source, packed with features and doesn’t collect ur data >_< oh and, still in beta!</sub>
+  <sub>What is Mochy Music? its a sleek modern cool music player for android, open source, packed with features and doesn’t collect ur data >_< !! oh and, still in beta! so please expect some bug :)</sub>
   <br/>
 <p align="center">
 <a href="https://trendshift.io/repositories/305501?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-305501" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/305501" alt="realidkroo%2FMochy-Music | Trendshift" width="250" height="55"/>
