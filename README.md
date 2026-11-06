@@ -57,6 +57,9 @@ Updating works the same way: install the new apk over the old one and your libra
 > [!TIP]
 > Only download Mochy from the releases page of this repo. A random mediafire or telegram link could be a modified app, and then your logins would not be safe, pls avoid those
 
+> [!BTW]
+> We support android 7 unofficially.
+
 ---
 
 ## Some Prview 
@@ -242,3 +245,4 @@ These are the open source apis and server we get gets its lyrics, streams and da
 <div align="center">
   <sub>star the repo plssss apreciate it!!!!!</sub>
 </div>
+

@@ -1382,24 +1382,38 @@ private fun PlayerSheet(
                                     }
                             )
                             Spacer(modifier = Modifier.height(7.dp))
-                            // Like (lyrics) and shuffle (queue) share a slot. Each is only composed
-                            // while its page is, so an invisible one never takes the other's taps.
-                            // Switching pages, one tucks back behind the chevron as the other opens
-                            // out from it.
+                            // The configured side action (Like by default) and shuffle (queue)
+                            // share a slot. Each is only composed while its page is, so an
+                            // invisible one never takes the other's taps.
                             Box {
                                 if (lyricsPageMounted) {
+                                    val lyricsSideAction = menuLayout.side
+                                    val lyricsSideActive = menuActionActive(lyricsSideAction)
+                                    val lyricsSideIsLike = lyricsSideAction ==
+                                        com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.LIKE
                                     PressScaleActionButton(
-                                        icon = if (trackInfo.liked) R.drawable.ic_untitled_heart else R.drawable.ic_untitled_heart_unfill,
-                                        tint = if (trackInfo.liked) Color.White else Color.White.copy(alpha = 0.85f),
-                                        containerColor = if (trackInfo.liked) Color.White.copy(alpha = 0.30f) else Color.White.copy(alpha = 0.15f),
+                                        icon = if (lyricsSideIsLike) {
+                                            if (trackInfo.liked) R.drawable.ic_untitled_heart else R.drawable.ic_untitled_heart_unfill
+                                        } else {
+                                            lyricsSideAction.icon
+                                        },
+                                        tint = if (lyricsSideActive) Color.White else Color.White.copy(alpha = 0.85f),
+                                        containerColor = if (lyricsSideActive) Color.White.copy(alpha = 0.30f) else Color.White.copy(alpha = 0.15f),
                                         onClick = {
-                                            likeBurst.likeFromButton(LikeSlot.LYRICS, trackInfo.liked, playerConnection::toggleLike)
+                                            if (lyricsSideIsLike) {
+                                                likeBurst.likeFromButton(LikeSlot.LYRICS, trackInfo.liked, playerConnection::toggleLike)
+                                            } else {
+                                                onMenuAction(lyricsSideAction)
+                                            }
                                         },
                                         hasShadow = false,
                                         modifier = Modifier
-                                            .likeButtonTarget(likeBurst, LikeSlot.LYRICS)
+                                            .then(
+                                                if (lyricsSideIsLike) Modifier.likeButtonTarget(likeBurst, LikeSlot.LYRICS)
+                                                else Modifier,
+                                            )
                                             .graphicsLayer {
-                                                if (likeMovesToLyrics()) {
+                                                if (lyricsSideIsLike && likeMovesToLyrics()) {
                                                     // the player's own like, moved here
                                                     val side = sideButtonRect
                                                     val chevron = lyricsChevronRect
