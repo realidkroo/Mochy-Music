@@ -8,7 +8,9 @@ import com.mochyy.mochymusic.module.ItemListModule
 import com.mochyy.mochymusic.module.LicenseServer
 import com.mochyy.mochymusic.module.LookModule
 import com.mochyy.mochymusic.module.LyricsModule
+import com.mochyy.mochymusic.module.MetadataModule
 import com.mochyy.mochymusic.module.MochyModule
+import com.mochyy.mochymusic.module.ModuleFields
 import com.mochyy.mochymusic.module.ModuleHost
 import com.mochyy.mochymusic.module.ModuleStorage
 import com.mochyy.mochymusic.module.ServerListModule
@@ -68,6 +70,8 @@ class ModuleSide : ModuleBridge {
         "signOut" -> JsonNull.also { module.signOut() }
         "choices" -> Wire.choicesToJson(module.choices)
         "look" -> Wire.mapToJson((module as? LookModule)?.look.orEmpty())
+        "fields" -> Wire.fieldsToJson((module as? ModuleFields)?.fields.orEmpty())
+        "onFields" -> JsonNull.also { (module as? ModuleFields)?.onFields(Wire.mapFrom(args["values"])) }
         "servers" -> Wire.serversToJson((module as? ServerListModule)?.servers.orEmpty())
         "removeServer" -> JsonNull.also { (module as? ServerListModule)?.removeServer(args.text("url").orEmpty()) }
         "items" -> Wire.itemsToJson((module as? ItemListModule)?.items.orEmpty())
@@ -103,6 +107,7 @@ class ModuleSide : ModuleBridge {
             Wire.resultToJson(result, ::licenseId)
         }
         "lyrics" -> JsonPrimitive((module as LyricsModule).lyrics(Wire.trackFrom(args.obj("track"))))
+        "metadata" -> Wire.metadataToJson((module as? MetadataModule)?.metadata(Wire.trackFrom(args.obj("track"))))
         "addServer" -> JsonPrimitive((module as ServerListModule).addServer(args.text("link").orEmpty())?.name)
         "addZip" -> Wire.addedToJson((module as ItemListModule).addZip(args.text("fileName").orEmpty(), data ?: ByteArray(0)))
         "addLink" -> Wire.addedToJson((module as ItemListModule).addLink(args.text("link").orEmpty()))

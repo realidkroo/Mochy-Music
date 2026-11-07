@@ -255,7 +255,7 @@ val DefaultBlurQuality: com.mochyy.mochymusic.constants.BlurQuality by lazy {
 }
 
 /** Lays its content out [margin] px bigger on every side, centred over the space it takes. */
-private fun Modifier.bleed(margin: () -> Int): Modifier = layout { measurable, constraints ->
+internal fun Modifier.bleed(margin: () -> Int): Modifier = layout { measurable, constraints ->
     val m = margin().coerceAtLeast(0)
     val width = if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth
     val height = if (constraints.hasBoundedHeight) constraints.maxHeight else constraints.minHeight

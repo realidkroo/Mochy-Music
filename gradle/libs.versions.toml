@@ -95,6 +95,8 @@ media3-cast = { module = "androidx.media3:media3-cast", version.ref = "media3" }
 media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
 media3-transformer = { module = "androidx.media3:media3-transformer", version.ref = "media3" }
 media3-effect = { module = "androidx.media3:media3-effect", version.ref = "media3" }
+# jellyfin's prebuilt ffmpeg audio decoder, google doesn't publish one; 1.6.1+2 is the build made against media3 1.7.1, bump it with media3
+media3-ffmpeg = { module = "org.jellyfin.media3:media3-ffmpeg-decoder", version = "1.6.1+2" }
 
 mediarouter = { module = "androidx.mediarouter:mediarouter", version.ref = "mediarouter" }
 cast-framework = { module = "com.google.android.gms:play-services-cast-framework", version.ref = "castFramework" }

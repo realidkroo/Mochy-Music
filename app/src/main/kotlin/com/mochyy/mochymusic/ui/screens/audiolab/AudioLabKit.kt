@@ -79,6 +79,7 @@ import com.mochyy.mochymusic.ui.component.LocalNavAnimatedContentScope
 import com.mochyy.mochymusic.ui.component.damageBoundary
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.flow.first
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 object LabColors {
     val Card = Color(0xFF1C1C1E)
@@ -352,7 +353,7 @@ private fun Modifier.combinedClickableCompat(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ): Modifier = this.then(
-    Modifier.combinedClickable(interactionSource = interaction, indication = null, onClick = onClick, onLongClick = onLongClick)
+    Modifier.combinedClickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick, onLongClick = onLongClick)
 )
 
 /** a track with a white pill that slides to the picked option */

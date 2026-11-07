@@ -103,6 +103,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
 import com.mochyy.mochymusic.ui.component.navigateToTab
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 private val SearchCategories = listOf(
     "All" to null,
@@ -375,7 +376,7 @@ fun OnlineSearchResult(
                             .size(20.dp)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
+                                indication = RemoteFocus,
                             ) { navController.navigateUp() },
                     )
                 },

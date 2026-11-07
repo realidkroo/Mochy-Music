@@ -52,6 +52,10 @@ private const val PageWipeFlat = 0.04f
 private const val PageWipeSettled = 0.001f
 private const val PageWipeHidden = 0.999f
 
+// in the wide layout the card beside the one in front sits back this dark, and its media drifts this far inside it
+private const val PeekDim = 0.5f
+private const val PeekMediaTravel = 0.12f
+
 // a feathered wipe sweeps across from the side the next page comes in on: the incoming page goes
 // 0 -> 100% behind the edge, the outgoing one 100 -> 0% just trailing it, so the seam only dims a
 // touch and never shows black. both are blurred by how far they are from settling, so the new
@@ -75,8 +79,14 @@ internal fun PageWipe(
     curve: () -> Float,
     blur: Boolean,
     modifier: Modifier = Modifier,
+    // the wide layout's cards sit side by side and slide, the next one peeking in, so there's nothing to wipe
+    peek: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
+    if (peek) {
+        PeekPage(pageOffset = pageOffset, modifier = modifier, content = content)
+        return
+    }
     val blurPx = if (blur) with(LocalDensity.current) { PageSwitchBlur.toPx() } else 0f
     val pageLayer = rememberGraphicsLayer()
     val sourceEdge = remember { PageWipeEdge() }
@@ -109,6 +119,22 @@ internal fun PageWipe(
         // a sibling of the recorded page, never inside it, so the recording can't contain itself
         PageWipeCopy(pageLayer = pageLayer, pageOffset = pageOffset, curve = curve, blurPx = blurPx)
     }
+}
+
+// a card of the wide hero: clipped to itself, darker the further it is from the front, read while drawing so a slide never recomposes it
+@Composable
+private fun PeekPage(pageOffset: () -> Float, modifier: Modifier, content: @Composable BoxScope.() -> Unit) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .clipToBounds()
+            .drawWithContent {
+                drawContent()
+                val d = abs(pageOffset()).coerceAtMost(1f)
+                if (d > PageWipeSettled) drawRect(Color.Black.copy(alpha = PeekDim * d))
+            },
+        content = content,
+    )
 }
 
 /** where the wipe's edge is on one page, worked out again each frame it moves */
@@ -241,7 +267,7 @@ private val FeatherEase = floatArrayOf(0f, 0.104f, 0.352f, 0.648f, 0.896f, 1f)
 
 // the slide itself, inside a pinned page: the media drifts the way it used to, zoomed by just
 // enough to keep its edges off screen, so it settles from a slight push-in
-internal fun Modifier.pageMediaDrift(pageOffset: () -> Float): Modifier = graphicsLayer {
+internal fun Modifier.pageMediaDrift(pageOffset: () -> Float, peek: Boolean = false): Modifier = if (peek) peekMediaDrift(pageOffset) else graphicsLayer {
     val d = pageOffset().coerceIn(-1f, 1f)
     val scale = 1f + 2f * PageMediaTravel * abs(d)
     scaleX = scale
@@ -251,8 +277,22 @@ internal fun Modifier.pageMediaDrift(pageOffset: () -> Float): Modifier = graphi
 
 // text drifts further than the cover and is gone by half way, so the outgoing and incoming
 // titles never sit on top of each other
-internal fun Modifier.pageTextDrift(pageOffset: () -> Float): Modifier = graphicsLayer {
+internal fun Modifier.pageTextDrift(pageOffset: () -> Float, peek: Boolean = false): Modifier = graphicsLayer {
     val d = pageOffset()
+    if (peek) {
+        // the peeking card keeps a faint hint of its title, the way the concept shows it
+        alpha = (1f - abs(d) * 0.75f).coerceIn(0f, 1f)
+        return@graphicsLayer
+    }
     translationX = d * size.width * (PageTextTravel + PageMediaTravel)
     alpha = (1f - abs(d) * 1.9f).coerceIn(0f, 1f)
+}
+
+// the wide hero's media lags a little behind its card as it slides, zoomed just enough to keep its edges inside the card
+private fun Modifier.peekMediaDrift(pageOffset: () -> Float): Modifier = graphicsLayer {
+    val d = pageOffset().coerceIn(-1f, 1f)
+    val scale = 1f + 2f * PeekMediaTravel * abs(d)
+    scaleX = scale
+    scaleY = scale
+    translationX = -d * size.width * PeekMediaTravel
 }

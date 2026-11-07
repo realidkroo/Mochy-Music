@@ -1,4 +1,4 @@
 {
-  "about": "The modules people can find under Settings, Modules, Find more sources. Each one is a link Mochy can add; docs/notes/modules.md says what that link has to answer.",
+  "about": "The modules people can find under Settings, Modules, Add a module. Each one is a link Mochy can add; modules/README.md says what that link has to answer.",
   "modules": []
 }

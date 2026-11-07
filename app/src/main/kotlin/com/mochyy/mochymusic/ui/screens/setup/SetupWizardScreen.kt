@@ -15,9 +15,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,7 +30,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -61,14 +58,12 @@ import com.mochyy.mochymusic.ui.screens.setup.onboarding.BehindScale
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.BlurCapability
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.BlurWarningPage
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.BrowserSpring
-import com.mochyy.mochymusic.ui.screens.setup.onboarding.BuildHomePage
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.CardInfo
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.DoneStep
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.HelloCardStep
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.ImportAskPage
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.ImportModePage
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.LastOnePage
-import com.mochyy.mochymusic.ui.screens.setup.onboarding.MinArtists
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.Onb
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.OnbButton
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.OnboardingBrowserSheet
@@ -84,21 +79,21 @@ import com.mochyy.mochymusic.viewmodels.OnboardingViewModel
 import com.mochyy.mochymusic.viewmodels.TransferStep
 import com.mochyy.mochymusic.viewmodels.TransferViewModel
 import com.mochyy.mochymusic.viewmodels.YouTubeSyncChoices
-import com.music.innertube.models.ArtistItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.backdropClick
 
 private enum class Step {
     Welcome, ImportAsk, ImportMode, Restoring, Providers, ProviderSetup, WhatToSync, SyncOptions,
-    Profile, Hello, BuildHome, BlurWarning, LastOne, Done,
+    Profile, Hello, BlurWarning, LastOne, Done,
 }
 
 /** pages that play once and move on by themselves, back never returns to them */
 private val AutoSteps = setOf(Step.Hello, Step.Done, Step.Restoring)
 
-/** the onboarding flow: welcome, import or sync, sign in, playlists, profile card, hello, artists, blur warning, last one, done */
+/** the onboarding flow: welcome, import or sync, sign in, playlists, profile card, hello, blur warning, last one, done */
 @Composable
 fun SetupWizardScreen(
     onComplete: (String, Uri?) -> Unit,
@@ -268,17 +263,6 @@ fun SetupWizardScreen(
         }
     }
 
-    // ---- artists ----
-    var artistQuery by rememberSaveable { mutableStateOf("") }
-    val pickedArtists = remember { mutableStateMapOf<String, ArtistItem>() }
-    val suggestions by vm.artistSuggestions.collectAsState()
-    val searchResults by vm.artistResults.collectAsState()
-    LaunchedEffect(step) { if (step == Step.BuildHome) vm.loadArtistSuggestions() }
-    LaunchedEffect(artistQuery) {
-        delay(350)
-        vm.searchArtists(artistQuery)
-    }
-
     // ---- settings the last pages flip ----
     val (disableBlur, onDisableBlurChange) = rememberPreference(DisableBlurKey, defaultValue = false)
     val (crossmixMode, onCrossmixModeChange) = rememberEnumPreference(CrossmixModeKey, defaultValue = CrossmixMode.AUTO_CROSSFADE)
@@ -286,7 +270,7 @@ fun SetupWizardScreen(
 
     val card = CardInfo(username = username, photo = profilePicUri, cardNumber = vm.cardNumber, joinedText = vm.joinedText)
 
-    fun afterHome(): Step = if (vm.blur?.verdict == BlurCapability.Verdict.Laggy) Step.BlurWarning else Step.LastOne
+    fun afterHello(): Step = if (vm.blur?.verdict == BlurCapability.Verdict.Laggy) Step.BlurWarning else Step.LastOne
 
     BackHandler(enabled = !browserWanted) {
         if (selectedUncroppedUri != null) selectedUncroppedUri = null else back()
@@ -449,27 +433,7 @@ fun SetupWizardScreen(
                             card = card,
                             onProbe = vm::onBlurProbe,
                             onFinished = {
-                                go(if (!vm.broughtMusicIn) Step.BuildHome else afterHome(), replaceCurrent = true)
-                            },
-                        )
-
-                        Step.BuildHome -> BuildHomePage(
-                            query = artistQuery,
-                            onQueryChange = { artistQuery = it },
-                            artists = (searchResults ?: suggestions).let { shown ->
-                                // picked ones stay visible even when a search doesn't include them
-                                (pickedArtists.values.filter { picked -> shown.none { it.id == picked.id } } + shown)
-                            },
-                            loading = suggestions.isEmpty() && searchResults == null,
-                            selected = pickedArtists.keys,
-                            onToggle = { artist ->
-                                if (artist.id in pickedArtists) pickedArtists.remove(artist.id) else pickedArtists[artist.id] = artist
-                            },
-                            onNext = {
-                                if (pickedArtists.size >= MinArtists) {
-                                    vm.saveArtists(pickedArtists.values.toList())
-                                    go(afterHome())
-                                }
+                                go(afterHello(), replaceCurrent = true)
                             },
                         )
 
@@ -507,11 +471,7 @@ fun SetupWizardScreen(
                         .fillMaxSize()
                         .graphicsLayer { alpha = browserPresence.value }
                         .background(Color.Black.copy(alpha = 0.45f))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = ::closeBrowser,
-                        ),
+                        .backdropClick(::closeBrowser),
                 )
                 OnboardingBrowserSheet(
                     service = session.service,

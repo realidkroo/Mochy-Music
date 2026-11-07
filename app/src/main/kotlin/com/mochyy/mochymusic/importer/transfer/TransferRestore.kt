@@ -12,6 +12,8 @@ import com.mochyy.mochymusic.MainActivity
 import com.mochyy.mochymusic.db.InternalDatabase
 import com.mochyy.mochymusic.markOnboardedOnThisInstall
 import com.mochyy.mochymusic.playback.MusicService
+import com.mochyy.mochymusic.playback.StoragePlaces
+import com.mochyy.mochymusic.playback.StoredKind
 import com.mochyy.mochymusic.utils.dataStore
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -72,9 +74,11 @@ object TransferRestore {
     // files first and the library last, so a stop halfway leaves an app that still starts and can import again
     private fun swapIn(context: Context, staging: File, ready: JSONObject) {
         moveFiles(context, File(staging, TransferArchive.FilesPrefix))
+        // the import's downloads land on the phone, so a card that held the old ones is let go
+        if (File(context.filesDir, StoredKind.Downloads.folder).exists()) StoragePlaces.resetToPhone(context, StoredKind.Downloads)
         File(staging, TransferArchive.MediaEntry).takeIf { it.exists() }?.let { media ->
             // the streaming cache's index lived in the old media database, so the cache starts over with the new one
-            File(context.filesDir, "exoplayer").deleteRecursively()
+            StoragePlaces.dir(context, StoredKind.SongCache).deleteRecursively()
             replaceDatabase(context.getDatabasePath(TransferArchive.MediaDatabaseName), media)
         }
         restorePrefs(context, File(staging, TransferArchive.PrefsPrefix))

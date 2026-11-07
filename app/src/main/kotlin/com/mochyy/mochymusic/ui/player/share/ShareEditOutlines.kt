@@ -53,6 +53,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** How the editor's boxes chase what they outline: quick, with a little give. */
 private val BoxSpring = spring<Rect>(dampingRatio = 0.72f, stiffness = 420f)
@@ -161,7 +162,7 @@ private fun TapArea(box: ChasingBox, pad: Float, interaction: MutableInteraction
                 layout(placeable.width, placeable.height) { placeable.place(r.left.roundToInt(), r.top.roundToInt()) }
             }
             .clip(RoundedCornerShape(16.dp))
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
     )
 }
 

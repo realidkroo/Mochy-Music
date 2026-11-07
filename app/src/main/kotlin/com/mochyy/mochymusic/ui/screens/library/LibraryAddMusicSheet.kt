@@ -61,6 +61,7 @@ import com.mochyy.mochymusic.ui.component.TopToaster
 import com.mochyy.mochymusic.ui.screens.search.SearchColors
 import com.mochyy.mochymusic.viewmodels.DeviceScan
 import com.mochyy.mochymusic.viewmodels.LibraryImportViewModel
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** A song in a picker sheet. */
 @Immutable
@@ -268,7 +269,7 @@ private fun PickerRow(song: PickerSong, checked: Boolean, onToggle: () -> Unit) 
             .clickable(
                 role = Role.Checkbox,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onToggle,
             )
             .padding(vertical = 2.dp),

@@ -75,6 +75,7 @@ import com.mochyy.mochymusic.ui.utils.resize
 import com.mochyy.mochymusic.viewmodels.CommunityPlaylistItem
 import com.mochyy.mochymusic.viewmodels.GenreViewModel
 import com.mochyy.mochymusic.ui.utils.stableStatusBars
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 private val HeaderHeight = 300.dp
 
@@ -446,7 +447,7 @@ private fun GenreTopBar(
                     .background(Color.White.copy(alpha = 0.10f))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
+                        indication = RemoteFocus,
                         onClick = onBack,
                     ),
                 contentAlignment = Alignment.Center,

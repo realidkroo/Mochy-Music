@@ -51,6 +51,7 @@ import com.mochyy.mochymusic.constants.ShowFormatSampleRateKey
 import com.mochyy.mochymusic.extensions.togglePlayPause
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.utils.rememberPreference
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // The Turntable frame's controls, at its sizes: four pills stacked on the right (like, back,
 // play/pause, forward) above the title row - the chevron on the left, the title and its format
@@ -112,7 +113,7 @@ fun TurntableControls(
                     .then(
                         if (onSongInfoClick != null) Modifier.clickable(
                             interactionSource = null,
-                            indication = null,
+                            indication = RemoteFocus,
                             onClick = onSongInfoClick,
                         ) else Modifier
                     ),
@@ -225,7 +226,7 @@ private fun PressScaleIcon(icon: Int, tint: Color, onClick: () -> Unit, modifier
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .fillMaxSize()
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
     ) {
         androidx.compose.foundation.Image(
             painter = painterResource(icon),
@@ -250,7 +251,7 @@ private fun ChevronButton(open: Boolean, hidden: Boolean, onClick: () -> Unit, m
     Box(
         modifier = modifier
             .size(ChevronSize)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -330,7 +331,7 @@ private fun TitleLines(mediaId: String, title: String, artist: String, modifier:
                     text = badge,
                     height = 18.dp,
                     modifier = if (onBadgeClick != null) {
-                        Modifier.clickable(interactionSource = null, indication = null, onClick = onBadgeClick)
+                        Modifier.clickable(interactionSource = null, indication = RemoteFocus, onClick = onBadgeClick)
                     } else Modifier,
                 )
             }

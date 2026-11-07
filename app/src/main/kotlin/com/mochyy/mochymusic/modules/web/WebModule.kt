@@ -1,4 +1,4 @@
-// a module added from a link: a service that answers search, stream and lyrics over plain http, no code of its own runs in mochy
+// a module added from a link: a service that answers search, stream, lyrics and song facts over plain http, no code of its own runs in mochy
 
 package com.mochyy.mochymusic.modules.web
 
@@ -11,7 +11,11 @@ import com.mochyy.mochymusic.module.HttpRequest
 import com.mochyy.mochymusic.module.LookModule
 import com.mochyy.mochymusic.module.LyricsModule
 import com.mochyy.mochymusic.module.MatchedTrack
+import com.mochyy.mochymusic.module.MetadataModule
+import com.mochyy.mochymusic.module.ModuleArt
 import com.mochyy.mochymusic.module.ModuleChoice
+import com.mochyy.mochymusic.module.ModuleField
+import com.mochyy.mochymusic.module.ModuleFields
 import com.mochyy.mochymusic.module.ModuleFeature
 import com.mochyy.mochymusic.module.ModuleHost
 import com.mochyy.mochymusic.module.ModuleInfo
@@ -22,9 +26,11 @@ import com.mochyy.mochymusic.module.SourceStream
 import com.mochyy.mochymusic.module.StreamFormat
 import com.mochyy.mochymusic.module.StreamOption
 import com.mochyy.mochymusic.module.TrackMatcher
+import com.mochyy.mochymusic.module.TrackMetadata
 import com.mochyy.mochymusic.module.TrackQuery
 import com.mochyy.mochymusic.modules.DeviceDecoders
 import com.mochyy.mochymusic.modules.skin.ModuleSkin
+import com.mochyy.mochymusic.modules.skin.SkinGlass
 import com.mochyy.mochymusic.modules.skin.SkinParser
 import com.mochyy.mochymusic.modules.skin.SkinSource
 import com.mochyy.mochymusic.modules.skin.appliedLook
@@ -46,7 +52,7 @@ internal class WebModule(
     private val resources: Resources,
     // the pictures and fonts a zip brought, when it came as one
     files: File? = null,
-) : SourceModule, LyricsModule, LookModule, SkinSource {
+) : SourceModule, LyricsModule, LookModule, MetadataModule, ModuleArt, ModuleFields, SkinSource {
 
     private val siteName = runCatching { URI(base).host }.getOrNull().orEmpty()
 
@@ -58,15 +64,32 @@ internal class WebModule(
         author = manifest.author,
     )
 
-    override val skin: ModuleSkin? = SkinParser.parse(info.id, info.name, manifest.player, manifest.font, manifest.pages, files, base)
+    override val skin: ModuleSkin? = SkinParser.parse(info.id, info.name, manifest.player, manifest.font, manifest.pages, files, base, manifest.actions, manifest.glass)
+
+    override val icon: String? = resolveModuleArt(manifest.icon, files, base)
+
+    override val banner: String? = resolveModuleArt(manifest.banner, files, base)
 
     override val adds: Set<ModuleFeature> = buildSet {
         if (manifest.playsSongs) add(ModuleFeature.AudioSource)
         if (manifest.hasLyrics) add(ModuleFeature.Lyrics)
-        if (manifest.look.isNotEmpty() || skin != null) add(ModuleFeature.Look)
+        if (manifest.hasMetadata) add(ModuleFeature.Metadata)
+        if (manifest.look.isNotEmpty() || skin != null || manifest.settings.any { it.changesLook }) add(ModuleFeature.Look)
     }
 
-    override val look: Map<String, String> = appliedLook(manifest.lookValues, skin)
+    // quality and atmos are the stream and mix choices for a module that plays songs, everything else is a field on its page
+    private val settings = ManifestSettings(manifest, skip = if (manifest.playsSongs) setOf(QualityKey, AtmosKey) else emptySet())
+
+    override val fields: List<ModuleField> get() = settings.fields
+
+    override fun onFields(values: Map<String, String>) {
+        settings.values = values
+    }
+
+    // the base look with whatever the picked settings lay over it, worked out again each time since a pick can change it
+    override val look: Map<String, String> get() = appliedLook(settings.look(manifest.lookValues), skin)
+
+    override val glass: SkinGlass? get() = settings.glass(skin?.glass)
 
     // read from resources each time so the chips follow the app's language
     override val choices: List<ModuleChoice>
@@ -204,10 +227,11 @@ internal class WebModule(
         return preferred.firstOrNull()?.track
     }
 
-    // the service's own defaults, then the picked quality and mix in the words the service declared for them
+    // the service's own settings as people set them (or their defaults), then the picked quality and mix in the words the service declared for them
     private fun paramsFor(tier: String, atmos: Boolean): String {
         val params = LinkedHashMap<String, String>()
         manifest.settings.forEach { setting -> setting.defaultValue?.takeIf { setting.key.isNotBlank() }?.let { params[setting.key] = it } }
+        params.putAll(settings.current().filterValues { it.isNotEmpty() })
         params[manifest.setting(QualityKey)?.key ?: QualityKey] = qualityValue(tier)
         val atmosKey = manifest.setting(AtmosKey)?.key ?: AtmosKey
         val mix = atmosValue(atmos)
@@ -331,18 +355,51 @@ internal class WebModule(
 
     override suspend fun lyrics(track: TrackQuery): String? {
         if (ModuleFeature.Lyrics !in adds) return null
-        val params = buildList {
-            add("title=${enc(track.title)}")
-            add("artist=${enc(track.artists.joinToString(", "))}")
-            track.album?.let { add("album=${enc(it)}") }
-            track.durationMs?.let { add("duration=${it / 1000}") }
-        }.joinToString("&")
-        val response = runCatching { host.http(HttpRequest("$base/lyrics?$params", headers = headers)) }.getOrNull()
+        val response = runCatching { host.http(HttpRequest("$base/lyrics?${songParams(track)}", headers = headers)) }.getOrNull()
         if (response == null || !response.ok) return null
         val answer = runCatching { json.parseToJsonElement(response.text) as? JsonObject }.getOrNull()
             ?: return response.text.takeIf { it.isNotBlank() && !it.trimStart().startsWith("{") }
         // timed lyrics first, plain ones when that's all there is
         return listOf("syncedLyrics", "lrc", "lyrics", "plainLyrics").firstNotNullOfOrNull { answer.string(it)?.takeIf(String::isNotBlank) }
+    }
+
+    // ---- song facts -----------------------------------------------------------------------------
+
+    override suspend fun metadata(track: TrackQuery): TrackMetadata? {
+        if (ModuleFeature.Metadata !in adds) return null
+        val response = runCatching { host.http(HttpRequest("$base/metadata?${songParams(track)}", headers = headers)) }.getOrNull()
+        if (response == null || !response.ok) return null
+        val o = runCatching { json.parseToJsonElement(response.text) as? JsonObject }.getOrNull() ?: return null
+        val found = TrackMetadata(
+            album = o.string("album"),
+            releaseDate = o.string("releaseDate") ?: o.string("released") ?: o.string("year"),
+            genres = o.list("genres").ifEmpty { listOfNotNull(o.string("genre")) },
+            writers = o.list("writers"),
+            producers = o.list("producers"),
+            label = o.string("label"),
+            about = o.string("about") ?: o.string("description"),
+            coverUrl = (o.string("coverUrl") ?: o.string("cover") ?: o.string("artwork"))?.takeIf { it.startsWith("https://") || it.startsWith("http://") },
+            isrc = o.string("isrc"),
+        )
+        // an answer with nothing in it is the same as not knowing the song
+        return found.takeIf { it != TrackMetadata() }
+    }
+
+    // what the song is, the way the lyrics and facts calls send it, followed by the module's own settings
+    private fun songParams(track: TrackQuery): String = buildList {
+        add("title=${enc(track.title)}")
+        add("artist=${enc(track.artists.joinToString(", "))}")
+        track.album?.let { add("album=${enc(it)}") }
+        track.durationMs?.let { add("duration=${it / 1000}") }
+        track.isrc?.let { add("isrc=${enc(it)}") }
+        settings.current().forEach { (key, value) -> if (value.isNotEmpty()) add("${enc(key)}=${enc(value)}") }
+    }.joinToString("&")
+
+    // a list of names, or one string with commas in it, the way services write them
+    private fun JsonObject.list(name: String): List<String> = when (val value = this[name]) {
+        is JsonArray -> value.mapNotNull { (it as? JsonPrimitive)?.contentOrNull?.takeIf(String::isNotBlank) }
+        is JsonPrimitive -> value.contentOrNull?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
+        else -> emptyList()
     }
 
     private fun markUnreachable(reason: String) {

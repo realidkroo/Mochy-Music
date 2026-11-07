@@ -286,6 +286,7 @@ internal fun VideoRegularLyrics(
                 frameWidth = frame.width.toPx(),
                 frameHeight = frame.height.toPx(),
                 paneWidth = frame.paneWidth.toPx(),
+                lineWidth = frame.lineWidth.toPx(),
                 startPad = RegularStartPad.toPx(),
                 endPad = RegularEndPad.toPx(),
                 bottom = RegularBottom.toPx(),
@@ -441,9 +442,9 @@ private fun BoxScope.RegularSlot(
 
 // the row is as wide as the pane, on its singer's side of the video
 private fun Modifier.regularPlace(alignment: LyricsAlignment, frame: VideoFrame): Modifier = when (alignment) {
-    LyricsAlignment.START -> this.padding(start = RegularStartPad).width(frame.paneWidth)
-    LyricsAlignment.END -> this.padding(start = frame.width - RegularEndPad - frame.paneWidth).width(frame.paneWidth)
-    LyricsAlignment.CENTER -> this.padding(start = (frame.width - frame.paneWidth) / 2).width(frame.paneWidth)
+    LyricsAlignment.START -> this.padding(start = RegularStartPad).width(frame.lineWidth)
+    LyricsAlignment.END -> this.padding(start = (frame.width - RegularEndPad - frame.lineWidth).coerceAtLeast(0.dp)).width(frame.lineWidth)
+    LyricsAlignment.CENTER -> this.padding(start = ((frame.width - frame.lineWidth) / 2).coerceAtLeast(0.dp)).width(frame.lineWidth)
 }
 
 // the bottom line's places in px, worked out once per size
@@ -451,6 +452,7 @@ private class RegularGeometry(
     val frameWidth: Float,
     val frameHeight: Float,
     val paneWidth: Float,
+    val lineWidth: Float,
     val startPad: Float,
     val endPad: Float,
     val bottom: Float,
@@ -461,8 +463,8 @@ private class RegularGeometry(
 
     fun rowLeft(alignment: LyricsAlignment): Float = when (alignment) {
         LyricsAlignment.START -> startPad
-        LyricsAlignment.END -> frameWidth - endPad - paneWidth
-        LyricsAlignment.CENTER -> (frameWidth - paneWidth) / 2f
+        LyricsAlignment.END -> frameWidth - endPad - lineWidth
+        LyricsAlignment.CENTER -> (frameWidth - lineWidth) / 2f
     }
 }
 

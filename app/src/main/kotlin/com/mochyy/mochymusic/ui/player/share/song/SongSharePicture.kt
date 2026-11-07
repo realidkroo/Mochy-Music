@@ -55,6 +55,7 @@ import com.mochyy.mochymusic.ui.player.share.cinematicTimings
 import com.mochyy.mochymusic.ui.player.share.drawMusicClouds
 import kotlin.math.PI
 import kotlin.math.ceil
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // the card's blur at full strength, in the picture's own units
 internal val MaxCardBlur = 26.dp
@@ -179,7 +180,7 @@ private fun BoxScope.CardSlot(
             .clip(shape)
             .then(
                 if (onCardTap != null) {
-                    Modifier.clickable(remember { MutableInteractionSource() }, indication = null, onClick = onCardTap)
+                    Modifier.clickable(remember { MutableInteractionSource() }, indication = RemoteFocus, onClick = onCardTap)
                 } else {
                     Modifier
                 },

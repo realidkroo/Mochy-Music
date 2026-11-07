@@ -89,6 +89,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
 import com.mochyy.mochymusic.ui.component.navigateToTab
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** set on the search page's entry to open its field with the keyboard up */
 private const val SearchFocusKey = "focusSearch"
@@ -287,7 +288,7 @@ fun SearchScreen(
                                 .size(20.dp)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
+                                    indication = RemoteFocus,
                                 ) {
                                     active = false
                                     focusManager.clearFocus()
@@ -307,7 +308,7 @@ fun SearchScreen(
                                 .size(20.dp)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
+                                    indication = RemoteFocus,
                                 ) { query = TextFieldValue("") },
                         )
                     }

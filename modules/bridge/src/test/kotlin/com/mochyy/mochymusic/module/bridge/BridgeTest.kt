@@ -175,4 +175,31 @@ class BridgeTest {
             assertTrue(e.message!!.contains("module API 2"))
         }
     }
+
+    @Test
+    fun settingsSongInfoPicturesAndItemStatusCross() = runBlocking {
+        val (module, _) = open(FakeRichModule::class.java.name)
+        assertEquals(setOf(ModuleFeature.Metadata), module.adds)
+        assertEquals("https://rich.example/icon.png", module.icon)
+        assertEquals("https://rich.example/banner.webp", module.banner)
+        assertEquals(listOf("region", "token"), module.fields.map { it.id })
+        assertEquals(com.mochyy.mochymusic.module.FieldKind.Select, module.fields[0].kind)
+        assertEquals(listOf("us", "jp"), module.fields[0].options.map { it.id })
+        assertEquals("Paste it", module.fields[1].hint)
+        module.onFields(mapOf("region" to "jp", "token" to "abc"))
+        val info = module.metadata(song)
+        assertEquals(listOf("Pop"), info?.genres)
+        assertEquals("jp", info?.label)
+        assertEquals("Says hi", info?.about)
+        val item = (module as ItemListModule).items.single()
+        assertEquals("https://rich.example/a.png", item.icon)
+        assertEquals(false, item.working)
+    }
+
+    @Test
+    fun aModuleWithoutSettingsHasNone() {
+        val (module, _) = open()
+        assertTrue(module.fields.isEmpty())
+        assertEquals(null, module.icon)
+    }
 }

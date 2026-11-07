@@ -65,6 +65,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import java.net.HttpURLConnection
 import java.net.URL
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 @Immutable
 private data class LeadDevEntry(
@@ -596,7 +597,7 @@ private fun AboutPillRow(text: String, onClick: () -> Unit) {
             .height(44.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(MenuRowSurface)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 18.dp),
     ) {
         Text(
@@ -621,7 +622,7 @@ private fun AboutCardButton(text: String, onClick: () -> Unit) {
             .height(54.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(MenuRowSurface)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 18.dp),
     ) {
         Text(
@@ -650,7 +651,7 @@ private fun PersonRow(
         modifier = Modifier
             .pressBounce(interaction, pressedScale = 0.98f)
             .fillMaxWidth()
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         GithubAvatar(
@@ -704,7 +705,7 @@ private fun AndMoreRow(
             .height(54.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(MenuRowSurface)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 16.dp),
     ) {
         Box(
@@ -744,7 +745,7 @@ private fun LicenseCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .background(MenuRowSurface)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 16.dp),
     ) {
         Column(modifier = Modifier.weight(1f)) {

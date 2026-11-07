@@ -238,7 +238,7 @@ private fun ToastPill(toast: TopToast) {
                     .clip(RoundedCornerShape(12.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
+                        indication = RemoteFocus,
                     ) {
                         TopToaster.dismiss(toast.id)
                         toast.onAction?.invoke()

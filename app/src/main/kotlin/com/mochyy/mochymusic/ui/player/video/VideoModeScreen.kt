@@ -62,6 +62,7 @@ import com.mochyy.mochymusic.ui.component.LocalPlayerBottomSheetState
 import com.mochyy.mochymusic.ui.component.PopupSheetHost
 import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.glassRoot
+import com.mochyy.mochymusic.constants.VideoModeUprightKey
 import com.mochyy.mochymusic.constants.VideoModeWholeVideoKey
 import com.mochyy.mochymusic.ui.menu.AddToPlaylistDialog
 import com.mochyy.mochymusic.ui.player.menu.LocalMenuSheetFloating
@@ -78,6 +79,7 @@ import com.mochyy.mochymusic.ui.player.styles.smooth
 import com.mochyy.mochymusic.ui.player.styles.turnFit
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.ui.utils.AppMotion
+import com.mochyy.mochymusic.ui.utils.isLandscapeWindow
 import com.mochyy.mochymusic.ui.utils.resize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -108,7 +110,7 @@ private const val PaneDragShare = 0.7f
 // a pull down this far on the video closes the player
 private val CloseDrag = 48.dp
 
-// the player turned sideways around the song's youtube video, its lyrics sliding in from the right
+// the player round the song's youtube video, its lyrics sliding in from the right; on a phone held upright it turns itself sideways unless rotated back
 @Composable
 fun VideoPlayerStyle(actions: StyleActions, modifier: Modifier = Modifier, preview: Boolean = false) {
     if (preview) VideoModePreview(modifier) else VideoModeScreen(actions, modifier)
@@ -163,22 +165,26 @@ private fun VideoModeScreen(actions: StyleActions, modifier: Modifier) {
     // collapsed, the mini player plays this same session; the mode only holds it while any of it shows
     val session = if (sheetShowing) video?.let { rememberYouTubeVideoSession(it.videoId) } else null
     if (session != null && video != null) DriveYouTubeVideo(session, video, running, ModeAutoCap)
-    // zoomed to fill by default; the menu's switch eases it out to the whole picture and back
+    // a window on its side needs no turn, the phone already did it; upright the mode turns itself unless its rotate button stood it up
+    val windowUpright = !isLandscapeWindow()
+    val (standUpright, onStandUpright) = rememberPreference(VideoModeUprightKey, defaultValue = false)
+    val turned = windowUpright && !standUpright
+    // zoomed to fill by default; the menu's switch eases it out to the whole picture and back, and stood upright it's always whole, a filled 16:9 would show a sliver
     val (wholeVideo) = rememberPreference(VideoModeWholeVideoKey, defaultValue = false)
     val fit = animateFloatAsState(
-        targetValue = if (wholeVideo) 1f else 0f,
+        targetValue = if (wholeVideo || (windowUpright && standUpright)) 1f else 0f,
         animationSpec = tween(FitMs, easing = FastOutSlowInEasing),
         label = "videoFit",
     )
 
     var showAddToPlaylist by remember { mutableStateOf(false) }
-    // the lyrics, the queue and the sheets in here fling the right way, though the whole frame is turned
-    com.mochyy.mochymusic.ui.player.styles.TurnedFlingFix()
+    // the lyrics, the queue and the sheets in here fling the right way while the whole frame is turned
+    com.mochyy.mochymusic.ui.player.styles.TurnedFlingFix(active = turned)
     // its own sheet host, inside the turned frame, so "add to playlist" opens the right way up
     val menuSheets = remember { PopupSheetState() }
 
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
-        VideoTurnFrame(modifier = Modifier.fillMaxSize()) {
+        VideoTurnFrame(turned = turned, modifier = Modifier.fillMaxSize()) {
             PopupSheetHost(states = listOf(menuSheets)) {
                 // every sheet the mode opens floats as a card the right way up, and never grows when scrolled
                 androidx.compose.runtime.CompositionLocalProvider(
@@ -202,6 +208,8 @@ private fun VideoModeScreen(actions: StyleActions, modifier: Modifier) {
                         controls = controls,
                         fit = { fit.value },
                         onClose = { sheet?.collapseSoft() },
+                        onRotate = if (windowUpright) { { onStandUpright(!standUpright) } } else null,
+                        onExitFullScreen = actions.onExitVideoMode,
                     )
                     if (state.menuOpen) {
                         VideoModeMenu(
@@ -252,6 +260,8 @@ private fun VideoModeLayout(
     controls: () -> Float,
     fit: () -> Float,
     onClose: () -> Unit,
+    onRotate: (() -> Unit)?,
+    onExitFullScreen: () -> Unit,
 ) {
     val sheet = LocalPlayerBottomSheetState.current
     val connection = LocalPlayerConnection.current
@@ -402,10 +412,13 @@ private fun VideoModeLayout(
                 controls = controls,
                 onClose = onClose,
                 onSongInfo = { state.songInfoOpen = true },
+                onRotate = onRotate,
+                onExitFullScreen = onExitFullScreen,
             )
             VideoTransport(state = state, controls = controls, isPlaying = isPlaying)
             VideoVolumeBar(state = state, controls = controls)
             VideoSeekRow(
+                frame = frame,
                 state = state,
                 controls = controls,
                 positionProvider = seekClock,
@@ -503,30 +516,42 @@ private fun Modifier.videoGestures(
 
 private enum class DragMode { NONE, UNDECIDED, PANE, COLLAPSE }
 
-// the frame turns into landscape when the mode comes up, the way the sideways styles turn; built on its first frames, turned once ready
+// turned, the frame lies in landscape on an upright window; it swings round whenever that changes, and on the way in fades up too (built on its first frames, turned once ready)
 @Composable
-private fun VideoTurnFrame(modifier: Modifier, content: @Composable () -> Unit) {
-    val turn = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        repeat(2) { withFrameNanos { } }
+private fun VideoTurnFrame(turned: Boolean, modifier: Modifier, content: @Composable () -> Unit) {
+    // the way it's laid out now; the swing starts from the other way and settles here
+    var shown by remember { mutableStateOf(turned) }
+    val turn = remember { Animatable(if (turned) 0f else 1f) }
+    var arriving by remember { mutableStateOf(turned) }
+    LaunchedEffect(turned) {
+        if (turned != shown) {
+            arriving = false
+            shown = turned
+            turn.snapTo(0f)
+        } else if (turn.value < 1f) {
+            repeat(2) { withFrameNanos { } }
+        } else {
+            return@LaunchedEffect
+        }
         turn.animateTo(1f, spring(dampingRatio = 0.74f, stiffness = 150f))
+        arriving = false
     }
     Box(
         modifier = modifier
-            .quarterTurn(true)
+            .quarterTurn(shown)
             .graphicsLayer {
                 val t = turn.value
                 if (t == 1f) return@graphicsLayer
-                // it arrives from upright, swinging clockwise into landscape
-                val angle = -90f * (1f - t)
+                // into landscape it swings clockwise from upright, back upright it swings the other way
+                val angle = (if (shown) -90f else 90f) * (1f - t)
                 rotationZ = angle
-                val scale = turnFit(size.width, size.height, 90f, angle) * (1f - 0.04f * sin01(t))
+                val scale = turnFit(size.width, size.height, if (shown) 90f else 0f, angle) * (1f - 0.04f * sin01(t))
                 scaleX = scale
                 scaleY = scale
                 // tipped back a touch mid-swing, so it turns in space rather than on glass
                 cameraDistance = 14f * density
                 rotationX = 9f * sin01(t)
-                alpha = smooth(t / 0.45f)
+                alpha = if (arriving) smooth(t / 0.45f) else 1f
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     val blur = 14.dp.toPx() * sin01(t)
                     renderEffect = if (blur > 0.5f && AppMotion.elementBlur) BlurEffect(blur, blur, TileMode.Clamp) else null

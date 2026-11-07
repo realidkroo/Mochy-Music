@@ -53,6 +53,7 @@ import com.mochyy.mochymusic.lyrics.LyricsAutoSync
 import com.mochyy.mochymusic.lyrics.LyricsUtils
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** The slider and the typed value both stop here: 10 seconds either way, shown in ms. */
 private const val MaxOffsetMs = 10_000
@@ -212,7 +213,7 @@ private fun AutoSyncStatus(state: LyricsAutoSync.State?, timed: Boolean, onUndo:
                 .padding(top = 6.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
+                    indication = RemoteFocus,
                     onClick = { onUndo(state.previousOffsetMs) },
                 ),
         )
@@ -284,7 +285,7 @@ private fun NudgeLabel(symbol: String, onClick: () -> Unit) {
         modifier = Modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(horizontal = 8.dp),

@@ -166,6 +166,8 @@ private class MorphEndpoints(
     val miniPlayY: Dp,
     val miniSkipX: Dp,
     val miniSkipY: Dp,
+    // the wide mini player's previous button, left of play; worked out on the phone too but never drawn there
+    val miniPrevX: Dp,
     val miniTextX: Dp,
     val miniTextWidth: Dp,
     val lyricsArtSize: Dp,
@@ -196,6 +198,7 @@ private class MorphEndpointsPx(
     val miniPlayYPx: Float,
     val miniSkipXPx: Float,
     val miniSkipYPx: Float,
+    val miniPrevXPx: Float,
     val miniTextXPx: Float,
     val miniTextWidthPx: Float,
     val lyricsArtSizePx: Float,
@@ -232,7 +235,7 @@ private class MorphEndpointsPx(
     }
 }
 
-private enum class MorphElement { ART, PLAY, SKIP, TEXT, BACKDROP }
+private enum class MorphElement { ART, PLAY, SKIP, PREVIOUS, TEXT, BACKDROP }
 
 private const val PILL_FADE_END = 0.15f
 
@@ -354,6 +357,11 @@ private fun Modifier.morphLayout(
             val skipY = lerpF(endpointsPx.miniSkipYPx, endpointsPx.fullPlayYPx, p)
             floatArrayOf(skipX, skipY, -1f, -1f)
         }
+        MorphElement.PREVIOUS -> {
+            val previousX = lerpF(endpointsPx.miniPrevXPx, endpointsPx.fullPlayXPx - 80f, p)
+            val previousY = lerpF(endpointsPx.miniSkipYPx, endpointsPx.fullPlayYPx, p)
+            floatArrayOf(previousX, previousY, -1f, -1f)
+        }
         MorphElement.TEXT -> {
 
             val textX = lerpF(endpointsPx.miniTextXPx, endpointsPx.fullTextXPx, p) + hOffset
@@ -447,8 +455,10 @@ fun MorphingCover(
     // the new flagship's sharp cover fades out at its bottom into a blurred copy of itself behind it
     val fadeCoverEdge = (!coverBlur || frostedCover) && coverStyle == PlayerCoverStyle.EDGE_TO_EDGE
 
-    val playVideoPref by rememberPreference(PlayVideoBackgroundKey, defaultValue = false)
-    val disableVideoAutoplay by rememberPreference(DisableVideoAutoplayKey, defaultValue = false)
+    // data saver turns video backgrounds and auto-playing videos off; the full video mode still plays when asked for
+    val dataSaving = com.mochyy.mochymusic.utils.rememberDataSaverActive()
+    val playVideoPref = rememberPreference(PlayVideoBackgroundKey, defaultValue = false).value && !dataSaving
+    val disableVideoAutoplay = rememberPreference(DisableVideoAutoplayKey, defaultValue = false).value || dataSaving
     val currentMetadata by (playerConnection?.mediaMetadata ?: remember { kotlinx.coroutines.flow.MutableStateFlow(null) })
         .collectAsState()
     // a track that is a video itself (a music video or live row, the Videos search tab) plays that
@@ -489,24 +499,28 @@ fun MorphingCover(
         label = "miniArtWidth"
     )
 
-    val endpoints = remember(maxWidth, maxHeight, statusBarTop, coverStyle, animatedMiniArtWidth) {
+    // where the pill sits across the screen: the phone's full width, or the wide bar's left part
+    val pillFrame = com.mochyy.mochymusic.ui.component.LocalMiniPillFrame.current
+    val endpoints = remember(maxWidth, maxHeight, statusBarTop, coverStyle, animatedMiniArtWidth, pillFrame) {
         val miniHeight = 64.dp
         val miniArtWidth = animatedMiniArtWidth
         val miniArtHeight = 48.dp
         // 8dp in from the pill's edge, as from its top and bottom, so the cover lines up with the
         // nav bar's first tab highlight right under it
-        val miniArtX = 32.dp
+        val miniArtX = pillFrame.start + 8.dp
         val miniArtY = (miniHeight - miniArtHeight) / 2
 
         val miniPlaySize = 36.dp
         val miniSkipSize = 36.dp
-        val miniSkipX = maxWidth - 36.dp - miniSkipSize
+        val miniSkipX = maxWidth - pillFrame.end - 12.dp - miniSkipSize
         val miniSkipY = (miniHeight - miniSkipSize) / 2
         val miniPlayX = miniSkipX - 8.dp - miniPlaySize
         val miniPlayY = (miniHeight - miniPlaySize) / 2
+        val miniPrevX = miniPlayX - 8.dp - miniSkipSize
 
         val miniTextX = miniArtX + miniArtWidth + 12.dp
-        val miniTextWidth = (miniPlayX - 10.dp - miniTextX).coerceAtLeast(0.dp)
+        val firstButtonX = if (pillFrame.withPrevious) miniPrevX else miniPlayX
+        val miniTextWidth = (firstButtonX - 10.dp - miniTextX).coerceAtLeast(0.dp)
 
         val artBox = coverArtBox(coverStyle, maxWidth, maxHeight, statusBarTop)
 
@@ -519,6 +533,7 @@ fun MorphingCover(
             miniPlayY = miniPlayY,
             miniSkipX = miniSkipX,
             miniSkipY = miniSkipY,
+            miniPrevX = miniPrevX,
             miniTextX = miniTextX,
             miniTextWidth = miniTextWidth,
 
@@ -552,6 +567,7 @@ fun MorphingCover(
                 miniPlayYPx = endpoints.miniPlayY.toPx(),
                 miniSkipXPx = endpoints.miniSkipX.toPx(),
                 miniSkipYPx = endpoints.miniSkipY.toPx(),
+                miniPrevXPx = endpoints.miniPrevX.toPx(),
                 miniTextXPx = endpoints.miniTextX.toPx(),
                 miniTextWidthPx = endpoints.miniTextWidth.toPx(),
                 lyricsArtSizePx = endpoints.lyricsArtSize.toPx(),
@@ -1137,6 +1153,10 @@ fun MorphingCover(
             endpointsPx = endpointsPx,
         )
 
+        if (pillFrame.withPrevious) {
+            MiniPreviousButton(progressProvider = progressProvider, endpointsPx = endpointsPx, size = miniPlaySize)
+        }
+
         Box(
             modifier = Modifier
                 .morphLayout(
@@ -1209,6 +1229,40 @@ fun MorphingCover(
             ) {
                 AnimatedSkipGlyph(cycle = skipCycle, backwards = false, color = MaterialTheme.colorScheme.onSurface, width = MiniSkipWidth)
             }
+        }
+    }
+}
+
+// the wide mini player's previous button, fading and growing away with the open like play and next
+@Composable
+private fun MiniPreviousButton(progressProvider: () -> Float, endpointsPx: MorphEndpointsPx, size: Dp) {
+    val playerConnection = LocalPlayerConnection.current
+    val scope = rememberCoroutineScope()
+    val cycle = remember { SkipCycleState() }
+    Box(
+        modifier = Modifier
+            .morphLayout(
+                progressProvider = progressProvider,
+                horizontalOffsetProvider = { 0f },
+                endpointsPx = endpointsPx,
+                element = MorphElement.PREVIOUS,
+            )
+            .requiredSize(size)
+            .graphicsLayer {
+                val p = progressProvider()
+                val scale = 1f + p
+                scaleX = scale
+                scaleY = scale
+                alpha = (1f - (p / 0.5f)).coerceIn(0f, 1f)
+            }
+    ) {
+        MiniPlayerButton(
+            onClick = {
+                scope.launch { cycle.step() }
+                playerConnection?.seekToPrevious()
+            },
+        ) {
+            AnimatedSkipGlyph(cycle = cycle, backwards = true, color = MaterialTheme.colorScheme.onSurface, width = MiniSkipWidth)
         }
     }
 }
@@ -1722,9 +1776,6 @@ private class SaturationFilterCache {
     }
 }
 
-/** How far in from each side the sheet's clip sits as the mini player (BottomSheet's pill branch). */
-private val SheetPillInset = 24.dp
-
 /** The backdrop over the opening sheet is solid from this progress on, the sheet still little more than the pill. */
 private const val BackdropSolidAt = 0.18f
 
@@ -1735,23 +1786,22 @@ private const val BackdropSolidAt = 0.18f
 private const val PillGlassUnmountAbove = 0.21f
 private const val PillGlassMountBelow = 0.19f
 
+// in the wide bar the mini player's own glass is all the way in by this much of the open
+private const val MergedGlassInBy = 0.06f
+
 private fun sheetBackdropAlpha(p: Float): Float =
     FastOutSlowInEasing.transform((p / BackdropSolidAt).coerceIn(0f, 1f))
 
-/**
- * Lays its content out over the shape the sheet is clipped to at [progressProvider] (BottomSheet's
- * pill branch): [insetPx] in from each side and the mini player's height while collapsed, the
- * whole screen once open. Rounded outward, so no hairline of the shape is ever left uncovered.
- */
+// lays its content over the shape the sheet is clipped to (BottomSheet's pill branch): the pill frame's insets and the mini player's height collapsed, the whole screen open, rounded outward so no hairline is left uncovered
 private fun Modifier.sheetShapeLayout(
     progressProvider: () -> Float,
     endpointsPx: MorphEndpointsPx,
-    insetPx: Float,
+    startPx: Float,
+    endPx: Float,
 ) = this.layout { measurable, constraints ->
     val p = progressProvider()
-    val inset = insetPx * (1f - p)
-    val left = kotlin.math.floor(inset).toInt()
-    val right = kotlin.math.ceil(endpointsPx.fullWidthPx - inset).toInt()
+    val left = kotlin.math.floor(startPx * (1f - p)).toInt()
+    val right = kotlin.math.ceil(endpointsPx.fullWidthPx - endPx * (1f - p)).toInt()
     val height = kotlin.math.ceil(lerpF(endpointsPx.miniHeightPx, endpointsPx.fullHeightPx, p)).toInt()
     val placeable = measurable.measure(
         Constraints.fixed((right - left).coerceAtLeast(1), height.coerceAtLeast(1))
@@ -1776,11 +1826,15 @@ private fun SheetPillGlass(
     val glassState = LocalGlassState.current ?: remember { GlassState() }
     // outside the mount check, so the wash keeps its place while the glass comes and goes
     val accentWash = com.mochyy.mochymusic.ui.component.rememberChromeAccentWash()
+    val pillFrame = com.mochyy.mochymusic.ui.component.LocalMiniPillFrame.current
+    // at rest in the wide bar the bar's own glass lies under the mini player, so this one only comes in as the player opens
+    val merged = pillFrame.merged
     val mountedHolder = remember { booleanArrayOf(true) }
-    val mounted by remember {
+    val mounted by remember(merged) {
         derivedStateOf {
             val progress = progressProvider()
             val next = when {
+                merged && progress <= 0f -> false
                 progress < PillGlassMountBelow -> true
                 progress > PillGlassUnmountAbove -> false
                 else -> mountedHolder[0]
@@ -1790,9 +1844,18 @@ private fun SheetPillGlass(
         }
     }
     if (!mounted) return
-    val insetPx = with(LocalDensity.current) { SheetPillInset.toPx() }
+    val density = LocalDensity.current
+    val startPx = with(density) { pillFrame.start.toPx() }
+    val endPx = with(density) { pillFrame.end.toPx() }
     // the same frosted glass as the nav bar; the sheet's clip trims the margin it blurs past its edges
-    Box(modifier = Modifier.sheetShapeLayout(progressProvider, endpointsPx, insetPx)) {
+    Box(
+        modifier = Modifier
+            .sheetShapeLayout(progressProvider, endpointsPx, startPx, endPx)
+            .then(
+                if (merged) Modifier.graphicsLayer { alpha = smoothstep(progressProvider() / MergedGlassInBy) }
+                else Modifier
+            ),
+    ) {
         FrostedChromeGlass(
             state = glassState,
             pureBlack = pureBlack,
@@ -1949,6 +2012,8 @@ private fun CoverCanvasLayer(
 
         val connectivityManager = context.getSystemService<android.net.ConnectivityManager>()
         if (canvasWifiOnly && connectivityManager?.isActiveNetworkMetered == true) return@LaunchedEffect
+        // data saver keeps the cover still, a canvas is a video loop
+        if (com.mochyy.mochymusic.utils.DataSaver.isActive(context)) return@LaunchedEffect
 
         val cached = CanvasArtworkPlaybackCache.get(mediaId)
         if (cached != null) {

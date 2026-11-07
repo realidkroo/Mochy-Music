@@ -15,6 +15,15 @@ import com.mochyy.mochymusic.db.entities.Song
 import com.mochyy.mochymusic.playback.CachedSongs
 import com.mochyy.mochymusic.playback.DownloadUtil
 import com.mochyy.mochymusic.playback.ExoDownloadService
+import com.mochyy.mochymusic.playback.DownloadExporter
+import com.mochyy.mochymusic.playback.ExportChoice
+import com.mochyy.mochymusic.playback.ExportStep
+import com.mochyy.mochymusic.playback.MoveStep
+import com.mochyy.mochymusic.playback.StorageMover
+import com.mochyy.mochymusic.playback.StoragePlace
+import com.mochyy.mochymusic.playback.StoragePlaces
+import com.mochyy.mochymusic.playback.StoredKind
+import com.mochyy.mochymusic.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -33,10 +42,22 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 
-/** How much room Mochy takes, in the four parts the Storage page shows, and the phone around it. */
+/** one drive mochy keeps things on, for its own overall card */
+data class DriveUsage(
+    val label: String,
+    val isPhone: Boolean,
+    val total: Long,
+    val free: Long,
+    /** what mochy has on this drive */
+    val mochy: Long,
+) {
+    val othersUsed: Long get() = (total - free - mochy).coerceAtLeast(0L)
+}
+
+/** How much room Mochy takes, in the four parts the Storage page shows, and every drive it sits on. */
 data class StorageUsage(
-    val deviceTotal: Long,
-    val deviceFree: Long,
+    /** the phone first, then any memory card holding downloads or the cache */
+    val drives: List<DriveUsage>,
     /** songs streamed and kept for next time, cover pictures, and other throwaway files */
     val cache: Long,
     /** downloaded songs and the covers saved for local files */
@@ -46,7 +67,7 @@ data class StorageUsage(
     val appData: Long,
 ) {
     val mochy: Long get() = cache + downloads + database + appData
-    val othersUsed: Long get() = (deviceTotal - deviceFree - mochy).coerceAtLeast(0L)
+    val phone: DriveUsage get() = drives.first()
 }
 
 /** A finished download, with what it costs on the phone. */
@@ -57,6 +78,13 @@ data class DownloadedSong(
     val downloadedAt: Long,
 )
 
+/** the drives one kind of folder could go to, where it is now, and how much a move would copy */
+data class PlaceChoice(
+    val places: List<StoragePlace>,
+    val current: StoragePlace,
+    val bytesToMove: Long,
+)
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class StorageViewModel @Inject constructor(
@@ -64,7 +92,12 @@ class StorageViewModel @Inject constructor(
     private val database: MusicDatabase,
     private val cachedSongs: CachedSongs,
     private val downloadUtil: DownloadUtil,
+    private val mover: StorageMover,
+    private val exporter: DownloadExporter,
 ) : ViewModel() {
+
+    val moveStep: StateFlow<MoveStep> = mover.step
+    val exportStep: StateFlow<ExportStep> = exporter.step
 
     private val _usage = MutableStateFlow<StorageUsage?>(null)
     val usage: StateFlow<StorageUsage?> = _usage.asStateFlow()
@@ -112,6 +145,19 @@ class StorageViewModel @Inject constructor(
         delay(800)
     }
 
+    /** the drives on offer for [kind], read off the main thread since it measures the folder */
+    suspend fun placeChoice(kind: StoredKind): PlaceChoice = withContext(Dispatchers.IO) {
+        PlaceChoice(StoragePlaces.places(context), StoragePlaces.placeOf(context, kind), mover.bytesToMove(kind))
+    }
+
+    fun move(kind: StoredKind, to: StoragePlace) = mover.move(kind, to)
+
+    fun clearMoveFailure() = mover.clearFailure()
+
+    fun export(tree: android.net.Uri, choice: ExportChoice) = exporter.start(tree, choice)
+
+    fun clearExport() = exporter.clear()
+
     private fun runBusy(block: suspend () -> Unit) {
         if (_busy.value) return
         _busy.value = true
@@ -128,22 +174,46 @@ class StorageViewModel @Inject constructor(
     private fun readUsage(): StorageUsage {
         val stat = StatFs(Environment.getDataDirectory().path)
         val dataDir = context.dataDir
-        val songCache = context.filesDir.resolve("exoplayer")
-        val downloadDir = context.filesDir.resolve("download")
+        val songCacheDir = StoragePlaces.dir(context, StoredKind.SongCache)
+        val downloadDir = StoragePlaces.dir(context, StoredKind.Downloads)
         val localArtwork = context.filesDir.resolve("local_artwork")
         val databases = context.getDatabasePath("x").parentFile
 
-        val cache = sizeOf(songCache) + sizeOf(context.cacheDir) + sizeOf(context.codeCacheDir)
-        val downloads = sizeOf(downloadDir) + sizeOf(localArtwork)
+        val songCache = sizeOf(songCacheDir)
+        val downloadedSongs = sizeOf(downloadDir)
+        val cache = songCache + sizeOf(context.cacheDir) + sizeOf(context.codeCacheDir)
+        val downloads = downloadedSongs + sizeOf(localArtwork)
         val db = sizeOf(databases)
-        // the data folder holds all of the above too, so they come off before the rest is counted
-        val rest = (sizeOf(dataDir) - cache - downloads - db).coerceAtLeast(0L)
+        // only what sits in the data folder comes off it before the rest is counted, a folder on a card was never in it
+        val onCards = listOf(songCacheDir to songCache, downloadDir to downloadedSongs).filter { (dir, _) -> dir.parentFile != context.filesDir }
+        val rest = (sizeOf(dataDir) - (cache + downloads - onCards.sumOf { it.second }) - db).coerceAtLeast(0L)
         val apk = context.applicationInfo.run {
             (listOf(sourceDir) + splitSourceDirs.orEmpty()).sumOf { File(it).length() }
         }
+        val total = cache + downloads + db + rest + apk
+        val phone = DriveUsage(
+            label = context.getString(R.string.storage_place_phone),
+            isPhone = true,
+            total = stat.totalBytes,
+            free = stat.availableBytes,
+            mochy = total - onCards.sumOf { it.second },
+        )
+        // a card holding both downloads and the cache gets one card on the page, not two
+        val cards = StoredKind.entries
+            .map { StoragePlaces.placeOf(context, it) }
+            .filter { !it.isPhone }
+            .distinctBy { it.root }
+            .map { place ->
+                DriveUsage(
+                    label = place.label,
+                    isPhone = false,
+                    total = place.total,
+                    free = place.free,
+                    mochy = onCards.filter { (dir, _) -> dir.parentFile == place.root }.sumOf { it.second },
+                )
+            }
         return StorageUsage(
-            deviceTotal = stat.totalBytes,
-            deviceFree = stat.availableBytes,
+            drives = listOf(phone) + cards,
             cache = cache,
             downloads = downloads,
             database = db,

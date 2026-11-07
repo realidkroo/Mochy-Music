@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // the look both info sheets share, drawn from the about song and stream info mocks
 
@@ -169,7 +170,7 @@ internal fun InfoPill(text: String, filled: Boolean, onClick: () -> Unit, enable
             .clickable(
                 enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(horizontal = 14.dp),

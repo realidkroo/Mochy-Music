@@ -14,6 +14,9 @@ import com.mochyy.mochymusic.module.DiagnosticStep
 import com.mochyy.mochymusic.module.ItemListModule
 import com.mochyy.mochymusic.module.ItemProblem
 import com.mochyy.mochymusic.module.ItemsAdded
+import com.mochyy.mochymusic.module.LyricsModule
+import com.mochyy.mochymusic.module.MetadataModule
+import com.mochyy.mochymusic.module.ModuleFeature
 import com.mochyy.mochymusic.module.ModuleItem
 import com.mochyy.mochymusic.module.ModuleServer
 import com.mochyy.mochymusic.module.ResolveResult
@@ -25,6 +28,8 @@ import com.mochyy.mochymusic.modules.CatalogModule
 import com.mochyy.mochymusic.modules.ModuleCatalog
 import com.mochyy.mochymusic.modules.ModuleRegistry
 import com.mochyy.mochymusic.modules.SourceModules
+import com.music.innertube.YouTube
+import com.music.innertube.models.SongItem
 import org.json.JSONObject
 import com.mochyy.mochymusic.playback.custom.WidevineDrm
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,7 +42,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-/** The Modules settings: each module's account, switch, choices, its playback test, and adding new ones. */
+/** the modules settings: each module's account, switch, choices and settings, its test, ordering, and adding new ones */
 @HiltViewModel
 class ModulesViewModel @Inject constructor(
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
@@ -92,6 +97,46 @@ class ModulesViewModel @Inject constructor(
     fun setEnabled(id: String, on: Boolean) = modules.setEnabled(id, on)
 
     fun setPick(id: String, choiceId: String, optionId: String) = modules.setPick(id, choiceId, optionId)
+
+    /** one of the module's own settings; a look that's on changes with it */
+    fun setField(id: String, fieldId: String, value: String) = registry.setField(id, fieldId, value)
+
+    /** a section of the modules page dragged into a new order; songs then play from the modules in that order too */
+    fun reorder(ids: List<String>, looks: Boolean) {
+        val all = entries.value
+        val others = all.filter { it.id !in ids }.map { it.id }
+        registry.setOrder(if (looks) others + ids else ids + others)
+        modules.setVisibleOrder(ids.filter { id -> all.firstOrNull { it.id == id }?.adds(ModuleFeature.AudioSource) == true })
+    }
+
+    // ---- the test's song search ----
+
+    private val _found = MutableStateFlow<List<SongItem>>(emptyList())
+    val found: StateFlow<List<SongItem>> = _found.asStateFlow()
+
+    private val _searching = MutableStateFlow(false)
+    val searching: StateFlow<Boolean> = _searching.asStateFlow()
+
+    private var searchJob: Job? = null
+
+    /** looks songs up on youtube music to test the module with, the latest query wins */
+    fun searchSongs(query: String) {
+        searchJob?.cancel()
+        if (query.isBlank()) {
+            _found.value = emptyList()
+            _searching.value = false
+            return
+        }
+        searchJob = viewModelScope.launch {
+            _searching.value = true
+            kotlinx.coroutines.delay(350)
+            val items = withContext(Dispatchers.IO) {
+                YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).getOrNull()?.items.orEmpty().filterIsInstance<SongItem>().take(8)
+            }
+            _found.value = items
+            _searching.value = false
+        }
+    }
 
     fun signOut(id: String) {
         registry.module(id)?.signOut()
@@ -246,15 +291,23 @@ class ModulesViewModel @Inject constructor(
 
     suspend fun catalog(): Result<List<CatalogModule>> = moduleCatalog.load()
 
-    /** the module's own steps, then whether this phone's Widevine actually gets a license */
+    /** everything the module adds, tried with [track]: its song (with the license and a real decode), its lyrics, its song info */
     fun runTest(id: String, track: TrackQuery) {
-        val module = modules.module(id) ?: return
+        val any = registry.module(id) ?: return
         testJob?.cancel()
         _steps.value = emptyList()
         _testing.value = true
         testJob = viewModelScope.launch {
+            if (ModuleFeature.Lyrics in any.adds && any is LyricsModule) testLyrics(any, track)
+            if (ModuleFeature.Metadata in any.adds && any is MetadataModule) testMetadata(any, track)
+            val module = modules.module(id)
+            if (module == null) {
+                _testing.value = false
+                return@launch
+            }
+            // the picks a song really plays with, so data saver's lighter stream is what gets tested
             val result = withContext(Dispatchers.IO) {
-                runCatching { module.diagnose(track, modules.picks(id)) { report(it) } }
+                runCatching { module.diagnose(track, modules.playbackPicks(id, module)) { report(it) } }
                     .getOrElse { e ->
                         report(DiagnosticStep("Error", false, e.message ?: e.javaClass.simpleName))
                         null
@@ -289,6 +342,44 @@ class ModulesViewModel @Inject constructor(
             modules.refresh()
             _testing.value = false
         }
+    }
+
+    private suspend fun testLyrics(module: LyricsModule, track: TrackQuery) {
+        report(DiagnosticStep(StepLyrics, null, "Asking ${module.info.name} for the lyrics…"))
+        val lyrics = withContext(Dispatchers.IO) { runCatching { module.lyrics(track) } }
+        report(
+            lyrics.fold(
+                onSuccess = { text ->
+                    val lines = text?.lines()?.map { it.replace(LrcTime, "").trim() }?.filter { it.isNotEmpty() }.orEmpty()
+                    val timed = text?.let { LrcTime.containsMatchIn(it) } == true
+                    if (lines.isEmpty()) DiagnosticStep(StepLyrics, false, "No lyrics for “${track.title}”")
+                    else DiagnosticStep(StepLyrics, true, "${lines.size} ${if (timed) "timed" else "plain"} lines · “${lines.first()}”")
+                },
+                onFailure = { DiagnosticStep(StepLyrics, false, it.message ?: it.javaClass.simpleName) },
+            )
+        )
+    }
+
+    private suspend fun testMetadata(module: MetadataModule, track: TrackQuery) {
+        report(DiagnosticStep(StepInfo, null, "Asking ${module.info.name} about the song…"))
+        val found = withContext(Dispatchers.IO) { runCatching { module.metadata(track) } }
+        report(
+            found.fold(
+                onSuccess = { info ->
+                    if (info == null) return@fold DiagnosticStep(StepInfo, false, "Nothing about “${track.title}”")
+                    val facts = listOfNotNull(
+                        info.genres.firstOrNull(),
+                        info.releaseDate,
+                        info.album,
+                        info.writers.takeIf { it.isNotEmpty() }?.let { "written by ${it.joinToString(", ")}" },
+                        info.label,
+                        info.about?.let { "says what it's about" },
+                    )
+                    DiagnosticStep(StepInfo, true, facts.joinToString(" · ").ifBlank { "An answer with nothing in it" })
+                },
+                onFailure = { DiagnosticStep(StepInfo, false, it.message ?: it.javaClass.simpleName) },
+            )
+        )
     }
 
     private fun report(step: DiagnosticStep) {
@@ -377,6 +468,9 @@ class ModulesViewModel @Inject constructor(
 
     private companion object {
         const val AppleApi = "https://amp-api.music.apple.com/"
+        const val StepLyrics = "Lyrics"
+        const val StepInfo = "Song info"
+        val LrcTime = Regex("""\[\d{1,2}:\d{2}(?:[.:]\d{1,3})?]""")
         // a zip for a module's list is read no further than this, the same ceiling the js modules put on one
         const val MaxItemsZipBytes = 25 * 1024 * 1024
     }

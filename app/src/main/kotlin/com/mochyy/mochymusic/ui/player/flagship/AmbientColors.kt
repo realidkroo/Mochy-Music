@@ -47,13 +47,24 @@ internal const val ToneSeamRight = 1
 internal const val ToneDeep = 2
 internal const val ToneAccent = 3
 
+// not a colour you see: a grey whose level says how much of the picture under the text is near white
+internal const val ToneGlare = 4
+private const val ToneCount = 5
+
+// a pixel this bright (rec. 709 luma out of 255) is one white text gets lost on
+private const val GlareLuma = 194
+
+// under this share of bright pixels the text reads fine, from the top one on it's fully glaring
+private const val GlareFrom = 0.35f
+private const val GlareTo = 0.75f
+
 private val Start = Color(0xFF2B2A2D)
 
-// the four colours the flagship's backdrop drifts between: the cover's bottom edge left and right, a deep one and an accent
+// the four colours the flagship's backdrop drifts between (the cover's bottom edge left and right, a deep one and an accent), plus how glaring the picture is under the text
 @Stable
 class AmbientColors internal constructor(private val scope: CoroutineScope) {
     // what everything draws with, handed out at most 30 times a second while it fades, so a fade never redraws the player every frame
-    private var shownTones by mutableStateOf(List(4) { Start })
+    private var shownTones by mutableStateOf(List(ToneCount) { if (it == ToneGlare) Color.Black else Start })
     private var target: List<Color>? = null
     private var picture: List<Color>? = null
 
@@ -63,6 +74,9 @@ class AmbientColors internal constructor(private val scope: CoroutineScope) {
     private var fade: Job? = null
 
     fun tone(index: Int): Color = shownTones[index]
+
+    // 0 on dark and mid covers, up to 1 when the picture under the title is mostly white; read it while drawing
+    fun glare(): Float = shownTones[ToneGlare].red
 
     // where the cover meets what's under it, both halves mixed, for the colour fade at the bottom
     fun seam(): Color {
@@ -96,7 +110,7 @@ class AmbientColors internal constructor(private val scope: CoroutineScope) {
     }
 
     private fun ease(next: List<Color>) {
-        if (next.size < 4) return
+        if (next.size < ToneCount) return
         val last = target
         if (last != null && last.indices.all { distance(last[it], next[it]) < MinChange }) return
         target = next
@@ -112,7 +126,7 @@ class AmbientColors internal constructor(private val scope: CoroutineScope) {
                 if (now - handedOut >= PublishMs) {
                     handedOut = now
                     val k = FastOutSlowInEasing.transform(t)
-                    shownTones = List(4) { lerp(from[it], next[it], k) }
+                    shownTones = List(ToneCount) { lerp(from[it], next[it], k) }
                 }
             }
             shownTones = next
@@ -165,7 +179,7 @@ suspend fun pictureTones(context: Context, url: String): List<Color>? {
     }?.also { pictureCache.put(url, it) }
 }
 
-// four tones from a frame's pixels, inside any black bars ([insetX] and [insetY] are the share cut off each side)
+// four tones and the glare from a frame's pixels, inside any black bars ([insetX] and [insetY] are the share cut off each side)
 internal fun ambientTones(pixels: IntArray, width: Int, height: Int, insetX: Float = 0f, insetY: Float = 0f): List<Color> {
     val left = (insetX * width).toInt().coerceIn(0, width / 2 - 1)
     val right = width - left
@@ -201,11 +215,34 @@ internal fun ambientTones(pixels: IntArray, width: Int, height: Int, insetX: Flo
         return Color(red = (r / n).toInt(), green = (g / n).toInt(), blue = (b / n).toInt())
     }
 
+    // the share of near-white pixels, not the average, so white snow beside a black coat still counts as glaring
+    fun glare(x0: Int, x1: Int, y0: Int, y1: Int): Color {
+        var bright = 0
+        var n = 0
+        var y = y0
+        while (y < y1) {
+            val row = y * width
+            var x = x0
+            while (x < x1) {
+                val c = pixels[row + x]
+                val luma = (54 * ((c shr 16) and 0xFF) + 183 * ((c shr 8) and 0xFF) + 19 * (c and 0xFF)) shr 8
+                if (luma >= GlareLuma) bright++
+                n++
+                x += step
+            }
+            y += step
+        }
+        if (n == 0) return Color.Black
+        val level = ((bright.toFloat() / n - GlareFrom) / (GlareTo - GlareFrom)).coerceIn(0f, 1f)
+        return Color(level, level, level)
+    }
+
     return listOf(
         tone(average(left, midX, seamTop, bottom), minLight = 0.14f, maxLight = 0.44f, saturation = 1.05f),
         tone(average(midX, right, seamTop, bottom), minLight = 0.14f, maxLight = 0.44f, saturation = 1.05f),
         tone(average(left, right, top, bottom), minLight = 0.08f, maxLight = 0.26f, saturation = 0.9f),
         tone(average(left, right, top, accentBottom), minLight = 0.16f, maxLight = 0.42f, saturation = 1.25f),
+        glare(left, right, seamTop, bottom),
     )
 }
 

@@ -85,6 +85,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.hypot
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // the three looks a word can take, each with its card and its prompt
 private enum class WordMode(val label: String, val prompt: String) {
@@ -380,7 +381,7 @@ private fun MakeItCard(
             .pressBounce(interaction)
             .clip(RoundedCornerShape(14.dp))
             .drawBehind { drawRect(lerp(MenuRowSurface, CardLit, lit.value.coerceIn(0f, 1f))) }
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         AnimatedContent(

@@ -59,6 +59,7 @@ import com.mochyy.mochymusic.ui.player.share.showLinePicker
 import com.mochyy.mochymusic.ui.player.share.song.export.copySongLink
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.ui.utils.resize
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // from a menu: the song on a card, its lyrics, or just the link
 internal fun PopupSheetState.showKindPage(session: SongShareSession): PopupSheetHandle {
@@ -237,7 +238,7 @@ internal fun ChoiceTile(
             .clip(shape)
             .background(MenuRowSurface)
             .border(if (selected) 2.dp else 0.dp, if (selected) Color.White.copy(alpha = 0.7f) else Color.Transparent, shape)
-            .clickable(interactionSource = interaction, indication = null) {
+            .clickable(interactionSource = interaction, indication = RemoteFocus) {
                 if (enabled) {
                     onClick()
                 } else {

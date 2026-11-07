@@ -52,6 +52,7 @@ import com.mochyy.mochymusic.ui.component.OdometerNumber
 import com.mochyy.mochymusic.ui.component.pressBounce
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 private val BugText = Color(0xFFFF8A80)
 private val BugFill = Color(0xFF4A2424)
@@ -98,7 +99,7 @@ internal fun PlaygroundCard(stats: DevSpaceStats?, settled: Boolean, onClick: ()
         modifier = modifier
             .pressBounce(interaction, pressedScale = 0.97f)
             .clip(RoundedCornerShape(DevCardCorner))
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
     )
 }
 

@@ -46,6 +46,7 @@ import com.mochyy.mochymusic.ui.component.pressBounce
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 internal val DevBarButtonFill = Color.White.copy(alpha = 0.22f)
 private val PickerHeight = 36.dp
@@ -103,7 +104,7 @@ internal fun DevPersonPicker(
                 modifier = Modifier
                     .onPlaced { segments[i] = Rect(it.positionInParent(), it.size.toSize()) }
                     .clip(CircleShape)
-                    .clickable(interactionSource = interaction, indication = null) { onTap(i) }
+                    .clickable(interactionSource = interaction, indication = RemoteFocus) { onTap(i) }
                     .graphicsLayer {
                         // whoever you're not on fades back a little, following the swipe too
                         val distance = abs(pagerState.currentPage + pagerState.currentPageOffsetFraction - i)

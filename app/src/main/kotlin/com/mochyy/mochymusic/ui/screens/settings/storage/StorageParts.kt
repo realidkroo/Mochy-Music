@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -60,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.ui.component.pressBounce
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlin.math.roundToInt
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 internal val StorageCard = Color(0xFF1C1C1E)
 internal val StorageTrack = Color(0xFF3A3A3C)
@@ -73,6 +75,8 @@ internal val DatabaseRed = Color(0xFFEE6E5E)
 internal val AppDataBlue = Color(0xFF6878F0)
 
 private val Emphasized = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+
+private val SliderHeight = 32.dp
 
 internal fun storageText(
     size: Float,
@@ -177,7 +181,7 @@ internal fun LegendRow(color: Color, label: String, size: String?) {
     }
 }
 
-/** snapping slider for the cache limit with a tick of haptics on every step, value is matched to the nearest step */
+// a thick pill the white fill grows across with a small grip at its end, snapping to steps with a haptic tick on each
 @Composable
 internal fun StepSlider(
     steps: List<Int>,
@@ -190,12 +194,19 @@ internal fun StepSlider(
     val last = (steps.size - 1).toFloat()
     // follows the finger exactly while dragging, then springs onto the step it lands on
     var dragFraction by remember { mutableFloatStateOf(-1f) }
-    val settled by animateFloatAsState(index / last, spring(dampingRatio = 0.7f, stiffness = 500f), label = "sliderKnob")
+    val settled by animateFloatAsState(index / last, spring(dampingRatio = 0.8f, stiffness = 420f), label = "sliderFill")
+    // the pill swells a touch under the finger, so it feels picked up
+    val held by animateFloatAsState(if (dragFraction >= 0f) 1f else 0f, spring(dampingRatio = 0.6f, stiffness = 600f), label = "sliderHeld")
     val currentIndex by rememberUpdatedState(index)
     val currentOnChange by rememberUpdatedState(onValueChange)
+    val density = LocalDensity.current
+    val pillPx = with(density) { SliderHeight.toPx() }
+
+    // where along the pill a finger is, with the grip's half-width kept clear at both ends
+    fun fractionAt(x: Float, width: Int): Float = ((x - pillPx / 2f) / (width - pillPx)).coerceIn(0f, 1f)
 
     fun pick(fraction: Float) {
-        val i = (fraction.coerceIn(0f, 1f) * last).roundToInt()
+        val i = (fraction * last).roundToInt()
         if (i != currentIndex) {
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             currentOnChange(steps[i])
@@ -205,34 +216,44 @@ internal fun StepSlider(
     Box(
         modifier
             .fillMaxWidth()
-            .height(28.dp)
+            .height(SliderHeight + 8.dp)
             .pointerInput(steps) {
-                detectTapGestures { pick(it.x / size.width) }
+                detectTapGestures { pick(fractionAt(it.x, size.width)) }
             }
             .pointerInput(steps) {
                 detectHorizontalDragGestures(
-                    onDragStart = { dragFraction = it.x / size.width },
+                    onDragStart = { dragFraction = fractionAt(it.x, size.width) },
                     onDragEnd = { dragFraction = -1f },
                     onDragCancel = { dragFraction = -1f },
                 ) { change, _ ->
-                    dragFraction = (change.position.x / size.width).coerceIn(0f, 1f)
+                    dragFraction = fractionAt(change.position.x, size.width)
                     pick(dragFraction)
                 }
             }
             .drawBehind {
-                val knob = 9.dp.toPx()
-                val track = 3.dp.toPx()
-                val y = size.height / 2f
-                val f = if (dragFraction >= 0f) dragFraction else settled
-                val x = knob + f * (size.width - knob * 2)
-                drawRoundRect(StorageTrack, Offset(0f, y - track / 2), Size(size.width, track), CornerRadius(track))
-                drawRoundRect(Color.White, Offset(0f, y - track / 2), Size(x, track), CornerRadius(track))
-                // small marks for each step, so it reads as stops rather than a smooth range
+                val height = pillPx + 6.dp.toPx() * held
+                val top = (size.height - height) / 2f
+                val centerY = size.height / 2f
+                val round = CornerRadius(height / 2f)
+                val fraction = if (dragFraction >= 0f) dragFraction else settled
+                // never thinner than a circle, so even "no cache" leaves a round end to grab
+                val fill = pillPx + fraction * (size.width - pillPx)
+                val gripX = fill - pillPx / 2f
+                drawRoundRect(StorageTrack, Offset(0f, top), Size(size.width, height), round)
+                drawRoundRect(Color.White, Offset(0f, top), Size(fill, height), round)
+                // dots on the empty part only, so the stops read without cluttering the fill
                 for (i in steps.indices) {
-                    val sx = knob + i / last * (size.width - knob * 2)
-                    drawCircle(Color.White.copy(alpha = if (sx <= x) 0.9f else 0.3f), radius = 1.5.dp.toPx(), center = Offset(sx, y))
+                    val x = pillPx / 2f + i / last * (size.width - pillPx)
+                    if (x > gripX + pillPx * 0.5f) drawCircle(Color.White.copy(alpha = 0.35f), radius = 2.dp.toPx(), center = Offset(x, centerY))
                 }
-                drawCircle(Color.White, radius = knob, center = Offset(x, y))
+                val gripWidth = 3.dp.toPx()
+                val gripHeight = height * 0.42f
+                drawRoundRect(
+                    color = StorageCard.copy(alpha = 0.6f),
+                    topLeft = Offset(gripX - gripWidth / 2f, centerY - gripHeight / 2f),
+                    size = Size(gripWidth, gripHeight),
+                    cornerRadius = CornerRadius(gripWidth / 2f),
+                )
             },
     )
 }
@@ -258,7 +279,7 @@ internal fun StorageActionButton(
             .graphicsLayer { alpha = if (enabled) 1f else 0.45f }
             .clip(CircleShape)
             .background(StorageCard)
-            .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, enabled = enabled, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 9.dp),
     ) {
         Text(

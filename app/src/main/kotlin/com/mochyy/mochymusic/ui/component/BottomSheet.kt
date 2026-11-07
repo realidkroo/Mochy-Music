@@ -132,8 +132,7 @@ private const val PillPressMaxProgress = 0.02f
 /** The progress the mini player's hairline outline and shadow are gone by. */
 private const val PillEdgeFadeEnd = 0.08f
 
-/** The collapsed sheet, the mini player: inset from each side, its height and its corners. */
-private val PillInset = 24.dp
+/** The collapsed sheet, the mini player: its height and its corners; how far in from each side is the MiniPillFrame's. */
 private val PillHeight = 64.dp
 private val PillCornerRadius = 20.dp
 private val PillShape = RoundedCornerShape(PillCornerRadius)
@@ -298,7 +297,7 @@ fun BottomSheet(
                             }
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
+                                indication = RemoteFocus,
                                 onClick = { if (isExpandable) state.expandSoft() },
                             )
                             .fillMaxWidth()
@@ -327,9 +326,16 @@ fun BottomSheet(
 
             val sheetCoordinates = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
 
+            // where the mini player sits across the screen, and whether the wide bar's glass already lies under it
+            val pillFrame = LocalMiniPillFrame.current
+            val currentPillFrame by androidx.compose.runtime.rememberUpdatedState(pillFrame)
+            // in the wide bar the pill is a stadium like the bar round it, so it lifts out of it cleanly
+            val pillCorner = if (pillFrame.merged) PillHeight / 2 else PillCornerRadius
+
             val sheetClipShape = remember {
                 object : androidx.compose.ui.graphics.Shape {
-                    var hp = 0f
+                    var left = 0f
+                    var right = 0f
                     var visibleHeight = 0f
                     var cr = 0f
 
@@ -340,9 +346,9 @@ fun BottomSheet(
                     ): androidx.compose.ui.graphics.Outline {
                         return androidx.compose.ui.graphics.Outline.Rounded(
                             androidx.compose.ui.geometry.RoundRect(
-                                left = hp,
+                                left = left,
                                 top = 0f,
-                                right = size.width - hp,
+                                right = size.width - right,
                                 bottom = visibleHeight,
                                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(cr, cr)
                             )
@@ -367,7 +373,7 @@ fun BottomSheet(
                 // The mini player's faint shadow. The sheet's clip would cut it off, so it's a
                 // layer of its own placed and tilted exactly like the sheet, and it fades with the
                 // hairline. It stays the pill's size: the opening sheet grows over it.
-                PillShadow(state, pillPress)
+                if (!pillFrame.merged) PillShadow(state, pillPress, pillFrame)
 
                 Box(
                     modifier = Modifier
@@ -376,8 +382,9 @@ fun BottomSheet(
                         .height(state.expandedBound)
                         .graphicsLayer {
                             val p = state.progress.coerceIn(0f, 1f)
-                            sheetClipShape.cr = androidx.compose.ui.unit.lerp(PillCornerRadius, 0.dp, p).toPx()
-                            sheetClipShape.hp = androidx.compose.ui.unit.lerp(PillInset, 0.dp, p).toPx()
+                            sheetClipShape.cr = androidx.compose.ui.unit.lerp(pillCorner, 0.dp, p).toPx()
+                            sheetClipShape.left = androidx.compose.ui.unit.lerp(pillFrame.start, 0.dp, p).toPx()
+                            sheetClipShape.right = androidx.compose.ui.unit.lerp(pillFrame.end, 0.dp, p).toPx()
                             sheetClipShape.visibleHeight = androidx.compose.ui.unit.lerp(PillHeight, state.expandedBound, p).toPx()
 
                             shape = sheetClipShape
@@ -387,18 +394,18 @@ fun BottomSheet(
                         .drawWithContent {
                             drawContent()
                             val p = state.progress.coerceIn(0f, 1f)
-                            // The pill's hairline fades out as it opens; it used to drop in one
-                            // frame at 5% open.
+                            // the pill's hairline fades out as it opens (it used to drop in one frame at 5%); the wide bar draws its own round both halves
                             val edge = 1f - p / PillEdgeFadeEnd
-                            if (edge > 0f) {
-                                val hp = androidx.compose.ui.unit.lerp(PillInset, 0.dp, p).toPx()
+                            if (edge > 0f && !pillFrame.merged) {
+                                val left = androidx.compose.ui.unit.lerp(pillFrame.start, 0.dp, p).toPx()
+                                val right = androidx.compose.ui.unit.lerp(pillFrame.end, 0.dp, p).toPx()
                                 drawChromeOutline(
-                                    topLeft = androidx.compose.ui.geometry.Offset(hp, 0f),
+                                    topLeft = androidx.compose.ui.geometry.Offset(left, 0f),
                                     size = androidx.compose.ui.geometry.Size(
-                                        size.width - hp * 2,
+                                        size.width - left - right,
                                         androidx.compose.ui.unit.lerp(PillHeight, state.expandedBound, p).toPx(),
                                     ),
-                                    cornerRadius = androidx.compose.ui.unit.lerp(PillCornerRadius, 0.dp, p).toPx(),
+                                    cornerRadius = androidx.compose.ui.unit.lerp(pillCorner, 0.dp, p).toPx(),
                                     alpha = edge,
                                 )
                             }
@@ -450,7 +457,8 @@ fun BottomSheet(
                                 while (true) {
                                     val down = awaitPointerEvent(PointerEventPass.Initial)
                                         .changes.firstOrNull { it.changedToDownIgnoreConsumed() } ?: continue
-                                    if (state.progress >= PillPressMaxProgress) continue
+                                    // in the wide bar the glass round it holds still, so the mini player alone doesn't tilt
+                                    if (state.progress >= PillPressMaxProgress || currentPillFrame.merged) continue
                                     if (size.width > 0 && size.height > 0) {
                                         pillPress.normalizedX = ((down.position.x / size.width) * 2f - 1f).coerceIn(-1f, 1f)
                                         pillPress.normalizedY = ((down.position.y / size.height) * 2f - 1f).coerceIn(-1f, 1f)
@@ -735,7 +743,7 @@ fun BottomSheet(
                             }
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
+                                indication = RemoteFocus,
                                 onClick = { if (isExpandable) state.expandSoft() },
                             ),
                         contentAlignment = androidx.compose.ui.Alignment.TopStart
@@ -751,7 +759,7 @@ fun BottomSheet(
 
 // its own function, so the shadow showing or hiding at 8% open recomposes only this
 @Composable
-private fun BoxScope.PillShadow(state: BottomSheetState, pillPress: PillPress) {
+private fun BoxScope.PillShadow(state: BottomSheetState, pillPress: PillPress, pillFrame: MiniPillFrame) {
     val showPillShadow by remember(state) {
         derivedStateOf { !state.isDismissed && state.progress < PillEdgeFadeEnd }
     }
@@ -769,7 +777,7 @@ private fun BoxScope.PillShadow(state: BottomSheetState, pillPress: PillPress) {
         ) {
             Box(
                 modifier = Modifier
-                    .padding(horizontal = PillInset)
+                    .padding(start = pillFrame.start, end = pillFrame.end)
                     .fillMaxWidth()
                     .height(PillHeight)
                     .dropShadow(PillShape, ChromeShadow)

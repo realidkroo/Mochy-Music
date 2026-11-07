@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- usage at the top of the page -->
+    <string name="storage_overall">Overall</string>
+    <string name="storage_legend_mochy">Mochy</string>
+    <string name="storage_legend_yours">Your storage</string>
+    <string name="storage_free">%1$s free</string>
+    <string name="storage_measuring">Working out how much room Mochy takes…</string>
+    <string name="storage_uses">Mochy uses %1$s of your storage (%2$s), which is split into</string>
+    <string name="storage_uses_drives">Mochy uses %1$s across %2$d drives, which is split into</string>
+    <string name="storage_breakdown_title">Mochy app data usage</string>
+    <string name="storage_legend_cache">Cache</string>
+    <string name="storage_legend_downloads">Downloaded music &amp; local</string>
+    <string name="storage_legend_database">Database</string>
+    <string name="storage_legend_app_data">App data</string>
+
+    <!-- cutting the junk -->
+    <string name="storage_junk_title">So, here\'s a list of things you can do to cut the junk</string>
+    <string name="storage_hint_full">Your phone is nearly full.</string>
+    <string name="storage_hint_cache">The cache is the easy one. Clearing it frees %1$s and songs simply stream again.</string>
+    <string name="storage_hint_downloads">Downloads take the most room. Manage downloads shows the biggest ones and the ones you barely play.</string>
+    <string name="storage_cache_limit">Set music cache limit</string>
+    <string name="storage_cache_none">No cache</string>
+    <string name="storage_cache_unlimited">Unlimited</string>
+    <string name="storage_cache_off">Off</string>
+    <string name="storage_cache_mb">%1$d MB</string>
+    <string name="storage_cache_gb">%1$d GB</string>
+    <string name="storage_cache_applies_later">The new limit starts next time you open Mochy.</string>
+    <string name="storage_remove_downloads">Remove all downloads</string>
+    <string name="storage_remove_downloads_title">Remove all downloads?</string>
+    <string name="storage_remove_downloads_message">Every downloaded song is deleted from this phone. They stay in your library and stream again when you play them, so they\'ll need a connection.</string>
+    <string name="storage_clear_cache">Remove all music &amp; cover cache</string>
+    <string name="storage_clear_cache_title">Clear the cache?</string>
+    <string name="storage_clear_cache_message">Songs kept from streaming and saved cover pictures are deleted. They come back as you play and browse. Your library and your downloads stay as they are.</string>
+    <string name="storage_clear_cache_action">Clear cache</string>
+    <string name="storage_manage_downloads">Manage downloads</string>
+
+    <!-- where things are saved, and exporting songs -->
+    <string name="storage_or">Or</string>
+    <string name="storage_downloads_place">Choose where downloads are saved</string>
+    <string name="storage_cache_place">Choose where the cache is saved</string>
+    <string name="storage_export_downloads">Export downloaded songs as a folder</string>
+    <string name="storage_moving">Moving… %1$d%%</string>
+    <string name="storage_move_failed">Couldn\'t move everything, so nothing was changed. Try again.</string>
+    <string name="storage_place_phone">This phone</string>
+    <string name="storage_place_card">Memory card</string>
+    <string name="storage_place_sheet_downloads">Where downloads are saved</string>
+    <string name="storage_place_sheet_cache">Where the cache is saved</string>
+    <string name="storage_place_note_downloads">Every downloaded song moves over, and its lyrics stay with it. Mochy restarts once to finish.</string>
+    <string name="storage_place_note_cache">The cache starts fresh in the new place. Mochy restarts once to finish.</string>
+    <string name="storage_place_card_note">On a memory card, Mochy saves into its own folder, which Android clears if Mochy is uninstalled.</string>
+    <string name="storage_place_only_phone">Put in a memory card or a drive to save somewhere other than this phone.</string>
+    <string name="storage_place_free">%1$s free of %2$s</string>
+    <string name="storage_place_here_now">Saved here now</string>
+    <string name="storage_place_no_room">Not enough room</string>
+    <string name="storage_place_move">Move here</string>
+    <string name="storage_place_move_downloads_title">Move downloads to %1$s?</string>
+    <string name="storage_place_move_cache_title">Move the cache to %1$s?</string>
+    <string name="storage_place_move_downloads_message">Downloads pause while %1$s is copied over. Mochy restarts once it\'s done, and the old copy is cleared.</string>
+    <string name="storage_place_move_cache_message">The cache you have now is cleared and Mochy restarts, then songs you play are kept in the new place.</string>
+    <string name="storage_place_move_action">Move and restart</string>
+
+    <string name="storage_export_sheet_title">Export downloaded songs</string>
+    <string name="storage_export_note">They\'re copied into a mochy-preserve folder wherever you pick. Your downloads stay where they are.</string>
+    <string name="storage_export_layout_playlists">Music and playlists</string>
+    <string name="storage_export_layout_playlists_detail">A folder for each playlist and your liked songs, the rest go in Music</string>
+    <string name="storage_export_layout_albums">Albums</string>
+    <string name="storage_export_layout_albums_detail">A folder for each album, songs from no album go in Music</string>
+    <string name="storage_export_covers">Cover pictures</string>
+    <string name="storage_export_lyrics">Lyrics</string>
+    <string name="storage_export_pick">Pick a folder</string>
+    <string name="storage_export_progress">Exporting… %1$d of %2$d</string>
+    <string name="storage_export_starting">Getting the songs ready…</string>
+    <string name="storage_export_failed">The export stopped partway. Check the folder you picked and try again.</string>
+    <plurals name="storage_export_done">
+        <item quantity="one">Exported %d song</item>
+        <item quantity="other">Exported %d songs</item>
+    </plurals>
+    <plurals name="storage_export_skipped">
+        <item quantity="one">%d song wasn\'t fully downloaded, so it was skipped</item>
+        <item quantity="other">%d songs weren\'t fully downloaded, so they were skipped</item>
+    </plurals>
+    <string name="storage_export_folder_music" translatable="false">Music</string>
+    <string name="storage_export_folder_playlists" translatable="false">Playlist</string>
+    <string name="storage_export_folder_albums" translatable="false">Albums</string>
+    <string name="storage_export_folder_liked" translatable="false">Liked songs</string>
+
+    <!-- moving to a new phone -->
+    <string name="storage_transfer_title">Moving to a new phone? Take everything with you</string>
+    <string name="storage_export_user_data">Export user data</string>
+    <string name="storage_import_user_data">Import user data</string>
+    <string name="storage_transfer_exporting">Exporting…</string>
+    <string name="storage_transfer_exporting_percent">Exporting… %1$d%%</string>
+    <string name="storage_transfer_exported">Exported! Import the .zip in Mochy on the other phone</string>
+    <string name="storage_transfer_importing">Importing…</string>
+    <string name="storage_transfer_importing_percent">Importing… %1$d%%, Mochy restarts when it\'s done</string>
+    <string name="storage_transfer_restarting">Done, restarting…</string>
+    <string name="storage_import_title">Replace your library?</string>
+    <string name="storage_import_message">Everything in Mochy right now is replaced by what\'s in the export, including your library, history, downloads and settings. Your logins stay as they are. Mochy restarts once to finish.</string>
+    <string name="storage_import_action">Pick the .zip</string>
+</resources>

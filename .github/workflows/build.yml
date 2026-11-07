@@ -62,3 +62,5 @@ jobs:
         with:
           name: app-universal-gms-debug
           path: app/build/outputs/apk/universalGms/debug/*.apk
+          # a debug apk is only for trying the build, after a week it's just eating actions storage
+          retention-days: 7

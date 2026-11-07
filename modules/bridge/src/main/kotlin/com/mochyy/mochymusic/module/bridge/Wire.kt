@@ -4,6 +4,7 @@ package com.mochyy.mochymusic.module.bridge
 
 import com.mochyy.mochymusic.module.AccountState
 import com.mochyy.mochymusic.module.DiagnosticStep
+import com.mochyy.mochymusic.module.FieldKind
 import com.mochyy.mochymusic.module.HttpRequest
 import com.mochyy.mochymusic.module.ItemListModule
 import com.mochyy.mochymusic.module.ItemProblem
@@ -11,7 +12,9 @@ import com.mochyy.mochymusic.module.ItemsAdded
 import com.mochyy.mochymusic.module.LicenseServer
 import com.mochyy.mochymusic.module.MatchedTrack
 import com.mochyy.mochymusic.module.MochyModule
+import com.mochyy.mochymusic.module.ModuleArt
 import com.mochyy.mochymusic.module.ModuleChoice
+import com.mochyy.mochymusic.module.ModuleField
 import com.mochyy.mochymusic.module.ModuleFeature
 import com.mochyy.mochymusic.module.ModuleInfo
 import com.mochyy.mochymusic.module.ModuleItem
@@ -24,6 +27,7 @@ import com.mochyy.mochymusic.module.SourceStream
 import com.mochyy.mochymusic.module.StreamDrm
 import com.mochyy.mochymusic.module.StreamFormat
 import com.mochyy.mochymusic.module.StreamOption
+import com.mochyy.mochymusic.module.TrackMetadata
 import com.mochyy.mochymusic.module.TrackQuery
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -49,6 +53,8 @@ internal object Wire {
         val items: Boolean,
         val itemsLabel: String,
         val itemsAbout: String,
+        val icon: String? = null,
+        val banner: String? = null,
     )
 
     val Empty = JsonObject(emptyMap())
@@ -71,6 +77,10 @@ internal object Wire {
             put("itemsLabel", module.itemsLabel)
             put("itemsAbout", module.itemsAbout)
         }
+        if (module is ModuleArt) {
+            put("icon", module.icon)
+            put("banner", module.banner)
+        }
     }
 
     fun aboutFrom(o: JsonObject) = About(
@@ -81,6 +91,8 @@ internal object Wire {
         items = o.bool("items"),
         itemsLabel = o.text("itemsLabel").orEmpty(),
         itemsAbout = o.text("itemsAbout").orEmpty(),
+        icon = o.text("icon"),
+        banner = o.text("banner"),
     )
 
     private fun infoToJson(info: ModuleInfo) = buildJsonObject {
@@ -167,6 +179,67 @@ internal object Wire {
             id = o.text("id").orEmpty(),
             label = o.text("label").orEmpty(),
             options = o["options"].objects().map { StreamOption(it.text("id").orEmpty(), it.text("label").orEmpty(), it.text("description").orEmpty()) },
+        )
+    }
+
+    fun fieldsToJson(fields: List<ModuleField>) = JsonArray(
+        fields.map { field ->
+            buildJsonObject {
+                put("id", field.id)
+                put("label", field.label)
+                put("kind", field.kind.name)
+                put("default", field.default)
+                put("hint", field.hint)
+                put("description", field.description)
+                put("options", JsonArray(field.options.map { option ->
+                    buildJsonObject {
+                        put("id", option.id)
+                        put("label", option.label)
+                        put("description", option.description)
+                    }
+                }))
+            }
+        },
+    )
+
+    // a kind this mochy doesn't know yet reads as a line to type in, the one every value fits
+    fun fieldsFrom(element: JsonElement): List<ModuleField> = element.objects().mapNotNull { o ->
+        val id = o.text("id")?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+        ModuleField(
+            id = id,
+            label = o.text("label").orEmpty().ifBlank { id },
+            kind = enumOrNull<FieldKind>(o.text("kind").orEmpty()) ?: FieldKind.Text,
+            options = o["options"].objects().map { StreamOption(it.text("id").orEmpty(), it.text("label").orEmpty(), it.text("description").orEmpty()) },
+            default = o.text("default").orEmpty(),
+            hint = o.text("hint").orEmpty(),
+            description = o.text("description").orEmpty(),
+        )
+    }
+
+    fun metadataToJson(metadata: TrackMetadata?): JsonElement = if (metadata == null) JsonNull else buildJsonObject {
+        put("album", metadata.album)
+        put("releaseDate", metadata.releaseDate)
+        put("genres", strings(metadata.genres))
+        put("writers", strings(metadata.writers))
+        put("producers", strings(metadata.producers))
+        put("label", metadata.label)
+        put("about", metadata.about)
+        put("coverUrl", metadata.coverUrl)
+        put("isrc", metadata.isrc)
+    }
+
+    fun metadataFrom(element: JsonElement): TrackMetadata? {
+        val o = element as? JsonObject ?: return null
+        return TrackMetadata(
+            album = o.text("album"),
+            releaseDate = o.text("releaseDate"),
+            genres = o.strings("genres"),
+            writers = o.strings("writers"),
+            producers = o.strings("producers"),
+            label = o.text("label"),
+            about = o.text("about"),
+            coverUrl = o.text("coverUrl"),
+            isrc = o.text("isrc"),
         )
     }
 
@@ -283,11 +356,21 @@ internal object Wire {
                 put("id", it.id)
                 put("name", it.name)
                 put("detail", it.detail)
+                put("icon", it.icon)
+                it.working?.let { working -> put("working", working) }
             }
         },
     )
 
-    fun itemsFrom(element: JsonElement) = element.objects().map { ModuleItem(it.text("id").orEmpty(), it.text("name").orEmpty(), it.text("detail").orEmpty()) }
+    fun itemsFrom(element: JsonElement) = element.objects().map {
+        ModuleItem(
+            it.text("id").orEmpty(),
+            it.text("name").orEmpty(),
+            it.text("detail").orEmpty(),
+            icon = it.text("icon"),
+            working = (it["working"] as? JsonPrimitive)?.booleanOrNull,
+        )
+    }
 
     fun addedToJson(added: ItemsAdded) = buildJsonObject {
         when (added) {

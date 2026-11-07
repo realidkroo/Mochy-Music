@@ -20,8 +20,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -66,6 +64,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.backdropClick
 
 private enum class ImportStep { Providers, ProviderSetup, WhatToSync, SyncOptions }
 
@@ -286,11 +285,7 @@ private fun LibraryImportFlow(onClose: () -> Unit) {
                     .fillMaxSize()
                     .graphicsLayer { alpha = browserPresence.value }
                     .background(Color.Black.copy(alpha = 0.45f))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = ::closeBrowser,
-                    ),
+                    .backdropClick(::closeBrowser),
             )
             OnboardingBrowserSheet(
                 service = session.service,

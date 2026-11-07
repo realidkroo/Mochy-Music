@@ -18,7 +18,7 @@ import java.io.File
 
 internal object SkinParser {
 
-    /** null when the manifest brings none of the three, or none of them made sense */
+    /** null when the manifest brings none of these, or none of them made sense */
     fun parse(
         moduleId: String,
         moduleName: String,
@@ -27,14 +27,38 @@ internal object SkinParser {
         pages: JsonElement?,
         files: File?,
         base: String?,
+        actions: JsonElement? = null,
+        glass: JsonElement? = null,
     ): ModuleSkin? {
         val parsedPlayer = (player as? JsonObject)?.let { player(it, moduleName) }
         // a font has to be a file on the phone, so only a zip can bring one
         val parsedFont = (font as? JsonObject)?.let(::font)?.takeIf { files != null }
         val parsedPages = (pages as? JsonArray).orEmpty().mapNotNull { (it as? JsonObject)?.let(::page) }.distinctBy { it.id }.take(MaxPages)
-        if (parsedPlayer == null && parsedFont == null && parsedPages.isEmpty()) return null
-        return ModuleSkin(moduleId, moduleName, parsedPlayer, parsedFont, parsedPages, files, base)
+        val parsedActions = (actions as? JsonArray).orEmpty().mapNotNull { (it as? JsonObject)?.let(::action) }.take(MaxActions)
+        // a shader is code the gpu runs, so it only comes as a file in a zip, the same as a font
+        val parsedGlass = (glass as? JsonObject)?.let(::glass)?.takeIf { files != null }
+        if (parsedPlayer == null && parsedFont == null && parsedPages.isEmpty() && parsedActions.isEmpty() && parsedGlass == null) return null
+        return ModuleSkin(moduleId, moduleName, parsedPlayer, parsedFont, parsedPages, files, base, parsedActions, parsedGlass)
     }
+
+    // ---- the bottom bar's glass -----------------------------------------------------------------
+
+    private fun glass(o: JsonObject): SkinGlass? {
+        val shader = o.string("shader")?.takeIf { name -> ShaderKinds.any { name.endsWith(it, ignoreCase = true) } } ?: return null
+        val change = glassChange(o)
+        return SkinGlass(shader, change.blurDp ?: 6f, change.marginDp ?: 16f, change.uniforms)
+    }
+
+    /** a blur, a margin and uniforms, as the glass and a setting's option both write them; mochy's own uniforms can't be set this way */
+    fun glassChange(o: JsonObject): GlassChange = GlassChange(
+        blurDp = o.float("blur")?.coerceIn(0f, 40f),
+        marginDp = o.float("margin")?.coerceIn(0f, 64f),
+        uniforms = (o["uniforms"] as? JsonObject).orEmpty().entries
+            .filter { (name, _) -> UniformName.matches(name) && name !in MochyUniforms }
+            .mapNotNull { (name, value) -> (value as? JsonPrimitive)?.floatOrNull?.takeIf { it.isFinite() }?.let { name to it } }
+            .take(MaxUniforms)
+            .toMap(),
+    )
 
     // ---- the player ---------------------------------------------------------------------------
 
@@ -139,7 +163,14 @@ internal object SkinParser {
         val id = o.string("id")?.lowercase()?.takeIf { PageId.matches(it) } ?: return null
         val blocks = (o["blocks"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonObject)?.let(::pageBlock) }.take(MaxPageBlocks)
         if (blocks.isEmpty()) return null
-        return SkinPage(id, o.string("title")?.take(60) ?: id, blocks)
+        return SkinPage(
+            id = id,
+            title = o.string("title")?.take(60) ?: id,
+            blocks = blocks,
+            inSettings = o.bool("inSettings") ?: o.bool("settings") ?: false,
+            subtitle = o.string("subtitle")?.take(80),
+            icon = o.string("icon"),
+        )
     }
 
     private fun pageBlock(o: JsonObject): PageBlock? = when (o.string("type")?.lowercase()) {
@@ -161,7 +192,20 @@ internal object SkinParser {
         "album" -> o.string("id")?.let { PageBlock.Album(it, o.string("title")?.take(80) ?: it, o.string("subtitle")?.take(80)) }
         "artist" -> o.string("id")?.let { PageBlock.Artist(it, o.string("title")?.take(80) ?: it) }
         "search" -> o.string("query")?.take(120)?.let { PageBlock.Search(it, o.string("title")?.take(80) ?: it) }
+        "setting" -> o.string("key")?.take(60)?.let(PageBlock::Setting)
         else -> null
+    }
+
+    // ---- the player's menu ----------------------------------------------------------------------
+
+    // a link only to the web, a page by its id, or a search; the song's {title}, {artist}, {album} and {id} are filled in when it's tapped
+    private fun action(o: JsonObject): SkinAction? {
+        val title = o.string("title")?.take(40) ?: return null
+        val target = o.string("link")?.takeIf { it.startsWith("https://") || it.startsWith("http://") }?.let(ActionTarget::Link)
+            ?: o.string("page")?.lowercase()?.takeIf { PageId.matches(it) }?.let(ActionTarget::Page)
+            ?: o.string("search")?.take(120)?.let(ActionTarget::Search)
+            ?: return null
+        return SkinAction(title, o.string("icon"), target)
     }
 
     // ---- values -------------------------------------------------------------------------------
@@ -208,6 +252,12 @@ internal object SkinParser {
     private const val MaxDepth = 3
     private const val MaxPages = 12
     private const val MaxPageBlocks = 80
+    private const val MaxActions = 6
+    private const val MaxUniforms = 24
+    private val ShaderKinds = listOf(".agsl", ".sksl")
+    private val UniformName = Regex("[A-Za-z_][A-Za-z0-9_]{0,40}")
+    // what mochy hands every glass shader itself
+    val MochyUniforms = setOf("content", "size", "margin", "radius", "density", "quality", "chrome")
 }
 
 /** "#RRGGBB" or "#AARRGGBB", the way skins and the accent colour write a colour */

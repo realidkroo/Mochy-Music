@@ -34,14 +34,23 @@ internal val PaneEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 private const val PaneOpenMs = 620
 private const val PaneCloseMs = 480
 
-// the sizes everything in the landscape frame is laid out from, all in dp
+// the sizes everything in the frame is laid out from, all in dp; stood upright there's no room beside the video, so the pane covers it
 @Stable
 internal class VideoFrame(val width: Dp, val height: Dp) {
-    // the lyrics pane takes this much of the right side
-    val paneWidth: Dp = (width * 0.4f).coerceIn(280.dp, 420.dp)
+    val upright: Boolean = height > width
+
+    // the lyrics pane takes this much of the right side, or the whole screen upright
+    val paneWidth: Dp = if (upright) width else (width * 0.4f).coerceIn(280.dp, 420.dp)
 
     // the video moves left by part of the pane, so more of the picture stays in view beside it
-    val videoSlide: Dp = paneWidth * 0.4f
+    val videoSlide: Dp = if (upright) 0.dp else paneWidth * 0.4f
+
+    // the bottom line of lyrics is as wide as the pane beside the video, or the screen less its margins upright
+    val lineWidth: Dp = if (upright) (width - 30.dp).coerceAtLeast(120.dp) else paneWidth
+
+    // how far the controls keep from the left and right edges
+    val edgeStart: Dp = if (upright) 20.dp else 48.dp
+    val edgeEnd: Dp = if (upright) 20.dp else 54.dp
 }
 
 @Stable

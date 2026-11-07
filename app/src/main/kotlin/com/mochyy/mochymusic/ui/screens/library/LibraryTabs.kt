@@ -40,6 +40,7 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.screens.search.SearchColors
 import com.mochyy.mochymusic.ui.screens.search.SearchHorizontalPadding
 import com.mochyy.mochymusic.viewmodels.LibraryShelfKind
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /**
  * What the Library shows: everything, what plays from the phone, what the player has cached, or
@@ -135,7 +136,7 @@ private fun LibraryTabChip(tab: LibraryTab, isSelected: Boolean, onSelect: (Libr
             .clickable(
                 role = Role.Tab,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = { onSelect(tab) },
             )
             .heightIn(min = 28.dp)

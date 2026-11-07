@@ -11,6 +11,8 @@ import androidx.datastore.preferences.core.edit
 import com.mochyy.mochymusic.constants.BlurQuality
 import com.mochyy.mochymusic.constants.BlurQualityKey
 import com.mochyy.mochymusic.constants.BlurStrengthPxKey
+import com.mochyy.mochymusic.constants.ChromeGlassStyle
+import com.mochyy.mochymusic.constants.ChromeGlassStyleKey
 import com.mochyy.mochymusic.constants.DynamicThemeKey
 import com.mochyy.mochymusic.constants.ElementBlurKey
 import com.mochyy.mochymusic.constants.EnableProgressiveBlurKey
@@ -109,6 +111,7 @@ internal class ModuleLooks(private val context: Context) {
             LookSetting.FLAGSHIP_BACKGROUND to Setting(FlagshipBackgroundStyleKey) { enumName<PlayerBackgroundStyle>(it) },
             LookSetting.IPOD_THEME to Setting(IpodThemeKey) { enumName<IpodTheme>(it) },
             LookSetting.IPOD_WHEEL to Setting(IpodWheelColorKey) { enumName<IpodWheelColor>(it) },
+            LookSetting.BOTTOM_BAR to Setting(ChromeGlassStyleKey) { enumName<ChromeGlassStyle>(it) },
         )
     }
 }

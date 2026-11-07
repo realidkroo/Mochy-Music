@@ -20,8 +20,15 @@ import kotlin.math.roundToInt
 // the design's shade starts here on the screen (1370 of its 2548) and runs to the bottom
 private const val ShadeTop = 0.538f
 
+// on a white picture the extra dark starts a little above the frost and is full before the title's top, so the title gets it too
+private const val GlareTop = 0.48f
+private const val GlareFull = 0.545f
+
+// how much more black a fully white picture gets under the text, on top of the usual shade
+private const val GlareShade = 0.3f
+
 // clear at the top, 24% black by 46% of the way down, then held: just enough for white text over the blurred cover
-private val Shade = Brush.verticalGradient(
+private val ShadeStops = arrayOf(
     0f to Color.Transparent,
     0.46f to Color.Black.copy(alpha = 0.24f),
     1f to Color.Black.copy(alpha = 0.24f),
@@ -36,20 +43,34 @@ fun ControlsShade(
     fadeProvider: () -> Float = { 1f },
     // how far the controls (and with them the cover's bottom) were moved, px down; read while placing only
     offsetProvider: () -> Float = { 0f },
+    // 0 to 1, how white the picture is under the text; read while drawing only
+    glareProvider: () -> Float = { 0f },
 ) {
     val drawn by remember { derivedStateOf { progressProvider() > 0.5f && fadeProvider() > 0f } }
     if (!drawn) return
     val currentProgress by rememberUpdatedState(progressProvider)
     val currentFade by rememberUpdatedState(fadeProvider)
+    val currentGlare by rememberUpdatedState(glareProvider)
     Spacer(
         modifier = Modifier
             .fillMaxWidth()
-            .height(maxHeight * (1f - ShadeTop))
-            .offset { IntOffset(0, (maxHeight.toPx() * ShadeTop + offsetProvider()).roundToInt()) }
+            .height(maxHeight * (1f - GlareTop))
+            .offset { IntOffset(0, (maxHeight.toPx() * GlareTop + offsetProvider()).roundToInt()) }
             .drawWithCache {
+                val screen = size.height / (1f - GlareTop)
+                // the usual shade keeps its old place, the box just starts higher now for the glare's dark
+                val shade = Brush.verticalGradient(*ShadeStops, startY = screen * (ShadeTop - GlareTop), endY = size.height)
+                val glareDark = Brush.verticalGradient(
+                    0f to Color.Transparent,
+                    1f to Color.Black.copy(alpha = GlareShade),
+                    startY = 0f,
+                    endY = screen * (GlareFull - GlareTop),
+                )
                 onDrawBehind {
                     val shown = ((currentProgress() - 0.5f) / 0.45f).coerceIn(0f, 1f) * currentFade().coerceIn(0f, 1f)
-                    drawRect(Shade, alpha = shown)
+                    drawRect(shade, alpha = shown)
+                    val glare = currentGlare().coerceIn(0f, 1f)
+                    if (glare > 0.004f) drawRect(glareDark, alpha = shown * glare)
                 }
             },
     )

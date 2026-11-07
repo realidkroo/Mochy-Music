@@ -45,11 +45,9 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -363,11 +361,7 @@ fun PopupSheetHost(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = active::dismissFromOutside,
-                    )
+                    .backdropClick(active::dismissFromOutside)
             )
 
             key(active) {
@@ -646,11 +640,7 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { if (!frame.closing) state.dismissFromOutside() },
-                    )
+                    .backdropClick { if (!frame.closing) state.dismissFromOutside() }
             )
         }
     }

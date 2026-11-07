@@ -85,6 +85,7 @@ import com.mochyy.mochymusic.ui.component.ProgressiveGlassBackground
 import com.mochyy.mochymusic.ui.utils.resize
 import com.mochyy.mochymusic.ui.component.containerTransformSource
 import com.mochyy.mochymusic.ui.utils.stableStatusBars
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 val SearchHorizontalPadding = 24.dp
 
@@ -485,7 +486,7 @@ fun SearchField(
                 if (readOnlyClick != null) {
                     Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
+                        indication = RemoteFocus,
                         onClick = readOnlyClick,
                     )
                 } else {

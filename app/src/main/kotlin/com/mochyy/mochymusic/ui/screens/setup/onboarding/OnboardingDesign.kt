@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 internal object Onb {
     val Page = Color(0xFF1C1C1C)
@@ -185,7 +186,7 @@ internal fun OnbButton(
             }
             .clip(CircleShape)
             .background(if (style == OnbButtonStyle.Primary) Onb.ButtonPrimary else Onb.ButtonSecondary)
-            .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, enabled = enabled, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -251,7 +252,7 @@ internal fun OnbCard(
             .clip(shape)
             .background(if (pressed) Onb.CardPressed else Onb.Card)
             .then(
-                if (onClick != null) Modifier.clickable(interactionSource = interaction, indication = null, onClick = onClick)
+                if (onClick != null) Modifier.clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
                 else Modifier
             ),
     ) {

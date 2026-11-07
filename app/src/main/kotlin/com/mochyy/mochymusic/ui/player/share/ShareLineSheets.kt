@@ -70,6 +70,7 @@ import com.mochyy.mochymusic.ui.utils.resize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** When a tap picks or drops several rows, each one waits this long per row from where the tap started. */
 private const val SweepStepMs = 28L
@@ -253,7 +254,7 @@ private fun LineRow(session: LyricsShareSession, index: Int, text: String, modif
                 with(session.choreography) { applyRowArrival(index) }
             }
             .drawBehind { drawShareRowLook(fill.value, outline.value, session.palette, ShareRowCorner.toPx()) }
-            .clickable(interactionSource = interaction, indication = null) {
+            .clickable(interactionSource = interaction, indication = RemoteFocus) {
                 if (session.toggle(index)) {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 } else {

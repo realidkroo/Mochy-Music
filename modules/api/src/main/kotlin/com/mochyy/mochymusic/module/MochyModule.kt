@@ -20,7 +20,35 @@ data class ModuleInfo(
 )
 
 /** what a module brings to mochy, one module can bring several */
-enum class ModuleFeature { AudioSource, Lyrics, Look }
+enum class ModuleFeature { AudioSource, Lyrics, Look, Metadata }
+
+/** a module's own pictures: a square icon for its row and a wide banner over its page, each a link or a file path; null keeps mochy's own */
+interface ModuleArt : MochyModule {
+    val icon: String? get() = null
+    val banner: String? get() = null
+}
+
+/** how a module's setting is shown: a line to type in, a list to pick from, or a switch */
+enum class FieldKind { Text, Select, Toggle }
+
+/** a setting a module asks people for, listed under options on its page; a toggle's [default] is "true" or "false" */
+data class ModuleField(
+    val id: String,
+    val label: String,
+    val kind: FieldKind,
+    val options: List<StreamOption> = emptyList(),
+    val default: String = "",
+    val hint: String = "",
+    val description: String = "",
+)
+
+/** a module with settings of its own: mochy shows them, keeps what people pick, and hands every value over */
+interface ModuleFields : MochyModule {
+    val fields: List<ModuleField>
+
+    /** every field's value, once before the first call and again each time one changes */
+    fun onFields(values: Map<String, String>) {}
+}
 
 /** What Mochy gives a module. */
 interface ModuleHost {
@@ -207,8 +235,14 @@ interface ServerListModule : MochyModule {
     fun removeServer(url: String)
 }
 
-/** one thing people added to a module, as its page lists it */
-data class ModuleItem(val id: String, val name: String, val detail: String)
+/** one thing people added to a module, as its page lists it: [icon] is a link, [working] is null until it's been tried */
+data class ModuleItem @JvmOverloads constructor(
+    val id: String,
+    val name: String,
+    val detail: String,
+    val icon: String? = null,
+    val working: Boolean? = null,
+)
 
 /** why a zip or a link added nothing */
 enum class ItemProblem { NotAZip, NotALink, Unreachable, NothingFound, Broken, TooBig }
@@ -245,6 +279,30 @@ interface LyricsModule : MochyModule {
 
     /** the song's lyrics as lrc ("[01:02.34] a line"), or plain lines when they aren't timed; null when it has none */
     suspend fun lyrics(track: TrackQuery): String?
+}
+
+/** what a metadata module knows about a song; whatever it doesn't know stays null or empty */
+data class TrackMetadata(
+    val album: String? = null,
+    /** "2014-03-17", "2014-03" or "2014" */
+    val releaseDate: String? = null,
+    val genres: List<String> = emptyList(),
+    val writers: List<String> = emptyList(),
+    val producers: List<String> = emptyList(),
+    val label: String? = null,
+    /** a paragraph or two about the song, shown in about song */
+    val about: String? = null,
+    /** a sharper cover than the one mochy has, a link */
+    val coverUrl: String? = null,
+    val isrc: String? = null,
+)
+
+/** a source of song facts (genre, release, credits, what it's about), asked before mochy's own while the module is on */
+interface MetadataModule : MochyModule {
+    override val adds: Set<ModuleFeature> get() = setOf(ModuleFeature.Metadata)
+
+    /** null when it doesn't know the song */
+    suspend fun metadata(track: TrackQuery): TrackMetadata?
 }
 
 /** a look: values for mochy's look settings, put in place while the module is on and given back when it goes off */
@@ -289,4 +347,6 @@ object LookSetting {
     const val IPOD_THEME = "ipodTheme"
     /** THEME, WHITE, BLACK or RED */
     const val IPOD_WHEEL = "ipodWheelColor"
+    /** the glass of the nav bar and mini player: FROSTED, or MODULE for the glass shader the look brings */
+    const val BOTTOM_BAR = "bottomBar"
 }

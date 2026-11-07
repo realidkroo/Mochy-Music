@@ -56,6 +56,7 @@ import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.player.menu.MenuSheetSurface
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.delay
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 private val YouTubeQualities = listOf(AudioQuality.AUTO, AudioQuality.HIGH, AudioQuality.MEDIUM, AudioQuality.LOW)
 
@@ -188,7 +189,7 @@ private fun ProviderChoiceRow(
             .clickable(
                 enabled = !busy,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
             ) { onPick(null) }
             .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
@@ -232,7 +233,7 @@ private fun QualityChip(label: String, selected: Boolean, enabled: Boolean, onCl
             .height(28.dp)
             .clip(shape)
             .then(if (selected) Modifier.background(Color.White) else Modifier.border(1.dp, Color.White.copy(alpha = 0.25f), shape))
-            .clickable(enabled = enabled, interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
+            .clickable(enabled = enabled, interactionSource = remember { MutableInteractionSource() }, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 12.dp),
     ) {
         Text(text = label, color = if (selected) Color.Black else Color.White.copy(alpha = 0.8f), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)

@@ -60,6 +60,7 @@ import com.mochyy.mochymusic.ui.player.HoldSlowFactor
 import com.mochyy.mochymusic.ui.player.HoldSpeed
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // the design's phone is this many of its units across; one unit of every shape is the screen's width over this
 private const val DesignWidth = 1172f
@@ -240,7 +241,7 @@ private fun PlayButton(
                 scaleX = s
                 scaleY = s
             }
-            .clickable(interactionSource = source, indication = null, onClick = onClick)
+            .clickable(interactionSource = source, indication = RemoteFocus, onClick = onClick)
             .semantics {
                 contentDescription = description
                 role = Role.Button
@@ -394,7 +395,7 @@ private fun TenSecondsButton(
                 scaleX = s
                 scaleY = s
             }
-            .clickable(interactionSource = source, indication = null) {
+            .clickable(interactionSource = source, indication = RemoteFocus) {
                 onClick()
                 scope.launch {
                     spin.animateTo(1f, tween(durationMillis = 120, easing = FastOutSlowInEasing))

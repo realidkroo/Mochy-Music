@@ -94,7 +94,7 @@ internal fun MenuItemRow(
             .clickable(
                 enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(horizontal = 14.dp, vertical = 14.dp),

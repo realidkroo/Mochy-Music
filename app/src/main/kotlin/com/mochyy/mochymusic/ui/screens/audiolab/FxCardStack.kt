@@ -41,6 +41,7 @@ import com.mochyy.mochymusic.eq.VolumeSettings
 import com.mochyy.mochymusic.ui.component.damageBoundary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** an effect that's on, as the header's cards and the hub's status line name it */
 class ActiveEffect(val key: String, val label: String)
@@ -106,7 +107,7 @@ fun BoxScope.FxCardStack(effects: List<ActiveEffect>, hidden: State<Boolean>) {
         modifier = Modifier
             .fillMaxSize()
             .damageBoundary()
-            .clickable(remember { MutableInteractionSource() }, indication = null, enabled = count > 1) { front++ },
+            .clickable(remember { MutableInteractionSource() }, indication = RemoteFocus, enabled = count > 1) { front++ },
     ) {
         if (count > ShownCards) {
             Text(

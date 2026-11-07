@@ -92,6 +92,7 @@ private val LocalizedSettingsTitles = mapOf(
     "Larp mode" to R.string.larp_mode,
     "Disable App Updates notice" to R.string.settings_updates_notice,
     "Offline mode" to R.string.settings_offline_mode,
+    "Data saver" to R.string.settings_data_saver,
     "Proxy" to R.string.proxy,
     "Albums from liked songs" to R.string.settings_albums_from_likes,
     "Keep playing even when closed" to R.string.playback_keep_playing,
@@ -169,6 +170,7 @@ private val SettingsIndex = listOf(
     SettingsEntry("App language", "App behaviour", "general_settings", "language bahasa locale device system indonesia english translate", R.string.app_language),
     SettingsEntry("Disable App Updates notice", "App behaviour", "general_settings", "update popup notification updater"),
     SettingsEntry("Offline mode", "App behaviour", "general_settings", "play downloaded cache offline"),
+    SettingsEntry("Data saver", "App behaviour", "general_settings", "data saver mobile metered cellular bandwidth lower quality canvas video"),
     SettingsEntry("Proxy", "App behaviour", ProxySettingsRoute, "proxy socks http server vpn network region country blocked bot sign in"),
     SettingsEntry("Albums from liked songs", "App behaviour", "general_settings", "albums library liked songs old way apple music"),
     SettingsEntry("Keep playing even when closed", "App behaviour", "general_settings", "background close stop playback"),
@@ -241,7 +243,8 @@ private data class RecommendedSetting(
     val titleRes: Int,
     val breadcrumbRes: Int,
     val iconRes: Int,
-    val onClick: (NavController) -> Unit,
+    // opens a page, the list's own way: over it on a phone, beside it on a wide screen
+    val onClick: (open: (String) -> Unit) -> Unit,
 )
 
 private val RecommendedOptions = listOf(
@@ -249,30 +252,31 @@ private val RecommendedOptions = listOf(
         titleRes = R.string.settings_rec_blur,
         breadcrumbRes = R.string.settings_crumb_customisation,
         iconRes = R.drawable.contrast,
-        onClick = { nav ->
+        onClick = { open ->
             SettingsHighlight.pending = "Blur"
-            nav.navigate("customisation_settings")
+            open("customisation_settings")
         }
     ),
     RecommendedSetting(
         titleRes = R.string.settings_rec_crossfade,
         breadcrumbRes = R.string.settings_crumb_audio_lab,
         iconRes = R.drawable.linear_scale,
-        onClick = { nav ->
-            nav.navigate("crossmix_settings")
+        onClick = { open ->
+            open("crossmix_settings")
         }
     ),
     RecommendedSetting(
         titleRes = R.string.settings_rec_equalizer,
         breadcrumbRes = R.string.settings_crumb_audio_lab,
         iconRes = R.drawable.equalizer,
-        onClick = { nav ->
-            nav.navigate("equalizer")
+        onClick = { open ->
+            open("equalizer")
         }
     )
 )
 
 private val BubbleColor = Color(0xFF1C1C1E)
+private val SelectedBubbleColor = Color(0xFF3A3A3E)
 
 // the header holds the mochy mark with the big "Settings" under it, taller than search's title-only header
 private val SettingsTitleBlockHeight = 88.dp
@@ -280,8 +284,13 @@ private val SettingsMarkSize = 32.dp
 private val IconBgColor = Color(0xFF333338)
 
 @Composable
-fun MochySettingsScreen(navController: NavController) {
+fun MochySettingsScreen(navController: NavController, pane: SettingsPane? = null) {
     val focusManager = LocalFocusManager.current
+    // on a wide screen the list stays put and its pages open beside it
+    val open: (String) -> Unit = { route ->
+        if (pane != null) navController.openSettingsPage(route) else navController.navigate(route)
+    }
+    val selected = pane?.selectedRoute
     val scrollState = rememberScrollState()
     val glassState = remember { GlassState() }
 
@@ -376,7 +385,7 @@ fun MochySettingsScreen(navController: NavController) {
                                     .background(BubbleColor)
                                     .clickable {
                                         SettingsHighlight.pending = entry.highlightKey
-                                        navController.navigate(entry.route)
+                                        open(entry.route)
                                     }
                                     .padding(horizontal = 16.dp, vertical = 14.dp)
                             ) {
@@ -432,7 +441,7 @@ fun MochySettingsScreen(navController: NavController) {
                             .padding(horizontal = 20.dp)
                             .clip(RoundedCornerShape(24.dp))
                             .background(BubbleColor)
-                            .clickable { recommendedItem.onClick(navController) }
+                            .clickable { recommendedItem.onClick(open) }
                             .padding(18.dp)
                     ) {
                         Column {
@@ -510,38 +519,47 @@ fun MochySettingsScreen(navController: NavController) {
                         CategoryBubble(
                             title = stringResource(R.string.settings_audio_lab_category),
                             iconRes = R.drawable.equalizer,
-                            onClick = { navController.navigate("audio_lab") }
+                            selected = selected == "audio_lab",
+                            onClick = { open("audio_lab") }
                         )
 
                         CategoryBubble(
                             title = stringResource(R.string.settings_app_behaviour),
                             iconRes = R.drawable.settings,
-                            onClick = { navController.navigate("general_settings") }
+                            selected = selected == "general_settings",
+                            onClick = { open("general_settings") }
                         )
 
                         CategoryBubble(
                             title = stringResource(R.string.settings_customisation_category),
                             iconRes = R.drawable.palette,
-                            onClick = { navController.navigate("customisation_settings") }
+                            selected = selected == "customisation_settings",
+                            onClick = { open("customisation_settings") }
                         )
 
                         CategoryBubble(
                             title = stringResource(R.string.storage),
                             iconRes = R.drawable.storage,
-                            onClick = { navController.navigate("storage_settings") }
+                            selected = selected == "storage_settings",
+                            onClick = { open("storage_settings") }
                         )
 
                         CategoryBubble(
                             title = stringResource(R.string.integrations),
                             iconRes = R.drawable.integration,
-                            onClick = { navController.navigate(IntegrationsRoute) }
+                            selected = selected == IntegrationsRoute,
+                            onClick = { open(IntegrationsRoute) }
                         )
 
                         CategoryBubble(
                             title = stringResource(R.string.settings_modules_category),
                             iconRes = R.drawable.library_add,
-                            onClick = { navController.navigate("modules") }
+                            selected = selected == "modules",
+                            onClick = { open("modules") }
                         )
+
+                        // pages the modules that are on bring to settings, right under modules
+                        com.mochyy.mochymusic.ui.screens.settings.modules.ModuleSettingsPages(open = open, selected = selected)
                     }
                 }
             }
@@ -630,13 +648,15 @@ internal fun CategoryBubble(
     title: String,
     iconRes: Int,
     onClick: () -> Unit,
+    // lit while its page is open beside the list on a wide screen
+    selected: Boolean = false,
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp)
             .clip(RoundedCornerShape(22.dp))
-            .background(BubbleColor)
+            .background(if (selected) SelectedBubbleColor else BubbleColor)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp),
         contentAlignment = Alignment.CenterStart

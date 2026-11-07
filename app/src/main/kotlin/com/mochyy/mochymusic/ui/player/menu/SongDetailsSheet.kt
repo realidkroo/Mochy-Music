@@ -61,6 +61,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** tapping the player's title opens this: the song, a few lines about it, its artists and album, then about song and stream info */
 @Composable
@@ -235,7 +236,7 @@ private fun DetailRow(
             .clickable(
                 enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(horizontal = 14.dp, vertical = 12.dp)
@@ -312,7 +313,7 @@ private fun DoneButton(onClick: () -> Unit) {
             .background(Color.White.copy(alpha = 0.24f))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             ),
     ) {

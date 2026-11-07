@@ -49,6 +49,7 @@ import com.mochyy.mochymusic.lyrics.LyricsProviderRegistry
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.ui.utils.safeOpenUri
 import com.mochyy.mochymusic.viewmodels.LyricsMenuViewModel
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 private val LabelColor = Color.White.copy(alpha = 0.55f)
 private val ValueColor = Color.White.copy(alpha = 0.38f)
@@ -174,7 +175,7 @@ private fun FooterButton(
             }
             .clip(shape)
             .background(background)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 6.dp),
     ) {
         content()

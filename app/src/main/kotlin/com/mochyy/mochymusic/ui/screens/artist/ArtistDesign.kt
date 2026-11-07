@@ -114,6 +114,7 @@ import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.viewmodels.ArtistRelease
 import com.mochyy.mochymusic.ui.utils.stableStatusBars
 import com.mochyy.mochymusic.ui.utils.stableStatusBarsPadding
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // the round photo sits this far down the banner, and the page's header starts there
 internal const val ArtistAvatarAt = 0.45f
@@ -457,7 +458,7 @@ private fun SubscribePill(subscribed: Boolean, onClick: () -> Unit) {
             .clip(RoundedCornerShape(50))
             .drawBehind { drawRect(fill) }
             .border(1.dp, Color.White.copy(alpha = if (subscribed) 0.22f else 0f), RoundedCornerShape(50))
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .animateContentSize(spring(dampingRatio = 0.7f, stiffness = 500f))
             .padding(start = 14.dp, end = 17.dp)
     ) {

@@ -46,6 +46,7 @@ import com.mochyy.mochymusic.ui.component.Bone
 import com.mochyy.mochymusic.ui.component.BonesHost
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.utils.resize
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /*
  * The pieces the "Add music" sheet is drawn from: a song row with its tick box, the two chips
@@ -78,7 +79,7 @@ internal fun PickRow(
             .clickable(
                 enabled = !inPlaylist,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = { picks.toggle(id, toMetadata) },
             )
             .padding(vertical = 4.dp),
@@ -157,7 +158,7 @@ internal fun AddMusicChip(text: String, selected: Boolean, onClick: () -> Unit) 
             .background(if (selected) Color.White else MenuRowSurface)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(horizontal = 14.dp, vertical = 6.dp),

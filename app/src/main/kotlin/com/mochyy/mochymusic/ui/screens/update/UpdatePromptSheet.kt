@@ -50,6 +50,7 @@ import com.mochyy.mochymusic.core.updater.installApk
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.player.menu.MenuSheetSurface
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 private val CardSurface = MenuRowSurface
 
@@ -276,7 +277,7 @@ private fun PromptButton(
             .clickable(
                 enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
     ) {

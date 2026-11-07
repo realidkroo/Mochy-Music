@@ -184,7 +184,7 @@ internal fun SheetPillButton(
             .clickable(
                 enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(horizontal = 20.dp, vertical = 12.dp),
@@ -231,7 +231,7 @@ internal fun SheetOptionRow(
             .clickable(
                 enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(horizontal = 14.dp, vertical = 12.dp),
@@ -363,7 +363,7 @@ internal fun SheetHeaderButton(
             .size(42.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             ),
     ) {
@@ -436,7 +436,7 @@ internal fun SheetActionCard(
             .clickable(
                 enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(16.dp),
@@ -513,7 +513,7 @@ internal fun SheetSearchLauncher(
             .background(MenuRowSurface)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(horizontal = 16.dp, vertical = 12.dp),

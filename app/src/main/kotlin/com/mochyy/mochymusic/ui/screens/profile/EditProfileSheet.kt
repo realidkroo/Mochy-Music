@@ -51,6 +51,7 @@ import com.mochyy.mochymusic.ui.screens.setup.onboarding.OnbTextField
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.OnboardingPage
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.PageBadge
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** Opens the editor filled in with the name and picture the profile shows now. */
 fun PopupSheetState.showEditProfileSheet(currentName: String, currentPhoto: Any?) {
@@ -137,7 +138,7 @@ private fun EditablePhoto(photo: Any?, onClick: () -> Unit) {
             }
             .clip(CircleShape)
             .background(Color(0xFF4F4F4F))
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
     ) {
         if (photo != null) {
             AsyncImage(

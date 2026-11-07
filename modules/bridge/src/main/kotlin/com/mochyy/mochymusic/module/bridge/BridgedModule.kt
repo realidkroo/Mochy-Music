@@ -10,7 +10,11 @@ import com.mochyy.mochymusic.module.LicenseServer
 import com.mochyy.mochymusic.module.LookModule
 import com.mochyy.mochymusic.module.LyricsModule
 import com.mochyy.mochymusic.module.MODULE_API_VERSION
+import com.mochyy.mochymusic.module.MetadataModule
+import com.mochyy.mochymusic.module.ModuleArt
 import com.mochyy.mochymusic.module.ModuleChoice
+import com.mochyy.mochymusic.module.ModuleField
+import com.mochyy.mochymusic.module.ModuleFields
 import com.mochyy.mochymusic.module.ModuleHost
 import com.mochyy.mochymusic.module.ModuleItem
 import com.mochyy.mochymusic.module.ModuleServer
@@ -18,6 +22,7 @@ import com.mochyy.mochymusic.module.ResolveResult
 import com.mochyy.mochymusic.module.ServerListModule
 import com.mochyy.mochymusic.module.ServerProblem
 import com.mochyy.mochymusic.module.SourceModule
+import com.mochyy.mochymusic.module.TrackMetadata
 import com.mochyy.mochymusic.module.TrackQuery
 import com.mochyy.mochymusic.module.bridge.Wire.text
 import com.mochyy.mochymusic.module.bridge.shared.BridgeReply
@@ -37,12 +42,15 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.io.encoding.Base64
 
-// songs, lyrics and a look are always here and only asked for when the module says it adds them; servers and items need a subclass, since the page checks for those by type
-open class BridgedModule private constructor(private val bridge: ModuleBridge, about: Wire.About) : SourceModule, LyricsModule, LookModule {
+// songs, lyrics, song facts, a look, pictures and settings are always here and only asked for when the module has them; servers and items need a subclass, since the page checks for those by type
+open class BridgedModule private constructor(private val bridge: ModuleBridge, about: Wire.About) :
+    SourceModule, LyricsModule, LookModule, MetadataModule, ModuleArt, ModuleFields {
 
     override val info = about.info
     override val adds = about.adds
     override val signIn = about.signIn
+    override val icon = about.icon
+    override val banner = about.banner
     val itemsLabel: String = about.itemsLabel
     val itemsAbout: String = about.itemsAbout
 
@@ -76,7 +84,17 @@ open class BridgedModule private constructor(private val bridge: ModuleBridge, a
     override suspend fun lyrics(track: TrackQuery): String? =
         (call("lyrics", buildJsonObject { put("track", Wire.trackToJson(track)) }) as? JsonPrimitive)?.contentOrNull
 
+    override suspend fun metadata(track: TrackQuery): TrackMetadata? =
+        Wire.metadataFrom(call("metadata", buildJsonObject { put("track", Wire.trackToJson(track)) }))
+
     override val look: Map<String, String> get() = Wire.mapFrom(ask("look"))
+
+    // a module packed before fields existed doesn't know the call, and that just means it has none
+    override val fields: List<ModuleField> get() = runCatching { Wire.fieldsFrom(ask("fields")) }.getOrDefault(emptyList())
+
+    override fun onFields(values: Map<String, String>) {
+        runCatching { ask("onFields", buildJsonObject { put("values", Wire.mapToJson(values)) }) }
+    }
 
     val servers: List<ModuleServer> get() = Wire.serversFrom(ask("servers"))
 

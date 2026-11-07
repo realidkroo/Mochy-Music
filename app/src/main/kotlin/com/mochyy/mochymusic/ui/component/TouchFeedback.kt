@@ -6,6 +6,8 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.IndicationNodeFactory
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.Composable
@@ -13,11 +15,13 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DrawModifierNode
@@ -71,14 +75,18 @@ private class RoundedHighlightNode(
     override fun onAttach() {
         coroutineScope.launch {
             val presses = ArrayList<PressInteraction.Press>()
+            var focused = false
             interactionSource.interactions.collect { interaction ->
                 when (interaction) {
                     is PressInteraction.Press -> presses.add(interaction)
                     is PressInteraction.Release -> presses.remove(interaction.press)
                     is PressInteraction.Cancel -> presses.remove(interaction.press)
+                    // the tv remote resting on it keeps the box lit, so people can see where they are
+                    is FocusInteraction.Focus -> focused = true
+                    is FocusInteraction.Unfocus -> focused = false
                     else -> return@collect
                 }
-                if (presses.isNotEmpty()) {
+                if (presses.isNotEmpty() || focused) {
                     launch { strength.animateTo(1f, tween(90)) }
                 } else {
                     launch {
@@ -106,6 +114,56 @@ private class RoundedHighlightNode(
         drawContent()
     }
 }
+
+/** a soft wash and a thin outline on whatever the tv remote rests on, fingers never focus so phones never see it */
+object RemoteFocus : IndicationNodeFactory {
+    override fun create(interactionSource: InteractionSource): DelegatableNode = RemoteFocusNode(interactionSource)
+
+    override fun equals(other: Any?): Boolean = other === this
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}
+
+private class RemoteFocusNode(private val interactionSource: InteractionSource) : Modifier.Node(), DrawModifierNode {
+    private val strength = Animatable(0f)
+
+    override fun onAttach() {
+        coroutineScope.launch {
+            interactionSource.interactions.collect { interaction ->
+                val target = when (interaction) {
+                    is FocusInteraction.Focus -> 1f
+                    is FocusInteraction.Unfocus -> 0f
+                    else -> return@collect
+                }
+                launch { strength.animateTo(target, tween(if (target > 0f) 120 else 200)) }
+            }
+        }
+    }
+
+    override fun ContentDrawScope.draw() {
+        drawContent()
+        val s = strength.value
+        if (s <= 0f) return
+        // round enough to hug a circle icon, capped so a big card keeps roughly its own corners
+        val corner = CornerRadius(minOf(size.minDimension / 2f, RemoteFocusCorner.toPx()))
+        drawRoundRect(color = Color.White.copy(alpha = 0.16f * s), cornerRadius = corner)
+        val stroke = RemoteFocusStroke.toPx()
+        drawRoundRect(
+            color = Color.White.copy(alpha = 0.85f * s),
+            topLeft = Offset(stroke / 2f, stroke / 2f),
+            size = Size(size.width - stroke, size.height - stroke),
+            cornerRadius = corner,
+            style = Stroke(stroke),
+        )
+    }
+}
+
+private val RemoteFocusCorner = 20.dp
+private val RemoteFocusStroke = 2.dp
+
+/** a backdrop that still catches taps but never takes the tv remote's focus, or it swallows the first press */
+fun Modifier.backdropClick(onClick: () -> Unit = {}): Modifier =
+    focusProperties { canFocus = false }.clickable(interactionSource = null, indication = null, onClick = onClick)
 
 /**
  * squishes under the finger and springs back with a little overshoot. a quick tap inside a list

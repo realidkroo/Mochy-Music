@@ -70,6 +70,7 @@ import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // how far the customize page's cards sit in from the screen's sides, the same as every other settings page
 internal val CustomisePageMargin = 20.dp
@@ -418,7 +419,7 @@ private fun StyleCard(
             .height(StyleCardHeight)
             .clip(CardShape)
             .background(LabColors.Card)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
     ) {
         PreviewFrame(modifier = Modifier.align(Alignment.BottomEnd), content = preview)
         Text(

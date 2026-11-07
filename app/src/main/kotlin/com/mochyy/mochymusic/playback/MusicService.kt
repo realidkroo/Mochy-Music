@@ -27,6 +27,7 @@ import androidx.core.net.toUri
 import androidx.datastore.preferences.core.edit
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
@@ -51,6 +52,7 @@ import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.ContentMetadata
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.decoder.ffmpeg.FfmpegFallbackRenderer
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
@@ -1219,11 +1221,12 @@ class MusicService :
             }
         }
 
+        // the timed saves only write what changed: a queue edit (they're the only thing that saves one), or the place in the song
         scope.launch {
             while (isActive) {
                 delay(30.seconds)
                 if (dataStore.get(PersistentQueueKey, true)) {
-                    saveQueueToDisk()
+                    saveQueueToDisk(onlyChanges = true)
                 }
             }
         }
@@ -1232,7 +1235,7 @@ class MusicService :
             while (isActive) {
                 delay(10.seconds)
                 if (dataStore.get(PersistentQueueKey, true) && player.isPlaying) {
-                    saveQueueToDisk()
+                    saveQueueToDisk(onlyChanges = true)
                 }
             }
         }
@@ -4007,6 +4010,15 @@ class MusicService :
                     override fun getDurationToProgressUs(positionUs: Long, elapsedRealtimeUs: Long, isOnBufferAvailableListenerRegistered: Boolean): Long =
                         minOf(super.getDurationToProgressUs(positionUs, elapsedRealtimeUs, isOnBufferAvailableListenerRegistered), PositionWakeUs)
                 })
+                // after the phone's own, so it only takes what the phone can't decode: alac on most phones, flac on old ones, 192 kHz masters
+                out.add(object : FfmpegFallbackRenderer(eventHandler, eventListener, audioSink) {
+                    override fun onSourceFormat(format: Format) {
+                        songs?.sourceFormat = format
+                    }
+
+                    override fun getDurationToProgressUs(positionUs: Long, elapsedRealtimeUs: Long): Long =
+                        minOf(super.getDurationToProgressUs(positionUs, elapsedRealtimeUs), PositionWakeUs)
+                })
             }
         }.apply {
             // a phone's first-choice decoder failing to start (a vendor FLAC decoder on a 24-bit
@@ -4040,28 +4052,50 @@ class MusicService :
         }
     }
 
-    private fun saveQueueToDisk() {
+    // what the last save wrote, so a timed save can tell nothing changed (it used to write all three files every 30 s, paused or not)
+    private var savedQueueKey: Int? = null
+    private var savedPosition = -1L
+
+    // a cheap fingerprint of everything in the queue and automix files: the songs, where in them we are, and how they play
+    private fun queueKey(): Int {
+        var key = java.util.Objects.hash(queueTitle, player.currentMediaItemIndex, player.shuffleModeEnabled, player.repeatMode, player.playWhenReady, playerVolume.value)
+        for (i in 0 until player.mediaItemCount) key = 31 * key + player.getMediaItemAt(i).mediaId.hashCode()
+        automixItems.value.forEach { key = 31 * key + it.mediaId.hashCode() }
+        return key
+    }
+
+    private fun saveQueueToDisk(onlyChanges: Boolean = false) {
         if (player.mediaItemCount == 0) {
             Timber.tag(TAG).d("Skipping queue save - no media items")
             return
         }
+        val key = queueKey()
+        val position = player.currentPosition
+        val queueChanged = key != savedQueueKey
+        if (onlyChanges && !queueChanged && kotlin.math.abs(position - savedPosition) < PositionSaveStepMs) return
+        // a timed save with only the place moved writes the small player state, not the whole queue again
+        val writeQueue = !onlyChanges || queueChanged
+        savedQueueKey = key
+        savedPosition = position
 
         try {
 
-            val persistQueue = currentQueue.toPersistQueue(
+            // the whole queue is only gathered when it's going to be written
+            val persistQueue = if (writeQueue) currentQueue.toPersistQueue(
                 title = queueTitle,
                 items = player.mediaItems.mapNotNull { it.metadata },
                 mediaItemIndex = player.currentMediaItemIndex,
                 position = player.currentPosition
-            )
+            ) else null
 
-            val persistAutomix =
+            val persistAutomix = if (writeQueue) {
                 PersistQueue(
                     title = "automix",
                     items = automixItems.value.mapNotNull { it.metadata },
                     mediaItemIndex = 0,
                     position = 0,
                 )
+            } else null
 
             val persistPlayerState = PersistPlayerState(
                 playWhenReady = player.playWhenReady,
@@ -4077,7 +4111,7 @@ class MusicService :
             )
 
             scope.launch(Dispatchers.IO) {
-                runCatching {
+                if (persistQueue != null) runCatching {
                     filesDir.resolve(PERSISTENT_QUEUE_FILE).outputStream().use { fos ->
                         ObjectOutputStream(fos).use { oos ->
                             oos.writeObject(persistQueue)
@@ -4089,7 +4123,7 @@ class MusicService :
                     reportException(it)
                 }
 
-                runCatching {
+                if (persistAutomix != null) runCatching {
                     filesDir.resolve(PERSISTENT_AUTOMIX_FILE).outputStream().use { fos ->
                         ObjectOutputStream(fos).use { oos ->
                             oos.writeObject(persistAutomix)
@@ -4186,7 +4220,9 @@ class MusicService :
         return super.onStartCommand(intent, flags, startId)
     }
 
-    private fun updateWidgetUI(isPlaying: Boolean) {
+    private val powerManager by lazy { getSystemService(android.os.PowerManager::class.java) }
+
+    private fun updateWidgetUI(isPlaying: Boolean, progressOnly: Boolean = false) {
         scope.launch {
             try {
                 val songData = currentSong.value
@@ -4202,7 +4238,8 @@ class MusicService :
                     isPlaying = isPlaying,
                     isLiked = isLiked,
                     duration = if (player.duration != C.TIME_UNSET) player.duration else 0,
-                    currentPosition = player.currentPosition
+                    currentPosition = player.currentPosition,
+                    progressOnly = progressOnly,
                 )
             } catch (e: Exception) {
 
@@ -4216,8 +4253,9 @@ class MusicService :
         widgetUpdateJob?.cancel()
         widgetUpdateJob = scope.launch {
             while (isActive) {
-                if (player.isPlaying) {
-                    updateWidgetUI(true)
+                // nobody sees a widget with the screen off, and redrawing it every second there was all cost
+                if (player.isPlaying && powerManager?.isInteractive != false) {
+                    updateWidgetUI(true, progressOnly = true)
                 }
                 // the widget's progress bar moves in whole seconds anyway; more often only cost
                 // frames in the app
@@ -4972,6 +5010,9 @@ class MusicService :
 
 /** How often a placed home screen widget's progress is redrawn while playing. */
 private const val WidgetProgressIntervalMs = 1_000L
+
+// a timed save skips a place in the song that moved less than this; coming back a second or two early doesn't matter
+private const val PositionSaveStepMs = 2_000L
 
 // the passthrough switch, its mode and whether anything shapes the sound, compared as one so audio pass hears each change once
 private data class PassSettings(val enabled: Boolean, val mode: AudioPassMode, val blocked: Boolean, val fixedVolume: Boolean)

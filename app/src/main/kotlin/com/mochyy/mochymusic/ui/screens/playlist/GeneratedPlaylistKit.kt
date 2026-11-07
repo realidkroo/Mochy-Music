@@ -59,6 +59,7 @@ import com.mochyy.mochymusic.ui.component.detail.PlaylistStatsStyle
 import com.mochyy.mochymusic.ui.component.detail.SectionTitleStyle
 import com.mochyy.mochymusic.ui.component.detail.playlistCompactHeaderHeight
 import com.mochyy.mochymusic.ui.screens.search.SearchFieldHeight
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /**
  * the frame every generated page sits in. [rows] fills the list under the header; the header,
@@ -179,7 +180,7 @@ fun GeneratedSearchCapsule(
                     .size(24.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.16f))
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = RemoteFocus) {
                         onQueryChange(TextFieldValue())
                     },
             ) {

@@ -155,6 +155,10 @@ val ProfileCardNumberKey = stringPreferencesKey("profileCardNumber")
 val ProfileJoinedEpochDayKey = longPreferencesKey("profileJoinedEpochDay")
 
 val AudioQualityKey = stringPreferencesKey("audioQuality")
+
+// data saver: lighter streams and no canvas or video backgrounds, on mobile data only unless the second switch is off
+val DataSaverKey = booleanPreferencesKey("dataSaver")
+val DataSaverMobileOnlyKey = booleanPreferencesKey("dataSaverMobileOnly")
 val IpVersionKey = stringPreferencesKey("ipVersion")
 
 enum class AudioQuality {
@@ -429,6 +433,8 @@ val VideoModeReturnStyleKey = stringPreferencesKey("videoModeReturnStyle")
 
 // the full video mode shows the whole picture with room round it, instead of zooming it to fill the screen
 val VideoModeWholeVideoKey = booleanPreferencesKey("videoModeWholeVideo")
+// the full video mode stood upright by its rotate button, instead of turning itself sideways on a phone held upright
+val VideoModeUprightKey = booleanPreferencesKey("videoModeUpright")
 
 val LocalSongAutoMetadataKey = booleanPreferencesKey("local_song_auto_metadata")
 
@@ -655,9 +661,6 @@ enum class PlayerStyle(val displayName: String, val selectorName: String) {
     // the two nightstand styles share their sheet, their night look and their lock screen rules
     val isBedside: Boolean get() = this == BEDSIDE || this == BEDSIDE_TILES
 
-    // laid out sideways until someone turns it upright, the way a phone stands on a nightstand
-    val startsSideways: Boolean get() = this == BEDSIDE_TILES
-
     /** drawn by the flagship's own player (cover, controls, card), not a design of its own */
     val flagshipFamily: Boolean get() = this == FLAGSHIP || this == CLASSIC || this == TURNTABLE
 
@@ -735,9 +738,6 @@ val BedsideLockPromptDismissedKey = booleanPreferencesKey("bedsideLockPromptDism
 // the page each bedside tile was left on, so it opens where it was
 val BedsideMusicTilePageKey = intPreferencesKey("bedsideMusicTilePage")
 val BedsideInfoTilePageKey = intPreferencesKey("bedsideInfoTilePage")
-
-/** whether [style] is shown turned sideways (its content rotated a quarter turn) */
-fun playerStyleRotatedKey(style: PlayerStyle) = booleanPreferencesKey("playerStyleRotated_${style.name}")
 
 /** what the timestamp at the right of the seek bar shows */
 enum class PlayerEndTimestamp { END_TIME, TIME_LEFT }
@@ -1245,6 +1245,15 @@ val DisableBlurKey = booleanPreferencesKey("disableBlur")
 val BlurQualityKey = stringPreferencesKey("blurQuality")
 
 enum class BlurQuality { LOW, HIGH }
+
+// the glass of the nav bar and the mini player; a look module can swap mochy's frost for a glass shader it brings itself
+val ChromeGlassStyleKey = stringPreferencesKey("chromeGlassStyle")
+
+enum class ChromeGlassStyle {
+    FROSTED,
+    // the agsl glass the look that's on brings in its zip
+    MODULE,
+}
 val EnableProgressiveBlurKey = booleanPreferencesKey("enableProgressiveBlur")
 // the animation switch in customize: off, nothing in the app moves (the old key name stayed so nobody's choice is lost)
 val EnableElementBlurAnimatorKey = booleanPreferencesKey("enableElementBlurAnimator")

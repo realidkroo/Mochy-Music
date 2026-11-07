@@ -60,3 +60,5 @@ jobs:
         with:
           name: app-universal-debug-pr-${{ github.event.number }}
           path: app/build/outputs/apk/universalFoss/debug/*.apk
+          # a pr's apk is for trying it before merging, after a week it's just eating actions storage
+          retention-days: 7

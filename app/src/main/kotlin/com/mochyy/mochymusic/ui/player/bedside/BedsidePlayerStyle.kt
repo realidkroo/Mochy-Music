@@ -32,15 +32,13 @@ import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.BedsideClockFace
 import com.mochyy.mochymusic.constants.BedsideClockFaceKey
-import com.mochyy.mochymusic.constants.PlayerStyle
 import com.mochyy.mochymusic.ui.component.LocalPlayerBottomSheetState
 import com.mochyy.mochymusic.ui.player.styles.LocalStyleInteractive
-import com.mochyy.mochymusic.ui.player.styles.RotatingFrame
+import com.mochyy.mochymusic.ui.player.styles.StyleStage
 import com.mochyy.mochymusic.ui.player.styles.StyleActions
 import com.mochyy.mochymusic.ui.player.styles.StyleCircle
 import com.mochyy.mochymusic.ui.player.styles.StyleMenu
 import com.mochyy.mochymusic.ui.player.styles.StyleTones
-import com.mochyy.mochymusic.ui.player.styles.rememberStyleRotation
 import com.mochyy.mochymusic.ui.player.styles.rememberStyleTones
 import com.mochyy.mochymusic.utils.rememberEnumPreference
 
@@ -56,9 +54,7 @@ fun BedsidePlayerStyle(actions: StyleActions, modifier: Modifier = Modifier, pre
     val tones = rememberStyleTones()
     val time = rememberBedsideTime(live)
     val cover = rememberCoverPainter(rememberPlayingTrack().thumbnailUrl)
-    val (rotated, setRotated) = rememberStyleRotation(PlayerStyle.BEDSIDE)
-    RotatingFrame(
-        rotated = rotated,
+    StyleStage(
         tones = tones,
         // pure black, so an oled screen keeps every pixel off that isn't the time
         background = { Spacer(Modifier.fillMaxSize().background(Color.Black)) },
@@ -73,8 +69,6 @@ fun BedsidePlayerStyle(actions: StyleActions, modifier: Modifier = Modifier, pre
             tones = tones,
             cover = cover,
             actions = actions,
-            rotated = rotated,
-            onRotate = setRotated,
             live = live,
         )
     }
@@ -91,8 +85,6 @@ private fun BedsideLayout(
     tones: StyleTones,
     cover: Painter,
     actions: StyleActions,
-    rotated: Boolean,
-    onRotate: (Boolean) -> Unit,
     live: Boolean,
 ) {
     val context = LocalContext.current
@@ -162,8 +154,6 @@ private fun BedsideLayout(
             onOpenChange = { menuOpen = it },
             tones = tones,
             actions = gated,
-            rotated = rotated,
-            onRotate = onRotate,
             atBottom = false,
             end = insets.end + EdgeGap,
             edge = insets.top + EdgeGap,

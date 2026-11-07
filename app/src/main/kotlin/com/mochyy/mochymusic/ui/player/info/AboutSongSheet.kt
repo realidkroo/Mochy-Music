@@ -65,6 +65,7 @@ import com.mochyy.mochymusic.ui.player.menu.rememberMenuSheetStack
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.ProviderSquircle
 import com.mochyy.mochymusic.utils.makeTimeString
 import com.mochyy.mochymusic.utils.rememberPreference
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** where the "about" text comes from; the chip beside the title swaps it */
 enum class AboutSource(val id: String, val label: String) {
@@ -72,6 +73,8 @@ enum class AboutSource(val id: String, val label: String) {
     Genius("genius", "Genius"),
     Wikipedia("wikipedia", "Wikipedia"),
     YouTube("youtube", "YouTube"),
+    // the song facts modules that are on, only offered while one is
+    Modules("modules", "Modules"),
 }
 
 /** "about song": the song's facts, what it's about, who made it and where else it plays */
@@ -176,7 +179,7 @@ private fun SourceChip(source: AboutSource, onClick: () -> Unit) {
             .border(1.dp, Color.White.copy(alpha = 0.3f), shape)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(horizontal = 11.dp),
@@ -247,7 +250,7 @@ private fun AboutCard(about: SongAbout, source: AboutSource, onSwitch: (AboutSou
                         .fillMaxWidth()
                         .then(
                             if (pageUrl != null) {
-                                Modifier.clickable(interactionSource = null, indication = null) { runCatching { uriHandler.openUri(pageUrl) } }
+                                Modifier.clickable(interactionSource = null, indication = RemoteFocus) { runCatching { uriHandler.openUri(pageUrl) } }
                             } else Modifier,
                         ),
                 )
@@ -261,6 +264,7 @@ internal fun textFor(about: SongAbout, source: AboutSource): String? = when (sou
     AboutSource.Genius -> about.genius?.about
     AboutSource.Wikipedia -> about.wiki?.about
     AboutSource.YouTube -> about.youtubeDescription
+    AboutSource.Modules -> about.module?.about
 }
 
 internal fun doneFor(about: SongAbout, source: AboutSource): Boolean = when (source) {
@@ -268,6 +272,7 @@ internal fun doneFor(about: SongAbout, source: AboutSource): Boolean = when (sou
     AboutSource.Genius -> about.geniusDone
     AboutSource.Wikipedia -> about.wikiDone
     AboutSource.YouTube -> about.youtubeDone
+    AboutSource.Modules -> about.moduleDone
 }
 
 // where "provided by" leads: the page the text came from (wikipedia's text is shared on the condition it's credited this way)
@@ -276,6 +281,7 @@ private fun pageFor(about: SongAbout, source: AboutSource): String? = when (sour
     AboutSource.Genius -> about.genius?.pageUrl?.takeIf { it.isNotEmpty() }
     AboutSource.Wikipedia -> about.wiki?.articleUrl
     AboutSource.YouTube -> null
+    AboutSource.Modules -> null
 }
 
 @Composable
@@ -294,7 +300,7 @@ private fun ArtistRow(artists: List<AboutArtist>, onOpenArtist: (String) -> Unit
                     .clickable(
                         enabled = !artist.id.isNullOrBlank(),
                         interactionSource = null,
-                        indication = null,
+                        indication = RemoteFocus,
                     ) { artist.id?.let(onOpenArtist) },
             ) {
                 Box(
@@ -344,7 +350,7 @@ private fun StoreRow(links: List<StoreLink>) = BoxWithConstraints(Modifier.fillM
             Column(
                 modifier = Modifier
                     .width(tile)
-                    .clickable(interactionSource = null, indication = null) { runCatching { uriHandler.openUri(link.url) } },
+                    .clickable(interactionSource = null, indication = RemoteFocus) { runCatching { uriHandler.openUri(link.url) } },
             ) {
                 ProviderSquircle(service = link.service, size = tile)
                 Spacer(Modifier.height(8.dp))

@@ -70,6 +70,7 @@ import com.mochyy.mochymusic.utils.AppIconFamily
 import com.mochyy.mochymusic.utils.AppIcons
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 private val TileSize = 66.dp
 // close to a launcher's squircle, so the tile reads as the icon it will be
@@ -156,7 +157,7 @@ private fun PickedIcon(icon: AppIcon, art: Map<Int, Painter>, expanded: Boolean,
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(interactionSource = interaction, indication = null, onClick = onToggle)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onToggle)
             .padding(horizontal = CardTextInset),
     ) {
         Text(
@@ -264,7 +265,7 @@ private fun IconTile(icon: AppIcon, art: Map<Int, Painter>, picked: Boolean, onC
             picked = picked,
             modifier = Modifier
                 .pressBounce(interaction, pressedScale = 0.94f)
-                .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+                .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
         )
         Spacer(Modifier.height(8.dp))
         label()
@@ -319,7 +320,7 @@ private fun CustomizeButton(open: Boolean, onClick: () -> Unit) {
             .pressBounce(interaction, pressedScale = 0.92f)
             .clip(CircleShape)
             .drawBehind { drawRect(fill) }
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 9.dp, vertical = 4.dp),
     )
 }
@@ -353,7 +354,7 @@ private fun Swatch(color: AppIconColor, selected: Boolean, onClick: () -> Unit) 
             .clip(CircleShape)
             .background(colorResource(color.background))
             .border(if (selected) 2.dp else 1.dp, ring, CircleShape)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .semantics {
                 contentDescription = name
                 this.selected = selected

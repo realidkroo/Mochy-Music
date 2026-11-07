@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DataSaverOn
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.HighQuality
+import androidx.compose.material.icons.rounded.SignalCellularAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +38,8 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.AlbumsFromLikedSongsKey
 import com.mochyy.mochymusic.constants.CanvasThumbnailAnimationKey
 import com.mochyy.mochymusic.constants.CanvasWifiOnlyKey
+import com.mochyy.mochymusic.constants.DataSaverKey
+import com.mochyy.mochymusic.constants.DataSaverMobileOnlyKey
 import com.mochyy.mochymusic.constants.DisableVideoAutoplayKey
 import com.mochyy.mochymusic.constants.DontSkipOnFailureKey
 import com.mochyy.mochymusic.constants.HideSettingsDescriptionsKey
@@ -172,6 +176,8 @@ private fun generalItems(navController: NavController): List<SettingsItem> {
     val context = LocalContext.current
     val (noticeHidden, onNoticeHidden) = rememberPreference(HideUpdateNoticeKey, defaultValue = false)
     val (offlineMode, onOfflineModeChange) = rememberPreference(OfflineModeKey, defaultValue = false)
+    val (dataSaver, onDataSaverChange) = rememberPreference(DataSaverKey, defaultValue = false)
+    val (dataSaverMobileOnly, onDataSaverMobileOnlyChange) = rememberPreference(DataSaverMobileOnlyKey, defaultValue = true)
     val (stopOnTaskRemoved, onStopOnTaskRemoved) = rememberPreference(StopPlaybackOnTaskRemovedKey, defaultValue = false)
     val (mixWithOtherApps, onMixWithOtherAppsChange) = rememberPreference(MixWithOtherAppsKey, defaultValue = false)
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(PersistentQueueKey, defaultValue = true)
@@ -200,6 +206,25 @@ private fun generalItems(navController: NavController): List<SettingsItem> {
             icon = painterResource(R.drawable.download),
             checked = offlineMode,
             onCheckedChange = onOfflineModeChange,
+        ),
+        // lighter streams and still covers, for metered plans; the second switch decides whether wi-fi counts too
+        switchItem(
+            key = "Data saver",
+            title = stringResource(R.string.settings_data_saver),
+            description = stringResource(R.string.settings_data_saver_desc),
+            detail = stringResource(R.string.settings_data_saver_detail),
+            icon = rememberVectorPainter(Icons.Rounded.DataSaverOn),
+            checked = dataSaver,
+            onCheckedChange = onDataSaverChange,
+        ),
+        switchItem(
+            key = "Data saver only on mobile data",
+            title = stringResource(R.string.settings_data_saver_mobile),
+            description = stringResource(R.string.settings_data_saver_mobile_desc),
+            icon = rememberVectorPainter(Icons.Rounded.SignalCellularAlt),
+            checked = dataSaverMobileOnly,
+            onCheckedChange = onDataSaverMobileOnlyChange,
+            subOptionOf = dataSaver,
         ),
         SettingsItem(
             title = { Text(stringResource(R.string.proxy)) },

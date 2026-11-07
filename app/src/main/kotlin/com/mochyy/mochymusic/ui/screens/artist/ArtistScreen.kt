@@ -133,6 +133,7 @@ import com.music.innertube.models.YTItem
 import com.music.innertube.pages.ArtistSection
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** an artist page's shelves, sorted by what they hold; YouTube's titles are in the account's language */
 private class ArtistShelves(sections: List<ArtistSection>) {
@@ -897,7 +898,7 @@ private fun ArtistAbout(name: String, bio: String, modifier: Modifier = Modifier
             modifier = Modifier
                 .animateContentSize(spring(dampingRatio = 0.9f, stiffness = 420f))
                 .clip(RoundedCornerShape(8.dp))
-                .clickable(interactionSource = null, indication = null) { expanded = !expanded },
+                .clickable(interactionSource = null, indication = RemoteFocus) { expanded = !expanded },
         )
     }
 }

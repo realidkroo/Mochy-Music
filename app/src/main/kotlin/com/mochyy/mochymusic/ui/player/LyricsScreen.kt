@@ -229,6 +229,9 @@ fun LyricsScreen(
     /** Opens the source picker from the footer's "Switch" button. Without it the button is hidden. */
     onSwitchSource: (() -> Unit)? = null,
 
+    // off where the lyrics sit in a panel beside the cover, with no header of their own (the landscape flagship)
+    showHeader: Boolean = true,
+
     modifier: Modifier = Modifier,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -545,7 +548,7 @@ fun LyricsScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
 
-        Row(
+        if (showHeader) Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()

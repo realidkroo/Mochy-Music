@@ -60,10 +60,12 @@ class MochyWidgetManager @Inject constructor(
         isPlaying: Boolean,
         isLiked: Boolean,
         duration: Long = 0,
-        currentPosition: Long = 0
+        currentPosition: Long = 0,
+        // the once-a-second tick for the progress bar: the turntable widget has none, so it's left alone
+        progressOnly: Boolean = false,
     ) = withContext(Dispatchers.Default) {
         updating.withLock {
-            drawWidgets(title, artist, artworkUri, isPlaying, isLiked, duration, currentPosition)
+            drawWidgets(title, artist, artworkUri, isPlaying, isLiked, duration, currentPosition, progressOnly)
         }
     }
 
@@ -75,12 +77,13 @@ class MochyWidgetManager @Inject constructor(
         isLiked: Boolean,
         duration: Long,
         currentPosition: Long,
+        progressOnly: Boolean,
     ) {
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val componentName = ComponentName(context, MusicWidgetReceiver::class.java)
         val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
         val turntableComponentName = ComponentName(context, TurntableWidgetReceiver::class.java)
-        val turntableWidgetIds = appWidgetManager.getAppWidgetIds(turntableComponentName)
+        val turntableWidgetIds = if (progressOnly) IntArray(0) else appWidgetManager.getAppWidgetIds(turntableComponentName)
         if (widgetIds.isEmpty() && turntableWidgetIds.isEmpty()) return
 
         val albumArt: Bitmap?

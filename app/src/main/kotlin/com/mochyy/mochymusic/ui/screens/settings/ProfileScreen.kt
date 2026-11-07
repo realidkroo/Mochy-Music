@@ -190,6 +190,7 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 private object MochyGreeting {
     private fun pick() = listOf("Hello again", "Hey", "Welcome back", "Good to see you").random()
@@ -590,7 +591,7 @@ fun ProfileScreen(navController: NavController) {
                                     cameraDistance = 14f * this.density
                                     alpha = if (cardHidden) 0f else 1f
                                 }
-                                .clickable(enabled = stage == HeaderStage.Collapsed, interactionSource = cardPress, indication = null) {
+                                .clickable(enabled = stage == HeaderStage.Collapsed, interactionSource = cardPress, indication = RemoteFocus) {
                                     if (expand > 0f) return@clickable
                                     haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                                     profile.open()
@@ -1084,7 +1085,7 @@ private fun DeveloperCard(onClick: () -> Unit) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .background(PageCard)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         // room for every face at rest, 40% of a face apart; pressed they spill to the right

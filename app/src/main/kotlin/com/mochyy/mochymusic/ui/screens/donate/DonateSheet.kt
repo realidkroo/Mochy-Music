@@ -44,6 +44,7 @@ import com.mochyy.mochymusic.ui.component.pressBounce
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.screens.update.VersionRing
 import com.mochyy.mochymusic.ui.screens.update.openUrl
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 const val KofiUrl = "https://ko-fi.com/realidkroo"
 const val SocialBuzzUrl = "https://sociabuzz.com/realidkroo/tribe"
@@ -168,7 +169,7 @@ private fun DonateLinkRow(
             .heightIn(min = 54.dp)
             .clip(RoundedCornerShape(18.dp))
             .background(MenuRowSurface)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 11.dp, vertical = 10.dp),
     ) {
         // plain white, not themed: the brand marks inside only read on a light badge

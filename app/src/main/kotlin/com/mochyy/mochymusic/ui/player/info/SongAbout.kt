@@ -6,6 +6,9 @@ import android.content.Context
 import com.mochyy.mochymusic.db.MusicDatabase
 import com.mochyy.mochymusic.importer.account.AccountService
 import com.mochyy.mochymusic.models.MediaMetadata
+import com.mochyy.mochymusic.module.TrackMetadata
+import com.mochyy.mochymusic.module.TrackQuery
+import com.mochyy.mochymusic.modules.ModuleMetadata
 import com.mochyy.mochymusic.ui.utils.resize
 import com.music.innertube.YouTube
 import com.music.musixmatch.Musixmatch
@@ -47,22 +50,28 @@ data class SongAbout(
     val wiki: WikiSong? = null,
     val youtubeDone: Boolean = false,
     val youtubeDescription: String? = null,
+    // what the song facts modules that are on said, laid together, and whose words the about text is
+    val moduleDone: Boolean = false,
+    val module: TrackMetadata? = null,
+    val moduleName: String? = null,
     val artists: List<AboutArtist> = emptyList(),
     val links: List<StoreLink> = emptyList(),
 ) {
     /** every source that can fill in the facts has answered (or given up) */
-    val factsDone: Boolean get() = musixmatchDone && geniusDone && wikiDone
+    val factsDone: Boolean get() = musixmatchDone && geniusDone && wikiDone && moduleDone
 
-    // each fact from the first source that has it: musixmatch, then wikipedia, then genius, then the library
+    // each fact from the first source that has it: a module that's on, then musixmatch, wikipedia, genius, then the library
     val genre: String?
-        get() = listOf(musixmatch?.genres, wiki?.genres, genius?.genres).firstOrNull { !it.isNullOrEmpty() }
+        get() = listOf(module?.genres, musixmatch?.genres, wiki?.genres, genius?.genres).firstOrNull { !it.isNullOrEmpty() }
             ?.take(2)?.joinToString(", ") { it.replaceFirstChar(Char::titlecase) }
     val released: String?
-        get() = (musixmatch?.releaseDate ?: wiki?.releaseDate ?: genius?.releaseDate)?.let(::readableDate) ?: libraryYear?.toString()
-    val album: String? get() = libraryAlbum ?: musixmatch?.album ?: genius?.album
-    val writtenBy: String? get() = genius?.writers.orEmpty().ifEmpty { wiki?.writers.orEmpty() }.joinToString(", ").ifBlank { null }
-    val producedBy: String? get() = genius?.producers.orEmpty().ifEmpty { wiki?.producers.orEmpty() }.joinToString(", ").ifBlank { null }
-    val label: String? get() = wiki?.label
+        get() = (module?.releaseDate ?: musixmatch?.releaseDate ?: wiki?.releaseDate ?: genius?.releaseDate)?.let(::readableDate) ?: libraryYear?.toString()
+    val album: String? get() = libraryAlbum ?: module?.album ?: musixmatch?.album ?: genius?.album
+    val writtenBy: String?
+        get() = module?.writers.orEmpty().ifEmpty { genius?.writers.orEmpty() }.ifEmpty { wiki?.writers.orEmpty() }.joinToString(", ").ifBlank { null }
+    val producedBy: String?
+        get() = module?.producers.orEmpty().ifEmpty { genius?.producers.orEmpty() }.ifEmpty { wiki?.producers.orEmpty() }.joinToString(", ").ifBlank { null }
+    val label: String? get() = module?.label ?: wiki?.label
 }
 
 data class AboutArtist(val id: String?, val name: String, val imageUrl: String?)
@@ -93,6 +102,8 @@ object SongAboutLoader {
                     musixmatchPageDone = it.musixmatch?.pageRead == true,
                     geniusDone = it.genius != null,
                     wikiDone = it.wiki != null,
+                    // with no song facts module on there's nothing to ask again
+                    moduleDone = it.module != null || ModuleMetadata.sources.isEmpty(),
                 )
             }
             trySend(state.value)
@@ -120,6 +131,16 @@ object SongAboutLoader {
         launch {
             val found = if (artistName.isBlank()) null else Wikipedia.song(song.title, artistName)
             publish { it.copy(wikiDone = true, wiki = found) }
+        }
+        launch {
+            val track = TrackQuery(
+                title = song.title,
+                artists = song.artists.map { it.name },
+                album = song.album?.title,
+                durationMs = song.duration.takeIf { it > 0 }?.times(1000L),
+            )
+            val facts = ModuleMetadata.lookup(track)
+            publish { it.copy(moduleDone = true, module = facts?.metadata, moduleName = facts?.aboutFrom) }
         }
         launch {
             val photos = artistPhotos(song, database)

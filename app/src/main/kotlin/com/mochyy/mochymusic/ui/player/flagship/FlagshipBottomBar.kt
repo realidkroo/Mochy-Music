@@ -88,6 +88,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // the volume's row, the room under it and the pills' row (the pill is drawn smaller inside, the rest is touch room)
 private val VolumeRowHeight = 28.dp
@@ -330,7 +331,7 @@ private fun OutputPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.CenterStart,
         modifier = modifier
             .fillMaxHeight()
-            .clickable(interactionSource = source, indication = null, onClick = onClick)
+            .clickable(interactionSource = source, indication = RemoteFocus, onClick = onClick)
             .semantics {
                 contentDescription = description
                 role = Role.Button

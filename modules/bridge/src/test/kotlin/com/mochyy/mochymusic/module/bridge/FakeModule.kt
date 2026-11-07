@@ -2,13 +2,19 @@ package com.mochyy.mochymusic.module.bridge
 
 import com.mochyy.mochymusic.module.AccountState
 import com.mochyy.mochymusic.module.DiagnosticStep
+import com.mochyy.mochymusic.module.FieldKind
 import com.mochyy.mochymusic.module.HttpRequest
 import com.mochyy.mochymusic.module.ItemListModule
 import com.mochyy.mochymusic.module.ItemProblem
 import com.mochyy.mochymusic.module.ItemsAdded
 import com.mochyy.mochymusic.module.LicenseServer
 import com.mochyy.mochymusic.module.MatchedTrack
+import com.mochyy.mochymusic.module.MetadataModule
+import com.mochyy.mochymusic.module.ModuleArt
 import com.mochyy.mochymusic.module.ModuleChoice
+import com.mochyy.mochymusic.module.ModuleFeature
+import com.mochyy.mochymusic.module.ModuleField
+import com.mochyy.mochymusic.module.ModuleFields
 import com.mochyy.mochymusic.module.ModuleHost
 import com.mochyy.mochymusic.module.ModuleInfo
 import com.mochyy.mochymusic.module.ModuleItem
@@ -18,6 +24,7 @@ import com.mochyy.mochymusic.module.SourceStream
 import com.mochyy.mochymusic.module.StreamDrm
 import com.mochyy.mochymusic.module.StreamFormat
 import com.mochyy.mochymusic.module.StreamOption
+import com.mochyy.mochymusic.module.TrackMetadata
 import com.mochyy.mochymusic.module.TrackQuery
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.awaitCancellation
@@ -97,3 +104,39 @@ class OldModule : SourceModule {
     override suspend fun resolve(track: TrackQuery, picks: Map<String, String>): ResolveResult = ResolveResult.NotFound("")
     override suspend fun diagnose(track: TrackQuery, picks: Map<String, String>, report: (DiagnosticStep) -> Unit): ResolveResult = ResolveResult.NotFound("")
 }
+
+// a module with everything that came later: settings of its own, song facts, pictures and items that say whether they work
+class FakeRichModule : MetadataModule, ModuleFields, ModuleArt, ItemListModule {
+    override val info = ModuleInfo("rich", "Rich", "1.0", "Brings song info")
+    override val adds = setOf(ModuleFeature.Metadata)
+    override val icon = "https://rich.example/icon.png"
+    override val banner = "https://rich.example/banner.webp"
+    override val itemsLabel = "Sources"
+    override val itemsAbout = ""
+
+    private var values: Map<String, String> = emptyMap()
+
+    override val fields = listOf(
+        ModuleField("region", "Region", FieldKind.Select, listOf(StreamOption("us", "US", ""), StreamOption("jp", "Japan", "")), default = "us"),
+        ModuleField("token", "Token", FieldKind.Text, hint = "Paste it"),
+    )
+
+    override fun onFields(values: Map<String, String>) {
+        this.values = values
+    }
+
+    override fun attach(host: ModuleHost) = Unit
+
+    // answers in the region it was last told, so the test sees the values arrived
+    override suspend fun metadata(track: TrackQuery): TrackMetadata? =
+        TrackMetadata(genres = listOf("Pop"), label = values["region"], writers = listOf("Amy Allen"), about = "Says hi")
+
+    override val items = listOf(ModuleItem("a", "A", "", icon = "https://rich.example/a.png", working = false))
+
+    override suspend fun addZip(fileName: String, bytes: ByteArray): ItemsAdded = ItemsAdded.Problem(ItemProblem.NothingFound)
+
+    override suspend fun addLink(link: String): ItemsAdded = ItemsAdded.Problem(ItemProblem.NotALink)
+
+    override fun removeItem(id: String) = Unit
+}
+

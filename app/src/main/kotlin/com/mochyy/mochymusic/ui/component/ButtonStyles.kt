@@ -235,7 +235,7 @@ private fun M3Transport(
                 .height(56.dp)
                 .clip(RoundedCornerShape(if (tonal) 18.dp else 28.dp))
                 .background(if (tonal) colors.container else colors.accent)
-                .clickable(interactionSource = interaction, indication = null, onClick = onPlayPause),
+                .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onPlayPause),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {

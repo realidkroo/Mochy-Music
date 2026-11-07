@@ -230,7 +230,7 @@ private fun CoverCard(
             .background(MenuRowSurface)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             ),
     ) {

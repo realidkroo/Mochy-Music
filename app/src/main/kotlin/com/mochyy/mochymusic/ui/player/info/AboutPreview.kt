@@ -32,6 +32,7 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.AboutSongSourceKey
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.utils.rememberPreference
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 private const val PreviewLines = 4
 private val PreviewLineHeight = 20.sp
@@ -52,7 +53,7 @@ fun AboutPreviewCard(about: SongAbout, onOpen: () -> Unit) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(MenuRowSurface)
-            .clickable(interactionSource = null, indication = null, onClick = onOpen)
+            .clickable(interactionSource = null, indication = RemoteFocus, onClick = onOpen)
             .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
         Box(Modifier.fillMaxWidth().height(textHeight)) {

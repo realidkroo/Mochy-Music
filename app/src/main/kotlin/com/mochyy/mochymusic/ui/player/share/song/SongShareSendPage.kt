@@ -84,6 +84,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.FileNotFoundException
 import java.io.IOException
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // "Share to": the finished picture, the three apps, and export and share for everything else
 internal fun PopupSheetState.showSendPage(session: SongShareSession) {
@@ -307,7 +308,7 @@ private fun PreviewPill(playing: Boolean, enabled: Boolean, modifier: Modifier, 
             .graphicsLayer { alpha = if (enabled) 1f else 0.4f }
             .clip(CircleShape)
             .background(Color.Black.copy(alpha = 0.42f))
-            .clickable(remember { MutableInteractionSource() }, indication = null, enabled = enabled, onClick = onClick)
+            .clickable(remember { MutableInteractionSource() }, indication = RemoteFocus, enabled = enabled, onClick = onClick)
             .padding(horizontal = 26.dp, vertical = 7.dp),
     )
 }
@@ -329,7 +330,7 @@ private fun AppTile(app: ShareApp, enabled: Boolean, onClick: () -> Unit) {
         modifier = Modifier
             .width(68.dp)
             .graphicsLayer { alpha = if (installed && enabled) 1f else 0.4f }
-            .clickable(remember { MutableInteractionSource() }, indication = null, enabled = installed && enabled, onClick = onClick),
+            .clickable(remember { MutableInteractionSource() }, indication = RemoteFocus, enabled = installed && enabled, onClick = onClick),
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -374,7 +375,7 @@ private fun QualityPicker(send: SendState, canUltraHd: Boolean, video: Boolean) 
                     .clip(CircleShape)
                     .background(if (on) MenuRowSurface else Color.Transparent)
                     .border(1.dp, Color.White.copy(alpha = if (on) 0.5f else 0.15f), CircleShape)
-                    .clickable(remember { MutableInteractionSource() }, indication = null, enabled = enabled) { send.quality = quality }
+                    .clickable(remember { MutableInteractionSource() }, indication = RemoteFocus, enabled = enabled) { send.quality = quality }
                     .padding(horizontal = 14.dp, vertical = 6.dp),
             )
         }

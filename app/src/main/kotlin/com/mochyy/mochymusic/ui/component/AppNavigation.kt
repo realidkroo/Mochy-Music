@@ -17,11 +17,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -206,66 +202,18 @@ class TabOwnership(private val navigationItems: List<Screens>) {
     }
 }
 
-@Composable
-fun AppNavigationRail(
-    navigationItems: List<Screens>,
-    currentRoute: String?,
-    /** from [owningTab]: the tab the page on screen belongs to */
-    selectedTabRoute: String,
-    onItemClick: (Screens, Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    pureBlack: Boolean = false,
-    /** a second quick tap on Search: straight into typing */
-    onSearchDoubleTap: (() -> Unit)? = null
-) {
-    val containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
-    val viewConfiguration = LocalViewConfiguration.current
-
-    NavigationRail(
-        modifier = modifier,
-        containerColor = containerColor
-    ) {
-        Spacer(modifier = Modifier.weight(1f))
-
-        navigationItems.forEach { screen ->
-            val isSelected = screen.route == selectedTabRoute
-            val iconRes = remember(isSelected, screen) {
-                if (isSelected) screen.iconIdActive else screen.iconIdInactive
-            }
-
-            val lastTap = remember { longArrayOf(0L) }
-
-            NavigationRailItem(
-                selected = isSelected,
-                onClick = {
-                    val doubleTap = onSearchDoubleTap.takeIf { screen == Screens.Search }
-                    tabTapped(lastTap, viewConfiguration.doubleTapTimeoutMillis, doubleTap) {
-                        onItemClick(screen, isSelected)
-                    }
-                },
-                icon = {
-                    Icon(
-                        painter = coil3.compose.rememberAsyncImagePainter(model = iconRes),
-                        contentDescription = stringResource(screen.titleId),
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            )
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-    }
-}
-
 /** The bar itself, a stadium the mini player's 64dp matches. */
-private val NavBarHeight = 64.dp
-private val NavBarShape = RoundedCornerShape(50)
+internal val NavBarHeight = 64.dp
+internal val NavBarShape = RoundedCornerShape(50)
 
 /** The lit tab's highlight sits this far in from the bar's top, bottom and both ends. */
 private val NavHighlightInset = 8.dp
 
 /** Room between a highlight and where its neighbour's would be. */
 private val NavHighlightGap = 4.dp
+
+// half the gap is the row's padding and half is inside each slot, so the highlight sits as far from the ends as from the top and bottom
+internal val NavRowPadding = NavHighlightInset - NavHighlightGap / 2
 
 /** How bright an unlit tab's icon is. */
 private const val UnlitIconAlpha = 0.7f
@@ -317,12 +265,10 @@ fun AppNavigationBar(
                 modifier = Modifier.fillMaxSize(),
             )
 
-            // Half the gap is the row's padding and half is inside each slot, so the highlight sits
-            // the same distance from the ends as from the top and bottom.
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = NavHighlightInset - NavHighlightGap / 2)
+                    .padding(horizontal = NavRowPadding)
                     .navHighlight(selectedIndex, navigationItems.size),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -346,7 +292,7 @@ fun AppNavigationBar(
  * in and out. Only read while drawing, so the slide never recomposes the bar.
  */
 @Composable
-private fun Modifier.navHighlight(selectedIndex: Int, tabCount: Int): Modifier {
+internal fun Modifier.navHighlight(selectedIndex: Int, tabCount: Int): Modifier {
     val start = remember { Animatable(selectedIndex.coerceAtLeast(0).toFloat()) }
     val end = remember { Animatable(selectedIndex.coerceAtLeast(0).toFloat()) }
     val shown = remember { Animatable(if (selectedIndex >= 0) 1f else 0f) }
@@ -408,7 +354,7 @@ private fun tabTapped(lastTap: LongArray, doubleTapTimeoutMillis: Long, onDouble
  * The Library's icon turns into a download badge while songs download.
  */
 @Composable
-private fun RowScope.NavTab(
+internal fun RowScope.NavTab(
     screen: Screens,
     isSelected: Boolean,
     onItemClick: (Screens, Boolean) -> Unit,
@@ -435,7 +381,7 @@ private fun RowScope.NavTab(
             .pressBounce(interactionSource, pressedScale = 0.85f)
             .clickable(
                 interactionSource = interactionSource,
-                indication = null,
+                indication = RemoteFocus,
                 onClick = {
                     tabTapped(lastTap, viewConfiguration.doubleTapTimeoutMillis, onDoubleTap) {
                         onItemClick(screen, isSelected)

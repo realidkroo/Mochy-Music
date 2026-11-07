@@ -63,6 +63,7 @@ import androidx.compose.foundation.layout.width
 import com.mochyy.mochymusic.constants.ShowFormatBadgeKey
 import com.mochyy.mochymusic.constants.ShowFormatSampleRateKey
 import com.mochyy.mochymusic.utils.rememberPreference
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 @Composable
 fun SongInfoRow(
@@ -123,7 +124,7 @@ fun SongInfoRow(
                     if (onSongInfoClick != null) {
                         Modifier.clickable(
                             interactionSource = null,
-                            indication = null,
+                            indication = RemoteFocus,
                             onClick = onSongInfoClick,
                         )
                     } else Modifier
@@ -329,7 +330,7 @@ private fun SongLines(
                     StreamFormatBadge(
                         text = badge ?: lastBadge[0].orEmpty(),
                         modifier = if (onBadgeClick != null) {
-                            Modifier.clickable(interactionSource = null, indication = null, onClick = onBadgeClick)
+                            Modifier.clickable(interactionSource = null, indication = RemoteFocus, onClick = onBadgeClick)
                         } else Modifier,
                     )
                     // clear of the row's edge fade
@@ -428,7 +429,7 @@ fun PressScaleActionButton(
         modifier = modifier
             .size(size)
             .clickable(
-                indication = null,
+                indication = RemoteFocus,
                 interactionSource = interactionSource,
                 onClick = onClick
             )

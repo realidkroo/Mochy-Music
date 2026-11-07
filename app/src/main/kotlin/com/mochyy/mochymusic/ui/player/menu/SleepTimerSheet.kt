@@ -54,6 +54,7 @@ import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.SheetIcon
 import com.mochyy.mochymusic.ui.component.AppSwitch
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 private val CardSurface = MenuRowSurface
 private val SheetEasing = MenuEasing
@@ -101,7 +102,7 @@ fun SleepTimerSheet(onDismiss: () -> Unit) {
                         .fillMaxWidth()
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
+                            indication = RemoteFocus,
                             onClick = { expanded = true },
                         )
                 ) {
@@ -210,7 +211,7 @@ private fun SheetButton(label: String, enabled: Boolean, onClick: () -> Unit) {
             .clickable(
                 enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(vertical = 14.dp)

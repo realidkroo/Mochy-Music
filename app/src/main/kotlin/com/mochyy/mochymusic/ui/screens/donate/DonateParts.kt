@@ -31,6 +31,7 @@ import coil3.request.crossfade
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.pressBounce
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // the art is 768 x 1013, solid down to 56% of her height and fading out below that
 internal const val CharacterAspect = 1013f / 768f
@@ -84,7 +85,7 @@ internal fun DonatePillButton(
             .height(48.dp)
             .clip(CircleShape)
             .background(MenuRowSurface)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(

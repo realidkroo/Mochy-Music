@@ -6,8 +6,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
@@ -36,6 +34,7 @@ import com.mochyy.mochymusic.constants.SetupCompletedKey
 import com.mochyy.mochymusic.ui.launch.LaunchGate
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import com.mochyy.mochymusic.ui.component.backdropClick
 
 // a beat with the bones settled before the sheet slides over them
 private const val SheetAfterIntroMillis = 120L
@@ -104,10 +103,7 @@ fun SetupWizardContainer(
                     .fillMaxSize()
                     .graphicsLayer { alpha = effectiveProgress.coerceIn(0f, 1f) }
                     .background(Color.Black.copy(alpha = 0.7f * effectiveProgress))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {  }
+                    .backdropClick()
             )
 
             Box(

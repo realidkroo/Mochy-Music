@@ -1,47 +1,54 @@
-// settings → modules: every module mochy has, what each adds, and ways to find more
+// settings → modules: a word on what modules are, mochy's bar, then the looks and the js and source modules, each list dragged into order and swiped to delete
 
 package com.mochyy.mochymusic.ui.screens.settings.modules
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.core.updater.DiscordUrl
+import com.mochyy.mochymusic.core.updater.GithubRepoUrl
 import com.mochyy.mochymusic.modules.ModuleEntry
+import com.mochyy.mochymusic.ui.component.ActionPromptDialog
 import com.mochyy.mochymusic.ui.component.BetaBadge
 import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 import com.mochyy.mochymusic.ui.component.SubSettingsScaffold
@@ -54,96 +61,115 @@ const val ModulesRoute = "modules"
 const val ModuleRoutePattern = "module/{id}"
 fun moduleRoute(id: String) = "module/$id"
 
-private val RowShape = RoundedCornerShape(24.dp)
+/** how to make a module, the guide in mochy's repo */
+const val ModuleDocsUrl = "$GithubRepoUrl/blob/main/modules/README.md"
+
+private val CardShape = RoundedCornerShape(26.dp)
 
 @Composable
 fun ModulesScreen(navController: NavController, viewModel: ModulesViewModel = hiltViewModel()) {
     val entries by viewModel.entries.collectAsState()
     val overlay = LocalZoomOutOverlayState.current
     val context = LocalContext.current
+    var removing by remember { mutableStateOf<ModuleEntry?>(null) }
+    val looks = entries.filter { it.isLookOnly }
+    val sources = entries.filter { !it.isLookOnly }
+    val open: (ModuleEntry) -> Unit = { navController.navigate(moduleRoute(it.id)) }
+    val findMore = { overlay.showFindModulesSheet(viewModel) { id -> navController.navigate(moduleRoute(id)) } }
+
     SubSettingsScaffold(
         title = stringResource(R.string.settings_modules_category),
         onBack = { navController.navigateUp() },
         titleBadge = { BetaBadge() },
     ) {
-        // mochy's bar is where people share modules, so it leads the page
+        ThirdPartyCard { context.openDevUrl(ModuleDocsUrl) }
+        Spacer(Modifier.height(14.dp))
+        // mochy's bar is where people share modules, so it sits right up top
         ModulesBarBanner { context.openDevUrl(DiscordUrl) }
-        Spacer(Modifier.height(16.dp))
-        Text(
-            stringResource(R.string.modules_intro),
-            fontFamily = InterFontFamily, fontSize = 14.sp, lineHeight = 19.sp, color = LabColors.Secondary,
-        )
-        Spacer(Modifier.height(16.dp))
-        entries.forEach { entry ->
-            ModuleRow(entry) { navController.navigate(moduleRoute(entry.id)) }
-            Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(22.dp))
+        Box(Modifier.fillMaxWidth().padding(horizontal = 2.dp).height(1.dp).background(Color.White.copy(alpha = 0.28f)))
+        Spacer(Modifier.height(28.dp))
+
+        ModuleSectionTitle(stringResource(R.string.modules_looks))
+        if (looks.isEmpty()) {
+            DashedSlot(stringResource(R.string.modules_looks_empty), onClick = findMore)
+        } else {
+            ModuleList(looks, onOpen = open, onRemove = { removing = it }, onReorder = { viewModel.reorder(it, looks = true) })
+            Spacer(Modifier.height(12.dp))
+            DashedSlot(stringResource(R.string.modules_add_more), onClick = findMore, compact = true)
         }
-        Spacer(Modifier.height(6.dp))
-        FindMoreButton {
-            overlay.showFindModulesSheet(viewModel) { id -> navController.navigate(moduleRoute(id)) }
-        }
+
+        Spacer(Modifier.height(34.dp))
+        ModuleSectionTitle(stringResource(R.string.modules_sources), stringResource(R.string.modules_swipe_to_delete))
+        ModuleList(sources, onOpen = open, onRemove = { removing = it }, onReorder = { viewModel.reorder(it, looks = false) })
+        Spacer(Modifier.height(12.dp))
+        DashedSlot(stringResource(R.string.modules_add_more), onClick = findMore, compact = true)
         Spacer(Modifier.height(120.dp))
     }
-}
 
-@Composable
-private fun ModuleRow(entry: ModuleEntry, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RowShape)
-            .background(LabColors.Card)
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ModuleLogo(entry.id, entry.module.info.name)
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(entry.module.info.name, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White)
-            Text(moduleStatus(entry), fontFamily = InterFontFamily, fontSize = 12.sp, color = LabColors.Secondary)
-            Spacer(Modifier.height(6.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                FeatureChips(entry.module.adds)
-                Spacer(Modifier.width(8.dp))
-                // the chips come first, the origin gives way when the row runs out of room
-                Text(moduleOrigin(entry), fontFamily = InterFontFamily, fontSize = 11.sp, color = LabColors.Faint, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
+    removing?.let { entry ->
+        ActionPromptDialog(
+            title = stringResource(R.string.module_remove_title, entry.module.info.name),
+            onDismiss = { removing = null },
+            onCancel = { removing = null },
+            onConfirm = {
+                viewModel.remove(entry.id)
+                removing = null
+            },
+        ) {
+            Text(stringResource(R.string.module_remove_body), fontFamily = InterFontFamily, fontSize = 14.sp, lineHeight = 20.sp)
         }
-        Icon(painterResource(R.drawable.navigate_next), null, tint = LabColors.Secondary, modifier = Modifier.size(18.dp))
     }
 }
 
-/** an empty slot drawn in dashes with a puzzle piece in it: there's room for one more module */
+/** the note that modules come from other people, with the way to the guide for making one */
 @Composable
-private fun FindMoreButton(onClick: () -> Unit) {
+private fun ThirdPartyCard(onDocs: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RowShape)
-            .drawBehind {
-                drawRoundRect(
-                    color = Color.White.copy(alpha = 0.22f),
-                    cornerRadius = CornerRadius(24.dp.toPx()),
-                    style = Stroke(width = 1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(9.dp.toPx(), 6.dp.toPx()))),
-                )
-            }
-            .clickable(onClick = onClick)
-            .padding(16.dp),
+            .height(84.dp)
+            .clip(CardShape)
+            .background(LabColors.Card)
+            .clickable(onClick = onDocs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier.size(46.dp).clip(RoundedCornerShape(12.dp)).background(LabColors.Row),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(painterResource(R.drawable.puzzle), null, tint = Color.White, modifier = Modifier.size(24.dp))
+        TwoPhones(Modifier.padding(start = 26.dp, top = 12.dp).width(84.dp).fillMaxHeight())
+        Spacer(Modifier.width(18.dp))
+        val docs = stringResource(R.string.modules_third_party_docs)
+        Text(
+            buildAnnotatedString {
+                append(stringResource(R.string.modules_third_party))
+                append(' ')
+                withStyle(SpanStyle(color = Color.White, fontWeight = FontWeight.Bold)) { append(docs) }
+            },
+            fontFamily = InterFontFamily, fontSize = 12.5.sp, lineHeight = 16.sp, letterSpacing = (-0.2).sp,
+            color = LabColors.Secondary,
+            modifier = Modifier.weight(1f).padding(end = 18.dp),
+        )
+    }
+}
+
+// the mock's two phones leaning on each other, cut off by the card's bottom edge
+@Composable
+private fun TwoPhones(modifier: Modifier) {
+    Canvas(modifier) {
+        val phone = Size(size.width * 0.58f, size.height * 1.25f)
+        val corner = CornerRadius(phone.width * 0.16f)
+        val outline = Stroke(1.dp.toPx())
+        rotate(-7f, pivot = Offset(phone.width * 0.4f, size.height)) {
+            drawRoundRect(
+                brush = Brush.verticalGradient(listOf(Color(0xFF3A3A3D), Color(0xFF2A2A2C))),
+                topLeft = Offset(0f, size.height * 0.16f),
+                size = phone,
+                cornerRadius = corner,
+            )
         }
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.modules_find_more), fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White)
-            Text(stringResource(R.string.modules_find_more_desc), fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 16.sp, color = LabColors.Secondary)
+        rotate(5f, pivot = Offset(size.width * 0.7f, size.height)) {
+            val left = size.width - phone.width
+            drawRoundRect(color = Color(0xFF161618), topLeft = Offset(left, 0f), size = phone, cornerRadius = corner)
+            drawRoundRect(color = Color.White.copy(alpha = 0.16f), topLeft = Offset(left, 0f), size = phone, cornerRadius = corner, style = outline)
         }
-        Icon(painterResource(R.drawable.add), null, tint = LabColors.Secondary, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -153,24 +179,24 @@ private fun ModulesBarBanner(onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp)
-            .clip(RowShape)
+            .height(112.dp)
+            .clip(CardShape)
             .background(LabColors.Card)
             .clickable(onClick = onClick)
-            .padding(start = 24.dp, end = 16.dp),
+            .padding(start = 24.dp, end = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // the drawing ends at her jacket, so sitting on the card's bottom edge cuts her off there like the design
         Image(
             painterResource(R.drawable.modules_bar_mochy), null,
             contentScale = ContentScale.Fit,
-            modifier = Modifier.align(Alignment.Bottom).padding(top = 8.dp).fillMaxHeight(),
+            modifier = Modifier.align(Alignment.Bottom).padding(top = 10.dp).fillMaxHeight(),
         )
         Spacer(Modifier.width(22.dp))
         Text(
             stringResource(R.string.modules_bar),
-            fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 22.sp,
-            letterSpacing = (-0.6).sp, color = Color.White, modifier = Modifier.weight(1f),
+            fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 21.sp, lineHeight = 24.sp,
+            letterSpacing = (-0.7).sp, color = Color.White, modifier = Modifier.weight(1f),
         )
     }
 }

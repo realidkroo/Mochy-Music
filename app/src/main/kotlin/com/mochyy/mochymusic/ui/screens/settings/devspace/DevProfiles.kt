@@ -55,6 +55,7 @@ import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 import com.mochyy.mochymusic.ui.component.pressBounce
 import com.mochyy.mochymusic.ui.screens.donate.showDonateSheet
 import com.mochyy.mochymusic.ui.utils.SoftBlurTransformation
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 internal data class DevSocial(val label: String, val url: String)
 
@@ -245,7 +246,7 @@ private fun DevLinkRow(label: String, onClick: () -> Unit) {
             .height(42.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(DevCard)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 18.dp),
     ) {
         Text(label, style = devText(15f, FontWeight.SemiBold, DevLinkText, -0.4f), maxLines = 1)

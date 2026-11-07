@@ -43,7 +43,7 @@ internal object SkinFiles {
         folderFor(context, moduleId).deleteRecursively()
     }
 
-    // pictures and fonts only, and none of the hidden copies macos tucks into a zip
+    // pictures, fonts and glass shaders only, and none of the hidden copies macos tucks into a zip
     private fun keeps(path: String): Boolean {
         val parts = path.split('/')
         if (parts.any { it.isEmpty() || it == ".." || it == "__MACOSX" || it.startsWith(".") }) return false
@@ -66,7 +66,7 @@ internal object SkinFiles {
         return written
     }
 
-    private val Kinds = setOf("png", "jpg", "jpeg", "webp", "gif", "ttf", "otf")
+    private val Kinds = setOf("png", "jpg", "jpeg", "webp", "gif", "ttf", "otf", "agsl", "sksl")
     private const val MaxFiles = 200
     private const val MaxFileBytes = 8L * 1024 * 1024
     private const val MaxTotalBytes = 30L * 1024 * 1024

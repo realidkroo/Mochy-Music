@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.constants.SuggestionRegionSlugToName
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -221,7 +222,7 @@ fun RegionListItem(
             .clickable(
                 onClick = onClick,
                 interactionSource = interactionSource,
-                indication = null
+                indication = RemoteFocus
             )
     )
 }

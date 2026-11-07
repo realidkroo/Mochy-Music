@@ -81,11 +81,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
-// the controls line up with the artwork on the left and the seek bar's end on the right
-private val EdgeStart = 48.dp
-private val EdgeEnd = 54.dp
+// how far down the top row sits; how far in from the sides comes from the frame, upright or sideways
 private val TopRow = 32.dp
+
+// the round buttons at the top right: rotate, leave full screen, close
+private val TopButtonSize = 30.dp
+private val TopButtonGap = 10.dp
 
 // the artwork: the song's cover beside its name with the controls up, a small faint watermark in the corner without them
 private val ArtSize = 48.dp
@@ -120,15 +123,20 @@ internal fun BoxScope.VideoTopBar(
     controls: () -> Float,
     onClose: () -> Unit,
     onSongInfo: () -> Unit,
+    // null where the phone itself turns the mode, a window already on its side
+    onRotate: (() -> Unit)?,
+    onExitFullScreen: () -> Unit,
 ) {
     val visible by rememberControlsVisible(controls)
+    val buttonCount = if (onRotate != null) 3 else 2
+    val buttonsWidth = TopButtonSize * buttonCount + TopButtonGap * (buttonCount - 1)
     AsyncImage(
         model = track.thumbnailUrl?.resize(240, 240),
         contentDescription = null,
         contentScale = ContentScale.Crop,
         modifier = Modifier
             .align(Alignment.TopStart)
-            .padding(start = EdgeStart, top = TopRow)
+            .padding(start = frame.edgeStart, top = TopRow)
             .size(ArtSize)
             .graphicsLayer {
                 val c = controls()
@@ -144,8 +152,8 @@ internal fun BoxScope.VideoTopBar(
     Column(
         modifier = Modifier
             .align(Alignment.TopStart)
-            .padding(start = EdgeStart + ArtSize + 14.dp, top = TopRow + 3.dp)
-            .widthIn(max = (frame.width - EdgeStart - ArtSize - EdgeEnd - 70.dp).coerceAtLeast(80.dp))
+            .padding(start = frame.edgeStart + ArtSize + 14.dp, top = TopRow + 3.dp)
+            .widthIn(max = (frame.width - frame.edgeStart - ArtSize - frame.edgeEnd - buttonsWidth - 40.dp).coerceAtLeast(80.dp))
             .graphicsLayer {
                 val c = controls()
                 alpha = c
@@ -156,7 +164,7 @@ internal fun BoxScope.VideoTopBar(
                 if (visible) {
                     Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
+                        indication = RemoteFocus,
                         onClick = {
                             state.touched()
                             if (state.controlsShown) onSongInfo() else state.toggleControls()
@@ -187,20 +195,34 @@ internal fun BoxScope.VideoTopBar(
         )
     }
     if (visible) {
-        val closeLabel = stringResource(R.string.video_mode_close_player)
-        PressScaleActionButton(
-            icon = R.drawable.close,
-            tint = Color.White,
-            containerColor = Color.White.copy(alpha = 0.22f),
-            size = 30.dp,
-            onClick = { if (state.controlsShown) onClose() else state.toggleControls() },
+        // a tap while the controls fade out brings them back rather than pressing what's fading
+        fun guarded(action: () -> Unit): () -> Unit = { if (state.controlsShown) action() else state.toggleControls() }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(TopButtonGap),
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(end = EdgeEnd, top = TopRow + 9.dp)
-                .semantics { contentDescription = closeLabel }
+                .padding(end = frame.edgeEnd, top = TopRow + 9.dp)
                 .graphicsLayer { alpha = controls() },
-        )
+        ) {
+            if (onRotate != null) {
+                TopButton(R.drawable.screen_rotation, stringResource(R.string.video_mode_rotate), guarded(onRotate))
+            }
+            TopButton(R.drawable.fullscreen_exit, stringResource(R.string.video_mode_exit_full_screen), guarded(onExitFullScreen))
+            TopButton(R.drawable.close, stringResource(R.string.video_mode_close_player), guarded(onClose))
+        }
     }
+}
+
+@Composable
+private fun TopButton(icon: Int, label: String, onClick: () -> Unit) {
+    PressScaleActionButton(
+        icon = icon,
+        tint = Color.White,
+        containerColor = Color.White.copy(alpha = 0.22f),
+        size = TopButtonSize,
+        onClick = onClick,
+        modifier = Modifier.semantics { contentDescription = label },
+    )
 }
 
 // previous, play or pause, next: in the middle of the whole screen, an open pane included
@@ -280,7 +302,7 @@ private fun TransportButton(
         modifier = Modifier
             .size(size)
             .semantics { contentDescription = label }
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -363,6 +385,7 @@ internal fun BoxScope.VideoVolumeBar(state: VideoModeState, controls: () -> Floa
 // the seek bar across the whole screen, an open pane included, with the times over its ends and the chevron above its right end
 @Composable
 internal fun BoxScope.VideoSeekRow(
+    frame: VideoFrame,
     state: VideoModeState,
     controls: () -> Float,
     positionProvider: () -> Long,
@@ -393,7 +416,7 @@ internal fun BoxScope.VideoSeekRow(
         modifier = Modifier
             .align(Alignment.BottomStart)
             .fillMaxWidth()
-            .padding(start = EdgeStart, end = EdgeEnd, bottom = SeekBottom)
+            .padding(start = frame.edgeStart, end = frame.edgeEnd, bottom = SeekBottom)
             .graphicsLayer { alpha = controls() },
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {

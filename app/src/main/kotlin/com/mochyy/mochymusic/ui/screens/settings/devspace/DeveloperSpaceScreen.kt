@@ -55,6 +55,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** how long the picker stays open showing names after the last tap or swipe */
 private const val PickerOpenMs = 2600L
@@ -197,7 +198,7 @@ private fun BackButton(onClick: () -> Unit) {
             .size(36.dp)
             .clip(CircleShape)
             .background(DevBarButtonFill)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
     ) {
         Icon(painterResource(R.drawable.chevron_leftpx), contentDescription = "Back", tint = Color.White, modifier = Modifier.size(20.dp))
     }

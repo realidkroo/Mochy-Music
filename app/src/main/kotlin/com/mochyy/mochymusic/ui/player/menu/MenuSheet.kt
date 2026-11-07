@@ -63,6 +63,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import com.mochyy.mochymusic.ui.utils.stableStatusBars
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 val MenuSurface = Color(0xFF0B0B0C)
 val MenuRowSurface = Color(0xFF161619)
@@ -363,7 +364,7 @@ fun MenuSheetSurface(
                     if (dismissEnabled) {
                         Modifier.clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
+                            indication = RemoteFocus,
                             onClick = { closeRef.value() },
                         )
                     } else Modifier

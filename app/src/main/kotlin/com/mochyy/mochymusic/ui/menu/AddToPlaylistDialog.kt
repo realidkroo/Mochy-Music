@@ -60,6 +60,7 @@ import kotlinx.coroutines.launch
 import java.text.Collator
 import java.time.LocalDateTime
 import java.util.Locale
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** How many playlists the "recents" section shows. */
 private const val RecentCount = 4
@@ -323,7 +324,7 @@ private fun PlaylistPickRow(playlist: Playlist, onClick: () -> Unit) {
             .clip(RoundedCornerShape(14.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(vertical = 6.dp),

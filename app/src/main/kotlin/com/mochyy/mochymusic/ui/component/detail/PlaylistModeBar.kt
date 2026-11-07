@@ -54,6 +54,7 @@ import com.mochyy.mochymusic.ui.component.GlassPillBackground
 import com.mochyy.mochymusic.ui.component.GlassState
 import com.mochyy.mochymusic.ui.component.pressBounce
 import com.mochyy.mochymusic.ui.utils.resize
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /**
  * what the playlist top bar shows instead of back and the dots while a song list is in a mode.
@@ -165,7 +166,7 @@ private fun SelectAllPill(allSelected: Boolean, onClick: () -> Unit) {
             .height(30.dp)
             .clip(CircleShape)
             .background(ModeButtonFill)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 14.dp),
     ) {
         AnimatedContent(
@@ -211,7 +212,7 @@ private fun ModeCircleButton(
             .background(if (filled) PillFill else ModeButtonFill)
             .clickable(
                 interactionSource = interaction,
-                indication = null,
+                indication = RemoteFocus,
                 enabled = enabled,
                 onClick = onClick,
             ),

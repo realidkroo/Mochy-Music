@@ -89,7 +89,7 @@ object AppModule {
     ): SimpleCache {
         val cacheSize = context.dataStore[MaxSongCacheSizeKey] ?: 1024
         return SimpleCache(
-            context.filesDir.resolve("exoplayer"),
+            com.mochyy.mochymusic.playback.StoragePlaces.dir(context, com.mochyy.mochymusic.playback.StoredKind.SongCache),
             when (cacheSize) {
                 -1 -> NoOpCacheEvictor()
                 else -> LeastRecentlyUsedCacheEvictor(cacheSize * 1024 * 1024L)
@@ -106,7 +106,7 @@ object AppModule {
         databaseProvider: DatabaseProvider,
     ): SimpleCache {
         return SimpleCache(
-            context.filesDir.resolve("download"),
+            com.mochyy.mochymusic.playback.StoragePlaces.dir(context, com.mochyy.mochymusic.playback.StoredKind.Downloads),
             NoOpCacheEvictor(),
             databaseProvider
         )

@@ -18,8 +18,6 @@ import com.mochyy.mochymusic.constants.YtReportPlaysKey
 import com.mochyy.mochymusic.constants.YtSyncLikedSongsKey
 import com.mochyy.mochymusic.constants.YtSyncNewPlaylistsKey
 import com.mochyy.mochymusic.constants.YtmSyncKey
-import com.mochyy.mochymusic.db.MusicDatabase
-import com.mochyy.mochymusic.db.entities.ArtistEntity
 import com.mochyy.mochymusic.importer.MusicImportService
 import com.mochyy.mochymusic.importer.ParsedImport
 import com.mochyy.mochymusic.importer.YouTubeSyncManager
@@ -28,19 +26,10 @@ import com.mochyy.mochymusic.importer.account.AccountService
 import com.mochyy.mochymusic.importer.parseImportCsv
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.BlurCapability
 import com.mochyy.mochymusic.utils.dataStore
-import com.music.innertube.YouTube
-import com.music.innertube.models.ArtistItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -48,7 +37,6 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import javax.inject.Inject
@@ -65,16 +53,11 @@ data class YouTubeSyncChoices(
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val database: MusicDatabase,
     private val importService: MusicImportService,
     private val youTubeSync: YouTubeSyncManager,
 ) : ViewModel() {
 
     var session by mutableStateOf<AccountImportSession?>(null)
-        private set
-
-    /** Music came in some way (an account or a backup); Home builds itself then, so artist picking is skipped. */
-    var broughtMusicIn by mutableStateOf(false)
         private set
 
     /** Set on the Hello page from its frame timings. */
@@ -84,20 +67,11 @@ class OnboardingViewModel @Inject constructor(
     val cardNumber: String = (10_000_000_000L + Random.nextLong(89_999_999_999L)).toString()
     val joinedText: String = "joined at " + LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
 
-    private val _artistSuggestions = MutableStateFlow<List<ArtistItem>>(emptyList())
-    val artistSuggestions: StateFlow<List<ArtistItem>> = _artistSuggestions.asStateFlow()
-    private val _artistResults = MutableStateFlow<List<ArtistItem>?>(null)
-    val artistResults: StateFlow<List<ArtistItem>?> = _artistResults.asStateFlow()
-    private var searchJob: Job? = null
-    private var suggestionsLoaded = false
-
     /** Onboarding can be run again from Settings; start each run clean. */
     fun reset() {
         session?.cancel()
         session = null
-        broughtMusicIn = false
         blur = null
-        _artistResults.value = null
     }
 
     // ---- providers ----
@@ -114,12 +88,11 @@ class OnboardingViewModel @Inject constructor(
 
     /** Whatever was read from the account goes to the background importer; onboarding moves on. */
     fun startImport(parsed: ParsedImport) {
-        if (importService.startImport(parsed)) broughtMusicIn = true
+        importService.startImport(parsed)
     }
 
     /** "Import & sync": remember what to sync and how, then run the first sync in the background. */
     fun startYouTubeSync(selectedIds: Set<String>, likedId: String, choices: YouTubeSyncChoices) {
-        broughtMusicIn = true
         viewModelScope.launch(Dispatchers.IO) {
             context.dataStore.edit { prefs ->
                 // nothing picked means everything, which is also what sync did before picking existed
@@ -143,7 +116,6 @@ class OnboardingViewModel @Inject constructor(
             val parsed = parseImportCsv(text, fallbackPlaylistName = "Imported playlist")
             if (parsed.totalSongs == 0 && parsed.totalPlaylists == 0) return@withContext "No songs in that file."
             if (!importService.startImport(parsed)) return@withContext "Another import is still running."
-            broughtMusicIn = true
             null
         } catch (e: CancellationException) {
             throw e
@@ -192,80 +164,6 @@ class OnboardingViewModel @Inject constructor(
 
     fun onBlurProbe(probe: BlurCapability.Probe) {
         blur = BlurCapability.decide(context, probe)
-    }
-
-    // ---- artists ----
-
-    fun loadArtistSuggestions() {
-        if (suggestionsLoaded) return
-        suggestionsLoaded = true
-        viewModelScope.launch(Dispatchers.IO) {
-            val fromCharts = YouTube.getChartsPage().getOrNull()?.sections.orEmpty()
-                .flatMap { it.items }
-                .filterIsInstance<ArtistItem>()
-            // the charts alone are often a dozen names; a spread of genres fills the page out
-            val fromGenres = coroutineScope {
-                SuggestionQueries.map { query ->
-                    async {
-                        YouTube.search(query, YouTube.SearchFilter.FILTER_ARTIST).getOrNull()?.items.orEmpty()
-                            .filterIsInstance<ArtistItem>()
-                            .take(6)
-                    }
-                }.awaitAll()
-            }
-            // interleaved, so the first screen isn't all one genre
-            val mixed = buildList {
-                addAll(fromCharts)
-                val longest = fromGenres.maxOfOrNull { it.size } ?: 0
-                for (i in 0 until longest) fromGenres.forEach { list -> list.getOrNull(i)?.let(::add) }
-            }
-            val artists = mixed.distinctBy { it.id }.filter { !it.thumbnail.isNullOrBlank() }.take(MaxSuggestions)
-            _artistSuggestions.value = artists
-            if (artists.size < MinSuggestions) suggestionsLoaded = false
-        }
-    }
-
-    fun searchArtists(query: String) {
-        searchJob?.cancel()
-        val q = query.trim()
-        if (q.isEmpty()) {
-            _artistResults.value = null
-            return
-        }
-        searchJob = viewModelScope.launch(Dispatchers.IO) {
-            _artistResults.value = YouTube.search(q, YouTube.SearchFilter.FILTER_ARTIST).getOrNull()?.items.orEmpty()
-                .filterIsInstance<ArtistItem>()
-                .distinctBy { it.id }
-                .take(24)
-        }
-    }
-
-    /** Picked artists join the library; Home leans on them until there's listening history. */
-    fun saveArtists(artists: List<ArtistItem>) {
-        if (artists.isEmpty()) return
-        val now = LocalDateTime.now()
-        database.query {
-            artists.forEachIndexed { index, artist ->
-                insert(
-                    ArtistEntity(
-                        id = artist.id,
-                        name = artist.title,
-                        thumbnailUrl = artist.thumbnail,
-                        channelId = artist.channelId,
-                        // spaced so the library keeps the order they were picked in
-                        bookmarkedAt = now.minusSeconds(index.toLong()),
-                    )
-                )
-            }
-        }
-    }
-
-    private companion object {
-        const val MinSuggestions = 30
-        const val MaxSuggestions = 48
-        val SuggestionQueries = listOf(
-            "pop", "hip hop", "r&b", "rock", "indie", "k-pop", "edm", "latin", "jazz", "j-pop", "country", "afrobeats",
-        )
     }
 
     override fun onCleared() {

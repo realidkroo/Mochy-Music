@@ -818,11 +818,14 @@ object YTPlayerUtils {
         val originalFormats = audioFormats.filter { it.isOriginal }
         val usableFormats = originalFormats.ifEmpty { audioFormats }
 
-        val effectiveQuality = when (audioQuality) {
-            AudioQuality.AUTO -> if (networkMetered) AudioQuality.MEDIUM else AudioQuality.HIGH
+        val effectiveQuality = when {
+            // data saver keeps youtube on its lightest stream, whatever was picked
+            DataSaver.isActive(networkMetered) -> AudioQuality.LOW
+            audioQuality == AudioQuality.AUTO -> if (networkMetered) AudioQuality.MEDIUM else AudioQuality.HIGH
             // Lossless and Atmos tiers were Monochrome's (a source module now); when
             // YouTube is the source we still want its best available stream.
-            AudioQuality.LOSSLESS, AudioQuality.HI_RES_LOSSLESS, AudioQuality.DOLBY_ATMOS -> AudioQuality.HIGH
+            audioQuality == AudioQuality.LOSSLESS || audioQuality == AudioQuality.HI_RES_LOSSLESS ||
+                audioQuality == AudioQuality.DOLBY_ATMOS -> AudioQuality.HIGH
             else -> audioQuality
         }
 

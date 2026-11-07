@@ -75,6 +75,7 @@ import com.mochyy.mochymusic.ui.menu.AddToPlaylistDialog
 import com.mochyy.mochymusic.ui.utils.resize
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.flow.flowOf
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /**
  * @param fromLyrics true when the menu was opened from the lyrics page. The lyrics tools are only
@@ -93,6 +94,8 @@ fun PlayerActionMenu(
     onFullVideo: (() -> Unit)? = null,
     // opens the equalizer page; no row without it
     onEqualizer: (() -> Unit)? = null,
+    // opens a page of the app for a module's row (its own page, a search)
+    onOpenRoute: ((String) -> Unit)? = null,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val trackInfo by playerConnection.uiState.trackInfo.collectAsState()
@@ -385,6 +388,8 @@ fun PlayerActionMenu(
                         onEditPlayer()
                     },
                 )
+
+                ModuleMenuRows(currentMetadata, onDismiss, onOpenRoute)
             }
     }
 
@@ -449,7 +454,7 @@ internal fun MenuRow(
             .clickable(
                 enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
             )
             .padding(horizontal = 14.dp, vertical = 14.dp)

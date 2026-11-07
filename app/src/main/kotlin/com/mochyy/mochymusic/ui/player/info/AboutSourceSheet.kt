@@ -40,6 +40,7 @@ import com.mochyy.mochymusic.ui.player.menu.LocalMenuSheetClose
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.player.menu.MenuSheetSurface
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.ProviderSquircle
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** picks where "about" reads from; each row previews what that source says, so the choice is an easy one */
 @Composable
@@ -58,11 +59,12 @@ fun AboutSourceSheet(
             InfoColumn(modifier = Modifier.widthIn(max = 600.dp)) {
                 InfoSheetTitle("About from")
                 Spacer(Modifier.height(16.dp))
-                AboutSource.entries.forEach { source ->
+                AboutSource.entries.filter { it != AboutSource.Modules || com.mochyy.mochymusic.modules.ModuleMetadata.sources.isNotEmpty() }.forEach { source ->
                     SourceRow(
                         source = source,
                         preview = previewOf(about, source),
                         isSelected = source == selected,
+                        moduleName = about.moduleName,
                         onClick = {
                             onPick(source)
                             close()
@@ -81,7 +83,7 @@ private fun previewOf(about: SongAbout, source: AboutSource): String = when {
 }
 
 @Composable
-private fun SourceRow(source: AboutSource, preview: String, isSelected: Boolean, onClick: () -> Unit) {
+private fun SourceRow(source: AboutSource, preview: String, isSelected: Boolean, onClick: () -> Unit, moduleName: String? = null) {
     val checkAlpha by animateFloatAsState(if (isSelected) 1f else 0f, label = "sourceCheck")
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -89,7 +91,7 @@ private fun SourceRow(source: AboutSource, preview: String, isSelected: Boolean,
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
             .background(MenuRowSurface)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
         when (source) {
@@ -97,6 +99,7 @@ private fun SourceRow(source: AboutSource, preview: String, isSelected: Boolean,
             AboutSource.Musixmatch -> SourceMark("M", Color(0xFFFF6050), Color.White)
             AboutSource.Genius -> SourceMark("G", Color(0xFFFFFF64), Color.Black)
             AboutSource.Wikipedia -> SourceMark("W", Color.White, Color.Black)
+            AboutSource.Modules -> SourceMark(moduleName?.take(1)?.uppercase() ?: "M", Color(0xFF8E8CF8), Color.White)
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {

@@ -38,6 +38,7 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.player.PressScaleActionButton
 import kotlin.math.roundToInt
 import com.mochyy.mochymusic.ui.utils.stableStatusBars
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** the player's menu item label, exactly as its chevron menu sets it */
 private val MenuLabelStyle = TextStyle(
@@ -404,7 +405,7 @@ private fun TileTap(rect: Rect, enabled: Boolean, onClick: () -> Unit) {
                 .offset(rect.left.coerceAtLeast(0f).toDp(), rect.top.toDp())
                 .size((rect.right - rect.left.coerceAtLeast(0f)).toDp(), rect.height.toDp())
                 .clip(RoundedCornerShape(TileCorner))
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick),
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = RemoteFocus, onClick = onClick),
         )
     }
 }

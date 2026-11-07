@@ -3,17 +3,14 @@
 package com.mochyy.mochymusic.modules
 
 import android.media.MediaCodecList
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.decoder.ffmpeg.FfmpegLibrary
 import com.mochyy.mochymusic.module.SourceStream
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Whether this phone can decode a module's stream. The player only has the phone's own decoders
- * (the app ships none of its own), and a song whose audio no decoder takes doesn't fail: the
- * player runs on in silence, its clock moving, nothing heard. A FLAC on a phone without a FLAC
- * decoder (Android 8.0 has none), or at a sample rate the phone's decoders don't take (a
- * 192 kHz master), did exactly that - so such a stream is passed over for the next provider in
- * the order, YouTube at the latest.
- */
+/** whether a module's stream can be decoded here, by the phone or our ffmpeg; one nothing takes plays on in silence, so it's passed over (docs/notes/audio-output.md) */
+@OptIn(UnstableApi::class)
 object DeviceDecoders {
     private val known = ConcurrentHashMap<String, Boolean>()
 
@@ -31,7 +28,7 @@ object DeviceDecoders {
             // AAC and the rest: every phone decodes them
             else -> return true
         }
-        return mimes.any { mime -> known.getOrPut("$mime@$sampleRateHz") { hasDecoder(mime, sampleRateHz) } }
+        return mimes.any { mime -> known.getOrPut("$mime@$sampleRateHz") { hasDecoder(mime, sampleRateHz) || ffmpegDecodes(mime) } }
     }
 
     /** a decoder for [mime] that takes [sampleRateHz] (any rate when 0); true when it can't be told */
@@ -47,4 +44,8 @@ object DeviceDecoders {
                     )
         }
     }.getOrDefault(true)
+
+    // ffmpeg takes any sample rate, so only the codec is asked; false if its library didn't load
+    private fun ffmpegDecodes(mime: String): Boolean =
+        runCatching { FfmpegLibrary.isAvailable() && FfmpegLibrary.supportsFormat(mime) }.getOrDefault(false)
 }

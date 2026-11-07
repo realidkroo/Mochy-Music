@@ -60,6 +60,7 @@ import com.mochyy.mochymusic.ui.player.mixF
 import com.mochyy.mochymusic.ui.player.smoothstepF
 import com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction
 import kotlinx.coroutines.flow.collectLatest
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // the page's clip starts as the pill's round ends and squares off as it fills the screen, no outline
 internal val FlagshipPillLook = PlayerCardLook(PillHeight / 2, 0f, 0f, 0f, 0f, 0.dp)
@@ -232,7 +233,7 @@ private fun RowScope.PillHalf(
             .weight(1f)
             .fillMaxHeight()
             .onGloballyPositioned { onPlaced(it.boundsInRoot()) }
-            .clickable(enabled = enabled, interactionSource = source, indication = null, onClick = onClick)
+            .clickable(enabled = enabled, interactionSource = source, indication = RemoteFocus, onClick = onClick)
             .semantics {
                 contentDescription = description
                 role = Role.Button

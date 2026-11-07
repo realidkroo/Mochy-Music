@@ -8,6 +8,11 @@ package com.mochyy.mochymusic.importer
 
 import android.content.Context
 import android.net.Uri
+import androidx.annotation.OptIn
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.MetadataRetriever
 import com.mochyy.mochymusic.db.MusicDatabase
 import com.mochyy.mochymusic.db.entities.AlbumArtistMap
 import com.mochyy.mochymusic.db.entities.AlbumEntity
@@ -21,6 +26,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 import java.util.UUID
+import java.util.concurrent.TimeUnit
+
+private const val AlacProbeTimeoutSeconds = 5L
 
 /** adds one audio file to the library as a local song and returns its id, uri has to stay readable so a shared file is copied into the app first (importSharedAudio) */
 suspend fun importLocalAudio(
@@ -36,6 +44,8 @@ suspend fun importLocalAudio(
     val embeddedLyrics = withContext(Dispatchers.IO) {
         com.mochyy.mochymusic.lyrics.readEmbeddedLyrics(context, uri)
     }
+
+    val isAlac = withContext(Dispatchers.IO) { isMp4(metadata.mimeType) && holdsAlac(context, uri) }
 
     val songId = "LOCAL_${UUID.randomUUID()}"
     val thumbnailUrl = withContext(Dispatchers.IO) {
@@ -94,8 +104,9 @@ suspend fun importLocalAudio(
             val mimeType = metadata.mimeType ?: "audio/mpeg"
             val codecs = when {
                 mimeType.contains("flac") -> "flac"
+                isAlac -> "alac"
                 mimeType.contains("opus") || mimeType.contains("ogg") -> "opus"
-                mimeType.contains("mp4") || mimeType.contains("m4a") || mimeType.contains("aac") -> "mp4a.40.2"
+                isMp4(mimeType) || mimeType.contains("aac") -> "mp4a.40.2"
                 mimeType.contains("wav") -> "pcm"
                 else -> "mp3"
             }
@@ -187,3 +198,12 @@ suspend fun importSharedAudio(
         throw e
     }
 }
+
+private fun isMp4(mimeType: String?) = mimeType != null && (mimeType.contains("mp4") || mimeType.contains("m4a"))
+
+// an m4a holds aac or alac and its tags don't say which, so media3 reads the file's own track list
+@OptIn(UnstableApi::class)
+private fun holdsAlac(context: Context, uri: Uri): Boolean = runCatching {
+    val tracks = MetadataRetriever.retrieveMetadata(context, MediaItem.fromUri(uri)).get(AlacProbeTimeoutSeconds, TimeUnit.SECONDS)
+    (0 until tracks.length).any { tracks[it].getFormat(0).sampleMimeType == MimeTypes.AUDIO_ALAC }
+}.getOrDefault(false)

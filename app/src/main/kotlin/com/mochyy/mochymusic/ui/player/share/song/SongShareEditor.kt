@@ -61,6 +61,7 @@ import com.mochyy.mochymusic.ui.screens.audiolab.LabCard
 import com.mochyy.mochymusic.ui.screens.audiolab.LabSlider
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlin.math.roundToInt
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // the picture, the background that moves under your fingers, and, for a video, the part of the song it plays
 internal fun PopupSheetState.showEditor(session: SongShareSession) {
@@ -152,7 +153,7 @@ private fun EditBackgroundPill(modifier: Modifier = Modifier, onClick: () -> Uni
             .pressBounce(interaction)
             .clip(CircleShape)
             .background(Color.Black.copy(alpha = 0.38f))
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp),
     )
 }

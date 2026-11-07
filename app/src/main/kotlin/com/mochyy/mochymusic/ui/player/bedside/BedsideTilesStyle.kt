@@ -35,16 +35,14 @@ import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.BedsideInfoTilePageKey
 import com.mochyy.mochymusic.constants.BedsideMusicTilePageKey
-import com.mochyy.mochymusic.constants.PlayerStyle
 import com.mochyy.mochymusic.ui.component.LocalPlayerBottomSheetState
 import com.mochyy.mochymusic.ui.player.LocalSongCarousel
 import com.mochyy.mochymusic.ui.player.styles.LocalStyleInteractive
-import com.mochyy.mochymusic.ui.player.styles.RotatingFrame
+import com.mochyy.mochymusic.ui.player.styles.StyleStage
 import com.mochyy.mochymusic.ui.player.styles.StyleActions
 import com.mochyy.mochymusic.ui.player.styles.StyleCircle
 import com.mochyy.mochymusic.ui.player.styles.StyleMenu
 import com.mochyy.mochymusic.ui.player.styles.StyleTones
-import com.mochyy.mochymusic.ui.player.styles.rememberStyleRotation
 import com.mochyy.mochymusic.ui.player.styles.rememberStyleTones
 import com.mochyy.mochymusic.ui.player.styles.styleSongSwipe
 import com.mochyy.mochymusic.utils.rememberPreference
@@ -61,14 +59,12 @@ fun BedsideTilesStyle(actions: StyleActions, modifier: Modifier = Modifier, prev
     val night = rememberBedsideNight(live)
     val tones = rememberStyleTones()
     val time = rememberBedsideTime(live)
-    val (rotated, setRotated) = rememberStyleRotation(PlayerStyle.BEDSIDE_TILES)
-    RotatingFrame(
-        rotated = rotated,
+    StyleStage(
         tones = tones,
         background = { Spacer(Modifier.fillMaxSize().background(Color.Black)) },
         modifier = modifier.then(if (preview) SwallowTouches else Modifier),
     ) { landscape ->
-        TilesLayout(landscape, time, night, tones, actions, rotated, setRotated, live)
+        TilesLayout(landscape, time, night, tones, actions, live)
     }
 }
 
@@ -80,8 +76,6 @@ private fun TilesLayout(
     night: BedsideNight,
     tones: StyleTones,
     actions: StyleActions,
-    rotated: Boolean,
-    onRotate: (Boolean) -> Unit,
     live: Boolean,
 ) {
     val context = LocalContext.current
@@ -152,8 +146,6 @@ private fun TilesLayout(
             onOpenChange = { menuOpen = it },
             tones = tones,
             actions = gated,
-            rotated = rotated,
-            onRotate = onRotate,
             atBottom = false,
             end = insets.end + EdgeGap,
             edge = insets.top + EdgeGap,

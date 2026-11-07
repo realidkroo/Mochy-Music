@@ -73,6 +73,7 @@ import com.mochyy.mochymusic.ui.screens.search.SearchHorizontalPadding
 import com.mochyy.mochymusic.ui.screens.search.SearchTitleBlockHeight
 import com.mochyy.mochymusic.ui.utils.resize
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** Title + subtitle block height, for the collapsing header on Library screens. */
 val LibraryTitleBlockHeight: Dp = SearchTitleBlockHeight + 16.dp
@@ -172,7 +173,7 @@ fun LibraryPinnedTile(
             .background(SearchColors.TileHigh)
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = RemoteFocus,
                 onClick = onClick,
                 onLongClick = onLongClick,
             ),

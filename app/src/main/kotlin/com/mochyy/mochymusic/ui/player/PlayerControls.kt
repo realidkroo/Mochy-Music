@@ -58,6 +58,7 @@ import com.mochyy.mochymusic.ui.player.flagship.AnimatedPlayGlyph
 import com.mochyy.mochymusic.ui.player.flagship.AnimatedSkipGlyph
 import com.mochyy.mochymusic.ui.player.flagship.SkipCycleState
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 @Composable
 fun PlayerControls(
@@ -394,7 +395,7 @@ internal fun AnimatedPressScalePlayPauseButton(
             .background(containerColor)
             .clickable(
                 enabled = enabled,
-                indication = null,
+                indication = RemoteFocus,
                 interactionSource = interactionSource,
                 onClick = onClick
             )

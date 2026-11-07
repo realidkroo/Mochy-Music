@@ -12,6 +12,8 @@ import androidx.media3.database.DatabaseProvider
 import com.mochyy.mochymusic.BuildConfig
 import com.mochyy.mochymusic.db.MusicDatabase
 import com.mochyy.mochymusic.playback.DownloadUtil
+import com.mochyy.mochymusic.playback.StoragePlaces
+import com.mochyy.mochymusic.playback.StoredKind
 import com.mochyy.mochymusic.utils.dataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -138,7 +140,7 @@ class TransferExporter @Inject constructor(
 
     // the streaming cache stays behind, so its tables in media3's database go too
     private fun dropStreamingCacheIndex(media: File) {
-        val uids = File(context.filesDir, "exoplayer").listFiles { file -> file.name.endsWith(".uid") }
+        val uids = StoragePlaces.dir(context, StoredKind.SongCache).listFiles { file -> file.name.endsWith(".uid") }
             ?.map { it.name.removeSuffix(".uid") }.orEmpty()
         if (uids.isEmpty()) return
         SQLiteDatabase.openDatabase(media.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
@@ -188,10 +190,16 @@ class TransferExporter @Inject constructor(
     // everything under the files folder that carries over, as zip-style relative paths
     private fun carriedFiles(): List<Pair<String, File>> {
         val root = context.filesDir
-        return root.listFiles().orEmpty()
+        val onPhone = root.listFiles().orEmpty()
             .filter { TransferArchive.carriesFile(it.name) }
             .flatMap { top -> top.walkTopDown().filter { it.isFile }.toList() }
             .map { it.relativeTo(root).invariantSeparatorsPath to it }
+        // downloads kept on a memory card go in under the same name, so the other phone finds them where it looks
+        val downloads = StoragePlaces.dir(context, StoredKind.Downloads)
+        if (downloads.parentFile == root) return onPhone
+        val onCard = downloads.walkTopDown().filter { it.isFile }
+            .map { "${StoredKind.Downloads.folder}/${it.relativeTo(downloads).invariantSeparatorsPath}" to it }
+        return onPhone + onCard
     }
 
     private fun readManifest(library: File, totalBytes: Long, localSongs: Int): TransferManifest =

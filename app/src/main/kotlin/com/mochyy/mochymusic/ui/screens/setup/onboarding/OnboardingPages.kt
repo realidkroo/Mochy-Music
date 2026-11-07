@@ -3,8 +3,6 @@
 package com.mochyy.mochymusic.ui.screens.setup.onboarding
 
 import com.mochyy.mochymusic.ui.component.rememberDeviceTilt
-import androidx.compose.ui.unit.em
-import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.WindowInsets
@@ -39,8 +37,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -51,13 +47,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,12 +62,8 @@ import com.mochyy.mochymusic.importer.account.RemotePlaylist
 import com.mochyy.mochymusic.importer.transfer.TransferManifest
 import com.mochyy.mochymusic.viewmodels.TransferStep
 import com.mochyy.mochymusic.viewmodels.YouTubeSyncChoices
-import com.music.innertube.models.ArtistItem
 
 private const val GoBack = "hell nah, go back"
-
-/** "let's build your home" needs this many artists to have something to build from */
-internal const val MinArtists = 3
 
 // ---- 1. import? ----
 
@@ -503,125 +492,6 @@ internal fun ProfilePage(
         )
     }
 }
-
-// ---- 8. build your home (only when nothing was imported) ----
-
-@Composable
-internal fun BuildHomePage(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    artists: List<ArtistItem>,
-    loading: Boolean,
-    selected: Set<String>,
-    onToggle: (ArtistItem) -> Unit,
-    onNext: () -> Unit,
-) {
-    OnboardingPage(
-        badge = { PageBadge(painterResource(R.drawable.home)) },
-        title = "Let's build your home",
-        subtitle = "Select any artist you really like",
-        scrollable = false,
-        footer = {
-            OnbButton(
-                text = when (selected.size) {
-                    0 -> "you need to pick 3 artists"
-                    1 -> "2 more"
-                    2 -> "one more artist to pick"
-                    else -> "next"
-                },
-                enabled = selected.size >= MinArtists,
-                onClick = onNext,
-            )
-        },
-    ) {
-        BasicTextField(
-            value = query,
-            onValueChange = onQueryChange,
-            singleLine = true,
-            textStyle = TextStyle(color = Color.White, fontFamily = InterFontFamily, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.03).em),
-            cursorBrush = SolidColor(Color.White),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            decorationBox = { inner ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(CircleShape)
-                        .background(Onb.Field)
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box {
-                        if (query.isEmpty()) Text("Search artists", color = Onb.Faint, fontSize = 15.sp)
-                        inner()
-                    }
-                }
-            },
-        )
-        Spacer(Modifier.height(16.dp))
-        BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            val columns = (maxWidth / 112.dp).toInt().coerceIn(3, 6)
-            if (loading && artists.isEmpty()) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.TopCenter).size(26.dp), color = Color.White, strokeWidth = 2.dp)
-            }
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(columns),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                contentPadding = PaddingValues(bottom = 12.dp),
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                items(artists, key = { it.id }) { artist ->
-                    ArtistBubble(artist = artist, selected = artist.id in selected, onClick = { onToggle(artist) })
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ArtistBubble(artist: ArtistItem, selected: Boolean, onClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
-            .padding(4.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .graphicsLayer {
-                    val s = if (selected) 0.92f else 1f
-                    scaleX = s
-                    scaleY = s
-                }
-                .clip(CircleShape)
-                .background(Onb.Card)
-                .then(if (selected) Modifier.border(3.dp, Color.White, CircleShape) else Modifier),
-        ) {
-            AsyncImage(
-                model = artist.thumbnail,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-            if (selected) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.35f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(painterResource(R.drawable.check), contentDescription = "Selected", tint = Color.White, modifier = Modifier.size(30.dp))
-                }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(artist.title, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-    }
-}
-
 
 @Composable
 internal fun BlurWarningPage(

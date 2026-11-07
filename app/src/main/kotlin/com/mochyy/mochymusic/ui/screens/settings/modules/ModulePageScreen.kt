@@ -1,4 +1,4 @@
-// a page a look module brings, built from its blocks: words, pictures, web links, and songs, playlists, albums and artists to open
+// a page a look module brings, built from its blocks: words, pictures, web links, its own settings, and songs, playlists, albums and artists to open
 
 package com.mochyy.mochymusic.ui.screens.settings.modules
 
@@ -74,7 +74,15 @@ fun ModulePageScreen(navController: NavController, id: String, pageId: String, v
             return@SubSettingsScaffold
         }
         page.blocks.forEach { block ->
-            PageBlockView(block, skin, navController)
+            if (block is PageBlock.Setting) {
+                // the module's own setting, changed right here the same way as on its page
+                val one = entry?.copy(fields = entry.fields.filter { it.id == block.key })
+                if (one != null && one.fields.isNotEmpty()) {
+                    ModuleOptions(entry = one, onPick = { _, _ -> }, onField = { field, value -> viewModel.setField(id, field, value) }, titled = false)
+                }
+            } else {
+                PageBlockView(block, skin, navController)
+            }
             Spacer(Modifier.height(10.dp))
         }
         Spacer(Modifier.height(120.dp))
@@ -128,6 +136,8 @@ private fun PageBlockView(block: PageBlock, skin: ModuleSkin, navController: Nav
         is PageBlock.Search -> PageRow(R.drawable.search_filled, block.title, block.query.takeIf { it != block.title }) {
             navController.navigate("search/${URLEncoder.encode(block.query, "UTF-8")}")
         }
+        // drawn by the page itself, which knows the module's values
+        is PageBlock.Setting -> Unit
     }
 }
 

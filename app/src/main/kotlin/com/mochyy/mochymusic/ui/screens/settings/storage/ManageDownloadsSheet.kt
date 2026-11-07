@@ -63,6 +63,7 @@ import com.mochyy.mochymusic.ui.screens.playlist.SheetNote
 import com.mochyy.mochymusic.ui.utils.resize
 import com.mochyy.mochymusic.viewmodels.DownloadedSong
 import com.mochyy.mochymusic.viewmodels.StorageViewModel
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** how many songs each suggestion shelf shows */
 private const val ShelfSize = 4
@@ -285,7 +286,7 @@ private fun DownloadRow(download: DownloadedSong, picked: Boolean, picking: Bool
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(if (picked) Color.White.copy(alpha = 0.07f) else Color.Transparent)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onToggle)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = RemoteFocus, onClick = onToggle)
             .padding(horizontal = 4.dp, vertical = 6.dp),
     ) {
         AsyncImage(

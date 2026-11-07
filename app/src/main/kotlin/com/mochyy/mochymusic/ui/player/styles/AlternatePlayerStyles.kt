@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -140,24 +144,19 @@ internal fun StyleSongs(
     }
 }
 
-/** the frame every style is drawn in: tones, gestures, rotation, the ••• menu's state */
+// the frame every style is drawn in: tones, gestures, the window's shape, the ••• menu's state
 @Composable
 internal fun StyleFrame(
-    style: PlayerStyle,
     preview: Boolean,
     modifier: Modifier,
     tones: StyleTones,
     /** what lies under the style and holds still when it turns; the playhead split when null */
     background: (@Composable BoxScope.() -> Unit)? = null,
-    content: @Composable BoxScope.(landscape: Boolean, menuOpen: Boolean, setMenuOpen: (Boolean) -> Unit, rotated: Boolean, setRotated: (Boolean) -> Unit) -> Unit,
+    content: @Composable BoxScope.(landscape: Boolean, menuOpen: Boolean, setMenuOpen: (Boolean) -> Unit) -> Unit,
 ) {
     val connection = LocalPlayerConnection.current
-    val (rotated, setRotated) = rememberStyleRotation(style)
     var menuOpen by remember { mutableStateOf(false) }
-    // turned sideways, its lists still fling the way the finger went
-    TurnedFlingFix(active = rotated && !preview)
-    RotatingFrame(
-        rotated = rotated,
+    StyleStage(
         tones = tones,
         background = background,
         modifier = modifier
@@ -187,7 +186,7 @@ internal fun StyleFrame(
             androidx.compose.material3.ProvideTextStyle(
                 androidx.compose.ui.text.TextStyle(fontFamily = com.mochyy.mochymusic.ui.theme.InterFontFamily)
             ) {
-                content(landscape, menuOpen, { menuOpen = it }, rotated, setRotated)
+                content(landscape, menuOpen) { menuOpen = it }
             }
         }
     }
@@ -217,18 +216,20 @@ private fun rememberBackdropClock(running: Boolean): () -> Float {
 private fun backdropTime(frameTimeNanos: Long): Float =
     ((frameTimeNanos / 1_000_000f) * (100f / 100_000f)).mod(100f)
 
-/**
- * Insets the way they fall on a style: upright, the status bar is at its top and the navigation
- * bar at its bottom; turned sideways, those same bars run down its left and right edges.
- */
+// where the system bars fall on a style; in landscape the player hides the status bar, so only the side bars and the cutout are left
 internal class StyleInsets(val start: Dp, val top: Dp, val end: Dp, val bottom: Dp)
 
 @Composable
 internal fun styleInsets(landscape: Boolean): StyleInsets {
-    val status = WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding()
-    val nav = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    return if (landscape) StyleInsets(start = status, top = 0.dp, end = nav, bottom = 0.dp)
-    else StyleInsets(start = 0.dp, top = status, end = 0.dp, bottom = nav)
+    val direction = androidx.compose.ui.platform.LocalLayoutDirection.current
+    val sides = WindowInsets.navigationBars.union(WindowInsets.displayCutout).asPaddingValues()
+    val status = if (landscape) 0.dp else WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding()
+    return StyleInsets(
+        start = sides.calculateStartPadding(direction),
+        top = status,
+        end = sides.calculateEndPadding(direction),
+        bottom = sides.calculateBottomPadding(),
+    )
 }
 
 // ---- Poster ------------------------------------------------------------------------------
@@ -271,10 +272,9 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
     // the pills' column, and the room the words keep from it
     val pillsWidth = com.mochyy.mochymusic.ui.player.TurntablePillWidth
     StyleFrame(
-        PlayerStyle.POSTER, preview, modifier, tones,
+        preview, modifier, tones,
         background = {
-            // the flagship's background, moving as it does there; it stays put when the poster turns.
-            // The cover's colours crossfade along the row of songs as a swipe or a skip slides it.
+            // the flagship's background, moving as it does there; the cover's colours crossfade along the row of songs as it slides
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val w = maxWidth
                 val h = maxHeight
@@ -306,7 +306,7 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                 }
             }
         },
-    ) { landscape, menuOpen, setMenuOpen, rotated, setRotated ->
+    ) { landscape, menuOpen, setMenuOpen ->
         val insets = styleInsets(landscape)
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val w = maxWidth
@@ -363,7 +363,7 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                 // the menu at the top, opening down, clear of the transport
                 StyleMenu(
                     open = menuOpen, onOpenChange = setMenuOpen, tones = tones, actions = actions,
-                    rotated = rotated, onRotate = setRotated, atBottom = false, end = 22.dp, edge = insets.top + 16.dp,
+                    atBottom = false, end = 22.dp, edge = insets.top + 16.dp,
                     buttonSize = PosterChevron, pill = true,
                 )
             } else {
@@ -415,7 +415,7 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                 }
                 StyleMenu(
                     open = menuOpen, onOpenChange = setMenuOpen, tones = tones, actions = actions,
-                    rotated = rotated, onRotate = setRotated, atBottom = false, end = 20.dp + insets.end, edge = 18.dp,
+                    atBottom = false, end = 20.dp + insets.end, edge = 18.dp,
                     buttonSize = PosterChevron, pill = true,
                 )
             }
@@ -700,7 +700,7 @@ private fun TimelinePlayerStyle(actions: StyleActions, modifier: Modifier, previ
     val icon = r.dp(0.15f, 50.dp, 72.dp)
     val duration = rememberDurationMs()
     val carousel = rememberStyleCarousel(preview)
-    StyleFrame(PlayerStyle.TIMELINE, preview, modifier, tones) { landscape, menuOpen, setMenuOpen, rotated, setRotated ->
+    StyleFrame(preview, modifier, tones) { landscape, menuOpen, setMenuOpen ->
         val insets = styleInsets(landscape)
         RidingTimes(
             tones = tones,
@@ -743,7 +743,7 @@ private fun TimelinePlayerStyle(actions: StyleActions, modifier: Modifier, previ
                     }
                 }
             }
-            StyleControls(tones, landscape, insets, menuOpen, setMenuOpen, actions, rotated, setRotated, menuTop = insets.top + 20.dp + (icon - r.dp(0.078f, 28.dp, 40.dp)) / 2)
+            StyleControls(tones, landscape, insets, menuOpen, setMenuOpen, actions, menuTop = insets.top + 20.dp + (icon - r.dp(0.078f, 28.dp, 40.dp)) / 2)
         }
     }
 }
@@ -763,7 +763,7 @@ private fun LyricsPlayerStyle(actions: StyleActions, modifier: Modifier, preview
     val duration = rememberDurationMs()
     val lyrics = rememberStyleLyrics(readings = !preview)
     val carousel = rememberStyleCarousel(preview)
-    StyleFrame(PlayerStyle.LYRICS, preview, modifier, tones) { landscape, menuOpen, setMenuOpen, rotated, setRotated ->
+    StyleFrame(preview, modifier, tones) { landscape, menuOpen, setMenuOpen ->
         val insets = styleInsets(landscape)
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val lyricHeight = if (landscape) maxHeight * 0.52f else maxHeight * 0.3f
@@ -802,7 +802,7 @@ private fun LyricsPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                         }
                     }
                 }
-                StyleControls(tones, landscape, insets, menuOpen, setMenuOpen, actions, rotated, setRotated, menuTop = insets.top + 20.dp)
+                StyleControls(tones, landscape, insets, menuOpen, setMenuOpen, actions, menuTop = insets.top + 20.dp)
             }
         }
     }
@@ -819,8 +819,6 @@ private fun BoxScope.StyleControls(
     menuOpen: Boolean,
     setMenuOpen: (Boolean) -> Unit,
     actions: StyleActions,
-    rotated: Boolean,
-    setRotated: (Boolean) -> Unit,
     menuTop: Dp,
 ) {
     val circle = rememberResponsive().dp(0.078f, 28.dp, 40.dp)
@@ -843,7 +841,7 @@ private fun BoxScope.StyleControls(
     }
     StyleMenu(
         open = menuOpen, onOpenChange = setMenuOpen, tones = tones, actions = actions,
-        rotated = rotated, onRotate = setRotated, atBottom = false,
+        atBottom = false,
         end = 22.dp + insets.end, edge = if (landscape) 18.dp else menuTop,
         buttonSize = circle,
     )

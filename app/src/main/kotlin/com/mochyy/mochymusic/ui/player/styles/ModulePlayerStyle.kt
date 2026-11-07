@@ -56,7 +56,6 @@ import com.mochyy.mochymusic.LocalAppContentObscured
 import com.mochyy.mochymusic.LocalArtworkColor
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.constants.PlayerBackgroundStyle
-import com.mochyy.mochymusic.constants.PlayerStyle
 import com.mochyy.mochymusic.modules.skin.ActiveSkin
 import com.mochyy.mochymusic.modules.skin.CoverShape
 import com.mochyy.mochymusic.modules.skin.ModuleSkin
@@ -128,7 +127,7 @@ internal fun ModulePlayerStyle(actions: StyleActions, modifier: Modifier, previe
     )
     val background: (@Composable BoxScope.() -> Unit)? =
         if (layout.background == SkinBackground.Tones) null else { { SkinBackdrop(context) } }
-    StyleFrame(PlayerStyle.MODULE, preview, modifier, tones, background) { landscape, menuOpen, setMenuOpen, rotated, setRotated ->
+    StyleFrame(preview, modifier, tones, background) { landscape, menuOpen, setMenuOpen ->
         val insets = styleInsets(landscape)
         Column(
             modifier = Modifier
@@ -145,7 +144,7 @@ internal fun ModulePlayerStyle(actions: StyleActions, modifier: Modifier, previe
         }
         StyleMenu(
             open = menuOpen, onOpenChange = setMenuOpen, tones = tones, actions = actions,
-            rotated = rotated, onRotate = setRotated, atBottom = false,
+            atBottom = false,
             end = 22.dp + insets.end, edge = insets.top + 20.dp, buttonSize = MenuButton,
         )
     }

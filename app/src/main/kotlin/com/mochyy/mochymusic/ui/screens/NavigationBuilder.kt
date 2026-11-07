@@ -392,8 +392,13 @@ fun NavGraphBuilder.navigationBuilder(
         com.mochyy.mochymusic.ui.screens.settings.PlaybackDiagnosticsScreen(navController = navController)
     }
 
-    composable("mochy_settings") {
-        com.mochyy.mochymusic.ui.screens.settings.MochySettingsScreen(navController = navController)
+    composable(com.mochyy.mochymusic.ui.screens.settings.SettingsListRoute) {
+        // on a wide screen the list itself stays at the left (MainActivity), so this side waits for a pick
+        if (com.mochyy.mochymusic.ui.utils.isWideLayout()) {
+            com.mochyy.mochymusic.ui.screens.settings.SettingsPanePlaceholder()
+        } else {
+            com.mochyy.mochymusic.ui.screens.settings.MochySettingsScreen(navController = navController)
+        }
     }
 
     // app behaviour kept general's route, so old links and search results still land on it
