@@ -90,12 +90,12 @@
   }
 
   // one sheet's pose for how far in (i) and how covered (c) it is
-  function pose(p, i, c, stacked) {
+  function pose(p, i, c) {
     var out = 1 - i;
     put(p.body, "transform", c ? "scale(" + n(1 - c * 0.07) + ")" : "");
     if (p.shade) put(p.shade, "opacity", c ? String(n(c * 0.62)) : "0");
     if (p.words) {
-      var move = p.head || !stacked ? "translate3d(0," + n(out * (p.head ? 80 : 50)) + "px,0)" : "translate3d(" + n(out * (p.flip ? 110 : -110)) + "px,0,0)";
+      var move = p.head || !wide.matches ? "translate3d(0," + n(out * (p.head ? 80 : 50)) + "px,0)" : "translate3d(" + n(out * (p.flip ? 110 : -110)) + "px,0,0)";
       put(p.words, "transform", out ? move : "");
       put(p.words, "opacity", out ? String(n(i)) : "");
     }
@@ -120,14 +120,13 @@
     var vh = window.innerHeight;
     var vw = window.innerWidth;
     var tops = items.map(function (el) { return el.getBoundingClientRect().top; });
-    var stacked = wide.matches;
     parts.forEach(function (p, i) {
       var next = tops[i + 1];
-      var covering = stacked && next !== undefined && p.el.classList.contains("scene");
-      pose(p, ease(clamp((vh - tops[i]) / (vh * 0.6))), covering ? clamp(1 - next / vh) : 0, stacked);
+      var covering = next !== undefined && p.el.classList.contains("scene");
+      pose(p, ease(clamp((vh - tops[i]) / (vh * 0.6))), covering ? clamp(1 - next / vh) : 0);
     });
     // the hero's marquee, ring and cue rest once a sheet fully covers them
-    if (hero) hero.classList.toggle("resting", stacked && tops[1] !== undefined && tops[1] <= 0);
+    if (hero) hero.classList.toggle("resting", tops[1] !== undefined && tops[1] <= 0);
     if (travel) {
       var x = clamp(-tops[railIndex] / (railHeight - vh)) * travel;
       track.style.transform = "translate3d(" + (-x).toFixed(1) + "px, 0, 0)";
