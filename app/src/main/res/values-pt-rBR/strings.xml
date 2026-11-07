@@ -101,6 +101,7 @@
     <string name="saving">Saving</string>
     <string name="saved">Saved</string>
     <string name="remove_download">Remover dos baixados</string>
+    <string name="player_menu_delete_download">Delete download</string>
     <string name="import_playlist">Importar lista</string>
     <string name="add_to_playlist">Adicionar à lista</string>
     <string name="start_an_radio">Radio</string>
