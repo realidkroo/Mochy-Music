@@ -29,7 +29,7 @@
     <string name="module_remove_body">Its settings and anything you added to it go with it. You can add it again any time.</string>
     <string name="modules_find_more_body">A module is a service someone else runs. Mochy only asks it for songs, lyrics or a look, and it can\'t touch anything else in the app.</string>
     <string name="modules_add_from_link">Add from a link</string>
-    <string name="modules_link_hint">https://…</string>
+    <string name="modules_link_hint">https://… or a GitHub project</string>
     <string name="modules_link_check">Check the link</string>
     <string name="modules_link_checking">Checking…</string>
     <string name="modules_link_not_a_link">That doesn\'t look like a link. It should start with https://</string>
@@ -83,6 +83,8 @@
     <string name="module_info_author">Author</string>
     <string name="module_info_status">Status</string>
     <string name="module_info_built_in">Built into Mochy</string>
+    <string name="module_shader_problem">Its player shader didn\'t load, so the player shows its fallback: %1$s</string>
+    <string name="module_shader_needs_13">Its player shaders need Android 13, so this phone shows their fallbacks.</string>
     <string name="module_glass_problem">Its glass didn\'t load, so the bars keep Mochy\'s frost: %1$s</string>
     <string name="module_glass_needs_13">Its glass needs Android 13 or newer, so this phone keeps Mochy\'s frost.</string>
     <string name="module_data_saver_on">Data saver is on</string>
@@ -133,4 +135,10 @@
     <string name="module_items_too_big">That\'s too big for %1$s to take.</string>
     <string name="modules_file_not_signed">This module runs its own code, so it has to be signed with the same key as your Mochy, and this copy isn\'t. Get the one made for your build of Mochy.</string>
     <string name="modules_code_broken">This module\'s code didn\'t start. It may be made for a different version of Mochy.</string>
+    <string name="modules_github_no_release">That GitHub project hasn\'t published a release yet. Ask whoever made it to publish one with the module\'s .zip attached.</string>
+    <string name="modules_github_no_module">The newest release has no module in it. Mochy looks for a .zip with \"mochyymodule\" in its name, like glass.mochyymodule.zip.</string>
+    <string name="skin_customise_row">Customise %1$s</string>
+    <string name="skin_customise_title">Customise</string>
+    <string name="skin_customise_body">These change how %1$s looks. They\'re the same settings as on the module\'s page.</string>
+    <string name="skin_customise_empty">Turn the module on to change these.</string>
 </resources>
