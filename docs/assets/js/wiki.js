@@ -24,22 +24,47 @@
     links[page.id] = a;
   });
 
+  var current = null;
+  var leaving = 0;
+
+  // the old page fades up and out first, then the new one rises in at the top
   function show(id) {
     var page = document.getElementById(id) || pages[0];
-    pages.forEach(function (p) { p.classList.toggle("on", p === page); });
+    if (!page.classList.contains("page")) page = pages[0];
     Object.keys(links).forEach(function (k) { links[k].classList.toggle("on", k === page.id); });
     document.title = page.dataset.title.replace(/&amp;/g, "&").replace(/^\d+\. /, "") + " · Mochy Wiki";
+    document.getElementById("side").classList.remove("open");
+    document.getElementById("tocToggle").setAttribute("aria-expanded", "false");
+    clearTimeout(leaving);
+    var old = current;
+    current = page;
+    if (!old || old === page || still) {
+      swap(old, page);
+      return;
+    }
+    old.classList.add("leaving");
+    leaving = setTimeout(function () { swap(old, page); }, 160);
+  }
+
+  function swap(old, page) {
+    pages.forEach(function (p) { p.classList.remove("leaving"); });
+    if (old && old !== page) old.classList.remove("on");
+    page.classList.add("on");
+    page.querySelectorAll("img[loading]").forEach(function (img) { img.loading = "eager"; });
     var i = pages.indexOf(page);
     next.innerHTML = "";
     if (i > 0) next.appendChild(step(pages[i - 1], "previous"));
     else next.appendChild(document.createElement("span"));
     if (i < pages.length - 1) next.appendChild(step(pages[i + 1], "next"));
-    page.querySelectorAll("img[loading]").forEach(function (img) { img.loading = "eager"; });
-    // after the browser's own jump to the #name, so the page opens at its title
-    requestAnimationFrame(function () { window.scrollTo(0, 0); });
-    document.getElementById("side").classList.remove("open");
-    document.getElementById("tocToggle").setAttribute("aria-expanded", "false");
+    next.classList.remove("in");
+    void next.offsetWidth;
+    next.classList.add("in");
+    // straight to the top, not the smooth scroll the rest of the site uses, and again after the browser's own jump to the #name
+    toTop();
+    requestAnimationFrame(toTop);
   }
+
+  function toTop() { window.scrollTo({ top: 0, behavior: "instant" }); }
 
   function step(page, word) {
     var a = document.createElement("a");
@@ -49,6 +74,9 @@
     return a;
   }
 
+  var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // opening a link to a page, the browser jumps to its article once everything has loaded; the page should open at its title instead
+  window.addEventListener("load", function () { if (window.scrollY < 400) toTop(); });
   window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
   show(location.hash.slice(1));
 
@@ -59,19 +87,22 @@
   });
 
   // the fold button tucks the sidebar away to just the brand, and it stays that way next visit
-  var wiki = document.querySelector(".wiki");
+  // the head already folded it before the first paint, so this only syncs the button
+  var root = document.documentElement;
   var fold = document.getElementById("sideFold");
   function setFolded(folded) {
-    wiki.classList.toggle("folded", folded);
+    root.classList.toggle("side-folded", folded);
     fold.setAttribute("aria-expanded", String(!folded));
     fold.setAttribute("aria-label", folded ? "Show the sidebar" : "Hide the sidebar");
   }
-  try { setFolded(localStorage.getItem("wikiSideFolded") === "1"); } catch (e) {}
+  setFolded(root.classList.contains("side-folded"));
   fold.addEventListener("click", function () {
-    var folded = !wiki.classList.contains("folded");
+    var folded = !root.classList.contains("side-folded");
     setFolded(folded);
     try { localStorage.setItem("wikiSideFolded", folded ? "1" : "0"); } catch (e) {}
   });
+  // transitions only once the page has settled, so opening it folded doesn't play the fold
+  requestAnimationFrame(function () { requestAnimationFrame(function () { root.classList.add("ready"); }); });
 
   // json and code get a little colour, done once, no library
   document.querySelectorAll("pre code").forEach(function (code) {
