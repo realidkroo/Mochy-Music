@@ -30,7 +30,7 @@ jobs:
       - name: Send the front page to the wiki
         run: |
           cp -r docs _site
-          rm -rf _site/notes
+          rm -rf _site/notes _site/_home
           printf '%s\n' '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Mochy Wiki</title><meta http-equiv="refresh" content="0; url=wiki/"><link rel="canonical" href="wiki/"></head><body style="background:#0e0e0f;color:#fff;font-family:system-ui"><a style="color:#f5e27a" href="wiki/">Mochy Wiki</a></body></html>' > _site/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
