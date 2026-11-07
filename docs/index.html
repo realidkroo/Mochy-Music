@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&display=swap">
 <!-- bump ?v= on the css and js links whenever they change, or browsers keep showing the old copy for up to 10 minutes -->
 <link rel="stylesheet" href="assets/css/site.css?v=20261107g">
-<link rel="stylesheet" href="assets/css/home.css?v=20261107g">
+<link rel="stylesheet" href="assets/css/home.css?v=20261107h">
 <link rel="preload" as="image" href="assets/img/mochy-hero.webp" type="image/webp">
 <script>document.documentElement.classList.add("js");</script>
 </head>
@@ -39,8 +39,17 @@
 
   <section class="scene dots hero" aria-label="Mochy Music">
     <div class="scene-body">
-      <div class="ghost" aria-hidden="true">MOCHY<br>MUSIC</div>
-      <div class="ring-wrap" aria-hidden="true"><svg class="ring" viewBox="0 0 1000 1000"><circle cx="500" cy="500" r="400"/></svg></div>
+      <div class="ghost" aria-hidden="true">
+        <div class="ghost-row to-right"><span>MOCHY</span><span>MOCHY</span><span>MOCHY</span><span>MOCHY</span></div>
+        <div class="ghost-row to-left"><span>MUSIC</span><span>MUSIC</span><span>MUSIC</span><span>MUSIC</span></div>
+      </div>
+      <div class="ring-wrap" aria-hidden="true">
+        <svg class="ring" viewBox="0 0 1000 1000">
+          <defs><path id="ringPath" d="M500,500 m-400,0 a400,400 0 1,1 800,0 a400,400 0 1,1 -800,0"/></defs>
+          <circle cx="500" cy="500" r="400"/>
+          <text dominant-baseline="central"><textPath href="#ringPath" textLength="2510" lengthAdjust="spacing">MOCHY MUSIC • MOCHY MUSIC • MOCHY MUSIC • </textPath></text>
+        </svg>
+      </div>
       <div class="wrap scene-grid">
         <div class="hero-copy">
           <h1><span class="w">Music</span><span class="s">With style &lt;3</span></h1>

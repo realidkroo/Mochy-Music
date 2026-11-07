@@ -43,8 +43,9 @@
 .stack { position: relative; }
 .scene { position: sticky; top: 0; height: 100vh; height: 100svh; min-height: 640px; overflow: hidden; border-radius: 40px 40px 0 0; box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.55); }
 .scene.hero { border-radius: 0; box-shadow: none; }
-.scene-body { position: absolute; inset: 0; transform-origin: 50% 30%; transform: scale(calc(1 - var(--cover, 0) * 0.07)); }
-.scene::after { content: ""; position: absolute; inset: 0; z-index: 6; background: #000; opacity: calc(var(--cover, 0) * 0.62); border-radius: inherit; pointer-events: none; }
+/* will-change keeps each moving piece on its own gpu layer, so a scroll frame only moves layers instead of repainting the whole sheet */
+.scene-body { position: absolute; inset: 0; transform-origin: 50% 30%; transform: scale(calc(1 - var(--cover, 0) * 0.07)); will-change: transform; }
+.scene::after { content: ""; position: absolute; inset: 0; z-index: 6; background: #000; opacity: calc(var(--cover, 0) * 0.62); border-radius: inherit; pointer-events: none; will-change: opacity; }
 .scene-grid { position: relative; z-index: 2; height: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; gap: 48px; padding-top: var(--nav-h); }
 .scene.flip .words { grid-column: 2; }
 
@@ -52,7 +53,7 @@
 .scene .words { transform: translateX(calc((1 - var(--in, 1)) * -110px)); opacity: var(--in, 1); }
 .scene.flip .words { transform: translateX(calc((1 - var(--in, 1)) * 110px)); }
 .art { position: absolute; inset: 0; pointer-events: none; }
-.slot { position: absolute; pointer-events: auto; transform: translateY(calc((1 - var(--in, 1)) * var(--rise, 240px) - var(--cover, 0) * var(--lift, 60px))) rotate(calc((1 - var(--in, 1)) * var(--turn, 6deg))); }
+.slot { position: absolute; pointer-events: auto; will-change: transform; transform: translateY(calc((1 - var(--in, 1)) * var(--rise, 240px) - var(--cover, 0) * var(--lift, 60px))) rotate(calc((1 - var(--in, 1)) * var(--turn, 6deg))); }
 .slot .phone { width: 100%; }
 .slot.cut { right: var(--edge); top: 24vh; width: min(560px, 40vw); --rise: 320px; --turn: 4deg; }
 .slot.cut .phone { height: 92vh; aspect-ratio: auto; }
@@ -65,15 +66,23 @@
 .phone.tilt { transition: transform 0.5s var(--spring); transform-style: preserve-3d; }
 
 /* ---------- the hero ---------- */
+/* two rows of outlined words drifting forever, mochy to the right and music to the left; each row is two identical halves, so sliding by half loops without a seam */
 .ghost {
   position: absolute; left: 0; right: 0; top: 9vh; z-index: 0; font: 800 clamp(140px, 21vw, 400px)/0.82 var(--font); letter-spacing: -0.04em;
   color: transparent; -webkit-text-stroke: 1px rgba(255, 255, 255, 0.06); white-space: nowrap; pointer-events: none; user-select: none;
-  transform: translateX(calc(var(--cover, 0) * -16%));
+  transform: translateX(calc(var(--cover, 0) * -16%)); will-change: transform;
 }
-.ring-wrap { position: absolute; z-index: 0; right: calc(var(--edge) - 14vw); top: -22vh; width: min(1000px, 70vw); aspect-ratio: 1; transform: rotate(calc(var(--cover, 0) * 120deg)); pointer-events: none; }
-.ring { width: 100%; height: 100%; animation: ring-in 1.6s var(--ease) both, spin 90s linear 1.6s infinite; }
+.ghost-row { display: flex; width: max-content; will-change: transform; animation: drift 46s linear infinite; }
+.ghost-row span { padding-right: 0.22em; }
+.ghost-row.to-right { animation-direction: reverse; }
+.ghost-row.to-left { animation-duration: 52s; }
+.ring-wrap { position: absolute; z-index: 0; right: calc(var(--edge) - 14vw); top: -22vh; width: min(1000px, 70vw); aspect-ratio: 1; transform: rotate(calc(var(--cover, 0) * 120deg)); pointer-events: none; will-change: transform; }
+.ring { width: 100%; height: 100%; will-change: transform; animation: ring-in 1.6s var(--ease) both, spin 70s linear 1.6s infinite; }
 .ring circle { fill: none; stroke: rgba(255, 255, 255, 0.035); stroke-width: 150; }
+.ring text { fill: rgba(255, 255, 255, 0.075); font: 800 92px var(--font); letter-spacing: -0.02em; }
+/* once a sheet covers the hero nothing in it needs to keep moving */
 .resting .ring { animation-play-state: running, paused; }
+.resting .ghost-row { animation-play-state: paused; }
 .hero h1 { margin: 0; font-weight: 800; letter-spacing: -0.065em; line-height: 0.95; }
 .hero h1 .w { display: block; color: #fff; font-size: clamp(48px, 5vw, 82px); animation: rise-in 0.9s var(--ease) 0.1s both; }
 .hero h1 .s { display: block; color: #c6c6c6; white-space: nowrap; font-size: clamp(52px, 7.2vw, 126px); animation: rise-in 0.9s var(--ease) 0.22s both; }
@@ -88,6 +97,7 @@
 @keyframes mascot-in { from { opacity: 0; transform: translateY(140px) rotate(4deg); } to { opacity: 1; transform: none; } }
 @keyframes ring-in { from { opacity: 0; transform: scale(0.82) rotate(-40deg); } to { opacity: 1; transform: none; } }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
 @keyframes cue { 0% { transform: scaleY(0); opacity: 1; } 70% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
 
 /* ---------- the strip: pinned while it slides sideways, the card in the middle the biggest ---------- */
@@ -98,7 +108,7 @@
 .card {
   position: relative; flex: none; width: clamp(280px, 26vw, 380px); height: clamp(380px, 56vh, 560px); overflow: hidden; padding: 28px 28px 0;
   border-radius: 32px; background: var(--card); box-shadow: 0 0 0 1px var(--line); text-decoration: none;
-  transform: scale(calc(1 - var(--d, 0) * 0.06)); transition: background 0.2s;
+  transform: scale(calc(1 - var(--d, 0) * 0.06)); transition: background 0.2s; will-change: transform;
 }
 a.card:hover { background: #1b1b1e; }
 .card h3 { margin: 0; font-size: clamp(22px, 2vw, 28px); font-weight: 800; letter-spacing: -0.045em; line-height: 1.04; }
@@ -137,7 +147,7 @@ a.card.end:hover { background: #ececf0; }
   .nav.open .nav-links span { display: none; }
   .scene { position: relative; height: auto; min-height: 0; border-radius: 28px 28px 0 0; }
   .scene.hero { min-height: 100svh; }
-  .scene-body { position: relative; inset: auto; transform: none; }
+  .scene-body { position: relative; inset: auto; transform: none; will-change: auto; }
   .scene::after { display: none; }
   .scene-grid { height: auto; grid-template-columns: minmax(0, 1fr); gap: 0; padding-top: calc(var(--nav-h) + 44px); }
   .scene.flip .words { grid-column: 1; }
@@ -162,7 +172,7 @@ a.card.end:hover { background: #ececf0; }
   .rail-pin { position: relative; height: auto; padding: 72px 0 56px; gap: 32px; }
   .rail-track { width: auto; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 24px; padding-inline: 24px; padding-bottom: 6px; transform: none !important; scrollbar-width: none; }
   .rail-track::-webkit-scrollbar { display: none; }
-  .card { width: 76vw; max-width: 340px; height: 460px; transform: none; scroll-snap-align: start; }
+  .card { will-change: auto; width: 76vw; max-width: 340px; height: 460px; transform: none; scroll-snap-align: start; }
   .card .phone { transform: translate(-50%, 36%); }
   .tour-scene { grid-template-columns: minmax(0, 1fr); gap: 40px; padding-block: 96px 40px; }
   .contact { padding-block: 110px 20px; }
