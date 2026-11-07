@@ -83,6 +83,8 @@
     <string name="module_info_author">Author</string>
     <string name="module_info_status">Status</string>
     <string name="module_info_built_in">Built into Mochy</string>
+    <string name="module_shader_problem">Its player shader didn\'t load, so the player shows its fallback: %1$s</string>
+    <string name="module_shader_needs_13">Its player shaders need Android 13, so this phone shows their fallbacks.</string>
     <string name="module_glass_problem">Its glass didn\'t load, so the bars keep Mochy\'s frost: %1$s</string>
     <string name="module_glass_needs_13">Its glass needs Android 13 or newer, so this phone keeps Mochy\'s frost.</string>
     <string name="module_data_saver_on">Data saver is on</string>

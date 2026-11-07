@@ -53,6 +53,10 @@ object ActiveSkin {
     var values: Map<String, String> by mutableStateOf(emptyMap())
         private set
 
+    /** why one of the player's shaders didn't load, for its page, the same way as [glassProblem] */
+    var shaderProblem: Pair<String, String>? by mutableStateOf(null)
+        private set
+
     /** the player's shaders by file name, the ones that compiled; empty below android 13 */
     var shaders: Map<String, SkinProgram> by mutableStateOf(emptyMap())
         private set
@@ -79,7 +83,8 @@ object ActiveSkin {
                     fontFor = skin
                 }
                 val compiled = if (skin != null && look != null) compile(skin, look) else Compiled(null, null)
-                Loaded(family, compiled, look, skin?.let(::compilePlayer).orEmpty())
+                val programs = skin?.let(::compilePlayer).orEmpty()
+                Loaded(family, compiled, look, programs, playerProblem)
             }
             withContext(Dispatchers.Main) {
                 if (requested != asked) return@withContext
@@ -88,17 +93,17 @@ object ActiveSkin {
                 glass = if (skin != null && loaded.wanted != null && loaded.compiled.shader != null) {
                     ActiveGlass(skin.moduleId, loaded.compiled.shader, loaded.wanted.blurDp, loaded.wanted.marginDp, loaded.wanted.uniforms)
                 } else null
-                val problem = loaded.compiled.problem ?: playerProblem
-                glassProblem = problem?.let { skin?.moduleId.orEmpty() to it }
+                glassProblem = loaded.compiled.problem?.let { skin?.moduleId.orEmpty() to it }
+                shaderProblem = loaded.playerProblem?.let { skin?.moduleId.orEmpty() to it }
                 if (shaders != loaded.programs) shaders = loaded.programs
                 if (values != settings) values = settings
             }
         }
     }
 
-    private class Loaded(val fonts: FontFamily?, val compiled: Compiled, val wanted: SkinGlass?, val programs: Map<String, SkinProgram>)
+    private class Loaded(val fonts: FontFamily?, val compiled: Compiled, val wanted: SkinGlass?, val programs: Map<String, SkinProgram>, val playerProblem: String?)
 
-    // why a player shader didn't compile, shown on the module's page next to a glass problem
+    // why a player shader didn't compile on the last load, written and read under the lock
     private var playerProblem: String? = null
 
     // each of the player's shader files, compiled once and kept while the file stays the same

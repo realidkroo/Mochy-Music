@@ -126,14 +126,18 @@ internal fun InfoCard(entry: ModuleEntry) {
     }
 }
 
-/** a look that brings its own glass says when this phone can't run it, or when its shader didn't compile and why */
+/** a look that brings its own glass or player shaders says when this phone can't run them, or when one didn't compile and why */
 @Composable
 private fun GlassNote(entry: ModuleEntry) {
-    if ((entry.module as? SkinSource)?.skin?.glass == null) return
-    val problem = ActiveSkin.glassProblem?.takeIf { it.first == entry.id }?.second
+    val skin = (entry.module as? SkinSource)?.skin ?: return
+    if (skin.glass == null && skin.playerShaders.isEmpty()) return
+    val glassProblem = ActiveSkin.glassProblem?.takeIf { it.first == entry.id }?.second
+    val shaderProblem = ActiveSkin.shaderProblem?.takeIf { it.first == entry.id }?.second
     val text = when {
-        problem != null -> stringResource(R.string.module_glass_problem, problem)
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU -> stringResource(R.string.module_glass_needs_13)
+        glassProblem != null -> stringResource(R.string.module_glass_problem, glassProblem)
+        shaderProblem != null -> stringResource(R.string.module_shader_problem, shaderProblem)
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && skin.glass != null -> stringResource(R.string.module_glass_needs_13)
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU -> stringResource(R.string.module_shader_needs_13)
         else -> return
     }
     Spacer(Modifier.height(8.dp))
