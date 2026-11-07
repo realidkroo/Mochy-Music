@@ -100,6 +100,7 @@
     <string name="saving">Saving</string>
     <string name="saved">Saved</string>
     <string name="remove_download">移除下载</string>
+    <string name="player_menu_delete_download">Delete download</string>
     <string name="import_playlist">导入播放列表</string>
     <string name="add_to_playlist">加入播放列表</string>
     <string name="start_an_radio">Radio</string>
