@@ -598,7 +598,7 @@ adb logcat -s ModuleTest SourceModules ModuleMetadata</code></pre>
 <p class="sub">working on mochy itself</p>
 <p>the module contract is <code>modules/api/.../MochyModule.kt</code>. a module implements any of: <code>SourceModule</code>, <code>LyricsModule</code>, <code>MetadataModule</code>, <code>LookModule</code>, <code>ModuleArt</code>, <code>ModuleFields</code>.</p>
 <div class="flow"><div>modules/api<small>the contract</small></div><i>→</i><div>modules/bridge<small>json both ways</small></div><i>→</i><div>app/modules<small>registry, web, local</small></div><i>→</i><div>ui/settings/modules<small>the pages</small></div></div>
-<p>the long version, with every rule, is the <a href="https://github.com/realidkroo/Mochy-Music/blob/main/modules/README.md">module README</a>. and please read CLAUDE.md before touching anything perf related, a lot of work went into keeping it smooth.</p>
+<p>the long version, with every rule, is the <a href="https://github.com/realidkroo/Mochy-Music/blob/main/modules/README.md">module README</a>. and please keep it smooth when you touch anything perf related, a lot of work went into that.</p>
 <pre><code>./gradlew :app:compileArm64FossDebugKotlin
 ./gradlew :modules:bridge:test</code></pre>
 </article>
