@@ -13,6 +13,7 @@ internal object TvRoutes {
     const val Search = "tv_search"
     const val Library = "tv_library"
     const val Phone = "tv_phone"
+    const val Mochy = "tv_mochy"
     const val Recap = "tv_recap"
     const val Browse = "tv_browse"
     const val Songs = "tv_songs"
@@ -28,6 +29,7 @@ internal fun NavGraphBuilder.tvGraph(profile: TvProfile) {
     ) { TvSearchScreen() }
     composable(TvRoutes.Library) { TvLibraryScreen() }
     composable(TvRoutes.Phone) { TvPhoneScreen(profile) }
+    composable(TvRoutes.Mochy) { TvMochyScreen(profile) }
     composable(TvRoutes.Recap) { TvRecapScreen() }
     composable(
         "${TvRoutes.Browse}/{browseId}?params={params}",

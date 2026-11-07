@@ -375,6 +375,8 @@ private const val CircleSkipWidth = 0.46f
 /** previous, play/pause and next as three [StyleCircle]s, laid out by the caller's [Row] or [Column] */
 @Composable
 fun TransportCircles(tones: StyleTones, size: Dp = 30.dp, vertical: Boolean = false, spacing: Dp = 8.dp) {
+    // a tv's remote plays and skips, buttons on the screen are only more things for focus to land on
+    if (com.mochyy.mochymusic.ui.utils.isTvLayout()) return
     val connection = LocalPlayerConnection.current ?: return
     val transport by connection.uiState.transportState.collectAsState()
     val scope = rememberCoroutineScope()

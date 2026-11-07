@@ -21,6 +21,8 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
@@ -96,22 +98,31 @@ internal object TvText {
         get() = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 7.sp, letterSpacing = 0.05.em, color = TvColors.Muted)
 }
 
-// a focused thing on a tv grows a little and gets a white ring, the only way to see where the remote is
+// how a focused thing shows it: covers and cards get a ring with a gap, rows and tabs a soft fill, buttons turn white (they read the focus themselves)
+internal enum class TvFocusLook { Ring, Fill, Invert }
+
+// the remote's spot on screen; lift is read while drawing, so moving focus only redraws the two items involved
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun Modifier.tvClickable(
     shape: Shape = RoundedCornerShape(16.dp),
-    focusedScale: Float = 1.05f,
-    ring: Boolean = true,
+    look: TvFocusLook = TvFocusLook.Ring,
+    focusedScale: Float = when (look) {
+        TvFocusLook.Ring -> 1.06f
+        TvFocusLook.Fill -> 1f
+        TvFocusLook.Invert -> 1.08f
+    },
+    interactionSource: MutableInteractionSource? = null,
     onFocused: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ): Modifier {
-    val interaction = remember { MutableInteractionSource() }
+    val interaction = interactionSource ?: remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
-    // read while drawing, so a focus change only redraws this one item
-    val lift = animateFloatAsState(if (focused) 1f else 0f, spring(dampingRatio = 0.8f, stiffness = 900f), label = "tvFocus")
-    val ringWidth = with(LocalDensity.current) { 2.dp.toPx() }
+    val lift = animateFloatAsState(if (focused) 1f else 0f, spring(dampingRatio = 0.85f, stiffness = 700f), label = "tvFocus")
+    val density = LocalDensity.current
+    val ringWidth = with(density) { 2.5.dp.toPx() }
+    val ringGap = with(density) { 3.dp.toPx() }
     return this
         .graphicsLayer {
             val scale = 1f + (focusedScale - 1f) * lift.value
@@ -119,10 +130,21 @@ internal fun Modifier.tvClickable(
             scaleY = scale
         }
         .drawWithContent {
-            drawContent()
             val amount = lift.value
-            if (ring && amount > 0.01f) {
-                drawOutline(shape.createOutline(size, layoutDirection, this), TvColors.Ring.copy(alpha = amount), style = Stroke(ringWidth))
+            if (look == TvFocusLook.Fill && amount > 0.01f) {
+                drawOutline(shape.createOutline(size, layoutDirection, this), Color.White.copy(alpha = 0.14f * amount))
+            }
+            drawContent()
+            if (look == TvFocusLook.Ring && amount > 0.01f) {
+                // drawn just outside the edge with a dark gap, so it shows on light covers too
+                val out = ringGap + ringWidth / 2
+                translate(-out, -out) {
+                    drawOutline(
+                        shape.createOutline(Size(size.width + out * 2, size.height + out * 2), layoutDirection, this),
+                        TvColors.Ring.copy(alpha = amount),
+                        style = Stroke(ringWidth),
+                    )
+                }
             }
         }
         .then(if (onFocused != null) Modifier.onFocusChanged { if (it.isFocused) onFocused() } else Modifier)
@@ -202,6 +224,7 @@ internal fun Modifier.tvDots(spacing: Dp = 16.dp, color: Color = TvColors.Dot): 
 @OptIn(ExperimentalFoundationApi::class)
 internal val TvColumnPivot = object : BringIntoViewSpec {
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
+        if (offset >= 0f && offset + size <= containerSize * 0.92f) return 0f
         val keyline = containerSize * 0.3f
         if (size > containerSize - keyline) return offset
         return offset - keyline

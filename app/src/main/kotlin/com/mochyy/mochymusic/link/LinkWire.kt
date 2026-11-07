@@ -33,6 +33,9 @@ object LinkWire {
     const val PhonePort = 47_801
     const val TvPairPort = 47_802
 
+    // the tv listens here for its phone's play, skip and look commands while a linked profile is open
+    const val TvControlPort = 47_803
+
     const val KeyHeader = "X-Mochy-Key"
 
     // bumped when a route changes shape, so an old phone and a new tv can say so instead of failing quietly

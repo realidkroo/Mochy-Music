@@ -58,6 +58,10 @@
     <string name="tv_following">Following</string>
     <string name="tv_similar_artists">similar artists</string>
 
+    <string name="tv_lyrics">Lyrics</string>
+    <string name="tv_song_info">Song info</string>
+    <string name="tv_source">Source</string>
+    <string name="tv_flagship_square">Flagship square</string>
     <string name="tv_like">Like</string>
     <string name="tv_unlike">Remove like</string>
     <string name="tv_go_to_album">Go to album</string>
@@ -112,4 +116,39 @@
     <string name="tv_link_channel">TV link</string>
     <string name="tv_link_notification_title">Linked to your TV</string>
     <string name="tv_link_notification_text">%1$s can sync and stream from this phone</string>
+
+    <!-- the tv's mochy page -->
+    <string name="tv_mochy">Mochy</string>
+    <string name="tv_mochy_version">Version %1$s</string>
+    <string name="tv_mochy_link_phone">Link your phone to bring your library over</string>
+    <string name="tv_mochy_phone_control">Phone can control this TV</string>
+    <string name="tv_on">On</string>
+    <string name="tv_off">Off</string>
+    <string name="tv_mochy_updates">Updates</string>
+    <string name="tv_mochy_support">Support Mochy</string>
+    <string name="tv_mochy_support_detail">Help keep it going</string>
+
+    <!-- playing next, up in the tv's player -->
+    <string name="tv_playing_next">Playing next</string>
+    <string name="tv_queue_empty">Nothing lined up after this song</string>
+    <string name="tv_queue_play_now">Play now</string>
+    <string name="tv_queue_earlier">Move earlier</string>
+    <string name="tv_queue_later">Move later</string>
+    <string name="tv_queue_remove">Remove from the queue</string>
+
+    <!-- the phone's player menu and remote for a linked tv -->
+    <string name="tv_menu_play_on">Play on %1$s</string>
+    <string name="tv_menu_play_next_on">Play next on %1$s</string>
+    <string name="tv_menu_control">Control %1$s</string>
+    <string name="tv_menu_sent">Playing on %1$s</string>
+    <string name="tv_menu_next_sent">Lined up next on %1$s</string>
+    <string name="tv_menu_unreachable">Couldn\'t reach %1$s. Make sure Mochy is open on it.</string>
+    <string name="tv_menu_remote_title">%1$s</string>
+    <string name="tv_menu_nothing_on">Nothing playing</string>
+    <string name="tv_menu_tv_look">Player on the TV</string>
+    <string name="tv_link_open_now">Open right now. Tap to unlink.</string>
+    <string name="tv_link_control_title">Open now</string>
+    <string name="tv_link_control_detail">Play, skip and change its player from here</string>
+    <string name="tv_link_in_player_menu">Show your TV in the player menu</string>
+    <string name="tv_link_in_player_menu_detail">Play on it, line songs up there, or control it from the player\'s menu</string>
 </resources>

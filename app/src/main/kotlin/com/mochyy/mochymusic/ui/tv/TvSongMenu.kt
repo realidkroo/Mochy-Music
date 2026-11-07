@@ -73,6 +73,7 @@ internal fun TvSongMenu(song: TvSongRef, onDismiss: () -> Unit) {
         Column(
             Modifier
                 .width(320.dp)
+                .tvPopIn()
                 .clip(RoundedCornerShape(26.dp))
                 .background(TvColors.Card)
                 .focusGroup()
@@ -92,7 +93,7 @@ internal fun TvSongMenu(song: TvSongRef, onDismiss: () -> Unit) {
                     Modifier
                         .fillMaxWidth()
                         .then(if (index == 0) Modifier.focusRequester(first) else Modifier)
-                        .tvClickable(shape = RoundedCornerShape(14.dp), focusedScale = 1.02f) {
+                        .tvClickable(shape = RoundedCornerShape(14.dp), look = TvFocusLook.Fill) {
                             run()
                             onDismiss()
                         }

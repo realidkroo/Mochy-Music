@@ -228,6 +228,8 @@ private fun LikeButton(liked: Boolean) {
 // back, play and next as the flagship's running glyphs, no circles round them
 @Composable
 private fun TileTransport(modifier: Modifier = Modifier, vertical: Boolean = false, gap: Dp = 30.dp, glyph: Dp = 22.dp) {
+    // the remote plays and skips on a tv
+    if (com.mochyy.mochymusic.ui.utils.isTvLayout()) return
     val connection = LocalPlayerConnection.current ?: return
     val transport by connection.uiState.transportState.collectAsState()
     val scope = rememberCoroutineScope()

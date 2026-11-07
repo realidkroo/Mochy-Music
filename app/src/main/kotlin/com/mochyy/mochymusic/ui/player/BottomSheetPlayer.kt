@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -286,18 +287,6 @@ private fun PlayerSheet(
         val shown = if (onTv) columns.map { column -> column.filter { it.availableOnTv } }.filter { it.isNotEmpty() } else columns
         shown.map { column -> column.map { it.ordinal } }
     }
-    // the tv's remote opens the lyrics and the queue from outside the player
-    if (onTv) {
-        LaunchedEffect(transition) {
-            TvPlayerRemote.commands.collect { command ->
-                when (command) {
-                    TvPlayerCommand.Lyrics -> if (transition.page == PlayerPage.LYRICS) transition.close() else transition.open(PlayerPage.LYRICS)
-                    TvPlayerCommand.Queue -> if (transition.page == PlayerPage.QUEUE) transition.close() else transition.open(PlayerPage.QUEUE)
-                    TvPlayerCommand.ClosePage -> if (transition.page != PlayerPage.NONE) transition.close()
-                }
-            }
-        }
-    }
     val studio = com.mochyy.mochymusic.ui.player.studio.rememberPlayerStudioState(selectorColumns)
     val studioAnchors = remember { com.mochyy.mochymusic.ui.player.studio.StudioAnchors() }
     val studioParts = com.mochyy.mochymusic.ui.player.studio.rememberStudioParts(studio, studioAnchors)
@@ -348,6 +337,27 @@ private fun PlayerSheet(
         .let { if (it == PlayerStyle.MODULE && !hasModuleStyle) PlayerStyle.FLAGSHIP else it }
         // a phone's ipod or turntable picked before the tv had its own list lands on the flagship there
         .let { if (onTv && !it.availableOnTv) PlayerStyle.FLAGSHIP else it }
+    // on a tv the lyrics are the player: they open with it, and the remote opens them, the song's info and its source
+    if (onTv) {
+        val currentStyle by androidx.compose.runtime.rememberUpdatedState(playerStyle)
+        LaunchedEffect(transition, state) {
+            snapshotFlow { state.isExpandedOrExpanding }
+                .collect { open -> if (open && currentStyle != PlayerStyle.VIDEO && transition.page == PlayerPage.NONE) transition.open(PlayerPage.LYRICS) }
+        }
+        LaunchedEffect(transition) {
+            TvPlayerRemote.commands.collect { command ->
+                when (command) {
+                    // full video keeps its own lyrics pane and song sheet, it answers those itself
+                    TvPlayerCommand.Lyrics -> if (currentStyle != PlayerStyle.VIDEO) {
+                        if (transition.page == PlayerPage.LYRICS) transition.close() else transition.open(PlayerPage.LYRICS)
+                    }
+                    TvPlayerCommand.SongInfo -> if (currentStyle != PlayerStyle.VIDEO) showSongDetails = true
+                    TvPlayerCommand.Source -> showStreamInfo = true
+                    TvPlayerCommand.ClosePage -> if (transition.page != PlayerPage.NONE) transition.close()
+                }
+            }
+        }
+    }
     LaunchedEffect(savedPlayerStyle) {
         if (savedPlayerStyle == pickedPlayerStyle) pickedPlayerStyle = null
     }
@@ -1043,7 +1053,7 @@ private fun PlayerSheet(
                     onSwitchSource = { showLyricsSource = true },
                 )
                 // the ipod, the full video mode and the bedside each have their own close, a bar over them would just be in the way
-                if (playerStyle != PlayerStyle.IPOD && playerStyle != PlayerStyle.VIDEO && !playerStyle.isBedside) PlayerHandle(
+                if (!onTv && playerStyle != PlayerStyle.IPOD && playerStyle != PlayerStyle.VIDEO && !playerStyle.isBedside) PlayerHandle(
                     state = handleState,
                     sheet = state,
                     statusBarTop = statusBarTopInset,
@@ -1109,7 +1119,8 @@ private fun PlayerSheet(
                             }
                         },
                 )
-                PlayerHandle(
+                // a tv closes its player with the back button, it has no handle to drag
+                if (!onTv) PlayerHandle(
                     state = handleState,
                     sheet = state,
                     statusBarTop = 0.dp,
@@ -1652,8 +1663,8 @@ private fun PlayerSheet(
             // the editor's tiles: inside the sheet, so they shrink and grow with it
             EditTiles(studioParts)
 
-            // over everything on the player, pages included
-            PlayerHandle(
+            // over everything on the player, pages included; a tv closes it with the back button instead
+            if (!onTv) PlayerHandle(
                 state = handleState,
                 sheet = state,
                 statusBarTop = statusBarTopInset,

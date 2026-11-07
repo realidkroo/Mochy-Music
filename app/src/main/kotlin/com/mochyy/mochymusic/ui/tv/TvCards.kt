@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -92,13 +96,15 @@ internal fun TvShelf(
     title: String,
     items: List<YTItem>,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(start = TvSpace.Start, end = TvSpace.End),
+    contentPadding: PaddingValues = PaddingValues(start = TvSpace.Start, end = TvSpace.End, top = 10.dp, bottom = 10.dp),
+    // how far in the title starts, the page's margin unless the shelf sits inside a padded column
+    titleInset: Dp = TvSpace.Start,
     onFocused: ((YTItem) -> Unit)? = null,
 ) {
     if (items.isEmpty()) return
     val actions = LocalTvActions.current
     Column(modifier) {
-        if (title.isNotBlank()) TvShelfTitle(title)
+        if (title.isNotBlank()) TvShelfTitle(title, inset = titleInset)
         CompositionLocalProvider(LocalBringIntoViewSpec provides TvRowPivot) {
             LazyRow(
                 contentPadding = contentPadding,
@@ -129,8 +135,8 @@ internal fun LocalItem.tvSubtitle(): String? = when (this) {
 }
 
 @Composable
-internal fun TvShelfTitle(title: String, modifier: Modifier = Modifier) {
-    Row(modifier.padding(start = TvSpace.Start, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+internal fun TvShelfTitle(title: String, modifier: Modifier = Modifier, inset: Dp = TvSpace.Start) {
+    Row(modifier.padding(start = inset, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(title, style = TvText.Section)
         Icon(
             painter = painterResource(R.drawable.arrow_forward),
@@ -156,8 +162,8 @@ internal fun TvSongRow(
         Row(
             Modifier
                 .weight(1f)
-                .tvClickable(shape = RoundedCornerShape(12.dp), focusedScale = 1.02f, onLongClick = onMenu, onClick = onClick)
-                .padding(4.dp),
+                .tvClickable(shape = RoundedCornerShape(12.dp), look = TvFocusLook.Fill, onLongClick = onMenu, onClick = onClick)
+                .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             TvCover(url = thumbnailUrl, size = 30.dp, shape = RoundedCornerShape(8.dp), modifier = Modifier.size(30.dp))
@@ -187,15 +193,23 @@ internal fun TvIconButton(
     tint: Color = Color.White,
     filled: Boolean = false,
 ) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
     Box(
         modifier
             .size(size)
+            .tvClickable(shape = CircleShape, look = TvFocusLook.Invert, interactionSource = interaction, onClick = onClick)
             .clip(CircleShape)
-            .background(if (filled) Color.White.copy(alpha = 0.14f) else Color.Transparent)
-            .tvClickable(shape = CircleShape, focusedScale = 1.1f, onClick = onClick),
+            .background(
+                when {
+                    focused -> Color.White
+                    filled -> Color.White.copy(alpha = 0.14f)
+                    else -> Color.Transparent
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.5f))
+        Icon(painterResource(icon), contentDescription = null, tint = if (focused) Color.Black else tint, modifier = Modifier.size(size * 0.5f))
     }
 }
 
@@ -208,15 +222,23 @@ internal fun TvPillButton(
     icon: Int? = null,
     bright: Boolean = false,
 ) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
     Row(
         modifier
+            .tvClickable(shape = CircleShape, look = TvFocusLook.Invert, interactionSource = interaction, onClick = onClick)
             .clip(CircleShape)
-            .background(if (bright) Color.White else Color(0xFF9A9A9A).copy(alpha = 0.55f))
-            .tvClickable(shape = CircleShape, focusedScale = 1.06f, onClick = onClick)
+            .background(
+                when {
+                    focused -> Color.White
+                    bright -> Color.White.copy(alpha = 0.3f)
+                    else -> Color.White.copy(alpha = 0.14f)
+                },
+            )
             .padding(horizontal = 14.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val color = if (bright) Color.Black else Color.White
+        val color = if (focused) Color.Black else Color.White
         if (icon != null) {
             Icon(painterResource(icon), contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
             Spacer(Modifier.width(6.dp))

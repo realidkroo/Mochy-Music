@@ -80,6 +80,7 @@ internal fun TvHello(onDone: () -> Unit) {
 @Composable
 internal fun TvWelcome(onNext: () -> Unit) {
     val focus = remember { FocusRequester() }
+    val seen = remember { HashSet<Any>() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     BoxWithConstraints(
         Modifier
@@ -107,9 +108,10 @@ internal fun TvWelcome(onNext: () -> Unit) {
                 .align(Alignment.BottomEnd)
                 .fillMaxHeight(0.9f)
                 .padding(end = 40.dp)
-                .offset(y = 20.dp),
+                .offset(y = 20.dp)
+                .tvReveal("mascot", seen, delayMillis = 180),
         )
-        Column(Modifier.align(Alignment.BottomStart).padding(start = 84.dp, bottom = 120.dp)) {
+        Column(Modifier.align(Alignment.BottomStart).padding(start = 84.dp, bottom = 120.dp).tvReveal("words", seen)) {
             Icon(painterResource(R.drawable.ic_mochy_mark), contentDescription = null, tint = Color.White, modifier = Modifier.size(64.dp))
             Spacer(Modifier.height(48.dp))
             Text(stringResource(R.string.tv_tap_anything), style = TvText.Item.copy(fontSize = 12.sp))

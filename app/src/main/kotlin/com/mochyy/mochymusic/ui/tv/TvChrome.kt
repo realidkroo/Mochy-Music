@@ -12,6 +12,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +36,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -47,8 +51,6 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.extensions.togglePlayPause
 import com.mochyy.mochymusic.extensions.toggleRepeatMode
 import com.mochyy.mochymusic.playback.PlayerConnection
-import com.mochyy.mochymusic.ui.player.TvPlayerCommand
-import com.mochyy.mochymusic.ui.player.TvPlayerRemote
 
 // the mochy mark at the top left, as on every concept page
 @Composable
@@ -67,9 +69,9 @@ internal fun TvAvatar(path: String?, onClick: () -> Unit, modifier: Modifier = M
     Box(
         modifier
             .size(24.dp)
+            .tvClickable(shape = CircleShape, focusedScale = 1.15f, onClick = onClick)
             .clip(CircleShape)
-            .background(TvColors.CardRaised)
-            .tvClickable(shape = CircleShape, focusedScale = 1.15f, onClick = onClick),
+            .background(TvColors.CardRaised),
         contentAlignment = Alignment.Center,
     ) {
         if (path != null) {
@@ -123,9 +125,8 @@ internal fun TvNowPlayingPill(
             // the cover and title open the full player
             Row(
                 Modifier
-                    .clip(CircleShape)
-                    .tvClickable(shape = RoundedCornerShape(10.dp), focusedScale = 1.03f, onClick = onOpenPlayer)
-                    .padding(horizontal = 4.dp, vertical = 1.dp),
+                    .tvClickable(shape = CircleShape, look = TvFocusLook.Fill, onClick = onOpenPlayer)
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TvCover(url = current?.thumbnailUrl, size = 22.dp, shape = RoundedCornerShape(6.dp), modifier = Modifier.size(22.dp))
@@ -153,8 +154,6 @@ internal fun TvNowPlayingPill(
                         onClick = player::toggleLike,
                         size = 26.dp,
                     )
-                    TvIconButton(R.drawable.lyrics, onClick = { onOpenPlayer(); TvPlayerRemote.send(TvPlayerCommand.Lyrics) }, size = 26.dp)
-                    TvIconButton(R.drawable.queue_music, onClick = { onOpenPlayer(); TvPlayerRemote.send(TvPlayerCommand.Queue) }, size = 26.dp)
                 }
             }
         }
@@ -166,11 +165,11 @@ internal enum class TvTab(val route: String, val icon: Any, val label: Int) {
     Home(TvRoutes.Home, R.raw.home, R.string.home),
     Search(TvRoutes.Search, R.raw.search, R.string.search),
     Library(TvRoutes.Library, R.raw.lib, R.string.your_library),
-    Phone(TvRoutes.Phone, R.drawable.nav_mochy_outline, R.string.tv_your_phone),
+    Mochy(TvRoutes.Mochy, R.drawable.nav_mochy_outline, R.string.tv_mochy),
 }
 
 @Composable
-internal fun TvRail(selected: TvTab?, onSelect: (TvTab) -> Unit, modifier: Modifier = Modifier) {
+internal fun TvRail(selected: TvTab?, onSelect: (TvTab) -> Unit, focus: FocusRequester, modifier: Modifier = Modifier) {
     Column(
         modifier
             .clip(RoundedCornerShape(26.dp))
@@ -183,18 +182,31 @@ internal fun TvRail(selected: TvTab?, onSelect: (TvTab) -> Unit, modifier: Modif
     ) {
         TvTab.entries.forEach { tab ->
             val lit = tab == selected
+            val interaction = remember { MutableInteractionSource() }
+            val focused by interaction.collectIsFocusedAsState()
             Box(
                 Modifier
                     .size(width = 34.dp, height = 44.dp)
+                    .then(if (tab == (selected ?: TvTab.Home)) Modifier.focusRequester(focus) else Modifier)
+                    .tvClickable(shape = RoundedCornerShape(17.dp), look = TvFocusLook.Invert, interactionSource = interaction) { onSelect(tab) }
                     .clip(RoundedCornerShape(17.dp))
-                    .background(if (lit) TvColors.CardRaised else Color.Transparent)
-                    .tvClickable(shape = RoundedCornerShape(17.dp), focusedScale = 1.08f) { onSelect(tab) },
+                    .background(
+                        when {
+                            focused -> Color.White
+                            lit -> TvColors.CardRaised
+                            else -> Color.Transparent
+                        },
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     painter = rememberAsyncImagePainter(tab.icon),
                     contentDescription = stringResource(tab.label),
-                    tint = if (lit) Color.White else TvColors.Muted,
+                    tint = when {
+                        focused -> Color.Black
+                        lit -> Color.White
+                        else -> TvColors.Muted
+                    },
                     modifier = Modifier.size(16.dp),
                 )
             }
@@ -208,6 +220,6 @@ internal fun tabOf(route: String?): TvTab? = when {
     route.startsWith(TvRoutes.Home) || route.startsWith(TvRoutes.Recap) -> TvTab.Home
     route.startsWith(TvRoutes.Search) || route.startsWith(TvRoutes.Browse) -> TvTab.Search
     route.startsWith(TvRoutes.Library) || route.startsWith(TvRoutes.Songs) || route.startsWith("local_playlist") -> TvTab.Library
-    route.startsWith(TvRoutes.Phone) -> TvTab.Phone
+    route.startsWith(TvRoutes.Mochy) || route.startsWith(TvRoutes.Phone) -> TvTab.Mochy
     else -> null
 }

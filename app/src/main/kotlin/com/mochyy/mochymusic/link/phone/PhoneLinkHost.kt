@@ -42,6 +42,10 @@ import javax.inject.Singleton
 @Immutable
 data class PairedTv(val id: String, val name: String, val key: String, val pairedAt: Long, val lastSeenAt: Long)
 
+// a paired tv that's open right now, with where its remote control listens
+@Immutable
+data class LiveTv(val id: String, val name: String, val host: String, val port: Int, val key: String, val seenAt: Long)
+
 // the phone's half of the tv link: remembers paired tvs and keeps a small server up so they can sync whenever they like
 @Singleton
 class PhoneLinkHost @Inject constructor(
@@ -56,6 +60,22 @@ class PhoneLinkHost @Inject constructor(
     val tvs: StateFlow<List<PairedTv>> = _tvs.asStateFlow()
 
     private val server = LinkHttpServer("PhoneLink", ::route)
+
+    // tvs that said hello lately; a tv with mochy open says it every 20 seconds
+    private val _live = MutableStateFlow<Map<String, LiveTv>>(emptyMap())
+    val live: StateFlow<Map<String, LiveTv>> = _live.asStateFlow()
+
+    fun liveTvs(now: Long = System.currentTimeMillis()): List<LiveTv> = _live.value.values.filter { now - it.seenAt < LiveForMs }
+
+    // the "show tv in the player menu" switch
+    var showInPlayerMenu: Boolean
+        get() = prefs.getBoolean(PlayerMenuKey, true)
+        set(value) {
+            prefs.edit { putBoolean(PlayerMenuKey, value) }
+            _menuShown.value = value
+        }
+    private val _menuShown = MutableStateFlow(prefs.getBoolean(PlayerMenuKey, true))
+    val menuShown: StateFlow<Boolean> = _menuShown.asStateFlow()
     private var advert: LinkAdvert? = null
 
     // goes up whenever the library changes, so a tv only pulls a fresh copy when there is one
@@ -130,7 +150,17 @@ class PhoneLinkHost @Inject constructor(
         }.also { refresh() }
     }
 
+    // sends one command to a tv that's open; false when it couldn't be reached or said no
+    suspend fun tellTv(tv: LiveTv, path: String, body: JSONObject = JSONObject()): JSONObject? = withContext(Dispatchers.IO) {
+        runCatching {
+            val url = "${LinkWire.baseUrl(tv.host, tv.port)}$path"
+            val response = if (path == "/now") LinkWire.get(url, tv.key) else LinkWire.postJson(url, tv.key, body.toString())
+            response.use { if (it.isSuccessful) JSONObject(it.body.string().ifBlank { "{}" }) else null }
+        }.getOrNull()
+    }
+
     fun unlink(tvId: String) {
+        _live.value = _live.value - tvId
         saveTvs(_tvs.value.filterNot { it.id == tvId })
         refresh()
         if (_tvs.value.isEmpty()) PhoneLinkService.stop(context)
@@ -141,7 +171,12 @@ class PhoneLinkHost @Inject constructor(
             ?: return LinkResponse.status(401, "not paired")
         seen(tv)
         return when {
-            request.path == "/hello" -> LinkResponse.json(hello().toString())
+            request.path == "/hello" -> {
+                request.query["tvPort"]?.toIntOrNull()?.takeIf { it > 0 }?.let { port ->
+                    _live.value = _live.value + (tv.id to LiveTv(tv.id, tv.name, request.remoteHost, port, tv.key, System.currentTimeMillis()))
+                }
+                LinkResponse.json(hello().toString())
+            }
             request.path == "/avatar" -> avatar()
             request.path == "/library" -> library.snapshot()
             request.path == "/files" -> LinkResponse.json(library.files().toString())
@@ -237,6 +272,10 @@ class PhoneLinkHost @Inject constructor(
         private const val Prefs = "mochy_link_tvs"
         private const val TvsKey = "tvs"
         private const val StayKey = "stay_reachable"
+        private const val PlayerMenuKey = "player_menu"
+
+        // a tv that hasn't said hello for this long is closed or gone
+        private const val LiveForMs = 70_000L
 
         // read without hilt by the boot receiver
         fun hasPairedTvs(context: Context): Boolean {

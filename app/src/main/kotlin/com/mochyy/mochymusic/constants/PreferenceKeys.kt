@@ -697,6 +697,9 @@ enum class PlayerStyle(val displayName: String, val selectorName: String) {
 
 val PlayerStyleKey = stringPreferencesKey("playerStyle")
 
+// the tv's "flagship square": the flagship with its whole cover as a rounded square
+val TvFlagshipSquareKey = booleanPreferencesKey("tvFlagshipSquare")
+
 // the ipod player's body colours, ipod.js's three plus a pitch black one with a dark screen
 enum class IpodTheme { SILVER, BLACK, U2, TRUE_DARK }
 

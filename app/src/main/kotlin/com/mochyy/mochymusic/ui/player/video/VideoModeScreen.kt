@@ -133,6 +133,17 @@ private fun VideoModeScreen(actions: StyleActions, modifier: Modifier) {
     )
     val scope = rememberCoroutineScope()
     val state = remember(scope) { VideoModeState(scope) }
+    if (com.mochyy.mochymusic.ui.utils.isTvLayout()) {
+        LaunchedEffect(state) {
+            com.mochyy.mochymusic.ui.player.TvPlayerRemote.commands.collect { command ->
+                when (command) {
+                    com.mochyy.mochymusic.ui.player.TvPlayerCommand.Lyrics -> if (state.paneOpen) state.closePane() else state.openPane(VideoPane.LYRICS)
+                    com.mochyy.mochymusic.ui.player.TvPlayerCommand.SongInfo -> state.songInfoOpen = true
+                    else -> Unit
+                }
+            }
+        }
+    }
     // collapsed into the mini player the video holds still; it's still there for the next open
     val sheetShowing by remember(sheet) { derivedStateOf { sheet == null || sheet.progress > 0f } }
     val running = transport.isPlaying && sheetShowing

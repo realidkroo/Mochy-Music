@@ -155,7 +155,8 @@ class TvPhoneSync @Inject constructor(
     private fun hello(phone: LinkedPhone): JSONObject? {
         val base = LinkWire.baseUrl(phone.host, phone.port)
         return try {
-            LinkWire.get("$base/hello", phone.key).use { response ->
+            // the tv says where its remote control listens, so the phone can play things here
+            LinkWire.get("$base/hello?tvPort=${TvControl.port}", phone.key).use { response ->
                 when (response.code) {
                     200 -> JSONObject(response.body.string()).also { PhoneFiles.reachedAt(base, phone.key) }
                     401 -> {

@@ -32,6 +32,7 @@ import com.mochyy.mochymusic.link.LinkPeer
 import com.mochyy.mochymusic.link.LinkWire
 import com.mochyy.mochymusic.link.discoverPeers
 import com.mochyy.mochymusic.link.phone.PairException
+import com.mochyy.mochymusic.link.phone.LiveTv
 import com.mochyy.mochymusic.link.phone.PairedTv
 import com.mochyy.mochymusic.link.phone.PhoneLinkHost
 import com.mochyy.mochymusic.link.phone.PhoneLinkService
@@ -74,6 +75,14 @@ class TvLinkViewModel @Inject constructor(
     val nearby: StateFlow<List<LinkPeer>> = discoverPeers(context, LinkWire.TvServiceType)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(2_000), emptyList())
 
+    val linkHost: PhoneLinkHost get() = host
+    val live = host.live
+    val menuShown: StateFlow<Boolean> = host.menuShown
+
+    fun setMenuShown(on: Boolean) {
+        host.showInPlayerMenu = on
+    }
+
     private val _staysReachable = MutableStateFlow(host.staysReachable)
     val staysReachable: StateFlow<Boolean> = _staysReachable.asStateFlow()
 
@@ -111,8 +120,12 @@ fun TvLinkScreen(navController: NavController, viewModel: TvLinkViewModel = hilt
     val nearby by viewModel.nearby.collectAsState()
     val stays by viewModel.staysReachable.collectAsState()
     val pairing by viewModel.pairing.collectAsState()
+    val live by viewModel.live.collectAsState()
+    val menuShown by viewModel.menuShown.collectAsState()
     var pairingWith by remember { mutableStateOf<LinkPeer?>(null) }
     var unlinking by remember { mutableStateOf<PairedTv?>(null) }
+    var controlling by remember { mutableStateOf<LiveTv?>(null) }
+    val openTvs = remember(live) { viewModel.linkHost.liveTvs() }
 
     SubSettingsScaffold(title = stringResource(R.string.tv_link_title), onBack = { navController.navigateUp() }) {
         ImportInfoCard {
@@ -126,17 +139,41 @@ fun TvLinkScreen(navController: NavController, viewModel: TvLinkViewModel = hilt
                 items = tvs.map { tv ->
                     SettingsItem(
                         title = { Text(tv.name) },
-                        descriptionText = stringResource(R.string.tv_link_tap_to_unlink),
+                        descriptionText = stringResource(if (openTvs.any { it.id == tv.id }) R.string.tv_link_open_now else R.string.tv_link_tap_to_unlink),
                         icon = painterResource(R.drawable.link),
                         iconShape = CircleShape,
                         onClick = { unlinking = tv },
                     )
                 },
             )
+            if (openTvs.isNotEmpty()) {
+                Spacer(Modifier.height(16.dp))
+                SettingsGroup(
+                    title = stringResource(R.string.tv_link_control_title),
+                    style = SettingsGroupStyle.Grouped,
+                    items = openTvs.map { tv ->
+                        SettingsItem(
+                            title = { Text(stringResource(R.string.tv_menu_control, tv.name)) },
+                            descriptionText = stringResource(R.string.tv_link_control_detail),
+                            icon = painterResource(R.drawable.cast_connected),
+                            iconShape = CircleShape,
+                            onClick = { controlling = tv },
+                        )
+                    },
+                )
+            }
             Spacer(Modifier.height(16.dp))
             SettingsGroup(
                 style = SettingsGroupStyle.Grouped,
                 items = listOf(
+                    SettingsItem(
+                        title = { Text(stringResource(R.string.tv_link_in_player_menu)) },
+                        descriptionText = stringResource(R.string.tv_link_in_player_menu_detail),
+                        icon = painterResource(R.drawable.more_horiz),
+                        iconShape = CircleShape,
+                        trailingContent = { AppSwitch(checked = menuShown, onCheckedChange = viewModel::setMenuShown) },
+                        onClick = { viewModel.setMenuShown(!menuShown) },
+                    ),
                     SettingsItem(
                         title = { Text(stringResource(R.string.tv_link_stay_reachable)) },
                         descriptionText = stringResource(R.string.tv_link_stay_reachable_detail),
@@ -185,6 +222,9 @@ fun TvLinkScreen(navController: NavController, viewModel: TvLinkViewModel = hilt
             onPair = { code -> viewModel.pair(tv, code) },
             onDismiss = { pairingWith = null },
         )
+    }
+    controlling?.let { tv ->
+        com.mochyy.mochymusic.ui.player.menu.TvRemoteDialog(viewModel.linkHost, tv, onDismiss = { controlling = null })
     }
     unlinking?.let { tv ->
         DefaultDialog(

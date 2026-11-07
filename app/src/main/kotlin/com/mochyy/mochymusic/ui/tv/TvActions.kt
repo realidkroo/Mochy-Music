@@ -65,6 +65,7 @@ internal class TvActions(
     val database: MusicDatabase,
     val openMenu: (TvSongRef) -> Unit,
     val openPlayer: () -> Unit,
+    val switchProfile: () -> Unit,
 ) {
     fun open(item: YTItem) {
         when (item) {

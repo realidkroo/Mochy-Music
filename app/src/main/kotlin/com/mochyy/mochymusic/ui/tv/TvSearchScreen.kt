@@ -44,6 +44,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -122,7 +124,12 @@ internal fun TvSearchScreen(
     val genres by moods.moodAndGenres.collectAsState()
     var query by remember { mutableStateOf(viewModel.initialQuery) }
     val fieldFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { runCatching { fieldFocus.requestFocus() } }
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(Unit) {
+        runCatching { fieldFocus.requestFocus() }
+        delay(30)
+        keyboard?.hide()
+    }
 
     Row(Modifier.fillMaxSize().padding(start = TvSpace.Start, end = TvSpace.End)) {
         Column(Modifier.width(380.dp).fillMaxHeight().padding(top = TvSpace.Top)) {
@@ -149,7 +156,7 @@ internal fun TvSearchScreen(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .tvClickable(shape = RoundedCornerShape(10.dp), focusedScale = 1.02f) {
+                            .tvClickable(shape = RoundedCornerShape(10.dp), look = TvFocusLook.Fill) {
                                 query = past
                                 viewModel.search(past)
                             }
@@ -221,9 +228,9 @@ private fun TvGenreCard(title: String, color: Color, onClick: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .height(86.dp)
+            .tvClickable(shape = RoundedCornerShape(22.dp), focusedScale = 1.04f, onClick = onClick)
             .clip(RoundedCornerShape(22.dp))
             .background(color.copy(alpha = 0.55f).compositeOverDark())
-            .tvClickable(shape = RoundedCornerShape(22.dp), focusedScale = 1.04f, onClick = onClick)
             .padding(14.dp),
     ) {
         Text(title, style = TvText.Item, modifier = Modifier.align(Alignment.BottomStart))

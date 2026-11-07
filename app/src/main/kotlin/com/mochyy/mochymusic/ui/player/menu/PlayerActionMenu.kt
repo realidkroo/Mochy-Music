@@ -317,6 +317,8 @@ fun PlayerActionMenu(
                     title = "Change device output",
                     onClick = { showAudioDevices = true },
                 )
+                // a linked tv with mochy open: play there, line it up there, or work it as a remote
+                TvMenuRows(onDismiss = onDismiss)
                 Spacer(modifier = Modifier.height(8.dp))
                 SleepTimerRow(onClick = { showSleepTimer = true })
                 Spacer(modifier = Modifier.height(8.dp))

@@ -6,6 +6,8 @@ import android.app.Activity
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -26,8 +28,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
@@ -53,6 +63,7 @@ import com.mochyy.mochymusic.constants.BlurQuality
 import com.mochyy.mochymusic.constants.BlurQualityKey
 import com.mochyy.mochymusic.db.MusicDatabase
 import com.mochyy.mochymusic.extensions.togglePlayPause
+import com.mochyy.mochymusic.link.tv.TvControl
 import com.mochyy.mochymusic.link.tv.TvProfile
 import com.mochyy.mochymusic.playback.DownloadUtil
 import com.mochyy.mochymusic.playback.PlayerConnection
@@ -74,7 +85,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // the tv app once a profile is picked: its pages, the chrome around them, and the player over everything
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 internal fun TvShell(
     player: PlayerConnection?,
@@ -103,9 +114,21 @@ internal fun TvShell(
         }
         var menuFor by remember { mutableStateOf<TvSongRef?>(null) }
         val actions = remember(navController, player) {
-            TvActions(navController, { player }, database, openMenu = { menuFor = it }, openPlayer = openPlayer)
+            TvActions(navController, { player }, database, openMenu = { menuFor = it }, openPlayer = openPlayer, switchProfile = onSwitchProfile)
         }
         val obscured = remember(sheet) { derivedStateOf { sheet.value > 0.dp } }
+        // the app remembers what had the remote, so closing the player puts it straight back there
+        val appFocus = remember { FocusRequester() }
+        // back on a tab's own page takes the remote to the rail first, since the rail sits at the far right
+        val railFocus = remember { FocusRequester() }
+        var railHasFocus by remember { mutableStateOf(false) }
+        val onTabRoot = currentRoute in TvTab.entries.map { it.route } || currentRoute?.startsWith("${TvRoutes.Search}?") == true
+
+        var playerWasOpen by remember { mutableStateOf(false) }
+        LaunchedEffect(sheet.isDismissed) {
+            if (sheet.isDismissed && playerWasOpen) runCatching { appFocus.requestFocus() }
+            playerWasOpen = !sheet.isDismissed
+        }
         val blurQuality by rememberEnumPreference(BlurQualityKey, BlurQuality.LOW)
         val glassState = remember { GlassState() }
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -134,6 +157,9 @@ internal fun TvShell(
                     Box(
                         Modifier
                             .fillMaxSize()
+                            .focusRequester(appFocus)
+                            .focusRestorer()
+                            .focusGroup()
                             .graphicsLayer {
                                 val open = (sheet.value / sheet.expandedBound).coerceIn(0f, 1f)
                                 alpha = 1f - open
@@ -145,17 +171,25 @@ internal fun TvShell(
                             NavHost(
                                 navController = navController,
                                 startDestination = TvRoutes.Home,
-                                enterTransition = { fadeIn(tween(220)) },
-                                exitTransition = { fadeOut(tween(160)) },
+                                enterTransition = { fadeIn(tween(320, easing = TvEase)) + scaleIn(tween(420, easing = TvEase), initialScale = 0.96f) },
+                                exitTransition = { fadeOut(tween(180)) },
+                                popEnterTransition = { fadeIn(tween(320, easing = TvEase)) + scaleIn(tween(420, easing = TvEase), initialScale = 1.03f) },
+                                popExitTransition = { fadeOut(tween(180)) + scaleOut(tween(220), targetScale = 0.97f) },
                             ) {
                                 // the phone's pages stay reachable for anything the player opens (an equalizer, a lyrics source)
                                 navigationBuilder(navController, scrollBehavior, activity, snackbarHostState)
                                 tvGraph(profile = profile)
                             }
                         }
+                        // registered after the nav host's own, so on a tab's page it wins over going back a page
+                        BackHandler(enabled = onTabRoot && !railHasFocus && sheet.isDismissed && menuFor == null) {
+                            runCatching { railFocus.requestFocus() }
+                        }
                         TvChromeLayer(
                             player = player,
                             profile = profile,
+                            railFocus = railFocus,
+                            onRailFocus = { railHasFocus = it },
                             selected = tabOf(currentRoute),
                             onOpenPlayer = openPlayer,
                             onSwitchProfile = onSwitchProfile,
@@ -176,6 +210,9 @@ internal fun TvShell(
             }
         }
 
+        // a song sent from the phone opens the player, so the room sees what's on
+        LaunchedEffect(Unit) { TvControl.openPlayer.collect { openPlayer() } }
+
         // a closed player drops its pages after a while, a tv has little memory to spare
         LaunchedEffect(sheet.isDismissed) {
             if (sheet.isDismissed && playerMounted) {
@@ -190,18 +227,40 @@ internal fun TvShell(
 private fun TvChromeLayer(
     player: PlayerConnection?,
     profile: TvProfile,
+    railFocus: FocusRequester,
+    onRailFocus: (Boolean) -> Unit,
     selected: TvTab?,
     onOpenPlayer: () -> Unit,
     onSwitchProfile: () -> Unit,
     onTab: (TvTab) -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .drawWithCache {
+                    val top = Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.9f), 1f to Color.Transparent, endY = 92.dp.toPx())
+                    val right = Brush.horizontalGradient(0f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.8f), startX = size.width - 130.dp.toPx(), endX = size.width)
+                    onDrawBehind {
+                        drawRect(top, size = androidx.compose.ui.geometry.Size(size.width, 92.dp.toPx()))
+                        drawRect(right, topLeft = androidx.compose.ui.geometry.Offset(size.width - 130.dp.toPx(), 0f))
+                    }
+                },
+        )
         TvLogo(Modifier.align(Alignment.TopStart).padding(start = TvSpace.Start, top = TvSpace.ChromeTop + 4.dp))
         if (player != null) {
             TvNowPlayingPill(player, onOpenPlayer, Modifier.align(Alignment.TopCenter).padding(top = TvSpace.ChromeTop - 4.dp))
         }
         TvAvatar(profile.avatarPath, onSwitchProfile, Modifier.align(Alignment.TopEnd).padding(end = TvSpace.Start, top = TvSpace.ChromeTop + 3.dp))
-        TvRail(selected, onTab, Modifier.align(Alignment.CenterEnd).padding(end = 32.dp))
+        TvRail(
+            selected,
+            onTab,
+            focus = railFocus,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 32.dp)
+                .onFocusChanged { onRailFocus(it.hasFocus) },
+        )
     }
 }
 

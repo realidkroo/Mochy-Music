@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.mochyy.mochymusic.db.MusicDatabase
+import com.mochyy.mochymusic.link.tv.TvControl
 import com.mochyy.mochymusic.link.tv.TvPairing
 import com.mochyy.mochymusic.link.tv.TvPhoneSync
 import com.mochyy.mochymusic.link.tv.TvProfile
@@ -60,11 +61,12 @@ class TvActivity : ComponentActivity() {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             if (service !is MusicBinder) return
             val previous = playerConnection
-            playerConnection = PlayerConnection(this@TvActivity, service, database, lifecycleScope)
+            playerConnection = PlayerConnection(this@TvActivity, service, database, lifecycleScope).also { TvControl.player = it }
             previous?.dispose()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
+            TvControl.player = null
             playerConnection?.dispose()
             playerConnection = null
         }
@@ -106,6 +108,7 @@ class TvActivity : ComponentActivity() {
             return false
         }
         profileOpen = true
+        TvControl.start(this)
         phoneSync.resume()
         return true
     }
@@ -126,6 +129,8 @@ class TvActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        TvControl.player = null
+        TvControl.stop()
         playerConnection?.dispose()
         playerConnection = null
     }

@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.togetherWith
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -85,7 +86,8 @@ internal fun TvLibraryScreen(viewModel: LibraryHomeViewModel = hiltViewModel()) 
     val phoneFiles by PhoneFiles.files.collectAsState()
 
     val songCount: @Composable (Int) -> String = { pluralStringResource(R.plurals.tv_song_count, it, it) }
-    val cards = when (tab) {
+    @Composable
+    fun cardsFor(which: TvLibraryTab): List<TvShelfCard> = when (which) {
         TvLibraryTab.All -> listOf(
             TvShelfCard("liked", stringResource(R.string.liked_songs), songCount(liked.size), R.drawable.favorite, liked.take(2).map { it.song.thumbnailUrl }, "${TvRoutes.Songs}/liked"),
             TvShelfCard("songs", stringResource(R.string.songs), songCount(songs.size), R.drawable.music_note, songs.take(2).map { it.song.thumbnailUrl }, "${TvRoutes.Songs}/library"),
@@ -118,10 +120,21 @@ internal fun TvLibraryScreen(viewModel: LibraryHomeViewModel = hiltViewModel()) 
                 TvLibraryTabLabel(text = stringResource(entry.label), selected = entry == tab, onPick = { tab = entry })
             }
         }
+        androidx.compose.animation.AnimatedContent(
+            targetState = tab,
+            transitionSpec = {
+                (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(300, easing = TvEase)) +
+                    androidx.compose.animation.slideInVertically(androidx.compose.animation.core.tween(380, easing = TvEase)) { it / 14 }) togetherWith
+                    androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(140))
+            },
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+            label = "tvLibraryTab",
+        ) { shownTab ->
+        val cards = cardsFor(shownTab)
         CompositionLocalProvider(LocalBringIntoViewSpec provides TvColumnPivot) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
-                modifier = Modifier.weight(1f).fillMaxHeight(),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(top = TvSpace.Top + 64.dp, bottom = 40.dp),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -133,6 +146,7 @@ internal fun TvLibraryScreen(viewModel: LibraryHomeViewModel = hiltViewModel()) 
                     TvLibraryCard(card) { actions.navController.navigate(card.route) }
                 }
             }
+        }
         }
     }
 }
@@ -146,10 +160,10 @@ private fun TvLibraryTabLabel(text: String, selected: Boolean, onPick: () -> Uni
     Row(
         Modifier
             .padding(vertical = 4.dp)
+            .onFocusChanged { focused = it.isFocused }
+            .tvClickable(shape = RoundedCornerShape(12.dp), look = TvFocusLook.Fill, onClick = onPick)
             .clip(RoundedCornerShape(12.dp))
             .background(if (selected) Color(0xFF1C1C1C) else Color.Transparent)
-            .onFocusChanged { focused = it.isFocused }
-            .tvClickable(shape = RoundedCornerShape(12.dp), focusedScale = 1.03f, ring = false, onClick = onPick)
             .padding(horizontal = 8.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -173,9 +187,9 @@ private fun TvLibraryCard(card: TvShelfCard, onClick: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .height(if (card.wide) 132.dp else 100.dp)
+            .tvClickable(shape = shape, focusedScale = 1.03f, onClick = onClick)
             .clip(shape)
-            .background(TvColors.Card)
-            .tvClickable(shape = shape, focusedScale = 1.03f, onClick = onClick),
+            .background(TvColors.Card),
     ) {
         Row(Modifier.padding(start = 16.dp, top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(painterResource(card.icon), contentDescription = null, tint = Color(0xFFD9D9D9), modifier = Modifier.size(12.dp))

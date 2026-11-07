@@ -51,6 +51,7 @@ internal fun TvProfilePicker(onPick: (TvProfile) -> Unit, onAdd: () -> Unit) {
     val activeId by TvProfiles.activeId.collectAsState()
     var removing by remember { mutableStateOf<TvProfile?>(null) }
     val lastUsed = remember { FocusRequester() }
+    val seen = remember { HashSet<Any>() }
     LaunchedEffect(Unit) { runCatching { lastUsed.requestFocus() } }
 
     Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
@@ -62,6 +63,7 @@ internal fun TvProfilePicker(onPick: (TvProfile) -> Unit, onAdd: () -> Unit) {
                     val focusFirst = profile.id == activeId || (activeId == null && index == 0)
                     TvProfileCircle(
                         name = profile.name,
+                        reveal = Modifier.tvReveal(profile.id, seen, delayMillis = index * 80),
                         modifier = if (focusFirst) Modifier.focusRequester(lastUsed) else Modifier,
                         onLongClick = { if (profile.id != activeId) removing = profile },
                         onClick = { onPick(profile) },
@@ -73,7 +75,7 @@ internal fun TvProfilePicker(onPick: (TvProfile) -> Unit, onAdd: () -> Unit) {
                         }
                     }
                 }
-                TvProfileCircle(name = stringResource(R.string.tv_add_profile), onClick = onAdd) {
+                TvProfileCircle(name = stringResource(R.string.tv_add_profile), reveal = Modifier.tvReveal("add", seen, delayMillis = profiles.size * 80), onClick = onAdd) {
                     Icon(painterResource(R.drawable.add), contentDescription = null, tint = Color.Black, modifier = Modifier.size(64.dp))
                 }
             }
@@ -95,18 +97,19 @@ internal fun TvProfilePicker(onPick: (TvProfile) -> Unit, onAdd: () -> Unit) {
 @Composable
 private fun TvProfileCircle(
     name: String,
+    reveal: Modifier,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(reveal, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier
                 .size(128.dp)
+                .tvClickable(shape = CircleShape, focusedScale = 1.08f, onLongClick = onLongClick, onClick = onClick)
                 .clip(CircleShape)
-                .background(Color(0xFFD9D9D9))
-                .tvClickable(shape = CircleShape, focusedScale = 1.08f, onLongClick = onLongClick, onClick = onClick),
+                .background(Color(0xFFD9D9D9)),
             contentAlignment = Alignment.Center,
         ) { content() }
         Spacer(Modifier.height(12.dp))
@@ -122,7 +125,7 @@ internal fun TvConfirm(text: String, confirm: String, onConfirm: () -> Unit, onD
     BackHandler(onBack = onDismiss)
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.7f)), contentAlignment = Alignment.Center) {
         Column(
-            Modifier.clip(RoundedCornerShape(26.dp)).background(TvColors.Card).padding(24.dp),
+            Modifier.tvPopIn().clip(RoundedCornerShape(26.dp)).background(TvColors.Card).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(text, style = TvText.Item.copy(fontSize = 16.sp))

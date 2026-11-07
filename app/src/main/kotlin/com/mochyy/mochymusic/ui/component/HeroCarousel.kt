@@ -353,11 +353,55 @@ data class ListeningPickItem(val item: MediaMetadata, val reason: String) : Hero
     }
 }
 
+// the hero's cards in order, shared by the phone's carousel and the tv's home so both put forward the same picks
+internal fun heroCarouselItems(
+    lastPlayedSong: MediaMetadata?,
+    dailyDiscover: List<DailyDiscoverItem>?,
+    extras: List<HeroCarouselItem>,
+    playlistPicks: List<PlaylistPickItem>,
+    keepListening: List<com.mochyy.mochymusic.db.entities.LocalItem>?,
+    starterItems: List<HeroCarouselItem>,
+    showGacha: Boolean,
+): List<HeroCarouselItem> = buildList {
+    lastPlayedSong?.let { add(KeepListeningItem(it, isLastPlayed = true)) }
+
+    // the gacha comes straight after the first card, so the first auto-advance shows it;
+    // buried behind the recommendations, most people never got that far
+    if (showGacha) add(GachaItem)
+
+    val discover = dailyDiscover?.take(4).orEmpty()
+    val reasons = discoverReasons(discover)
+    val discoverCards = discover.mapIndexed { index, item -> DiscoverItem(item, reasons[index]) }
+    // a pick already on the hero (the song playing, a daily discover) isn't put forward twice
+    val shown = HashSet<String>()
+    lastPlayedSong?.id?.let(shown::add)
+    interleave(discoverCards, extras).forEach { card ->
+        val id = card.mediaId
+        if (id == null || shown.add(id)) add(card)
+    }
+
+    // the user's own playlists between the recommendations, a couple at a time
+    addAll(playlistPicks.take(2))
+
+    val regular = count { it !is GachaItem }
+    if (regular < 5) {
+        keepListening?.filterIsInstance<com.mochyy.mochymusic.db.entities.Song>()
+            ?.filter { song -> none { it.mediaId == song.id } }
+            ?.take(5 - regular)
+            ?.forEach { song ->
+                add(KeepListeningItem(song.toMediaMetadata(), isLastPlayed = false))
+            }
+    }
+
+    // nothing played yet: start from the imported playlists or the picked artists' songs
+    if (none { it !is GachaItem }) addAll(starterItems.take(5))
+}
+
 /**
  * the extra cards, one per related row (its first song, else its first anything) plus a song on
  * repeat and a forgotten favourite. a row about an artist leads, since that's the most personal
  */
-private fun extraHeroPicks(
+internal fun extraHeroPicks(
     similar: List<SimilarRecommendation>?,
     onRepeat: List<com.mochyy.mochymusic.db.entities.Song>?,
     forgotten: List<com.mochyy.mochymusic.db.entities.Song>?,
@@ -542,40 +586,7 @@ fun HeroCarousel(
         forgottenFavorites?.firstOrNull()?.id,
     ) { extraHeroPicks(similarRecommendations, onRepeat, forgottenFavorites) }
     val carouselItems = remember(keepListening, lastPlayedSong, dailyDiscover, showGacha, starterItems, playlistPicks, extras) {
-        buildList {
-            lastPlayedSong?.let { add(KeepListeningItem(it, isLastPlayed = true)) }
-
-            // the gacha comes straight after the first card, so the first auto-advance shows it;
-            // buried behind the recommendations, most people never got that far
-            if (showGacha) add(GachaItem)
-
-            val discover = dailyDiscover?.take(4).orEmpty()
-            val reasons = discoverReasons(discover)
-            val discoverCards = discover.mapIndexed { index, item -> DiscoverItem(item, reasons[index]) }
-            // a pick already on the hero (the song playing, a daily discover) isn't put forward twice
-            val shown = HashSet<String>()
-            lastPlayedSong?.id?.let(shown::add)
-            interleave(discoverCards, extras).forEach { card ->
-                val id = card.mediaId
-                if (id == null || shown.add(id)) add(card)
-            }
-
-            // the user's own playlists between the recommendations, a couple at a time
-            addAll(playlistPicks.take(2))
-
-            val regular = count { it !is GachaItem }
-            if (regular < 5) {
-                keepListening?.filterIsInstance<com.mochyy.mochymusic.db.entities.Song>()
-                    ?.filter { song -> none { it.mediaId == song.id } }
-                    ?.take(5 - regular)
-                    ?.forEach { song ->
-                        add(KeepListeningItem(song.toMediaMetadata(), isLastPlayed = false))
-                    }
-            }
-
-            // nothing played yet: start from the imported playlists or the picked artists' songs
-            if (none { it !is GachaItem }) addAll(starterItems.take(5))
-        }
+        heroCarouselItems(lastPlayedSong, dailyDiscover, extras, playlistPicks, keepListening, starterItems, showGacha)
     }
 
     val heroHeight = heroHeight()

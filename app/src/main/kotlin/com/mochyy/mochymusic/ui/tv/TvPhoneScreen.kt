@@ -160,9 +160,9 @@ private fun TvPhoneCard(title: String, count: String?, icon: Int, slim: Boolean 
     Column(
         Modifier
             .fillMaxWidth()
+            .tvClickable(shape = shape, focusedScale = 1.03f, onClick = onClick)
             .clip(shape)
             .background(TvColors.Card)
-            .tvClickable(shape = shape, focusedScale = 1.03f, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = if (slim) 14.dp else 16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

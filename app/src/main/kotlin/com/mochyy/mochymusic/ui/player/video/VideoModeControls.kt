@@ -233,7 +233,8 @@ internal fun BoxScope.VideoTransport(
     isPlaying: Boolean,
 ) {
     val visible by rememberControlsVisible(controls)
-    if (!visible) return
+    // the remote plays and skips on a tv
+    if (!visible || com.mochyy.mochymusic.ui.utils.isTvLayout()) return
     val connection = LocalPlayerConnection.current ?: return
     val scope = rememberCoroutineScope()
     // the flagship's running triangles, each a step on with every press
