@@ -185,7 +185,10 @@ fun OnlineSearchResult(
         }
     }
 
+    val recentContext = androidx.compose.ui.platform.LocalContext.current
     val onItemClick: (YTItem) -> Unit = { item ->
+        // kept for the search page's recent searches
+        RecentSearches.add(recentContext, item)
         when (item) {
             is SongItem -> {
                 if (item.id == mediaMetadata?.id) {

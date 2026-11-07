@@ -45,6 +45,7 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.TransportEffect
 import com.mochyy.mochymusic.constants.TransportEffectKey
 import com.mochyy.mochymusic.constants.TransportFadeDefaultSeconds
+import com.mochyy.mochymusic.constants.SkipBlendKey
 import com.mochyy.mochymusic.constants.TransportFadeEnabledKey
 import com.mochyy.mochymusic.constants.TransportFadeMaxSeconds
 import com.mochyy.mochymusic.constants.TransportFadeMinSeconds
@@ -77,6 +78,7 @@ fun TransportFadeSection() {
     val (enabled, onEnabledChange) = rememberPreference(TransportFadeEnabledKey, defaultValue = true)
     val (storedSeconds, onSecondsChange) = rememberPreference(TransportFadeSecondsKey, defaultValue = TransportFadeDefaultSeconds)
     val (effect, onEffectChange) = rememberEnumPreference(TransportEffectKey, defaultValue = TransportEffect.OFF)
+    val (blendSkips, onBlendSkipsChange) = rememberPreference(SkipBlendKey, defaultValue = false)
     val seconds = storedSeconds.coerceIn(TransportFadeMinSeconds, TransportFadeMaxSeconds)
 
     Text(
@@ -100,6 +102,12 @@ fun TransportFadeSection() {
             subtitle = "Eases the music out when you pause or skip, and back in when you play",
             checked = enabled,
             onCheckedChange = onEnabledChange,
+        )
+        LabToggleRow(
+            title = androidx.compose.ui.res.stringResource(com.mochyy.mochymusic.R.string.settings_blend_skips),
+            subtitle = androidx.compose.ui.res.stringResource(com.mochyy.mochymusic.R.string.settings_blend_skips_desc),
+            checked = blendSkips,
+            onCheckedChange = onBlendSkipsChange,
         )
         LabCollapsible(enabled) {
             Box(Modifier.padding(horizontal = 6.dp)) {

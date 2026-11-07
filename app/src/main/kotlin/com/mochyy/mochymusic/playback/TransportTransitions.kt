@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
@@ -28,6 +29,8 @@ private const val FrameMs = 16L
 private const val TailSettleMs = 80L
 // without an analysed tempo, echoes repeat as if at 120 bpm
 private const val DefaultBeatMs = 500.0
+// how long a skip waits, silent, for the next song to start before it fades in anyway
+private const val StartWaitMs = 6_000L
 
 // fades and crossmix effects for pause, play and skips, so stopping or switching songs eases out instead of cutting
 @UnstableApi
@@ -45,6 +48,8 @@ class TransportTransitions(
         // false while casting or mid-crossmix: the buttons then act at once, as they always did
         fun canFade(): Boolean
         fun beatMsFor(mediaId: String?): Double?
+        // with "blend skips" on, the service plays the skip as a crossfade on a second player; false leaves it to the fade here
+        fun blendSkip(previous: Boolean): Boolean = false
     }
 
     @Volatile var enabled = true
@@ -89,16 +94,22 @@ class TransportTransitions(
             player.pause()
             return
         }
+        // a service scope that's already been cancelled would never run the fade, so the pause happens at once
+        if (!scope.isActive) {
+            stopFade()
+            player.pause()
+            return
+        }
         val from = currentLevel()
         stopFade(keepVolume = true)
         val anchor = player.currentPosition
-        val item = player.currentMediaItem
+        val songId = player.currentMediaItem?.mediaId
         val processor = armOut(player, lengthMs)
         phase = Phase.Pausing
         _playIntent.value = false
         job = scope.launch {
             val done = runFade(player, lengthMs) { p ->
-                if (player.currentMediaItem != item) return@runFade false
+                if (player.currentMediaItem?.mediaId != songId) return@runFade false
                 heard = from * (1f - smoothstep(p))
                 level = if (processor != null) from * tailFade(p) else heard
                 true
@@ -158,7 +169,12 @@ class TransportTransitions(
 
     private fun skip(previous: Boolean) {
         val player = host.player
-        if (!player.playWhenReady || !shouldFade(player) || phase == Phase.Skipping) {
+        // the two songs cross over on two players; the crossfade drives both volumes from here, so this fade lets go without touching them
+        if (player.playWhenReady && phase != Phase.Pausing && host.blendSkip(previous)) {
+            stopFade(keepVolume = true)
+            return
+        }
+        if (!player.playWhenReady || !shouldFade(player) || phase == Phase.Skipping || !scope.isActive) {
             stopFade()
             doSkip(player, previous)
             return
@@ -167,12 +183,13 @@ class TransportTransitions(
         stopFade(keepVolume = true)
         val outMs = min(lengthMs / 2f, SkipOutMaxMs)
         val inMs = max(lengthMs / 2f, 300f)
-        val item = player.currentMediaItem
+        val songId = player.currentMediaItem?.mediaId
+        val index = player.currentMediaItemIndex
         val processor = armOut(player, outMs)
         phase = Phase.Skipping
         job = scope.launch {
             val done = runFade(player, outMs) { p ->
-                if (player.currentMediaItem != item) return@runFade false
+                if (player.currentMediaItem?.mediaId != songId) return@runFade false
                 heard = from * (1f - smoothstep(p))
                 level = if (processor != null) from * tailFade(p) else heard
                 true
@@ -187,9 +204,9 @@ class TransportTransitions(
             applyLevel(player)
             disarm()
             doSkip(player, previous)
-            // the next song's first buffers decide where its effect starts, so wait for it to be the current one
+            // the swell waits until the next song is really heard: timed from the press, a slow start came in at full volume with no fade at all
             var waited = 0L
-            while (player.currentMediaItem == item && player.currentPosition > 1_000L && waited < 600L) {
+            while (waited < StartWaitMs && !(player.isPlaying && (player.currentMediaItemIndex != index || player.currentPosition < 1_000L))) {
                 delay(FrameMs)
                 waited += FrameMs
             }

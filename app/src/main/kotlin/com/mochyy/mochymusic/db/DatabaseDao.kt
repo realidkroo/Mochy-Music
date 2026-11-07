@@ -1193,6 +1193,18 @@ interface DatabaseDao {
     @Query("DELETE FROM playlist_song_map WHERE playlistId = :playlistId AND songId IN (:songIds) AND position >= :fromPosition")
     fun removeAddedSongs(playlistId: String, songIds: List<String>, fromPosition: Int)
 
+    @Query("UPDATE playlist_song_map SET position = position + :by WHERE playlistId = :playlistId")
+    fun shiftPlaylistPositions(playlistId: String, by: Int)
+
+    // songs added to a playlist that mirrors youtube go on top, where people look for what they just added
+    @Transaction
+    fun addSongsToPlaylistTop(playlist: Playlist, songIds: List<String>) {
+        shiftPlaylistPositions(playlist.id, songIds.size)
+        songIds.forEachIndexed { index, id ->
+            insert(PlaylistSongMap(songId = id, playlistId = playlist.id, position = index))
+        }
+    }
+
     @Transaction
     fun addSongToPlaylist(playlist: Playlist, songIds: List<String>) {
         var position = playlist.songCount

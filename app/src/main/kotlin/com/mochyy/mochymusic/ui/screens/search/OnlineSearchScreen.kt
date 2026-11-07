@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -105,6 +106,8 @@ fun OnlineSearchScreen(
 
     val coroutineScope = rememberCoroutineScope()
     val viewState by viewModel.viewState.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val recentSearches by remember { RecentSearches.items(context) }.collectAsState()
 
     val lazyListState = rememberLazyListState()
 
@@ -134,6 +137,26 @@ fun OnlineSearchScreen(
             .fillMaxSize()
             .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
     ) {
+        // an empty field shows what was opened from search lately, like spotify's recent searches
+        if (query.isEmpty()) {
+            recentSearchItems(
+                items = recentSearches.orEmpty(),
+                onOpen = { recent ->
+                    when (recent.kind) {
+                        RecentSearch.Kind.Song -> playerConnection.playQueue(
+                            YouTubeQueue(com.music.innertube.models.WatchEndpoint(videoId = recent.id)),
+                        )
+                        RecentSearch.Kind.Album -> navController.navigate("album/${recent.id}")
+                        RecentSearch.Kind.Artist -> navController.navigate("artist/${recent.id}")
+                        RecentSearch.Kind.Playlist -> navController.navigate("online_playlist/${recent.id}")
+                    }
+                    onDismiss()
+                },
+                onRemove = { RecentSearches.remove(context, it.id) },
+                onClear = { RecentSearches.clear(context) },
+            )
+        }
+
         if (viewState.history.isNotEmpty()) {
             item(key = "history_header") {
                 Text(
@@ -286,6 +309,7 @@ fun OnlineSearchScreen(
                 modifier = Modifier
                     .combinedClickable(
                         onClick = {
+                            RecentSearches.add(context, item)
                             when (item) {
                                 is SongItem -> {
                                     if (item.id == mediaMetadata?.id) {

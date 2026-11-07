@@ -178,6 +178,7 @@ private val SettingsIndex = listOf(
     SettingsEntry("Save Player's last state", "App behaviour", "general_settings", "persistent queue restore track state"),
     SettingsEntry("Local song auto metadata", "App behaviour", "general_settings", "match tags id3 covers lyrics"),
     SettingsEntry("Disable auto-playing YouTube video", "App behaviour", "general_settings", "music video live autoplay cover"),
+    SettingsEntry("Studio version for music videos", "App behaviour", "general_settings", "music video mv omv audio studio album version skit sound effects official"),
     SettingsEntry("Translations from YouTube", "App behaviour", "general_settings", "captions translate lyrics language"),
     SettingsEntry("Sync lyrics to music videos", "App behaviour", "general_settings", "lyrics video timing intro skit"),
     SettingsEntry("Don't skip on failure", "App behaviour", "general_settings", "fail stream error stay skip"),
@@ -193,6 +194,7 @@ private val SettingsIndex = listOf(
     // Audio Lab
     SettingsEntry("Audio Lab", "Audio Lab", "audio_lab", "sound effects equalizer fx quality"),
     SettingsEntry("Crossfade", "Audio Lab", "crossmix_settings", "crossmix automix transition gapless blend"),
+    SettingsEntry("Blend skips", "Audio Lab", "crossmix_settings", "skip next previous back crossfade seamless preload transition fade blend"),
     SettingsEntry("Equalizer", "Audio Lab", "equalizer", "eq bass treble band parametric graph autoeq headphones correction preset"),
     SettingsEntry("AutoEQ", "Audio Lab", "equalizer", "headphones earbuds correction harman database model"),
     SettingsEntry("Audio Quality", "Audio Lab", "audio_quality", "bitrate stream high low lossless hi-res flac monochrome"),

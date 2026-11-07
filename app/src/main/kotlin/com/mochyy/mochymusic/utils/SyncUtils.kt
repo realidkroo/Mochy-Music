@@ -20,6 +20,7 @@ import com.mochyy.mochymusic.constants.YtSyncHoldKey
 import com.mochyy.mochymusic.constants.YtSyncLikedSongsKey
 import com.mochyy.mochymusic.constants.YtSyncSourcesTaggedKey
 import com.mochyy.mochymusic.db.MusicDatabase
+import com.mochyy.mochymusic.importer.PlaylistAddedHere
 import com.mochyy.mochymusic.scrobble.Scrobbler
 import com.mochyy.mochymusic.db.entities.ArtistEntity
 import com.mochyy.mochymusic.db.entities.ImportedPlaylist
@@ -1011,38 +1012,42 @@ class SyncUtils @Inject constructor(
                     val songs = page.songs.map(SongItem::toMediaMetadata)
                     Timber.d("syncPlaylist: Fetched ${songs.size} songs from remote")
 
-                    if (songs.isEmpty()) {
-                        Timber.w("syncPlaylist: Remote playlist is empty, clearing local playlist")
-                        database.withTransaction {
-                            database.clearPlaylist(playlistId)
-                        }
-                        return@onSuccess
-                    }
-
                     val remoteIds = songs.map { it.id }
                     val localIds = database.playlistSongs(playlistId).first()
                         .sortedBy { it.map.position }
                         .map { it.song.id }
 
-                    if (remoteIds == localIds) {
+                    // songs added in mochy stay on top through every sync, even when youtube never got them
+                    // (signed out, or someone else's playlist); the sync used to wipe them a few seconds later
+                    val addedHere = PlaylistAddedHere.added(context, playlistId).filter { it in localIds }
+                    val seen = PlaylistAddedHere.remoteSeen(context, playlistId)
+                    // from before this was kept: anything here youtube never had counts as added here too
+                    val olderAdds = localIds.filter { it !in remoteIds && it !in addedHere && (seen == null || it !in seen) }
+                    val top = addedHere + olderAdds
+                    val merged = top + remoteIds.filter { it !in top }
+                    PlaylistAddedHere.remember(context, playlistId, remoteIds, top)
+
+                    if (merged == localIds) {
                         Timber.d("syncPlaylist: Local and remote are in sync, no changes needed")
                         return@onSuccess
                     }
 
-                    Timber.d("syncPlaylist: Updating local playlist (remote: ${remoteIds.size}, local: ${localIds.size})")
+                    Timber.d("syncPlaylist: Updating local playlist (remote: ${remoteIds.size}, kept here: ${top.size}, local: ${localIds.size})")
 
+                    val remoteById = songs.associateBy { it.id }
                     database.withTransaction {
                         database.clearPlaylist(playlistId)
-                        songs.forEachIndexed { idx, song ->
-                            if (database.song(song.id).firstOrNull() == null) {
+                        merged.forEachIndexed { idx, id ->
+                            val song = remoteById[id]
+                            if (song != null && database.song(song.id).firstOrNull() == null) {
                                 database.insert(song)
                             }
                             database.insert(
                                 PlaylistSongMap(
-                                    songId = song.id,
+                                    songId = id,
                                     playlistId = playlistId,
                                     position = idx,
-                                    setVideoId = song.setVideoId
+                                    setVideoId = song?.setVideoId,
                                 )
                             )
                         }

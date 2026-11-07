@@ -163,6 +163,8 @@ object YTPlayerUtils {
         val streamHeaders: Map<String, String> = emptyMap(),
         // youtube refused the song, so this is its music video's sound
         val fromMusicVideo: Boolean = false,
+        // a music video asked for, playing its studio upload's sound instead
+        val fromStudio: Boolean = false,
     )
 
     /**
@@ -199,9 +201,16 @@ object YTPlayerUtils {
         playlistId: String? = null,
         audioQuality: AudioQuality,
         connectivityManager: ConnectivityManager,
+        // a music video plays its song's studio upload when there is one, without the video's skits and sound effects
+        preferStudio: Boolean = false,
     ): Result<PlaybackData> {
         val firstAttempt = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager)
             .orStandIn(videoId, audioQuality, connectivityManager)
+        if (preferStudio) {
+            firstAttempt.getOrNull()?.let { data ->
+                studioVersionOf(videoId, data, audioQuality, connectivityManager)?.let { return Result.success(it) }
+            }
+        }
 
         // a rate limit is the whole network, not the session: rotating asks YouTube again and
         // retrying walks every client again, which only keeps the limit in place
@@ -243,6 +252,31 @@ object YTPlayerUtils {
             )
         }
         return this
+    }
+
+    // music video id -> its studio upload's id, "" when it has none
+    private val studioIds = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+    // the studio upload's stream for a music video, with the video's own details kept; null for a song or a video with no studio version
+    private suspend fun studioVersionOf(
+        videoId: String,
+        data: PlaybackData,
+        audioQuality: AudioQuality,
+        connectivityManager: ConnectivityManager,
+    ): PlaybackData? {
+        val details = data.videoDetails ?: return null
+        val type = details.musicVideoType ?: return null
+        if (type == com.music.innertube.models.WatchEndpoint.WatchEndpointMusicSupportedConfigs.WatchEndpointMusicConfig.MUSIC_VIDEO_TYPE_ATV) return null
+        val title = details.title ?: return null
+        val artist = details.author?.removeSuffix(" - Topic") ?: return null
+        // looked up once a session per video, the answer (or that there's none) kept for every replay and seek after
+        val known = studioIds[videoId]
+        val studioId = if (known != null) known.takeIf { it.isNotEmpty() } else {
+            (SongVersions.songVersionId(title, artist)?.takeIf { it != videoId }).also { studioIds[videoId] = it.orEmpty() }
+        } ?: return null
+        val studio = resolvePlaybackData(studioId, null, audioQuality, connectivityManager).getOrNull() ?: return null
+        Timber.tag(logTag).i("$videoId is a music video, playing its studio version $studioId")
+        return studio.copy(videoDetails = details, playbackTracking = null, fromStudio = true)
     }
 
     // the refusal only carried the song's details to the stand-in lookup, callers get the error it wraps

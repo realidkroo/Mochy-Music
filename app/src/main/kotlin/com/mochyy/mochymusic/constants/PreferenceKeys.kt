@@ -272,6 +272,12 @@ val TransportFadeEnabledKey = booleanPreferencesKey("transportFadeEnabled")
 val TransportFadeSecondsKey = floatPreferencesKey("transportFadeSeconds")
 val TransportEffectKey = stringPreferencesKey("transportEffect")
 
+// skips and backs cross over on two players, the songs either side fetched ahead so they start at once
+val SkipBlendKey = booleanPreferencesKey("skipBlend")
+
+// a music video plays its song's studio upload when there is one, without the video's skits and sound effects
+val StudioForVideosKey = booleanPreferencesKey("studioForVideos")
+
 const val TransportFadeDefaultSeconds = 2f
 const val TransportFadeMinSeconds = 0.5f
 const val TransportFadeMaxSeconds = 10f

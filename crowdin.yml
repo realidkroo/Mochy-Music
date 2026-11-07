@@ -1,18 +1,31 @@
 # every file of app text, so a translation platform sees all of it; new text goes into one of these, never into the code
+# untranslated strings are left out of the exports: written as english copies, they hid the translations an older folder of the
+# same language still had (vietnamese showed almost nothing in vietnamese, issue 217)
 files:
   - source: /app/src/main/res/values/strings.xml
+    skip_untranslated_strings: true
     translation: /app/src/main/res/values-%android_code%/strings.xml
   - source: /app/src/main/res/values/mochy_strings.xml
+    skip_untranslated_strings: true
     translation: /app/src/main/res/values-%android_code%/mochy_strings.xml
   - source: /app/src/main/res/values/app_language.xml
+    skip_untranslated_strings: true
     translation: /app/src/main/res/values-%android_code%/app_language.xml
   - source: /app/src/main/res/values/settings_language.xml
+    skip_untranslated_strings: true
     translation: /app/src/main/res/values-%android_code%/settings_language.xml
   - source: /app/src/main/res/values/updater_strings.xml
+    skip_untranslated_strings: true
     translation: /app/src/main/res/values-%android_code%/updater_strings.xml
   - source: /app/src/main/res/values/audiopass_strings.xml
+    skip_untranslated_strings: true
     translation: /app/src/main/res/values-%android_code%/audiopass_strings.xml
   - source: /app/src/main/res/values/modules_strings.xml
+    skip_untranslated_strings: true
     translation: /app/src/main/res/values-%android_code%/modules_strings.xml
   - source: /app/src/main/res/values/player_bedside_strings.xml
+    skip_untranslated_strings: true
     translation: /app/src/main/res/values-%android_code%/player_bedside_strings.xml
+  - source: /app/src/main/res/values/tv_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/tv_strings.xml

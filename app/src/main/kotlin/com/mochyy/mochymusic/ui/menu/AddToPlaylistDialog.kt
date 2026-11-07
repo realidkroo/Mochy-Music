@@ -104,6 +104,7 @@ fun AddToPlaylistDialog(
     val database = LocalDatabase.current
     val menuState = LocalMenuState.current
     val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current.applicationContext
 
     // Read through these: the sheet is composed by the popup host from lambdas made when it opened.
     val currentOnGetSong by rememberUpdatedState(onGetSong)
@@ -132,12 +133,17 @@ fun AddToPlaylistDialog(
             } else {
                 sheet[0]?.dismiss()
                 currentOnDismiss()
-                database.addSongToPlaylist(playlist, ids)
+                val browseId = playlist.playlist.browseId
+                if (browseId != null) {
+                    // a playlist that mirrors youtube keeps what's added here through its syncs, on top
+                    com.mochyy.mochymusic.importer.PlaylistAddedHere.add(context, playlist.id, ids)
+                    database.addSongsToPlaylistTop(playlist, ids)
+                } else {
+                    database.addSongToPlaylist(playlist, ids)
+                }
                 announceAddedToPlaylist(database, playlist, ids)
 
-                playlist.playlist.browseId?.let { browseId ->
-                    ids.forEach { YouTube.addToPlaylist(browseId, it) }
-                }
+                browseId?.let { ids.forEach { id -> YouTube.addToPlaylist(it, id) } }
             }
         }
     }
