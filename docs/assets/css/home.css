@@ -34,7 +34,9 @@
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 .pill:hover { background: #242427; color: #fff; }
-.pill i { width: 28px; height: 28px; border-radius: 50%; background: #e6e6e6; flex: none; }
+.pill i { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #e6e6e6; color: #1d1d1f; flex: none; }
+.pill i svg { width: 62%; height: 62%; fill: currentColor; }
+.pill i svg.line { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .pill.white { background: #fff; color: #000; padding: 20px 40px; justify-content: center; }
 .pill.small { font-size: 16px; padding: 11px 18px; gap: 10px; }
 .pill.small i { width: 16px; height: 16px; }
@@ -43,17 +45,16 @@
 .stack { position: relative; }
 .scene { position: sticky; top: 0; height: 100vh; height: 100svh; min-height: 640px; overflow: hidden; border-radius: 40px 40px 0 0; box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.55); }
 .scene.hero { border-radius: 0; box-shadow: none; }
-/* will-change keeps each moving piece on its own gpu layer, so a scroll frame only moves layers instead of repainting the whole sheet */
-.scene-body { position: absolute; inset: 0; transform-origin: 50% 30%; transform: scale(calc(1 - var(--cover, 0) * 0.07)); will-change: transform; }
-.scene::after { content: ""; position: absolute; inset: 0; z-index: 6; background: #000; opacity: calc(var(--cover, 0) * 0.62); border-radius: inherit; pointer-events: none; will-change: opacity; }
+/* home.js moves these with plain transforms as you scroll; will-change keeps each on its own gpu layer, so a scroll frame only shifts layers and never repaints a sheet */
+.scene-body { position: absolute; inset: 0; transform-origin: 50% 30%; will-change: transform; }
+.shade { position: absolute; inset: 0; z-index: 6; background: #000; opacity: 0; border-radius: inherit; pointer-events: none; will-change: opacity; }
 .scene-grid { position: relative; z-index: 2; height: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; gap: 48px; padding-top: var(--nav-h); }
 .scene.flip .words { grid-column: 2; }
 
 /* the words slide in from their own side, the phones rise from below at their own speeds and drift up as the sheet is covered */
-.scene .words { transform: translateX(calc((1 - var(--in, 1)) * -110px)); opacity: var(--in, 1); }
-.scene.flip .words { transform: translateX(calc((1 - var(--in, 1)) * 110px)); }
+.scene .words { will-change: transform, opacity; }
 .art { position: absolute; inset: 0; pointer-events: none; }
-.slot { position: absolute; pointer-events: auto; will-change: transform; transform: translateY(calc((1 - var(--in, 1)) * var(--rise, 240px) - var(--cover, 0) * var(--lift, 60px))) rotate(calc((1 - var(--in, 1)) * var(--turn, 6deg))); }
+.slot { position: absolute; pointer-events: auto; will-change: transform; }
 .slot .phone { width: 100%; }
 .slot.cut { right: var(--edge); top: 24vh; width: min(560px, 40vw); --rise: 320px; --turn: 4deg; }
 .slot.cut .phone { height: 92vh; aspect-ratio: auto; }
@@ -63,23 +64,24 @@
 .duo.left .b { left: calc(var(--edge) + 15vw); top: 28vh; --rise: 340px; --lift: 90px; }
 .duo.right .a { right: var(--edge); top: 18vh; --rise: 200px; --lift: 40px; }
 .duo.right .b { right: calc(var(--edge) + 15vw); top: 29vh; --rise: 340px; --lift: 90px; --turn: -6deg; }
-.phone.tilt { transition: transform 0.5s var(--spring); transform-style: preserve-3d; }
+.phone.tilt { transition: transform 0.5s var(--spring); }
 
 /* ---------- the hero ---------- */
 /* two rows of outlined words drifting forever, mochy to the right and music to the left; each row is two identical halves, so sliding by half loops without a seam */
 .ghost {
   position: absolute; left: 0; right: 0; top: 9vh; z-index: 0; font: 800 clamp(140px, 21vw, 400px)/0.82 var(--font); letter-spacing: -0.04em;
   color: transparent; -webkit-text-stroke: 1px rgba(255, 255, 255, 0.06); white-space: nowrap; pointer-events: none; user-select: none;
-  transform: translateX(calc(var(--cover, 0) * -16%)); will-change: transform;
+  will-change: transform;
 }
 .ghost-row { display: flex; width: max-content; will-change: transform; animation: drift 46s linear infinite; }
 .ghost-row span { padding-right: 0.22em; }
 .ghost-row.to-right { animation-direction: reverse; }
 .ghost-row.to-left { animation-duration: 52s; }
-.ring-wrap { position: absolute; z-index: 0; right: calc(var(--edge) - 14vw); top: -22vh; width: min(1000px, 70vw); aspect-ratio: 1; transform: rotate(calc(var(--cover, 0) * 120deg)); pointer-events: none; will-change: transform; }
+.ring-wrap { position: absolute; z-index: 0; right: calc(var(--edge) - 14vw); top: -22vh; width: min(1000px, 70vw); aspect-ratio: 1; pointer-events: none; will-change: transform; }
 .ring { width: 100%; height: 100%; will-change: transform; animation: ring-in 1.6s var(--ease) both, spin 70s linear 1.6s infinite; }
 .ring circle { fill: none; stroke: rgba(255, 255, 255, 0.035); stroke-width: 150; }
-.ring text { fill: rgba(255, 255, 255, 0.075); font: 800 92px var(--font); letter-spacing: -0.02em; }
+/* the path runs a little inside the band, so the letters' middle lands on the band's middle in every browser */
+.ring text { fill: rgba(255, 255, 255, 0.075); font: 600 66px "Fira Code", ui-monospace, Menlo, monospace; }
 /* once a sheet covers the hero nothing in it needs to keep moving */
 .resting .ring { animation-play-state: running, paused; }
 .resting .ghost-row { animation-play-state: paused; }
@@ -87,10 +89,10 @@
 .hero h1 .w { display: block; color: #fff; font-size: clamp(48px, 5vw, 82px); animation: rise-in 0.9s var(--ease) 0.1s both; }
 .hero h1 .s { display: block; color: #c6c6c6; white-space: nowrap; font-size: clamp(52px, 7.2vw, 126px); animation: rise-in 0.9s var(--ease) 0.22s both; }
 .hero .cta { display: flex; flex-wrap: wrap; gap: 20px; margin-top: clamp(48px, 13vh, 150px); animation: rise-in 0.9s var(--ease) 0.36s both; }
-.hero-copy { transform: translateY(calc(var(--cover, 0) * -90px)); opacity: calc(1 - var(--cover, 0) * 1.3); }
-.mascot-wrap { position: absolute; z-index: 1; right: calc(var(--edge) + 2vw); bottom: -16vh; height: 98vh; aspect-ratio: 1095 / 1858; transform: translateY(calc(var(--cover, 0) * -70px)) scale(calc(1 + var(--cover, 0) * 0.05)); transform-origin: 50% 100%; }
+.hero-copy { will-change: transform, opacity; }
+.mascot-wrap { position: absolute; z-index: 1; right: calc(var(--edge) + 2vw); bottom: -16vh; height: 98vh; aspect-ratio: 1095 / 1858; transform-origin: 50% 100%; will-change: transform; }
 .mascot { width: 100%; height: 100%; animation: mascot-in 1.3s var(--ease) 0.15s both; }
-.cue { position: absolute; z-index: 3; left: 50%; bottom: 28px; display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--faint); font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; transform: translateX(-50%); opacity: calc(1 - var(--cover, 0) * 4); animation: rise-in 0.9s var(--ease) 0.9s both; }
+.cue { position: absolute; z-index: 3; left: 0; right: 0; width: max-content; margin-inline: auto; bottom: 28px; display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--faint); font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; animation: rise-in 0.9s var(--ease) 0.9s backwards; }
 .cue i { width: 1px; height: 38px; background: linear-gradient(var(--faint), transparent); transform-origin: top; animation: cue 1.8s var(--ease) infinite; }
 .resting .cue i { animation-play-state: paused; }
 @keyframes rise-in { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
@@ -103,17 +105,17 @@
 /* ---------- the strip: pinned while it slides sideways, the card in the middle the biggest ---------- */
 .rail { position: relative; height: 300vh; border-radius: 40px 40px 0 0; box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.55); }
 .rail-pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 5vh; padding-top: var(--nav-h); }
-.rail-head { transform: translateY(calc((1 - var(--in, 1)) * 80px)); opacity: var(--in, 1); }
+.rail-head { will-change: transform, opacity; }
 .rail-track { display: flex; gap: 22px; width: max-content; padding-inline: var(--edge); will-change: transform; }
 .card {
   position: relative; flex: none; width: clamp(280px, 26vw, 380px); height: clamp(380px, 56vh, 560px); overflow: hidden; padding: 28px 28px 0;
   border-radius: 32px; background: var(--card); box-shadow: 0 0 0 1px var(--line); text-decoration: none;
-  transform: scale(calc(1 - var(--d, 0) * 0.06)); transition: background 0.2s; will-change: transform;
+  transition: background 0.2s; will-change: transform;
 }
 a.card:hover { background: #1b1b1e; }
 .card h3 { margin: 0; font-size: clamp(22px, 2vw, 28px); font-weight: 800; letter-spacing: -0.045em; line-height: 1.04; }
 .card p { margin: 10px 0 0; color: var(--soft); font-size: 15px; line-height: 1.45; }
-.card .phone { position: absolute; left: 50%; bottom: 0; width: 62%; border-radius: 32px; box-shadow: 0 0 0 1px var(--frame); transform: translate(-50%, calc(36% + var(--d, 0) * 50px)) rotate(calc(var(--d, 0) * 4deg)); }
+.card .phone { position: absolute; left: 50%; bottom: 0; width: 62%; border-radius: 32px; box-shadow: 0 0 0 1px var(--frame); transform: translate(-50%, 36%); }
 .card.end { display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 30px; background: #fff; color: #000; }
 .card.end p { color: #555; }
 a.card.end:hover { background: #ececf0; }
@@ -148,12 +150,11 @@ a.card.end:hover { background: #ececf0; }
   .scene { position: relative; height: auto; min-height: 0; border-radius: 28px 28px 0 0; }
   .scene.hero { min-height: 100svh; }
   .scene-body { position: relative; inset: auto; transform: none; will-change: auto; }
-  .scene::after { display: none; }
+  .shade { display: none; }
   .scene-grid { height: auto; grid-template-columns: minmax(0, 1fr); gap: 0; padding-top: calc(var(--nav-h) + 44px); }
   .scene.flip .words { grid-column: 1; }
   .words.right { text-align: left; justify-self: start; }
   .words.right .lead { margin-left: 0; }
-  .scene .words, .scene.flip .words { transform: translateY(calc((1 - var(--in, 1)) * 50px)); }
   .art { position: relative; inset: auto; height: 540px; margin-top: 40px; }
   .slot.cut { left: 50%; right: auto; top: 0; width: min(330px, 80vw); margin-left: calc(min(330px, 80vw) / -2); }
   .slot.cut .phone { height: 700px; }
