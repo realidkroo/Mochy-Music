@@ -159,7 +159,8 @@ a { color: inherit; }
 
 /* ---------- wiki ---------- */
 /* the sidebar sits fixed beside the page; folding shrinks the same panel into a pill top left while the page slides to the middle */
-.wiki { --side-w: 380px; --fold: 0.5s cubic-bezier(0.32, 0.72, 0, 1); min-height: 100vh; }
+/* a column so a short page still pushes the footer down to the bottom of the window */
+.wiki { --side-w: 380px; --fold: 0.5s cubic-bezier(0.32, 0.72, 0, 1); min-height: 100vh; display: flex; flex-direction: column; }
 .side {
   position: fixed; z-index: 8; top: 0; left: 0; width: var(--side-w); height: 100vh;
   display: flex; flex-direction: column; overflow: hidden;
@@ -188,7 +189,7 @@ a { color: inherit; }
 .toc a { display: block; text-decoration: none; color: var(--faint); font-weight: 600; font-size: 16px; letter-spacing: -0.025em; padding: 6px 12px 6px 14px; border-radius: 12px; transition: color 0.15s, background 0.2s; }
 .toc a:hover { color: var(--soft); }
 .toc a.on { color: #f1f1f4; background: rgba(255, 255, 255, 0.06); }
-.main { margin-left: var(--side-w); padding: 40px 56px 140px; min-width: 0; transition: margin-left var(--fold); }
+.main { flex: 1 0 auto; margin-left: var(--side-w); padding: 40px 56px 140px; min-width: 0; transition: margin-left var(--fold); }
 .page, .next { max-width: 780px; margin-inline: auto; }
 
 @media (min-width: 981px) {
@@ -275,6 +276,27 @@ pre .k { color: #8fb8ff; } pre .s { color: var(--yellow); } pre .n { color: #ff9
 .next small { color: var(--faint); display: block; font-size: 13px; }
 .next b { font-size: 17px; letter-spacing: -0.03em; }
 
+/* the footer: a black sheet under every page, mochy holding up the app on the right, sliding along with the sidebar like the page does */
+.footer {
+  position: relative; overflow: hidden; margin-left: var(--side-w); min-height: 290px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px;
+  padding: 64px 320px 58px 68px; background: #000; border-radius: 32px 32px 0 0;
+  transition: margin-left var(--fold);
+}
+.footer-brand { display: flex; flex-direction: column; min-width: 0; }
+.footer-brand .brand-name { font-size: 28px; text-decoration: none; }
+.footer-brand p { margin: 10px 0 0; color: var(--soft); font-size: 16px; }
+.footer-year { margin-top: auto; padding-top: 40px; color: var(--soft); font-size: 16px; }
+.footer-links { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 18px; }
+.footer-links a { color: var(--soft); text-decoration: none; font-size: 16px; transition: color 0.15s; }
+.footer-links a:hover { color: #fff; }
+/* she stands at the right edge and the sheet cuts her off at the waist */
+.footer-art { position: absolute; right: 52px; top: 30px; width: 205px; height: auto; pointer-events: none; user-select: none; }
+@media (min-width: 981px) {
+  .side-folded .footer { margin-left: 0; }
+}
+html:not(.ready) .footer { transition: none !important; }
+
 /* the little live demos: they look like the app's own controls */
 .demo { background: #111113; border-radius: 24px; box-shadow: 0 0 0 1px #26262b; padding: 22px; margin: 20px 0 30px; }
 .demo-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
@@ -344,6 +366,14 @@ pre .k { color: #8fb8ff; } pre .s { color: var(--yellow); } pre .n { color: #ff9
   .page p, .page li { font-size: 16px; }
   .next { flex-direction: column; }
   .next a:last-child { text-align: left; }
+  /* on a phone everything stacks, and she stands under the links fading into the black, the year in the corner */
+  .footer { margin-left: 0; display: block; min-height: 0; padding: 48px 32px 0; border-radius: 28px 28px 0 0; }
+  .footer-links { align-items: flex-start; gap: 22px; margin-top: 40px; }
+  .footer-year { position: absolute; right: 30px; bottom: 26px; padding: 0; z-index: 1; }
+  .footer-art {
+    position: static; display: block; width: min(300px, 82%); margin: 28px auto -110px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 52%, transparent 82%); mask-image: linear-gradient(to bottom, #000 52%, transparent 82%);
+  }
   .shot { grid-template-columns: minmax(0, 1fr); justify-items: center; }
   .cards { grid-template-columns: minmax(0, 1fr); }
   .shotgrid { grid-template-columns: minmax(0, 1fr) !important; }

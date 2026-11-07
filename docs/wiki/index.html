@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&display=swap">
 <!-- bump ?v= on the css and js links whenever they change, or browsers keep showing the old copy for up to 10 minutes -->
-<link rel="stylesheet" href="../assets/css/site.css?v=20261107c">
+<link rel="stylesheet" href="../assets/css/site.css?v=20261107e">
 <script>try { if (localStorage.getItem("wikiSideFolded") === "1") document.documentElement.classList.add("side-folded"); } catch (e) {}</script>
 </head>
 <body>
@@ -1454,7 +1454,7 @@ curl "https://my-flac.example/metadata?title=Eastside&amp;artist=benny%20blanco&
 <article class="page" id="devs" data-group="More" data-title="For mochy devs">
 <h1>For devs</h1>
 <p class="sub">changing the module system itself</p>
-<p>this part is for people working on mochy. follow the repo's <code>CLAUDE.md</code> everywhere: one-line lowercase code comments, text people see goes in <code>res/values/*.xml</code> (english only, never touch <code>values-*/</code>), and keep it smooth.</p>
+<p>this part is for people working on mochy itself: where the module system lives and how to change it without breaking modules people already made.</p>
 <div class="flow"><div>modules/api<small>the contract</small></div><i>→</i><div>modules/bridge<small>json both ways</small></div><i>→</i><div>app/modules<small>registry, web, local, skin</small></div><i>→</i><div>ui/player/styles + ui/screens/settings/modules<small>what you see</small></div></div>
 <h2>Where things live</h2>
 <div class="tbl"><table>
@@ -1550,7 +1550,7 @@ curl "https://my-flac.example/metadata?title=Eastside&amp;artist=benny%20blanco&
 <h2>Module apps</h2>
 <p>an apk whose code runs inside mochy. it needs a <code>&lt;service&gt;</code> answering <code>com.mochyy.mochymusic.SOURCE_MODULE</code>, <code>&lt;meta-data android:name="com.mochyy.mochymusic.module.entry" android:value="your.module.EntryClass" /&gt;</code> on it, an entry class with a no-argument constructor implementing <code>MochyModule</code>, and to be <b>signed with mochy's own key</b> and built for the same api version. build against <code>:modules:api</code> as <code>compileOnly</code>. a module app replaces the built-in module with the same id.</p>
 <h2>Checking your change</h2>
-<pre><code>./gradlew :app:compileArm64FossDebugKotlin     # announce it if someone shares the checkout
+<pre><code>./gradlew :app:compileArm64FossDebugKotlin
 ./gradlew :modules:bridge:test
 ./gradlew :modules:&lt;name&gt;:test
 ./gradlew :module:test                          # inside mochy-js-modules</code></pre>
@@ -1558,8 +1558,23 @@ curl "https://my-flac.example/metadata?title=Eastside&amp;artist=benny%20blanco&
 
 <nav class="next" id="next"></nav>
 </main>
+
+<footer class="footer">
+  <div class="footer-brand">
+    <a class="brand-name" href="#welcome"><img src="../assets/img/logo.svg" alt="" width="32" height="35">Mochy Music</a>
+    <p>not affiliated by google, apple, or other.</p>
+    <span class="footer-year">2026</span>
+  </div>
+  <nav class="footer-links" aria-label="Mochy links">
+    <a href="#welcome">Docs</a>
+    <a href="https://github.com/realidkroo/Mochy-Music">Github</a>
+    <a href="https://discord.gg/NTmqVphbRY">Join discord</a>
+    <a href="https://github.com/realidkroo/Mochy-Music/releases">Download now</a>
+  </nav>
+  <img class="footer-art" src="../assets/img/mochy-phone.webp" alt="" width="645" height="1100" loading="lazy" decoding="async">
+</footer>
 </div>
-<script src="../assets/js/site.js?v=20261107c" defer></script>
-<script src="../assets/js/wiki.js?v=20261107c" defer></script>
+<script src="../assets/js/site.js?v=20261107e" defer></script>
+<script src="../assets/js/wiki.js?v=20261107e" defer></script>
 </body>
 </html>
