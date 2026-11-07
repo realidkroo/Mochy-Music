@@ -942,6 +942,8 @@
     <string name="video_mode">Full video</string>
     <string name="video_mode_exit">Exit video mode</string>
     <string name="video_mode_close_player">Close player</string>
+    <string name="video_mode_rotate">Rotate player</string>
+    <string name="video_mode_exit_full_screen">Exit full screen</string>
     <string name="video_mode_finding">Looking for the video…</string>
     <string name="video_mode_no_video">No video for this song. The lyrics still play here.</string>
     <string name="video_mode_no_lyrics">No lyrics for this song</string>
