@@ -45,7 +45,9 @@
   // the menu on a phone
   var nav = document.querySelector(".nav");
   var toggle = document.querySelector(".nav-toggle");
-  if (nav && toggle) toggle.addEventListener("click", function () { nav.classList.toggle("open"); });
+  if (nav && toggle) toggle.addEventListener("click", function () {
+    toggle.setAttribute("aria-expanded", String(nav.classList.toggle("open")));
+  });
 
   // the tour: tap a tab and the phone shows that page, the highlight sliding over the way the app's does
   document.querySelectorAll(".tour").forEach(function (tour) {

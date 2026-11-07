@@ -46,7 +46,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.core.updater.DiscordUrl
-import com.mochyy.mochymusic.core.updater.GithubRepoUrl
 import com.mochyy.mochymusic.modules.ModuleEntry
 import com.mochyy.mochymusic.ui.component.ActionPromptDialog
 import com.mochyy.mochymusic.ui.component.BetaBadge
@@ -61,8 +60,8 @@ const val ModulesRoute = "modules"
 const val ModuleRoutePattern = "module/{id}"
 fun moduleRoute(id: String) = "module/$id"
 
-/** how to make a module, the guide in mochy's repo */
-const val ModuleDocsUrl = "$GithubRepoUrl/blob/main/modules/README.md"
+/** how to make a module, the guide on mochy's wiki */
+const val ModuleDocsUrl = "https://realidkroo.github.io/Mochy-Music/docs/wiki/#modules-types"
 
 private val CardShape = RoundedCornerShape(26.dp)
 

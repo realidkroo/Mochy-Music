@@ -1,4 +1,4 @@
-// what a look module brings beyond plain settings: a player of its own, a font, a glass for the bottom bar, pages, rows in the player's menu, and where its files live (modules/README.md)
+// what a look module brings beyond plain settings: a player of its own, a font, a glass for the bottom bar, pages, rows in the player's menu, and where its files live (docs/wiki, module pages)
 
 package com.mochyy.mochymusic.modules.skin
 

@@ -38,6 +38,7 @@
     // after the browser's own jump to the #name, so the page opens at its title
     requestAnimationFrame(function () { window.scrollTo(0, 0); });
     document.getElementById("side").classList.remove("open");
+    document.getElementById("tocToggle").setAttribute("aria-expanded", "false");
   }
 
   function step(page, word) {
@@ -51,8 +52,25 @@
   window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
   show(location.hash.slice(1));
 
-  document.getElementById("tocToggle").addEventListener("click", function () {
-    document.getElementById("side").classList.toggle("open");
+  // the hamburger on a phone opens the pages under the brand
+  var burger = document.getElementById("tocToggle");
+  burger.addEventListener("click", function () {
+    burger.setAttribute("aria-expanded", String(document.getElementById("side").classList.toggle("open")));
+  });
+
+  // the fold button tucks the sidebar away to just the brand, and it stays that way next visit
+  var wiki = document.querySelector(".wiki");
+  var fold = document.getElementById("sideFold");
+  function setFolded(folded) {
+    wiki.classList.toggle("folded", folded);
+    fold.setAttribute("aria-expanded", String(!folded));
+    fold.setAttribute("aria-label", folded ? "Show the sidebar" : "Hide the sidebar");
+  }
+  try { setFolded(localStorage.getItem("wikiSideFolded") === "1"); } catch (e) {}
+  fold.addEventListener("click", function () {
+    var folded = !wiki.classList.contains("folded");
+    setFolded(folded);
+    try { localStorage.setItem("wikiSideFolded", folded ? "1" : "0"); } catch (e) {}
   });
 
   // json and code get a little colour, done once, no library
