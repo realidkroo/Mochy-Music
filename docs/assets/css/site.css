@@ -1,4 +1,4 @@
-/* mochy's site and wiki: one dark look, the dotted ground from the concept, inter like the app */
+/* what the homepage and the wiki share: one dark look, the dotted ground from the concept, inter like the app; the homepage's own parts are in home.css */
 :root {
   --bg: #0e0e0f;
   --bg-deep: #070708;
@@ -44,42 +44,16 @@ a { color: inherit; }
   background-size: 22px 22px;
 }
 
-.wrap {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding-left: max(20px, env(safe-area-inset-left, 0px));
-  padding-right: max(20px, env(safe-area-inset-right, 0px));
-}
-
-/* ---------- nav ---------- */
-.nav { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-block: 34px 10px; position: relative; z-index: 5; }
+/* the brand: the logo, mochy music, and what follows the line */
 .brand { display: flex; align-items: center; gap: 18px; text-decoration: none; }
 .brand-name { white-space: nowrap; display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 23px; letter-spacing: -0.04em; }
 .brand-name img { width: 32px; height: 35px; }
 .brand-sep { width: 1px; height: 40px; background: #3a3a3e; }
 .brand-sub { font-size: 23px; font-weight: 500; color: var(--soft); letter-spacing: 0.01em; }
-.nav-links { display: flex; align-items: center; gap: 18px; font-weight: 700; font-size: 21px; letter-spacing: -0.02em; text-transform: uppercase; }
-.nav-links a { color: var(--soft); text-decoration: none; transition: color 0.15s; }
-.nav-links a:hover { color: var(--fg); }
-.nav-links span { width: 2px; height: 26px; background: var(--soft); opacity: 0.6; }
-.nav-toggle { display: none; border: 0; cursor: pointer; place-items: center; }
-.nav-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
 
 /* ---------- buttons that press like the app's (pressBounce: a squish, then a spring back) ---------- */
 .press { transition: transform 0.42s var(--spring); transform: translateZ(0); -webkit-tap-highlight-color: transparent; }
 .press.down { transform: scale(0.94); transition: transform 0.12s ease-out; }
-.pill {
-  display: inline-flex; align-items: center; gap: 14px;
-  padding: 16px 30px 16px 18px; border-radius: 999px; border: 0;
-  background: #1d1d1f; color: #c9c9cf; font: 700 28px/1 var(--font); letter-spacing: -0.04em;
-  text-decoration: none; cursor: pointer;
-}
-.pill:hover { background: #242427; color: #fff; }
-.pill i { width: 28px; height: 28px; border-radius: 50%; background: #e6e6e6; flex: none; }
-.pill.white { background: #fff; color: #000; }
-.pill.small { font-size: 16px; padding: 11px 18px; gap: 10px; }
-.pill.small i { width: 16px; height: 16px; }
-
 /* ---------- phones ---------- */
 .phone {
   position: relative; width: 290px; aspect-ratio: 450 / 1000;
@@ -87,39 +61,6 @@ a { color: inherit; }
   box-shadow: 0 0 0 1px var(--frame), 0 30px 80px rgba(0, 0, 0, 0.55);
 }
 .phone img { width: 100%; height: 100%; object-fit: cover; }
-.phone.tilt { transition: transform 0.5s var(--spring); transform-style: preserve-3d; will-change: transform; }
-
-/* ---------- home ---------- */
-.slide { position: relative; overflow: hidden; }
-.slide + .slide { content-visibility: auto; contain-intrinsic-size: auto 820px; }
-.slide-inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 40px; min-height: 760px; padding-block: 60px; }
-.slide-inner.flip > :first-child { order: 2; }
-.big { font-weight: 800; letter-spacing: -0.065em; line-height: 0.98; margin: 0; text-wrap: balance; }
-.big.xl { font-size: clamp(56px, 8.4vw, 116px); }
-.big.l { font-size: clamp(44px, 5.4vw, 70px); }
-.lead { color: var(--soft); font-size: clamp(20px, 2.3vw, 31px); font-weight: 600; letter-spacing: -0.045em; line-height: 1.15; margin: 14px 0 0; max-width: 15em; }
-.right { text-align: right; justify-self: end; }
-.right .lead { margin-left: auto; }
-
-.hero { min-height: 100vh; }
-.hero h1 .w { color: #fff; font-size: clamp(48px, 5.4vw, 72px); letter-spacing: -0.06em; }
-.hero h1 .s { color: #c6c6c6; display: block; white-space: nowrap; font-size: clamp(46px, 6.6vw, 110px); }
-.hero .cta { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 150px; }
-.hero-art { position: relative; height: 100%; min-height: 720px; }
-.hero-art .mascot { position: absolute; right: 0; bottom: -40px; width: min(560px, 100%); height: auto; z-index: 2; }
-/* the donut of words behind her, turning slowly; only its transform changes, so it never repaints */
-.ring { position: absolute; right: -240px; top: 50%; width: 980px; height: 980px; margin-top: -490px; z-index: 0; pointer-events: none; animation: spin 60s linear infinite; will-change: transform; }
-.ring.paused { animation-play-state: paused; }
-.ring text { font: 800 118px var(--font); letter-spacing: 0.06em; fill: none; stroke: rgba(255, 255, 255, 0.07); stroke-width: 1; }
-.ring circle { fill: none; stroke: rgba(255, 255, 255, 0.045); stroke-width: 150; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.ghost { position: absolute; inset: 70px 0 auto 0; font: 800 clamp(160px, 24vw, 340px)/0.9 var(--font); letter-spacing: -0.04em; color: transparent; -webkit-text-stroke: 1px rgba(255, 255, 255, 0.06); white-space: nowrap; pointer-events: none; user-select: none; }
-
-.phones { position: relative; display: flex; justify-content: center; }
-.phones .phone:nth-child(2) { margin-left: -120px; margin-top: 90px; }
-.cut { height: 700px; align-self: end; display: flex; align-items: flex-start; }
-.cut .phone { width: 560px; border-radius: 52px; aspect-ratio: auto; height: 760px; }
-.cut .phone img { object-position: top; }
 
 /* the tour: a phone with the app's own bottom bar under it, tap a tab and the screen swaps like in the app */
 .tour { display: flex; flex-direction: column; align-items: center; gap: 26px; }
@@ -137,29 +78,8 @@ a { color: inherit; }
 .navbar .hl { position: absolute; top: 8px; bottom: 8px; left: 10px; width: 56px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); transition: left 0.38s cubic-bezier(0.3, 1.25, 0.5, 1), width 0.38s cubic-bezier(0.3, 1.25, 0.5, 1); }
 .tour-caption { color: var(--soft); font-weight: 700; letter-spacing: -0.03em; min-height: 1.6em; text-align: center; }
 
-.features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding-block: 40px 100px; }
-.feature { background: var(--card); border-radius: 28px; padding: 26px; text-decoration: none; display: flex; flex-direction: column; gap: 10px; transition: background 0.2s; }
-.feature:hover { background: #1d1d20; }
-.feature b { font-size: 22px; letter-spacing: -0.04em; }
-.feature span { color: var(--soft); font-size: 15px; line-height: 1.45; }
-.feature .go { margin-top: auto; color: var(--faint); font-size: 13px; font-weight: 600; }
-
-.contact { text-align: center; padding-block: 190px 190px; }
-.contact h2 { font-size: clamp(34px, 3.6vw, 46px); letter-spacing: -0.06em; margin: 0 0 40px; }
-.contact .pill { min-width: 396px; justify-content: center; font-size: 20px; padding: 18px 30px; }
-
-.foot { background: var(--bg-deep); padding-block: 50px 46px; }
-.foot-grid { display: flex; justify-content: space-between; gap: 30px; }
-.foot .brand-name { font-size: 27px; font-weight: 500; }
-.foot small { display: block; color: var(--soft); font-size: 15px; margin-top: 4px; letter-spacing: -0.02em; }
-.foot .year { color: var(--soft); margin-top: 70px; }
-.foot nav { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; font-size: 15px; }
-.foot nav a { color: var(--soft); text-decoration: none; }
-.foot nav a:hover { color: #fff; }
-
 /* ---------- wiki ---------- */
-/* the sidebar sits fixed beside the page; folding shrinks the same panel into a pill top left while the page slides to the middle */
-/* a column so a short page still pushes the footer down to the bottom of the window */
+/* the sidebar sits fixed beside the page and folds into a pill; the column layout keeps the footer at the bottom of short pages */
 .wiki { --side-w: 380px; --fold: 0.5s cubic-bezier(0.32, 0.72, 0, 1); min-height: 100vh; display: flex; flex-direction: column; }
 .side {
   position: fixed; z-index: 8; top: 0; left: 0; width: var(--side-w); height: 100vh;
@@ -333,24 +253,6 @@ html:not(.ready) .footer { transition: none !important; }
 
 /* ---------- small screens ---------- */
 @media (max-width: 980px) {
-  .nav-links { display: none; }
-  .nav .brand-sep, .nav .brand-sub { display: none; }
-  .nav-toggle { display: grid; background: #1d1d20; color: #fff; width: 44px; height: 44px; border-radius: 14px; }
-  .nav.open .nav-links { display: flex; position: absolute; top: 90px; right: 20px; flex-direction: column; align-items: flex-end; background: #161618; border-radius: 22px; padding: 18px 22px; gap: 10px; font-size: 18px; }
-  .nav.open .nav-links span { display: none; }
-  .slide-inner { grid-template-columns: minmax(0, 1fr); min-height: 0; padding-block: 50px; }
-  .slide-inner.flip > :first-child { order: 0; }
-  .right { text-align: left; justify-self: start; }
-  .right .lead { margin-left: 0; }
-  .hero .cta { margin-top: 40px; }
-  .hero-art { min-height: 560px; }
-  .ring { width: 640px; height: 640px; margin-top: -320px; right: -200px; }
-  .phones .phone { width: 220px; }
-  .phones .phone:nth-child(2) { margin-left: -80px; }
-  .cut { height: auto; }
-  .cut .phone { width: 300px; height: auto; aspect-ratio: 450 / 1000; border-radius: 38px; }
-  .features { grid-template-columns: minmax(0, 1fr); }
-  .contact .pill { min-width: 0; width: 100%; }
   .side { position: sticky; width: auto; height: auto; padding: 14px 20px; box-shadow: 0 1px 0 var(--line); transition: none; }
   .side .brand-name { font-size: 19px; }
   .side .brand-sub { font-size: 19px; }

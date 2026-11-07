@@ -1,7 +1,5 @@
-// the little bits of feel the site borrows from the app: buttons that squish and spring back, phones that lean under a finger, the tour's bottom bar
+// the little bits of feel the homepage and the wiki borrow from the app: buttons that squish and spring back, and the tour's bottom bar
 (function () {
-  var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
   // pressBounce: down squishes, up springs back past and settles
   document.addEventListener("pointerdown", function (e) {
     var el = e.target.closest(".press");
@@ -14,39 +12,6 @@
     };
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
-  });
-
-  // press3D: a phone leans toward the pointer a few degrees, only while hovered, transform only
-  if (!still && window.matchMedia("(hover: hover)").matches) {
-    document.querySelectorAll(".tilt").forEach(function (el) {
-      var frame = 0;
-      el.addEventListener("pointermove", function (e) {
-        if (frame) return;
-        frame = requestAnimationFrame(function () {
-          frame = 0;
-          var r = el.getBoundingClientRect();
-          var x = (e.clientX - r.left) / r.width - 0.5;
-          var y = (e.clientY - r.top) / r.height - 0.5;
-          el.style.transform = "perspective(900px) rotateY(" + (x * 10).toFixed(2) + "deg) rotateX(" + (-y * 10).toFixed(2) + "deg)";
-        });
-      });
-      el.addEventListener("pointerleave", function () { el.style.transform = ""; });
-    });
-  }
-
-  // the ring only turns while it's on screen
-  var ring = document.querySelector(".ring");
-  if (ring && "IntersectionObserver" in window) {
-    new IntersectionObserver(function (entries) {
-      ring.classList.toggle("paused", !entries[0].isIntersecting);
-    }).observe(ring);
-  }
-
-  // the menu on a phone
-  var nav = document.querySelector(".nav");
-  var toggle = document.querySelector(".nav-toggle");
-  if (nav && toggle) toggle.addEventListener("click", function () {
-    toggle.setAttribute("aria-expanded", String(nav.classList.toggle("open")));
   });
 
   // the tour: tap a tab and the phone shows that page, the highlight sliding over the way the app's does
