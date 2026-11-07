@@ -2,10 +2,16 @@
 
 <div align="center">
 
-  <sub>Sleek modern cool music player for android, open source, packed with features and doesn’t collect ur data >_< oh and, still in beta!</sub>
+  <sub>What is Mochy Music? its a sleek modern cool music player for android, open source, packed with features and doesn’t collect ur data >_< !! oh and, still in beta! so please expect some bug :)</sub>
   <br/>
 <p align="center">
-  <a href="https://github.com/realidkroo/mochy-music/releases">
+<a href="https://trendshift.io/repositories/305501?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-305501" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/305501" alt="realidkroo%2FMochy-Music | Trendshift" width="250" height="55"/>
+</a>
+
+<br/>
+<p align="center">
+
+<a href="https://github.com/realidkroo/mochy-music/releases">
     <img src="https://shieldcn.dev/github/downloads/realidkroo/mochy-music.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=fab387" alt="Downloads">
 </a>
   <a href="https://github.com/realidkroo/mochy-music/stargazers">
@@ -16,18 +22,8 @@
       <a href="https://github.com/realidkroo/mochy-music/releases">
     <img src="https://shieldcn.dev/badge/Android-8.0%2B-313244.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logo=android&logoColor=94e2d5" alt="Android 8.0+">
   </a>
-  </a>
-  <a href="https://github.com/realidkroo/mochy-music/commits">
-    <img src="https://shieldcn.dev/github/commits/realidkroo/mochy-music.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=a6e3a1" alt="Commits">
-  </a>
   <a href="https://github.com/realidkroo/mochy-music/releases/latest">
     <img src="https://shieldcn.dev/github/release/realidkroo/mochy-music.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=cba6f7" alt="Release">
-  </a>
-  <a href="https://github.com/realidkroo/mochy-music/issues">
-    <img src="https://shieldcn.dev/github/issues/realidkroo/mochy-music.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=f38ba8" alt="Issues">
-  </a>
-  <a href="https://github.com/realidkroo/mochy-music/blob/main/LICENSE">
-    <img src="https://shieldcn.dev/github/license/realidkroo/mochy-music.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=b4befe" alt="License">
   </a>
   <a href="https://www.figma.com/board/NWTElXRZ21LaaJotjuOe8D/Untitled?node-id=0-1&t=bMsq80RJXYybjXsh-1">
     <img src="https://shieldcn.dev/badge/Roadmap-View-313244.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=b4befe" alt="Roadmap">
@@ -36,6 +32,7 @@
   <img src="https://shieldcn.dev/badge/Discord-Join%20Server-313244.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logo=discord&logoColor=b4befe" alt="Mochy's Bar">
 </a>
 
+</a>
 </p>
 </div>
 
