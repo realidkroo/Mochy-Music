@@ -276,6 +276,11 @@ pre .k { color: #8fb8ff; } pre .s { color: var(--yellow); } pre .n { color: #ff9
 .next small { color: var(--faint); display: block; font-size: 13px; }
 .next b { font-size: 17px; letter-spacing: -0.03em; }
 
+/* a page that needs the room, like the roadmap board, gets a wider column */
+.page.wide { max-width: 1180px; }
+.board { position: relative; aspect-ratio: 16 / 10; min-height: 480px; margin: 20px 0 22px; border-radius: 24px; overflow: hidden; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+.board iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
 /* the footer: a black sheet under every page, mochy holding up the app on the right, sliding along with the sidebar like the page does */
 .footer {
   position: relative; overflow: hidden; margin-left: var(--side-w); min-height: 290px;
@@ -364,6 +369,7 @@ html:not(.ready) .footer { transition: none !important; }
   .page > .sub { font-size: 23px; margin-bottom: 36px; }
   .page h2 { font-size: 26px; margin-top: 48px; }
   .page p, .page li { font-size: 16px; }
+  .board { aspect-ratio: 3 / 4; min-height: 420px; border-radius: 20px; }
   .next { flex-direction: column; }
   .next a:last-child { text-align: left; }
   /* on a phone everything stacks, and she stands under the links fading into the black, the year in the corner */
