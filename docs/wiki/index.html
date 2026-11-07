@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mochy Wiki</title>
+<meta name="description" content="Mochy Music's wiki: how the app works, and how to make modules for it.">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+<div class="wiki">
+<aside class="side" id="side">
+  <div class="brand"><a class="brand-name" href="../" style="text-decoration:none"><img src="../assets/img/logo.svg" alt="" width="32" height="35">Mochy Music</a><span class="brand-sep"></span><span class="brand-sub">Docs</span></div>
+  <button class="nav-toggle press" type="button" id="tocToggle" style="margin-bottom:10px">Pages</button>
+  <ul class="toc" id="toc"></ul>
+</aside>
+
+<main class="main dots">
+<div class="topbar">
+  <div class="search">
+    <kbd>/</kbd>
+    <input id="q" type="search" placeholder="Search Anything here" autocomplete="off" aria-label="Search the wiki">
+    <div class="results" id="results"></div>
+  </div>
+</div>
+
+<!-- ============================== BEGGINING ============================== -->
+
+<article class="page" id="welcome" data-group="Beggining" data-title="Hi! start here">
+<h1>Hi!</h1>
+<p class="sub">this is mochy's wiki &lt;3</p>
+<p>hello, im the one making mochy. this wiki is where i explain how the app works and how to make your own modules for it. i tried to keep it with a lot of pictures instead of a wall of code, becuase reading code in docs is boring lol.</p>
+<p>everything here comes from the real app, the screenshots are from the latest build. if something looks diffrent on your phone, you're probably on an older version, go update :p</p>
+<div class="cards">
+  <a class="press" href="#app-tour"><b>Using the app</b><span>a walk around mochy, page by page, with what every button does</span></a>
+  <a class="press" href="#modules-types"><b>Making modules</b><span>new looks, liquid glass, your own sources, lyrics and song info</span></a>
+  <a class="press" href="#modules-first"><b>Your first module</b><span>a whole module in two minutes, one json file in a zip</span></a>
+  <a class="press" href="#roadmap"><b>Roadmap</b><span>what's done and what i'm working on</span></a>
+</div>
+<div class="note">tip: press <code>/</code> anywhere to search the wiki.</div>
+</article>
+
+<article class="page" id="app-tour" data-group="Beggining" data-title="The app">
+<h1>The app</h1>
+<p class="sub">a quick walk around</p>
+<p>mochy has four tabs at the bottom, plus the player that lives right above them. tap the bar below, it switches just like in the app:</p>
+<div class="tour" style="align-items:flex-start;margin:20px 0 30px">
+  <div class="phone">
+    <img class="on" src="../assets/img/app-home.webp" alt="Home" width="450" height="1000" loading="lazy">
+    <img data-src="../assets/img/app-search.webp" alt="Search" width="450" height="1000">
+    <img data-src="../assets/img/app-library.webp" alt="Library" width="450" height="1000">
+    <img data-src="../assets/img/app-profile.webp" alt="Profile" width="450" height="1000">
+  </div>
+  <div class="navbar" role="tablist" aria-label="App pages">
+    <span class="hl" style="left:10px"></span>
+    <button class="on press" type="button" aria-label="Home" data-caption="Home: picked for you"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5V20h-5v-5H9v5H4z"/></svg></button>
+    <button class="press" type="button" aria-label="Search" data-caption="Search: moods, genres, anything"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg></button>
+    <button class="press" type="button" aria-label="Library" data-caption="Library: your music"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="3"/><path d="M10 15.5a1.5 1.5 0 1 1-1.5-1.5H10V9h4"/></svg></button>
+    <button class="press" type="button" aria-label="Profile" data-caption="Profile: stats and settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c1.4-3.4 4.2-5 7.5-5s6.1 1.6 7.5 5"/></svg></button>
+  </div>
+  <div class="tour-caption" style="text-align:left">Home: picked for you</div>
+</div>
+<div class="flow"><div>Home<small>what to play</small></div><i>→</i><div>Search<small>find anything</small></div><i>→</i><div>Library<small>yours</small></div><i>→</i><div>Profile<small>stats + settings</small></div></div>
+<p>tapping a tab you're already on scrolls it back to the top. tapping it from a page deeper inside (an album, a playlist) takes you back to the tab's own page, like every tab bar does.</p>
+</article>
+
+<article class="page" id="install" data-group="Beggining" data-title="Installing">
+<h1>Installing</h1>
+<p class="sub">getting mochy on your phone</p>
+<ol>
+  <li>go to the <a href="https://github.com/realidkroo/Mochy-Music/releases">releases page</a> and download the apk. <b>arm64</b> is for almost every phone, <b>universal</b> works everywhere but its bigger.</li>
+  <li>open it, android asks if you trust the source, say yes.</li>
+  <li>open mochy, it walks you thru a few steps: a username, importing (you can skip), and a check if your phone can do blur.</li>
+</ol>
+<div class="note">mochy works on android 8 and newer. blur and glass need android 12, the liquid glass needs android 13. older phones get a plain version that still looks nice.</div>
+<p>updates show up inside the app when theres a new one, you can turn that off in app behaviour.</p>
+</article>
+
+<!-- ============================== USING THE APP ============================== -->
+
+<article class="page" id="app-home" data-group="Using the app" data-title="Home &amp; search">
+<h1>Home</h1>
+<p class="sub">what to play, picked for you</p>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-home.webp" alt="Home" width="450" height="1000" loading="lazy"><span class="mark" style="left:50%;top:22%">1</span><span class="mark" style="left:12%;top:61%">2</span><span class="mark" style="left:50%;top:84%">3</span><span class="mark" style="left:50%;top:93%">4</span></div>
+  <ol class="marks">
+    <li><b>the hero.</b> swipe it sideways. it rotates between songs on repeat, things picked from what you like, and the gacha card (roll it for a random song, its fun trust me).</li>
+    <li><b>shelves.</b> recently played, most played, mixes. tap the title to see all of it.</li>
+    <li><b>the mini player.</b> tap it to open the player, swipe it sideways to skip.</li>
+    <li><b>the bar.</b> home, search, library, profile.</li>
+  </ol>
+</div>
+<h2>Search</h2>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-search.webp" alt="Search" width="450" height="1000" loading="lazy"></div>
+  <div><p>moods and genres at first. type to search songs, albums, artists, playlists and videos. tap search twice fast and it goes straight to typing.</p><p>Home has three styles too (mochyy, listen now, hop in), change it in customisation.</p></div>
+</div>
+</article>
+
+<article class="page" id="app-player" data-group="Using the app" data-title="Player &amp; styles">
+<h1>Player</h1>
+<p class="sub">and all the ways it can look</p>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-player.webp" alt="The player" width="450" height="1000" loading="lazy"><span class="mark" style="left:50%;top:30%">1</span><span class="mark" style="left:20%;top:56%">2</span><span class="mark" style="left:50%;top:65%">3</span><span class="mark" style="left:50%;top:79%">4</span></div>
+  <ol class="marks">
+    <li><b>the cover.</b> swipe it to change song. some songs have an animated canvas or their music video here.</li>
+    <li><b>the title.</b> the little badge beside it says the format (opus, aac, flac).</li>
+    <li><b>seek bar.</b> drag it anywhere.</li>
+    <li><b>controls.</b> swipe the player down anywhere to close it.</li>
+  </ol>
+</div>
+<h2>Changing the style</h2>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-styles.webp" alt="Style picker" width="450" height="1000" loading="lazy"></div>
+  <div>
+    <p><b>hold the player</b> and it shrinks into a picker of styles. swipe between them and tap one.</p>
+    <div class="flow"><div>Flagship</div><div>Classic</div><div>Turntable</div><div>iPod</div><div>Poster</div><div>Timeline</div><div>Lyrics</div><div>Bedside</div><div>Video</div></div>
+    <p>a look module can bring a style of its own too, it shows first in that list. (see <a href="#modules-player">player style</a>)</p>
+  </div>
+</div>
+</article>
+
+<article class="page" id="app-lyrics" data-group="Using the app" data-title="Lyrics">
+<h1>Lyrics</h1>
+<p class="sub">word by word</p>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-lyrics.webp" alt="Lyrics" width="450" height="1000" loading="lazy"></div>
+  <div>
+    <p>tap the card at the bottom of the player to open the lyrics. the line being sung is bright, the rest fade.</p>
+    <p>mochy asks a bunch of lyric sources at once and keeps the best one (timed lyrics win). you can switch source from the player's menu, nudge the timing, or translate them.</p>
+    <div class="note">with a music video playing, lyrics follow the video instead of the album version.</div>
+    <p>lyrics modules join the list too, and go first while their on.</p>
+  </div>
+</div>
+</article>
+
+<article class="page" id="app-library" data-group="Using the app" data-title="Library &amp; imports">
+<h1>Library</h1>
+<p class="sub">your music, from everywhere</p>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-library.webp" alt="Library" width="450" height="1000" loading="lazy"><span class="mark" style="left:40%;top:27%">1</span><span class="mark" style="left:50%;top:36%">2</span></div>
+  <ol class="marks">
+    <li><b>filters.</b> all, local (files on your phone), cached and imported.</li>
+    <li><b>import.</b> bring playlists and likes from spotify, youtube music, apple music and tidal. it matches every song so it plays here.</li>
+  </ol>
+</div>
+<p>downloads live here too. they come from the best source in your download order (audio quality page), as one file the phone can play.</p>
+</article>
+
+<article class="page" id="app-audio" data-group="Using the app" data-title="Audio lab">
+<h1>Audio lab</h1>
+<p class="sub">make it sound like you want</p>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-audiolab.webp" alt="Audio Lab" width="450" height="1000" loading="lazy"></div>
+  <div>
+    <p>settings → audio lab. the equalizer, audio effects (reverb and friends), crossfade, and <b>audio quality</b>.</p>
+    <p>audio quality has the <b>provider order</b>: each song plays from the first provider thats on and has it. youtube music is one of them, modules that play songs are the others.</p>
+    <div class="flow"><div>Monochrome<small>lossless</small></div><i>→</i><div>your module</div><i>→</i><div>YouTube Music</div></div>
+  </div>
+</div>
+</article>
+
+<article class="page" id="app-stats" data-group="Using the app" data-title="Stats &amp; recap">
+<h1>Stats</h1>
+<p class="sub">replay it. look at the past.</p>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-stats.webp" alt="Stats" width="450" height="1000" loading="lazy"></div>
+  <div><p>profile → view stats. how long you listened, your top songs, artists and genres, per month or year.</p><p>the <b>recap</b> is the story version, like a wrapped, whenever you want.</p></div>
+</div>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-recap.webp" alt="Recap" width="450" height="1000" loading="lazy"></div>
+  <div><p>pick the month or the year and play through it.</p><p class="aside">all of this stays on your phone, mochy never sends it anywhere.</p></div>
+</div>
+</article>
+
+<article class="page" id="app-settings" data-group="Using the app" data-title="Settings &amp; data saver">
+<h1>Settings</h1>
+<p class="sub">everything, sorted</p>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-settings.webp" alt="Settings" width="450" height="1000" loading="lazy"><span class="mark" style="left:50%;top:18%">1</span><span class="mark" style="left:30%;top:52%">2</span></div>
+  <ol class="marks">
+    <li><b>search.</b> type any setting, it takes you right to it.</li>
+    <li><b>categories.</b> audio lab, app behaviour, customisation, storage, integrations, modules. pages that modules bring show up under modules.</li>
+  </ol>
+</div>
+<h2>Data saver</h2>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-behaviour.webp" alt="App behaviour" width="450" height="1000" loading="lazy"></div>
+  <div>
+    <p>app behaviour → <b>data saver</b>. try it:</p>
+    <div class="demo" id="saverDemo">
+      <div class="demo-row" style="justify-content:space-between"><b>Data saver</b><button class="switch press" type="button" data-k="on" aria-label="Data saver"></button></div>
+      <div class="demo-row" style="justify-content:space-between;margin-top:12px"><span style="color:#cfcfd5">Only on mobile data</span><button class="switch on press" type="button" data-k="mobile" aria-label="Only on mobile data"></button></div>
+      <p style="margin:16px 0 0;color:#a6a6ad;font-size:14.5px" id="saverText"></p>
+    </div>
+  </div>
+</div>
+</article>
+
+<article class="page" id="app-tv" data-group="Using the app" data-title="Mochy on TV">
+<h1>On TV</h1>
+<p class="sub">for the couch</p>
+<div class="phone" style="width:100%;aspect-ratio:16/9;border-radius:22px;margin:10px 0 24px"><img src="../assets/img/app-tv.webp" alt="Mochy on TV" width="960" height="540" loading="lazy"></div>
+<p>mochy shows up on android tv's home screen. the home page is laid out for a tv: the cover sits square at the right, and the first shelf shows without scrolling. the mini player and the tabs share one bar along the bottom.</p>
+</article>
+
+<!-- ============================== MODULES ============================== -->
+
+<article class="page" id="modules-types" data-group="Modules" data-title="1. Types of module">
+<h1>Types of module</h1>
+<p class="sub">what a module can add</p>
+<p>a module adds stuff to mochy without an app update. one module can add any mix of these:</p>
+<div class="cards">
+  <div><b>🎵 Songs</b><span>mochy asks it for the song thats playing, and plays the stream itself so every audio lab effect still works.</span></div>
+  <div><b>💬 Lyrics</b><span>goes first in the lyrics sources while it's on.</span></div>
+  <div><b>ℹ️ Song info</b><span>genre, release date, who wrote it, what its about. shows first in about song.</span></div>
+  <div><b>🎨 A look</b><span>restyles mochy: colours, a player of its own, a font, liquid glass, pages, menu rows.</span></div>
+</div>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-modules2.webp" alt="The modules page" width="450" height="1000" loading="lazy"><span class="mark" style="left:30%;top:9%">1</span><span class="mark" style="left:36%;top:30%">2</span><span class="mark" style="left:94%;top:40%">3</span></div>
+  <ol class="marks">
+    <li><b>look modules</b> only change how mochy looks.</li>
+    <li><b>JS &amp; source modules</b> bring songs, lyrics or song info.</li>
+    <li><b>drag the lines</b> to reorder, <b>swipe left</b> to delete. the order is the order songs and lyrics are asked in.</li>
+  </ol>
+</div>
+<h2>Which kind should i make?</h2>
+<div class="tbl"><table>
+<tr><th>you want to…</th><th>make a…</th><th>needs a server?</th></tr>
+<tr><td>restyle mochy, liquid glass, your own player</td><td>look, as a zip</td><td>no</td></tr>
+<tr><td>songs, lyrics or song info from a service</td><td>web module (a link)</td><td>yes</td></tr>
+<tr><td>songs from a javascript script</td><td>script for JS Modules</td><td>no</td></tr>
+<tr><td>code that runs inside mochy</td><td>zip with its own code</td><td>mochy devs only</td></tr>
+</table></div>
+<div class="note">nothing from a look or a web module runs inside mochy. they only hand back json and links, so anyone can make one and nobody has to trust it with the app.</div>
+</article>
+
+<article class="page" id="modules-first" data-group="Modules" data-title="2. Your first module">
+<h1>Your first module</h1>
+<p class="sub">two minutes, i promise</p>
+<div class="flow"><div>1. a folder<small>midnight/</small></div><i>→</i><div>2. manifest.json<small>+ icon.png</small></div><i>→</i><div>3. zip it</div><i>→</i><div>4. add from a file</div><i>→</i><div>5. turn it on</div></div>
+<pre><code class="json">{
+  "id": "midnight",
+  "name": "Midnight",
+  "version": "1.0",
+  "description": "Pure black, sharp corners, the turntable player",
+  "author": "you",
+  "icon": "icon.png",
+  "look": {
+    "playerStyle": "TURNTABLE",
+    "pureBlack": "true",
+    "thumbnailCornerRadius": "4"
+  }
+}</code></pre>
+<ol>
+  <li>make a folder called <code>midnight</code>, put that <code>manifest.json</code> in it with a square <code>icon.png</code>.</li>
+  <li>zip it. mac: right click → compress. windows: send to → compressed folder.</li>
+  <li>send the zip to your phone. in mochy: <b>settings → modules → add a module → add from a file</b>.</li>
+  <li>tap add, open its page and flip <b>enable</b>.</li>
+</ol>
+<p>thats a whole module! turn it off and your own settings come back, exactly how you had them.</p>
+</article>
+
+<article class="page" id="modules-manifest" data-group="Modules" data-title="3. manifest.json">
+<h1>manifest.json</h1>
+<p class="sub">field by field</p>
+<p>every module, link or zip, describes itself with one manifest. here's every field:</p>
+<div class="tbl"><table>
+<tr><th>field</th><th>needed?</th><th>what it's for</th></tr>
+<tr><td><code>id</code></td><td>id or name</td><td>short and stable, like <code>my-flac</code>. <b>never change it</b>, adding the same id again updates the module.</td></tr>
+<tr><td><code>name</code></td><td>id or name</td><td>what people see</td></tr>
+<tr><td><code>version</code></td><td>no</td><td>shown on its row, bump it when you change stuff</td></tr>
+<tr><td><code>description</code></td><td>no</td><td>one line under its name</td></tr>
+<tr><td><code>author</code></td><td>no</td><td>you!</td></tr>
+<tr><td><code>icon</code>, <code>banner</code></td><td>no</td><td><a href="#modules-art">pictures</a></td></tr>
+<tr><td><code>resources</code></td><td>no</td><td><code>search</code>+<code>stream</code> = songs, <code>lyrics</code>, <code>metadata</code> = song info</td></tr>
+<tr><td><code>settings</code></td><td>no</td><td><a href="#modules-settings">options people change</a></td></tr>
+<tr><td><code>look</code></td><td>no</td><td><a href="#modules-look">look settings</a></td></tr>
+<tr><td><code>player</code></td><td>no</td><td><a href="#modules-player">a player of your own</a></td></tr>
+<tr><td><code>font</code></td><td>no, zip only</td><td>your own font</td></tr>
+<tr><td><code>pages</code>, <code>actions</code></td><td>no</td><td><a href="#modules-pages">pages and menu rows</a></td></tr>
+<tr><td><code>glass</code></td><td>no, zip only</td><td><a href="#modules-glass">a glass shader</a></td></tr>
+<tr><td><code>url</code></td><td>zip only</td><td>the service a zip plays from</td></tr>
+</table></div>
+<div class="note warn">dont use <code>start_url</code>, <code>display</code>, <code>short_name</code> or <code>icons</code>: thats a website's manifest and mochy turns it away.</div>
+<p>fields mochy doesn't know are ignored, so a newer manifest still opens on an older mochy.</p>
+</article>
+
+<article class="page" id="modules-art" data-group="Modules" data-title="4. Icon &amp; banner">
+<h1>Icon &amp; banner</h1>
+<p class="sub">make it look like yours</p>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-module_page.webp" alt="A module's page" width="450" height="1000" loading="lazy"><span class="mark" style="left:50%;top:9%">1</span><span class="mark" style="left:14%;top:27%">2</span><span class="mark" style="left:60%;top:36%">3</span><span class="mark" style="left:50%;top:55%">4</span></div>
+  <ol class="marks">
+    <li><b>banner.</b> wide, about 2:1 (1200×600 is plenty). it fades into the page, and <b>the page takes its colour from it</b>.</li>
+    <li><b>icon.</b> square, 512×512 is plenty. mochy rounds the corners, so give it square ones.</li>
+    <li><b>name + dot.</b> green is on, grey is off, amber means it needs something.</li>
+    <li><b>enable.</b> the one switch.</li>
+  </ol>
+</div>
+<pre><code class="json">"icon": "icon.png",
+"banner": "images/banner.webp"</code></pre>
+<p>a path in your zip, a link, or (for a link module) a path next to its manifest. no banner? mochy blows your icon up and blurs it instead. no icon either? your first letter on a colour.</p>
+</article>
+
+<article class="page" id="modules-settings" data-group="Modules" data-title="5. Settings (options)">
+<h1>Settings</h1>
+<p class="sub">options people change on your module's page</p>
+<p>these show under <b>options</b>, like this (go on, press them):</p>
+<div class="demo">
+  <b style="font-size:14px">Region</b>
+  <div class="demo-row" style="margin:8px 0 16px" data-group="r"><button class="opt on press" type="button">United States</button><button class="opt press" type="button">Japan</button></div>
+  <div class="demo-row" style="justify-content:space-between"><span>Allow explicit songs</span><button class="switch on press" type="button" aria-label="Allow explicit songs"></button></div>
+</div>
+<pre><code class="json">"settings": [
+  { "key": "region", "label": "Region", "type": "select", "default": "us",
+    "options": [
+      { "value": "us", "label": "United States" },
+      { "value": "jp", "label": "Japan" }
+    ] },
+  { "key": "token", "label": "Your API key", "type": "text", "hint": "Paste it here" },
+  { "key": "explicit", "label": "Allow explicit songs", "type": "toggle", "default": "true" }
+]</code></pre>
+<div class="tbl"><table>
+<tr><th>type</th><th>looks like</th></tr>
+<tr><td><code>select</code></td><td>round rows to pick one from</td></tr>
+<tr><td><code>text</code></td><td>a line to type in (saved when you stop typing)</td></tr>
+<tr><td><code>toggle</code></td><td>a switch</td></tr>
+</table></div>
+<h2>Where the values go</h2>
+<div class="flow"><div>you pick<small>on the page</small></div><i>→</i><div>mochy keeps it</div><i>→</i><div>?region=jp<small>on every call</small></div></div>
+<p>a web module gets every setting as a query parameter. an option can also carry a <code>look</code> or a <code>glass</code>, so picking it restyles mochy. thats how one module offers "liquid" and "clear" glass.</p>
+</article>
+
+<article class="page" id="modules-look" data-group="Modules" data-title="6. Looks">
+<h1>Looks</h1>
+<p class="sub">restyle mochy, safely</p>
+<p>a look may only change these, so a module can never touch your accounts, network or playback:</p>
+<div class="tbl"><table>
+<tr><th>key</th><th>values</th></tr>
+<tr><td><code>bottomBar</code></td><td><code>FROSTED</code>, <code>MODULE</code> (your glass)</td></tr>
+<tr><td><code>playerStyle</code></td><td><code>FLAGSHIP</code>, <code>CLASSIC</code>, <code>TURNTABLE</code>, <code>VIDEO</code>, <code>IPOD</code>, <code>POSTER</code>, <code>TIMELINE</code>, <code>LYRICS</code>, <code>BEDSIDE</code>, <code>BEDSIDE_TILES</code>, <code>MODULE</code></td></tr>
+<tr><td><code>homeStyle</code></td><td><code>MOCHYY</code>, <code>LISTEN_NOW</code>, <code>HOP_IN</code></td></tr>
+<tr><td><code>playlistStyle</code></td><td><code>FLOW</code>, <code>CLASSIC</code>, <code>MINIMAL</code></td></tr>
+<tr><td><code>thumbnailCornerRadius</code></td><td>0 to 45</td></tr>
+<tr><td><code>accentColor</code></td><td><code>"#RRGGBB"</code></td></tr>
+<tr><td><code>dynamicTheme</code>, <code>pureBlack</code></td><td>true, false</td></tr>
+<tr><td><code>lyricsMotionStyle</code></td><td><code>MOTION</code>, <code>LEGACY</code>, <code>BORING</code>, <code>PLAIN</code></td></tr>
+<tr><td><code>blurQuality</code></td><td><code>LOW</code>, <code>HIGH</code></td></tr>
+<tr><td><code>blurStrengthPx</code></td><td>10 to 50</td></tr>
+<tr><td>+ player backgrounds, ipod theme...</td><td>see the <a href="https://github.com/realidkroo/Mochy-Music/blob/main/modules/README.md">full list</a></td></tr>
+</table></div>
+<div class="cards">
+  <div><b>one at a time</b><span>turning a second look on turns the first off and gives its settings back first.</span></div>
+  <div><b>you always win</b><span>change a setting by hand while a look is on, and you keep it when it goes off.</span></div>
+</div>
+</article>
+
+<article class="page" id="modules-player" data-group="Modules" data-title="7. Player style">
+<h1>Player Style</h1>
+<p class="sub">design your own now-playing screen</p>
+<p>a <code>player</code> is a list of blocks, top to bottom. you get swipe-to-skip, tap to pause and swipe-down-to-close for free.</p>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:24px;align-items:start" class="shotgrid">
+<pre><code class="json">"player": {
+  "name": "Vinyl",
+  "background": { "type": "blurredCover", "dim": 0.35 },
+  "blocks": [
+    { "type": "space", "grow": true },
+    { "type": "cover", "shape": "circle", "size": 0.78, "spin": true },
+    { "type": "title", "size": 26, "weight": "bold" },
+    { "type": "artist" },
+    { "type": "progress", "style": "line" },
+    { "type": "controls", "size": 56 },
+    { "type": "space", "grow": true }
+  ]
+}</code></pre>
+<div style="background:#2b1d14;border-radius:30px;padding:26px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;aspect-ratio:9/17">
+  <div style="flex:1"></div>
+  <div class="spin" style="width:130px;height:130px;border-radius:50%;background:conic-gradient(#e8b86b,#5a3a20,#e8b86b);animation:spin 6s linear infinite"></div>
+  <b style="font-size:18px">My Song</b><span style="color:#c9b79c;font-size:13px;margin-top:-10px">Someone</span>
+  <div style="width:80%;height:3px;background:#ffffff33;border-radius:3px"><div style="width:40%;height:3px;background:#fff;border-radius:3px"></div></div>
+  <div style="display:flex;gap:14px"><span style="width:30px;height:30px;border-radius:50%;background:#ffffff22"></span><span style="width:38px;height:38px;border-radius:50%;background:#ffffff33"></span><span style="width:30px;height:30px;border-radius:50%;background:#ffffff22"></span></div>
+  <div style="flex:1"></div>
+</div>
+</div>
+<p class="aside" style="margin-top:10px">↑ roughly what that turns into</p>
+<h2>Blocks</h2>
+<div class="cards">
+  <div><b>cover</b><span>shape, corner, size, spin like a record, a frame over it</span></div>
+  <div><b>title / artist / album / text</b><span>size, weight, colour, lines, upper</span></div>
+  <div><b>progress</b><span>line, thick or pill, seekable</span></div>
+  <div><b>controls</b><span>circles or plain</span></div>
+  <div><b>lyrics</b><span>the synced lyrics, sung through</span></div>
+  <div><b>row / column / space / image</b><span>to lay it all out</span></div>
+</div>
+<p>colours can be fixed (<code>#FFFFFF</code>) or follow the song: <code>ink</code>, <code>inkSoft</code>, <code>played</code>, <code>remaining</code>, <code>cover</code>, <code>accent</code>.</p>
+</article>
+
+<article class="page" id="modules-pages" data-group="Modules" data-title="8. Pages &amp; menu rows">
+<h1>Pages &amp; menu rows</h1>
+<p class="sub">add your own bits to the app</p>
+<h2>Pages</h2>
+<p>an about page, your favourite playlists, or a <b>settings page that shows in mochy's own settings</b> (add <code>"inSettings": true</code>).</p>
+<pre><code class="json">"pages": [
+  { "id": "glass", "title": "Liquid Glass", "inSettings": true, "blocks": [
+    { "type": "heading", "text": "Your glass" },
+    { "type": "setting", "key": "style" },
+    { "type": "playlist", "id": "PLxxxx", "title": "Late night picks" },
+    { "type": "button", "text": "Join us", "link": "https://discord.gg/NTmqVphbRY" }
+  ] }
+]</code></pre>
+<div class="flow"><div>heading</div><div>text</div><div>image</div><div>button</div><div>setting</div><div>song</div><div>playlist</div><div>album</div><div>artist</div><div>search</div><div>divider</div><div>space</div></div>
+<h2>Menu rows</h2>
+<p>rows in the player's ••• menu, under edit player. each opens a link, one of your pages, or a search, with the song filled in:</p>
+<pre><code class="json">"actions": [
+  { "title": "Find the lyrics on Genius", "link": "https://genius.com/search?q={artist}%20{title}" },
+  { "title": "Live versions", "search": "{title} {artist} live" }
+]</code></pre>
+<p><code>{title}</code>, <code>{artist}</code>, <code>{album}</code> and <code>{id}</code> get swapped for the song. links have to be https, so a row can never open another app.</p>
+</article>
+
+<article class="page" id="modules-glass" data-group="Modules" data-title="9. Liquid glass">
+<h1>Liquid glass</h1>
+<p class="sub">a glass of your own for the bottom bar</p>
+<p>a look can swap mochy's frosted bar for its own glass: an <b>AGSL shader</b> in your zip. mochy blurs whats under the bar and runs your shader over it. compare them here:</p>
+<div class="demo">
+  <div class="demo-row" data-group="g"><button class="opt on press" type="button" data-bar="frost">Mochy's frost</button><button class="opt press" type="button" data-bar="liquid">Liquid</button><button class="opt press" type="button" data-bar="clear">Clear</button></div>
+  <div class="glass-stage"><div class="bar frost" id="glassBar"></div></div>
+</div>
+<div class="flow"><div>what's under the bar</div><i>→</i><div>blur<small>glass.blur</small></div><i>→</i><div>your shader<small>glass.agsl</small></div><i>→</i><div>clipped to the bar</div></div>
+<pre><code class="json">"glass": {
+  "shader": "glass.agsl",
+  "blur": 7,
+  "margin": 22,
+  "uniforms": { "tintAlpha": 0.42, "bevel": 18, "strength": 14 }
+}</code></pre>
+<h2>What your shader gets</h2>
+<div class="tbl"><table>
+<tr><th>uniform</th><th>what it is</th></tr>
+<tr><td><code>shader content</code></td><td>whats under the bar, already blurred</td></tr>
+<tr><td><code>float2 size</code></td><td>the bar plus <code>margin</code> on each side, in px</td></tr>
+<tr><td><code>float margin</code>, <code>float radius</code></td><td>in px, the bars are stadiums</td></tr>
+<tr><td><code>float density</code></td><td>px per dp</td></tr>
+<tr><td><code>float quality</code></td><td>1 on high blur, 0 on low (skip your extras)</td></tr>
+<tr><td><code>layout(color) half4 chrome</code></td><td>mochy's bar colour</td></tr>
+</table></div>
+<pre><code>uniform shader content;
+uniform float2 size;
+uniform float margin;
+uniform float radius;
+uniform float density;
+layout(color) uniform half4 chrome;
+uniform float tintAlpha;
+
+float roundedBox(float2 p, float2 b, float r) {
+    float2 q = abs(p) - b + r;
+    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+}
+
+half4 main(float2 p) {
+    float2 c = size * 0.5;
+    float d = roundedBox(p - c, c - margin, radius);
+    float4 color = float4(content.eval(p));
+    color.rgb = mix(color.rgb, float4(chrome).rgb * color.a, tintAlpha);
+    float edge = 1.0 - smoothstep(0.0, 1.2 * density, -d);
+    color.rgb = mix(color.rgb, float3(color.a), edge * 0.4);
+    return half4(color);
+}</code></pre>
+<div class="note warn">keep it light! it runs on every bar, every frame, on slow phones too. a few reads of <code>content</code> per pixel at most. needs android 13, older phones keep the frost. if it doesnt compile, the module's page says why.</div>
+<p>the real <b>Liquid Glass</b> module (lens on the rim, colour fringe, lit edge, liquid/clear options) lives in its own project, <code>mochy-liquid-glass</code>. grab it from mochy's bar on discord.</p>
+</article>
+
+<article class="page" id="modules-web" data-group="Modules" data-title="10. Songs, lyrics &amp; song info">
+<h1>Web modules</h1>
+<p class="sub">songs, lyrics and song info from your server</p>
+<p>a web module is a tiny http service. mochy calls it with plain GETs and reads json back. people add it by pasting its link.</p>
+<div class="flow"><div>GET /manifest.json</div><div>GET /search?q=</div><div>GET /stream/{id}</div><div>GET /lyrics</div><div>GET /metadata</div></div>
+<h2>Playing a song</h2>
+<div class="flow"><div>song plays</div><i>→</i><div>/search<small>first artist + title</small></div><i>→</i><div>mochy picks the match<small>studio, not the remix</small></div><i>→</i><div>/stream/{id}</div><i>→</i><div>plays it</div></div>
+<pre><code class="json">{ "tracks": [ { "id": "123", "title": "Eastside", "artist": "benny blanco, Halsey, Khalid",
+                "album": "Eastside", "duration": 173, "isrc": "USUM71809132" } ] }</code></pre>
+<pre><code class="json">{ "url": "https://…/123.flac", "codec": "flac", "quality": "LOSSLESS", "sampleRate": 44100, "bitDepth": 16 }</code></pre>
+<div class="note">give <code>duration</code> in seconds and the <code>isrc</code> if you have it, thats how mochy tells the real song from a live take or a sped up one.</div>
+<h2>Lyrics</h2>
+<pre><code class="json">{ "syncedLyrics": "[00:12.34] first line\n[00:15.80] second line" }</code></pre>
+<h2>Song info</h2>
+<pre><code class="json">{ "album": "Short n' Sweet", "releaseDate": "2024-04-11", "genres": ["Pop"],
+  "writers": ["Sabrina Carpenter", "Amy Allen"], "label": "Island",
+  "about": "A playful summer song." }</code></pre>
+<p>a cloudflare worker, deno deploy, vercel or netlify can host it for free. github alone can't, it only serves files.</p>
+</article>
+
+<article class="page" id="modules-zip" data-group="Modules" data-title="11. Zips &amp; JS scripts">
+<h1>Zips &amp; scripts</h1>
+<p class="sub">share a module as one file</p>
+<div class="tbl"><table>
+<tr><th>in the zip</th><th>what happens</th></tr>
+<tr><td>manifest.json (root or one folder in)</td><td>read</td></tr>
+<tr><td>.png .jpg .webp .gif .ttf .otf .agsl</td><td>unpacked, keeping their paths</td></tr>
+<tr><td>anything else</td><td>ignored</td></tr>
+</table></div>
+<p>a zip that plays songs needs a <code>url</code> to its service. a look lives on the phone and never touches the network.</p>
+<h2>JS Modules</h2>
+<p>JS Modules is a module that runs javascript scripts. add it from a file, then add scripts on its page. a script can export any of these:</p>
+<pre><code class="js">module.exports = {
+  async searchTracks(query, limit, context) { /* songs */ },
+  async getTrackStreamUrl(id, quality, context) { /* songs */ },
+  async getTrackLyrics(track, context) { return { syncedLyrics: '[00:01.00] hi' }; },
+  async getTrackMetadata(track, context) { return { genres: ['Pop'] }; }
+};</code></pre>
+<p>every script is asked at once and the best answer wins. each one on the page has a dot: green if it worked last time, amber if not (and the line under it says why).</p>
+</article>
+
+<article class="page" id="modules-share" data-group="Modules" data-title="12. Sharing &amp; the catalog">
+<h1>Sharing</h1>
+<p class="sub">get it to other people</p>
+<div class="cards">
+  <a class="press" href="https://discord.gg/NTmqVphbRY"><b>Mochy's Bar</b><span>post the zip or the link on discord, thats where people find modules</span></a>
+  <a class="press" href="https://github.com/realidkroo/Mochy-Music/blob/main/modules/catalog.json"><b>The catalog</b><span>open a pull request to catalog.json and it shows under add a module</span></a>
+</div>
+<pre><code class="json">{ "name": "My FLAC", "description": "My own library, lossless",
+  "url": "https://my-flac.example", "icon": "https://my-flac.example/icon.png",
+  "adds": ["audio", "lyrics", "metadata", "look"], "author": "someone" }</code></pre>
+<p class="aside">pull requests are checked by hand. shady or broken stuff isnt merged.</p>
+</article>
+
+<article class="page" id="modules-test" data-group="Modules" data-title="13. Testing it">
+<h1>Testing</h1>
+<p class="sub">does it actually work?</p>
+<div class="shot">
+  <div class="phone"><img src="../assets/img/app-module_page2.webp" alt="Testing a module" width="450" height="1000" loading="lazy"></div>
+  <div>
+    <p>at the bottom of your module's page: <b>test the module</b>. search any song (or take the one playing) and tap it. mochy runs everything your module does with it, right on the phone, step by step:</p>
+    <div class="flow"><div>find the song</div><i>→</i><div>stream</div><i>→</i><div>license</div><i>→</i><div>decode 2 s</div></div>
+    <p>lyrics modules show how many lines came back, song info modules show the facts.</p>
+  </div>
+</div>
+<pre><code>curl https://my-flac.example/manifest.json
+curl "https://my-flac.example/search?q=benny%20blanco%20eastside"
+adb logcat -s ModuleTest SourceModules ModuleMetadata</code></pre>
+</article>
+
+<article class="page" id="modules-how" data-group="Modules" data-title="14. How mochy uses it">
+<h1>How mochy uses it</h1>
+<p class="sub">behind the scenes</p>
+<div class="flow"><div>song plays</div><i>→</i><div>provider order<small>audio quality</small></div><i>→</i><div>first that has it</div><i>→</i><div>can the phone decode it?</div><i>→</i><div>plays</div></div>
+<ul>
+  <li>a song your module doesn't have is remembered for 30 min, so it isnt asked again every play.</li>
+  <li>a module that doesn't answer is left alone for 10 min.</li>
+  <li>downloads have their own order, and need one whole file (no hls/dash).</li>
+  <li><b>data saver</b> asks for <code>High</code> instead of lossless, youtube plays its lightest stream.</li>
+</ul>
+</article>
+
+<article class="page" id="modules-trouble" data-group="Modules" data-title="15. Rules &amp; troubleshooting">
+<h1>Rules &amp; help</h1>
+<p class="sub">please read this one</p>
+<h2>Rules</h2>
+<ul>
+  <li>https for everything.</li>
+  <li>answer fast (mochy waits 12 s to connect, 20 s for an answer).</li>
+  <li>keep ids stable, be honest in search results.</li>
+  <li>never put secrets in a manifest you share, a link with your key in it <b>is</b> your password.</li>
+  <li>dont pretend to be someone else.</li>
+</ul>
+<h2>Something's off</h2>
+<div class="tbl"><table>
+<tr><th>you see</th><th>why</th></tr>
+<tr><td>"That's a website, not a module"</td><td>you pasted a website, use the module's link or its manifest.json</td></tr>
+<tr><td>"That file isn't a module"</td><td>no manifest.json at the root or one folder in</td></tr>
+<tr><td>my icon doesn't show</td><td>paths are case sensitive, png/jpg/webp/gif under 8 MB</td></tr>
+<tr><td>my glass doesn't show</td><td>module on? android 13? blur on? the page says if the shader failed</td></tr>
+<tr><td>songs still come from youtube</td><td>check the provider order, or it was skipped after not answering</td></tr>
+<tr><td>a script has an amber dot</td><td>it failed last time, the line under it says why</td></tr>
+</table></div>
+<div class="note warn">modules are made by other people. reports about a 3rd party module will be ignored, ask whoever made it!</div>
+</article>
+
+<!-- ============================== MORE ============================== -->
+
+<article class="page" id="roadmap" data-group="More" data-title="Roadmap">
+<h1>Roadmap</h1>
+<p class="sub">what's done, what's next</p>
+<div class="cards">
+  <div><b>Done ✓</b><span>modules revamp, liquid glass module, data saver, revamped profile, gesture custom, lyrics offset, discord integration, lyrics share, ipod styles, storage usage, device output, playlist revamp, tv layout</span></div>
+  <div><b>Next</b><span>better crossmix, lastfm integration, voice and music recognition, search on downloads, and as always bugs fixing</span></div>
+</div>
+<p class="aside">plans may change as development progresses. the live list is <a href="https://github.com/realidkroo/Mochy-Music/blob/main/Roadmap.md">Roadmap.md</a>.</p>
+</article>
+
+<article class="page" id="devs" data-group="More" data-title="For mochy devs">
+<h1>For devs</h1>
+<p class="sub">working on mochy itself</p>
+<p>the module contract is <code>modules/api/.../MochyModule.kt</code>. a module implements any of: <code>SourceModule</code>, <code>LyricsModule</code>, <code>MetadataModule</code>, <code>LookModule</code>, <code>ModuleArt</code>, <code>ModuleFields</code>.</p>
+<div class="flow"><div>modules/api<small>the contract</small></div><i>→</i><div>modules/bridge<small>json both ways</small></div><i>→</i><div>app/modules<small>registry, web, local</small></div><i>→</i><div>ui/settings/modules<small>the pages</small></div></div>
+<p>the long version, with every rule, is the <a href="https://github.com/realidkroo/Mochy-Music/blob/main/modules/README.md">module README</a>. and please read CLAUDE.md before touching anything perf related, a lot of work went into keeping it smooth.</p>
+<pre><code>./gradlew :app:compileArm64FossDebugKotlin
+./gradlew :modules:bridge:test</code></pre>
+</article>
+
+<nav class="next" id="next"></nav>
+</main>
+</div>
+<script src="../assets/js/site.js" defer></script>
+<script src="../assets/js/wiki.js" defer></script>
+</body>
+</html>

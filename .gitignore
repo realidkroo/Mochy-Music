@@ -45,7 +45,12 @@ apk-generated/
 plan.md
 implementation_plan.md
 transcript_*.txt
-docs/
+docs/*
+!docs/index.html
+!docs/.nojekyll
+!docs/assets/
+!docs/wiki/
+!docs/modules/
 
 # Logs, crash dumps & API response dumps
 *.log

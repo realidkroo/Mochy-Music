@@ -1102,7 +1102,7 @@ An older Mochy skips a block it doesn't know, so adding one never breaks older l
 
 - New manifest fields go in `WebModuleManifest`, always with a default, so every manifest out there keeps working.
 - New calls or answer fields go in `WebModule`. Read new fields as optional, and keep reading the old ones.
-- Update this README in the same change, then run `python3 docs/modules/embed_readme.py` so `docs/modules/index.html`, the same guide as a page, carries it too.
+- Update this README in the same change, and the matching page of the wiki in `docs/wiki/index.html`.
 
 ### Adding a built-in module
 
