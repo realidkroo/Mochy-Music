@@ -140,6 +140,9 @@ constructor(
         ) { dataSpec ->
             val mediaId = dataSpec.key ?: error("No media id")
 
+            // a tv copying a song its linked phone already has takes the phone's file, the very same song and much quicker
+            com.mochyy.mochymusic.link.PhoneFiles.streamUrl(mediaId)?.let { return@Factory dataSpec.withUri(it.toUri()) }
+
             moduleDownload(mediaId)?.let { found ->
                 return@Factory dataSpec.buildUpon()
                     .setUri(found.url.toUri())

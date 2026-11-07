@@ -45,6 +45,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
+import com.mochyy.mochymusic.link.isTelevision
 
 // how long after the launch intro the PoToken WebView may boot (Home's reveal runs ~1s)
 private const val PoTokenAfterIntroMillis = 2_500L
@@ -58,6 +59,10 @@ class App : Application(), SingletonImageLoader.Factory {
 
     @Inject
     lateinit var musicDatabase: com.mochyy.mochymusic.db.MusicDatabase
+
+    // only built once a tv is paired, it pulls in the downloads
+    @Inject
+    lateinit var phoneLink: dagger.Lazy<com.mochyy.mochymusic.link.phone.PhoneLinkHost>
 
     override fun onCreate() {
         // before super, because that's where hilt builds the database and the player caches
@@ -127,6 +132,14 @@ class App : Application(), SingletonImageLoader.Factory {
                 kotlinx.coroutines.delay(PoTokenAfterIntroMillis)
                 com.mochyy.mochymusic.utils.YTPlayerUtils.preWarmPoToken()
             }
+        }
+
+        applicationScope.launch(Dispatchers.IO) {
+            // a paired tv can reach this phone again as soon as mochy is up, after the intro has had the main thread
+            if (isTelevision() || !com.mochyy.mochymusic.link.phone.PhoneLinkHost.hasPairedTvs(this@App)) return@launch
+            com.mochyy.mochymusic.ui.launch.LaunchGate.awaitIntro()
+            phoneLink.get().refresh()
+            com.mochyy.mochymusic.link.phone.PhoneLinkService.start(this@App)
         }
 
         applicationScope.launch(Dispatchers.IO) {

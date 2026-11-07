@@ -229,6 +229,7 @@ private val SettingsIndex = listOf(
     SettingsEntry("Remove all downloads", "Storage", "storage_settings", "delete clear downloads offline space"),
 
     // Experimental
+    SettingsEntry("Mochy on your TV", "Import & sync", com.mochyy.mochymusic.ui.screens.settings.tvlink.TvLinkRoute, "tv television android tv google tv pair link phone sync stream downloads big screen"),
     SettingsEntry("Import & sync", "Experimental", "experimental_settings", "import spotify apple music deezer tidal tunemymusic csv youtube sync export backup transfer"),
     SettingsEntry("Big disc cover styles", "Experimental", "experimental_settings", "disc vinyl cover"),
     SettingsEntry("Music haptics", "Experimental", "experimental_settings", "vibration haptic"),

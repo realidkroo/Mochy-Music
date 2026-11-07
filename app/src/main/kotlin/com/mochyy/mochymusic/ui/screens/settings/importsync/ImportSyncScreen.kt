@@ -15,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -104,6 +105,14 @@ fun ImportSyncScreen(
                     icon = painterResource(R.drawable.sync),
                     iconShape = CircleShape,
                     onClick = { navController.navigate(YouTubeSyncRoute) },
+                ),
+                SettingsItem(
+                    title = { Text(stringResource(R.string.tv_link_title)) },
+                    highlightKey = "Mochy on your TV",
+                    descriptionText = stringResource(R.string.tv_link_row_detail),
+                    icon = painterResource(R.drawable.smartphone),
+                    iconShape = CircleShape,
+                    onClick = { navController.navigate(com.mochyy.mochymusic.ui.screens.settings.tvlink.TvLinkRoute) },
                 ),
                 SettingsItem(
                     title = { Text("TuneMyMusic CSV") },

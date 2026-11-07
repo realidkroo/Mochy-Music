@@ -59,6 +59,7 @@ val SettingsPaneRoutes = setOf(
     "experimental_settings",
     "playback_diagnostics",
     ImportSyncRoute,
+    com.mochyy.mochymusic.ui.screens.settings.tvlink.TvLinkRoute,
     "import_providers",
     "import_tunemymusic",
     "import_progress",

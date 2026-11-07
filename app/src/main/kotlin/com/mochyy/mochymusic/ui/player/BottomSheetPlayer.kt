@@ -277,11 +277,26 @@ private fun PlayerSheet(
 
     // the player studio: the selector the player shrinks into, and the flagship's in-place editor
     // a look module with a player of its own puts that style first in the selector, for as long as it's on
-    val hasModuleStyle = com.mochyy.mochymusic.modules.skin.ActiveSkin.current?.player != null
+    val onTv = com.mochyy.mochymusic.ui.utils.isTvLayout()
+    val hasModuleStyle = !onTv && com.mochyy.mochymusic.modules.skin.ActiveSkin.current?.player != null
     // the selector's columns, as indexes into PlayerStyle.entries: the flagship with its older layouts under it
-    val selectorColumns = remember(hasModuleStyle) {
+    val selectorColumns = remember(hasModuleStyle, onTv) {
         val columns = if (hasModuleStyle) listOf(listOf(PlayerStyle.MODULE)) + PlayerStyle.selectorColumns else PlayerStyle.selectorColumns
-        columns.map { column -> column.map { it.ordinal } }
+        // a tv only offers the looks made for it
+        val shown = if (onTv) columns.map { column -> column.filter { it.availableOnTv } }.filter { it.isNotEmpty() } else columns
+        shown.map { column -> column.map { it.ordinal } }
+    }
+    // the tv's remote opens the lyrics and the queue from outside the player
+    if (onTv) {
+        LaunchedEffect(transition) {
+            TvPlayerRemote.commands.collect { command ->
+                when (command) {
+                    TvPlayerCommand.Lyrics -> if (transition.page == PlayerPage.LYRICS) transition.close() else transition.open(PlayerPage.LYRICS)
+                    TvPlayerCommand.Queue -> if (transition.page == PlayerPage.QUEUE) transition.close() else transition.open(PlayerPage.QUEUE)
+                    TvPlayerCommand.ClosePage -> if (transition.page != PlayerPage.NONE) transition.close()
+                }
+            }
+        }
     }
     val studio = com.mochyy.mochymusic.ui.player.studio.rememberPlayerStudioState(selectorColumns)
     val studioAnchors = remember { com.mochyy.mochymusic.ui.player.studio.StudioAnchors() }
@@ -329,7 +344,10 @@ private fun PlayerSheet(
     // card - the old style grew, then the new one was built mid-spring, and the spring stuttered.
     var pickedPlayerStyle by remember { mutableStateOf<PlayerStyle?>(null) }
     // the module style draws the look that's on; with none on, the flagship stands in
-    val playerStyle = (pickedPlayerStyle ?: savedPlayerStyle).let { if (it == PlayerStyle.MODULE && !hasModuleStyle) PlayerStyle.FLAGSHIP else it }
+    val playerStyle = (pickedPlayerStyle ?: savedPlayerStyle)
+        .let { if (it == PlayerStyle.MODULE && !hasModuleStyle) PlayerStyle.FLAGSHIP else it }
+        // a phone's ipod or turntable picked before the tv had its own list lands on the flagship there
+        .let { if (onTv && !it.availableOnTv) PlayerStyle.FLAGSHIP else it }
     LaunchedEffect(savedPlayerStyle) {
         if (savedPlayerStyle == pickedPlayerStyle) pickedPlayerStyle = null
     }

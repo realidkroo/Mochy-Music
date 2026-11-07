@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- the tv link: a quiet background service so a paired tv can reach the phone, and the wi-fi discovery it needs -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- lets the player ask a usb dac to run at the song's own rate, or bit-perfect, on android 14+ -->
@@ -77,6 +80,20 @@
             android:excludeFromRecents="true"
             android:process=":crash" />
 
+        <!-- the big-screen app; the tv home screen only lists main + leanback launcher, so this is what a tv opens -->
+        <activity
+            android:name=".ui.tv.TvActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode"
+            android:theme="@style/Theme.mochy"
+            android:windowSoftInputMode="adjustNothing">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <!-- a turn of the phone only lays compose out again, so the open player, its video and any sheet carry on instead of starting over -->
         <activity
             android:name=".MainActivity"
@@ -88,11 +105,6 @@
             <!-- not in the launcher itself: one of the icon aliases below is, the one picked in customisation -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-            <!-- the tv home screen only lists main + leanback launcher, the phone launcher icons stay on the aliases -->
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -1034,6 +1046,21 @@
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
+
+        <!-- keeps a paired tv able to reach this phone while mochy is closed -->
+        <service
+            android:name=".link.phone.PhoneLinkService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+        <receiver
+            android:name=".link.phone.PhoneLinkBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <service
             android:name=".playback.ExoDownloadService"

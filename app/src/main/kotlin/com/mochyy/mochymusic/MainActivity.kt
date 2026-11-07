@@ -74,6 +74,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import com.mochyy.mochymusic.ui.component.WideBarPillGap
 import com.mochyy.mochymusic.ui.utils.isWideLayout
+import com.mochyy.mochymusic.link.isTelevision
 import com.mochyy.mochymusic.ui.utils.stableSystemBars
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
@@ -397,6 +398,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen().handOffToLaunchIntro { introPlays }
         super.onCreate(savedInstanceState)
+        // a tv that opens the phone app from an old shortcut gets the big-screen one instead
+        if (savedInstanceState == null && intent?.action == Intent.ACTION_MAIN && isTelevision()) {
+            startActivity(Intent(this, com.mochyy.mochymusic.ui.tv.TvActivity::class.java))
+            finish()
+            return
+        }
         introRequested = savedInstanceState == null && intent?.action == Intent.ACTION_MAIN
         if (introRequested) LaunchGate.begin() else LaunchGate.skip()
         // kept in step with the icon in use, in case it was switched some way other than customisation
@@ -1506,6 +1513,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleDeepLinkIntent(intent: Intent, navController: NavHostController) {
+        // the tv link's notification opens its settings page
+        if (intent.action == com.mochyy.mochymusic.link.phone.PhoneLinkService.ActionOpenTvLink) {
+            intent.action = null
+            navController.navigate(com.mochyy.mochymusic.ui.screens.settings.tvlink.TvLinkRoute)
+            return
+        }
         if (importSharedAudio(intent)) return
         val uri = intent.data ?: intent.extras?.getString(Intent.EXTRA_TEXT)?.toUri() ?: return
         intent.data = null

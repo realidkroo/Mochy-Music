@@ -667,6 +667,9 @@ enum class PlayerStyle(val displayName: String, val selectorName: String) {
     // the two flagships the full editor works on: cover, middle part, controls and bottom bar
     val hasFullEditor: Boolean get() = this == FLAGSHIP || this == CLASSIC
 
+    // the looks that read well across a room and stay smooth on a tv's gpu; the rest stay on phones
+    val availableOnTv: Boolean get() = this == FLAGSHIP || this == POSTER || this == VIDEO || this == TIMELINE || isBedside
+
     companion object {
         /** the styles these replaced, so a stored choice lands on its nearest successor */
         fun fromStored(name: String?): PlayerStyle? = when (name) {

@@ -459,6 +459,10 @@ fun NavGraphBuilder.navigationBuilder(
         com.mochyy.mochymusic.ui.screens.settings.importsync.ImportSyncScreen(navController = navController)
     }
 
+    composable(com.mochyy.mochymusic.ui.screens.settings.tvlink.TvLinkRoute) {
+        com.mochyy.mochymusic.ui.screens.settings.tvlink.TvLinkScreen(navController = navController)
+    }
+
     composable(com.mochyy.mochymusic.ui.screens.settings.importsync.ImportProvidersRoute) {
         com.mochyy.mochymusic.ui.screens.settings.importsync.ImportProvidersScreen(navController = navController)
     }

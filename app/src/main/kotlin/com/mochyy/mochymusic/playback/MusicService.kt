@@ -3701,6 +3701,9 @@ class MusicService :
                 )
             }
 
+            // a song streamed from the linked phone goes to the phone's address as it is
+            if (mediaId.startsWith(com.mochyy.mochymusic.link.PhoneFiles.CacheKeyPrefix)) return@Factory dataSpec
+
             val shouldBypassCache = bypassCacheForQualityChange.contains(mediaId)
 
             val scheme = dataSpec.uri.scheme
@@ -4604,6 +4607,16 @@ class MusicService :
             return com.mochyy.mochymusic.playback.custom.CustomStreamResult(
                 streamUrl = uri?.toString() ?: mediaId,
                 source = "your downloads",
+            )
+        }
+        // on a tv, the linked phone's downloads and song files stream from the phone over the wi-fi
+        com.mochyy.mochymusic.link.PhoneFiles.streamUrl(mediaId)?.let { url ->
+            forgetModuleFacts(mediaId)
+            notePlayingFrom(mediaId, PlayingFrom(PlayingFrom.Device, "Your phone"))
+            return com.mochyy.mochymusic.playback.custom.CustomStreamResult(
+                streamUrl = url,
+                source = "your phone",
+                cacheKey = com.mochyy.mochymusic.link.PhoneFiles.cacheKeyOf(mediaId),
             )
         }
         return null

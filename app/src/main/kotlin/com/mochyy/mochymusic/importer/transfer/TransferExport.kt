@@ -59,12 +59,12 @@ class TransferExporter @Inject constructor(
         onProgress(0f)
         val library = File(work, "library.db")
         val live = database.openHelper.writableDatabase
-        snapshot(File(requireNotNull(live.path)), library, begin = live::beginTransaction, end = live::endTransaction)
+        snapshotDatabase(File(requireNotNull(live.path)), library, begin = live::beginTransaction, end = live::endTransaction)
 
         val media = File(work, "media.db")
         val liveMedia = databaseProvider.writableDatabase
         val hasMedia = runCatching {
-            snapshot(File(liveMedia.path), media, begin = liveMedia::beginTransaction, end = liveMedia::endTransaction)
+            snapshotDatabase(File(liveMedia.path), media, begin = liveMedia::beginTransaction, end = liveMedia::endTransaction)
             dropStreamingCacheIndex(media)
         }.isSuccess
 
@@ -115,27 +115,6 @@ class TransferExporter @Inject constructor(
         } finally {
             if (!wasPaused) withContext(Dispatchers.Main) { manager.resumeDownloads() }
         }
-    }
-
-    // copies a live database while holding its write lock, so nothing lands halfway, then folds its wal into one plain file
-    private fun snapshot(source: File, target: File, begin: () -> Unit, end: () -> Unit) {
-        val targetWal = File(target.path + "-wal")
-        target.delete()
-        targetWal.delete()
-        begin()
-        try {
-            source.copyTo(target, overwrite = true)
-            File(source.path + "-wal").takeIf { it.exists() }?.copyTo(targetWal, overwrite = true)
-        } finally {
-            end()
-        }
-        SQLiteDatabase.openDatabase(target.path, null, SQLiteDatabase.OPEN_READWRITE).use { copy ->
-            foldIntoOneFile(copy)
-            copy.rawQuery("PRAGMA quick_check", null).use { cursor ->
-                check(cursor.moveToFirst() && cursor.getString(0).equals("ok", ignoreCase = true)) { "snapshot of ${source.name} failed its check" }
-            }
-        }
-        listOf("-wal", "-shm", "-journal").forEach { File(target.path + it).delete() }
     }
 
     // the streaming cache stays behind, so its tables in media3's database go too

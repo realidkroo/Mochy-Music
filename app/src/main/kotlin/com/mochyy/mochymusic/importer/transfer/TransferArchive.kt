@@ -38,6 +38,7 @@ import com.mochyy.mochymusic.constants.TurnstileBypassTokenKey
 import com.mochyy.mochymusic.constants.VisitorDataKey
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 
 /** the layout of a transfer zip, written by the export and read back by the import, so both sides agree on every name */
 internal object TransferArchive {
@@ -182,6 +183,27 @@ internal fun foldIntoOneFile(db: SQLiteDatabase) {
     db.rawQuery("PRAGMA wal_checkpoint(TRUNCATE)", null).use { cursor ->
         check(cursor.moveToFirst() && cursor.getInt(0) == 0) { "couldn't fold the wal into ${db.path}" }
     }
+}
+
+// copies a live database while holding its write lock, so nothing lands halfway, then folds its wal into one plain file
+internal fun snapshotDatabase(source: File, target: File, begin: () -> Unit, end: () -> Unit) {
+    val targetWal = File(target.path + "-wal")
+    target.delete()
+    targetWal.delete()
+    begin()
+    try {
+        source.copyTo(target, overwrite = true)
+        File(source.path + "-wal").takeIf { it.exists() }?.copyTo(targetWal, overwrite = true)
+    } finally {
+        end()
+    }
+    SQLiteDatabase.openDatabase(target.path, null, SQLiteDatabase.OPEN_READWRITE).use { copy ->
+        foldIntoOneFile(copy)
+        copy.rawQuery("PRAGMA quick_check", null).use { cursor ->
+            check(cursor.moveToFirst() && cursor.getString(0).equals("ok", ignoreCase = true)) { "snapshot of ${source.name} failed its check" }
+        }
+    }
+    listOf("-wal", "-shm", "-journal").forEach { File(target.path + it).delete() }
 }
 
 /** what the manifest says about a zip, enough to check it and to tell the user what's inside */
