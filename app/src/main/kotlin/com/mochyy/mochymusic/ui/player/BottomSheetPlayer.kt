@@ -463,6 +463,11 @@ private fun PlayerSheet(
                 navController.navigate("album/$albumId")
                 state.collapseSoft()
             },
+            onOpenRoute = { route ->
+                navController.navigate(route)
+                state.collapseSoft()
+            },
+            onClose = { state.collapseSoft() },
         )
     }
 

@@ -33,6 +33,10 @@ internal interface SkinSource {
 @Immutable
 class ActiveGlass(val moduleId: String, val shader: Any, val blurDp: Float, val marginDp: Float, val uniforms: Map<String, Float>)
 
+/** one of the player's shaders, compiled, with the uniform names its source declares so a frame only sets those */
+@Immutable
+class SkinProgram(val shader: Any, val declared: Set<String>)
+
 object ActiveSkin {
     var current: ModuleSkin? by mutableStateOf(null)
         private set
@@ -45,18 +49,27 @@ object ActiveSkin {
     var glassProblem: Pair<String, String>? by mutableStateOf(null)
         private set
 
+    /** what each of the look's own settings is set to, for the player's conditions and setting colours */
+    var values: Map<String, String> by mutableStateOf(emptyMap())
+        private set
+
+    /** the player's shaders by file name, the ones that compiled; empty below android 13 */
+    var shaders: Map<String, SkinProgram> by mutableStateOf(emptyMap())
+        private set
+
     @Volatile
-    private var requested: Pair<ModuleSkin?, SkinGlass?>? = null
+    private var requested: Triple<ModuleSkin?, SkinGlass?, Map<String, String>>? = null
 
     // the font and the compiled shader last loaded, so a settings change that only moves a uniform reloads neither
     private var fontFor: ModuleSkin? = null
     private var family: FontFamily? = null
     private var shaderKey: String? = null
     private var shader: Any? = null
+    private val programs = mutableMapOf<String, SkinProgram>()
 
-    /** called on every refresh of the switches; the font and the shader load off the main thread, then everything changes on it together */
-    internal fun publish(skin: ModuleSkin?, look: SkinGlass?, scope: CoroutineScope) {
-        val asked = skin to look
+    /** called on every refresh of the switches; the font and the shaders load off the main thread, then everything changes on it together */
+    internal fun publish(skin: ModuleSkin?, look: SkinGlass?, settings: Map<String, String>, scope: CoroutineScope) {
+        val asked = Triple(skin, look, settings)
         if (asked == requested) return
         requested = asked
         scope.launch(Dispatchers.IO) {
@@ -66,19 +79,51 @@ object ActiveSkin {
                     fontFor = skin
                 }
                 val compiled = if (skin != null && look != null) compile(skin, look) else Compiled(null, null)
-                Triple(family, compiled, look)
+                Loaded(family, compiled, look, skin?.let(::compilePlayer).orEmpty())
             }
             withContext(Dispatchers.Main) {
                 if (requested != asked) return@withContext
-                val (fonts, compiled, wanted) = loaded
                 current = skin
-                LookFont.family = fonts
-                glass = if (skin != null && wanted != null && compiled.shader != null) {
-                    ActiveGlass(skin.moduleId, compiled.shader, wanted.blurDp, wanted.marginDp, wanted.uniforms)
+                LookFont.family = loaded.fonts
+                glass = if (skin != null && loaded.wanted != null && loaded.compiled.shader != null) {
+                    ActiveGlass(skin.moduleId, loaded.compiled.shader, loaded.wanted.blurDp, loaded.wanted.marginDp, loaded.wanted.uniforms)
                 } else null
-                glassProblem = compiled.problem?.let { skin?.moduleId.orEmpty() to it }
+                val problem = loaded.compiled.problem ?: playerProblem
+                glassProblem = problem?.let { skin?.moduleId.orEmpty() to it }
+                if (shaders != loaded.programs) shaders = loaded.programs
+                if (values != settings) values = settings
             }
         }
+    }
+
+    private class Loaded(val fonts: FontFamily?, val compiled: Compiled, val wanted: SkinGlass?, val programs: Map<String, SkinProgram>)
+
+    // why a player shader didn't compile, shown on the module's page next to a glass problem
+    private var playerProblem: String? = null
+
+    // each of the player's shader files, compiled once and kept while the file stays the same
+    private fun compilePlayer(skin: ModuleSkin): Map<String, SkinProgram> {
+        playerProblem = null
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || skin.playerShaders.isEmpty()) return emptyMap()
+        return skin.playerShaders.mapNotNull { name ->
+            val file = skin.fontFile(name)?.takeIf { it.isFile && it.length() <= MaxShaderBytes }
+            if (file == null) {
+                playerProblem = "its player shader $name isn't in the module, or is bigger than ${MaxShaderBytes / 1024} KB"
+                return@mapNotNull null
+            }
+            val key = "${file.path}:${file.lastModified()}:${file.length()}"
+            programs[key]?.let { return@mapNotNull name to it }
+            try {
+                val source = file.readText()
+                val program = SkinProgram(createAgslShader(source), DeclaredUniform.findAll(source).map { it.groupValues[1] }.toSet())
+                programs[key] = program
+                name to program
+            } catch (e: Exception) {
+                Timber.tag("ActiveSkin").w(e, "Couldn't compile the player's shader $name")
+                playerProblem = "$name: " + (e.message?.lineSequence()?.firstOrNull { it.isNotBlank() }?.trim()?.take(200) ?: e.javaClass.simpleName)
+                null
+            }
+        }.toMap()
     }
 
     private class Compiled(val shader: Any?, val problem: String?)
@@ -118,6 +163,8 @@ object ActiveSkin {
     }.onFailure { Timber.tag("ActiveSkin").w(it, "Couldn't load the look's font") }.getOrNull()
 
     private const val MaxShaderBytes = 64 * 1024
+    // "uniform float time;" or "layout(color) uniform half4 played;", the name is what a frame may set
+    private val DeclaredUniform = Regex("""\buniform\s+\w+\s+(\w+)\s*[;\[]""")
 }
 
 /** the look as it's applied: a module with its own player or glass switches to it, and a fixed accent turns the cover-coloured theme off */

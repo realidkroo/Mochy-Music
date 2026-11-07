@@ -236,8 +236,9 @@ class ModuleRegistry @Inject constructor(
         }.sortedBy { entry -> order.indexOf(entry.id).let { if (it < 0) Int.MAX_VALUE else it } }
         _entries.value = list
         // the look that's on now, for the player's module style and the app's font
-        val restyling = list.firstOrNull { it.active && (it.module as? SkinSource)?.skin?.restyles == true }?.module as? SkinSource
-        ActiveSkin.publish(restyling?.skin, restyling?.glass, scope)
+        val restylingEntry = list.firstOrNull { it.active && (it.module as? SkinSource)?.skin?.restyles == true }
+        val restyling = restylingEntry?.module as? SkinSource
+        ActiveSkin.publish(restyling?.skin, restyling?.glass, restylingEntry?.values.orEmpty(), scope)
         LyricsProviderRegistry.setModuleProviders(
             list.filter { it.active && it.adds(ModuleFeature.Lyrics) }.mapNotNull { (it.module as? LyricsModule)?.let(::ModuleLyricsProvider) },
         )
@@ -271,10 +272,15 @@ class ModuleRegistry @Inject constructor(
         data object NeedsUrl : LinkCheck
         /** its code isn't signed with this mochy's key, so it can't run here */
         data object NotSigned : LinkCheck
+        /** a github project with no published release */
+        data object NoRelease : LinkCheck
+        /** the newest release has no zip with mochyymodule in its name */
+        data object NoModuleInRelease : LinkCheck
     }
 
-    /** fetches the link's manifest.json without adding anything */
+    /** fetches the link's manifest.json without adding anything; a github project's link fetches its newest release's module zip instead */
     suspend fun check(link: String): LinkCheck = withContext(Dispatchers.IO) {
+        GitHubReleases.parse(link)?.let { return@withContext checkGitHub(it) }
         val base = WebModuleManifest.baseOf(link) ?: return@withContext LinkCheck.NotALink
         val text = runCatching {
             client.newCall(Request.Builder().url("$base/manifest.json").header("Accept", "application/json").build()).execute().use { response ->
@@ -287,6 +293,19 @@ class ModuleRegistry @Inject constructor(
         val found = WebModule(base, manifest, context.resources)
         if (found.adds.isEmpty()) return@withContext LinkCheck.NotAModule
         LinkCheck.Ready(base, text, found.info.name, found.adds, alreadyAdded = module(found.info.id) != null, from = base.substringAfter("://"))
+    }
+
+    // the release's zip lands in the cache, then it's read exactly like a zip picked from the phone
+    private suspend fun checkGitHub(link: GitHubReleases.Link): LinkCheck {
+        val found = GitHubReleases.download(client, context.cacheDir, link, preferDebug = com.mochyy.mochymusic.BuildConfig.BUILD_TYPE != "release")
+        val zip = when (found) {
+            is GitHubReleases.Found.Zip -> found
+            GitHubReleases.Found.NoRelease -> return LinkCheck.NoRelease
+            GitHubReleases.Found.NoModule -> return LinkCheck.NoModuleInRelease
+            GitHubReleases.Found.Unreachable -> return LinkCheck.Unreachable
+        }
+        val result = checkZip(Uri.fromFile(zip.file))
+        return (result as? LinkCheck.Ready)?.copy(from = zip.from) ?: result
     }
 
     /** reads a module's zip without adding anything: its manifest.json, and the service it names when it plays songs or lyrics */

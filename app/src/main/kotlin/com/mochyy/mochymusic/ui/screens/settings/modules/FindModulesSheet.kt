@@ -99,6 +99,8 @@ private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) ->
             LinkCheck.NotAZip -> problem = context.getString(R.string.modules_file_not_a_zip)
             LinkCheck.NeedsUrl -> problem = context.getString(R.string.modules_file_needs_url)
             LinkCheck.NotSigned -> problem = context.getString(R.string.modules_file_not_signed)
+            LinkCheck.NoRelease -> problem = context.getString(R.string.modules_github_no_release)
+            LinkCheck.NoModuleInRelease -> problem = context.getString(R.string.modules_github_no_module)
         }
     }
 

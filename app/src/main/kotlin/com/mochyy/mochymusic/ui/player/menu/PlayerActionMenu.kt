@@ -124,6 +124,7 @@ fun PlayerActionMenu(
     var showLyricsProvider by remember { mutableStateOf(false) }
     var showLyricsTranslation by remember { mutableStateOf(false) }
     var showLyricsOffset by remember { mutableStateOf(false) }
+    var showSkinCustomise by remember { mutableStateOf(false) }
 
     // Only touched by the lyrics section. hiltViewModel() itself is cheap, but the flows are
     // collected lazily so a menu opened from the player does no lyrics work at all.
@@ -389,7 +390,7 @@ fun PlayerActionMenu(
                     },
                 )
 
-                ModuleMenuRows(currentMetadata, onDismiss, onOpenRoute)
+                ModuleMenuRows(currentMetadata, onDismiss, onOpenRoute, onCustomise = { showSkinCustomise = true })
             }
     }
 
@@ -422,6 +423,9 @@ fun PlayerActionMenu(
     }
     if (showLyricsProvider) {
         LyricsProviderSheet(onDismiss = { showLyricsProvider = false })
+    }
+    if (showSkinCustomise) {
+        SkinCustomiseSheet(onDismiss = { showSkinCustomise = false })
     }
     if (showLyricsOffset) {
         LyricsOffsetSheet(onDismiss = { showLyricsOffset = false })

@@ -275,6 +275,8 @@ fun StyleCircle(
     active: Boolean = false,
     // drawn in place of the icon, in the icon's colour: the transport's animated glyphs
     glyph: (@Composable (Color) -> Unit)? = null,
+    // a module's own picture in place of the icon, in its own colours
+    picture: Any? = null,
 ) {
     val press = remember { Animatable(1f) }
     val scope = rememberCoroutineScope()
@@ -319,6 +321,13 @@ fun StyleCircle(
         }
         if (glyph != null) {
             glyph(tint)
+        } else if (picture != null) {
+            coil3.compose.AsyncImage(
+                model = picture,
+                contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                modifier = Modifier.size(if (pill) 20.dp else size * 0.5f),
+            )
         } else {
             Icon(
                 painter = painterResource(icon),
@@ -343,6 +352,19 @@ private class MenuItem(
     val label: String,
     @DrawableRes val icon: Int,
     val active: Boolean = false,
+    val picture: Any? = null,
+    val onClick: () -> Unit,
+)
+
+/** an item a style adds to its chevron menu (a look module's own), above other menu and edit player; [picture] wins over [icon] */
+@androidx.compose.runtime.Immutable
+class StyleMenuExtra(
+    val label: String,
+    @DrawableRes val icon: Int,
+    val picture: Any? = null,
+    val active: Boolean = false,
+    /** stays open after the tap, so a toggle's change shows */
+    val keepsOpen: Boolean = false,
     val onClick: () -> Unit,
 )
 
@@ -413,6 +435,10 @@ class StyleActions(
     // the song info sheet's artist and album rows: the page opens and the player closes on the way
     val onOpenArtist: (String) -> Unit = {},
     val onOpenAlbum: (String) -> Unit = {},
+    // a page of the app a module's button or chevron item opens (its own page, a search); the player closes on the way
+    val onOpenRoute: (String) -> Unit = {},
+    // folds the player down to the mini player, for a module's close button
+    val onClose: () -> Unit = {},
 )
 
 /**
@@ -502,6 +528,7 @@ fun BoxScope.StyleMenu(
     showButton: Boolean = true,
     /** the button and the menu's circles dressed as the Turntable's pills */
     pill: Boolean = false,
+    extras: List<StyleMenuExtra> = emptyList(),
 ) {
     val reveal = remember { Animatable(0f) }
     LaunchedEffect(open) {
@@ -529,7 +556,12 @@ fun BoxScope.StyleMenu(
         ) else emptyList()
         val rows = listOfNotNull(
             actions.onLyrics?.let { open -> MenuItem("Lyrics", R.drawable.lyrics) { onOpenChange(false); open() } },
-        ) + shuffleAndRepeat + listOf(
+        ) + shuffleAndRepeat + extras.map { extra ->
+            MenuItem(extra.label, extra.icon, extra.active, extra.picture) {
+                if (!extra.keepsOpen) onOpenChange(false)
+                extra.onClick()
+            }
+        } + listOf(
             MenuItem("Other menu", R.drawable.more_horiz) { onOpenChange(false); actions.onOtherMenu() },
             MenuItem("Edit player", R.drawable.tune) { onOpenChange(false); actions.onEditPlayer() },
         )
@@ -564,7 +596,7 @@ fun BoxScope.StyleMenu(
                     },
                 ) {
                     Text(text = item.label, style = com.mochyy.mochymusic.ui.player.chevronMenuLabelStyle(if (pill) Color.White else tones.ink, 13.sp))
-                    StyleCircle(icon = item.icon, tones = tones, size = buttonSize + 6.dp, onClick = item.onClick, pill = pill, active = item.active)
+                    StyleCircle(icon = item.icon, tones = tones, size = buttonSize + 6.dp, onClick = item.onClick, pill = pill, active = item.active, picture = item.picture)
                 }
             }
         }

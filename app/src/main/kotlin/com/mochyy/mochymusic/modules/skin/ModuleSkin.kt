@@ -31,6 +31,32 @@ class ModuleSkin(
 
     /** a font or shader file, which only a zip can carry */
     fun fontFile(path: String?): File? = (resolve(path) as? File)
+
+    /** every shader file the player draws with, so they compile off the main thread with the glass */
+    val playerShaders: Set<String> by lazy {
+        val found = mutableSetOf<String>()
+        fun background(b: SkinBackground) {
+            if (b is SkinBackground.Shader) found += b.program.file
+        }
+        fun blocks(list: List<SkinBlock>) {
+            list.forEach { block ->
+                when (block) {
+                    is SkinBlock.Shader -> found += block.program.file
+                    is SkinBlock.Styled -> blocks(listOf(block.inner))
+                    is SkinBlock.Row -> blocks(block.blocks)
+                    is SkinBlock.Column -> blocks(block.blocks)
+                    is SkinBlock.Stack -> blocks(block.blocks)
+                    else -> Unit
+                }
+            }
+        }
+        player?.let { p ->
+            background(p.background)
+            p.layers.forEach { background(it.background) }
+            blocks(p.blocks)
+        }
+        found
+    }
 }
 
 // ---- the bottom bar's glass -------------------------------------------------------------------
@@ -57,6 +83,8 @@ sealed interface SkinColor {
     data object Chip : SkinColor
     data object Cover : SkinColor
     data object Accent : SkinColor
+    /** "$key": a colour someone typed or picked in one of the module's settings, [fallback] until it's a real colour */
+    data class Setting(val key: String, val fallback: SkinColor) : SkinColor
 }
 
 enum class SkinAlign { Start, Center, End }
@@ -84,7 +112,30 @@ data class SkinPlayer(
     val padding: Dp,
     val align: SkinAlign,
     val blocks: List<SkinBlock>,
-)
+    /** more backgrounds stacked over the first one, each with its own see-through and motion */
+    val layers: List<SkinLayer> = emptyList(),
+    /** the settings the player's customise sheet offers, from the ••• menu or a customise button */
+    val customise: SkinCustomise? = null,
+    /** the module's own items in the player's chevron menu, above mochy's other menu and edit player */
+    val menu: List<SkinMenuItem> = emptyList(),
+) {
+    /** whether anything in it moves with the music or a loop, so the shared clock only runs when something reads it */
+    val moves: Boolean get() = layers.any { it.motion != null } || background is SkinBackground.Shader || blocks.any(SkinBlock::moves)
+}
+
+@Immutable
+data class SkinCustomise(val title: String?, val keys: List<String>)
+
+/** what a player button or a chevron menu item does: one of mochy's own controls, or a link, a page or a search like a menu row */
+@Immutable
+sealed interface SkinTarget {
+    data class Control(val kind: ButtonKind) : SkinTarget
+    data class Action(val target: ActionTarget) : SkinTarget
+}
+
+/** an item in the chevron menu: its words, a picture from the module (mochy's icon for a control when it has none) and what it does */
+@Immutable
+data class SkinMenuItem(val title: String, val icon: String?, val target: SkinTarget)
 
 @Immutable
 sealed interface SkinBackground {
@@ -93,27 +144,96 @@ sealed interface SkinBackground {
     /** the other styles' played and remaining tones, split at the playhead */
     data object Tones : SkinBackground
     data class Fill(val colors: List<SkinColor>) : SkinBackground
-    data class Picture(val image: String) : SkinBackground
+    /** [blur] in dp, only on android 12+, where it's drawn once and kept */
+    data class Picture(val image: String, val blur: Float = 0f) : SkinBackground
+    /** the module's own agsl, android 13+; [fallback] everywhere else and while it compiles */
+    data class Shader(val program: SkinShaderSource, val fallback: SkinBackground) : SkinBackground
 }
+
+/** a shader file in the zip and the module's own float uniforms for it */
+@Immutable
+data class SkinShaderSource(val file: String, val uniforms: Map<String, Float>)
+
+/** a background stacked over the player's own one */
+@Immutable
+data class SkinLayer(val background: SkinBackground, val opacity: Float, val motion: SkinMotion?)
+
+/** a loop a block or a layer runs while the song plays: [speed] 1 is the normal pace, [amount] 1 the normal size */
+@Immutable
+data class SkinMotion(val kind: MotionKind, val speed: Float, val amount: Float)
+
+enum class MotionKind { Float, Sway, Breathe, Pulse, Spin, Beat, Drift, Zoom, Shake }
+
+/** how a block comes in: when the player opens, or again with every new song when [eachSong] */
+@Immutable
+data class SkinEnter(val kind: EnterKind, val delayMs: Int, val durationMs: Int, val eachSong: Boolean)
+
+enum class EnterKind { Fade, Rise, Drop, Zoom, SlideStart, SlideEnd }
+
+/** "key", "!key", "key=value" or "key!=value": a block that only shows while one of the module's settings says so */
+@Immutable
+data class SkinCondition(val key: String, val value: String?, val negate: Boolean)
 
 enum class CoverShape { Square, Rounded, Circle }
 
 enum class ProgressStyle { Line, Thick, Pill }
 
+enum class VisualizerStyle { Bars, Mirror, Wave, Dots, Ring }
+
+enum class ButtonKind { PlayPause, Previous, Next, Like, Shuffle, Repeat, Lyrics, Menu, Customise, Close }
+
+enum class ShapeKind { Rect, Circle, Pill, Line }
+
+enum class TimeKind { Elapsed, Remaining, Length }
+
+enum class StackAlign { Center, Top, Bottom, Start, End }
+
 @Immutable
 sealed interface SkinBlock {
-    data class Cover(val shape: CoverShape, val corner: Dp, val size: Float, val spin: Boolean, val frame: String?, val shadow: Boolean) : SkinBlock
+    data class Cover(val shape: CoverShape, val corner: Dp, val size: Float, val spin: Boolean, val frame: String?, val shadow: Boolean, val spinSpeed: Float = 1f) : SkinBlock
     data class Title(val text: SkinText) : SkinBlock
     data class Artist(val text: SkinText) : SkinBlock
     data class Album(val text: SkinText) : SkinBlock
     data class Label(val value: String, val text: SkinText) : SkinBlock
-    data class Picture(val image: String, val width: Dp?, val height: Dp, val corner: Dp) : SkinBlock
+    data class Picture(val image: String, val width: Dp?, val height: Dp, val corner: Dp, val fit: Boolean = false) : SkinBlock
     data class Progress(val style: ProgressStyle, val color: SkinColor, val track: SkinColor, val times: Boolean, val seek: Boolean) : SkinBlock
     data class Controls(val size: Dp, val plain: Boolean, val color: SkinColor?, val icon: SkinColor?) : SkinBlock
     data class Lyrics(val height: Dp, val size: TextUnit, val color: SkinColor) : SkinBlock
     data class Space(val size: Dp, val grow: Boolean) : SkinBlock
     data class Row(val blocks: List<SkinBlock>, val gap: Dp) : SkinBlock
     data class Column(val blocks: List<SkinBlock>, val gap: Dp) : SkinBlock
+    /** its blocks drawn on top of each other, the first at the back */
+    data class Stack(val blocks: List<SkinBlock>, val align: StackAlign, val height: Dp?) : SkinBlock
+    /** bars, a wave or dots that follow the music as it's heard */
+    data class Visualizer(val style: VisualizerStyle, val count: Int, val height: Dp, val color: SkinColor, val fill: Float, val round: Boolean) : SkinBlock
+    /** one control or custom action, with mochy's icon or the module's [image] ([imageOn] while it's on: playing, liked, shuffling) */
+    data class Button(val target: SkinTarget, val size: Dp, val color: SkinColor?, val fill: SkinColor?, val image: String?, val imageOn: String?) : SkinBlock
+    /** a plain shape to decorate with: a box, a circle, a pill or a line, filled or outlined */
+    data class Shape(val kind: ShapeKind, val width: Dp?, val height: Dp, val colors: List<SkinColor>, val corner: Dp, val stroke: Dp?) : SkinBlock
+    data class Time(val kind: TimeKind, val text: SkinText) : SkinBlock
+    /** the module's own agsl drawn in a box, [fallback] colour where shaders can't run */
+    data class Shader(val program: SkinShaderSource, val width: Dp?, val height: Dp, val corner: Dp, val fallback: SkinColor?) : SkinBlock
+    /** any block with a loop, an entrance, a condition, a nudge or see-through on top */
+    data class Styled(
+        val inner: SkinBlock,
+        val motion: SkinMotion?,
+        val enter: SkinEnter?,
+        val condition: SkinCondition?,
+        val opacity: Float,
+        val x: Dp,
+        val y: Dp,
+        val rotate: Float,
+    ) : SkinBlock
+
+    val moves: Boolean
+        get() = when (this) {
+            is Styled -> motion != null || inner.moves
+            is Visualizer, is Shader -> true
+            is Row -> blocks.any { it.moves }
+            is Column -> blocks.any { it.moves }
+            is Stack -> blocks.any { it.moves }
+            else -> false
+        }
 }
 
 // ---- pages ------------------------------------------------------------------------------------
