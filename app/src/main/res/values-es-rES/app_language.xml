@@ -9,6 +9,11 @@
     <string name="settings_updates_notice_desc">No popup will appear unless you open the updater</string>
     <string name="settings_offline_mode">Offline mode</string>
     <string name="settings_offline_mode_desc">Play downloaded music only</string>
+    <string name="settings_data_saver">Data saver</string>
+    <string name="settings_data_saver_desc">Lighter streams, and no canvas or video backgrounds</string>
+    <string name="settings_data_saver_detail">YouTube plays its lightest stream and modules play at High instead of Lossless. Canvas covers and video backgrounds stay off, but the full video mode still plays when you open it.</string>
+    <string name="settings_data_saver_mobile">Only on mobile data</string>
+    <string name="settings_data_saver_mobile_desc">On Wi-Fi everything plays as usual</string>
     <string name="settings_local_auto_metadata">Local song automatic metadata</string>
     <string name="settings_local_auto_metadata_desc">Automatically match local tracks with online metadata</string>
     <string name="settings_disable_video_autoplay">Disable YouTube video autoplay</string>
@@ -33,6 +38,7 @@
     <string name="settings_modules_category">Modules</string>
     <string name="settings_recommended_item">Recommended item</string>
     <string name="settings_nothing_matches">Nothing matches “%1$s”.</string>
+    <string name="settings_pane_hint">Pick a setting on the left to open it here.</string>
     <string name="settings_search_placeholder">Search settings</string>
     <string name="settings_clear_search">Clear search</string>
     <string name="library_local_search">Search your local music</string>
