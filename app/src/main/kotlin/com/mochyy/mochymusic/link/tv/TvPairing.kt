@@ -31,7 +31,7 @@ sealed interface PairTarget {
 
 // what the pairing screen shows: the code to type on the phone and the name the phone will see
 @Immutable
-data class PairingCode(val code: String, val tvName: String)
+data class PairingCode(val code: String, val tvName: String, val address: String? = null)
 
 // while its pairing screen is open, the tv waits on the wi-fi for a phone that knows the code it shows
 @Singleton
@@ -78,8 +78,15 @@ class TvPairing @Inject constructor(
 
     private fun newCode(name: String = LinkIdentity.name(context)) {
         wrongTries = 0
-        _code.value = PairingCode(code = (random.nextInt(900_000) + 100_000).toString(), tvName = name)
+        _code.value = PairingCode(code = (random.nextInt(900_000) + 100_000).toString(), tvName = name, address = localAddress())
     }
+
+    // the tv's address on the wi-fi, for a phone on a network that hides tvs from each other
+    private fun localAddress(): String? = runCatching {
+        val connectivity = context.getSystemService(android.net.ConnectivityManager::class.java)
+        val properties = connectivity.getLinkProperties(connectivity.activeNetwork) ?: return null
+        properties.linkAddresses.map { it.address }.firstOrNull { it is java.net.Inet4Address && !it.isLoopbackAddress }?.hostAddress
+    }.getOrNull()
 
     private fun route(request: LinkRequest): LinkResponse = when {
         request.path == "/pair/hello" -> LinkResponse.json(

@@ -173,8 +173,7 @@ fun TvLinkScreen(navController: NavController, viewModel: TvLinkViewModel = hilt
     val stays by viewModel.staysReachable.collectAsState()
     val menuShown by viewModel.menuShown.collectAsState()
     val notify by viewModel.notifyShown.collectAsState()
-    val pairing by viewModel.pairing.collectAsState()
-    var pairingWith by remember { mutableStateOf<LinkPeer?>(null) }
+    val overlay = com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState.current
     var unlinking by remember { mutableStateOf<PairedTv?>(null) }
     var controlling by remember { mutableStateOf<LiveTv?>(null) }
     // a tv drops to "not open" on its own, so the page looks at the clock now and then
@@ -213,33 +212,36 @@ fun TvLinkScreen(navController: NavController, viewModel: TvLinkViewModel = hilt
 
         SectionLabel(stringResource(if (tvs.isEmpty()) R.string.tv_link_found else R.string.tv_link_add_another))
         val fresh = nearby.filter { it.id !in paired }
-        SettingsGroup(
-            style = SettingsGroupStyle.Grouped,
-            items = if (fresh.isEmpty()) {
-                listOf(
-                    SettingsItem(
-                        title = { Text(stringResource(R.string.tv_link_looking)) },
-                        descriptionText = stringResource(R.string.tv_link_looking_detail),
-                        icon = painterResource(R.drawable.smartphone),
-                        iconShape = CircleShape,
-                        trailingContent = { LookingDots() },
-                    ),
+        val found = if (fresh.isEmpty()) {
+            listOf(
+                SettingsItem(
+                    title = { Text(stringResource(R.string.tv_link_looking)) },
+                    descriptionText = stringResource(R.string.tv_link_looking_detail),
+                    icon = painterResource(R.drawable.smartphone),
+                    iconShape = CircleShape,
+                    trailingContent = { LookingDots() },
+                ),
+            )
+        } else {
+            fresh.map { tv ->
+                SettingsItem(
+                    title = { Text(tv.name) },
+                    descriptionText = stringResource(R.string.tv_link_tap_to_pair),
+                    icon = painterResource(R.drawable.ic_mochy_mark),
+                    iconShape = CircleShape,
+                    onClick = { overlay.showTvPairSheet(tv, viewModel) },
                 )
-            } else {
-                fresh.map { tv ->
-                    SettingsItem(
-                        title = { Text(tv.name) },
-                        descriptionText = stringResource(R.string.tv_link_tap_to_pair),
-                        icon = painterResource(R.drawable.ic_mochy_mark),
-                        iconShape = CircleShape,
-                        onClick = {
-                            viewModel.resetPairing()
-                            pairingWith = tv
-                        },
-                    )
-                }
-            },
+            }
+        }
+        // a wi-fi that hides tvs from phones: the tv shows its address under the code, typed here instead
+        val byAddress = SettingsItem(
+            title = { Text(stringResource(R.string.tv_pair_sheet_by_address)) },
+            descriptionText = stringResource(R.string.tv_link_by_address_detail),
+            icon = painterResource(R.drawable.link),
+            iconShape = CircleShape,
+            onClick = { overlay.showTvPairSheet(null, viewModel) },
         )
+        SettingsGroup(style = SettingsGroupStyle.Grouped, items = found + byAddress)
 
         Spacer(Modifier.height(18.dp))
         SectionLabel(stringResource(R.string.tv_link_how_title))
@@ -284,14 +286,6 @@ fun TvLinkScreen(navController: NavController, viewModel: TvLinkViewModel = hilt
         Spacer(Modifier.height(24.dp))
     }
 
-    pairingWith?.let { tv ->
-        TvCodeDialog(
-            tvName = tv.name,
-            state = pairing,
-            onPair = { code -> viewModel.pair(tv, code) },
-            onDismiss = { pairingWith = null },
-        )
-    }
     controlling?.let { tv -> TvRemoteDialog(viewModel.host, tv, onDismiss = { controlling = null }) }
     unlinking?.let { tv ->
         DefaultDialog(
@@ -486,50 +480,5 @@ private fun LookingDots() {
             val lit = phase.toInt() == index
             Box(Modifier.size(6.dp).clip(CircleShape).background(Color.White.copy(alpha = if (lit) 0.9f else 0.25f)))
         }
-    }
-}
-
-@Composable
-private fun TvCodeDialog(tvName: String, state: PairUi, onPair: (String) -> Unit, onDismiss: () -> Unit) {
-    var code by remember { mutableStateOf("") }
-    DefaultDialog(
-        onDismiss = onDismiss,
-        title = { Text(stringResource(R.string.tv_link_enter_code, tvName)) },
-        buttons = {
-            if (state is PairUi.Done) {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.tv_done)) }
-            } else {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.tv_cancel)) }
-                TextButton(onClick = { onPair(code) }, enabled = code.length == 6 && state != PairUi.Working) {
-                    Text(stringResource(R.string.tv_link_pair))
-                }
-            }
-        },
-    ) {
-        if (state is PairUi.Done) {
-            Text(stringResource(R.string.tv_link_paired, state.tvName), style = MaterialTheme.typography.bodyLarge)
-            return@DefaultDialog
-        }
-        // the six digits big, spaced like the tv shows them
-        OutlinedTextField(
-            value = code,
-            onValueChange = { typed ->
-                code = typed.filter(Char::isDigit).take(6)
-                if (code.length == 6 && state != PairUi.Working) onPair(code)
-            },
-            singleLine = true,
-            textStyle = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 30.sp, letterSpacing = 0.3.em, textAlign = TextAlign.Center),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-            placeholder = { Text("000000", fontSize = 30.sp, letterSpacing = 0.3.em, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), color = Color.White.copy(alpha = 0.2f)) },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        val note = when (state) {
-            PairUi.Working -> stringResource(R.string.tv_link_pairing)
-            PairUi.WrongCode -> stringResource(R.string.tv_link_wrong_code)
-            PairUi.Failed -> stringResource(R.string.tv_link_failed)
-            else -> stringResource(R.string.tv_link_code_label)
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(note, style = MaterialTheme.typography.bodyMedium, color = Muted)
     }
 }

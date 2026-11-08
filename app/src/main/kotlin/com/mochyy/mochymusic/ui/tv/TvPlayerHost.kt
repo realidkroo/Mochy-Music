@@ -68,6 +68,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
+import androidx.media3.common.Player
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.PlayerStyle
@@ -80,6 +81,7 @@ import com.mochyy.mochymusic.ui.player.flagship.SkipCycleState
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.mochyy.mochymusic.extensions.togglePlayPause
+import com.mochyy.mochymusic.extensions.toggleRepeatMode
 import com.mochyy.mochymusic.playback.PlayerConnection
 import com.mochyy.mochymusic.ui.component.BottomSheetState
 import com.mochyy.mochymusic.ui.player.BottomSheetPlayer
@@ -419,6 +421,8 @@ private fun TvControlStrip(
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             TvTransport(player, firstFocus)
+            Spacer(Modifier.width(14.dp))
+            TvTransportExtras(player)
             Spacer(Modifier.width(20.dp))
             TvPillButton(stringResource(R.string.tv_lyrics), onClick = { TvPlayerRemote.send(TvPlayerCommand.Lyrics) }, icon = R.drawable.lyrics)
             Spacer(Modifier.width(8.dp))
@@ -459,6 +463,40 @@ private fun TvTransport(player: PlayerConnection, playFocus: FocusRequester) {
             scope.launch { next.step() }
             player.seekToNext()
         }) { AnimatedSkipGlyph(cycle = next, backwards = false, color = Color.White, width = 26.dp) }
+    }
+}
+
+// shuffle, repeat and like beside the transport, bare glyphs that dim when they're off; repeat cycles off, all, then one
+@Composable
+private fun TvTransportExtras(player: PlayerConnection) {
+    val transport by player.uiState.transportState.collectAsState()
+    val track by player.uiState.trackInfo.collectAsState()
+    val dim = Color.White.copy(alpha = 0.45f)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        TvGlyphButton(onClick = { player.player.shuffleModeEnabled = !transport.shuffleModeEnabled }) {
+            Icon(
+                painterResource(R.drawable.shuffle),
+                contentDescription = null,
+                tint = if (transport.shuffleModeEnabled) Color.White else dim,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        TvGlyphButton(onClick = player.player::toggleRepeatMode) {
+            Icon(
+                painterResource(if (transport.repeatMode == Player.REPEAT_MODE_ONE) R.drawable.repeat_one else R.drawable.repeat),
+                contentDescription = null,
+                tint = if (transport.repeatMode != Player.REPEAT_MODE_OFF) Color.White else dim,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        TvGlyphButton(onClick = player::toggleLike) {
+            Icon(
+                painterResource(if (track.liked) R.drawable.ic_untitled_heart else R.drawable.ic_untitled_heart_unfill),
+                contentDescription = null,
+                tint = if (track.liked) Color.White else dim,
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 

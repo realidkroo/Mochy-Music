@@ -230,5 +230,10 @@ internal fun TvPairingSteps(pairing: TvPairing, modifier: Modifier = Modifier) {
                 Text(step, style = TvText.Body.copy(fontSize = 14.sp, color = Color(0xFFCFCFCF)))
             }
         }
+        // for a wi-fi that hides tvs from phones: the phone can type this instead
+        code?.address?.let { address ->
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.tv_pair_by_address, address), style = TvText.Body.copy(fontSize = 13.sp, color = TvColors.Muted))
+        }
     }
 }
