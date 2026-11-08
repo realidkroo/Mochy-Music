@@ -40,7 +40,7 @@ import javax.inject.Singleton
 
 // a tv this phone is paired with; the key is what the tv shows on every call
 @Immutable
-data class PairedTv(val id: String, val name: String, val key: String, val pairedAt: Long, val lastSeenAt: Long)
+data class PairedTv(val id: String, val name: String, val key: String, val pairedAt: Long, val lastSeenAt: Long, val lastSyncAt: Long = 0L)
 
 // a paired tv that's open right now, with where its remote control listens
 @Immutable
@@ -66,6 +66,20 @@ class PhoneLinkHost @Inject constructor(
     val live: StateFlow<Map<String, LiveTv>> = _live.asStateFlow()
 
     fun liveTvs(now: Long = System.currentTimeMillis()): List<LiveTv> = _live.value.values.filter { now - it.seenAt < LiveForMs }
+
+    // when each tv last streamed a song from this phone, for the notification's "streaming" line
+    private val _lastStream = MutableStateFlow<Map<String, Long>>(emptyMap())
+    val lastStream: StateFlow<Map<String, Long>> = _lastStream.asStateFlow()
+
+    // the "tell me when the tv syncs" switch
+    var notifySync: Boolean
+        get() = prefs.getBoolean(NotifyKey, true)
+        set(value) {
+            prefs.edit { putBoolean(NotifyKey, value) }
+            _notifyShown.value = value
+        }
+    private val _notifyShown = MutableStateFlow(prefs.getBoolean(NotifyKey, true))
+    val notifyShown: StateFlow<Boolean> = _notifyShown.asStateFlow()
 
     // the "show tv in the player menu" switch
     var showInPlayerMenu: Boolean
@@ -172,15 +186,29 @@ class PhoneLinkHost @Inject constructor(
         seen(tv)
         return when {
             request.path == "/hello" -> {
+                val now = System.currentTimeMillis()
+                // a tv that wasn't around a moment ago has just come back: the phone says so
+                val wasAround = _live.value[tv.id]?.let { now - it.seenAt < LiveForMs } == true
                 request.query["tvPort"]?.toIntOrNull()?.takeIf { it > 0 }?.let { port ->
-                    _live.value = _live.value + (tv.id to LiveTv(tv.id, tv.name, request.remoteHost, port, tv.key, System.currentTimeMillis()))
+                    _live.value = _live.value + (tv.id to LiveTv(tv.id, tv.name, request.remoteHost, port, tv.key, now))
                 }
+                if (!wasAround && notifySync) PhoneLinkNotices.connected(context, tv.name)
                 LinkResponse.json(hello().toString())
             }
             request.path == "/avatar" -> avatar()
-            request.path == "/library" -> library.snapshot()
+            request.path == "/library" -> {
+                val snapshot = library.snapshot()
+                // told once the whole library has gone over, not when the tv only asked for it
+                LinkResponse.stream(snapshot.contentType) { out ->
+                    snapshot.writer(out)
+                    synced(tv)
+                }
+            }
             request.path == "/files" -> LinkResponse.json(library.files().toString())
-            request.path.startsWith("/file/") -> library.file(request, request.path.removePrefix("/file/"))
+            request.path.startsWith("/file/") -> {
+                _lastStream.value = _lastStream.value + (tv.id to System.currentTimeMillis())
+                library.file(request, request.path.removePrefix("/file/"))
+            }
             request.path == "/changes" && request.method == "POST" -> {
                 library.applyChanges(JSONObject(request.bodyText()))
                 revision.incrementAndGet()
@@ -228,6 +256,12 @@ class PhoneLinkHost @Inject constructor(
         )
     }
 
+    private fun synced(tv: PairedTv) {
+        val now = System.currentTimeMillis()
+        saveTvs(_tvs.value.map { if (it.id == tv.id) it.copy(lastSyncAt = now) else it })
+        if (notifySync) PhoneLinkNotices.synced(context, tv.name)
+    }
+
     // written at most once a minute, a tv calls every few seconds while it's open
     private fun seen(tv: PairedTv) {
         val now = System.currentTimeMillis()
@@ -245,6 +279,7 @@ class PhoneLinkHost @Inject constructor(
                 key = json.optString("key").ifBlank { return@mapNotNull null },
                 pairedAt = json.optLong("pairedAt"),
                 lastSeenAt = json.optLong("lastSeenAt"),
+                lastSyncAt = json.optLong("lastSyncAt"),
             )
         }
     }
@@ -254,7 +289,7 @@ class PhoneLinkHost @Inject constructor(
         val array = JSONArray(
             list.map {
                 JSONObject().put("id", it.id).put("name", it.name).put("key", it.key)
-                    .put("pairedAt", it.pairedAt).put("lastSeenAt", it.lastSeenAt)
+                    .put("pairedAt", it.pairedAt).put("lastSeenAt", it.lastSeenAt).put("lastSyncAt", it.lastSyncAt)
             },
         )
         prefs.edit { putString(TvsKey, array.toString()) }
@@ -273,9 +308,10 @@ class PhoneLinkHost @Inject constructor(
         private const val TvsKey = "tvs"
         private const val StayKey = "stay_reachable"
         private const val PlayerMenuKey = "player_menu"
+        private const val NotifyKey = "notify_sync"
 
         // a tv that hasn't said hello for this long is closed or gone
-        private const val LiveForMs = 70_000L
+        const val LiveForMs = 70_000L
 
         // read without hilt by the boot receiver
         fun hasPairedTvs(context: Context): Boolean {

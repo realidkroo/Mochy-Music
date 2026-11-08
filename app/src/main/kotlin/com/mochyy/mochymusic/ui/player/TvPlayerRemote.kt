@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
 // what a tv remote can ask of the open player that only the player itself can do
-enum class TvPlayerCommand { Lyrics, SongInfo, Source, ClosePage }
+enum class TvPlayerCommand { Lyrics, ClosePage }
 
 // the tv's control strip and now playing pill talk to the player sheet through here; a phone never sends anything
 object TvPlayerRemote {

@@ -111,7 +111,7 @@
     <string name="tv_link_failed">Couldn\'t reach the TV. Make sure both are on the same Wi-Fi.</string>
     <string name="tv_link_paired">Linked with %1$s. Your library is on its way.</string>
     <string name="tv_link_unlink_question">Unlink %1$s? The TV keeps what it already has.</string>
-    <string name="tv_link_stay_reachable">Stay reachable in the background</string>
+    <string name="tv_link_stay_reachable">Stream to your TV in the background</string>
     <string name="tv_link_stay_reachable_detail">Your TV can sync and stream even when Mochy is closed. Shows a quiet notification.</string>
     <string name="tv_link_channel">TV link</string>
     <string name="tv_link_notification_title">Linked to your TV</string>
@@ -151,4 +151,40 @@
     <string name="tv_link_control_detail">Play, skip and change its player from here</string>
     <string name="tv_link_in_player_menu">Show your TV in the player menu</string>
     <string name="tv_link_in_player_menu_detail">Play on it, line songs up there, or control it from the player\'s menu</string>
+
+    <!-- the phone's tv page, its notices, the tv's banner and the tv's song panel -->
+    <string name="tv_link_add_another">Link another TV</string>
+    <string name="tv_link_how_title">How the link works</string>
+    <string name="tv_link_notify">Tell me when the TV syncs</string>
+    <string name="tv_link_notify_detail">A short note when your TV connects and when it has your latest library</string>
+    <string name="tv_link_hero_title">Bring your library to the TV</string>
+    <string name="tv_link_hero_detail">Open Mochy on your TV, go to its Mochy page, and pick it below</string>
+    <string name="tv_link_hero_linked">Linked to %1$s</string>
+    <string name="tv_link_hero_linked_detail">It syncs and streams from this phone whenever Mochy is open on it</string>
+    <string name="tv_link_hero_connected">Connected to %1$s</string>
+    <string name="tv_link_hero_connected_detail">Your library is in step, and your downloads can stream from here</string>
+    <string name="tv_link_control">Control</string>
+    <string name="tv_link_play_there">Play here on TV</string>
+    <string name="tv_link_status_open">Open now</string>
+    <string name="tv_link_status_open_synced">Open now · synced %1$s</string>
+    <string name="tv_link_status_seen">Last open %1$s</string>
+    <string name="tv_link_status_waiting">Waiting for Mochy to open on it</string>
+    <string name="tv_link_status_connected">Connected to %1$s</string>
+    <string name="tv_link_status_connected_detail">Your library is in step</string>
+    <string name="tv_link_status_streaming">Streaming to %1$s</string>
+    <string name="tv_link_status_streaming_detail">Your downloads are playing on the TV from this phone</string>
+    <string name="tv_link_events_channel">TV sync</string>
+    <string name="tv_link_notice_connected">Connected to %1$s</string>
+    <string name="tv_link_notice_connected_detail">Your TV can sync and stream from this phone</string>
+    <string name="tv_link_notice_synced">%1$s is in step</string>
+    <string name="tv_link_notice_synced_detail">Your TV has your latest likes, playlists and downloads</string>
+    <string name="tv_toast_connected">Connected to %1$s</string>
+    <string name="tv_toast_connected_detail">Syncing your library now</string>
+    <string name="tv_toast_synced">Synced with %1$s</string>
+    <string name="tv_toast_synced_detail">Your library is up to date</string>
+    <string name="tv_info_about">About</string>
+    <string name="tv_info_go_to">Go to</string>
+    <string name="tv_info_source">Playing from</string>
+    <string name="tv_info_source_unknown">Still finding where to play it from</string>
+    <string name="tv_info_close">Close</string>
 </resources>

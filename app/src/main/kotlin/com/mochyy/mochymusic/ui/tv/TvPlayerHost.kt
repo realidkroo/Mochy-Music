@@ -98,7 +98,14 @@ internal fun TvPlayerHost(
 ) {
     BottomSheetPlayer(state = state, navController = navController, pureBlack = true)
     if (state.isExpandedOrExpanding) {
-        TvRemoteLayer(player = player)
+        TvRemoteLayer(
+            player = player,
+            // an artist or album from the song's panel opens its page with the player put away
+            onOpen = { route ->
+                state.collapseSoft()
+                navController.navigate(route)
+            },
+        )
     }
 }
 
@@ -107,10 +114,12 @@ private enum class TvPlayerBar { None, PlayingNext, Strip }
 
 // sits over the open player: ok plays or pauses, left and right seek, up brings what's playing next, down the lyrics and looks
 @Composable
-private fun TvRemoteLayer(player: PlayerConnection) {
+private fun TvRemoteLayer(player: PlayerConnection, onOpen: (String) -> Unit) {
     val layerFocus = remember { FocusRequester() }
     val barFocus = remember { FocusRequester() }
     var bar by remember { mutableStateOf(TvPlayerBar.None) }
+    // the song's info panel; it takes the remote while it's open, the sheets made for touch couldn't be reached
+    var info by remember { mutableStateOf<TvInfoStart?>(null) }
     var lastKeyAt by remember { mutableLongStateOf(0L) }
     val hide: () -> Unit = {
         bar = TvPlayerBar.None
@@ -123,7 +132,7 @@ private fun TvRemoteLayer(player: PlayerConnection) {
     DisposableEffect(Unit) { onDispose { TvPlayerRemote.controlsShown = false } }
     // a bar steps aside once the remote has been still for a while
     LaunchedEffect(bar, lastKeyAt) {
-        if (bar == TvPlayerBar.None) return@LaunchedEffect
+        if (bar == TvPlayerBar.None || info != null) return@LaunchedEffect
         delay(BarHideMs)
         hide()
     }
@@ -138,7 +147,7 @@ private fun TvRemoteLayer(player: PlayerConnection) {
                 false
             }
             .onKeyEvent { event ->
-                if (bar != TvPlayerBar.None || event.type != KeyEventType.KeyDown) return@onKeyEvent false
+                if (bar != TvPlayerBar.None || info != null || event.type != KeyEventType.KeyDown) return@onKeyEvent false
                 when (event.key) {
                     Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
                         player.player.togglePlayPause()
@@ -181,7 +190,26 @@ private fun TvRemoteLayer(player: PlayerConnection) {
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             LaunchedEffect(Unit) { runCatching { barFocus.requestFocus() } }
-            TvControlStrip(player = player, firstFocus = barFocus, onLeaveTop = hide)
+            TvControlStrip(
+                player = player,
+                firstFocus = barFocus,
+                onLeaveTop = hide,
+                onInfo = { start ->
+                    bar = TvPlayerBar.None
+                    info = start
+                },
+            )
+        }
+        info?.let { start ->
+            TvSongInfoPanel(
+                player = player,
+                start = start,
+                onOpen = onOpen,
+                onDismiss = {
+                    info = null
+                    runCatching { layerFocus.requestFocus() }
+                },
+            )
         }
     }
 }
@@ -330,6 +358,7 @@ private fun TvControlStrip(
     player: PlayerConnection,
     firstFocus: FocusRequester,
     onLeaveTop: () -> Unit,
+    onInfo: (TvInfoStart) -> Unit,
 ) {
     var style by rememberEnumPreference(PlayerStyleKey, PlayerStyle.FLAGSHIP)
     var square by rememberPreference(TvFlagshipSquareKey, false)
@@ -393,9 +422,9 @@ private fun TvControlStrip(
             Spacer(Modifier.width(20.dp))
             TvPillButton(stringResource(R.string.tv_lyrics), onClick = { TvPlayerRemote.send(TvPlayerCommand.Lyrics) }, icon = R.drawable.lyrics)
             Spacer(Modifier.width(8.dp))
-            TvPillButton(stringResource(R.string.tv_song_info), onClick = { TvPlayerRemote.send(TvPlayerCommand.SongInfo) }, icon = R.drawable.info)
+            TvPillButton(stringResource(R.string.tv_song_info), onClick = { onInfo(TvInfoStart.Song) }, icon = R.drawable.info)
             Spacer(Modifier.width(8.dp))
-            TvPillButton(stringResource(R.string.tv_source), onClick = { TvPlayerRemote.send(TvPlayerCommand.Source) }, icon = R.drawable.graphic_eq)
+            TvPillButton(stringResource(R.string.tv_source), onClick = { onInfo(TvInfoStart.Source) }, icon = R.drawable.graphic_eq)
         }
         Spacer(Modifier.height(12.dp))
         Row(

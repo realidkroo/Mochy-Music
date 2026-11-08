@@ -138,7 +138,6 @@ private fun VideoModeScreen(actions: StyleActions, modifier: Modifier) {
             com.mochyy.mochymusic.ui.player.TvPlayerRemote.commands.collect { command ->
                 when (command) {
                     com.mochyy.mochymusic.ui.player.TvPlayerCommand.Lyrics -> if (state.paneOpen) state.closePane() else state.openPane(VideoPane.LYRICS)
-                    com.mochyy.mochymusic.ui.player.TvPlayerCommand.SongInfo -> state.songInfoOpen = true
                     else -> Unit
                 }
             }

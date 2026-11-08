@@ -89,16 +89,7 @@ internal fun TvMenuRows(onDismiss: () -> Unit) {
             icon = R.drawable.cast_connected,
             title = stringResource(R.string.tv_menu_play_on, tv.name),
             onClick = {
-                // the queue from the playing song on, at the same spot, and the phone goes quiet
-                val exo = player.player
-                val from = exo.currentMediaItemIndex.coerceAtLeast(0)
-                val songs = (from until minOf(exo.mediaItemCount, from + MaxSentSongs)).mapNotNull { exo.getMediaItemAt(it).metadata }
-                val position = exo.currentPosition
-                scope.launch {
-                    val sent = host.tellTv(tv, "/play", JSONObject().put("songs", LinkSongs.listToJson(songs)).put("index", 0).put("position", position))
-                    if (sent != null) player.pause()
-                    TopToaster.show(context.getString(if (sent != null) R.string.tv_menu_sent else R.string.tv_menu_unreachable, tv.name))
-                }
+                scope.launch { sendQueueToTv(context, host, tv, player) }
                 onDismiss()
             },
         )
@@ -121,6 +112,17 @@ internal fun TvMenuRows(onDismiss: () -> Unit) {
     }
 
     remoteFor?.let { tv -> TvRemoteDialog(host, tv, onDismiss = { remoteFor = null }) }
+}
+
+// the queue from the playing song on, at the same spot, goes to the tv and the phone goes quiet
+internal suspend fun sendQueueToTv(context: android.content.Context, host: PhoneLinkHost, tv: LiveTv, player: com.mochyy.mochymusic.playback.PlayerConnection) {
+    val exo = player.player
+    val from = exo.currentMediaItemIndex.coerceAtLeast(0)
+    val songs = (from until minOf(exo.mediaItemCount, from + MaxSentSongs)).mapNotNull { exo.getMediaItemAt(it).metadata }
+    if (songs.isEmpty()) return
+    val sent = host.tellTv(tv, "/play", JSONObject().put("songs", LinkSongs.listToJson(songs)).put("index", 0).put("position", exo.currentPosition))
+    if (sent != null) player.pause()
+    TopToaster.show(context.getString(if (sent != null) R.string.tv_menu_sent else R.string.tv_menu_unreachable, tv.name))
 }
 
 // a small remote for the tv: what's on, play and skip, and the tv's player look

@@ -252,6 +252,8 @@ private fun TvChromeLayer(
             TvNowPlayingPill(player, onOpenPlayer, Modifier.align(Alignment.TopCenter).padding(top = TvSpace.ChromeTop - 4.dp))
         }
         TvAvatar(profile.avatarPath, onSwitchProfile, Modifier.align(Alignment.TopEnd).padding(end = TvSpace.Start, top = TvSpace.ChromeTop + 3.dp))
+        // "connected to" and "synced with" the phone, under the avatar for a few seconds
+        TvLinkToast(Modifier.align(Alignment.TopEnd).padding(end = TvSpace.Start, top = TvSpace.ChromeTop + 40.dp))
         TvRail(
             selected,
             onTab,

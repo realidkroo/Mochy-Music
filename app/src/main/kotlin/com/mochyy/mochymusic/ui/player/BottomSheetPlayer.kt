@@ -337,7 +337,7 @@ private fun PlayerSheet(
         .let { if (it == PlayerStyle.MODULE && !hasModuleStyle) PlayerStyle.FLAGSHIP else it }
         // a phone's ipod or turntable picked before the tv had its own list lands on the flagship there
         .let { if (onTv && !it.availableOnTv) PlayerStyle.FLAGSHIP else it }
-    // on a tv the lyrics are the player: they open with it, and the remote opens them, the song's info and its source
+    // on a tv the lyrics are the player: they open with it, and the remote opens and closes them
     if (onTv) {
         val currentStyle by androidx.compose.runtime.rememberUpdatedState(playerStyle)
         LaunchedEffect(transition, state) {
@@ -351,8 +351,6 @@ private fun PlayerSheet(
                     TvPlayerCommand.Lyrics -> if (currentStyle != PlayerStyle.VIDEO) {
                         if (transition.page == PlayerPage.LYRICS) transition.close() else transition.open(PlayerPage.LYRICS)
                     }
-                    TvPlayerCommand.SongInfo -> if (currentStyle != PlayerStyle.VIDEO) showSongDetails = true
-                    TvPlayerCommand.Source -> showStreamInfo = true
                     TvPlayerCommand.ClosePage -> if (transition.page != PlayerPage.NONE) transition.close()
                 }
             }

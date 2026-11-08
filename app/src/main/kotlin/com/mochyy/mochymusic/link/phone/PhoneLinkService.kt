@@ -20,6 +20,7 @@ import com.mochyy.mochymusic.link.isTelevision
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 // keeps the phone reachable for its paired tvs while mochy is closed, with a quiet notification saying so
 @AndroidEntryPoint
@@ -27,7 +28,16 @@ class PhoneLinkService : Service() {
     @Inject
     lateinit var host: PhoneLinkHost
 
+    // keeps the ongoing notification saying what's true now: which tv is open, and whether it's streaming from here
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main)
+    private var watching = false
+
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onDestroy() {
+        scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+        super.onDestroy()
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ActionStop || host.tvs.value.isEmpty()) {
@@ -48,7 +58,25 @@ class PhoneLinkService : Service() {
             return START_NOT_STICKY
         }
         host.refresh()
+        watchState()
         return START_STICKY
+    }
+
+    private fun watchState() {
+        if (watching) return
+        watching = true
+        scope.launch {
+            kotlinx.coroutines.flow.combine(host.tvs, host.live, host.lastStream, ticks()) { _, _, _, _ -> notification() }
+                .collect { NotificationManagerCompat.from(this@PhoneLinkService).runCatching { notify(NotificationId, it) } }
+        }
+    }
+
+    // a tv that goes quiet drops back to "linked" without anything else changing, so the line is checked now and then
+    private fun ticks() = kotlinx.coroutines.flow.flow {
+        while (true) {
+            emit(Unit)
+            kotlinx.coroutines.delay(30_000)
+        }
     }
 
     private fun notification(): android.app.Notification {
@@ -59,7 +87,16 @@ class PhoneLinkService : Service() {
                 .setShowBadge(false)
                 .build(),
         )
+        val now = System.currentTimeMillis()
+        val open_ = host.liveTvs(now)
+        val streaming = open_.filter { tv -> host.lastStream.value[tv.id]?.let { now - it < StreamingForMs } == true }
         val names = host.tvs.value.joinToString { it.name }
+        // says what's really going on: streaming to a tv, a tv open and in step, or only linked and waiting
+        val (title, text) = when {
+            streaming.isNotEmpty() -> getString(R.string.tv_link_status_streaming, streaming.joinToString { it.name }) to getString(R.string.tv_link_status_streaming_detail)
+            open_.isNotEmpty() -> getString(R.string.tv_link_status_connected, open_.joinToString { it.name }) to getString(R.string.tv_link_status_connected_detail)
+            else -> getString(R.string.tv_link_notification_title) to getString(R.string.tv_link_notification_text, names)
+        }
         val open = android.app.PendingIntent.getActivity(
             this,
             0,
@@ -68,8 +105,8 @@ class PhoneLinkService : Service() {
         )
         return NotificationCompat.Builder(this, ChannelId)
             .setSmallIcon(R.drawable.mochy_notification)
-            .setContentTitle(getString(R.string.tv_link_notification_title))
-            .setContentText(getString(R.string.tv_link_notification_text, names))
+            .setContentTitle(title)
+            .setContentText(text)
             .setContentIntent(open)
             .setOngoing(true)
             .setSilent(true)
@@ -83,6 +120,9 @@ class PhoneLinkService : Service() {
         private const val NotificationId = 4_711
         private const val ActionStop = "com.mochyy.mochymusic.link.STOP"
         const val ActionOpenTvLink = "com.mochyy.mochymusic.action.TV_LINK"
+
+        // a tv that fetched a song from here this recently counts as streaming
+        private const val StreamingForMs = 3 * 60_000L
 
         // android 12+ refuses this from the background, the link then only runs while mochy itself is up
         fun start(context: Context) {

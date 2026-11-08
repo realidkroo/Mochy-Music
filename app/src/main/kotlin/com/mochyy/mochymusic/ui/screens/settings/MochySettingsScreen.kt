@@ -555,6 +555,13 @@ fun MochySettingsScreen(navController: NavController, pane: SettingsPane? = null
                         )
 
                         CategoryBubble(
+                            title = stringResource(R.string.tv_link_title),
+                            iconRes = R.drawable.cast_connected,
+                            selected = selected == com.mochyy.mochymusic.ui.screens.settings.tvlink.TvLinkRoute,
+                            onClick = { open(com.mochyy.mochymusic.ui.screens.settings.tvlink.TvLinkRoute) }
+                        )
+
+                        CategoryBubble(
                             title = stringResource(R.string.settings_modules_category),
                             iconRes = R.drawable.library_add,
                             selected = selected == "modules",
