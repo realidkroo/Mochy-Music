@@ -1069,4 +1069,17 @@
     <string name="not_recommended_menu">Don\'t recommend this again</string>
     <string name="not_recommended_done">We won\'t recommend this song again</string>
     <string name="atmos_streaming_note">Apple encodes Atmos for FairPlay only and Monochrome streams stereo FLAC, so Atmos comes from a module added from a link: set its Dolby Atmos choice to Atmos. Your own surround files are rendered too.</string>
+    <!-- skips that cross over, the studio version of music videos, recent searches -->
+    <string name="settings_blend_skips">Blend skips</string>
+    <string name="settings_blend_skips_desc">Loads the songs either side ahead, so skip and back crossfade straight into them</string>
+    <string name="settings_studio_for_videos">Studio version for music videos</string>
+    <string name="settings_studio_for_videos_desc">A music video plays its song\'s studio recording when there is one, without the video\'s skits and sound effects</string>
+    <string name="playing_studio_version">Playing the studio version</string>
+    <string name="recent_searches">Recent searches</string>
+    <string name="recent_searches_clear">Clear</string>
+    <string name="recent_search_song">Song · %1$s</string>
+    <string name="recent_search_album">Album · %1$s</string>
+    <string name="recent_search_playlist">Playlist · %1$s</string>
+    <string name="recent_search_artist">Artist</string>
+    <string name="recent_search_remove">Remove from recent searches</string>
 </resources>
