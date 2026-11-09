@@ -49,7 +49,12 @@
     <string name="storage_place_note_downloads">Every downloaded song moves over, and its lyrics stay with it. Mochy restarts once to finish.</string>
     <string name="storage_place_note_cache">The cache starts fresh in the new place. Mochy restarts once to finish.</string>
     <string name="storage_place_card_note">On a memory card, Mochy saves into its own folder, which Android clears if Mochy is uninstalled.</string>
-    <string name="storage_place_only_phone">Put in a memory card or a drive to save somewhere other than this phone.</string>
+    <string name="storage_place_choose_folder">Choose a folder</string>
+    <string name="storage_place_folder_note">Mochy saves into a Mochy folder inside the one you pick, so nothing else in there is touched.</string>
+    <string name="storage_place_access_needed">To save in %1$s, Mochy needs All files access. Android asks for it in Settings.</string>
+    <string name="storage_place_allow_access">Allow access</string>
+    <string name="storage_place_no_access">Mochy didn\'t get access, so it can\'t save there. Allow it, or pick another folder.</string>
+    <string name="storage_place_folder_unsupported">That folder can\'t be used. Pick one on this phone or a memory card.</string>
     <string name="storage_place_free">%1$s free of %2$s</string>
     <string name="storage_place_here_now">Saved here now</string>
     <string name="storage_place_no_room">Not enough room</string>

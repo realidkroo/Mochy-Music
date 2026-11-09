@@ -48,6 +48,7 @@ class StorageMover @Inject constructor(
         scope.launch {
             val from = StoragePlaces.dir(context, kind)
             runCatching {
+                if (!to.isPhone) checkWritable(to.root)
                 if (kind == StoredKind.Downloads) copyDownloads(from, to) else File(to.root, kind.folder).mkdirs()
                 StoragePlaces.choose(context, kind, to, oldDir = from)
             }.onSuccess {
@@ -111,6 +112,14 @@ class StorageMover @Inject constructor(
             // after a move they stay paused until the restart, or they'd write into the folder that's about to go
             if (!moved && !wasPaused) withContext(Dispatchers.Main) { manager.resumeDownloads() }
         }
+    }
+
+    // writes and removes a small file first, so a folder android won't let mochy write in fails here instead of after the restart
+    private fun checkWritable(root: File) {
+        if (!root.exists() && !root.mkdirs()) throw IOException("couldn't make ${root.path}")
+        val probe = File(root, ".mochy-write-check")
+        probe.writeText("")
+        if (!probe.delete()) throw IOException("couldn't tidy up in ${root.path}")
     }
 
     private fun sizeOf(dir: File): Long =

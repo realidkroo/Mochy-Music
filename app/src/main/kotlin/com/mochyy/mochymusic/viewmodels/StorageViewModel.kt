@@ -150,6 +150,13 @@ class StorageViewModel @Inject constructor(
         PlaceChoice(StoragePlaces.places(context), StoragePlaces.placeOf(context, kind), mover.bytesToMove(kind))
     }
 
+    // a folder from the folder picker as the place mochy would save into, or null when it isn't on the phone or a card
+    suspend fun pickedFolder(tree: android.net.Uri): StoragePlace? = withContext(Dispatchers.IO) {
+        StoragePlaces.folderFromTree(context, tree)?.let { StoragePlaces.folderPlace(context, StoragePlaces.rootForPicked(it)) }
+    }
+
+    fun needsFolderAccess(place: StoragePlace): Boolean = StoragePlaces.needsFolderAccess(context, place.root)
+
     fun move(kind: StoredKind, to: StoragePlace) = mover.move(kind, to)
 
     fun clearMoveFailure() = mover.clearFailure()
