@@ -312,6 +312,10 @@ class MusicService :
     @Inject
     lateinit var audioFx: AudioFxService
 
+    // speed and pitch kept for single songs, over audio lab's for everything else
+    @Inject
+    lateinit var songTuning: SongTuning
+
     @Inject
     lateinit var scrobbler: Scrobbler
 
@@ -864,10 +868,13 @@ class MusicService :
         // Audio FX's speed and pitch, on whichever player is playing. The equalizer and effects need
         // nothing here: the store hands them to the processors live, with no seek or reload.
         scope.launch {
-            // a dragged slider sends dozens of steps a second; the player takes the latest one at most every SpeedApplyGapMs
-            audioLab.playback
-                .map { settings -> PlaybackParameters(settings.speed, settings.pitch) }
+            // a song with its own speed and pitch plays at those, every other song at audio lab's
+            combine(audioLab.playback, songTuning.all, currentMediaMetadata) { settings, tunings, metadata ->
+                tunings[metadata?.id]?.let { PlaybackParameters(it.speed, it.pitch) }
+                    ?: PlaybackParameters(settings.speed, settings.pitch)
+            }
                 .distinctUntilChanged()
+                // a dragged slider sends dozens of steps a second; the player takes the latest one at most every SpeedApplyGapMs
                 .conflate()
                 .collect { params ->
                     if (player.playbackParameters != params) player.playbackParameters = params

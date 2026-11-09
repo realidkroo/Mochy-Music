@@ -1,6 +1,7 @@
 package com.mochyy.mochymusic.di
 
 import com.mochyy.mochymusic.eq.AudioLabStore
+import com.mochyy.mochymusic.playback.SongTuning
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -10,4 +11,5 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 interface AudioLabEntryPoint {
     fun audioLabStore(): AudioLabStore
+    fun songTuning(): SongTuning
 }

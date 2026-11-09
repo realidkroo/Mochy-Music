@@ -1146,6 +1146,12 @@
     <string name="settings_persistent_shuffle">Keep shuffle on</string>
     <string name="settings_persistent_shuffle_desc">Shuffle stays on when you play another playlist or album, until you turn it off</string>
     <string name="auto_download_new_songs">Download new songs</string>
+    <string name="speed_only_this_song">Save for this song only</string>
+    <string name="speed_only_this_song_detail">%1$s keeps this speed and pitch. Other songs play as usual.</string>
+    <string name="discord_custom_pick">Choose a picture</string>
+    <string name="discord_custom_change">Change picture</string>
+    <string name="discord_custom_note">Discord only shows pictures from the web, so Mochy puts yours on a free file host and shows it from there.</string>
+    <string name="discord_custom_failed">Couldn\'t use that picture. Try another one.</string>
     <string name="settings_studio_for_videos">Studio version for music videos</string>
     <string name="settings_studio_for_videos_desc">A music video plays its song\'s studio recording when there is one, without the video\'s skits and sound effects</string>
     <string name="playing_studio_version">Playing the studio version</string>
