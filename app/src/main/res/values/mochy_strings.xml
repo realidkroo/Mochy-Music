@@ -1156,6 +1156,9 @@
     <string name="search_in_album">Search in this album…</string>
     <string name="close_search">Close search</string>
     <string name="search_this_list">Search</string>
+    <string name="radio_queue_title">%1$s Radio</string>
+    <string name="radio_started">Radio on. Songs like %1$s play next, and it keeps going.</string>
+    <string name="radio_failed">Couldn\'t start a radio for this song. Check your connection and try again.</string>
     <string name="settings_studio_for_videos">Studio version for music videos</string>
     <string name="settings_studio_for_videos_desc">A music video plays its song\'s studio recording when there is one, without the video\'s skits and sound effects</string>
     <string name="playing_studio_version">Playing the studio version</string>

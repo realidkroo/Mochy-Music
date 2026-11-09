@@ -2282,6 +2282,7 @@ class MusicService :
         }
     }
 
+    // "start radio", like spotify's song radio or apple music's station: the song keeps playing where it is, and everything after it becomes an endless run of songs like it
     fun startRadioSeamlessly() {
 
         if (!playerInitialized.value) {
@@ -2290,8 +2291,6 @@ class MusicService :
         }
 
         val currentMediaMetadata = player.currentMetadata ?: return
-
-        val currentIndex = player.currentMediaItemIndex
         val currentMediaId = currentMediaMetadata.id
 
         resetQueueRunway()
@@ -2300,7 +2299,7 @@ class MusicService :
 
         scope.launch(SilentHandler) {
             try {
-                loadSeamlessRadio(currentIndex, currentMediaId, generation)
+                loadSeamlessRadio(currentMediaId, currentMediaMetadata.title, generation)
             } finally {
                 if (generation == queueGeneration) {
                     initialQueueLoading = false
@@ -2311,85 +2310,62 @@ class MusicService :
     }
 
     private suspend fun loadSeamlessRadio(
-        currentIndex: Int,
         currentMediaId: String,
+        title: String,
         generation: Int,
     ) {
-        val radioQueue = YouTubeQueue(
-            endpoint = WatchEndpoint(
-                videoId = currentMediaId
-            )
-        )
-
-        try {
-            val initialStatus = withContext(Dispatchers.IO) {
+        // the song's own station, the same one youtube music's "start radio" plays, not whatever "up next" happened to be
+        val radioQueue = YouTubeQueue(WatchEndpoint(videoId = currentMediaId, playlistId = "RDAMVM$currentMediaId"))
+        val hideExplicit = dataStore.get(HideExplicitKey, false)
+        val hideVideoSongs = dataStore.get(HideVideoSongsKey, false)
+        var moreFrom: Queue = radioQueue
+        val loaded = try {
+            withContext(Dispatchers.IO) {
                 radioQueue.getInitialStatus()
-                    .filterExplicit(dataStore.get(HideExplicitKey, false))
-                    .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
+                    .filterExplicit(hideExplicit)
+                    .filterVideoSongs(hideVideoSongs)
+                    .items
             }
-            if (generation != queueGeneration) return
-
-            if (initialStatus.title != null) {
-                queueTitle = initialStatus.title
-            }
-
-            val radioItems = initialStatus.items.filter { item ->
-                item.mediaId != currentMediaId && item.mediaId !in NotRecommended
-            }
-
-            if (radioItems.isNotEmpty()) {
-                val itemCount = player.mediaItemCount
-
-                if (itemCount > currentIndex + 1) {
-                    player.removeMediaItems(currentIndex + 1, itemCount)
-                }
-
-                player.addMediaItems(currentIndex + 1, radioItems)
-                if (player.shuffleModeEnabled) {
-                    val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
-                    applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
-                }
-            }
-
-            currentQueue = radioQueue
         } catch (e: Exception) {
-
-            try {
-                val nextResult = withContext(Dispatchers.IO) {
-                    YouTube.next(WatchEndpoint(videoId = currentMediaId)).getOrNull()
-                }
-                nextResult?.relatedEndpoint?.let { relatedEndpoint ->
-                    val relatedPage = withContext(Dispatchers.IO) {
-                        YouTube.related(relatedEndpoint).getOrNull()
-                    }
-                    if (generation != queueGeneration) return
-                    relatedPage?.songs?.let { songs ->
-                        val radioItems = songs
-                            .filter { it.id != currentMediaId && it.id !in NotRecommended }
-                            .map { it.toMediaItem() }
-                            .filterExplicit(dataStore.get(HideExplicitKey, false))
-                            .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
-
-                        if (radioItems.isNotEmpty()) {
-                            val itemCount = player.mediaItemCount
-                            if (itemCount > currentIndex + 1) {
-                                player.removeMediaItems(currentIndex + 1, itemCount)
-                            }
-                            player.addMediaItems(currentIndex + 1, radioItems)
-                            if (player.shuffleModeEnabled) {
-                                val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
-                                applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
-                            }
-                            // The old queue's pages no longer follow these songs; let infinite queue extend them.
-                            currentQueue = EmptyQueue
-                        }
-                    }
-                }
-            } catch (_: Exception) {
-
-            }
+            Timber.tag(TAG).w(e, "The radio for $currentMediaId didn't load, trying its related songs")
+            // the station's pages don't follow related songs, so infinite queue carries these on instead
+            moreFrom = EmptyQueue
+            relatedSongs(currentMediaId, hideExplicit, hideVideoSongs)
         }
+        val radioItems = loaded.filter { it.mediaId != currentMediaId && it.mediaId !in NotRecommended }
+        if (generation != queueGeneration) return
+        // the song moved on while the station loaded, so this isn't its radio any more
+        if (player.currentMediaItem?.mediaId != currentMediaId) return
+        if (radioItems.isEmpty()) {
+            showBanner(getString(R.string.radio_failed))
+            return
+        }
+
+        // what was queued after the song makes way for the station; what already played stays as history
+        val index = player.currentMediaItemIndex
+        val itemCount = player.mediaItemCount
+        if (itemCount > index + 1) player.removeMediaItems(index + 1, itemCount)
+        player.addMediaItems(index + 1, radioItems)
+        if (player.shuffleModeEnabled) {
+            val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
+            applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
+        }
+        currentQueue = moreFrom
+        queueTitle = getString(R.string.radio_queue_title, title)
+        showBanner(getString(R.string.radio_started, title))
+        if (dataStore.get(PersistentQueueKey, true)) saveQueueToDisk()
     }
+
+    // the songs youtube lists as related to [songId], for when its station won't load
+    private suspend fun relatedSongs(songId: String, hideExplicit: Boolean, hideVideoSongs: Boolean): List<MediaItem> =
+        withContext(Dispatchers.IO) {
+            val related = YouTube.next(WatchEndpoint(videoId = songId)).getOrNull()?.relatedEndpoint
+                ?: return@withContext emptyList()
+            YouTube.related(related).getOrNull()?.songs.orEmpty()
+                .map { it.toMediaItem() }
+                .filterExplicit(hideExplicit)
+                .filterVideoSongs(hideVideoSongs)
+        }
 
     fun getAutomixAlbum(albumId: String) {
         scope.launch(SilentHandler) {

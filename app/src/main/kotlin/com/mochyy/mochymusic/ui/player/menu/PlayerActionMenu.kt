@@ -64,7 +64,6 @@ import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.KeepScreenOn
 import com.mochyy.mochymusic.playback.ExoDownloadService
-import com.mochyy.mochymusic.playback.queues.YouTubeQueue
 import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.component.SheetActionCard
 import com.mochyy.mochymusic.ui.component.SheetActionCardRow
@@ -247,17 +246,16 @@ fun PlayerActionMenu(
                     Spacer(modifier = Modifier.height(SectionGap))
                 }
 
-                // Saving the song somewhere is what people open this menu for most.
+                // what people open this menu for most, as a two by two grid of big cards
                 SheetActionCardRow {
+                    // the song keeps playing and everything after it becomes songs like it, as spotify and apple music do; a file on the phone has no station
                     SheetActionCard(
                         icon = R.drawable.radio,
-                        title = "Start Radio",
-                        enabled = currentMetadata != null,
+                        title = androidx.compose.ui.res.stringResource(R.string.start_radio),
+                        enabled = currentMetadata != null && currentMetadata?.localUri == null,
                         onClick = {
-                            currentMetadata?.let { metadata ->
-                                playerConnection.playQueue(YouTubeQueue.radio(metadata))
-                                onDismiss()
-                            }
+                            playerConnection.startRadioSeamlessly()
+                            onDismiss()
                         },
                         modifier = Modifier.weight(1f),
                     )
@@ -268,6 +266,9 @@ fun PlayerActionMenu(
                         onClick = { showChoosePlaylistDialog = true },
                         modifier = Modifier.weight(1f),
                     )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                SheetActionCardRow {
                     SheetDownloadCard(
                         downloadState = download?.state,
                         onDownload = {
@@ -290,6 +291,19 @@ fun PlayerActionMenu(
                                 DownloadService.sendRemoveDownload(
                                     context, ExoDownloadService::class.java, metadata.id, false,
                                 )
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                    // opens the song share over everything: a card, its lyrics, a video with the song, or the link
+                    SheetActionCard(
+                        icon = R.drawable.share,
+                        title = androidx.compose.ui.res.stringResource(R.string.share),
+                        enabled = currentMetadata != null,
+                        onClick = {
+                            currentMetadata?.let { metadata ->
+                                onDismiss()
+                                com.mochyy.mochymusic.ui.player.share.song.SongShare.open(metadata)
                             }
                         },
                         modifier = Modifier.weight(1f),
@@ -355,19 +369,6 @@ fun PlayerActionMenu(
                     title = if (inLibrary) "remove from library" else "add to library",
                     enabled = currentMetadata != null,
                     onClick = { playerConnection.toggleLibrary() },
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                // opens the song share over everything: a card, its lyrics, a video with the song, or the link
-                MenuRow(
-                    icon = R.drawable.share,
-                    title = androidx.compose.ui.res.stringResource(R.string.song_share_menu),
-                    enabled = currentMetadata != null,
-                    onClick = {
-                        currentMetadata?.let { metadata ->
-                            onDismiss()
-                            com.mochyy.mochymusic.ui.player.share.song.SongShare.open(metadata)
-                        }
-                    },
                 )
                 if (isAutoplaySong) {
                     Spacer(modifier = Modifier.height(8.dp))
