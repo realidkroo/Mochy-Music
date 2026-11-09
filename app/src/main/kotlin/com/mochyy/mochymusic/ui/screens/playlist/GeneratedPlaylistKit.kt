@@ -34,10 +34,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -60,6 +63,7 @@ import com.mochyy.mochymusic.ui.component.detail.SectionTitleStyle
 import com.mochyy.mochymusic.ui.component.detail.playlistCompactHeaderHeight
 import com.mochyy.mochymusic.ui.screens.search.SearchFieldHeight
 import com.mochyy.mochymusic.ui.component.RemoteFocus
+import kotlinx.coroutines.launch
 
 /**
  * the frame every generated page sits in. [rows] fills the list under the header; the header,
@@ -88,6 +92,9 @@ fun GeneratedPlaylistPage(
     overlay: @Composable BoxScope.() -> Unit = {},
     rows: LazyListScope.() -> Unit,
 ) {
+    // the round search button beside shuffle jumps to the capsule under the buttons and opens the keyboard
+    val searchFocus = remember { FocusRequester() }
+    val scope = rememberCoroutineScope()
     PlaylistDetailScaffold(
         sharedElementKey = null,
         coverUrl = coverUrl,
@@ -113,11 +120,18 @@ fun GeneratedPlaylistPage(
                 onShuffleClick = onShuffleClick,
                 sortControl = sortControl,
                 compact = true,
+                onSearchClick = {
+                    scope.launch {
+                        lazyListState.animateScrollToItem(0)
+                        runCatching { searchFocus.requestFocus() }
+                    }
+                },
                 below = {
                     GeneratedSearchCapsule(
                         query = query,
                         onQueryChange = onQueryChange,
                         placeholder = searchPlaceholder,
+                        focusRequester = searchFocus,
                     )
                 },
             )
@@ -136,6 +150,7 @@ fun GeneratedSearchCapsule(
     onQueryChange: (TextFieldValue) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    focusRequester: FocusRequester = remember { FocusRequester() },
 ) {
     val focusManager = LocalFocusManager.current
     var focused by remember { mutableStateOf(false) }
@@ -169,6 +184,7 @@ fun GeneratedSearchCapsule(
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .focusRequester(focusRequester)
                     .onFocusChanged { focused = it.isFocused },
             )
         }

@@ -19,17 +19,11 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.pullToRefresh
@@ -52,7 +46,6 @@ import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -60,7 +53,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachReversed
@@ -107,7 +99,7 @@ import com.mochyy.mochymusic.ui.component.detail.PlaylistEndOfLine
 import com.mochyy.mochymusic.ui.component.detail.PlaylistHeader
 import com.mochyy.mochymusic.ui.component.detail.PlaylistInset
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSortControl
-import com.mochyy.mochymusic.ui.component.detail.PlaylistSearchControl
+import com.mochyy.mochymusic.ui.component.detail.PlaylistSearchBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistStatsStyle
 import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackBones
 import com.mochyy.mochymusic.ui.component.detail.PlaylistModeBar
@@ -349,7 +341,6 @@ fun AutoPlaylistScreen(
         lazyListState = state,
         onBackClick = { navController.navigateUp() },
         onBackLongClick = { navController.backToMain() },
-        showCover = !isSearching,
         contentPadding = LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Bottom).asPaddingValues(),
         modifier = if (canRefresh) {
             Modifier.pullToRefresh(
@@ -393,11 +384,12 @@ fun AutoPlaylistScreen(
         },
         topBarOverride = if (isSearching) {
             {
-                AutoPlaylistSearchBar(
+                PlaylistSearchBar(
                     query = query,
                     onQueryChange = { query = it },
+                    placeholder = stringResource(R.string.search_in_playlist),
                     focusRequester = focusRequester,
-                    onBack = {
+                    onClose = {
                         isSearching = false
                         query = TextFieldValue()
                     },
@@ -469,6 +461,7 @@ fun AutoPlaylistScreen(
             item(key = "playlist_header") {
                 val isThisQueue = queueTitle == playlist
                 PlaylistHeader(
+                    onSearchClick = { isSearching = true },
                     title = playlist,
                     creators = emptyList(),
                     stats = playlistStats(
@@ -481,7 +474,6 @@ fun AutoPlaylistScreen(
                     },
                     onShuffleClick = { playAll(current.shuffled()) },
                     sortControl = {
-                        // downloads and liked songs run long: search finds one without scrolling
                         Row(verticalAlignment = Alignment.CenterVertically) {
                         if (isLiked) {
                             PlaylistSortControl(
@@ -519,8 +511,6 @@ fun AutoPlaylistScreen(
                                 onToggleDirection = { onSortDescendingChange(!sortDescending) },
                             )
                         }
-                        Spacer(Modifier.width(16.dp))
-                        PlaylistSearchControl(onClick = { isSearching = true })
                         }
                     },
                 )
@@ -626,51 +616,6 @@ fun AutoPlaylistScreen(
             Spacer(Modifier.height(50.dp))
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AutoPlaylistSearchBar(
-    query: TextFieldValue,
-    onQueryChange: (TextFieldValue) -> Unit,
-    focusRequester: FocusRequester,
-    onBack: () -> Unit,
-) {
-    TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        title = {
-            TextField(
-                value = query,
-                onValueChange = onQueryChange,
-                placeholder = {
-                    Text(
-                        text = stringResource(R.string.search),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                singleLine = true,
-                textStyle = MaterialTheme.typography.titleLarge,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focusRequester)
-            )
-        },
-        navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(painter = painterResource(R.drawable.arrow_back_ios), contentDescription = null)
-            }
-        },
-    )
 }
 
 /**

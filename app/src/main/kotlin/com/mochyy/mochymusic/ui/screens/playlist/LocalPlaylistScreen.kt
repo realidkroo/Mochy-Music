@@ -33,7 +33,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -46,10 +45,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -69,7 +64,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
@@ -80,7 +74,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -133,6 +126,7 @@ import com.mochyy.mochymusic.ui.component.detail.FeaturedArtistsRow
 import com.mochyy.mochymusic.ui.component.detail.PlaylistDetailScaffold
 import com.mochyy.mochymusic.ui.component.detail.PlaylistEndOfLine
 import com.mochyy.mochymusic.ui.component.detail.PlaylistHeader
+import com.mochyy.mochymusic.ui.component.detail.PlaylistSearchBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistModeBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSectionTitle
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSelectTick
@@ -504,17 +498,17 @@ fun LocalPlaylistScreen(
         lazyListState = lazyListState,
         onBackClick = { navController.navigateUp() },
         onBackLongClick = { navController.backToMain() },
-        showCover = !isSearching,
         contentPadding = LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Bottom)
             .union(WindowInsets.ime).asPaddingValues(),
         onMoreClick = openPlaylistMenu,
         topBarOverride = if (isSearching) {
             {
-                LocalPlaylistSearchBar(
+                PlaylistSearchBar(
                     query = query,
                     onQueryChange = { query = it },
+                    placeholder = stringResource(R.string.search_in_playlist),
                     focusRequester = focusRequester,
-                    onBack = {
+                    onClose = {
                         isSearching = false
                         query = TextFieldValue()
                     },
@@ -588,6 +582,7 @@ fun LocalPlaylistScreen(
                 val isThisQueue = queueTitle == currentPlaylist.playlist.name
                 val savedRemote = currentPlaylist.playlist.browseId != null && !currentPlaylist.playlist.isEditable
                 PlaylistHeader(
+                    onSearchClick = { isSearching = true },
                     title = currentPlaylist.playlist.name,
                     creators = if (accountName.isNotBlank()) listOf(CreatorUi(name = accountName, avatarUrl = creatorAvatar)) else emptyList(),
                     stats = playlistStats(
@@ -944,49 +939,4 @@ private fun playlistSortLabel(type: PlaylistSongSortType): Int = when (type) {
     PlaylistSongSortType.NAME -> R.string.sort_by_name
     PlaylistSongSortType.ARTIST -> R.string.sort_by_artist
     PlaylistSongSortType.PLAY_TIME -> R.string.sort_by_play_time
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun LocalPlaylistSearchBar(
-    query: TextFieldValue,
-    onQueryChange: (TextFieldValue) -> Unit,
-    focusRequester: FocusRequester,
-    onBack: () -> Unit,
-) {
-    TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        title = {
-            TextField(
-                value = query,
-                onValueChange = onQueryChange,
-                placeholder = {
-                    Text(
-                        text = stringResource(R.string.search),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                singleLine = true,
-                textStyle = MaterialTheme.typography.titleLarge,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focusRequester)
-            )
-        },
-        navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(painter = painterResource(R.drawable.arrow_back_ios), contentDescription = null)
-            }
-        },
-    )
 }

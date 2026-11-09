@@ -41,11 +41,14 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -75,6 +78,7 @@ import com.mochyy.mochymusic.ui.component.detail.PlaylistSectionTitle
 import com.mochyy.mochymusic.ui.component.detail.PlaylistStatsStyle
 import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackBones
 import com.mochyy.mochymusic.ui.component.detail.PlaylistModeBar
+import com.mochyy.mochymusic.ui.component.detail.PlaylistSearchBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSelectTick
 import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackRow
 import com.mochyy.mochymusic.ui.component.detail.featuredArtistsOf
@@ -124,6 +128,29 @@ fun AlbumScreen(
         if (hideExplicit) songs = songs.filter { !it.song.explicit }
         if (hideVideoSongs) songs = songs.filter { !it.song.isVideo }
         songs
+    }
+
+    // the album's own song search, from the round button beside shuffle
+    var isSearching by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
+    val focusRequester = remember { FocusRequester() }
+    val shownSongs = remember(filteredSongs, isSearching, query.text) {
+        val typed = query.text.trim()
+        if (!isSearching || typed.isEmpty()) {
+            filteredSongs
+        } else {
+            filteredSongs.filter { song ->
+                song.song.title.contains(typed, ignoreCase = true) ||
+                    song.artists.any { it.name.contains(typed, ignoreCase = true) }
+            }
+        }
+    }
+    val closeSearch = {
+        isSearching = false
+        query = TextFieldValue()
+    }
+    if (isSearching) {
+        BackHandler(onBack = closeSearch)
     }
 
     var inSelectMode by rememberSaveable { mutableStateOf(false) }
@@ -191,6 +218,17 @@ fun AlbumScreen(
                 }
             }
         },
+        topBarOverride = if (isSearching) {
+            {
+                PlaylistSearchBar(
+                    query = query,
+                    onQueryChange = { query = it },
+                    placeholder = stringResource(R.string.search_in_album),
+                    focusRequester = focusRequester,
+                    onClose = closeSearch,
+                )
+            }
+        } else null,
         modeBar = if (inSelectMode) {
             PlaylistModeBar.Select(
                 count = selection.size,
@@ -223,10 +261,11 @@ fun AlbumScreen(
             return@PlaylistDetailScaffold
         }
 
-        item(key = "album_header", contentType = "header") {
+        if (!isSearching) item(key = "album_header", contentType = "header") {
             // read here, not at the top of the screen: a track change then only redraws the header
             val isThisAlbum = mediaMetadata?.album?.id == album.album.id
             PlaylistHeader(
+                onSearchClick = { isSearching = true },
                 title = album.album.title,
                 creators = album.artists.map { CreatorUi(name = it.name, avatarUrl = it.thumbnailUrl, artistId = it.id) },
                 // the description takes the stats' place, and the stats move under it
@@ -257,7 +296,7 @@ fun AlbumScreen(
         }
 
         itemsIndexed(
-            items = filteredSongs,
+            items = shownSongs,
             key = { _, song -> song.id },
             contentType = { _, _ -> "track" },
         ) { position, song ->
@@ -316,6 +355,14 @@ fun AlbumScreen(
                     } else null,
                 )
             }
+        }
+
+        // while searching only the matching songs show, as on a playlist
+        if (isSearching) {
+            item(key = "bottom_spacer") {
+                Spacer(Modifier.height(50.dp))
+            }
+            return@PlaylistDetailScaffold
         }
 
         item(key = "end_of_line") {
