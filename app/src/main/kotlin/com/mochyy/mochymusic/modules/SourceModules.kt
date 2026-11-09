@@ -163,9 +163,8 @@ class SourceModules @Inject constructor(
         val startedAt = System.currentTimeMillis()
         val answers = if (track == null) emptyMap() else asked.mapNotNull { id ->
             val module = module(id) ?: return@mapNotNull null
-            val picks = picksFor(id, module)
             id to resolveScope.async {
-                runCatching { module.resolve(track, picks) }
+                runCatching { module.resolve(track, picksFor(id, module)) }
                     .onFailure { if (it !is CancellationException) android.util.Log.w(Tag, "$id failed for ${track.title}", it) }
                     .getOrNull()
             }
