@@ -592,7 +592,7 @@ class HomeViewModel @Inject constructor(
         if (System.currentTimeMillis() - lastPlayedLikedSongs < 86400000L * 7) {
             val likedCount = database.likedSongsCount().first()
             val likedPlaylistEntity = com.mochyy.mochymusic.db.entities.Playlist(
-                playlist = com.mochyy.mochymusic.db.entities.PlaylistEntity(id = "liked", name = context.getString(R.string.liked)),
+                playlist = com.mochyy.mochymusic.db.entities.PlaylistEntity(id = "liked", name = context.getString(R.string.liked), thumbnailUrl = likedCoverImage()),
                 songCount = likedCount,
                 songThumbnails = listOf()
             )
@@ -764,7 +764,7 @@ class HomeViewModel @Inject constructor(
         if (System.currentTimeMillis() - lastPlayedLikedSongs < 86400000L * 7) {
             val likedCount = database.likedSongsCount().first()
             val likedPlaylistEntity = com.mochyy.mochymusic.db.entities.Playlist(
-                playlist = com.mochyy.mochymusic.db.entities.PlaylistEntity(id = "liked", name = context.getString(R.string.liked)),
+                playlist = com.mochyy.mochymusic.db.entities.PlaylistEntity(id = "liked", name = context.getString(R.string.liked), thumbnailUrl = likedCoverImage()),
                 songCount = likedCount,
                 songThumbnails = listOf()
             )
@@ -1328,6 +1328,15 @@ class HomeViewModel @Inject constructor(
                     }
                 }
         }
+    }
+
+    // liked songs' cover as a picture, so home's cards, their colours and the see-all list show it like any playlist's
+    private suspend fun likedCoverImage(): String? = try {
+        com.mochyy.mochymusic.ui.component.LikedCoverImage.url(context, database.likedCovers().first())
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
     }
 }
 

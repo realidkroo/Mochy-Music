@@ -3,7 +3,8 @@
 // Liked songs' cover, the same everywhere it shows (Home, the Library, playlist lists, the Liked
 // page itself): the colours of the four songs liked last, blended softly corner to corner, with a
 // white heart on top. it's drawn rather than a picture, so it's a handful of gradients at any size
-// and doesn't need blur, which older phones can't do.
+// and doesn't need blur, which older phones can't do. LikedCoverImage saves the same drawing as a
+// picture for the places that only take an image link.
 
 package com.mochyy.mochymusic.ui.component
 
@@ -159,45 +160,9 @@ fun LikedCover(
     Box(
         contentAlignment = heartAlignment,
         modifier = modifier.drawWithCache {
-            val corners = listOf(c0, c1, c2, c3)
-            // the four averaged, under everything, so no corner of it is ever left bare
-            val base = corners.fold(0 to Color.Transparent) { (n, acc), c ->
-                (n + 1) to Color(ColorUtils.blendARGB(acc.toArgb(), c.toArgb(), 1f / (n + 1)))
-            }.second
-            val radius = size.maxDimension * 0.9f
-            // dithered: a soft blend this wide bands on 8-bit screens otherwise
-            val paints = corners.mapIndexed { i, c ->
-                android.graphics.Paint().apply {
-                    isDither = true
-                    shader = RadialGradient(
-                        size.width * Anchors[i].x,
-                        size.height * Anchors[i].y,
-                        radius,
-                        intArrayOf(c.toArgb(), c.copy(alpha = 0.72f).toArgb(), c.copy(alpha = 0f).toArgb()),
-                        floatArrayOf(0f, 0.36f, 1f),
-                        Shader.TileMode.CLAMP,
-                    )
-                }
-            }
-            // a little darker towards the edges, which gives it depth and keeps the heart on top
-            val shade = android.graphics.Paint().apply {
-                isDither = true
-                shader = RadialGradient(
-                    size.width / 2f,
-                    size.height / 2f,
-                    size.maxDimension * 0.78f,
-                    intArrayOf(0, 0, Color.Black.copy(alpha = 0.22f).toArgb()),
-                    floatArrayOf(0f, 0.4f, 1f),
-                    Shader.TileMode.CLAMP,
-                )
-            }
+            val paints = LikedCoverPaints(listOf(c0, c1, c2, c3), size.width, size.height)
             onDrawBehind {
-                drawRect(base)
-                drawIntoCanvas { canvas ->
-                    val native = canvas.nativeCanvas
-                    paints.forEach { native.drawRect(0f, 0f, size.width, size.height, it) }
-                    native.drawRect(0f, 0f, size.width, size.height, shade)
-                }
+                drawIntoCanvas { canvas -> paints.draw(canvas.nativeCanvas, size.width, size.height) }
             }
         },
     ) {
@@ -209,5 +174,95 @@ fun LikedCover(
                 .fillMaxWidth(heartSize)
                 .aspectRatio(1f),
         )
+    }
+}
+
+// the cover's gradients for one size and set of colours, so the live cover and its saved picture are drawn the same
+private class LikedCoverPaints(corners: List<Color>, width: Float, height: Float) {
+    // the four averaged, under everything, so no corner of it is ever left bare
+    private val base = corners.fold(0 to Color.Transparent) { (n, acc), c ->
+        (n + 1) to Color(ColorUtils.blendARGB(acc.toArgb(), c.toArgb(), 1f / (n + 1)))
+    }.second.toArgb()
+
+    // dithered: a soft blend this wide bands on 8-bit screens otherwise
+    private val corners = corners.mapIndexed { i, c ->
+        android.graphics.Paint().apply {
+            isDither = true
+            shader = RadialGradient(
+                width * Anchors[i].x,
+                height * Anchors[i].y,
+                maxOf(width, height) * 0.9f,
+                intArrayOf(c.toArgb(), c.copy(alpha = 0.72f).toArgb(), c.copy(alpha = 0f).toArgb()),
+                floatArrayOf(0f, 0.36f, 1f),
+                Shader.TileMode.CLAMP,
+            )
+        }
+    }
+
+    // a little darker towards the edges, which gives it depth and keeps the heart on top
+    private val shade = android.graphics.Paint().apply {
+        isDither = true
+        shader = RadialGradient(
+            width / 2f,
+            height / 2f,
+            maxOf(width, height) * 0.78f,
+            intArrayOf(0, 0, Color.Black.copy(alpha = 0.22f).toArgb()),
+            floatArrayOf(0f, 0.4f, 1f),
+            Shader.TileMode.CLAMP,
+        )
+    }
+
+    fun draw(canvas: android.graphics.Canvas, width: Float, height: Float) {
+        canvas.drawColor(base)
+        corners.forEach { canvas.drawRect(0f, 0f, width, height, it) }
+        canvas.drawRect(0f, 0f, width, height, shade)
+    }
+}
+
+// liked songs' cover saved as a picture, for the places that only take an image link (home's cards, their colours, lists)
+object LikedCoverImage {
+    private const val Folder = "liked_cover"
+    private const val Size = 512
+    private const val HeartShare = 0.4f
+
+    // the picture for the songs liked last, drawn once per set of colours and reused; null if it couldn't be written
+    suspend fun url(context: Context, likedCovers: List<String>): String? {
+        val colors = LikedCoverColors.of(context, likedCovers)
+        val key = colors.joinToString("-") { Integer.toHexString(it.toArgb()) }
+        return withContext(Dispatchers.IO) {
+            val folder = java.io.File(context.filesDir, Folder).apply { mkdirs() }
+            val file = java.io.File(folder, "liked.$key.webp")
+            if (!file.exists()) {
+                val written = runCatching { write(context, colors, file) }.isSuccess
+                if (!written) return@withContext null
+                // the colours moved on, so the older pictures are no use
+                folder.listFiles()?.forEach { if (it != file) it.delete() }
+            }
+            android.net.Uri.fromFile(file).toString()
+        }
+    }
+
+    private fun write(context: Context, colors: List<Color>, file: java.io.File) {
+        val bitmap = android.graphics.Bitmap.createBitmap(Size, Size, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        LikedCoverPaints(colors, Size.toFloat(), Size.toFloat()).draw(canvas, Size.toFloat(), Size.toFloat())
+        androidx.core.content.ContextCompat.getDrawable(context, R.drawable.favorite_border)?.mutate()?.let { heart ->
+            val side = (Size * HeartShare).toInt()
+            val start = (Size - side) / 2
+            heart.setBounds(start, start, start + side, start + side)
+            heart.setTint(android.graphics.Color.WHITE)
+            heart.draw(canvas)
+        }
+        @Suppress("DEPRECATION")
+        val format = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            android.graphics.Bitmap.CompressFormat.WEBP_LOSSY
+        } else {
+            android.graphics.Bitmap.CompressFormat.WEBP
+        }
+        // written beside it first, so a cut-short write never leaves a broken picture in its place
+        val partial = java.io.File(file.parentFile, file.name + ".part")
+        partial.outputStream().buffered().use { bitmap.compress(format, 92, it) }
+        bitmap.recycle()
+        check(partial.renameTo(file)) { "couldn't put the liked cover in place" }
     }
 }
