@@ -52,6 +52,7 @@
     <string name="settings_albums_from_likes">Albums from liked songs</string>
     <string name="settings_albums_from_likes_desc">Liking a song also adds its album</string>
     <string name="settings_albums_from_likes_detail">This is how Mochy used to work: every song you like brings its album into Albums. When it\'s off, Albums works like Apple Music and shows the albums you saved, plus the albums of songs you added, imported or keep on this phone.</string>
+    <string name="settings_pause_search_history_desc">Stop saving what you search for</string>
     <string name="proxy_status_off">Off</string>
     <string name="proxy_status_on">On, through %1$s</string>
     <string name="proxy_intro">Send Mochy\'s YouTube traffic through another server. It helps when YouTube blocks your network, or when YouTube Music isn\'t available where you live.</string>
