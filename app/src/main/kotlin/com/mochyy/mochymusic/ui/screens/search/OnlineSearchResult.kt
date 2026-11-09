@@ -388,19 +388,56 @@ fun OnlineSearchResult(
     }
 }
 
+// youtube's own first pick, unless another result matches the typed words clearly better; taking the first song anywhere showed songs nobody searched for
 private fun pickTopResult(items: List<YTItem>, query: String): YTItem? {
     if (items.isEmpty()) return null
-    val normalised = query.trim().lowercase()
+    val words = searchWords(query)
+    if (words.isEmpty()) return items.first()
+    val typed = words.joinToString(" ")
 
     items.filterIsInstance<ArtistItem>()
-        .firstOrNull { it.title.trim().lowercase() == normalised }
+        .firstOrNull { searchWords(it.title).joinToString(" ") == typed }
         ?.let { return it }
 
-    val songs = items.filterIsInstance<SongItem>()
-    songs.firstOrNull { !it.isVideoSong }?.let { return it }
-
-    return songs.firstOrNull() ?: items.first()
+    // the highest score wins, and on a tie the one youtube put first
+    var best: YTItem? = null
+    var bestScore = 0
+    items.forEach { item ->
+        val score = matchScore(item, words, typed)
+        if (score > bestScore) {
+            best = item
+            bestScore = score
+        }
+    }
+    return best ?: items.first()
 }
+
+// how well an item's title and credits cover the typed words: all of them beats some, the exact title beats both, and a music video gives way to the song
+private fun matchScore(item: YTItem, words: List<String>, typed: String): Int {
+    val title = searchWords(item.title)
+    val credits = when (item) {
+        is SongItem -> item.artists.flatMap { searchWords(it.name) }
+        is AlbumItem -> item.artists.orEmpty().flatMap { searchWords(it.name) }
+        is PlaylistItem -> item.author?.name?.let(::searchWords).orEmpty()
+        else -> emptyList()
+    }
+    val known = (title + credits).toHashSet()
+    val found = words.count { it in known }
+    if (found == 0) return 0
+    var score = found * 100 / words.size
+    if (title.joinToString(" ") == typed) score += 100 else if (found == words.size) score += 40
+    if (item is SongItem && item.isVideoSong) score -= 5
+    return score.coerceAtLeast(1)
+}
+
+// lowercase words without accents, so "Beyoncé" and "beyonce" match
+private fun searchWords(text: String): List<String> =
+    AccentMarks.replace(java.text.Normalizer.normalize(text.lowercase(), java.text.Normalizer.Form.NFD), "")
+        .split(WordBreaks)
+        .filter { it.isNotEmpty() }
+
+private val AccentMarks = Regex("\\p{M}+")
+private val WordBreaks = Regex("[^\\p{L}\\p{N}]+")
 
 @Composable
 private fun TopResultCard(

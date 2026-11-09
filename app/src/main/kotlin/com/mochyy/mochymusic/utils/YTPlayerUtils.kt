@@ -813,6 +813,31 @@ object YTPlayerUtils {
             .onFailure { Timber.tag(logTag).e(it, "Failed to fetch metadata") }
     }
 
+    // the play links for a song another source plays, asked for the way the stream lookup asks, or youtube ignored the plays and history stayed empty
+    suspend fun playbackTrackingFor(videoId: String): PlayerResponse.PlaybackTracking? {
+        val isLoggedIn = YouTube.cookie != null
+        if (!isLoggedIn && YouTube.visitorData.isNullOrEmpty()) YouTube.refreshVisitorData()
+        val client = if (isLoggedIn) METADATA_CLIENT else MAIN_CLIENT
+        val sessionId = if (isLoggedIn) YouTube.dataSyncId else YouTube.visitorData
+        val poToken = if (client.useWebPoTokens && sessionId != null) {
+            try {
+                poTokenGenerator.poTokenFor(videoId, sessionId)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.tag(logTag).w(e, "No PoToken for the play links of $videoId")
+                null
+            }
+        } else {
+            null
+        }
+        val timestamp = if (client.useSignatureTimestamp) getSignatureTimestampOrNull(videoId).timestamp else null
+        return YouTube.player(videoId, null, client, timestamp, poToken?.playerRequestPoToken)
+            .onFailure { Timber.tag(logTag).w(it, "Couldn't get the play links for $videoId") }
+            .getOrNull()
+            ?.playbackTracking
+    }
+
     private fun findFormat(
         playerResponse: PlayerResponse,
         audioQuality: AudioQuality,

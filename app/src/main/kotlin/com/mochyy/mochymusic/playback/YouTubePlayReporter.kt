@@ -155,7 +155,7 @@ class YouTubePlayReporter(
             // one failed ask shouldn't lose the play, so it's tried again a couple of times
             repeat(TRACKING_TRIES) { attempt ->
                 if (attempt > 0) delay(TRACKING_RETRY_MS * attempt)
-                YTPlayerUtils.playerResponseForMetadata(videoId).getOrNull()?.playbackTracking?.let { return@async it }
+                YTPlayerUtils.playbackTrackingFor(videoId)?.let { return@async it }
             }
             null
         }
