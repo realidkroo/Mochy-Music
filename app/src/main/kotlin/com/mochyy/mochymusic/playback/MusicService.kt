@@ -3005,6 +3005,8 @@ class MusicService :
 
     override fun onRepeatModeChanged(repeatMode: Int) {
         updateNotification()
+        // a crossfade or mix planned before repeat one went on would still swap players at the end, and the song came round silent
+        scheduleCrossfade()
         scope.launch {
             dataStore.edit { settings ->
                 settings[RepeatModeKey] = repeatMode

@@ -42,11 +42,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -152,21 +155,30 @@ fun StatsScreen(navController: NavController) {
     val collapse by remember { derivedStateOf { if (listState.firstVisibleItemIndex > 0) 1f else (listState.firstVisibleItemScrollOffset / with(density) { 90.dp.toPx() }).coerceIn(0f, 1f) } }
 
     fun openPicker() {
+        val choice = PickerChoice(kind, year, month)
         var handle: PopupSheetHandle? = null
-        handle = sheets.showWithHandle {
-            StatsPicker(
-                kind = kind,
-                year = year,
-                month = month,
-                firstDay = start,
-                today = today,
-                onDone = { k, y, m ->
-                    kind = k
-                    year = y
-                    month = m
-                    handle?.dismiss()
-                },
-            )
+        // done sits in the button bar: at the end of the content it was cut off below the screen on most phones, so the sheet couldn't be closed with a pick
+        handle = sheets.showWithHandle(
+            buttonBar = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF666666))
+                        .clickable {
+                            kind = choice.kind
+                            year = choice.year
+                            month = choice.month
+                            handle?.dismiss()
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("Done", style = statsText(20f))
+                }
+            },
+        ) {
+            StatsPicker(choice = choice, firstDay = start, today = today)
         }
     }
 
@@ -661,18 +673,23 @@ private fun hourLabel(h: Int): String = java.time.LocalTime.of(h, 0)
 // ---------------------------------------------------------------------------------------------
 // The picker sheet
 
+// what the picker has landed on, shared by its wheels and the done button pinned under them
+@Stable
+private class PickerChoice(kind: StatsRange.Kind, year: Int, month: Int) {
+    var kind by mutableStateOf(kind)
+    var year by mutableStateOf(year)
+    var month by mutableStateOf(month)
+}
+
 @Composable
 private fun ColumnScope.StatsPicker(
-    kind: StatsRange.Kind,
-    year: Int,
-    month: Int,
+    choice: PickerChoice,
     firstDay: LocalDate,
     today: LocalDate,
-    onDone: (StatsRange.Kind, Int, Int) -> Unit,
 ) {
-    var k by remember { mutableStateOf(kind) }
-    var y by remember { mutableStateOf(year) }
-    var m by remember { mutableStateOf(month) }
+    var k by choice::kind
+    var y by choice::year
+    var m by choice::month
     val years = (firstDay.year..today.year).toList()
     val months = remember(y) {
         val from = if (y == firstDay.year) firstDay.monthValue else 1
@@ -681,7 +698,13 @@ private fun ColumnScope.StatsPicker(
     }
     if (m !in months) m = months.last()
 
-    Column(modifier = Modifier.padding(horizontal = 22.dp).padding(bottom = 20.dp)) {
+    // two wheels and their titles are taller than a sheet gets on most phones, so the picker scrolls
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 22.dp)
+            .padding(bottom = 8.dp),
+    ) {
         Text("Show by", style = statsText(36f, tracking = -1.4f))
         Spacer(Modifier.height(10.dp))
         listOf(StatsRange.Kind.Month to "Month", StatsRange.Kind.Year to "Year").forEach { (value, label) ->
@@ -718,18 +741,6 @@ private fun ColumnScope.StatsPicker(
                     onSelected = { m = it },
                 )
             }
-        }
-        Spacer(Modifier.height(18.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp)
-                .clip(CircleShape)
-                .background(Color(0xFF666666))
-                .clickable { onDone(k, y, m) },
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("Done", style = statsText(20f))
         }
     }
 }
