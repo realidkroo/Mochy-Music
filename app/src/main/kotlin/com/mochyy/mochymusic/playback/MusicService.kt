@@ -104,6 +104,8 @@ import com.mochyy.mochymusic.constants.TransportFadeMinSeconds
 import com.mochyy.mochymusic.constants.TransportFadeSecondsKey
 import com.mochyy.mochymusic.constants.CrossfadeGaplessKey
 import com.mochyy.mochymusic.constants.SkipBlendKey
+import com.mochyy.mochymusic.constants.SkipBlendAheadKey
+import com.mochyy.mochymusic.constants.SkipBlendAheadMax
 import com.mochyy.mochymusic.constants.StudioForVideosKey
 import com.mochyy.mochymusic.constants.CrossmixMode
 import com.mochyy.mochymusic.constants.CrossmixModeKey
@@ -543,6 +545,8 @@ class MusicService :
 
     // "blend skips": skips and backs cross over on two players, the neighbours' first seconds fetched ahead
     @Volatile private var skipBlend = false
+    // how many songs coming up get their start fetched, so a few skips in a row still blend
+    @Volatile private var blendAhead = 1
     private var prefetchJob: Job? = null
 
     // "studio version for music videos": a music video plays its song's studio upload when there is one
@@ -1148,11 +1152,12 @@ class MusicService :
             }
 
         dataStore.data
-            .map { (it[SkipBlendKey] ?: false) to (it[StudioForVideosKey] ?: false) }
+            .map { Triple(it[SkipBlendKey] ?: false, it[StudioForVideosKey] ?: false, it[SkipBlendAheadKey] ?: 1) }
             .distinctUntilChanged()
-            .collect(scope) { (blend, studio) ->
+            .collect(scope) { (blend, studio, ahead) ->
                 skipBlend = blend
                 studioForVideos = studio
+                blendAhead = ahead.coerceIn(1, SkipBlendAheadMax)
                 if (blend) prefetchNeighbours() else prefetchJob?.cancel()
             }
 
@@ -1908,8 +1913,8 @@ class MusicService :
         resetQueueRunway()
         val generation = queueGeneration
         initialQueueLoading = true
-        val persistShuffleAcrossQueues = dataStore.get(PersistentShuffleAcrossQueuesKey, false)
-        val previousShuffleEnabled = player.shuffleModeEnabled
+        // on by default, like spotify: a new playlist keeps shuffling until shuffle is turned off
+        val persistShuffleAcrossQueues = dataStore.get(PersistentShuffleAcrossQueuesKey, true)
         if (!persistShuffleAcrossQueues) {
             player.shuffleModeEnabled = false
         }
@@ -4449,7 +4454,11 @@ class MusicService :
         // only songs youtube plays: a source module's stream is found and cached its own way
         val youTubeFirst = sourceModules.order.value.firstOrNull { sourceModules.isUsable(it) } == com.mochyy.mochymusic.modules.SourceModules.YouTubeId
         if (!youTubeFirst) return
-        val ids = listOf(player.nextMediaItemIndex, player.previousMediaItemIndex)
+        // data saver keeps it to the next one, the extra songs are only worth it on a connection that doesn't count
+        val ahead = if (com.mochyy.mochymusic.utils.DataSaver.isActive(this)) 1 else blendAhead
+        val upcoming = upcomingIndices(ahead)
+        // the next one first, then back, then the rest coming up
+        val ids = (upcoming.take(1) + player.previousMediaItemIndex + upcoming.drop(1))
             .filter { it != C.INDEX_UNSET && it < player.mediaItemCount }
             .map { player.getMediaItemAt(it).mediaId }
             .distinct()
@@ -4463,6 +4472,22 @@ class MusicService :
                 runCatching { warmStart(id) }.onFailure { Timber.tag(TAG).d(it, "Couldn't fetch the start of $id ahead") }
             }
         }
+    }
+
+    // the next [count] songs in play order, shuffle included; repeat one counts as off here, the way the skip buttons see it
+    private fun upcomingIndices(count: Int): List<Int> {
+        val timeline = player.currentTimeline
+        if (timeline.isEmpty) return emptyList()
+        val navigationRepeat = if (player.repeatMode == REPEAT_MODE_ONE) REPEAT_MODE_OFF else player.repeatMode
+        val current = player.currentMediaItemIndex
+        val found = ArrayList<Int>(count)
+        var index = current
+        while (found.size < count) {
+            index = timeline.getNextWindowIndex(index, navigationRepeat, player.shuffleModeEnabled)
+            if (index == C.INDEX_UNSET || index == current) break
+            found += index
+        }
+        return found
     }
 
     // reads a song's first bytes through the player's own data source, which keeps them in the player's cache

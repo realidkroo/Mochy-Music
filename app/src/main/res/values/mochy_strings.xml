@@ -1136,6 +1136,16 @@
     <!-- skips that cross over, the studio version of music videos, recent searches -->
     <string name="settings_blend_skips">Blend skips</string>
     <string name="settings_blend_skips_desc">Loads the songs either side ahead, so skip and back crossfade straight into them</string>
+    <string name="settings_blend_ahead">Songs loaded ahead</string>
+    <plurals name="settings_blend_ahead_value">
+        <item quantity="one">%d song</item>
+        <item quantity="other">%d songs</item>
+    </plurals>
+    <string name="settings_blend_ahead_desc">More songs ahead keeps the fade smooth when you skip a few in a row. It uses a little more data.</string>
+    <string name="settings_blend_ahead_saver">Data saver is on, so only the next song loads ahead.</string>
+    <string name="settings_persistent_shuffle">Keep shuffle on</string>
+    <string name="settings_persistent_shuffle_desc">Shuffle stays on when you play another playlist or album, until you turn it off</string>
+    <string name="auto_download_new_songs">Download new songs</string>
     <string name="settings_studio_for_videos">Studio version for music videos</string>
     <string name="settings_studio_for_videos_desc">A music video plays its song\'s studio recording when there is one, without the video\'s skits and sound effects</string>
     <string name="playing_studio_version">Playing the studio version</string>

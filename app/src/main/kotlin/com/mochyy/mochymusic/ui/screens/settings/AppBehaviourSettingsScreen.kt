@@ -53,6 +53,7 @@ import com.mochyy.mochymusic.constants.LyricsMotionStyleKey
 import com.mochyy.mochymusic.constants.MixWithOtherAppsKey
 import com.mochyy.mochymusic.constants.OfflineModeKey
 import com.mochyy.mochymusic.constants.PersistentQueueKey
+import com.mochyy.mochymusic.constants.PersistentShuffleAcrossQueuesKey
 import com.mochyy.mochymusic.constants.ProxyEnabledKey
 import com.mochyy.mochymusic.constants.ProxyUrlKey
 import com.mochyy.mochymusic.constants.PlayVideoBackgroundKey
@@ -346,7 +347,17 @@ private fun playerBehaviourItems(): List<SettingsItem> {
     val (failureTimeout, onFailureTimeoutChange) = rememberPreference(StreamFailureTimeoutKey, defaultValue = 6)
     val (skipSilence, onSkipSilenceChange) = rememberPreference(SkipSilenceKey, defaultValue = false)
     val (reportPlays, onReportPlaysChange) = rememberPreference(YtReportPlaysKey, defaultValue = true)
+    val (persistentShuffle, onPersistentShuffleChange) = rememberPreference(PersistentShuffleAcrossQueuesKey, defaultValue = true)
     return listOf(
+        // shuffle stays on from one playlist to the next, like spotify, until it's turned off
+        switchItem(
+            key = "Keep shuffle on",
+            title = stringResource(R.string.settings_persistent_shuffle),
+            description = stringResource(R.string.settings_persistent_shuffle_desc),
+            icon = painterResource(R.drawable.shuffle),
+            checked = persistentShuffle,
+            onCheckedChange = onPersistentShuffleChange,
+        ),
         switchItem(
             key = "Disable auto-playing YouTube video",
             title = stringResource(R.string.settings_disable_video_autoplay),

@@ -387,6 +387,7 @@ fun AutoPlaylistScreen(
                     },
                     onDismiss = { menuState.dismiss() },
                     onSearch = { isSearching = true },
+                    autoDownloadId = if (isLiked) com.mochyy.mochymusic.playback.AutoDownloads.LikedId else null,
                 )
             }
         },

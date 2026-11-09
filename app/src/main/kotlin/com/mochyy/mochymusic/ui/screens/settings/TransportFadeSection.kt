@@ -38,6 +38,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,6 +48,8 @@ import com.mochyy.mochymusic.constants.TransportEffect
 import com.mochyy.mochymusic.constants.TransportEffectKey
 import com.mochyy.mochymusic.constants.TransportFadeDefaultSeconds
 import com.mochyy.mochymusic.constants.SkipBlendKey
+import com.mochyy.mochymusic.constants.SkipBlendAheadKey
+import com.mochyy.mochymusic.constants.SkipBlendAheadMax
 import com.mochyy.mochymusic.constants.TransportFadeEnabledKey
 import com.mochyy.mochymusic.constants.TransportFadeMaxSeconds
 import com.mochyy.mochymusic.constants.TransportFadeMinSeconds
@@ -61,6 +65,7 @@ import com.mochyy.mochymusic.ui.screens.audiolab.rememberOnScreen
 import com.mochyy.mochymusic.ui.screens.audiolab.rememberPicturesHeld
 import com.mochyy.mochymusic.ui.screens.audiolab.trackOnScreen
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
+import com.mochyy.mochymusic.utils.rememberDataSaverActive
 import com.mochyy.mochymusic.utils.rememberEnumPreference
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlin.math.PI
@@ -79,6 +84,8 @@ fun TransportFadeSection() {
     val (storedSeconds, onSecondsChange) = rememberPreference(TransportFadeSecondsKey, defaultValue = TransportFadeDefaultSeconds)
     val (effect, onEffectChange) = rememberEnumPreference(TransportEffectKey, defaultValue = TransportEffect.OFF)
     val (blendSkips, onBlendSkipsChange) = rememberPreference(SkipBlendKey, defaultValue = false)
+    val (blendAhead, onBlendAheadChange) = rememberPreference(SkipBlendAheadKey, defaultValue = 1)
+    val dataSaving = rememberDataSaverActive()
     val seconds = storedSeconds.coerceIn(TransportFadeMinSeconds, TransportFadeMaxSeconds)
 
     Text(
@@ -109,6 +116,9 @@ fun TransportFadeSection() {
             checked = blendSkips,
             onCheckedChange = onBlendSkipsChange,
         )
+        LabCollapsible(blendSkips) {
+            BlendAheadRow(ahead = blendAhead, dataSaving = dataSaving, onAheadChange = onBlendAheadChange)
+        }
         LabCollapsible(enabled) {
             Box(Modifier.padding(horizontal = 6.dp)) {
                 LabSlider(
@@ -139,6 +149,31 @@ fun TransportFadeSection() {
             EffectPicker(selected = effect, onSelect = onEffectChange)
             Spacer(Modifier.height(4.dp))
         }
+    }
+}
+
+// how many songs coming up are loaded for blend skips; data saver holds it at one and says so
+@Composable
+private fun BlendAheadRow(ahead: Int, dataSaving: Boolean, onAheadChange: (Int) -> Unit) {
+    val shown = if (dataSaving) 1 else ahead.coerceIn(1, SkipBlendAheadMax)
+    Column(Modifier.padding(horizontal = 6.dp).padding(bottom = 6.dp)) {
+        LabSlider(
+            label = stringResource(R.string.settings_blend_ahead),
+            valueText = pluralStringResource(R.plurals.settings_blend_ahead_value, shown, shown),
+            value = shown.toFloat(),
+            onValueChange = { onAheadChange(it.roundToInt().coerceIn(1, SkipBlendAheadMax)) },
+            valueRange = 1f..SkipBlendAheadMax.toFloat(),
+            steps = SkipBlendAheadMax - 2,
+            enabled = !dataSaving,
+        )
+        Text(
+            text = stringResource(if (dataSaving) R.string.settings_blend_ahead_saver else R.string.settings_blend_ahead_desc),
+            fontFamily = InterFontFamily,
+            fontSize = 12.sp,
+            lineHeight = 15.sp,
+            color = LabColors.Secondary,
+            modifier = Modifier.padding(top = 4.dp),
+        )
     }
 }
 

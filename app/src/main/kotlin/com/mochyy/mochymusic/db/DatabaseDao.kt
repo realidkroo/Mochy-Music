@@ -1168,6 +1168,18 @@ interface DatabaseDao {
     @Query("SELECT * FROM playlist WHERE id = :playlistId")
     fun playlistEntity(playlistId: String): PlaylistEntity?
 
+    // the newest entry in a playlist, where "download new songs" starts counting from
+    @Query("SELECT MAX(id) FROM playlist_song_map WHERE playlistId = :playlistId")
+    fun lastPlaylistEntryId(playlistId: String): Long?
+
+    // songs added to a playlist after its entry [afterEntryId]; entry ids only ever grow, so these are the ones added since
+    @Query("SELECT songId FROM playlist_song_map WHERE playlistId = :playlistId AND id > :afterEntryId")
+    fun playlistSongIdsAfter(playlistId: String, afterEntryId: Long): Flow<List<String>>
+
+    // songs liked after [since], in the same stored form as likedDate
+    @Query("SELECT id FROM song WHERE liked = 1 AND likedDate > :since")
+    fun likedSongIdsSince(since: Long): Flow<List<String>>
+
     // swaps only the cover, and only while it's still [expected], so a redraw that finishes late never undoes a newer edit
     @Query("UPDATE playlist SET thumbnailUrl = :thumbnailUrl WHERE id = :playlistId AND thumbnailUrl IS :expected")
     fun replacePlaylistCover(playlistId: String, expected: String?, thumbnailUrl: String): Int

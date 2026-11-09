@@ -60,6 +60,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -300,6 +302,7 @@ constructor(
         downloads.value = result
 
         scope.launch { followBatches() }
+        scope.launch { followAutoDownloads(context) }
 
         // Offline mode holds downloads where they are rather than failing them: they carry on
         // when it's turned off. Only then - resuming whenever offline mode reads off, at every
@@ -443,6 +446,43 @@ constructor(
             }
             // a batch that ended on an out-of-date entry in downloads can't spin this loop
             delay(1_000)
+        }
+    }
+
+    // a song added to a playlist with "download new songs" on, or liked with it on for liked songs, starts downloading as it comes in
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private suspend fun followAutoDownloads(context: Context) {
+        context.dataStore.data
+            .map { AutoDownloads.marks(it) }
+            .distinctUntilChanged()
+            .collectLatest { marks ->
+                if (marks.isEmpty()) return@collectLatest
+                val sources = marks.map { (id, mark) ->
+                    if (id == AutoDownloads.LikedId) database.likedSongIdsSince(mark) else database.playlistSongIdsAfter(id, mark)
+                }
+                combine(sources) { lists -> lists.flatMap { it }.toSet() }
+                    .distinctUntilChanged()
+                    .collect { ids -> ids.forEach { startAutoDownload(context, it) } }
+            }
+    }
+
+    private suspend fun startAutoDownload(context: Context, songId: String) {
+        if (OfflineMode.isOn) return
+        // already saved, on its way, or stopped by hand: asking again would start a finished one over
+        val known = downloads.value[songId]
+        if (known != null && known.state != Download.STATE_FAILED) return
+        val song = database.song(songId).first() ?: return
+        // an imported file has no youtube id to download from
+        if (song.song.isLocal) return
+        val request = androidx.media3.exoplayer.offline.DownloadRequest.Builder(songId, songId.toUri())
+            .setCustomCacheKey(songId)
+            .setData(song.song.title.toByteArray())
+            .build()
+        kotlinx.coroutines.withContext(Dispatchers.Main) {
+            // android won't start the service from the background (a sync running behind another app), so the manager takes it straight then
+            runCatching {
+                androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(context, ExoDownloadService::class.java, request, false)
+            }.onFailure { downloadManager.addDownload(request) }
         }
     }
 
