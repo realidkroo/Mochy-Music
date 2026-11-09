@@ -40,6 +40,7 @@ import com.mochyy.mochymusic.ui.player.LyricsHeaderArtSize
 import com.mochyy.mochymusic.ui.player.LyricsHeaderArtTopFromStatusBar
 import com.mochyy.mochymusic.ui.player.LyricsHeaderArtX
 import com.mochyy.mochymusic.ui.player.LyricsScreen
+import com.mochyy.mochymusic.ui.player.QueueScreen
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.ui.utils.stableStatusBarsPadding
 
@@ -58,6 +59,44 @@ fun StyleLyricsPage(
     modifier: Modifier = Modifier,
     onCoveredChange: (Boolean) -> Unit = {},
     onSwitchSource: (() -> Unit)? = null,
+) {
+    StyleOverlayPage(open = open, onClose = onClose, modifier = modifier, onCoveredChange = onCoveredChange) { nav ->
+        LyricsScreen(
+            onClose = onClose,
+            screenHeight = screenHeight,
+            contentBottomInset = nav + 28.dp,
+            onSwitchSource = onSwitchSource,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+// the queue over the poster, from its chevron menu: the same page as the lyrics, with the flagship's queue list in it
+@Composable
+fun StyleQueuePage(
+    open: Boolean,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    onCoveredChange: (Boolean) -> Unit = {},
+) {
+    StyleOverlayPage(open = open, onClose = onClose, modifier = modifier, onCoveredChange = onCoveredChange) { nav ->
+        QueueScreen(
+            onClose = onClose,
+            contentBottomInset = nav + 28.dp,
+            controlsClearance = 0.dp,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+// a page that rises over a style on the player's own background, with the cover and title where the flagship's header sits; [content] gets the nav bar's height
+@Composable
+private fun StyleOverlayPage(
+    open: Boolean,
+    onClose: () -> Unit,
+    modifier: Modifier,
+    onCoveredChange: (Boolean) -> Unit,
+    content: @Composable (nav: Dp) -> Unit,
 ) {
     val shown = remember { Animatable(0f) }
     LaunchedEffect(open) {
@@ -143,13 +182,7 @@ fun StyleLyricsPage(
                     }
                 }
             }
-            LyricsScreen(
-                onClose = onClose,
-                screenHeight = screenHeight,
-                contentBottomInset = nav + 28.dp,
-                onSwitchSource = onSwitchSource,
-                modifier = Modifier.fillMaxSize(),
-            )
+            content(nav)
         }
     }
 }

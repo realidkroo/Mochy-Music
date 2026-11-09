@@ -467,9 +467,12 @@ private fun PlayerSheet(
     }
     // the song's whole lyrics, opened over an alternate style from its ••• menu
     var styleLyricsOpen by remember { mutableStateOf(false) }
-    // that page fully up: the style under it stops drawing, and its clocks stop with it
+    // the queue, opened over the poster from its chevron menu
+    var styleQueueOpen by remember { mutableStateOf(false) }
+    // either page fully up: the style under it stops drawing, and its clocks stop with it
     var styleCovered by remember { mutableStateOf(false) }
-    val styleCoveredNow = remember { { styleCovered } }
+    var styleQueueCovered by remember { mutableStateOf(false) }
+    val styleCoveredNow = remember { { styleCovered || styleQueueCovered } }
     val styleActions = remember(openStudio) {
         com.mochyy.mochymusic.ui.player.styles.StyleActions(
             onOtherMenu = {
@@ -494,6 +497,7 @@ private fun PlayerSheet(
                 state.collapseSoft()
             },
             onClose = { state.collapseSoft() },
+            onQueue = { styleQueueOpen = true },
         )
     }
 
@@ -1037,18 +1041,28 @@ private fun PlayerSheet(
                             // under a lyrics page that fills the screen it needn't be drawn
                             modifier = Modifier
                                 .fillMaxSize()
-                                .graphicsLayer { alpha = if (styleCovered) 0f else 1f },
+                                .graphicsLayer { alpha = if (styleCovered || styleQueueCovered) 0f else 1f },
                         )
                     }
                 }
                 // closed with the player, so it isn't still up the next time it opens
-                LaunchedEffect(styleOpen) { if (!styleOpen) styleLyricsOpen = false }
+                LaunchedEffect(styleOpen) {
+                    if (!styleOpen) {
+                        styleLyricsOpen = false
+                        styleQueueOpen = false
+                    }
+                }
                 com.mochyy.mochymusic.ui.player.styles.StyleLyricsPage(
                     open = styleLyricsOpen && styleOpen,
                     onClose = { styleLyricsOpen = false },
                     screenHeight = screenHeight,
                     onCoveredChange = { styleCovered = it },
                     onSwitchSource = { showLyricsSource = true },
+                )
+                com.mochyy.mochymusic.ui.player.styles.StyleQueuePage(
+                    open = styleQueueOpen && styleOpen,
+                    onClose = { styleQueueOpen = false },
+                    onCoveredChange = { styleQueueCovered = it },
                 )
                 // the ipod, the full video mode and the bedside each have their own close, a bar over them would just be in the way
                 if (!onTv && playerStyle != PlayerStyle.IPOD && playerStyle != PlayerStyle.VIDEO && !playerStyle.isBedside) PlayerHandle(

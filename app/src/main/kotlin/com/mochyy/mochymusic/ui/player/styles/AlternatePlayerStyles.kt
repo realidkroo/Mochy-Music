@@ -366,7 +366,7 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                 StyleMenu(
                     open = menuOpen, onOpenChange = setMenuOpen, tones = tones, actions = actions,
                     atBottom = false, end = 22.dp, edge = insets.top + 16.dp,
-                    buttonSize = PosterChevron, pill = true,
+                    buttonSize = PosterChevron, pill = true, queue = true,
                 )
             } else {
                 // circle from the left edge, the words to its right
@@ -418,7 +418,7 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                 StyleMenu(
                     open = menuOpen, onOpenChange = setMenuOpen, tones = tones, actions = actions,
                     atBottom = false, end = 20.dp + insets.end, edge = 18.dp,
-                    buttonSize = PosterChevron, pill = true,
+                    buttonSize = PosterChevron, pill = true, queue = true,
                 )
             }
         }
