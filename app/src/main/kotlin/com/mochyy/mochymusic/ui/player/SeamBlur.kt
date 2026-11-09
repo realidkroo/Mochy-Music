@@ -47,6 +47,8 @@ fun SeamBlur(
     fadeProvider: () -> Float = { 1f },
     /** how far the controls (and with them the bottom of the cover) were moved, px down; read while placing only */
     offsetProvider: () -> Float = { 0f },
+    // the selector's cards draw the no-blur look: they can't blur the live player under them
+    noBlur: Boolean = false,
 ) {
     if (trackInfo.thumbnailUrl == null) return
 
@@ -56,7 +58,7 @@ fun SeamBlur(
     val context = LocalContext.current
     // Without blur the glass below has nothing to draw, yet still ran its mask effect (and an
     // offscreen layer below Android 12). The cover fades its own bottom edge instead then.
-    val blurAvailable = rememberCoverBlurAvailable()
+    val blurAvailable = rememberCoverBlurAvailable() && !noBlur
 
     val bandTop = maxHeight * 0.52f
     val bandBottom = maxHeight * 0.74f

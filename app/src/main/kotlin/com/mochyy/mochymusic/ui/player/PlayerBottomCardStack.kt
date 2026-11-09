@@ -539,6 +539,34 @@ private fun QueueCardContent(
     }
 }
 
+// the deck as the player shows it at rest, for the selector's cards: the front card running off the bottom edge and the one behind peeking over it
+@Composable
+internal fun PlayerDeckPreview(look: PlayerCardLook, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(PlayerDeckHeight),
+    ) {
+        val cardHeight = PlayerCardHeight.toPx()
+        val bleed = BottomBleed.toPx()
+        val corner = CornerRadius(look.corner.toPx())
+        val border = look.borderWidth.toPx()
+        val frontTop = size.height - cardHeight
+        // the back card, scaled from the bottom and lifted by the peek, only where it shows over the front one
+        val inset = PeekInset.toPx()
+        val backTop = size.height - cardHeight * BackCardScale - PeekOffset.toPx()
+        clipRect(bottom = frontTop) {
+            val left = inset * BackCardScale + (size.width - size.width * BackCardScale) / 2f
+            val width = (size.width - inset * 2f) * BackCardScale
+            val backCorner = CornerRadius(look.corner.toPx() * BackCardScale)
+            drawRoundRect(Color.White.copy(alpha = look.backFill), Offset(left, backTop), Size(width, cardHeight + bleed), backCorner)
+            drawRoundRect(Color.White.copy(alpha = look.backBorder), Offset(left, backTop), Size(width, cardHeight + bleed), backCorner, style = Stroke(border * BackCardScale))
+        }
+        drawRoundRect(Color.White.copy(alpha = look.frontFill), Offset(0f, frontTop), Size(size.width, cardHeight + bleed), corner)
+        drawRoundRect(Color.White.copy(alpha = look.frontBorder), Offset(0f, frontTop), Size(size.width, cardHeight + bleed), corner, style = Stroke(border))
+    }
+}
+
 /** the queue card's own row: the next song's artwork, and its title and artist */
 @Composable
 private fun NextSongRow(

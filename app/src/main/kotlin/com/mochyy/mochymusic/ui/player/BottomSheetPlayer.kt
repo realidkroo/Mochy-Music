@@ -135,13 +135,13 @@ import com.mochyy.mochymusic.ui.utils.stableStatusBars
  * so the same 64dp lift dragged the title, timestamps and seek bar back up onto the cover - the
  * overlap that showed up once SQUARED became the default on devices without blur.
  */
-private val ControlsDrawShift = 64.dp
+internal val ControlsDrawShift = 64.dp
 
 /** Small upward nudge for the seek bar and its timestamps, so they sit off the controls below. */
-private val SeekBarLift = 6.dp
+internal val SeekBarLift = 6.dp
 
 /** the Turntable's controls stand this far above the card, as in its frame */
-private val TurntableControlsLift = 44.dp
+internal val TurntableControlsLift = 44.dp
 
 /** The queue page's third button (autoplay) and the gap above it, on top of the lyrics pair. */
 private val QueueButtonExtraHeight = 41.dp
@@ -186,7 +186,7 @@ private val PlayerCloseStrip = 64.dp
 private const val StyleHiddenBelow = 0.25f
 
 /** The old gap from the seek bar down to the buttons (24dp plus the bar's lift). */
-private val TransportGapAboveRow = 24.dp + SeekBarLift
+internal val TransportGapAboveRow = 24.dp + SeekBarLift
 
 /** From the top of the page column's chevron to the top of the button under it (34dp + a 7dp gap). */
 private val PageButtonStep = 41.dp
