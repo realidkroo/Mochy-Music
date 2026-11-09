@@ -16,15 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MultipartBody
 import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import timber.log.Timber
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.ceil
@@ -40,13 +32,10 @@ internal class SpinningArtwork(
     private val scope: CoroutineScope,
     /** a GIF finished: send the status again so it shows */
     private val onReady: () -> Unit,
+    // reads artwork that's on the phone (a local song's cover), which the web download can't
+    private val loadLocal: suspend (source: String, size: Int) -> Bitmap? = { _, _ -> null },
 ) {
-    private class Made(val url: String, val usableUntilMs: Long)
-
-    /** a free host, how long it keeps a file, and how to hand it one */
-    private class Host(val name: String, val keepsMs: Long, val upload: (ByteArray) -> String)
-
-    private val made = ConcurrentHashMap<String, Made>()
+    private val made = ConcurrentHashMap<String, PictureHosts.Hosted>()
     private val failedAt = ConcurrentHashMap<String, Long>()
     private val working = ConcurrentHashMap.newKeySet<String>()
 
@@ -60,7 +49,7 @@ internal class SpinningArtwork(
         if (working.add(key)) {
             scope.launch {
                 try {
-                    made[key] = upload(render(download(sourceUrl), style))
+                    made[key] = PictureHosts.upload(render(download(sourceUrl), style), "mochy.gif", "image/gif")
                     onReady()
                 } catch (e: CancellationException) {
                     throw e
@@ -76,6 +65,7 @@ internal class SpinningArtwork(
     }
 
     private suspend fun download(url: String): Bitmap = withContext(Dispatchers.IO) {
+        if (!PresenceImages.isWebImage(url)) return@withContext loadLocal(url, SourceSize) ?: error("artwork on the phone couldn't be read")
         val request = Request.Builder().url(url.resize(SourceSize, SourceSize)).build()
         val bytes = DiscordHttp.client.newCall(request).execute().use { response ->
             check(response.isSuccessful) { "artwork download failed: HTTP ${response.code}" }
@@ -137,28 +127,6 @@ internal class SpinningArtwork(
         val side = minOf(source.width, source.height)
         if (source.width == source.height) return source
         return Bitmap.createBitmap(source, (source.width - side) / 2, (source.height - side) / 2, side, side)
-    }
-
-    /**
-     * Tries each host in turn. Free hosts come and go (litterbox started answering every upload
-     * with an error in October 2026), so one being down mustn't stop the picture.
-     */
-    private suspend fun upload(gif: ByteArray): Made = withContext(Dispatchers.IO) {
-        var lastProblem: Exception? = null
-        for (host in Hosts) {
-            try {
-                val url = host.upload(gif)
-                check(url.startsWith("https://")) { "${host.name} sent back \"${url.take(120)}\"" }
-                // stop using it a little before the host deletes it
-                return@withContext Made(url, System.currentTimeMillis() + host.keepsMs * 9 / 10)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.tag(LogTag).d(e, "${host.name} didn't take the GIF")
-                lastProblem = e
-            }
-        }
-        throw lastProblem ?: IllegalStateException("no host to upload to")
     }
 
     /**
@@ -257,42 +225,5 @@ internal class SpinningArtwork(
         private const val MinFrames = 12
 
         private const val RetryAfterFailureMs = 10 * 60_000L
-        private const val HourMs = 60 * 60_000L
-
-        private val json = Json { ignoreUnknownKeys = true }
-
-        // Checked October 2026 by uploading a GIF and fetching it back as Discord's crawler:
-        // uguu serves the GIF itself; qu.ax and tmpfiles serve a web page instead, so they're out.
-        private val Hosts = listOf(
-            Host("uguu.se", keepsMs = 3 * HourMs) { gif ->
-                val reply = post("https://uguu.se/upload", "files[]", gif)
-                json.parseToJsonElement(reply).jsonObject["files"]?.jsonArray?.firstOrNull()
-                    ?.jsonObject?.get("url")?.jsonPrimitive?.contentOrNull.orEmpty()
-            },
-            // catbox keeps files for good; the 30 days only bounds how long Mochy reuses one
-            Host("catbox.moe", keepsMs = 30 * 24 * HourMs) { gif ->
-                post("https://catbox.moe/user/api.php", "fileToUpload", gif, "reqtype" to "fileupload")
-            },
-            Host("litterbox.catbox.moe", keepsMs = 72 * HourMs) { gif ->
-                post(
-                    "https://litterbox.catbox.moe/resources/internals/api.php", "fileToUpload", gif,
-                    "reqtype" to "fileupload", "time" to "72h",
-                )
-            },
-        )
-
-        /** Sends [gif] as a form upload and returns the reply's text, trimmed. */
-        private fun post(url: String, fileField: String, gif: ByteArray, vararg fields: Pair<String, String>): String {
-            val body = MultipartBody.Builder().setType(MultipartBody.FORM).apply {
-                fields.forEach { (name, value) -> addFormDataPart(name, value) }
-                addFormDataPart(fileField, "mochy.gif", gif.toRequestBody("image/gif".toMediaType()))
-            }.build()
-            val request = Request.Builder().url(url).post(body).build()
-            return DiscordHttp.client.newCall(request).execute().use { response ->
-                val text = response.body?.string().orEmpty().trim()
-                check(response.isSuccessful) { "HTTP ${response.code}" }
-                text
-            }
-        }
     }
 }

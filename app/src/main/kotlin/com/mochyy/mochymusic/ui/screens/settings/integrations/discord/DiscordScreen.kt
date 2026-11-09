@@ -4,6 +4,9 @@ package com.mochyy.mochymusic.ui.screens.settings.integrations.discord
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -142,7 +145,17 @@ fun DiscordScreen(
                 onLogin = ::openLogin,
                 onLogOut = viewModel::logOut,
             )
-            CustomizeSection(settings = settings, edit = viewModel::edit)
+            CustomizeSection(
+                settings = settings,
+                edit = viewModel::edit,
+                onPickCustom = { large, picked ->
+                    scope.launch {
+                        if (!viewModel.pickCustomPicture(large, picked)) {
+                            Toast.makeText(context, context.getString(R.string.discord_custom_failed), Toast.LENGTH_LONG).show()
+                        }
+                    }
+                },
+            )
             // room for the floating preview over the last card
             Spacer(Modifier.height(220.dp))
         }
@@ -225,8 +238,17 @@ private fun AccountButton(
 private fun CustomizeSection(
     settings: PresenceSettings,
     edit: (PresenceSettings.() -> PresenceSettings) -> Unit,
+    // a picture picked for the big (true) or small slot's "your own picture"
+    onPickCustom: (large: Boolean, picked: android.net.Uri) -> Unit,
 ) {
     val gap = Modifier.height(12.dp)
+    val pickSmall = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { picked ->
+        if (picked != null) onPickCustom(false, picked)
+    }
+    val pickLarge = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { picked ->
+        if (picked != null) onPickCustom(true, picked)
+    }
+    val imagesOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
 
     DiscordSectionTitle("CUSTOMIZE")
     DiscordPlaceholderCard()
@@ -281,16 +303,27 @@ private fun CustomizeSection(
         title = "Small image source",
         selected = settings.smallImage,
         options = PresenceImage.ForSmall,
-        onSelect = { image -> edit { copy(smallImage = image) } },
+        // "your own picture" with none picked yet opens the picker first, and only switches once one is chosen
+        onSelect = { image ->
+            if (image == PresenceImage.CUSTOM && settings.smallCustomImage.isBlank()) pickSmall.launch(imagesOnly)
+            else edit { copy(smallImage = image) }
+        },
         spin = settings.spin,
         onSpinChange = { spin -> edit { copy(spinSeconds = spin.secondsPerTurn, spinFps = spin.fps) } },
+        customPicture = settings.smallCustomImage,
+        onPickCustom = { pickSmall.launch(imagesOnly) },
     )
     Spacer(gap)
     DiscordImageSourceCard(
         title = "Big image source",
         selected = settings.largeImage,
         options = PresenceImage.ForLarge,
-        onSelect = { image -> edit { copy(largeImage = image) } },
+        onSelect = { image ->
+            if (image == PresenceImage.CUSTOM && settings.largeCustomImage.isBlank()) pickLarge.launch(imagesOnly)
+            else edit { copy(largeImage = image) }
+        },
+        customPicture = settings.largeCustomImage,
+        onPickCustom = { pickLarge.launch(imagesOnly) },
     )
 
     DiscordSectionTitle("Buttons")

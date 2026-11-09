@@ -345,6 +345,7 @@ private fun PictureView(picture: PresencePicture) {
     val fill = Modifier.fillMaxSize()
     when (picture) {
         is PresencePicture.Web -> AsyncImage(model = picture.url, contentDescription = null, contentScale = ContentScale.Crop, modifier = fill)
+        is PresencePicture.Local -> AsyncImage(model = picture.sourceUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = fill)
         PresencePicture.Logo -> Box(fill.background(Color(0xFF1A1A1A))) {
             Image(
                 painter = painterResource(R.drawable.ic_launcher_mark),

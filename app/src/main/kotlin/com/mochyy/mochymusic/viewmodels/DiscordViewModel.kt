@@ -12,7 +12,9 @@ import com.mochyy.mochymusic.discord.DiscordPresence
 import com.mochyy.mochymusic.discord.DiscordProfile
 import com.mochyy.mochymusic.discord.NowPlaying
 import com.mochyy.mochymusic.discord.PresenceConnection
+import com.mochyy.mochymusic.discord.PresenceImage
 import com.mochyy.mochymusic.discord.PresenceSettings
+import com.mochyy.mochymusic.discord.savePresencePicture
 import com.mochyy.mochymusic.utils.PreferencesCache
 import com.mochyy.mochymusic.utils.dataStore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,7 +31,7 @@ import javax.inject.Inject
 /** Settings → Integrations → Discord: the account, the switch, and every customisation. */
 @HiltViewModel
 class DiscordViewModel @Inject constructor(
-    @ApplicationContext context: Context,
+    @ApplicationContext private val context: Context,
     private val auth: DiscordAuth,
     private val presence: DiscordPresence,
 ) : ViewModel() {
@@ -56,6 +58,16 @@ class DiscordViewModel @Inject constructor(
         val edited = _settings.value.change()
         _settings.value = edited
         presence.save(edited)
+    }
+
+    // a picture picked for "your own picture" in the big or small slot; false when it couldn't be read
+    suspend fun pickCustomPicture(large: Boolean, picked: Uri): Boolean {
+        val saved = savePresencePicture(context, picked, if (large) "large" else "small") ?: return false
+        edit {
+            if (large) copy(largeImage = PresenceImage.CUSTOM, largeCustomImage = saved)
+            else copy(smallImage = PresenceImage.CUSTOM, smallCustomImage = saved)
+        }
+        return true
     }
 
     suspend fun loginUri(): Uri = auth.loginUri()

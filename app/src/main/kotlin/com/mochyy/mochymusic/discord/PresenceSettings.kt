@@ -14,9 +14,11 @@ import com.mochyy.mochymusic.constants.DiscordButton2TargetKey
 import com.mochyy.mochymusic.constants.DiscordButton2TextKey
 import com.mochyy.mochymusic.constants.DiscordClearOnPauseKey
 import com.mochyy.mochymusic.constants.DiscordDetailsKey
+import com.mochyy.mochymusic.constants.DiscordLargeCustomImageKey
 import com.mochyy.mochymusic.constants.DiscordLargeImageKey
 import com.mochyy.mochymusic.constants.DiscordLargeTextKey
 import com.mochyy.mochymusic.constants.DiscordRefreshSecondsKey
+import com.mochyy.mochymusic.constants.DiscordSmallCustomImageKey
 import com.mochyy.mochymusic.constants.DiscordSmallImageKey
 import com.mochyy.mochymusic.constants.DiscordSmallTextKey
 import com.mochyy.mochymusic.constants.DiscordSpinFpsKey
@@ -39,6 +41,8 @@ enum class PresenceImage(val label: String, val forLargeImage: Boolean) {
     APP_LOGO("Mochy logo", true),
     SPINNING_ARTIST("Rotating artist artwork", false),
     SPINNING_ARTWORK("Rotating music artwork", false),
+    // a picture from the phone, put on a free host for discord like the rotating ones
+    CUSTOM("Your own picture", true),
     ;
 
     /** a looping GIF of the artwork turning, made and uploaded by SpinningArtwork */
@@ -84,6 +88,9 @@ data class PresenceSettings(
     val spinFps: Int = DefaultSpinFps,
     /** off the profile the moment the music pauses, rather than staying up frozen for a while */
     val clearOnPause: Boolean = false,
+    // the files picked for "your own picture", empty until one is
+    val largeCustomImage: String = "",
+    val smallCustomImage: String = "",
 ) {
     val spin: SpinStyle get() = SpinStyle(spinSeconds, spinFps)
 
@@ -105,6 +112,8 @@ data class PresenceSettings(
         prefs[DiscordSpinSecondsKey] = spinSeconds
         prefs[DiscordSpinFpsKey] = spinFps
         prefs[DiscordClearOnPauseKey] = clearOnPause
+        prefs[DiscordLargeCustomImageKey] = largeCustomImage
+        prefs[DiscordSmallCustomImageKey] = smallCustomImage
     }
 
     companion object {
@@ -149,6 +158,8 @@ data class PresenceSettings(
             spinSeconds = (prefs[DiscordSpinSecondsKey] ?: Defaults.spinSeconds).coerceIn(MinSpinSeconds, MaxSpinSeconds),
             spinFps = prefs[DiscordSpinFpsKey]?.takeIf { it in SpinFpsSteps } ?: Defaults.spinFps,
             clearOnPause = prefs[DiscordClearOnPauseKey] ?: Defaults.clearOnPause,
+            largeCustomImage = prefs[DiscordLargeCustomImageKey] ?: Defaults.largeCustomImage,
+            smallCustomImage = prefs[DiscordSmallCustomImageKey] ?: Defaults.smallCustomImage,
         )
 
         private inline fun <reified T : Enum<T>> enumOf(name: String?, fallback: T): T =

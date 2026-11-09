@@ -90,7 +90,10 @@ class DiscordPresence @Inject constructor(
     /** picture addresses Discord wouldn't take, so they aren't offered again and again */
     private val refusedUrls = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
 
-    private val spinning = SpinningArtwork(scope, onReady = ::nudge)
+    private val spinning = SpinningArtwork(scope, onReady = ::nudge, loadLocal = { source, size -> loadLocalPicture(context, source, size) })
+
+    // covers of local songs and pictures the user picked, put on the web first
+    private val uploads = UploadedPictures(context, scope, onReady = ::nudge)
 
     private data class Sent(val activity: PresenceActivity, val largeAsset: String?, val smallAsset: String?)
 
@@ -186,17 +189,16 @@ class DiscordPresence @Inject constructor(
         return false
     }
 
-    /** A spinning picture that was still being made last time may be ready now. */
+    // a spinning gif or an uploaded picture that was still being made last time may be ready now
     private fun picturesChanged(activity: PresenceActivity, previous: Sent): Boolean {
-        fun spinningReady(picture: PresencePicture?, sentAsset: String?): Boolean {
-            if (picture !is PresencePicture.Spinning) return false
-            val url = spinning.urlFor(picture.sourceUrl, picture.style) ?: return false
-            // Discord turned this one down already: the still artwork it fell back to stays
-            if (url in refusedUrls) return false
-            return synchronized(assetPaths) { assetPaths[url] } != sentAsset
+        fun readyNow(picture: PresencePicture?, sentAsset: String?): Boolean {
+            if (picture !is PresencePicture.Spinning && picture !is PresencePicture.Local) return false
+            // discord turned the better one down already: what it fell back to stays
+            val best = candidatesFor(picture).firstOrNull { it !in refusedUrls } ?: return false
+            return synchronized(assetPaths) { assetPaths[best] } != sentAsset
         }
-        return spinningReady(activity.largeImage, previous.largeAsset) ||
-            spinningReady(activity.smallImage, previous.smallAsset)
+        return readyNow(activity.largeImage, previous.largeAsset) ||
+            readyNow(activity.smallImage, previous.smallAsset)
     }
 
     /**
@@ -296,8 +298,13 @@ class DiscordPresence @Inject constructor(
         is PresencePicture.Web -> listOf(picture.url)
         is PresencePicture.Status -> listOf(PresenceImages.statusUrl(picture))
         PresencePicture.Logo -> listOf(PresenceImages.LogoUrl)
-        is PresencePicture.Spinning -> listOfNotNull(spinning.urlFor(picture.sourceUrl, picture.style), picture.sourceUrl)
+        is PresencePicture.Spinning -> listOfNotNull(spinning.urlFor(picture.sourceUrl, picture.style), stillUrl(picture.sourceUrl))
+        is PresencePicture.Local -> listOfNotNull(uploads.urlFor(picture.sourceUrl))
     }
+
+    // the still picture behind a spinning one: as it is from the web, uploaded first from the phone
+    private fun stillUrl(source: String): String? =
+        if (PresenceImages.isWebImage(source)) source else uploads.urlFor(source)
 
     private suspend fun register(urls: List<String>, token: String, renewed: Boolean = false) {
         val body = buildJsonObject { put("urls", buildJsonArray { urls.forEach { add(JsonPrimitive(it)) } }) }

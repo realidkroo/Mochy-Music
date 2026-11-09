@@ -20,6 +20,9 @@ sealed interface PresencePicture {
     /** the rotating disc made from [sourceUrl], turning as [style] says */
     data class Spinning(val sourceUrl: String, val style: SpinStyle) : PresencePicture
 
+    // a picture on the phone (a local song's cover, a picked one) that goes to a free host before discord can show it
+    data class Local(val sourceUrl: String) : PresencePicture
+
     data object Logo : PresencePicture
 }
 
@@ -42,14 +45,14 @@ object PresenceImages {
     }
 
     /** What [source] shows for [track]; artwork that's missing falls back to the next best thing. */
-    fun pick(source: PresenceImage, track: NowPlaying, nowMs: Long, spin: SpinStyle): PresencePicture? {
+    fun pick(source: PresenceImage, track: NowPlaying, nowMs: Long, spin: SpinStyle, custom: String = ""): PresencePicture? {
         // YouTube hands out small thumbnails; Discord shows the big picture at up to 240px
-        val artwork = track.artworkUrl?.takeIf(::isWebImage)?.resize(512, 512)
-        val artistArtwork = track.artistArtworkUrl?.takeIf(::isWebImage)?.resize(512, 512)
+        val artwork = track.artworkUrl?.takeIf { it.isNotBlank() }?.let(::sized)
+        val artistArtwork = track.artistArtworkUrl?.takeIf { it.isNotBlank() }?.let(::sized)
         return when (source) {
             PresenceImage.OFF -> null
-            PresenceImage.ARTWORK -> artwork?.let(PresencePicture::Web) ?: PresencePicture.Logo
-            PresenceImage.ARTIST -> (artistArtwork ?: artwork)?.let(PresencePicture::Web) ?: PresencePicture.Logo
+            PresenceImage.ARTWORK -> still(artwork) ?: PresencePicture.Logo
+            PresenceImage.ARTIST -> still(artistArtwork ?: artwork) ?: PresencePicture.Logo
             PresenceImage.APP_LOGO -> PresencePicture.Logo
             PresenceImage.PLAYBACK_STATUS -> PresencePicture.Status(
                 step = (track.progressAt(nowMs) * StatusSteps).roundToInt().coerceIn(0, StatusSteps),
@@ -58,9 +61,19 @@ object PresenceImages {
             PresenceImage.SPINNING_ARTWORK -> artwork?.let { PresencePicture.Spinning(it, spin) } ?: PresencePicture.Logo
             PresenceImage.SPINNING_ARTIST ->
                 (artistArtwork ?: artwork)?.let { PresencePicture.Spinning(it, spin) } ?: PresencePicture.Logo
+            PresenceImage.CUSTOM -> still(custom.takeIf { it.isNotBlank() }) ?: PresencePicture.Logo
         }
     }
 
+    // a web picture as discord fetches it, anything on the phone as one to upload first
+    private fun still(url: String?): PresencePicture? = when {
+        url == null -> null
+        isWebImage(url) -> PresencePicture.Web(url)
+        else -> PresencePicture.Local(url)
+    }
+
+    private fun sized(url: String): String = if (isWebImage(url)) url.resize(512, 512) else url
+
     /** a local file or content:// cover can't be fetched by Discord */
-    private fun isWebImage(url: String) = url.startsWith("https://") || url.startsWith("http://")
+    fun isWebImage(url: String) = url.startsWith("https://") || url.startsWith("http://")
 }

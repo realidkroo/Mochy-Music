@@ -55,8 +55,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -65,6 +67,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.discord.PresenceButton
 import com.mochyy.mochymusic.discord.PresenceButtonTarget
@@ -347,11 +350,15 @@ internal fun DiscordImageSourceCard(
     onSelect: (PresenceImage) -> Unit,
     spin: SpinStyle? = null,
     onSpinChange: (SpinStyle) -> Unit = {},
+    // the picture behind "your own picture", and a way to pick another
+    customPicture: String = "",
+    onPickCustom: () -> Unit = {},
 ) {
     DiscordCard {
         DiscordCardTitle(title)
         Spacer(Modifier.height(10.dp))
         DiscordDropdown(selected = selected, options = options, label = { it.label }, onSelect = onSelect)
+        if (selected == PresenceImage.CUSTOM) CustomPictureRow(customPicture, onPickCustom)
         if (selected.isRotating && spin != null) {
             FieldLabel("One full turn")
             DiscordStepSlider(
@@ -379,6 +386,49 @@ internal fun DiscordImageSourceCard(
             )
         }
     }
+}
+
+// the picked picture beside a button to choose another, and why it goes through a file host
+@Composable
+private fun CustomPictureRow(picture: String, onPick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 12.dp),
+    ) {
+        AsyncImage(
+            model = picture.takeIf { it.isNotBlank() },
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(DiscordColors.Field),
+        )
+        Spacer(Modifier.width(12.dp))
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .weight(1f)
+                .height(40.dp)
+                .clip(CircleShape)
+                .background(DiscordColors.Field)
+                .clickable(onClick = onPick),
+        ) {
+            Text(
+                text = stringResource(if (picture.isBlank()) R.string.discord_custom_pick else R.string.discord_custom_change),
+                color = Color.White,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+    Text(
+        text = stringResource(R.string.discord_custom_note),
+        color = DiscordColors.Secondary,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        modifier = Modifier.padding(start = 4.dp, top = 10.dp),
+    )
 }
 
 @Composable
