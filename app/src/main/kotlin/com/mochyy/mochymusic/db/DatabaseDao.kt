@@ -57,6 +57,7 @@ import com.mochyy.mochymusic.extensions.reversed
 import com.mochyy.mochymusic.extensions.toSQLiteQuery
 import com.mochyy.mochymusic.models.MediaMetadata
 import com.mochyy.mochymusic.models.toMediaMetadata
+import com.mochyy.mochymusic.playlistcover.PlaylistCoverStore
 import com.mochyy.mochymusic.ui.utils.resize
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -1164,6 +1165,13 @@ interface DatabaseDao {
     @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE id = :playlistId")
     fun playlist(playlistId: String): Flow<Playlist?>
 
+    @Query("SELECT * FROM playlist WHERE id = :playlistId")
+    fun playlistEntity(playlistId: String): PlaylistEntity?
+
+    // swaps only the cover, and only while it's still [expected], so a redraw that finishes late never undoes a newer edit
+    @Query("UPDATE playlist SET thumbnailUrl = :thumbnailUrl WHERE id = :playlistId AND thumbnailUrl IS :expected")
+    fun replacePlaylistCover(playlistId: String, expected: String?, thumbnailUrl: String): Int
+
     @Transaction
     @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE isEditable AND bookmarkedAt IS NOT NULL ORDER BY rowId")
     fun editablePlaylistsByCreateDateAsc(): Flow<List<Playlist>>
@@ -1957,13 +1965,16 @@ interface DatabaseDao {
         }
     }
 
-    @Update
+    @Transaction
     fun update(playlistEntity: PlaylistEntity, playlistItem: PlaylistItem) {
+        // read fresh: the sync walks every playlist slowly, and a copy from its start wrote over edits made meanwhile
+        val current = playlistEntity(playlistEntity.id) ?: playlistEntity
         update(
-            playlistEntity.copy(
+            current.copy(
                 name = playlistItem.title,
                 browseId = playlistItem.id,
-                thumbnailUrl = playlistItem.thumbnail,
+                // a cover made or picked in mochy stays, youtube's own picture went over it on every sync
+                thumbnailUrl = current.thumbnailUrl.takeIf(PlaylistCoverStore::isManaged) ?: playlistItem.thumbnail,
                 isEditable = playlistItem.isEditable,
                 remoteSongCount = playlistItem.songCountText?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() },
                 playEndpointParams = playlistItem.playEndpoint?.params,

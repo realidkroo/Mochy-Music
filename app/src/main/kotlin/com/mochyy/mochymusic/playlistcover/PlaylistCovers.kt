@@ -528,7 +528,17 @@ object PlaylistCovers {
             topSongId = topSongId,
             artworkUrl = artworkUrl,
         ) ?: return
-        database.query { update(playlist.copy(thumbnailUrl = url)) }
-        withContext(Dispatchers.IO) { PlaylistCoverStore.deleteStale(context, playlist.id, url) }
+        // only the cover changes, and only if it's still the one redrawn: writing back the whole playlist from before undid a rename or a picked picture made meanwhile
+        val swapped = withContext(Dispatchers.IO) {
+            database.replacePlaylistCover(playlist.id, expected = playlist.thumbnailUrl, thumbnailUrl = url) > 0
+        }
+        withContext(Dispatchers.IO) {
+            if (swapped) {
+                PlaylistCoverStore.deleteStale(context, playlist.id, url)
+            } else {
+                // someone changed the cover while this one was drawn, so this one is the leftover
+                Uri.parse(url).path?.let { File(it).delete() }
+            }
+        }
     }
 }
