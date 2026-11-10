@@ -52,6 +52,7 @@ import com.mochyy.mochymusic.constants.LyricsMotionStyle
 import com.mochyy.mochymusic.constants.LyricsMotionStyleKey
 import com.mochyy.mochymusic.constants.MixWithOtherAppsKey
 import com.mochyy.mochymusic.constants.OfflineModeKey
+import com.mochyy.mochymusic.constants.PauseSearchHistoryKey
 import com.mochyy.mochymusic.constants.PersistentQueueKey
 import com.mochyy.mochymusic.constants.PersistentShuffleAcrossQueuesKey
 import com.mochyy.mochymusic.constants.ProxyEnabledKey
@@ -185,6 +186,7 @@ private fun generalItems(navController: NavController): List<SettingsItem> {
     val (resumeOnBluetooth, onResumeOnBluetoothChange) = rememberPreference(ResumeOnBluetoothConnectKey, defaultValue = false)
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(PersistentQueueKey, defaultValue = true)
     val (albumsFromLikes, onAlbumsFromLikesChange) = rememberPreference(AlbumsFromLikedSongsKey, defaultValue = false)
+    val (pauseSearchHistory, onPauseSearchHistoryChange) = rememberPreference(PauseSearchHistoryKey, defaultValue = false)
     val (proxyOn) = rememberPreference(ProxyEnabledKey, defaultValue = false)
     val (proxyAddress) = rememberPreference(ProxyUrlKey, defaultValue = "")
     // the launch check's notification reads its own switch, so it follows this one too
@@ -293,6 +295,14 @@ private fun generalItems(navController: NavController): List<SettingsItem> {
             icon = painterResource(R.drawable.album),
             checked = albumsFromLikes,
             onCheckedChange = onAlbumsFromLikesChange,
+        ),
+        switchItem(
+            key = "Pause search history",
+            title = stringResource(R.string.pause_search_history),
+            description = stringResource(R.string.settings_pause_search_history_desc),
+            icon = painterResource(R.drawable.history),
+            checked = pauseSearchHistory,
+            onCheckedChange = onPauseSearchHistoryChange,
         ),
     )
 }
