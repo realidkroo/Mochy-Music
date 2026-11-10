@@ -200,7 +200,6 @@ internal fun FlagshipLandscape(
             fadeDownFrom = if (onTv && !squareCover) TvCoverFadeDownFrom else null,
             square = onTv && squareCover,
             band = !onTv,
-            onTv = onTv,
         )
         if (onTv) {
             // a soft dark floor across the bottom, so the title always reads and the cover and lyrics sink into it
@@ -255,14 +254,12 @@ internal fun FlagshipLandscape(
                 .padding(start = (coverWidth - CoverGutter - ButtonSize * 2 - ButtonGap).coerceAtLeast(0.dp), bottom = bottomInset + 18.dp),
         )
 
-        if (lyricsMounted) {
-            // lined up under the title: the phone's own gutter, or the tv's wider margin
-            val sidePad = if (onTv) TvTitleInset - 8.dp else CoverGutter - 8.dp
+        if (lyricsMounted && !onTv) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .width(coverWidth)
-                    .padding(start = sidePad, end = sidePad, bottom = bottomInset)
+                    .padding(start = CoverGutter - 8.dp, end = CoverGutter - 8.dp, bottom = bottomInset)
                     .graphicsLayer { alpha = lyricsProgress() * (1f - handedToBar.value) },
             ) {
                 Column { PlayerProgressSlider(active = sheetShowing) }
@@ -351,8 +348,6 @@ private fun BoxScope.LandscapeCover(
     square: Boolean = false,
     // the blurred copy of the cover's foot under the title; a tv lays a dark floor there instead, a bright cover turned it white
     band: Boolean = true,
-    // no touch to drag the edge on a tv, so it melts away blurred instead of the flat alpha fade phones get
-    onTv: Boolean = false,
 ) {
     val connection = LocalPlayerConnection.current
     val carousel = LocalSongCarousel.current
@@ -371,27 +366,28 @@ private fun BoxScope.LandscapeCover(
             // its own layer, so the fade can cut the edge away without touching the backdrop behind
             .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
             .drawWithContent {
-                // recorded every time regardless of band, so the tv's edge blur below always has this frame's picture to read
-                coverLayer.record { this@drawWithContent.drawContent() }
-                drawLayer(coverLayer)
-                // on a tv the edge melts away blurred instead (see CoverEdgeBlur); a flat alpha fade there left a hard cut
-                // where the crisp cover met its blurred backdrop, since nothing bridged the two
-                if (!onTv) {
-                    val from = size.width * (1f - fadeShare)
-                    // eased in and out, so the edge has no line where the fade starts or ends
-                    drawRect(
-                        Brush.horizontalGradient(
-                            0f to Color.Transparent,
-                            0.3f to Color.Black.copy(alpha = 0.1f),
-                            0.65f to Color.Black.copy(alpha = 0.55f),
-                            1f to Color.Black,
-                            startX = from,
-                            endX = size.width,
-                        ),
-                        topLeft = androidx.compose.ui.geometry.Offset(from, 0f),
-                        blendMode = BlendMode.DstOut,
-                    )
+                if (band) {
+                    coverLayer.record { this@drawWithContent.drawContent() }
+                    drawLayer(coverLayer)
+                } else {
+                    drawContent()
                 }
+                val from = size.width * (1f - fadeShare)
+                // eased in and out, so the edge has no line where the fade starts or ends, straight onto the
+                // blurred backdrop behind it - a blurred band here only drew a second edge where its own blur
+                // met the backdrop's different one
+                drawRect(
+                    Brush.horizontalGradient(
+                        0f to Color.Transparent,
+                        0.3f to Color.Black.copy(alpha = 0.1f),
+                        0.65f to Color.Black.copy(alpha = 0.55f),
+                        1f to Color.Black,
+                        startX = from,
+                        endX = size.width,
+                    ),
+                    topLeft = androidx.compose.ui.geometry.Offset(from, 0f),
+                    blendMode = BlendMode.DstOut,
+                )
                 if (fadeDownFrom != null) {
                     val top = size.height * fadeDownFrom
                     drawRect(
@@ -418,43 +414,8 @@ private fun BoxScope.LandscapeCover(
             )
         }
     }
-    if (onTv) {
-        CoverEdgeBlur(coverWidth = coverWidth, fadeShare = fadeShare, coverLayer = coverLayer)
-    }
     if (bandShown && band) {
         LyricsBand(coverWidth = coverWidth, coverLayer = coverLayer, lyricsProgress = lyricsProgress)
-    }
-}
-
-// the tv has no finger to drag a cutaway edge, so the last part of the cover blurs away instead of just fading flat;
-// the blur grows into the edge the same way the lyrics band grows into the bottom, so nothing meets a hard line
-private const val TvEdgeBlurRadius = 46f
-
-@Composable
-private fun BoxScope.CoverEdgeBlur(
-    coverWidth: Dp,
-    fadeShare: Float,
-    coverLayer: androidx.compose.ui.graphics.layer.GraphicsLayer,
-) {
-    val mask = remember {
-        Brush.horizontalGradient(0f to Color.Black, 0.7f to Color.Black, 1f to Color.Transparent)
-    }
-    val smooth = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
-        LocalBlurQuality.current == BlurQuality.HIGH
-    val from = coverWidth * (1f - fadeShare)
-    DownscaledBlur(
-        radius = { BlurEffectCache.effectiveRadius(TvEdgeBlurRadius) },
-        tileMode = Shader.TileMode.CLAMP,
-        mask = mask,
-        growDown = if (smooth) true else null,
-        growAcross = true,
-        modifier = Modifier
-            .align(Alignment.CenterStart)
-            .padding(start = from)
-            .width(coverWidth - from)
-            .fillMaxHeight(),
-    ) { _ ->
-        translate(left = -from.toPx()) { drawLayer(coverLayer) }
     }
 }
 

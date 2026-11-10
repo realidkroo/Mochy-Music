@@ -100,7 +100,7 @@
     <string name="tv_link_your_tvs">Your TVs</string>
     <string name="tv_link_tap_to_unlink">Linked. Tap to unlink.</string>
     <string name="tv_link_found">TVs on this Wi-Fi</string>
-    <string name="tv_link_lo oking">Looking for TVs…</string>
+    <string name="tv_link_looking">Looking for TVs…</string>
     <string name="tv_link_looking_detail">Open Mochy on your TV and go to its phone page. It shows up here.</string>
     <string name="tv_link_tap_to_pair">Tap to link</string>
     <string name="tv_link_enter_code">Type the code on %1$s</string>

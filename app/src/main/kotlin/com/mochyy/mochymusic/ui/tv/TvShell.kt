@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.SnackbarHostState
@@ -37,6 +38,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -48,6 +51,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -85,7 +89,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // the tv app once a profile is picked: its pages, the chrome around them, and the player over everything
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    androidx.compose.ui.ExperimentalComposeUiApi::class,
+    androidx.compose.animation.ExperimentalSharedTransitionApi::class,
+)
 @Composable
 internal fun TvShell(
     player: PlayerConnection?,
@@ -112,6 +120,9 @@ internal fun TvShell(
                 scope.launchOpen { sheet.expandSoft() }
             }
         }
+        // the pill's own spot, so the full player can grow out of exactly where it was sitting; only
+        // caught while the pill is actually at rest, never mid fade or mid swipe
+        var pillBounds by remember { mutableStateOf<Rect?>(null) }
         var menuFor by remember { mutableStateOf<TvSongRef?>(null) }
         val actions = remember(navController, player) {
             TvActions(navController, { player }, database, openMenu = { menuFor = it }, openPlayer = openPlayer, switchProfile = onSwitchProfile)
@@ -168,17 +179,22 @@ internal fun TvShell(
                             },
                     ) {
                         CompositionLocalProvider(LocalAppContentObscured provides obscured) {
-                            NavHost(
-                                navController = navController,
-                                startDestination = TvRoutes.Home,
-                                enterTransition = { fadeIn(tween(320, easing = TvEase)) + scaleIn(tween(420, easing = TvEase), initialScale = 0.96f) },
-                                exitTransition = { fadeOut(tween(180)) },
-                                popEnterTransition = { fadeIn(tween(320, easing = TvEase)) + scaleIn(tween(420, easing = TvEase), initialScale = 1.03f) },
-                                popExitTransition = { fadeOut(tween(180)) + scaleOut(tween(220), targetScale = 0.97f) },
-                            ) {
-                                // the phone's pages stay reachable for anything the player opens (an equalizer, a lyrics source)
-                                navigationBuilder(navController, scrollBehavior, activity, snackbarHostState)
-                                tvGraph(profile = profile)
+                            // a playlist or album card grows into its own page the same way the phone's cards do
+                            androidx.compose.animation.SharedTransitionLayout {
+                                CompositionLocalProvider(com.mochyy.mochymusic.ui.component.LocalSharedTransitionScope provides this) {
+                                    NavHost(
+                                        navController = navController,
+                                        startDestination = TvRoutes.Home,
+                                        enterTransition = { fadeIn(tween(320, easing = TvEase)) + scaleIn(tween(420, easing = TvEase), initialScale = 0.96f) },
+                                        exitTransition = { fadeOut(tween(180)) },
+                                        popEnterTransition = { fadeIn(tween(320, easing = TvEase)) + scaleIn(tween(420, easing = TvEase), initialScale = 1.03f) },
+                                        popExitTransition = { fadeOut(tween(180)) + scaleOut(tween(220), targetScale = 0.97f) },
+                                    ) {
+                                        // the phone's pages stay reachable for anything the player opens (an equalizer, a lyrics source)
+                                        navigationBuilder(navController, scrollBehavior, activity, snackbarHostState)
+                                        tvGraph(profile = profile)
+                                    }
+                                }
                             }
                         }
                         // registered after the nav host's own, so on a tab's page it wins over going back a page
@@ -192,6 +208,7 @@ internal fun TvShell(
                             onRailFocus = { railHasFocus = it },
                             selected = tabOf(currentRoute),
                             onOpenPlayer = openPlayer,
+                            onPillPlaced = { if (sheet.isDismissed) pillBounds = it },
                             onSwitchProfile = onSwitchProfile,
                             onTab = { tab ->
                                 navController.navigate(tab.route) {
@@ -203,7 +220,13 @@ internal fun TvShell(
                         )
                     }
                     if (playerMounted && player != null) {
-                        TvPlayerHost(state = sheet, player = player, navController = navController)
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .growFromPill(progress = { sheet.value / sheet.expandedBound }, pill = { pillBounds }),
+                        ) {
+                            TvPlayerHost(state = sheet, player = player, navController = navController)
+                        }
                     }
                     menuFor?.let { song -> TvSongMenu(song = song, onDismiss = { menuFor = null }) }
                 }
@@ -231,6 +254,7 @@ private fun TvChromeLayer(
     onRailFocus: (Boolean) -> Unit,
     selected: TvTab?,
     onOpenPlayer: () -> Unit,
+    onPillPlaced: (Rect) -> Unit,
     onSwitchProfile: () -> Unit,
     onTab: (TvTab) -> Unit,
 ) {
@@ -249,7 +273,12 @@ private fun TvChromeLayer(
         )
         TvLogo(Modifier.align(Alignment.TopStart).padding(start = TvSpace.Start, top = TvSpace.ChromeTop + 4.dp))
         if (player != null) {
-            TvNowPlayingPill(player, onOpenPlayer, Modifier.align(Alignment.TopCenter).padding(top = TvSpace.ChromeTop - 4.dp))
+            TvNowPlayingPill(
+                player,
+                onOpenPlayer,
+                Modifier.align(Alignment.TopCenter).padding(top = TvSpace.ChromeTop - 4.dp),
+                onPlaced = onPillPlaced,
+            )
         }
         TvAvatar(profile.avatarPath, onSwitchProfile, Modifier.align(Alignment.TopEnd).padding(end = TvSpace.Start, top = TvSpace.ChromeTop + 3.dp))
         // "connected to" and "synced with" the phone, under the avatar for a few seconds
@@ -280,6 +309,26 @@ private fun handleMediaKey(key: Key, type: KeyEventType, player: PlayerConnectio
         else -> return false
     }
     return true
+}
+
+// how much of the grow the content spends fading in, so it never shows squashed inside the tiny starting pill
+private const val PillGrowFadeShare = 0.35f
+
+// the full player scales and clips down to exactly the pill's own rect at rest, and grows back out to the
+// whole screen as [progress] goes from 0 to 1 - the same pill the remote just pressed, not a generic slide-up
+private fun Modifier.growFromPill(progress: () -> Float, pill: () -> Rect?): Modifier = graphicsLayer {
+    val source = pill() ?: return@graphicsLayer
+    val t = progress().coerceIn(0f, 1f)
+    if (t >= 0.999f) return@graphicsLayer
+    val screenCenter = Offset(size.width / 2f, size.height / 2f)
+    val pillCenter = source.center
+    scaleX = lerp(source.width / size.width, 1f, t)
+    scaleY = lerp(source.height / size.height, 1f, t)
+    translationX = lerp(pillCenter.x - screenCenter.x, 0f, t)
+    translationY = lerp(pillCenter.y - screenCenter.y, 0f, t)
+    clip = true
+    shape = RoundedCornerShape(lerp(source.height / 2f, 0f, t).toDp())
+    alpha = (t / PillGrowFadeShare).coerceIn(0f, 1f)
 }
 
 // waits two frames so the freshly mounted player has laid out before the spring starts

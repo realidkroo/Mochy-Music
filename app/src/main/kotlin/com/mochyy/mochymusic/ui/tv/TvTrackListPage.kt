@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.models.MediaMetadata
+import com.mochyy.mochymusic.ui.component.containerTransformTarget
 import kotlinx.coroutines.flow.MutableStateFlow
 
 // one row of the album page, whatever list it came from
@@ -68,6 +69,8 @@ internal fun TvTrackListPage(
     loading: Boolean,
     onPlay: (index: Int, shuffled: Boolean) -> Unit,
     background: Color = Color(0xFF0C0E11),
+    // the card it grew out of, so it can shrink back into exactly that spot on the way out
+    transformKey: String? = null,
 ) {
     val actions = LocalTvActions.current
     val player = LocalPlayerConnection.current
@@ -75,7 +78,12 @@ internal fun TvTrackListPage(
     val firstSong = remember { FocusRequester() }
     LaunchedEffect(tracks.isNotEmpty()) { if (tracks.isNotEmpty()) runCatching { firstSong.requestFocus() } }
 
-    BoxWithConstraints(Modifier.fillMaxSize().background(background)) {
+    BoxWithConstraints(
+        Modifier
+            .fillMaxSize()
+            .background(background)
+            .containerTransformTarget(transformKey, sourceCornerRadius = 16.dp),
+    ) {
         val coverWidth = maxWidth * 0.47f
         // the cover, its right and bottom edges fading into the page so the words sit on the dark
         Box(Modifier.width(coverWidth).fillMaxHeight()) {

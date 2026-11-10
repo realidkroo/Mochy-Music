@@ -61,7 +61,7 @@ private fun Song.tvTrack() = TvTrack(
 )
 
 @Composable
-internal fun TvAlbumScreen(viewModel: AlbumViewModel = hiltViewModel()) {
+internal fun TvAlbumScreen(viewModel: AlbumViewModel = hiltViewModel(), transformKey: String? = null) {
     val album by viewModel.albumWithSongs.collectAsState()
     val player = LocalPlayerConnection.current
     val current = album
@@ -78,6 +78,7 @@ internal fun TvAlbumScreen(viewModel: AlbumViewModel = hiltViewModel()) {
         coverUrl = current?.album?.thumbnailUrl,
         tracks = tracks,
         loading = current == null,
+        transformKey = transformKey,
         onPlay = { index, shuffled ->
             val withSongs = current ?: return@TvTrackListPage
             // an album plays on into its radio when it ends, the same as on the phone
@@ -87,7 +88,7 @@ internal fun TvAlbumScreen(viewModel: AlbumViewModel = hiltViewModel()) {
 }
 
 @Composable
-internal fun TvOnlinePlaylistScreen(viewModel: OnlinePlaylistViewModel = hiltViewModel()) {
+internal fun TvOnlinePlaylistScreen(viewModel: OnlinePlaylistViewModel = hiltViewModel(), transformKey: String? = null) {
     val playlist by viewModel.playlist.collectAsState()
     val songs by viewModel.playlistSongs.collectAsState()
     val loading by viewModel.isLoading.collectAsState()
@@ -101,12 +102,13 @@ internal fun TvOnlinePlaylistScreen(viewModel: OnlinePlaylistViewModel = hiltVie
         coverUrl = playlist?.thumbnail,
         tracks = tracks,
         loading = loading,
+        transformKey = transformKey,
         onPlay = { index, shuffled -> actions.playItems(songs, index, playlist?.title, shuffled) },
     )
 }
 
 @Composable
-internal fun TvLocalPlaylistScreen(viewModel: LocalPlaylistViewModel = hiltViewModel()) {
+internal fun TvLocalPlaylistScreen(viewModel: LocalPlaylistViewModel = hiltViewModel(), transformKey: String? = null) {
     val playlist by viewModel.playlist.collectAsState()
     val entries by viewModel.playlistSongs.collectAsState()
     val actions = LocalTvActions.current
@@ -118,6 +120,7 @@ internal fun TvLocalPlaylistScreen(viewModel: LocalPlaylistViewModel = hiltViewM
         coverUrl = playlist?.thumbnails?.firstOrNull() ?: songs.firstOrNull()?.song?.thumbnailUrl,
         tracks = tracks,
         loading = playlist == null,
+        transformKey = transformKey,
         onPlay = { index, shuffled -> actions.playSongs(songs, index, playlist?.playlist?.name, shuffled) },
     )
 }
@@ -215,6 +218,7 @@ internal fun TvGridScreen(kind: String, viewModel: LibraryHomeViewModel = hiltVi
                         subtitle = item.tvSubtitle(),
                         thumbnailUrl = item.thumbnailUrl,
                         round = kind == "artists",
+                        transformKey = tvTransformKey(item),
                         coverModifier = if (index == 0) Modifier.focusRequester(first) else Modifier,
                         onClick = { actions.open(item) },
                     )

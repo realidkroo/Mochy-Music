@@ -47,6 +47,7 @@ import com.mochyy.mochymusic.db.entities.Artist
 import com.mochyy.mochymusic.db.entities.LocalItem
 import com.mochyy.mochymusic.db.entities.Playlist
 import com.mochyy.mochymusic.db.entities.Song
+import com.mochyy.mochymusic.ui.component.containerTransformSource
 
 internal val TvCardSize = 112.dp
 
@@ -59,6 +60,8 @@ internal fun TvItemCard(
     round: Boolean = false,
     size: Dp = TvCardSize,
     coverModifier: Modifier = Modifier,
+    // the page it opens grows out of this exact cover; only albums and playlists carry one (see tvTransformKey)
+    transformKey: String? = null,
     onFocused: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
@@ -71,6 +74,7 @@ internal fun TvItemCard(
             shape = shape,
             modifier = coverModifier
                 .size(size)
+                .containerTransformSource(transformKey, cornerRadius = 16.dp, coverUrl = thumbnailUrl)
                 .tvClickable(shape = shape, onFocused = onFocused, onLongClick = onLongClick, onClick = onClick),
         )
         Spacer(Modifier.height(8.dp))
@@ -116,6 +120,7 @@ internal fun TvShelf(
                         subtitle = item.tvSubtitle(),
                         thumbnailUrl = item.thumbnail,
                         round = item is ArtistItem,
+                        transformKey = tvTransformKey(item),
                         onFocused = onFocused?.let { { it(item) } },
                         onLongClick = (item as? SongItem)?.let { song -> { actions.openMenu(song.tvRef()) } },
                         onClick = { actions.open(item) },
@@ -132,6 +137,21 @@ internal fun LocalItem.tvSubtitle(): String? = when (this) {
     is Album -> artists.joinToString { it.name }.ifBlank { album.year?.toString() }
     is Artist -> null
     is Playlist -> null
+}
+
+// the key a card's cover grows into its page with, matching the ids TvGraph's routes are opened with
+// (TvActions.open); only albums and playlists get one - a song plays instead of opening a page, and
+// the artist page doesn't grow out of a cover
+internal fun tvTransformKey(item: LocalItem): String? = when (item) {
+    is Album -> "album-${item.id}"
+    is Playlist -> "playlist-${item.id}"
+    else -> null
+}
+
+internal fun tvTransformKey(item: YTItem): String? = when (item) {
+    is AlbumItem -> "album-${item.browseId}"
+    is PlaylistItem -> "playlist-${item.id}"
+    else -> null
 }
 
 @Composable

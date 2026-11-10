@@ -39,8 +39,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -88,6 +91,8 @@ internal fun TvNowPlayingPill(
     player: PlayerConnection,
     onOpenPlayer: () -> Unit,
     modifier: Modifier = Modifier,
+    // the full player grows out of exactly this spot, so it needs the pill's own rect while it's sitting still
+    onPlaced: (Rect) -> Unit = {},
 ) {
     val metadata by player.mediaMetadata.collectAsState()
     val isPlaying by player.isPlaying.collectAsState()
@@ -107,6 +112,7 @@ internal fun TvNowPlayingPill(
                 .clip(CircleShape)
                 .background(TvColors.Pill)
                 .border(1.dp, TvColors.PillEdge, CircleShape)
+                .onGloballyPositioned { onPlaced(it.boundsInRoot()) }
                 .onFocusChanged { focusedInside = it.hasFocus }
                 .focusGroup()
                 .padding(horizontal = 8.dp, vertical = 5.dp),

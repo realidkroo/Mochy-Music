@@ -473,6 +473,7 @@ internal fun TvLocalShelf(title: String, items: List<LocalItem>, onFocused: ((Lo
                         subtitle = item.tvSubtitle(),
                         thumbnailUrl = item.thumbnailUrl,
                         round = item is Artist,
+                        transformKey = tvTransformKey(item),
                         onFocused = onFocused?.let { { it(item) } },
                         onLongClick = (item as? Song)?.let { song -> { actions.openMenu(song.tvRef()) } },
                         onClick = { actions.open(item) },

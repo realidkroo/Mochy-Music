@@ -92,7 +92,8 @@ internal fun TvSongInfoPanel(
                 .fillMaxHeight()
                 .width(400.dp)
                 .tvPopIn()
-                .background(TvColors.Pill)
+                // the drawer melts in from its own left edge instead of ending the scrim behind it in a flat opaque line
+                .background(Brush.horizontalGradient(0f to Color.Transparent, 0.2f to TvColors.Pill, 1f to TvColors.Pill))
                 .focusGroup()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 22.dp, vertical = 28.dp),
