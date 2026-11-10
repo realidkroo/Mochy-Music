@@ -6,6 +6,7 @@
 
 package com.mochyy.mochymusic.ui.screens.library
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -30,10 +31,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.models.TransferBatch
 import com.mochyy.mochymusic.models.TransferItem
 import com.mochyy.mochymusic.models.TransferState
@@ -46,9 +49,9 @@ import com.mochyy.mochymusic.viewmodels.LibraryImportViewModel
 import kotlinx.coroutines.flow.StateFlow
 
 /** Which job a progress card or sheet follows. */
-enum class TransferKind(val title: String, val idleText: String) {
-    Downloads("Download progress", "Nothing is downloading right now."),
-    LocalImport("Import progress", "Nothing is being imported right now."),
+enum class TransferKind(@StringRes val title: Int, @StringRes val idleText: Int) {
+    Downloads(R.string.lib_transfer_download_title, R.string.lib_transfer_download_idle),
+    LocalImport(R.string.lib_transfer_import_title, R.string.lib_transfer_import_idle),
 }
 
 internal fun LibraryImportViewModel.batchOf(kind: TransferKind): StateFlow<TransferBatch> = when (kind) {
@@ -90,7 +93,7 @@ fun PopupSheetState.showTransferSheet(kind: TransferKind, viewModel: LibraryImpo
 @Composable
 private fun ColumnScope.TransferSheetContent(kind: TransferKind, batch: TransferBatch) {
     Text(
-        text = kind.title,
+        text = stringResource(kind.title),
         color = SearchColors.Primary,
         fontSize = 26.sp,
         fontWeight = FontWeight.Bold,
@@ -103,7 +106,7 @@ private fun ColumnScope.TransferSheetContent(kind: TransferKind, batch: Transfer
     Spacer(Modifier.height(8.dp))
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = if (batch.isEmpty) "0" else "${batch.doneCount} of ${batch.items.size}",
+            text = if (batch.isEmpty) "0" else stringResource(R.string.lib_transfer_n_of_m, batch.doneCount, batch.items.size),
             color = SearchColors.Primary,
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
@@ -120,7 +123,7 @@ private fun ColumnScope.TransferSheetContent(kind: TransferKind, batch: Transfer
 
     if (batch.isEmpty) {
         Text(
-            text = kind.idleText,
+            text = stringResource(kind.idleText),
             color = SearchColors.Secondary,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
@@ -150,7 +153,7 @@ private fun TransferRow(item: TransferItem) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            val subtitle = if (item.state == TransferState.Failed) "Couldn't add this one" else item.subtitle
+            val subtitle = if (item.state == TransferState.Failed) stringResource(R.string.lib_transfer_failed) else item.subtitle
             if (subtitle != null) {
                 Text(
                     text = subtitle,
@@ -171,7 +174,7 @@ private fun TransferRow(item: TransferItem) {
 private fun CancelDownloadsButton(batchFlow: StateFlow<TransferBatch>, onCancel: () -> Unit) {
     val batch by batchFlow.collectAsState()
     SheetPillButton(
-        text = "Cancel all downloads",
+        text = stringResource(R.string.lib_transfer_cancel_all),
         enabled = batch.isRunning,
         onClick = onCancel,
     )
@@ -191,7 +194,7 @@ private fun CreatePlaylistButton(
     val songIds = batch.finishedSongIds
 
     SheetPillButton(
-        text = "Create playlist",
+        text = stringResource(R.string.lib_transfer_create_playlist),
         enabled = !batch.isRunning && songIds.isNotEmpty(),
         onClick = { creating = true },
     )

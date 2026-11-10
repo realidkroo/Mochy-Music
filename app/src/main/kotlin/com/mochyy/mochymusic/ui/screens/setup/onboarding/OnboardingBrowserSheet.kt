@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -118,7 +119,7 @@ internal fun OnboardingBrowserSheet(
             }
             BrowserSheetBar(
                 icon = { ProviderSquircle(service, size = 38.dp) },
-                title = "Sign in to ${service.label}",
+                title = stringResource(R.string.onb_sign_in_to, service.label),
                 url = url,
                 onClose = onClose,
             )
@@ -168,7 +169,7 @@ internal fun BrowserSheetBar(
                 .clickable(onClick = onClose),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(painterResource(R.drawable.close), contentDescription = "Close", tint = Color.White, modifier = Modifier.size(20.dp))
+            Icon(painterResource(R.drawable.close), contentDescription = stringResource(R.string.onb_close), tint = Color.White, modifier = Modifier.size(20.dp))
         }
     }
 }

@@ -50,6 +50,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -59,6 +60,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.AppBarHeight
 
 @ExperimentalMaterial3Api
@@ -167,6 +169,8 @@ private fun SearchBarInputField(
     val textColor = LocalTextStyle.current.color.takeOrElse {
         if (focused) colors.focusedTextColor else colors.unfocusedTextColor
     }
+    val searchDescription = stringResource(R.string.search)
+    val suggestionsDescription = stringResource(R.string.pc_search_suggestions)
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -195,9 +199,9 @@ private fun SearchBarInputField(
                     }
                 }
                 .semantics {
-                    contentDescription = "Search"
+                    contentDescription = searchDescription
                     if (active) {
-                        stateDescription = "Suggestions available"
+                        stateDescription = suggestionsDescription
                     }
                 }
                 .onKeyEvent {

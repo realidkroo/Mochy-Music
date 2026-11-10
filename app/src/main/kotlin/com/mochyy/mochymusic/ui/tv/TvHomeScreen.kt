@@ -277,7 +277,7 @@ private fun TvHeroText(
                     is TvHeroCard.Pick -> {
                         val label = shown.item.label(isPlaying)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(label.text, style = TvText.Sub.copy(color = Color(0xFFD0D0D0), fontSize = 12.sp))
+                            Text(if (label.textRes != 0) stringResource(label.textRes) else label.text, style = TvText.Sub.copy(color = Color(0xFFD0D0D0), fontSize = 12.sp))
                             label.subject?.let { subject ->
                                 Spacer(Modifier.width(6.dp))
                                 label.coverUrl?.let {

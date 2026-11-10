@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="xmix_title">Crossfade</string>
+    <string name="xmix_back">Audio Lab</string>
+    <string name="xmix_off">Tắt</string>
+    <string name="xmix_off_desc">Nhàm chán, nhàm chán, nhàm chán</string>
+    <string name="xmix_auto">Crossfade tự động</string>
+    <string name="xmix_auto_desc">Chuyển bài mờ dần mượt mà trong %1$d giây từ mỗi bài sang bài kế tiếp</string>
+    <string name="xmix_manual">Crossfade thủ công</string>
+    <string name="xmix_manual_desc">Tự đặt thời lượng crossfade</string>
+    <string name="xmix_length">Thời lượng</string>
+    <string name="xmix_crossmix">CrossMix</string>
+    <string name="xmix_crossmix_desc">Kiểu DJ: nhận biết nhịp độ, nhịp trống, tông, năng lượng và vị trí giọng hát của từng bài, rồi chọn một trong 27 kiểu chuyển phù hợp nhất để hai giọng hát không bao giờ chồng lên nhau</string>
+    <string name="xmix_crossmix_desc_unavailable">Vẫn đang được tinh chỉnh nên chưa thể bật. Kiểu phối của DJ nhận biết nhịp độ, nhịp trống, tông và giọng hát của từng bài</string>
+    <string name="xmix_gapless">Giữ nguyên album gapless</string>
+    <string name="xmix_gapless_desc">Các bài trong album nối liền nhau sẽ phát nguyên bản, không phối</string>
+    <string name="xmix_in_progress">Đang phát triển</string>
+    <string name="xmix_transport_title">Chuyển tiếp khi tạm dừng, phát, tua tới và tua lui</string>
+    <string name="xmix_fade_enable">Bật hiệu ứng mờ dần</string>
+    <string name="xmix_fade_enable_desc">Nhạc nhỏ dần khi bạn tạm dừng hoặc chuyển bài, và lớn dần lại khi phát</string>
+    <string name="xmix_layered_effect">Hiệu ứng chồng lớp</string>
+    <string name="xmix_layered_effect_desc">Hiệu ứng CrossMix phủ lên đoạn mờ dần, như vọng lại hoặc đĩa quay ngược</string>
+    <string name="xmix_choose_effect">Chọn hiệu ứng</string>
+    <string name="xmix_effect_none">Không</string>
+    <string name="xmix_effect_echo">Vọng</string>
+    <string name="xmix_effect_rewind">Tua ngược</string>
+    <string name="xmix_effect_tape_stop">Băng dừng</string>
+    <string name="xmix_effect_far_away">Mờ xa dần</string>
+    <string name="xmix_effect_reverb">Vang Reverb</string>
+    <string name="xmix_effect_filter">Quét bộ lọc</string>
+    <string name="xmix_status_title">Trạng thái Crossmix</string>
+    <string name="xmix_status_empty">Chưa có gì. Hãy phát một bài có bài khác đang chờ phía sau</string>
+    <string name="xmix_test_title">Thử trên bài này</string>
+    <string name="xmix_test_desc">Chuyển mượt sang bài kế tiếp</string>
+    <string name="xmix_test_detail">Lên kế hoạch chuyển sang bài kế tiếp, rồi nhảy tới vài giây trước đoạn đó</string>
+</resources>

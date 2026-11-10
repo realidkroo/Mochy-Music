@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fx_title_audio">Audio</string>
+
+    <string name="fx_loudness_title">Loudness</string>
+    <string name="fx_loudness_sub">Louder and fuller, never clipping</string>
+    <string name="fx_loudness_gentle">Gentle</string>
+    <string name="fx_loudness_punchy">Punchy</string>
+    <string name="fx_loudness_night">Night mode</string>
+    <string name="fx_loudness_max">Max</string>
+    <string name="fx_boost">Boost</string>
+    <string name="fx_compression">Compression</string>
+    <string name="fx_compression_note">Compression lifts the quiet parts up toward the loud ones. Night mode keeps whispers and explosions close.</string>
+    <string name="fx_even_out">Even out songs</string>
+    <string name="fx_even_out_sub">Plays every song at the same loudness</string>
+    <string name="fx_replaygain">REPLAYGAIN</string>
+    <string name="fx_rg_track">Track</string>
+    <string name="fx_rg_album">Album</string>
+    <string name="fx_preamp">Preamp</string>
+    <string name="fx_replaygain_note">Songs that carry ReplayGain (Monochrome\'s FLACs, many of your own files) even out by it: Track keeps every song level, Album keeps an album\'s quiet and loud songs as mastered. YouTube songs use YouTube\'s loudness.</string>
+
+    <string name="fx_spatial_title">Spatial audio</string>
+    <string name="fx_spatial_sub">Takes stereo out of your head and puts it in front of you</string>
+    <string name="fx_mode_crossfeed">Crossfeed</string>
+    <string name="fx_mode_speakers">Speakers</string>
+    <string name="fx_xf_light">Light</string>
+    <string name="fx_xf_natural">Natural</string>
+    <string name="fx_xf_strong">Strong</string>
+    <string name="fx_head_shadow">Head shadow</string>
+    <string name="fx_amount">Amount</string>
+    <string name="fx_speaker_angle">Speaker angle</string>
+    <string name="fx_speakers_note">Two virtual speakers in front of a modelled head: the far ear hears each one a little later and darker, as in a room. 30° is a studio pair.</string>
+
+    <string name="fx_mono_title">Mono audio</string>
+    <string name="fx_mono_sub">Both ears hear the whole mix: for one earbud, or hearing in one ear</string>
+
+    <string name="fx_atmos_title">Dolby Atmos &amp; surround</string>
+    <string name="fx_atmos_sub">Plays 5.1, 7.1 and Atmos beds as 3D sound on any headphones, with Mochy\'s head model, instead of folding them to stereo. From the next song.</string>
+    <string name="fx_atmos_decoder">Atmos decoder</string>
+    <string name="fx_atmos_spatializer">Android spatializer</string>
+    <string name="fx_atmos_yes">Yes</string>
+    <string name="fx_atmos_not_on_phone">Not on this phone</string>
+    <string name="fx_atmos_needs_android">Android 12L+</string>
+    <string name="fx_state_not_available">Not available</string>
+    <string name="fx_state_on">On</string>
+    <string name="fx_state_off">Off</string>
+    <string name="fx_state_unknown">Unknown</string>
+
+    <string name="fx_speed_normal">Normal</string>
+    <string name="fx_speed_slowed">Slowed</string>
+    <string name="fx_speed_slowed_reverb">Slowed + reverb</string>
+    <string name="fx_speed_nightcore">Nightcore</string>
+    <string name="fx_speed_title">Playback speed</string>
+    <string name="fx_pitch_stays">Pitch stays where it is</string>
+    <string name="fx_pitch_follows">Pitch follows the speed, like a record</string>
+    <string name="fx_speed">Speed</string>
+    <string name="fx_preserve_pitch">Preserve pitch</string>
+    <string name="fx_preserve_pitch_sub">Keep the original key when changing speed</string>
+    <string name="fx_pitch">Pitch</string>
+    <string name="fx_semitones">%1$s semitones</string>
+    <string name="fx_reset">Reset</string>
+
+    <string name="fx_volume_title">Exponential volume</string>
+    <string name="fx_volume_sub">A logarithmic curve, for finer control at low volume</string>
+    <string name="fx_curve_gentle">Gentle</string>
+    <string name="fx_curve_exponential">Exponential</string>
+    <string name="fx_curve_steep">Steep</string>
+    <string name="fx_curve">Curve</string>
+    <string name="fx_volume_limit">Volume limit</string>
+    <string name="fx_volume_note">Shapes Mochy\'s own volume (the player\'s slider, fades and ducking). The limit caps how loud the app ever plays.</string>
+
+    <string name="fx_reverb_title">Reverb</string>
+    <string name="fx_reverb_sub">Reverb the music</string>
+    <string name="fx_reverb_room">Room</string>
+    <string name="fx_reverb_studio">Studio</string>
+    <string name="fx_reverb_bathroom">Bathroom</string>
+    <string name="fx_reverb_plate">Plate</string>
+    <string name="fx_reverb_hall">Hall</string>
+    <string name="fx_reverb_cathedral">Cathedral</string>
+    <string name="fx_reverb_stadium">Stadium</string>
+    <string name="fx_reverb_dream">Dreamy</string>
+    <string name="fx_reverb_custom">Custom</string>
+    <string name="fx_mix">Mix</string>
+    <string name="fx_room_size">Room size</string>
+    <string name="fx_damping">Damping</string>
+    <string name="fx_wet">Wet</string>
+    <string name="fx_fine_tune">FINE TUNE</string>
+    <string name="fx_dry">Dry</string>
+    <string name="fx_width">Width</string>
+    <string name="fx_pre_delay">Pre-delay</string>
+    <string name="fx_low_cut">Low cut</string>
+</resources>

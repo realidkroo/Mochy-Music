@@ -1,8 +1,11 @@
 package com.mochyy.mochymusic.ui.player.ipod
 
+import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -11,28 +14,36 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.res.stringResource
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.db.entities.Song
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 // one screen of the ipod's menu tree, named the way its header shows it
 @Immutable
-sealed class IpodPage(val title: String) {
+sealed class IpodPage(val title: String, @StringRes val titleRes: Int? = null) {
     data object Main : IpodPage("Mochy")
-    data object Music : IpodPage("Music")
-    data object NowPlaying : IpodPage("Now Playing")
-    data object CoverFlow : IpodPage("Cover Flow")
-    data object Playlists : IpodPage("Playlists")
-    data object Artists : IpodPage("Artists")
-    data object Albums : IpodPage("Albums")
-    data object Songs : IpodPage("Songs")
-    data object LikedSongs : IpodPage("Liked Songs")
+    data object Music : IpodPage("", R.string.ps_ipod_music)
+    data object NowPlaying : IpodPage("", R.string.ps_ipod_now_playing)
+    data object CoverFlow : IpodPage("", R.string.ps_ipod_cover_flow)
+    data object Playlists : IpodPage("", R.string.ps_ipod_playlists)
+    data object Artists : IpodPage("", R.string.ps_ipod_artists)
+    data object Albums : IpodPage("", R.string.ps_ipod_albums)
+    data object Songs : IpodPage("", R.string.ps_ipod_songs)
+    data object LikedSongs : IpodPage("", R.string.ps_ipod_liked_songs)
     data class Playlist(val id: String, val name: String) : IpodPage(name)
     data class Artist(val id: String, val name: String) : IpodPage(name)
     data class Album(val id: String, val name: String) : IpodPage(name)
 
     val isSidebar: Boolean get() = this == Main || this == Music
+
+    /** the name in the app's language: the fixed pages have a string resource, the library's own pages a name */
+    fun titleIn(context: Context): String = titleRes?.let(context::getString) ?: title
 }
+
+@Composable
+internal fun IpodPage.displayTitle(): String = titleRes?.let { stringResource(it) } ?: title
 
 // what picking a row does: open a page, play a song from the list, or shuffle everything
 @Immutable
@@ -51,9 +62,13 @@ class IpodRow(
     val subtitle: String? = null,
     val art: String? = null,
     val roundArt: Boolean = false,
+    @StringRes val titleRes: Int? = null,
 ) {
     val opensPage: Boolean get() = pick is IpodPick.Open
 }
+
+@Composable
+internal fun IpodRow.displayTitle(): String = titleRes?.let { stringResource(it) } ?: title
 
 // a page's lines, plus the songs behind them when it's a song list; art lists get taller rows
 @Immutable
@@ -64,27 +79,27 @@ class IpodList(val rows: List<IpodRow>, val songs: List<Song> = emptyList(), val
 }
 
 // shown for the moment a list takes longer than the slide to read
-val IpodLoadingList = IpodList(listOf(IpodRow("loading", "Loading…", null)))
+val IpodLoadingList = IpodList(listOf(IpodRow("loading", "", null, titleRes = R.string.ps_ipod_loading)))
 
 // the home sidebar: cover flow, the music menu and now playing
 val IpodMainList = IpodList(
     listOf(
-        IpodRow("coverflow", "Cover Flow", IpodPick.Open(IpodPage.CoverFlow)),
-        IpodRow("music", "Music", IpodPick.Open(IpodPage.Music)),
-        IpodRow("now", "Now Playing", IpodPick.Open(IpodPage.NowPlaying)),
+        IpodRow("coverflow", "", IpodPick.Open(IpodPage.CoverFlow), titleRes = R.string.ps_ipod_cover_flow),
+        IpodRow("music", "", IpodPick.Open(IpodPage.Music), titleRes = R.string.ps_ipod_music),
+        IpodRow("now", "", IpodPick.Open(IpodPage.NowPlaying), titleRes = R.string.ps_ipod_now_playing),
     )
 )
 
 // the music submenu, also shown in the left half of the screen beside the covers
 val IpodMusicList = IpodList(
     listOf(
-        IpodRow("playlists", "Playlists", IpodPick.Open(IpodPage.Playlists)),
-        IpodRow("artists", "Artists", IpodPick.Open(IpodPage.Artists)),
-        IpodRow("albums", "Albums", IpodPick.Open(IpodPage.Albums)),
-        IpodRow("songs", "Songs", IpodPick.Open(IpodPage.Songs)),
-        IpodRow("liked", "Liked Songs", IpodPick.Open(IpodPage.LikedSongs)),
-        IpodRow("shuffle", "Shuffle Songs", IpodPick.Shuffle),
-        IpodRow("coverflow", "Cover Flow", IpodPick.Open(IpodPage.CoverFlow)),
+        IpodRow("playlists", "", IpodPick.Open(IpodPage.Playlists), titleRes = R.string.ps_ipod_playlists),
+        IpodRow("artists", "", IpodPick.Open(IpodPage.Artists), titleRes = R.string.ps_ipod_artists),
+        IpodRow("albums", "", IpodPick.Open(IpodPage.Albums), titleRes = R.string.ps_ipod_albums),
+        IpodRow("songs", "", IpodPick.Open(IpodPage.Songs), titleRes = R.string.ps_ipod_songs),
+        IpodRow("liked", "", IpodPick.Open(IpodPage.LikedSongs), titleRes = R.string.ps_ipod_liked_songs),
+        IpodRow("shuffle", "", IpodPick.Shuffle, titleRes = R.string.ps_ipod_shuffle_songs),
+        IpodRow("coverflow", "", IpodPick.Open(IpodPage.CoverFlow), titleRes = R.string.ps_ipod_cover_flow),
     )
 )
 

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Stats screen -->
+    <string name="rc_stats_done">Done</string>
+    <string name="rc_stats_title">Stats</string>
+    <string name="rc_stats_year_recap_link">"%1$d Re'cap  &gt;"</string>
+    <string name="rc_stats_year_recap">%1$d Re\'cap</string>
+    <string name="rc_stats_collapse_all">Collapse all</string>
+    <string name="rc_stats_expand_all">Expand all</string>
+    <string name="rc_stats_empty_title">Nothing played in %1$s yet.</string>
+    <string name="rc_stats_empty_hint">Play a few songs and this fills itself in.</string>
+    <string name="rc_stats_often">Let\'s see how often you like to listen to music</string>
+    <string name="rc_stats_privacy">Everything here is collected by your usage on this app and WILL NEVER BE SENT to some random server! (Genres are looked up by artist name only.)</string>
+    <string name="rc_stats_cd_profile">Profile</string>
+    <string name="rc_stats_cd_collapse">Collapse</string>
+    <string name="rc_stats_cd_expand">Expand</string>
+
+    <string name="rc_stats_total_month">This month, you\'ve been listening for</string>
+    <string name="rc_stats_total_year">This year, you\'ve been listening for</string>
+    <string name="rc_stats_every_day">Every day of %1$s</string>
+    <string name="rc_stats_every_month">Every month of %1$d</string>
+    <plurals name="rc_stats_fact_songs">
+        <item quantity="one">%1$d Song</item>
+        <item quantity="other">%1$d Songs</item>
+    </plurals>
+    <plurals name="rc_stats_fact_artists">
+        <item quantity="one">%1$d Artist</item>
+        <item quantity="other">%1$d Artists</item>
+    </plurals>
+    <plurals name="rc_stats_fact_albums">
+        <item quantity="one">%1$d Album</item>
+        <item quantity="other">%1$d Albums</item>
+    </plurals>
+    <plurals name="rc_stats_fact_plays">
+        <item quantity="one">%1$d play</item>
+        <item quantity="other">%1$d plays</item>
+    </plurals>
+
+    <string name="rc_stats_dominant_genre">Dominant Genre</string>
+    <string name="rc_stats_genre_loading">Sorting your genres…</string>
+    <string name="rc_stats_genre_unavailable">Couldn\'t name your genres right now - this needs a connection the first time.</string>
+
+    <string name="rc_stats_artist_love">You really love listening to this artist</string>
+    <plurals name="rc_stats_artist_row">
+        <item quantity="one">%1$s · %2$d play</item>
+        <item quantity="other">%1$s · %2$d plays</item>
+    </plurals>
+    <plurals name="rc_stats_artist_summary">
+        <item quantity="one">%1$s playtime and %2$d play from %3$s</item>
+        <item quantity="other">%1$s playtime and %2$d plays from %3$s</item>
+    </plurals>
+
+    <string name="rc_stats_song_number_one">And without noticing, this song is your #1</string>
+    <plurals name="rc_stats_song_row">
+        <item quantity="one">%1$s · %2$d play · %3$s</item>
+        <item quantity="other">%1$s · %2$d plays · %3$s</item>
+    </plurals>
+    <string name="rc_stats_song_from">%1$s from %2$s</string>
+    <plurals name="rc_stats_song_summary">
+        <item quantity="one">%1$s playtime and %2$d play</item>
+        <item quantity="other">%1$s playtime and %2$d plays</item>
+    </plurals>
+
+    <string name="rc_stats_weekday_month">This month, you like to listen to music every</string>
+    <string name="rc_stats_weekday_year">This year, you like to listen to music every</string>
+    <string name="rc_stats_totaling_hours">totaling %1$s hours</string>
+    <string name="rc_stats_hour_morning">And you love to listen in the mornings exactly around</string>
+    <string name="rc_stats_hour_afternoon">And you love to listen in the afternoons exactly around</string>
+    <string name="rc_stats_hour_evening">And you love to listen in the evenings exactly around</string>
+    <string name="rc_stats_hour_night">And you love to listen in the nights exactly around</string>
+    <string name="rc_stats_totaling_hours_time">totaling %1$s hours at this time!</string>
+
+    <string name="rc_stats_show_by">Show by</string>
+    <string name="rc_stats_kind_month">Month</string>
+    <string name="rc_stats_kind_year">Year</string>
+    <string name="rc_stats_selected">Selected</string>
+    <string name="rc_stats_what_year">What year?</string>
+    <string name="rc_stats_what_month">What month?</string>
+    <string name="rc_stats_this_month_tag">(this month)</string>
+
+    <!-- Recap availability (why the recap is locked) -->
+
+    <!-- Recap story -->
+    <string name="rc_story_hey">hey, %1$s!</string>
+    <string name="rc_story_journey_started">%1$s you started your journey in Mochy on</string>
+    <string name="rc_story_journey_listening">and you have been listening to music in total time of</string>
+    <string name="rc_story_journey_bye">so long, partners!</string>
+    <string name="rc_story_tap">TAP!</string>
+    <string name="rc_story_month_is">%1$s is</string>
+    <string name="rc_story_out_of_100" formatted="false">out of 100%</string>
+    <string name="rc_story_weekday_at_this_time">and at this time,</string>
+    <string name="rc_story_weekday_favourite">is your favourite day to listen to music</string>
+    <plurals name="rc_story_hours">
+        <item quantity="one">hour</item>
+        <item quantity="other">hours</item>
+    </plurals>
+    <plurals name="rc_story_minutes">
+        <item quantity="one">minute</item>
+        <item quantity="other">minutes</item>
+    </plurals>
+    <string name="rc_story_more_than_second">more than your 2nd!</string>
+    <string name="rc_story_nothing_close">nothing else comes close!</string>
+    <string name="rc_story_again">Again\nand\nagain</string>
+    <string name="rc_story_this_artist">this\nartist..</string>
+    <string name="rc_story_recognize_artist">Recognize\nthis artist?</string>
+    <string name="rc_story_favorite_artist">that\'s your favorite this month!</string>
+    <plurals name="rc_story_plays">
+        <item quantity="one">%1$d play</item>
+        <item quantity="other">%1$d plays</item>
+    </plurals>
+    <string name="rc_story_x_plays">x Plays</string>
+    <string name="rc_story_plays_bang">Plays!</string>
+    <string name="rc_story_might_recognize">You might\nrecognize this!</string>
+    <string name="rc_story_which_one">hmm, which one...</string>
+    <string name="rc_story_hear_melody">Hear the\nmelody..</string>
+    <string name="rc_story_title_by">%1$s by\n%2$s</string>
+    <string name="rc_story_favourite_song">Your favourite song\nthis month!!!</string>
+    <string name="rc_story_bill">Let\'s see your bill</string>
+    <string name="rc_story_receipt_recap">%1$s recap</string>
+    <string name="rc_story_receipt_printed">printed at %1$s/%2$s</string>
+    <string name="rc_story_receipt_top_artist">Top Artist</string>
+    <string name="rc_story_receipt_top_music">Top Music</string>
+    <string name="rc_story_receipt_total">Total : %1$s playtime</string>
+    <string name="rc_story_receipt_counts">%1$d plays · %2$d songs · %3$d artists</string>
+    <string name="rc_story_receipt_end">END OF LINE</string>
+    <string name="rc_story_there_you_go">There you go</string>
+    <string name="rc_story_thats_your">That\'s your\n%1$s recap!</string>
+    <string name="rc_story_tap_finish">TAP TO FINISH</string>
+
+    <!-- Recap ID card back -->
+</resources>

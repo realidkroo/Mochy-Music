@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.AudioQuality
@@ -57,7 +58,7 @@ fun AudioFormatBadge(
     ) {
         Image(
             painter = painterResource(id = iconRes),
-            contentDescription = "Audio Format",
+            contentDescription = stringResource(R.string.pc_audio_format_cd),
             colorFilter = if (tint != Color.Unspecified) ColorFilter.tint(contentColor) else null,
             modifier = Modifier.requiredSize(width = badgeWidth, height = height)
         )

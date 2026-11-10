@@ -2,6 +2,7 @@
 
 package com.mochyy.mochymusic.ui.screens.audiolab
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -27,12 +28,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.eq.LoudnessSettings
 import com.mochyy.mochymusic.eq.PlaybackSettings
 import com.mochyy.mochymusic.eq.ReverbSettings
@@ -60,6 +63,18 @@ internal fun activeEffects(
     if (spatial.mono) add(ActiveEffect("mono", "Mono"))
     if (!playback.isNormal) add(ActiveEffect("playback", "Playback"))
     if (volume.enabled) add(ActiveEffect("volume", "Volume"))
+}
+
+/** the string for an effect's key; [ActiveEffect.label] stays the English fallback */
+@StringRes
+internal fun effectLabelRes(key: String): Int = when (key) {
+    "reverb" -> R.string.lab_effect_reverb
+    "loudness" -> R.string.lab_effect_loudness
+    "spatial" -> R.string.lab_effect_spatial
+    "surround" -> R.string.lab_effect_surround
+    "mono" -> R.string.lab_effect_mono
+    "playback" -> R.string.lab_effect_playback
+    else -> R.string.lab_effect_volume
 }
 
 private const val ShownCards = 3
@@ -111,7 +126,7 @@ fun BoxScope.FxCardStack(effects: List<ActiveEffect>, hidden: State<Boolean>) {
     ) {
         if (count > ShownCards) {
             Text(
-                "and ${count - ShownCards} other",
+                stringResource(R.string.lab_fx_and_other, count - ShownCards),
                 fontFamily = FontFamily.Monospace,
                 fontSize = 10.sp,
                 color = LabCardInk,
@@ -173,12 +188,12 @@ private fun BoxScope.StackedCard(
             },
     ) {
         if (depth >= ShownCards && place >= ShownCards - 0.01f) return@LabHeaderCardFrame
-        val label = card.label
+        val label = card.label?.let { stringResource(effectLabelRes(card.key)) }
         LabCardFace(
             // the front card shows everything; further back it fades to its name down the edge
             modifier = Modifier.graphicsLayer { alpha = 1f - place.coerceIn(0f, 1f) },
-            topStart = label?.let { "ON" },
-            topEnd = label?.let { "$position of $count" },
+            topStart = label?.let { stringResource(R.string.lab_fx_on) },
+            topEnd = label?.let { stringResource(R.string.lab_fx_position, position, count) },
             label = label,
         ) { barsModifier ->
             LabBars(spectrum = spectrum, hidden = hidden, modifier = barsModifier, color = LabCardBars, fill = 0.42f)

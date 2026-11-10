@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -40,11 +41,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.PopupSheetState
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.pressBounce
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.screens.update.VersionRing
 import com.mochyy.mochymusic.ui.screens.update.openUrl
-import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 const val KofiUrl = "https://ko-fi.com/realidkroo"
 const val SocialBuzzUrl = "https://sociabuzz.com/realidkroo/tribe"
@@ -58,7 +59,7 @@ fun PopupSheetState.showDonateSheet() {
     val popup = this
     show(
         fullBleed = true,
-        buttonBar = { DonatePillButton(text = "what no i dont want to", onClick = popup::dismiss, quiet = true) },
+        buttonBar = { DonatePillButton(text = stringResource(R.string.donate_dismiss_button), onClick = popup::dismiss, quiet = true) },
     ) {
         DonateSheetContent()
     }
@@ -73,22 +74,29 @@ private fun DonateSheetContent() {
 
         VersionRing(
             text = "MOCHY MUSIC",
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                // centred just in from the top-right corner so the sheet's edge cuts it off, and takes no room of its own
-                .layout { measurable, constraints ->
-                    val loose = constraints.copy(minWidth = 0, minHeight = 0, maxWidth = Constraints.Infinity, maxHeight = Constraints.Infinity)
-                    val placeable = measurable.measure(loose)
-                    layout(0, 0) { placeable.place(x = (-198).dp.roundToPx(), y = (-109).dp.roundToPx()) }
-                }
-                .graphicsLayer { translationY = -scroll.value.toFloat() },
+            modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    // centred just in from the top-right corner so the sheet's edge cuts it off, and takes no room of its own
+                    .layout { measurable, constraints ->
+                        val loose =
+                            constraints.copy(
+                                minWidth = 0,
+                                minHeight = 0,
+                                maxWidth = Constraints.Infinity,
+                                maxHeight = Constraints.Infinity,
+                            )
+                        val placeable = measurable.measure(loose)
+                        layout(0, 0) { placeable.place(x = (-198).dp.roundToPx(), y = (-109).dp.roundToPx()) }
+                    }.graphicsLayer { translationY = -scroll.value.toFloat() },
         )
 
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scroll)
-                .padding(horizontal = 26.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(scroll)
+                    .padding(horizontal = 26.dp),
         ) {
             Spacer(Modifier.height(CharacterTop))
             DonateCharacter(
@@ -97,7 +105,7 @@ private fun DonateSheetContent() {
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
             Text(
-                text = "Arigatou! :3",
+                text = stringResource(R.string.donate_thank_you_title),
                 fontSize = 36.sp,
                 lineHeight = 40.sp,
                 fontWeight = FontWeight.Bold,
@@ -106,7 +114,7 @@ private fun DonateSheetContent() {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Here’s a way to support and donate to us!",
+                text = stringResource(R.string.donate_subtitle),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.3).sp,
@@ -116,21 +124,21 @@ private fun DonateSheetContent() {
             Spacer(Modifier.height(24.dp))
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 DonateLinkRow(
-                    title = "Support us on Ko-fi",
+                    title = stringResource(R.string.donate_kofi),
                     icon = R.drawable.ic_kofi,
                     iconSize = 22.dp,
                     onClick = { context.openUrl(KofiUrl) },
                 )
                 DonateLinkRow(
-                    title = "Support us on SociaBuzz",
-                    subtitle = "Recommended for some SEA and LATAM countries",
+                    title = stringResource(R.string.donate_sociabuzz),
+                    subtitle = stringResource(R.string.donate_sociabuzz_desc),
                     icon = R.drawable.link,
                     iconSize = 16.dp,
                     iconTint = Color.Black,
                     onClick = { context.openUrl(SocialBuzzUrl) },
                 )
                 DonateLinkRow(
-                    title = "Support us on Buy Me a Coffee",
+                    title = stringResource(R.string.donate_buymeacoffee),
                     icon = R.drawable.ic_bmc_logo,
                     iconSize = 20.dp,
                     onClick = { context.openUrl(BuyMeACoffeeUrl) },
@@ -139,7 +147,7 @@ private fun DonateSheetContent() {
 
             Spacer(Modifier.height(22.dp))
             Text(
-                text = "your donation, no matter how small it is, will always be very very useful for us :3",
+                text = stringResource(R.string.donate_note),
                 fontSize = 14.sp,
                 lineHeight = 19.sp,
                 fontWeight = FontWeight.Bold,
@@ -163,22 +171,24 @@ private fun DonateLinkRow(
     val interaction = remember { MutableInteractionSource() }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .pressBounce(interaction, pressedScale = 0.97f)
-            .fillMaxWidth()
-            .heightIn(min = 54.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(MenuRowSurface)
-            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
-            .padding(horizontal = 11.dp, vertical = 10.dp),
+        modifier =
+            Modifier
+                .pressBounce(interaction, pressedScale = 0.97f)
+                .fillMaxWidth()
+                .heightIn(min = 54.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(MenuRowSurface)
+                .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
+                .padding(horizontal = 11.dp, vertical = 10.dp),
     ) {
         // plain white, not themed: the brand marks inside only read on a light badge
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(34.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color.White),
+            modifier =
+                Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.White),
         ) {
             Icon(
                 painter = painterResource(icon),

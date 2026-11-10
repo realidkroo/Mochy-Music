@@ -41,7 +41,7 @@ import com.mochyy.mochymusic.utils.PlaybackLogLevel
 fun PlaybackLogsDialog(
     logs: List<PlaybackLogEntry>,
     onClear: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     val listState = rememberLazyListState()
 
@@ -60,22 +60,23 @@ fun PlaybackLogsDialog(
         buttons = {
             TextButton(
                 onClick = {
-                    val textToCopy = logs.joinToString("\n") { log ->
-                        buildString {
-                            append(log.timestamp)
-                            append(" [")
-                            append(log.level.name)
-                            append("] ")
-                            append(log.message)
-                            log.details?.let { d -> append(" -- $d") }
+                    val textToCopy =
+                        logs.joinToString("\n") { log ->
+                            buildString {
+                                append(log.timestamp)
+                                append(" [")
+                                append(log.level.name)
+                                append("] ")
+                                append(log.message)
+                                log.details?.let { d -> append(" -- $d") }
+                            }
                         }
-                    }
                     val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    val clip = android.content.ClipData.newPlainText("PlaybackLogs", textToCopy)
+                    val clip = android.content.ClipData.newPlainText(context.getString(R.string.playback_logs_clip_label), textToCopy)
                     cm.setPrimaryClip(clip)
                     Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
                 },
-                enabled = logs.isNotEmpty()
+                enabled = logs.isNotEmpty(),
             ) {
                 Text(stringResource(R.string.copy))
             }
@@ -86,27 +87,28 @@ fun PlaybackLogsDialog(
             Button(onClick = onDismiss) {
                 Text(stringResource(android.R.string.ok))
             }
-        }
+        },
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(400.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(400.dp),
         ) {
             if (logs.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = stringResource(R.string.no_playback_logs),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     items(logs) { log ->
                         PlaybackLogEntryItem(log)
@@ -120,42 +122,45 @@ fun PlaybackLogsDialog(
 @Composable
 private fun PlaybackLogEntryItem(log: PlaybackLogEntry) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
                 text = log.timestamp,
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = FontFamily.Monospace,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.width(8.dp))
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = when (log.level) {
-                    PlaybackLogLevel.ERROR -> MaterialTheme.colorScheme.errorContainer
-                    PlaybackLogLevel.WARNING -> Color(0xFFFFF3CD)
-                    PlaybackLogLevel.BOT -> MaterialTheme.colorScheme.secondaryContainer
-                    PlaybackLogLevel.INFO -> MaterialTheme.colorScheme.primaryContainer
-                    PlaybackLogLevel.DEBUG -> MaterialTheme.colorScheme.surfaceVariant
-                }
+                color =
+                    when (log.level) {
+                        PlaybackLogLevel.ERROR -> MaterialTheme.colorScheme.errorContainer
+                        PlaybackLogLevel.WARNING -> Color(0xFFFFF3CD)
+                        PlaybackLogLevel.BOT -> MaterialTheme.colorScheme.secondaryContainer
+                        PlaybackLogLevel.INFO -> MaterialTheme.colorScheme.primaryContainer
+                        PlaybackLogLevel.DEBUG -> MaterialTheme.colorScheme.surfaceVariant
+                    },
             ) {
                 Text(
                     text = log.level.name,
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                    color = when (log.level) {
-                        PlaybackLogLevel.ERROR -> MaterialTheme.colorScheme.onErrorContainer
-                        PlaybackLogLevel.WARNING -> Color(0xFF856404)
-                        PlaybackLogLevel.BOT -> MaterialTheme.colorScheme.onSecondaryContainer
-                        PlaybackLogLevel.INFO -> MaterialTheme.colorScheme.onPrimaryContainer
-                        PlaybackLogLevel.DEBUG -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                    color =
+                        when (log.level) {
+                            PlaybackLogLevel.ERROR -> MaterialTheme.colorScheme.onErrorContainer
+                            PlaybackLogLevel.WARNING -> Color(0xFF856404)
+                            PlaybackLogLevel.BOT -> MaterialTheme.colorScheme.onSecondaryContainer
+                            PlaybackLogLevel.INFO -> MaterialTheme.colorScheme.onPrimaryContainer
+                            PlaybackLogLevel.DEBUG -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                 )
             }
         }
@@ -164,7 +169,7 @@ private fun PlaybackLogEntryItem(log: PlaybackLogEntry) {
             text = log.message,
             style = MaterialTheme.typography.bodySmall,
             fontFamily = FontFamily.Monospace,
-            fontWeight = if (log.level == PlaybackLogLevel.BOT) androidx.compose.ui.text.font.FontWeight.Bold else null
+            fontWeight = if (log.level == PlaybackLogLevel.BOT) androidx.compose.ui.text.font.FontWeight.Bold else null,
         )
         log.details?.let { details ->
             Text(
@@ -173,7 +178,7 @@ private fun PlaybackLogEntryItem(log: PlaybackLogEntry) {
                 fontFamily = FontFamily.Monospace,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 3,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

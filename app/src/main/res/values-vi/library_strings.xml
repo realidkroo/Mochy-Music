@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels -->
+    <string name="lib_artist">Nghệ sĩ</string>
+    <string name="lib_album">Album</string>
+    <string name="lib_playlist">Danh sách phát</string>
+    <string name="lib_nothing_to_show">Chưa có gì để hiển thị</string>
+    <string name="lib_no_results">Không có gì trong thư viện khớp với \"%1$s\"</string>
+    <plurals name="lib_song_count">
+        <item quantity="other">%1$d bài hát</item>
+    </plurals>
+    <string name="lib_count_on_device">%1$s trên thiết bị này</string>
+    <string name="lib_count_cached">%1$s đã lưu đệm</string>
+
+    <!-- Albums / artists / playlists / songs screens -->
+    <string name="lib_albums_local_subtitle">Các album có nhạc trên thiết bị này.</string>
+    <string name="lib_albums_cached_subtitle">Các album có bài hát trong bộ nhớ đệm của bạn.</string>
+    <string name="lib_artists_local_subtitle">Các nghệ sĩ có nhạc trên thiết bị này.</string>
+    <string name="lib_artists_cached_subtitle">Các nghệ sĩ có bài hát trong bộ nhớ đệm của bạn.</string>
+    <string name="lib_artists_all_subtitle">Tất cả nghệ sĩ trong thư viện của bạn được liệt kê ở đây.</string>
+    <string name="lib_artists_search">Tìm nghệ sĩ theo tên</string>
+    <string name="lib_playlists_imported_subtitle">Các danh sách phát đã nhập từ %1$s.</string>
+    <string name="lib_playlists_local_subtitle">Các danh sách phát có nhạc trên thiết bị này.</string>
+    <string name="lib_playlists_cached_subtitle">Các danh sách phát có bài hát trong bộ nhớ đệm của bạn.</string>
+    <string name="lib_playlists_all_subtitle">Tất cả danh sách phát trong thư viện của bạn được liệt kê ở đây.</string>
+    <string name="lib_playlists_search">Tìm danh sách phát theo tên</string>
+    <string name="lib_songs_subtitle">Tất cả bài hát trong thư viện của bạn được liệt kê ở đây.</string>
+    <string name="lib_songs_search">Tìm bài hát theo tên hoặc nghệ sĩ</string>
+    <string name="lib_recent_title">Đã thêm</string>
+    <string name="lib_recent_subtitle">Gần đây</string>
+    <string name="lib_recent_search">Tìm bài hát trong danh sách này, theo lời bài hát hoặc nghệ sĩ</string>
+
+    <!-- Imported screen -->
+    <string name="lib_imported_unknown_source">một nguồn không xác định</string>
+    <plurals name="lib_imported_songs_subtitle">
+        <item quantity="other">%1$d bài hát đã nhập từ %2$s.</item>
+    </plurals>
+    <string name="lib_imported_search">Tìm bài hát đã nhập từ %1$s</string>
+    <string name="lib_imported_queue_title">Đã nhập từ %1$s</string>
+
+    <!-- Tabs -->
+    <string name="lib_cached_empty">Chưa có gì được lưu đệm. Các bài bạn phát sẽ hiện ở đây.</string>
+    <string name="lib_manage_cache_pill">Quản lý bộ nhớ đệm</string>
+    <string name="lib_cached_all_music">Tất cả nhạc đã lưu đệm</string>
+    <string name="lib_all_music">Tất cả nhạc</string>
+    <string name="lib_manage_imports_pill">Quản lý nhập nhạc</string>
+    <string name="lib_manage_local_pill">Quản lý nhạc trên máy</string>
+    <string name="lib_local_or">Hoặc</string>
+    <string name="lib_local_let_read">Cho phép Mochy đọc bộ nhớ để tìm tất cả bài hát của bạn</string>
+    <string name="lib_local_import_here">Nhập nhạc trên máy của bạn tại đây</string>
+    <string name="lib_local_imported_from_local">Đã nhập từ máy</string>
+
+    <!-- Import banner -->
+    <string name="lib_import_banner_title">Nhập nhạc của bạn tại đây!</string>
+    <string name="lib_import_checking_resync">Đang kiểm tra bài mới cho \"%1$s\"…</string>
+    <string name="lib_import_adding_resync">Đang thêm %1$d/%2$d bài mới vào \"%3$s\"</string>
+    <string name="lib_import_getting_ready">Đang chuẩn bị các bài hát của bạn…</string>
+    <string name="lib_import_adding_from">Đang thêm %1$d/%2$d bài từ %3$s</string>
+    <string name="lib_import_adding">Đang thêm %1$d/%2$d bài</string>
+    <string name="lib_import_still_running">Một lượt nhập vẫn đang chạy. Hãy thử lại khi nó hoàn tất.</string>
+
+    <!-- Local import -->
+    <string name="lib_local_no_access">Mochy không thể thấy nhạc của bạn nếu chưa được cấp quyền</string>
+    <string name="lib_local_no_new_songs">Không có bài hát mới trong các thư mục nhạc của bạn</string>
+
+    <!-- Transfer progress -->
+    <string name="lib_transfer_download_title">Tiến trình tải xuống</string>
+    <string name="lib_transfer_download_idle">Hiện không có gì đang tải xuống.</string>
+    <string name="lib_transfer_import_title">Tiến trình nhập</string>
+    <string name="lib_transfer_import_idle">Hiện không có gì đang được nhập.</string>
+    <string name="lib_transfer_n_of_m">%1$d/%2$d</string>
+    <string name="lib_transfer_failed">Không thể thêm bài này</string>
+    <string name="lib_transfer_cancel_all">Hủy tất cả lượt tải xuống</string>
+    <string name="lib_transfer_create_playlist">Tạo danh sách phát</string>
+
+    <!-- Song picker sheets -->
+    <string name="lib_picker_done">Xong</string>
+    <plurals name="lib_picker_add_songs">
+        <item quantity="other">Thêm %1$d bài hát</item>
+    </plurals>
+    <plurals name="lib_picker_remove_songs">
+        <item quantity="other">Xóa %1$d bài hát</item>
+    </plurals>
+    <string name="lib_picker_add_music">Thêm nhạc</string>
+    <string name="lib_picker_looking">Đang tìm nhạc trên điện thoại của bạn…</string>
+    <string name="lib_picker_all_in_library">Mọi bài hát trên điện thoại của bạn đã có trong thư viện.</string>
+    <string name="lib_picker_remove_from_list">Xóa khỏi danh sách</string>
+    <string name="lib_picker_no_local_files">Thư viện của bạn chưa có tệp nào từ điện thoại.</string>
+    <string name="lib_picker_files_stay">Các tệp vẫn còn trên điện thoại của bạn.</string>
+    <string name="lib_picker_remove_from_cache">Xóa khỏi bộ nhớ đệm</string>
+    <string name="lib_picker_nothing_cached">Chưa có gì được lưu đệm.</string>
+    <string name="lib_picker_cache_hint">Các bài này sẽ được phát trực tuyến lại ở lần phát tiếp theo.</string>
+    <string name="lib_picker_pick_to_remove">Chọn bài hát để xóa</string>
+    <string name="lib_picker_select_none">Bỏ chọn tất cả</string>
+    <string name="lib_picker_select_all">Chọn tất cả</string>
+    <string name="lib_picker_nothing_matches">Không có gì khớp với \"%1$s\"</string>
+
+    <!-- Manage sheets -->
+    <string name="lib_manage_delete_all_imports">Xóa tất cả bản nhập</string>
+    <string name="lib_manage_delete_all_imports_title">Xóa tất cả bản nhập?</string>
+    <string name="lib_manage_delete_all_imports_msg">Mọi bài hát, lượt thích và danh sách phát bạn đã nhập sẽ rời khỏi thư viện. Những bài đã có sẵn trong đó vẫn được giữ, cũng như nhạc mà đồng bộ YouTube luôn cập nhật.</string>
+    <string name="lib_manage_undo_session">Hoàn tác lần nhập</string>
+    <string name="lib_manage_undo_last_title">Hoàn tác lần nhập gần nhất?</string>
+    <string name="lib_manage_undo_last_msg">Các bài hát, lượt thích và danh sách phát từ lần nhập gần nhất sẽ rời khỏi thư viện. Những gì có từ trước vẫn được giữ.</string>
+    <string name="lib_manage_undo_import">Hoàn tác nhập</string>
+    <string name="lib_manage_resync_all">Đồng bộ lại tất cả</string>
+    <string name="lib_manage_delete_source">Xóa bản nhập từ %1$s</string>
+    <string name="lib_manage_delete_source_title">Xóa bản nhập từ %1$s?</string>
+    <string name="lib_manage_delete_source_msg">Mọi thứ bạn đã nhập từ %1$s sẽ rời khỏi thư viện, kể cả danh sách phát.</string>
+    <string name="lib_manage_delete_source_msg_youtube">Mọi thứ bạn đã nhập từ %1$s sẽ rời khỏi thư viện, kể cả danh sách phát. Nhạc mà đồng bộ YouTube luôn cập nhật vẫn được giữ.</string>
+    <string name="lib_manage_delete">Xóa</string>
+    <string name="lib_manage_rescan_local">Quét lại nhạc trên máy</string>
+    <string name="lib_manage_delete_from_list">Xóa khỏi danh sách</string>
+    <string name="lib_manage_add_folder">Thêm thư mục nhạc</string>
+    <string name="lib_manage_undo_local_title">Hoàn tác lần nhập nhạc trên máy gần nhất?</string>
+    <string name="lib_manage_undo_local_msg">Các bài hát đã thêm sẽ rời khỏi thư viện. Các tệp vẫn còn trên điện thoại của bạn.</string>
+    <string name="lib_manage_clear_cache">Xóa bộ nhớ đệm</string>
+    <string name="lib_manage_clear_cache_title">Xóa bộ nhớ đệm của bạn?</string>
+    <string name="lib_manage_clear_cache_msg">Mọi bài hát đã lưu đệm sẽ bị xóa khỏi điện thoại và được phát trực tuyến lại ở lần phát tiếp theo. Thư viện và các bài đã tải xuống của bạn vẫn được giữ nguyên.</string>
+    <string name="lib_manage_remove_songs">Xóa bài hát</string>
+</resources>

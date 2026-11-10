@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Playback logs -->
+    <string name="playback_logs_clip_label">Nhật ký phát lại</string>
+
+    <!-- Manage downloads sheet -->
+    <string name="storage_manage_sort_by">Sắp xếp theo - </string>
+    <string name="storage_manage_sort_size">kích thước</string>
+    <string name="storage_manage_sort_name">tên</string>
+    <string name="storage_manage_sort_recent">mới tải gần đây</string>
+    <string name="storage_manage_sort_most_played">nghe nhiều nhất</string>
+    <string name="storage_manage_sort_least_played">ít nghe nhất</string>
+    <string name="storage_manage_done">Xong</string>
+    <string name="storage_manage_remove_one">Xóa 1 bài hát · %1$s</string>
+    <string name="storage_manage_remove_many">Xóa %1$d bài hát · %2$s</string>
+    <string name="storage_manage_confirm_remove_one">Xóa bài hát tải xuống này?</string>
+    <string name="storage_manage_confirm_remove_many">Xóa %1$d bài hát tải xuống?</string>
+    <string name="storage_manage_confirm_message">Các bài hát này sẽ bị xóa khỏi điện thoại nhưng vẫn ở trong thư viện của bạn và sẽ phát trực tuyến lại khi bạn nghe.</string>
+    <string name="storage_manage_confirm_action">Xóa</string>
+    <string name="storage_manage_search_placeholder">Tìm bài hát đã tải xuống</string>
+    <string name="storage_manage_song_single">bài hát</string>
+    <string name="storage_manage_song_plural">bài hát</string>
+    <string name="storage_manage_empty_note">Chưa có bài hát nào được tải xuống. Bài hát bạn tải sẽ xuất hiện tại đây.</string>
+    <string name="storage_manage_no_match">Không có bài tải xuống nào khớp với \"%1$s\".</string>
+    <string name="storage_manage_shelf_biggest">Lớn nhất</string>
+    <string name="storage_manage_shelf_less_listened">Ít nghe</string>
+    <string name="storage_manage_shelf_less_listened_sub">Đã tải xuống từ lâu và hầu như không nghe</string>
+    <string name="storage_manage_all">Tất cả</string>
+    <string name="storage_manage_unpick">Bỏ chọn</string>
+    <string name="storage_manage_pick_all">Chọn tất cả</string>
+
+    <!-- Playlist menu & sheets -->
+    <string name="sheet_label_recents">gần đây</string>
+    <string name="sheet_label_results">kết quả</string>
+    <string name="sheet_label_all">tất cả</string>
+
+    <!-- Device output -->
+    <string name="ps_device_usb_audio">USB audio</string>
+    <string name="ps_device_usb_dac">USB DAC</string>
+</resources>

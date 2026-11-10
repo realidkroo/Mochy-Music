@@ -19,9 +19,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.FadeInCover
 import com.mochyy.mochymusic.ui.component.GlassState
 import com.mochyy.mochymusic.ui.utils.resize
@@ -186,7 +188,7 @@ fun WelcomeStep(isHiding: Boolean = false) {
                 .padding(start = 32.dp, bottom = 175.dp, end = 32.dp)
         ) {
             Text(
-                text = "Welcome to\nmochy!",
+                text = stringResource(R.string.onb_welcome_title),
                 fontSize = 42.sp,
                 lineHeight = 44.sp,
                 fontWeight = FontWeight.ExtraBold,
@@ -195,7 +197,7 @@ fun WelcomeStep(isHiding: Boolean = false) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "A way to listen and own your\nmusic, differently.",
+                text = stringResource(R.string.onb_welcome_subtitle),
                 fontSize = 16.sp,
                 color = Color(0xFFB3B3B3),
                 lineHeight = 22.sp,

@@ -81,6 +81,7 @@ fun PopupSheetState.showAddMusicSheet(playlistId: String, startInLibrary: Boolea
         buttonBar = {
             val database = LocalDatabase.current
             val scope = rememberCoroutineScope()
+            val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
             val count = picks.songs.size
             SheetPillButton(
                 text = when {
@@ -101,7 +102,7 @@ fun PopupSheetState.showAddMusicSheet(playlistId: String, startInLibrary: Boolea
                     val chosen = picks.songs.toList()
                     scope.launch(Dispatchers.IO) {
                         try {
-                            addPicksToPlaylist(database, playlistId, chosen)
+                            addPicksToPlaylist(database, playlistId, chosen, appContext)
                             withContext(Dispatchers.Main) { sheet?.dismiss() }
                         } catch (e: CancellationException) {
                             throw e

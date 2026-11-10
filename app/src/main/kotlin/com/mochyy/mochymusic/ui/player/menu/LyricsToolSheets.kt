@@ -47,7 +47,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -120,7 +123,7 @@ fun LyricsEditorSheet(onDismiss: () -> Unit) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Edit lyrics",
+                    text = stringResource(R.string.ps_lyrics_edit_title),
                     color = Color.White,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
@@ -128,7 +131,7 @@ fun LyricsEditorSheet(onDismiss: () -> Unit) {
                 )
                 if (parsed.isNotEmpty()) {
                     Text(
-                        text = "Save",
+                        text = stringResource(R.string.save),
                         color = Color.White,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
@@ -154,7 +157,7 @@ fun LyricsEditorSheet(onDismiss: () -> Unit) {
 
             if (parsed.isEmpty()) {
                 Text(
-                    text = "No lyrics to edit for this song.",
+                    text = stringResource(R.string.ps_lyrics_nothing_to_edit),
                     color = Color(0xFF9A9A9A),
                     fontSize = 13.sp,
                     modifier = Modifier.padding(vertical = 24.dp),
@@ -274,7 +277,7 @@ fun LyricsProviderSheet(onDismiss: () -> Unit) {
                 .padding(top = 16.dp, bottom = 24.dp)
         ) {
             Text(
-                text = "Lyrics Provider",
+                text = stringResource(R.string.ps_lyrics_provider_title),
                 color = Color.White,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
@@ -289,15 +292,15 @@ fun LyricsProviderSheet(onDismiss: () -> Unit) {
                 val available = state as? LyricsMenuViewModel.SourceState.Available
                 val isActive = name == active
                 val status = when {
-                    isActive -> "In use"
+                    isActive -> stringResource(R.string.ps_lyrics_in_use)
                     available != null -> when (available.candidate.sync) {
-                        LyricsUtils.SyncKind.WORD -> "Word synced"
-                        LyricsUtils.SyncKind.LINE -> "Line synced"
-                        else -> "Plain"
-                    } + if (available.candidate.hasDuet) " · duet" else ""
-                    state == LyricsMenuViewModel.SourceState.Unavailable -> "Not found"
-                    state == LyricsMenuViewModel.SourceState.Off -> "Off"
-                    else -> "Checking…"
+                        LyricsUtils.SyncKind.WORD -> stringResource(R.string.ps_lyrics_word_synced)
+                        LyricsUtils.SyncKind.LINE -> stringResource(R.string.ps_lyrics_line_synced)
+                        else -> stringResource(R.string.ps_lyrics_plain)
+                    } + if (available.candidate.hasDuet) " · " + stringResource(R.string.ps_lyrics_duet) else ""
+                    state == LyricsMenuViewModel.SourceState.Unavailable -> stringResource(R.string.ps_lyrics_not_found)
+                    state == LyricsMenuViewModel.SourceState.Off -> stringResource(R.string.ps_lyrics_off)
+                    else -> stringResource(R.string.ps_lyrics_checking)
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -365,35 +368,125 @@ fun LyricsProviderSheet(onDismiss: () -> Unit) {
  * lyrics in is not something a shortlist can guess, and a missing language is a dead end with no
  * workaround. Presented in its own overlay because a list this long cannot sit inline.
  */
-private val TranslationTargets = listOf(
-    "af" to "Afrikaans", "sq" to "Albanian", "am" to "Amharic", "ar" to "Arabic",
-    "hy" to "Armenian", "az" to "Azerbaijani", "eu" to "Basque", "be" to "Belarusian",
-    "bn" to "Bengali", "bs" to "Bosnian", "bg" to "Bulgarian", "ca" to "Catalan",
-    "ceb" to "Cebuano", "ny" to "Chichewa", "zh-CN" to "Chinese (Simplified)",
-    "zh-TW" to "Chinese (Traditional)", "co" to "Corsican", "hr" to "Croatian",
-    "cs" to "Czech", "da" to "Danish", "nl" to "Dutch", "en" to "English",
-    "eo" to "Esperanto", "et" to "Estonian", "tl" to "Filipino", "fi" to "Finnish",
-    "fr" to "French", "fy" to "Frisian", "gl" to "Galician", "ka" to "Georgian",
-    "de" to "German", "el" to "Greek", "gu" to "Gujarati", "ht" to "Haitian Creole",
-    "ha" to "Hausa", "haw" to "Hawaiian", "iw" to "Hebrew", "hi" to "Hindi",
-    "hmn" to "Hmong", "hu" to "Hungarian", "is" to "Icelandic", "ig" to "Igbo",
-    "id" to "Indonesian", "ga" to "Irish", "it" to "Italian", "ja" to "Japanese",
-    "jw" to "Javanese", "kn" to "Kannada", "kk" to "Kazakh", "km" to "Khmer",
-    "ko" to "Korean", "ku" to "Kurdish", "ky" to "Kyrgyz", "lo" to "Lao",
-    "la" to "Latin", "lv" to "Latvian", "lt" to "Lithuanian", "lb" to "Luxembourgish",
-    "mk" to "Macedonian", "mg" to "Malagasy", "ms" to "Malay", "ml" to "Malayalam",
-    "mt" to "Maltese", "mi" to "Maori", "mr" to "Marathi", "mn" to "Mongolian",
-    "my" to "Myanmar", "ne" to "Nepali", "no" to "Norwegian", "ps" to "Pashto",
-    "fa" to "Persian", "pl" to "Polish", "pt" to "Portuguese", "pa" to "Punjabi",
-    "ro" to "Romanian", "ru" to "Russian", "sm" to "Samoan", "gd" to "Scots Gaelic",
-    "sr" to "Serbian", "st" to "Sesotho", "sn" to "Shona", "sd" to "Sindhi",
-    "si" to "Sinhala", "sk" to "Slovak", "sl" to "Slovenian", "so" to "Somali",
-    "es" to "Spanish", "su" to "Sundanese", "sw" to "Swahili", "sv" to "Swedish",
-    "tg" to "Tajik", "ta" to "Tamil", "te" to "Telugu", "th" to "Thai",
-    "tr" to "Turkish", "uk" to "Ukrainian", "ur" to "Urdu", "uz" to "Uzbek",
-    "vi" to "Vietnamese", "cy" to "Welsh", "xh" to "Xhosa", "yi" to "Yiddish",
-    "yo" to "Yoruba", "zu" to "Zulu",
+private val TranslationTargetIds = listOf(
+    "af" to R.string.ps_lang_af,
+    "sq" to R.string.ps_lang_sq,
+    "am" to R.string.ps_lang_am,
+    "ar" to R.string.ps_lang_ar,
+    "hy" to R.string.ps_lang_hy,
+    "az" to R.string.ps_lang_az,
+    "eu" to R.string.ps_lang_eu,
+    "be" to R.string.ps_lang_be,
+    "bn" to R.string.ps_lang_bn,
+    "bs" to R.string.ps_lang_bs,
+    "bg" to R.string.ps_lang_bg,
+    "ca" to R.string.ps_lang_ca,
+    "ceb" to R.string.ps_lang_ceb,
+    "ny" to R.string.ps_lang_ny,
+    "zh-CN" to R.string.ps_lang_zh_cn,
+    "zh-TW" to R.string.ps_lang_zh_tw,
+    "co" to R.string.ps_lang_co,
+    "hr" to R.string.ps_lang_hr,
+    "cs" to R.string.ps_lang_cs,
+    "da" to R.string.ps_lang_da,
+    "nl" to R.string.ps_lang_nl,
+    "en" to R.string.ps_lang_en,
+    "eo" to R.string.ps_lang_eo,
+    "et" to R.string.ps_lang_et,
+    "tl" to R.string.ps_lang_tl,
+    "fi" to R.string.ps_lang_fi,
+    "fr" to R.string.ps_lang_fr,
+    "fy" to R.string.ps_lang_fy,
+    "gl" to R.string.ps_lang_gl,
+    "ka" to R.string.ps_lang_ka,
+    "de" to R.string.ps_lang_de,
+    "el" to R.string.ps_lang_el,
+    "gu" to R.string.ps_lang_gu,
+    "ht" to R.string.ps_lang_ht,
+    "ha" to R.string.ps_lang_ha,
+    "haw" to R.string.ps_lang_haw,
+    "iw" to R.string.ps_lang_iw,
+    "hi" to R.string.ps_lang_hi,
+    "hmn" to R.string.ps_lang_hmn,
+    "hu" to R.string.ps_lang_hu,
+    "is" to R.string.ps_lang_is,
+    "ig" to R.string.ps_lang_ig,
+    "id" to R.string.ps_lang_id,
+    "ga" to R.string.ps_lang_ga,
+    "it" to R.string.ps_lang_it,
+    "ja" to R.string.ps_lang_ja,
+    "jw" to R.string.ps_lang_jw,
+    "kn" to R.string.ps_lang_kn,
+    "kk" to R.string.ps_lang_kk,
+    "km" to R.string.ps_lang_km,
+    "ko" to R.string.ps_lang_ko,
+    "ku" to R.string.ps_lang_ku,
+    "ky" to R.string.ps_lang_ky,
+    "lo" to R.string.ps_lang_lo,
+    "la" to R.string.ps_lang_la,
+    "lv" to R.string.ps_lang_lv,
+    "lt" to R.string.ps_lang_lt,
+    "lb" to R.string.ps_lang_lb,
+    "mk" to R.string.ps_lang_mk,
+    "mg" to R.string.ps_lang_mg,
+    "ms" to R.string.ps_lang_ms,
+    "ml" to R.string.ps_lang_ml,
+    "mt" to R.string.ps_lang_mt,
+    "mi" to R.string.ps_lang_mi,
+    "mr" to R.string.ps_lang_mr,
+    "mn" to R.string.ps_lang_mn,
+    "my" to R.string.ps_lang_my,
+    "ne" to R.string.ps_lang_ne,
+    "no" to R.string.ps_lang_no,
+    "ps" to R.string.ps_lang_ps,
+    "fa" to R.string.ps_lang_fa,
+    "pl" to R.string.ps_lang_pl,
+    "pt" to R.string.ps_lang_pt,
+    "pa" to R.string.ps_lang_pa,
+    "ro" to R.string.ps_lang_ro,
+    "ru" to R.string.ps_lang_ru,
+    "sm" to R.string.ps_lang_sm,
+    "gd" to R.string.ps_lang_gd,
+    "sr" to R.string.ps_lang_sr,
+    "st" to R.string.ps_lang_st,
+    "sn" to R.string.ps_lang_sn,
+    "sd" to R.string.ps_lang_sd,
+    "si" to R.string.ps_lang_si,
+    "sk" to R.string.ps_lang_sk,
+    "sl" to R.string.ps_lang_sl,
+    "so" to R.string.ps_lang_so,
+    "es" to R.string.ps_lang_es,
+    "su" to R.string.ps_lang_su,
+    "sw" to R.string.ps_lang_sw,
+    "sv" to R.string.ps_lang_sv,
+    "tg" to R.string.ps_lang_tg,
+    "ta" to R.string.ps_lang_ta,
+    "te" to R.string.ps_lang_te,
+    "th" to R.string.ps_lang_th,
+    "tr" to R.string.ps_lang_tr,
+    "uk" to R.string.ps_lang_uk,
+    "ur" to R.string.ps_lang_ur,
+    "uz" to R.string.ps_lang_uz,
+    "vi" to R.string.ps_lang_vi,
+    "cy" to R.string.ps_lang_cy,
+    "xh" to R.string.ps_lang_xh,
+    "yi" to R.string.ps_lang_yi,
+    "yo" to R.string.ps_lang_yo,
+    "zu" to R.string.ps_lang_zu,
 )
+
+/** Every language with its name in the app's language, A to Z for that language. */
+@Composable
+private fun rememberTranslationTargets(): List<Pair<String, String>> {
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    return remember(configuration) {
+        val collator = java.text.Collator.getInstance(java.util.Locale.getDefault())
+        TranslationTargetIds
+            .map { (code, res) -> code to context.getString(res) }
+            .sortedWith { a, b -> collator.compare(a.second, b.second) }
+    }
+}
 
 @Composable
 fun LyricsTranslationSheet(onDismiss: () -> Unit) {
@@ -402,6 +495,7 @@ fun LyricsTranslationSheet(onDismiss: () -> Unit) {
     val (target, setTarget) = rememberPreference(TranslateLanguageKey, defaultValue = "en")
     val (source, setSource) = rememberPreference(TranslateSourceLanguageKey, defaultValue = "auto")
     val (sessionWide, setSessionWide) = rememberPreference(TranslateLyricsKey, defaultValue = false)
+    val targets = rememberTranslationTargets()
     var picking by remember { mutableStateOf(false) }
     var pickingSource by remember { mutableStateOf(false) }
 
@@ -419,9 +513,9 @@ fun LyricsTranslationSheet(onDismiss: () -> Unit) {
                 .padding(horizontal = 20.dp)
                 .padding(top = 16.dp, bottom = 24.dp)
         ) {
-            Text(text = "Lyrics translation", color = Color(0xFF9A9A9A), fontSize = 12.sp)
+            Text(text = stringResource(R.string.ps_lyrics_translation_title), color = Color(0xFF9A9A9A), fontSize = 12.sp)
             Text(
-                text = "Translate from",
+                text = stringResource(R.string.ps_lyrics_translate_from),
                 color = Color.White,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
@@ -432,25 +526,24 @@ fun LyricsTranslationSheet(onDismiss: () -> Unit) {
             // then nothing could be done about it, so the source can be set by hand too.
             PillButton(
                 label = if (source.isBlank() || source == "auto") {
-                    "Detect automatically"
+                    stringResource(R.string.ps_lyrics_detect_auto)
                 } else {
-                    TranslationTargets.firstOrNull { it.first == source }?.second ?: source
+                    targets.firstOrNull { it.first == source }?.second ?: source
                 },
                 onClick = { pickingSource = true },
             )
 
             Spacer(modifier = Modifier.height(14.dp))
-            Text(text = "To", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(text = stringResource(R.string.ps_lyrics_to), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             PillButton(
-                label = TranslationTargets.firstOrNull { it.first == target }?.second ?: "unselected",
+                label = targets.firstOrNull { it.first == target }?.second ?: stringResource(R.string.ps_lyrics_unselected),
                 onClick = { picking = true },
                 trailing = if (target in youtubeLanguages) ({ YouTubeTick() }) else null,
             )
             AnimatedVisibility(visible = youtubeLanguages.isNotEmpty(), enter = fadeIn() + expandVertically()) {
                 Text(
-                    text = "A green tick means the video has its own captions in that language, so they're used as " +
-                        "the translation. You can turn this off in Settings > General.",
+                    text = stringResource(R.string.ps_lyrics_green_tick_hint),
                     color = Color(0xFF9A9A9A),
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
@@ -459,7 +552,7 @@ fun LyricsTranslationSheet(onDismiss: () -> Unit) {
             }
 
             Spacer(modifier = Modifier.height(14.dp))
-            Text(text = "And", color = Color(0xFF9A9A9A), fontSize = 12.sp)
+            Text(text = stringResource(R.string.ps_lyrics_and), color = Color(0xFF9A9A9A), fontSize = 12.sp)
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
@@ -473,7 +566,7 @@ fun LyricsTranslationSheet(onDismiss: () -> Unit) {
                 SheetIcon(R.drawable.translate)
                 Spacer(modifier = Modifier.width(14.dp))
                 Text(
-                    text = "Translate this whole session",
+                    text = stringResource(R.string.ps_lyrics_translate_session),
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -519,10 +612,10 @@ fun LyricsTranslationSheet(onDismiss: () -> Unit) {
             ) {
                 Text(
                     text = when {
-                        isTranslating -> "Translating… (tap to stop)"
-                        translationOn -> "Show original"
-                        target.isBlank() -> "Pick a language first"
-                        else -> "Translate!"
+                        isTranslating -> stringResource(R.string.ps_lyrics_translating_stop)
+                        translationOn -> stringResource(R.string.ps_lyrics_show_original)
+                        target.isBlank() -> stringResource(R.string.ps_lyrics_pick_language_first)
+                        else -> stringResource(R.string.ps_lyrics_translate_action)
                     },
                     color = Color.White.copy(alpha = if (target.isBlank() || isTranslating) 0.45f else 1f),
                     fontSize = 15.sp,
@@ -534,7 +627,7 @@ fun LyricsTranslationSheet(onDismiss: () -> Unit) {
             (status as? LyricsTranslationHelper.TranslationStatus.Error)?.let { error ->
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Couldn't translate: ${error.message}",
+                    text = stringResource(R.string.ps_lyrics_translate_failed, "${error.message}"),
                     color = Color(0xFFFF8A8A),
                     fontSize = 12.sp,
                 )
@@ -544,7 +637,7 @@ fun LyricsTranslationSheet(onDismiss: () -> Unit) {
 
     if (picking) {
         LanguagePickerSheet(
-            title = "Translate to",
+            title = stringResource(R.string.ps_lyrics_translate_to),
             selected = target,
             marked = youtubeLanguages,
             // The picker closes itself (animated) after a pick; onDismiss then drops it. While a
@@ -555,9 +648,9 @@ fun LyricsTranslationSheet(onDismiss: () -> Unit) {
     }
     if (pickingSource) {
         LanguagePickerSheet(
-            title = "Translate from",
+            title = stringResource(R.string.ps_lyrics_translate_from),
             selected = source.ifBlank { "auto" },
-            options = listOf("auto" to "Detect automatically") + TranslationTargets,
+            options = listOf("auto" to stringResource(R.string.ps_lyrics_detect_auto)) + targets,
             onPick = { setSource(it) },
             onDismiss = { pickingSource = false },
         )
@@ -583,7 +676,7 @@ private fun rememberYouTubeTranslationLanguages(): Set<String> {
             artist = metadata.artists.joinToString { it.name },
             isVideo = metadata.isVideoSong,
             lines = lines,
-            targets = TranslationTargets.map { it.first },
+            targets = TranslationTargetIds.map { it.first },
         )
     }
     return languages
@@ -601,7 +694,7 @@ private fun YouTubeTick() {
     ) {
         Icon(
             painter = painterResource(R.drawable.check),
-            contentDescription = "Captions on YouTube",
+            contentDescription = stringResource(R.string.ps_lyrics_captions_on_youtube),
             tint = Color.White,
             modifier = Modifier.size(18.dp),
         )
@@ -622,15 +715,17 @@ private fun LanguagePickerSheet(
     selected: String,
     onPick: (String) -> Unit,
     onDismiss: () -> Unit,
-    options: List<Pair<String, String>> = TranslationTargets,
+    options: List<Pair<String, String>>? = null,
     marked: Set<String> = emptySet(),
 ) {
     var query by remember { mutableStateOf("") }
-    val filtered = remember(query, options) {
+    val allTargets = rememberTranslationTargets()
+    val shown = options ?: allTargets
+    val filtered = remember(query, shown) {
         if (query.isBlank()) {
-            options
+            shown
         } else {
-            options.filter { it.second.contains(query, ignoreCase = true) }
+            shown.filter { it.second.contains(query, ignoreCase = true) }
         }
     }
 
@@ -660,7 +755,7 @@ private fun LanguagePickerSheet(
                     .padding(horizontal = 16.dp)
             ) {
                 if (query.isEmpty()) {
-                    Text(text = "Search language", color = Color(0xFF8A8A8A), fontSize = 13.sp)
+                    Text(text = stringResource(R.string.ps_lyrics_search_language), color = Color(0xFF8A8A8A), fontSize = 13.sp)
                 }
                 BasicTextField(
                     value = query,

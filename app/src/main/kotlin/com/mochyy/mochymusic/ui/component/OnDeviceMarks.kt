@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.exoplayer.offline.Download
 import com.mochyy.mochymusic.LocalDatabase
@@ -85,7 +86,7 @@ fun OnDeviceIcon(modifier: Modifier = Modifier) {
     ) {
         Icon(
             painter = painterResource(R.drawable.arrow_downward),
-            contentDescription = "On this device",
+            contentDescription = stringResource(R.string.pc_on_this_device),
             tint = Color.Black.copy(alpha = 0.8f),
             modifier = Modifier.size(12.dp),
         )

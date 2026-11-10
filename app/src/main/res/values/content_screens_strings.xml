@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- About Sheet -->
+    <string name="about_app">About app</string>
+    <string name="about_mochy_music_version">Mochy Music | %1$s</string>
+    <string name="about_app_description">Mochy Music is a music app but\nkinda cool.</string>
+    <string name="about_actions">Actions</string>
+    <string name="about_support_me">Support me please :3 \u2192</string>
+    <string name="about_github">Mochy Music github \u2192</string>
+    <string name="about_meet_lead_dev">Meet the lead dev</string>
+    <string name="about_we_wont_exist">We wont exist without these guys</string>
+    <string name="about_and_more">And more \u2192</string>
+    <string name="about_license">License</string>
+    <string name="about_more_license">More about license</string>
+    <string name="about_cool_contributors">Cool contributors</string>
+    <string name="about_credits">Credits</string>
+
+    <!-- Update Sheet -->
+    <string name="update_actions">Actions</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_check_for_update">Check for update</string>
+    <string name="update_downgrade_to">Downgrade to %1$s</string>
+    <string name="update_switch_nightly">Switch to nightly</string>
+    <string name="update_not_out_yet">Not out yet</string>
+    <string name="update_help_us">Help us!</string>
+    <string name="update_status_new_update">New update!</string>
+    <string name="update_action_update_now">UPDATE NOW</string>
+    <string name="update_status_looking">Looking for updates</string>
+    <string name="update_status_latest">You\'re on the latest</string>
+    <string name="update_status_all_good">All good</string>
+    <string name="update_status_failed">Couldn\'t check for updates</string>
+    <string name="update_status_offline">Offline?</string>
+    <string name="update_action_try_again">TRY AGAIN</string>
+    <string name="update_install_permission_error">Allow \"Install unknown apps\" for mochy, then tap Install here again.</string>
+    <string name="update_back_desc">Back</string>
+    <string name="update_changelog">Changelog</string>
+    <string name="update_to_be_installed">To Be Installed -</string>
+    <string name="update_download_failed">Download failed</string>
+    <string name="update_downloading_progress">Downloading… %1$d%%</string>
+    <string name="update_no_apk">No APK in this release</string>
+    <string name="update_install_here">Install here</string>
+    <string name="update_open_web">Open the web</string>
+
+    <!-- Artist Screen -->
+    <string name="artist_menu_shuffle">Shuffle</string>
+    <string name="artist_menu_start_radio">Start radio</string>
+    <string name="artist_menu_copy_link">Copy link</string>
+    <string name="artist_link_label">Artist Link</string>
+    <string name="artist_top_songs">Top songs</string>
+    <string name="artist_albums">Albums</string>
+    <string name="artist_singles_eps">Singles &amp; EPs</string>
+    <string name="artist_videos">Videos</string>
+    <string name="artist_concert">Concert</string>
+    <string name="artist_featured_on">Featured on</string>
+    <string name="artist_similar">Similar Artist</string>
+    <string name="artist_in_your_library">In your library</string>
+    <string name="artist_saved_albums_of">Albums of %1$s you saved</string>
+    <string name="artist_about">About %1$s</string>
+    <string name="artist_load_failed">Couldn\'t load this artist. Tap to try again</string>
+
+    <!-- Playlist Screens -->
+    <string name="playlist_removed_song_from">Removed %1$s from %2$s</string>
+    <string name="playlist_fallback_name">playlist</string>
+    <string name="playlist_drag_to_move">Drag to move</string>
+    <string name="playlist_related">Related Playlists</string>
+    <string name="playlist_sort_order">Sort order</string>
+    <string name="playlist_sort_desc"> (Desc)</string>
+    <string name="playlist_sort_asc"> (Asc)</string>
+
+    <!-- Search & Genre Screens -->
+    <string name="genre_nothing_here">Nothing here yet</string>
+    <string name="genre_featured">Featured</string>
+    <string name="genre_from_the_community">From the community</string>
+    <string name="item_kind_album">Album</string>
+    <string name="item_kind_artist">Artist</string>
+    <string name="item_kind_playlist">Playlist</string>
+    <string name="item_kind_video">Video</string>
+    <string name="item_kind_song">Song</string>
+    <string name="search_category_all">All</string>
+    <string name="search_category_music">Music</string>
+    <string name="search_category_artist">Artist</string>
+    <string name="search_category_video">Video</string>
+    <string name="search_category_album">Album</string>
+    <string name="search_category_playlist">Playlist</string>
+    <string name="search_category_featured">Featured</string>
+    <string name="search_top_results">Top Results</string>
+    <string name="search_exact_matches">Exact matches</string>
+    <string name="search_no_results">No results</string>
+    <string name="search_placeholder_tracks_albums">Search for any tracks, albums, lyrics…</string>
+    <string name="search_by_artist">by %1$s</string>
+
+    <!-- Suggestion Region Sheet -->
+    <string name="suggestion_choose_region">Choose Suggestions Region</string>
+    <string name="suggestion_search_regions">Search regions…</string>
+    <string name="suggestion_search_desc">Search</string>
+    <string name="suggestion_system">System</string>
+    <string name="suggestion_system_default">System Default</string>
+    <string name="suggestion_countries_regions">Countries &amp; Regions</string>
+    <string name="suggestion_selected_desc">Selected</string>
+
+    <!-- Donate Sheet -->
+    <string name="donate_dismiss_button">what no i dont want to</string>
+    <string name="donate_thank_you_title">Arigatou! :3</string>
+    <string name="donate_subtitle">Here’s a way to support and donate to us!</string>
+    <string name="donate_kofi">Support us on Ko-fi</string>
+    <string name="donate_sociabuzz">Support us on SociaBuzz</string>
+    <string name="donate_sociabuzz_desc">Recommended for some SEA and LATAM countries</string>
+    <string name="donate_buymeacoffee">Support us on Buy Me a Coffee</string>
+    <string name="donate_note">your donation, no matter how small it is, will always be very very useful for us :3</string>
+
+    <!-- Album Screen -->
+    <string name="album_more_by_artist">More by %1$s</string>
+    <string name="album_more_by_this_artist">More by this artist</string>
+    <string name="album_other_versions">Other versions</string>
+    <string name="album_releases_for_you">Releases for you</string>
+    <string name="album_explicit_tag">Explicit</string>
+    <string name="album_load_failed">Couldn\'t load this album. Tap to try again</string>
+</resources>

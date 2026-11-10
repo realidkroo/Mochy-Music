@@ -45,6 +45,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
@@ -479,8 +480,8 @@ fun LikedLabel(
             alpha = ((sheetProgressProvider() - 0.9f) / 0.1f).coerceIn(0f, 1f)
         },
     ) {
-        if (likeShown > 0.001f) NoteText("Added to Library and Liked Songs", likeShown)
-        if (mixShown > 0.001f) MixingNote("Mixxing…", mixShown, active = { sheetProgressProvider() > 0.9f })
+        if (likeShown > 0.001f) NoteText(stringResource(R.string.pc_like_added), likeShown)
+        if (mixShown > 0.001f) MixingNote(stringResource(R.string.pc_like_mixing), mixShown, active = { sheetProgressProvider() > 0.9f })
     }
 }
 

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- common -->
+    <string name="onb_next">Next</string>
+    <string name="onb_next_lower">next</string>
+    <string name="onb_done">Done</string>
+    <string name="onb_close">Close</string>
+    <string name="onb_go_back">hell nah, go back</string>
+    <string name="onb_yes">Yes!</string>
+    <string name="onb_skip">Skip</string>
+    <string name="onb_stop">Stop</string>
+    <string name="onb_selected">Selected</string>
+
+    <!-- welcome -->
+    <string name="onb_welcome_title">Welcome to\nmochy!</string>
+    <string name="onb_welcome_subtitle">A way to listen and own your\nmusic, differently.</string>
+
+    <!-- photo cropper -->
+    <string name="onb_adjust_photo">Adjust your photo profile</string>
+    <string name="onb_select_new_image">Select new image</string>
+
+    <!-- import -->
+    <string name="onb_import_title">Importing music</string>
+    <string name="onb_import_ask_subtitle">Do you want to import music from other platforms like Spotify, Apple Music, Tidal or SoundCloud, or sync your data with YouTube Music?</string>
+    <string name="onb_import_mode_subtitle">what do you want?</string>
+    <string name="onb_import_previous_title">Import previous data</string>
+    <string name="onb_import_previous_desc">the .zip you exported from your old app, with your library, history, downloads and settings</string>
+    <string name="onb_import">Import</string>
+    <string name="onb_import_desc">import music, playlists and albums from supported providers like Apple Music, Spotify, Tidal and YouTube Music</string>
+    <string name="onb_import_backup_title">Import from backup</string>
+    <string name="onb_import_backup_desc">if you by any chance have a Mochy backup</string>
+
+    <!-- restoring previous data -->
+    <string name="onb_all_set">All set!</string>
+    <string name="onb_bringing_over">Bringing your music over</string>
+    <string name="onb_restart_once">Mochy restarts once to finish. See you in a sec!</string>
+    <string name="onb_restore_counts">%1$s, %2$s and %3$s from your old app.</string>
+    <string name="onb_reading_export">Reading your export…</string>
+    <string name="onb_restarting">Restarting…</string>
+    <string name="onb_restore_progress">%1$d%% · keep Mochy open, it restarts by itself when it\'s done</string>
+    <plurals name="onb_songs">
+        <item quantity="one">%1$,d song</item>
+        <item quantity="other">%1$,d songs</item>
+    </plurals>
+    <plurals name="onb_playlists">
+        <item quantity="one">%1$,d playlist</item>
+        <item quantity="other">%1$,d playlists</item>
+    </plurals>
+    <plurals name="onb_plays">
+        <item quantity="one">%1$,d play</item>
+        <item quantity="other">%1$,d plays</item>
+    </plurals>
+
+    <!-- provider -->
+    <string name="onb_select_provider">Select provider</string>
+    <string name="onb_provider_spotify_desc">Liked Songs and playlists</string>
+    <string name="onb_provider_apple_desc">Library playlists and Favorite Songs</string>
+    <string name="onb_provider_youtube_desc">Liked music and playlists · also supports sync</string>
+    <string name="onb_provider_tidal_desc">My Tracks and your playlists</string>
+    <string name="onb_provider_setup_title">%1$s setup</string>
+    <string name="onb_provider_setup_subtitle">You will log in to your account. We never see your password. A web page will open.</string>
+    <string name="onb_sign_in_again">Sign in again</string>
+    <string name="onb_try_again">Try again</string>
+    <string name="onb_open_sign_in">Open sign-in</string>
+    <string name="onb_provider_setup_body">Sign in on %1$s\'s own page. Once you\'re in, the page closes and your playlists show up here.</string>
+    <string name="onb_sign_in_to">Sign in to %1$s</string>
+
+    <!-- what to import -->
+    <string name="onb_what_to_import">What to import</string>
+    <string name="onb_signed_in_as">Signed in as %1$s</string>
+    <string name="onb_choose_what_to_import">Choose what to import</string>
+    <string name="onb_import_count">Import %1$d</string>
+    <string name="onb_reading_progress">%1$s (%2$d of %3$d)</string>
+    <string name="onb_select_none">Select none</string>
+    <string name="onb_select_all">Select all</string>
+    <string name="onb_nothing_in_account">Nothing in this account yet.</string>
+
+    <!-- sync options -->
+    <string name="onb_sync_title">Also keep in sync?</string>
+    <string name="onb_sync_subtitle">YouTube Music can stay in step with Mochy: your playlists, likes and history, both ways.</string>
+    <string name="onb_import_and_sync">Import &amp; sync</string>
+    <string name="onb_just_import">Just import</string>
+    <string name="onb_sync_launch_title">Sync library on launch</string>
+    <string name="onb_sync_launch_desc">Likes, library and the playlists you picked, each time Mochy opens</string>
+    <string name="onb_sync_new_playlists_title">New playlists go to YouTube</string>
+    <string name="onb_sync_new_playlists_desc">Playlists you make here are created on YouTube too</string>
+    <string name="onb_sync_push_plays_title">Push plays to YouTube history</string>
+    <string name="onb_sync_push_plays_desc">What you play here shows up in your YouTube history</string>
+    <string name="onb_sync_bring_history_title">Bring YouTube history here</string>
+    <string name="onb_sync_bring_history_desc">Plays from your other devices join Mochy\'s history</string>
+
+    <!-- profile -->
+    <string name="onb_profile_title">Let\'s create your profile!</string>
+    <string name="onb_never_store">Mochy will never store your data online!</string>
+    <string name="onb_username_prompt">what\'s your username?</string>
+    <string name="onb_username_hint">username</string>
+    <string name="onb_set_photo">Set a profile picture here!</string>
+    <string name="onb_profile_picture">Profile picture</string>
+    <string name="onb_add_profile_picture">Add a profile picture</string>
+    <string name="onb_card_profile_usr">PROFILE USR#%1$s</string>
+    <string name="onb_card_id_of">ID CARD OF</string>
+    <string name="onb_card_of_name">%1$s`s CARD</string>
+
+    <!-- hello / done -->
+    <string name="onb_hello">Hello!</string>
+    <string name="onb_welcome_to_mochy">welcome to mochy!</string>
+    <string name="onb_all_good">You\'re good to go</string>
+
+    <!-- blur warning -->
+    <string name="onb_warning">Warning</string>
+    <string name="onb_blur_warning_body">Your phone may be too weak to run blurs. Do you want to disable blur? You can always change this in Settings.</string>
+    <string name="onb_disable_blur">Disable Blur</string>
+    <string name="onb_measured">Measured: %1$s</string>
+    <string name="onb_continue">continue</string>
+    <string name="onb_no_continue">no, continue</string>
+    <string name="onb_blur_needs_android_12">Blur needs Android 12</string>
+    <string name="onb_blur_slow_frames">%1$d%% slow frames at %2$d Hz</string>
+    <string name="onb_blur_low_memory">%1$s · low-memory device</string>
+
+    <!-- last one -->
+    <string name="onb_last_one">Last one</string>
+    <string name="onb_last_one_subtitle">Disable anything that you don\'t like</string>
+    <string name="onb_auto_crossfade_title">Auto Crossfade</string>
+    <string name="onb_auto_crossfade_desc">Automatically crossfades, analysing the pitch, tempo and more to pick the perfect moment</string>
+    <string name="onb_ai_filter_title">AI Artist filter</string>
+    <string name="onb_ai_filter_desc">Turning this off may give you AI slop recommendations</string>
+</resources>

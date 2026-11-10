@@ -82,7 +82,7 @@ internal fun LazyListScope.libraryImportedTab(
     }
 
     item(key = "imported_songs") {
-        LibraryCapsLabel("All music")
+        LibraryCapsLabel(stringResource(R.string.lib_all_music))
         Spacer(modifier = Modifier.height(10.dp))
         LibraryCardGrid(
             services.map { service ->
@@ -99,7 +99,7 @@ internal fun LazyListScope.libraryImportedTab(
     }
 
     item(key = "imported_playlists") {
-        LibraryCapsLabel("Playlists")
+        LibraryCapsLabel(stringResource(R.string.playlists))
         Spacer(modifier = Modifier.height(10.dp))
         LibraryCardGrid(
             services.map { service ->
@@ -133,6 +133,6 @@ internal fun LazyListScope.libraryImportedTab(
 
     item(key = "imported_manage") {
         Spacer(modifier = Modifier.height(22.dp))
-        LibraryManagePill(text = "Manage imports", onClick = onManage)
+        LibraryManagePill(text = stringResource(R.string.lib_manage_imports_pill), onClick = onManage)
     }
 }

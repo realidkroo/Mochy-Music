@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Greetings -->
+    <string name="profile_greeting_hello_again">Chào bạn</string>
+    <string name="profile_greeting_hey">Chào bạn nhé</string>
+    <string name="profile_greeting_welcome_back">Chào mừng quay lại</string>
+    <string name="profile_greeting_good_to_see_you">Rất vui được gặp lại bạn</string>
+    <string name="profile_greeting_fallback">bạn ơi</string>
+    <string name="profile_greeting_format">%1$s, %2$s!</string>
+
+    <!-- Profile Header & ID Card -->
+    <string name="profile_joined_at">tham gia vào %1$s</string>
+    <string name="profile_pull_down_cd">Kéo xuống</string>
+    <string name="profile_swipe_down_hint">vuốt xuống ở đây!!</string>
+    <string name="profile_scratch_hint">cào đi nào!</string>
+    <string name="profile_come_back_later">quay lại sau nhé</string>
+    <string name="profile_swipe_up_to_close">vuốt lên để đóng</string>
+
+    <!-- Listening Time Card & Stats -->
+    <string name="profile_total_listening_time">"Tổng thời gian\nnghe"</string>
+    <string name="profile_view_stats">"Xem thống kê  &gt;"</string>
+    <string name="profile_unit_hour_short">h</string>
+    <string name="profile_unit_minute_short">m</string>
+
+    <!-- Version & About Card -->
+    <string name="profile_version_about_app">Phiên bản &amp; thông tin ứng dụng</string>
+    <string name="profile_capsule_about">Giới thiệu</string>
+    <string name="profile_capsule_update">Cập nhật</string>
+
+    <!-- Community & Settings -->
+    <string name="profile_meet_dev_contributors">gặp gỡ dev &amp; người đóng góp :3</string>
+    <string name="profile_join_discord">Tham gia máy chủ Discord của Mochy!</string>
+    <string name="profile_discord_cd">Discord</string>
+    <string name="profile_settings_title">Cài đặt</string>
+    <string name="profile_open_settings">Mở cài đặt</string>
+
+    <!-- Edit Profile Sheet -->
+    <string name="profile_edit_title">Chỉnh sửa hồ sơ</string>
+    <string name="profile_data_privacy_hint">Mochy sẽ không bao giờ lưu trữ dữ liệu của bạn trên mạng!</string>
+    <string name="profile_done">Xong</string>
+    <string name="profile_username_label">tên người dùng</string>
+    <string name="profile_username_placeholder">tên người dùng</string>
+    <string name="profile_picture_label">ảnh hồ sơ</string>
+    <string name="profile_picture_cd">Ảnh hồ sơ</string>
+    <string name="profile_picture_add_cd">Thêm ảnh hồ sơ</string>
+
+    <!-- User Profile Page -->
+    <string name="profile_tag">PROFILE USR#%1$s</string>
+    <string name="profile_edit_button">Chỉnh sửa hồ sơ</string>
+    <string name="profile_total_listens">Tổng lượt nghe</string>
+    <plurals name="profile_unit_songs">
+        <item quantity="other">Bài hát</item>
+    </plurals>
+    <plurals name="profile_unit_minutes">
+        <item quantity="other">Phút</item>
+    </plurals>
+    <plurals name="profile_unit_hours">
+        <item quantity="other">Giờ</item>
+    </plurals>
+    <string name="profile_listening_to">Đang nghe</string>
+    <string name="profile_recent_empty">Các bài hát bạn nghe sẽ hiển thị ở đây.</string>
+    <string name="profile_your_playlists">Danh sách phát của bạn</string>
+    <string name="profile_top_artists">Nghệ sĩ nghe nhiều</string>
+    <string name="profile_top_artists_empty">Những nghệ sĩ bạn nghe nhiều nhất sẽ xuất hiện ở đây.</string>
+</resources>

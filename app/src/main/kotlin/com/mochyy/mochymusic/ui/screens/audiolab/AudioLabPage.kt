@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -356,9 +357,9 @@ internal fun LabBackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
     ) {
         Icon(
             painter = painterResource(R.drawable.arrow_back_ios),
-            contentDescription = "Back",
+            contentDescription = stringResource(R.string.lab_back),
             tint = Color.White,
-            modifier = Modifier.size(15.dp).offset(x = 2.dp),
+            modifier = Modifier.size(15.dp),
         )
     }
 }

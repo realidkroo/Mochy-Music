@@ -32,12 +32,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.eq.data.FilterType
 import com.mochyy.mochymusic.eq.data.ParametricEQBand
 import com.mochyy.mochymusic.ui.screens.audiolab.LabCard
@@ -53,12 +55,12 @@ fun EqBandsSection(
     nodes: List<ParametricEQBand>,
     onGain: (index: Int, gain: Double) -> Unit,
 ) {
-    LabSectionLabel("Bands")
+    LabSectionLabel(stringResource(R.string.eqx_tab_bands))
     LabCard(padding = 12.dp) {
         BandSliders(nodes, onGain)
         Spacer(Modifier.height(10.dp))
         Text(
-            "Sweep across the sliders to draw a curve",
+            stringResource(R.string.eqx_bands_hint),
             fontFamily = InterFontFamily, fontSize = 12.sp, color = LabColors.Faint,
             modifier = Modifier.padding(horizontal = 6.dp),
         )

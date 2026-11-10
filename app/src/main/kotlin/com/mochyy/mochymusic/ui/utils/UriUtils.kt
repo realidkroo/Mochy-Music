@@ -15,7 +15,7 @@ fun UriHandler.safeOpenUri(context: Context, uri: String) {
     }.onFailure {
         Toast.makeText(
             context,
-            context.getString(R.string.error_no_stream).replace("stream", "app"),
+            context.getString(R.string.pc_error_no_app),
             Toast.LENGTH_SHORT
         ).show()
     }

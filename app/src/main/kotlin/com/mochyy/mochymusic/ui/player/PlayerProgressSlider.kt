@@ -59,12 +59,14 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.C
 import androidx.media3.common.Player
 import com.mochyy.mochymusic.LocalPlayerConnection
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.PlayerHorizontalPadding
 import com.mochyy.mochymusic.ui.component.SeekBarExpandSpring
 import com.mochyy.mochymusic.utils.makeTimeString
@@ -270,7 +272,7 @@ fun PlayerProgressSlider(
                 LoadingLabel(style = timeStyle, color = restColor)
             } else if (state == FailureKey) {
                 Text(
-                    text = failureLabel ?: "Error",
+                    text = failureLabel ?: stringResource(R.string.error_title),
                     style = timeStyle,
                     color = StreamFailureRed,
                     maxLines = 1,
@@ -453,7 +455,7 @@ private fun rememberSettled(value: Boolean): State<Boolean> = produceState(initi
 private fun LoadingLabel(style: TextStyle, color: Color) {
     val transition = rememberInfiniteTransition(label = "loadingLabel")
     Row(verticalAlignment = Alignment.Bottom) {
-        Text(text = "Loading", style = style, color = color, maxLines = 1)
+        Text(text = stringResource(R.string.pc_loading), style = style, color = color, maxLines = 1)
         repeat(3) { index ->
             val lit by transition.animateFloat(
                 initialValue = 0.15f,

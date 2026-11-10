@@ -3,6 +3,8 @@
 package com.mochyy.mochymusic.ui.player.customize
 
 import androidx.annotation.DrawableRes
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.datastore.preferences.core.Preferences
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.CanvasThumbnailAnimationKey
@@ -35,17 +37,20 @@ val PlayerCoverStyle.isBigDisc: Boolean
 val PlayerCoverStyle.hasTonearm: Boolean
     get() = this == PlayerCoverStyle.DISC_BIG_LABEL
 
+@get:Composable
 val PlayerCoverStyle.displayName: String
-    get() = when (this) {
-        PlayerCoverStyle.EDGE_TO_EDGE -> "Full edge to edge"
-        PlayerCoverStyle.SQUARED -> "Squared"
-        PlayerCoverStyle.DISC_SMALL_FULL -> "Disc Music - inside - small"
-        PlayerCoverStyle.DISC_SMALL_LABEL -> "Disc Music - label - small"
-        PlayerCoverStyle.DISC_BIG_FULL -> "Disc Music - inside - big"
-        PlayerCoverStyle.DISC_BIG_LABEL -> "Disc Music - label - big"
-        PlayerCoverStyle.DISC_ALBUM -> "Disc + album Music"
-        PlayerCoverStyle.TURNTABLE -> "Turntable"
-    }
+    get() = stringResource(
+        when (this) {
+            PlayerCoverStyle.EDGE_TO_EDGE -> R.string.ps_cover_edge_to_edge
+            PlayerCoverStyle.SQUARED -> R.string.ps_cover_squared
+            PlayerCoverStyle.DISC_SMALL_FULL -> R.string.ps_cover_disc_small_full
+            PlayerCoverStyle.DISC_SMALL_LABEL -> R.string.ps_cover_disc_small_label
+            PlayerCoverStyle.DISC_BIG_FULL -> R.string.ps_cover_disc_big_full
+            PlayerCoverStyle.DISC_BIG_LABEL -> R.string.ps_cover_disc_big_label
+            PlayerCoverStyle.DISC_ALBUM -> R.string.ps_cover_disc_album
+            PlayerCoverStyle.TURNTABLE -> R.string.ps_cover_turntable
+        }
+    )
 
 sealed interface CoverOption {
     val title: String
@@ -71,64 +76,66 @@ sealed interface CoverOption {
     ) : CoverOption
 }
 
-private val AnimatedCanvasOption = CoverOption.Switch(
-    title = "Animated canvas",
-    description = "Animated canvas ( not from youtube )",
+@Composable
+private fun animatedCanvasOption() = CoverOption.Switch(
+    title = stringResource(R.string.ps_cover_animated_canvas),
+    description = stringResource(R.string.ps_cover_animated_canvas_desc),
     icon = R.drawable.sparks,
     key = CanvasThumbnailAnimationKey,
     default = true,
 )
 
-private val YtVideoOption = CoverOption.Switch(
-    title = "Yt video background",
-    description = "Plays yt videos on canvas",
+@Composable
+private fun ytVideoOption() = CoverOption.Switch(
+    title = stringResource(R.string.ps_cover_yt_video),
+    description = stringResource(R.string.ps_cover_yt_video_desc),
     icon = R.drawable.slow_motion_video,
     key = PlayVideoBackgroundKey,
     default = false,
 )
 
-private val TimestampMatchingOption = CoverOption.Switch(
-    title = "Timestamp matching",
-    description = "Based on subtitle",
+@Composable
+private fun timestampMatchingOption(parent: CoverOption.Switch) = CoverOption.Switch(
+    title = stringResource(R.string.ps_cover_timestamp_matching),
+    description = stringResource(R.string.ps_cover_timestamp_matching_desc),
     icon = R.drawable.lyrics,
     key = YtVideoBackgroundLyricsSyncKey,
     default = true,
-    parent = YtVideoOption,
+    parent = parent,
 )
 
-private val RotatingAnimationOption = CoverOption.Switch(
-    title = "Rotating animation",
-    description = "For the disc",
-    icon = R.drawable.refresh,
-    key = DiscRotatingAnimationKey,
-    default = true,
+@Composable
+private fun discOptions() = listOf(
+    CoverOption.Switch(
+        title = stringResource(R.string.ps_cover_rotating),
+        description = stringResource(R.string.ps_cover_for_disc),
+        icon = R.drawable.refresh,
+        key = DiscRotatingAnimationKey,
+        default = true,
+    ),
+    CoverOption.Switch(
+        title = stringResource(R.string.ps_cover_realistic),
+        description = stringResource(R.string.ps_cover_for_disc),
+        icon = R.drawable.palette,
+        key = DiscRealisticModeKey,
+        default = true,
+    ),
+    CoverOption.Text(
+        title = stringResource(R.string.ps_cover_disc_name),
+        description = stringResource(R.string.ps_cover_disc_name_desc),
+        icon = R.drawable.edit,
+        key = DiscNameKey,
+        placeholder = stringResource(R.string.ps_cover_disc_name_placeholder),
+    ),
 )
 
-private val RealisticModeOption = CoverOption.Switch(
-    title = "Realistic mode",
-    description = "For the disc",
-    icon = R.drawable.palette,
-    key = DiscRealisticModeKey,
-    default = true,
-)
-
-private val DiscNameOption = CoverOption.Text(
-    title = "Disc name",
-    description = "Printed on the platter",
-    icon = R.drawable.edit,
-    key = DiscNameKey,
-    placeholder = "Leave empty to hide",
-)
-
-private val DiscOptions = listOf(RotatingAnimationOption, RealisticModeOption, DiscNameOption)
-
+@get:Composable
 val PlayerCoverStyle.options: List<CoverOption>
     get() = when (this) {
-        PlayerCoverStyle.SQUARED -> listOf(AnimatedCanvasOption)
-        PlayerCoverStyle.EDGE_TO_EDGE -> listOf(
-            YtVideoOption,
-            TimestampMatchingOption,
-            AnimatedCanvasOption,
-        )
-        else -> DiscOptions
+        PlayerCoverStyle.SQUARED -> listOf(animatedCanvasOption())
+        PlayerCoverStyle.EDGE_TO_EDGE -> {
+            val ytVideo = ytVideoOption()
+            listOf(ytVideo, timestampMatchingOption(ytVideo), animatedCanvasOption())
+        }
+        else -> discOptions()
     }

@@ -2,6 +2,7 @@
 
 package com.mochyy.mochymusic.ui.screens.search
 
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -59,21 +60,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import android.os.Build
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
-import com.music.innertube.YouTube
-import com.music.innertube.YouTube.SearchFilter.Companion.FILTER_ALBUM
-import com.music.innertube.YouTube.SearchFilter.Companion.FILTER_ARTIST
-import com.music.innertube.YouTube.SearchFilter.Companion.FILTER_COMMUNITY_PLAYLIST
-import com.music.innertube.YouTube.SearchFilter.Companion.FILTER_FEATURED_PLAYLIST
-import com.music.innertube.YouTube.SearchFilter.Companion.FILTER_SONG
-import com.music.innertube.YouTube.SearchFilter.Companion.FILTER_VIDEO
-import com.music.innertube.models.AlbumItem
-import com.music.innertube.models.ArtistItem
-import com.music.innertube.models.PlaylistItem
-import com.music.innertube.models.SongItem
-import com.music.innertube.models.YTItem
 import com.mochyy.mochymusic.LocalDatabase
 import com.mochyy.mochymusic.LocalPlayerAwareWindowInsets
 import com.mochyy.mochymusic.LocalPlayerConnection
@@ -87,11 +75,13 @@ import com.mochyy.mochymusic.models.toMediaMetadata
 import com.mochyy.mochymusic.playback.queues.YouTubeQueue
 import com.mochyy.mochymusic.ui.component.GlassState
 import com.mochyy.mochymusic.ui.component.LocalMenuState
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.RoundedHighlight
 import com.mochyy.mochymusic.ui.component.SongSwipeBox
-import com.mochyy.mochymusic.ui.component.librarySwipeAction
-import com.mochyy.mochymusic.ui.component.queueSwipeAction
 import com.mochyy.mochymusic.ui.component.glassRoot
+import com.mochyy.mochymusic.ui.component.librarySwipeAction
+import com.mochyy.mochymusic.ui.component.navigateToTab
+import com.mochyy.mochymusic.ui.component.queueSwipeAction
 import com.mochyy.mochymusic.ui.menu.YouTubeAlbumMenu
 import com.mochyy.mochymusic.ui.menu.YouTubeArtistMenu
 import com.mochyy.mochymusic.ui.menu.YouTubePlaylistMenu
@@ -99,21 +89,32 @@ import com.mochyy.mochymusic.ui.menu.YouTubeSongMenu
 import com.mochyy.mochymusic.ui.utils.resize
 import com.mochyy.mochymusic.utils.rememberPreference
 import com.mochyy.mochymusic.viewmodels.OnlineSearchViewModel
+import com.music.innertube.YouTube
+import com.music.innertube.YouTube.SearchFilter.Companion.FILTER_ALBUM
+import com.music.innertube.YouTube.SearchFilter.Companion.FILTER_ARTIST
+import com.music.innertube.YouTube.SearchFilter.Companion.FILTER_COMMUNITY_PLAYLIST
+import com.music.innertube.YouTube.SearchFilter.Companion.FILTER_FEATURED_PLAYLIST
+import com.music.innertube.YouTube.SearchFilter.Companion.FILTER_SONG
+import com.music.innertube.YouTube.SearchFilter.Companion.FILTER_VIDEO
+import com.music.innertube.models.AlbumItem
+import com.music.innertube.models.ArtistItem
+import com.music.innertube.models.PlaylistItem
+import com.music.innertube.models.SongItem
+import com.music.innertube.models.YTItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
-import com.mochyy.mochymusic.ui.component.navigateToTab
-import com.mochyy.mochymusic.ui.component.RemoteFocus
 
-private val SearchCategories = listOf(
-    "All" to null,
-    "Music" to FILTER_SONG,
-    "Artist" to FILTER_ARTIST,
-    "Video" to FILTER_VIDEO,
-    "Album" to FILTER_ALBUM,
-    "Playlist" to FILTER_COMMUNITY_PLAYLIST,
-    "Featured" to FILTER_FEATURED_PLAYLIST,
-)
+private val SearchCategories =
+    listOf(
+        R.string.search_category_all to null,
+        R.string.search_category_music to FILTER_SONG,
+        R.string.search_category_artist to FILTER_ARTIST,
+        R.string.search_category_video to FILTER_VIDEO,
+        R.string.search_category_album to FILTER_ALBUM,
+        R.string.search_category_playlist to FILTER_COMMUNITY_PLAYLIST,
+        R.string.search_category_featured to FILTER_FEATURED_PLAYLIST,
+    )
 
 @Composable
 fun OnlineSearchResult(
@@ -148,9 +149,10 @@ fun OnlineSearchResult(
     val collapse = rememberCollapseProgress(listState)
     val progressProvider = remember(collapse) { { collapse.value } }
 
-    val selectedIndex = remember(searchFilter) {
-        SearchCategories.indexOfFirst { it.second?.value == searchFilter?.value }.coerceAtLeast(0)
-    }
+    val selectedIndex =
+        remember(searchFilter) {
+            SearchCategories.indexOfFirst { it.second?.value == searchFilter?.value }.coerceAtLeast(0)
+        }
 
     LaunchedEffect(searchFilter) { listState.scrollToItem(0) }
 
@@ -166,24 +168,25 @@ fun OnlineSearchResult(
 
     BackHandler { navController.navigateUp() }
 
-    val submit: (String) -> Unit = remember(navController, pauseSearchHistory) {
-        { raw ->
-            val text = raw.trim()
-            if (text.isNotEmpty() && text != viewModel.query) {
-                focusManager.clearFocus()
-                navController.navigate("search/${URLEncoder.encode(text, "UTF-8")}") {
-                    popUpTo("search/${URLEncoder.encode(viewModel.query, "UTF-8")}") {
-                        inclusive = true
+    val submit: (String) -> Unit =
+        remember(navController, pauseSearchHistory) {
+            { raw ->
+                val text = raw.trim()
+                if (text.isNotEmpty() && text != viewModel.query) {
+                    focusManager.clearFocus()
+                    navController.navigate("search/${URLEncoder.encode(text, "UTF-8")}") {
+                        popUpTo("search/${URLEncoder.encode(viewModel.query, "UTF-8")}") {
+                            inclusive = true
+                        }
                     }
-                }
-                if (!pauseSearchHistory) {
-                    coroutineScope.launch(Dispatchers.IO) {
-                        database.query { insert(SearchHistory(query = text)) }
+                    if (!pauseSearchHistory) {
+                        coroutineScope.launch(Dispatchers.IO) {
+                            database.query { insert(SearchHistory(query = text)) }
+                        }
                     }
                 }
             }
         }
-    }
 
     val recentContext = androidx.compose.ui.platform.LocalContext.current
     val onItemClick: (YTItem) -> Unit = { item ->
@@ -198,9 +201,17 @@ fun OnlineSearchResult(
                 }
             }
 
-            is AlbumItem -> navController.navigate("album/${item.id}")
-            is ArtistItem -> navController.navigate("artist/${item.id}")
-            is PlaylistItem -> navController.navigate("online_playlist/${item.id}")
+            is AlbumItem -> {
+                navController.navigate("album/${item.id}")
+            }
+
+            is ArtistItem -> {
+                navController.navigate("artist/${item.id}")
+            }
+
+            is PlaylistItem -> {
+                navController.navigate("online_playlist/${item.id}")
+            }
         }
     }
 
@@ -208,45 +219,59 @@ fun OnlineSearchResult(
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         menuState.show {
             when (item) {
-                is SongItem -> YouTubeSongMenu(item, navController, menuState::dismiss)
-                is AlbumItem -> YouTubeAlbumMenu(item, navController, menuState::dismiss)
-                is ArtistItem -> YouTubeArtistMenu(item, menuState::dismiss)
-                is PlaylistItem -> YouTubePlaylistMenu(
-                    playlist = item,
-                    coroutineScope = coroutineScope,
-                    onDismiss = menuState::dismiss,
-                )
+                is SongItem -> {
+                    YouTubeSongMenu(item, navController, menuState::dismiss)
+                }
+
+                is AlbumItem -> {
+                    YouTubeAlbumMenu(item, navController, menuState::dismiss)
+                }
+
+                is ArtistItem -> {
+                    YouTubeArtistMenu(item, menuState::dismiss)
+                }
+
+                is PlaylistItem -> {
+                    YouTubePlaylistMenu(
+                        playlist = item,
+                        coroutineScope = coroutineScope,
+                        onDismiss = menuState::dismiss,
+                    )
+                }
             }
         }
     }
 
     val bottomInset = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
 
-    val top = remember(summary, viewModel.query) {
-        summary?.let { pickTopResult(it.summaries.flatMap { section -> section.items }, viewModel.query) }
-    }
+    val top =
+        remember(summary, viewModel.query) {
+            summary?.let { pickTopResult(it.summaries.flatMap { section -> section.items }, viewModel.query) }
+        }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(SearchColors.page(pureBlack))
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(SearchColors.page(pureBlack)),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                // recorded while scrolling too, so the bar's blur never drops out mid-scroll
-                .glassRoot(glassState, isActive = { progressProvider() > 0.01f })
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    // recorded while scrolling too, so the bar's blur never drops out mid-scroll
+                    .glassRoot(glassState, isActive = { progressProvider() > 0.01f }),
         ) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    top = searchTopBarHeight(withTitle = true, extra = 46.dp),
-                    bottom = bottomInset + 24.dp,
-                ),
+                contentPadding =
+                    PaddingValues(
+                        top = searchTopBarHeight(withTitle = true, extra = 46.dp),
+                        bottom = bottomInset + 24.dp,
+                    ),
             ) {
                 if (searchFilter == null) {
-
                     val page = summary
                     if (page == null) {
                         item(key = "loading") {
@@ -260,7 +285,7 @@ fun OnlineSearchResult(
                     } else {
                         if (top != null) {
                             item(key = "top_header") {
-                                SearchSectionHeader(title = "Top Results", ruleAbove = false)
+                                SearchSectionHeader(title = stringResource(R.string.search_top_results), ruleAbove = false)
                             }
                             item(key = "top_card") {
                                 TopResultCard(
@@ -283,7 +308,7 @@ fun OnlineSearchResult(
                                 renderedSection = true
                                 item(key = "summary_header_${index}_${section.title}") {
                                     SearchSectionHeader(
-                                        title = if (index == 0) "Exact matches" else section.title,
+                                        title = if (index == 0) stringResource(R.string.search_exact_matches) else section.title,
                                         ruleAbove = ruleAbove,
                                     )
                                 }
@@ -324,7 +349,7 @@ fun OnlineSearchResult(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
-                                    text = "No results",
+                                    text = stringResource(R.string.search_no_results),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
                                     color = SearchColors.Secondary,
                                 )
@@ -359,7 +384,7 @@ fun OnlineSearchResult(
             },
             below = {
                 SearchCategoryRow(
-                    categories = SearchCategories.map { it.first },
+                    categories = SearchCategories.map { stringResource(it.first) },
                     selectedIndex = selectedIndex,
                     onSelect = { index -> viewModel.filter.value = SearchCategories[index].second },
                 )
@@ -369,18 +394,19 @@ fun OnlineSearchResult(
                 value = query,
                 onValueChange = { query = it },
                 onSearch = submit,
-                placeholder = "Search for any tracks, albums, lyrics...",
+                placeholder = stringResource(R.string.search_placeholder_tracks_albums),
                 leading = {
                     Icon(
                         painter = painterResource(R.drawable.arrow_back),
                         contentDescription = null,
                         tint = SearchColors.Secondary,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = RemoteFocus,
-                            ) { navController.navigateUp() },
+                        modifier =
+                            Modifier
+                                .size(20.dp)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = RemoteFocus,
+                                ) { navController.navigateUp() },
                     )
                 },
             )
@@ -389,13 +415,17 @@ fun OnlineSearchResult(
 }
 
 // youtube's own first pick, unless another result matches the typed words clearly better; taking the first song anywhere showed songs nobody searched for
-private fun pickTopResult(items: List<YTItem>, query: String): YTItem? {
+private fun pickTopResult(
+    items: List<YTItem>,
+    query: String,
+): YTItem? {
     if (items.isEmpty()) return null
     val words = searchWords(query)
     if (words.isEmpty()) return items.first()
     val typed = words.joinToString(" ")
 
-    items.filterIsInstance<ArtistItem>()
+    items
+        .filterIsInstance<ArtistItem>()
         .firstOrNull { searchWords(it.title).joinToString(" ") == typed }
         ?.let { return it }
 
@@ -413,26 +443,50 @@ private fun pickTopResult(items: List<YTItem>, query: String): YTItem? {
 }
 
 // how well an item's title and credits cover the typed words: all of them beats some, the exact title beats both, and a music video gives way to the song
-private fun matchScore(item: YTItem, words: List<String>, typed: String): Int {
+private fun matchScore(
+    item: YTItem,
+    words: List<String>,
+    typed: String,
+): Int {
     val title = searchWords(item.title)
-    val credits = when (item) {
-        is SongItem -> item.artists.flatMap { searchWords(it.name) }
-        is AlbumItem -> item.artists.orEmpty().flatMap { searchWords(it.name) }
-        is PlaylistItem -> item.author?.name?.let(::searchWords).orEmpty()
-        else -> emptyList()
-    }
+    val credits =
+        when (item) {
+            is SongItem -> {
+                item.artists.flatMap { searchWords(it.name) }
+            }
+
+            is AlbumItem -> {
+                item.artists.orEmpty().flatMap { searchWords(it.name) }
+            }
+
+            is PlaylistItem -> {
+                item.author
+                    ?.name
+                    ?.let(::searchWords)
+                    .orEmpty()
+            }
+
+            else -> {
+                emptyList()
+            }
+        }
     val known = (title + credits).toHashSet()
     val found = words.count { it in known }
     if (found == 0) return 0
     var score = found * 100 / words.size
-    if (title.joinToString(" ") == typed) score += 100 else if (found == words.size) score += 40
+    if (title.joinToString(" ") == typed) {
+        score += 100
+    } else if (found == words.size) {
+        score += 40
+    }
     if (item is SongItem && item.isVideoSong) score -= 5
     return score.coerceAtLeast(1)
 }
 
 // lowercase words without accents, so "Beyoncé" and "beyonce" match
 private fun searchWords(text: String): List<String> =
-    AccentMarks.replace(java.text.Normalizer.normalize(text.lowercase(), java.text.Normalizer.Form.NFD), "")
+    AccentMarks
+        .replace(java.text.Normalizer.normalize(text.lowercase(), java.text.Normalizer.Form.NFD), "")
         .split(WordBreaks)
         .filter { it.isNotEmpty() }
 
@@ -447,122 +501,147 @@ private fun TopResultCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
-    val kind = when (item) {
-        is SongItem -> if (item.isVideoSong) "Video" else "Song"
-        is AlbumItem -> "Album"
-        is ArtistItem -> "Artist"
-        is PlaylistItem -> "Playlist"
-    }
-    val detail = when (item) {
-        is SongItem -> listOfNotNull(
-            kind,
-            item.artists.joinToString { it.name }.takeIf { it.isNotBlank() }?.let { "by $it" },
-            item.duration?.let { formatDuration(it) },
-        ).joinToString("  •  ")
+    val kind =
+        when (item) {
+            is SongItem -> if (item.isVideoSong) stringResource(R.string.item_kind_video) else stringResource(R.string.item_kind_song)
+            is AlbumItem -> stringResource(R.string.item_kind_album)
+            is ArtistItem -> stringResource(R.string.item_kind_artist)
+            is PlaylistItem -> stringResource(R.string.item_kind_playlist)
+        }
+    val detail =
+        when (item) {
+            is SongItem -> {
+                listOfNotNull(
+                    kind,
+                    item.artists
+                        .joinToString { it.name }
+                        .takeIf { it.isNotBlank() }
+                        ?.let { stringResource(R.string.search_by_artist, it) },
+                    item.duration?.let { formatDuration(it) },
+                ).joinToString("  •  ")
+            }
 
-        is AlbumItem -> listOfNotNull(
-            kind,
-            item.artists?.joinToString { it.name }?.takeIf { it.isNotBlank() }?.let { "by $it" },
-            item.year?.toString(),
-        ).joinToString("  •  ")
+            is AlbumItem -> {
+                listOfNotNull(
+                    kind,
+                    item.artists
+                        ?.joinToString { it.name }
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { stringResource(R.string.search_by_artist, it) },
+                    item.year?.toString(),
+                ).joinToString("  •  ")
+            }
 
-        is ArtistItem -> kind
-        is PlaylistItem -> listOfNotNull(kind, item.author?.name?.let { "by $it" }, item.songCountText)
-            .joinToString("  •  ")
-    }
+            is ArtistItem -> {
+                kind
+            }
+
+            is PlaylistItem -> {
+                listOfNotNull(kind, item.author?.name?.let { stringResource(R.string.search_by_artist, it) }, item.songCountText)
+                    .joinToString("  •  ")
+            }
+        }
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = SearchHorizontalPadding)
-            .clip(RoundedCornerShape(16.dp))
-            .background(SearchColors.Tile)
-            .searchCardBorder(16.dp)
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = SearchHorizontalPadding)
+                .clip(RoundedCornerShape(16.dp))
+                .background(SearchColors.Tile)
+                .searchCardBorder(16.dp)
+                .combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {
-
         if (item.thumbnail != null) {
             AsyncImage(
                 model = item.thumbnail?.resize(256, 256),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .matchParentSize()
-                    .graphicsLayer {
-                        alpha = 0.55f
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            renderEffect = com.mochyy.mochymusic.ui.component.BlurEffectCache.get(
-                                70f,
-                                android.graphics.Shader.TileMode.CLAMP
-                            )
-                        }
-                    },
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .graphicsLayer {
+                            alpha = 0.55f
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                renderEffect =
+                                    com.mochyy.mochymusic.ui.component.BlurEffectCache.get(
+                                        70f,
+                                        android.graphics.Shader.TileMode.CLAMP,
+                                    )
+                            }
+                        },
             )
             Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.verticalGradient(
-                            0f to Color.Black.copy(alpha = 0.35f),
-                            0.55f to Color.Black.copy(alpha = 0.62f),
-                            1f to Color.Black.copy(alpha = 0.88f),
-                        )
-                    )
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                0f to Color.Black.copy(alpha = 0.35f),
+                                0.55f to Color.Black.copy(alpha = 0.62f),
+                                1f to Color.Black.copy(alpha = 0.88f),
+                            ),
+                        ),
             )
         }
 
         Column(modifier = Modifier.padding(16.dp)) {
-        SearchArtwork(
-            url = item.thumbnail,
-            size = 108.dp,
-            circle = item is ArtistItem,
-            corner = 8.dp,
-            sharedElementKey = com.mochyy.mochymusic.ui.component.coverTransitionKey(item),
-        )
-        Spacer(modifier = Modifier.height(14.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    color = SearchColors.Primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = detail,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = SearchColors.Secondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            if (item !is ArtistItem) {
-                Spacer(modifier = Modifier.width(12.dp))
-                Box(
-                    modifier = Modifier
-                        .size(46.dp)
-                        .clip(CircleShape)
-                        .background(Color.White)
-                        .clickable(onClick = onClick),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(
-                            if (isActive && isPlaying) R.drawable.ic_untitled_pause else R.drawable.play
-                        ),
-                        contentDescription = null,
-                        tint = Color.Black,
-                        modifier = Modifier.size(22.dp),
+            SearchArtwork(
+                url = item.thumbnail,
+                size = 108.dp,
+                circle = item is ArtistItem,
+                corner = 8.dp,
+                sharedElementKey =
+                    com.mochyy.mochymusic.ui.component
+                        .coverTransitionKey(item),
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = item.title,
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        color = SearchColors.Primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = detail,
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                        color = SearchColors.Secondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
+
+                if (item !is ArtistItem) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                                .clickable(onClick = onClick),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            painter =
+                                painterResource(
+                                    if (isActive && isPlaying) R.drawable.ic_untitled_pause else R.drawable.play,
+                                ),
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                }
             }
-        }
         }
     }
 }
@@ -576,49 +655,64 @@ private fun ResultRow(
     onLongClick: () -> Unit,
     onMenu: () -> Unit,
 ) {
-    val subtitle = when (item) {
-        is SongItem -> listOfNotNull(
-            item.artists.joinToString { it.name }.takeIf { it.isNotBlank() },
-            item.duration?.let { formatDuration(it) },
-        ).joinToString("  •  ")
+    val albumLabel = stringResource(R.string.item_kind_album)
+    val artistLabel = stringResource(R.string.item_kind_artist)
+    val playlistLabel = stringResource(R.string.item_kind_playlist)
+    val subtitle =
+        when (item) {
+            is SongItem -> {
+                listOfNotNull(
+                    item.artists.joinToString { it.name }.takeIf { it.isNotBlank() },
+                    item.duration?.let { formatDuration(it) },
+                ).joinToString("  •  ")
+            }
 
-        is AlbumItem -> listOfNotNull(
-            "Album",
-            item.artists?.joinToString { it.name }?.takeIf { it.isNotBlank() },
-        ).joinToString("  •  ")
+            is AlbumItem -> {
+                listOfNotNull(
+                    albumLabel,
+                    item.artists?.joinToString { it.name }?.takeIf { it.isNotBlank() },
+                ).joinToString("  •  ")
+            }
 
-        is ArtistItem -> "Artist"
-        is PlaylistItem -> listOfNotNull("Playlist", item.author?.name).joinToString("  •  ")
-    }
+            is ArtistItem -> {
+                artistLabel
+            }
+
+            is PlaylistItem -> {
+                listOfNotNull(playlistLabel, item.author?.name).joinToString("  •  ")
+            }
+        }
 
     val row: @Composable () -> Unit = {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .combinedClickable(
-                    interactionSource = null,
-                    indication = ResultRowHighlight,
-                    onClick = onClick,
-                    onLongClick = onLongClick,
-                )
-                .padding(horizontal = SearchHorizontalPadding, vertical = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .combinedClickable(
+                        interactionSource = null,
+                        indication = ResultRowHighlight,
+                        onClick = onClick,
+                        onLongClick = onLongClick,
+                    ).padding(horizontal = SearchHorizontalPadding, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SearchArtwork(
                 url = item.thumbnail,
                 size = 46.dp,
                 circle = item is ArtistItem,
-                sharedElementKey = com.mochyy.mochymusic.ui.component.coverTransitionKey(item),
+                sharedElementKey =
+                    com.mochyy.mochymusic.ui.component
+                        .coverTransitionKey(item),
             )
             Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.title,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-
+                    style =
+                        MaterialTheme.typography.bodyLarge.copy(
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
                     color = if (isActive) Color(0xFF7FD1FF) else SearchColors.Primary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

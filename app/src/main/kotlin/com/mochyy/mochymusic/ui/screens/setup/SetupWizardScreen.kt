@@ -42,8 +42,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.CrossmixMode
 import com.mochyy.mochymusic.constants.CrossmixModeKey
 import com.mochyy.mochymusic.constants.DisableAiFilterKey
@@ -327,7 +329,7 @@ fun SetupWizardScreen(
                         Step.Welcome -> Box(Modifier.fillMaxSize().background(Color.Black)) {
                             WelcomeStep(isHiding = isLeavingWelcome)
                             OnbButton(
-                                text = "Next",
+                                text = stringResource(R.string.onb_next),
                                 onClick = {
                                     isLeavingWelcome = true
                                     scope.launch {

@@ -67,6 +67,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import com.mochyy.mochymusic.ui.player.share.LyricsShareSession
 import com.mochyy.mochymusic.ui.player.share.song.LyricsSongShare
 import com.mochyy.mochymusic.ui.player.share.ShareFlightSource
@@ -598,7 +599,7 @@ fun LyricsScreen(
                     LyricsLoadingDots(modifier = Modifier.align(Alignment.Center))
                 } else {
                     Text(
-                        text = "No lyrics found",
+                        text = stringResource(R.string.pc_no_lyrics_found),
                         style = MaterialTheme.typography.bodyLarge,
                         color = Color.White.copy(alpha = 0.5f),
                         modifier = Modifier.align(Alignment.Center)

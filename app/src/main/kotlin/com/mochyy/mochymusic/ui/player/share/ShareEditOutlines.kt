@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -187,7 +188,7 @@ private fun MoveSongArrow(header: ChasingBox, pad: Float, headerBelow: Boolean, 
     ) {
         Icon(
             painterResource(R.drawable.expand_more),
-            contentDescription = if (headerBelow) "Move the song above the words" else "Move the song under the words",
+            contentDescription = stringResource(if (headerBelow) R.string.ps_share_move_song_above else R.string.ps_share_move_song_under),
             tint = Color.White.copy(alpha = 0.7f),
             modifier = Modifier
                 .size(24.dp)

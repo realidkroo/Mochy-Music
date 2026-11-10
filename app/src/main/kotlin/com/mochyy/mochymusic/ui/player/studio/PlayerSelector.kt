@@ -56,6 +56,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.R
@@ -441,7 +442,7 @@ fun PlayerSelectorOverlay(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.arrow_back_ios),
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.back_button_desc),
                         tint = Color.White,
                         modifier = Modifier.size(15.dp).offset(x = 2.dp),
                     )
@@ -450,7 +451,7 @@ fun PlayerSelectorOverlay(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text("Styles", color = Color.White, style = studioText(StudioType.Title, FontWeight.Bold))
+                    Text(stringResource(R.string.ps_studio_styles), color = Color.White, style = studioText(StudioType.Title, FontWeight.Bold))
                     AnimatedContent(
                         // the module style goes by the name its look gives it
                         targetState = styles.getOrNull(focused)?.let { style ->
@@ -509,8 +510,8 @@ fun PlayerSelectorOverlay(
                 ) {
                     // edit stays in its place, only dimmed where there's nothing to edit, so set never moves under the finger
                     val editable = style?.editable == true
-                    CardButton("Edit", enabled = active && editable, dimmed = !editable, onClick = { onEdit(focused) }, modifier = Modifier.weight(1f))
-                    CardButton("Set", enabled = active, onClick = { currentOnSet(focused, 0f) }, modifier = Modifier.weight(1f))
+                    CardButton(stringResource(R.string.ps_studio_edit), enabled = active && editable, dimmed = !editable, onClick = { onEdit(focused) }, modifier = Modifier.weight(1f))
+                    CardButton(stringResource(R.string.ps_studio_set), enabled = active, onClick = { currentOnSet(focused, 0f) }, modifier = Modifier.weight(1f))
                 }
             }
         }

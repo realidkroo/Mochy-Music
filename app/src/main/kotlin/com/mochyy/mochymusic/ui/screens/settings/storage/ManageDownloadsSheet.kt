@@ -2,6 +2,7 @@
 
 package com.mochyy.mochymusic.ui.screens.settings.storage
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -47,13 +48,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.BoneColor
 import com.mochyy.mochymusic.ui.component.PopupSheetHandle
 import com.mochyy.mochymusic.ui.component.PopupSheetState
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.SheetLabel
 import com.mochyy.mochymusic.ui.component.SheetPillButton
 import com.mochyy.mochymusic.ui.component.SheetSearchField
@@ -63,7 +68,6 @@ import com.mochyy.mochymusic.ui.screens.playlist.SheetNote
 import com.mochyy.mochymusic.ui.utils.resize
 import com.mochyy.mochymusic.viewmodels.DownloadedSong
 import com.mochyy.mochymusic.viewmodels.StorageViewModel
-import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** how many songs each suggestion shelf shows */
 private const val ShelfSize = 4
@@ -74,20 +78,41 @@ private const val ShelvesFrom = 8
 /** a download younger than this hasn't had a fair chance to be played yet */
 private const val SettleMillis = 14L * 24 * 60 * 60 * 1000
 
-private enum class DownloadSort(val label: String) {
-    Size("size"),
-    Name("name"),
-    Recent("recently downloaded"),
-    MostPlayed("most played"),
-    LeastPlayed("least played");
+private enum class DownloadSort(
+    @param:StringRes val labelRes: Int,
+) {
+    Size(R.string.storage_manage_sort_size),
+    Name(R.string.storage_manage_sort_name),
+    Recent(R.string.storage_manage_sort_recent),
+    MostPlayed(R.string.storage_manage_sort_most_played),
+    LeastPlayed(R.string.storage_manage_sort_least_played),
+    ;
 
-    fun sort(songs: List<DownloadedSong>): List<DownloadedSong> = when (this) {
-        Size -> songs.sortedByDescending { it.bytes }
-        Name -> songs.sortedBy { it.song.song.title.lowercase() }
-        Recent -> songs.sortedByDescending { it.downloadedAt }
-        MostPlayed -> songs.sortedByDescending { it.song.song.totalPlayTime }
-        LeastPlayed -> songs.sortedBy { it.song.song.totalPlayTime }
-    }
+    fun sort(songs: List<DownloadedSong>): List<DownloadedSong> =
+        when (this) {
+            Size -> {
+                songs.sortedByDescending { it.bytes }
+            }
+
+            Name -> {
+                songs.sortedBy {
+                    it.song.song.title
+                        .lowercase()
+                }
+            }
+
+            Recent -> {
+                songs.sortedByDescending { it.downloadedAt }
+            }
+
+            MostPlayed -> {
+                songs.sortedByDescending { it.song.song.totalPlayTime }
+            }
+
+            LeastPlayed -> {
+                songs.sortedBy { it.song.song.totalPlayTime }
+            }
+        }
 }
 
 /** the songs picked so far, it lives as long as the sheet so searching never drops a pick */
@@ -104,48 +129,63 @@ fun PopupSheetState.showManageDownloadsSheet(viewModel: StorageViewModel) {
     val popup = this
     val picks = DownloadPicks()
     var sheet: PopupSheetHandle? = null
-    sheet = showWithHandle(
-        buttonBar = {
-            val downloads by viewModel.downloads.collectAsState()
-            val chosen = downloads.orEmpty().filter { it.song.id in picks.ids }
-            AnimatedContent(
-                targetState = chosen.isEmpty(),
-                transitionSpec = { (fadeIn() + scaleIn(initialScale = 0.96f)).togetherWith(fadeOut()) },
-                label = "manageDownloadsButton",
-            ) { nothingPicked ->
-                SheetPillButton(
-                    text = if (nothingPicked) {
-                        "Done"
-                    } else {
-                        val n = chosen.size
-                        "Remove ${if (n == 1) "1 song" else "$n songs"} · ${formatSize(chosen.sumOf { it.bytes })}"
-                    },
-                    onClick = {
-                        if (chosen.isEmpty()) {
-                            sheet?.dismiss()
-                            return@SheetPillButton
-                        }
-                        val ids = chosen.map { it.song.id }
-                        popup.showConfirm(
-                            title = if (ids.size == 1) "Remove this download?" else "Remove ${ids.size} downloads?",
-                            message = "They're deleted from this phone but stay in your library, and stream again " +
-                                "when you play them.",
-                            action = "Remove",
-                        ) {
-                            viewModel.removeDownloads(ids)
-                            picks.ids.clear()
-                        }
-                    },
-                )
-            }
-        },
-    ) {
-        ManageDownloadsContent(viewModel, picks)
-    }
+    sheet =
+        showWithHandle(
+            buttonBar = {
+                val context = LocalContext.current
+                val downloads by viewModel.downloads.collectAsState()
+                val chosen = downloads.orEmpty().filter { it.song.id in picks.ids }
+                AnimatedContent(
+                    targetState = chosen.isEmpty(),
+                    transitionSpec = { (fadeIn() + scaleIn(initialScale = 0.96f)).togetherWith(fadeOut()) },
+                    label = "manageDownloadsButton",
+                ) { nothingPicked ->
+                    SheetPillButton(
+                        text =
+                            if (nothingPicked) {
+                                stringResource(R.string.storage_manage_done)
+                            } else {
+                                val n = chosen.size
+                                val sizeStr = formatSize(chosen.sumOf { it.bytes })
+                                if (n == 1) {
+                                    stringResource(R.string.storage_manage_remove_one, sizeStr)
+                                } else {
+                                    stringResource(R.string.storage_manage_remove_many, n, sizeStr)
+                                }
+                            },
+                        onClick = {
+                            if (chosen.isEmpty()) {
+                                sheet?.dismiss()
+                                return@SheetPillButton
+                            }
+                            val ids = chosen.map { it.song.id }
+                            popup.showConfirm(
+                                title =
+                                    if (ids.size == 1) {
+                                        context.getString(R.string.storage_manage_confirm_remove_one)
+                                    } else {
+                                        context.getString(R.string.storage_manage_confirm_remove_many, ids.size)
+                                    },
+                                message = context.getString(R.string.storage_manage_confirm_message),
+                                action = context.getString(R.string.storage_manage_confirm_action),
+                            ) {
+                                viewModel.removeDownloads(ids)
+                                picks.ids.clear()
+                            }
+                        },
+                    )
+                }
+            },
+        ) {
+            ManageDownloadsContent(viewModel, picks)
+        }
 }
 
 @Composable
-private fun ManageDownloadsContent(viewModel: StorageViewModel, picks: DownloadPicks) {
+private fun ManageDownloadsContent(
+    viewModel: StorageViewModel,
+    picks: DownloadPicks,
+) {
     val downloads by viewModel.downloads.collectAsState()
     var query by rememberSaveable { mutableStateOf("") }
     var sort by rememberSaveable { mutableStateOf(DownloadSort.Size) }
@@ -153,20 +193,42 @@ private fun ManageDownloadsContent(viewModel: StorageViewModel, picks: DownloadP
 
     val all = downloads
     val sorted = remember(all, sort) { all?.let(sort::sort).orEmpty() }
-    val matches = remember(all, needle) {
-        if (needle.isEmpty()) emptyList() else all.orEmpty().filter { d ->
-            d.song.song.title.contains(needle, ignoreCase = true) ||
-                d.song.artists.any { it.name.contains(needle, ignoreCase = true) }
+    val matches =
+        remember(all, needle) {
+            if (needle.isEmpty()) {
+                emptyList()
+            } else {
+                all.orEmpty().filter { d ->
+                    d.song.song.title
+                        .contains(needle, ignoreCase = true) ||
+                        d.song.artists.any { it.name.contains(needle, ignoreCase = true) }
+                }
+            }
         }
-    }
     val biggest = remember(all) { all.orEmpty().sortedByDescending { it.bytes }.take(ShelfSize) }
     val lessListened = remember(all) { lessListened(all.orEmpty()) }
     val totalBytes = remember(all) { all.orEmpty().sumOf { it.bytes } }
+    val shelfBiggest = stringResource(R.string.storage_manage_shelf_biggest)
+    val shelfLess = stringResource(R.string.storage_manage_shelf_less_listened)
+    val shelfLessSub = stringResource(R.string.storage_manage_shelf_less_listened_sub)
+    val allLabel = stringResource(R.string.storage_manage_all)
 
     Column(Modifier.fillMaxWidth().fillMaxHeight()) {
-        SheetSearchField(value = query, onValueChange = { query = it }, placeholder = "Search your downloads")
+        SheetSearchField(
+            value = query,
+            onValueChange = { query = it },
+            placeholder = stringResource(R.string.storage_manage_search_placeholder),
+        )
+        val songWord =
+            if (all?.size ==
+                1
+            ) {
+                stringResource(R.string.storage_manage_song_single)
+            } else {
+                stringResource(R.string.storage_manage_song_plural)
+            }
         Text(
-            all?.let { "${it.size} ${if (it.size == 1) "song" else "songs"} · ${formatSize(totalBytes)}" } ?: " ",
+            all?.let { "${it.size} $songWord · ${formatSize(totalBytes)}" } ?: " ",
             style = storageText(12f, FontWeight.Medium, StorageMuted, 0f),
             modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 10.dp),
         )
@@ -177,25 +239,32 @@ private fun ManageDownloadsContent(viewModel: StorageViewModel, picks: DownloadP
             modifier = Modifier.fillMaxWidth().weight(1f),
         ) {
             when {
-                all == null -> Unit
-                all.isEmpty() -> item(key = "empty") { SheetNote("Nothing downloaded yet. Songs you download show up here.") }
+                all == null -> {
+                    Unit
+                }
+
+                all.isEmpty() -> {
+                    item(key = "empty") { SheetNote(stringResource(R.string.storage_manage_empty_note)) }
+                }
+
                 needle.isNotEmpty() -> {
                     if (matches.isEmpty()) {
-                        item(key = "no-match") { SheetNote("No downloads match \"$needle\".") }
+                        item(key = "no-match") { SheetNote(stringResource(R.string.storage_manage_no_match, needle)) }
                     } else {
                         downloadRows("search", matches, picks)
                     }
                 }
+
                 else -> {
                     if (all.size >= ShelvesFrom) {
-                        shelf("biggest", "Biggest", null, biggest, picks)
+                        shelf("biggest", shelfBiggest, null, biggest, picks)
                         if (lessListened.isNotEmpty()) {
-                            shelf("less", "Less listened", "Downloaded a while ago and hardly played", lessListened, picks)
+                            shelf("less", shelfLess, shelfLessSub, lessListened, picks)
                         }
                     }
                     item(key = "all-label") {
                         Column(Modifier.padding(bottom = 8.dp)) {
-                            SheetLabel("All")
+                            SheetLabel(allLabel)
                             SortSwitch(sort) { sort = DownloadSort.entries[(sort.ordinal + 1) % DownloadSort.entries.size] }
                         }
                     }
@@ -231,16 +300,16 @@ private fun LazyListScope.shelf(
             }
             // a whole shelf in one go: it's what the suggestion is for
             Text(
-                if (allPicked) "Unpick" else "Pick all",
+                if (allPicked) stringResource(R.string.storage_manage_unpick) else stringResource(R.string.storage_manage_pick_all),
                 style = storageText(12f, FontWeight.SemiBold, Color.White, -0.2f),
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.14f))
-                    .clickable {
-                        val ids = songs.map { it.song.id }
-                        if (allPicked) picks.ids.removeAll(ids) else ids.filterNot { it in picks.ids }.forEach(picks.ids::add)
-                    }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                modifier =
+                    Modifier
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.14f))
+                        .clickable {
+                            val ids = songs.map { it.song.id }
+                            if (allPicked) picks.ids.removeAll(ids) else ids.filterNot { it in picks.ids }.forEach(picks.ids::add)
+                        }.padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
     }
@@ -248,7 +317,11 @@ private fun LazyListScope.shelf(
     item(key = "$key-gap") { Spacer(Modifier.height(18.dp)) }
 }
 
-private fun LazyListScope.downloadRows(prefix: String, songs: List<DownloadedSong>, picks: DownloadPicks) {
+private fun LazyListScope.downloadRows(
+    prefix: String,
+    songs: List<DownloadedSong>,
+    picks: DownloadPicks,
+) {
     items(songs, key = { "$prefix-${it.song.id}" }) { download ->
         DownloadRow(download, picked = download.song.id in picks.ids, picking = picks.ids.isNotEmpty()) {
             picks.toggle(download.song.id)
@@ -258,51 +331,63 @@ private fun LazyListScope.downloadRows(prefix: String, songs: List<DownloadedSon
 
 /** the sort switch, a tap moves to the next order and the word rolls over to the new one */
 @Composable
-private fun SortSwitch(sort: DownloadSort, onNext: () -> Unit) {
+private fun SortSwitch(
+    sort: DownloadSort,
+    onNext: () -> Unit,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onNext)
-            .padding(vertical = 2.dp),
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(onClick = onNext)
+                .padding(vertical = 2.dp),
     ) {
-        Text("Sort by - ", style = storageText(12f, FontWeight.Medium, StorageMuted, 0f))
+        Text(stringResource(R.string.storage_manage_sort_by), style = storageText(12f, FontWeight.Medium, StorageMuted, 0f))
         AnimatedContent(
             targetState = sort,
             transitionSpec = { (slideInVertically { it } + fadeIn()).togetherWith(slideOutVertically { -it } + fadeOut()) },
             label = "downloadSort",
         ) { shown ->
-            Text("${shown.label} ›", style = storageText(12f, FontWeight.SemiBold, Color.White.copy(alpha = 0.8f), 0f))
+            Text("${stringResource(shown.labelRes)} ›", style = storageText(12f, FontWeight.SemiBold, Color.White.copy(alpha = 0.8f), 0f))
         }
     }
 }
 
 @Composable
-private fun DownloadRow(download: DownloadedSong, picked: Boolean, picking: Boolean, onToggle: () -> Unit) {
+private fun DownloadRow(
+    download: DownloadedSong,
+    picked: Boolean,
+    picking: Boolean,
+    onToggle: () -> Unit,
+) {
     val song = download.song
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (picked) Color.White.copy(alpha = 0.07f) else Color.Transparent)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = RemoteFocus, onClick = onToggle)
-            .padding(horizontal = 4.dp, vertical = 6.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(if (picked) Color.White.copy(alpha = 0.07f) else Color.Transparent)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = RemoteFocus, onClick = onToggle)
+                .padding(horizontal = 4.dp, vertical = 6.dp),
     ) {
         AsyncImage(
             model = song.song.thumbnailUrl?.resize(144, 144),
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(50.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(BoneColor),
+            modifier =
+                Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(BoneColor),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(1.dp),
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 12.dp),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp),
         ) {
             Text(
                 song.song.title,

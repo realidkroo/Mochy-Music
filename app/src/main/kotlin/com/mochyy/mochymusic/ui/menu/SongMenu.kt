@@ -541,7 +541,7 @@ fun SongMenu(
                         Material3MenuItemData(
                             title = {
                                 Text(
-                                    text = if (isPinned) "Unpin from library" else "Pin to library"
+                                    text = stringResource(if (isPinned) R.string.unpin_from_speed_dial else R.string.pin_to_speed_dial)
                                 )
                             },
                             icon = {
@@ -692,8 +692,8 @@ fun SongMenu(
                     importMatch?.let { match ->
                         add(
                             Material3MenuItemData(
-                                title = { Text(text = "Choose different version") },
-                                description = { Text(text = "Wrong recording? Pick the right one from a list") },
+                                title = { Text(text = stringResource(R.string.menu_choose_version)) },
+                                description = { Text(text = stringResource(R.string.menu_choose_version_desc)) },
                                 icon = {
                                     Icon(
                                         painter = painterResource(R.drawable.tune),
@@ -711,7 +711,7 @@ fun SongMenu(
                             title = { Text(text = stringResource(R.string.refetch)) },
                             description = {
                                 Text(
-                                    text = if (importMatch != null) "Search again for the right version of this song"
+                                    text = if (importMatch != null) stringResource(R.string.pc_refetch_import_desc)
                                     else stringResource(R.string.refetch_desc)
                                 )
                             },
@@ -775,10 +775,10 @@ private fun refetchImported(context: android.content.Context, database: com.moch
     ImportedVersions.scope.launch {
         val switched = ImportedVersions.refetch(context.applicationContext, database, match)
         if (switched != null) {
-            TopToaster.show(text = "Found a closer match: ${switched.title}", thumbnail = switched.thumbnail, iconRes = R.drawable.sync)
+            TopToaster.show(text = context.getString(R.string.pc_closer_match, switched.title), thumbnail = switched.thumbnail, iconRes = R.drawable.sync)
         } else {
             TopToaster.show(
-                text = "This is already the closest match we can find. Try Choose different version.",
+                text = context.getString(R.string.pc_closest_match),
                 iconRes = R.drawable.sync,
                 durationMs = 4000L,
             )

@@ -31,10 +31,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.importer.account.AccountService
 import com.mochyy.mochymusic.ui.player.menu.LocalMenuSheetClose
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
@@ -57,7 +59,7 @@ fun AboutSourceSheet(
             modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
         ) {
             InfoColumn(modifier = Modifier.widthIn(max = 600.dp)) {
-                InfoSheetTitle("About from")
+                InfoSheetTitle(stringResource(R.string.pc_about_from))
                 Spacer(Modifier.height(16.dp))
                 AboutSource.entries.filter { it != AboutSource.Modules || com.mochyy.mochymusic.modules.ModuleMetadata.sources.isNotEmpty() }.forEach { source ->
                     SourceRow(
@@ -77,9 +79,10 @@ fun AboutSourceSheet(
     }
 }
 
+@Composable
 private fun previewOf(about: SongAbout, source: AboutSource): String = when {
-    !doneFor(about, source) -> "Looking…"
-    else -> textFor(about, source)?.lineSequence()?.firstOrNull { it.isNotBlank() }?.trim() ?: "Nothing about this song yet"
+    !doneFor(about, source) -> stringResource(R.string.pc_about_looking)
+    else -> textFor(about, source)?.lineSequence()?.firstOrNull { it.isNotBlank() }?.trim() ?: stringResource(R.string.pc_about_nothing_yet)
 }
 
 @Composable

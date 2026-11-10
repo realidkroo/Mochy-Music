@@ -14,7 +14,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import com.mochyy.mochymusic.ui.utils.SnapLayoutInfoProvider
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,8 +29,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
@@ -65,6 +64,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -93,10 +93,10 @@ import com.mochyy.mochymusic.ui.component.GlassState
 import com.mochyy.mochymusic.ui.component.HomeCardHighlight
 import com.mochyy.mochymusic.ui.component.HomeCardSpacing
 import com.mochyy.mochymusic.ui.component.HomeCoverCard
-import com.mochyy.mochymusic.ui.component.homeRowHeight
 import com.mochyy.mochymusic.ui.component.HomeTrackRow
 import com.mochyy.mochymusic.ui.component.HomeVideoCard
 import com.mochyy.mochymusic.ui.component.LocalMenuState
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.detail.FeaturedArtistUi
 import com.mochyy.mochymusic.ui.component.detail.FeaturedArtistsRow
 import com.mochyy.mochymusic.ui.component.detail.PlaylistInset
@@ -105,6 +105,7 @@ import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackBones
 import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackRow
 import com.mochyy.mochymusic.ui.component.detail.playlistCoverHeight
 import com.mochyy.mochymusic.ui.component.glassRoot
+import com.mochyy.mochymusic.ui.component.homeRowHeight
 import com.mochyy.mochymusic.ui.component.navigateToTab
 import com.mochyy.mochymusic.ui.component.rememberCoverBlurAvailable
 import com.mochyy.mochymusic.ui.component.rememberRevealSeenState
@@ -117,6 +118,7 @@ import com.mochyy.mochymusic.ui.menu.YouTubePlaylistMenu
 import com.mochyy.mochymusic.ui.menu.YouTubeSongMenu
 import com.mochyy.mochymusic.ui.screens.settings.importsync.rememberYouTubeSignedIn
 import com.mochyy.mochymusic.ui.theme.rememberCoverThemeColor
+import com.mochyy.mochymusic.ui.utils.SnapLayoutInfoProvider
 import com.mochyy.mochymusic.ui.utils.backToMain
 import com.mochyy.mochymusic.ui.utils.resize
 import com.mochyy.mochymusic.utils.ArtistVideos
@@ -133,10 +135,11 @@ import com.music.innertube.models.YTItem
 import com.music.innertube.pages.ArtistSection
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** an artist page's shelves, sorted by what they hold; YouTube's titles are in the account's language */
-private class ArtistShelves(sections: List<ArtistSection>) {
+private class ArtistShelves(
+    sections: List<ArtistSection>,
+) {
     val topSongs = sections.firstOrNull { (it.items.firstOrNull() as? SongItem)?.album != null }
     val albumShelves = sections.filter { it.items.firstOrNull() is AlbumItem }
     private val videoKinds = ArtistVideos.shelves(sections)
@@ -148,15 +151,20 @@ private class ArtistShelves(sections: List<ArtistSection>) {
     val similar = sections.firstOrNull { it.items.firstOrNull() is ArtistItem }
 
     // anything this page doesn't know how to lay out still shows, as plain cards
-    val others = sections.filter { section ->
-        section !== topSongs && section !in albumShelves && section !== videoShelf && section !== liveShelf &&
-            section !in playlistShelves && section !== similar &&
-            !(section.items.firstOrNull() is SongItem && (videos.isNotEmpty() || live.isNotEmpty()) &&
-                section.items.all { item -> item is SongItem && (item.album == null) })
-    }
+    val others =
+        sections.filter { section ->
+            section !== topSongs && section !in albumShelves && section !== videoShelf && section !== liveShelf &&
+                section !in playlistShelves && section !== similar &&
+                !(
+                    section.items.firstOrNull() is SongItem && (videos.isNotEmpty() || live.isNotEmpty()) &&
+                        section.items.all { item -> item is SongItem && (item.album == null) }
+                )
+        }
 
-    private fun shelfHolding(sections: List<ArtistSection>, item: SongItem?): ArtistSection? =
-        item?.let { first -> sections.firstOrNull { section -> section.items.any { it.id == first.id } } }
+    private fun shelfHolding(
+        sections: List<ArtistSection>,
+        item: SongItem?,
+    ): ArtistSection? = item?.let { first -> sections.firstOrNull { section -> section.items.any { it.id == first.id } } }
 }
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -209,25 +217,41 @@ fun ArtistScreen(
 
     // the colour comes off the banner: Apple's frame once it's there, the photo until then
     val themeColor by rememberCoverThemeColor(appleStill ?: photo?.resize(544, 544))
-    val background = animateColorAsState(
-        targetValue = themeColor ?: MaterialTheme.colorScheme.background,
-        animationSpec = tween(600),
-        label = "artistTheme",
-    )
+    val background =
+        animateColorAsState(
+            targetValue = themeColor ?: MaterialTheme.colorScheme.background,
+            animationSpec = tween(600),
+            label = "artistTheme",
+        )
     val accent = LocalDetailAccentColor.current
     SideEffect { accent.value = themeColor }
     DisposableEffect(Unit) { onDispose { accent.value = null } }
+
+    val shelfTitles =
+        ArtistShelfTitles(
+            topSongs = stringResource(R.string.artist_top_songs),
+            albums = stringResource(R.string.artist_albums),
+            singlesEps = stringResource(R.string.artist_singles_eps),
+            videos = stringResource(R.string.artist_videos),
+            concert = stringResource(R.string.artist_concert),
+            featuredOn = stringResource(R.string.artist_featured_on),
+            similar = stringResource(R.string.artist_similar),
+        )
 
     val lazyListState = rememberLazyListState()
     val revealSeen = rememberRevealSeenState()
     val bannerHeight = playlistCoverHeight()
     val bannerHeightPx = with(LocalDensity.current) { bannerHeight.toPx() }
-    val scrollProgress = remember(lazyListState, bannerHeightPx) {
-        derivedStateOf {
-            if (lazyListState.firstVisibleItemIndex > 0) 1f
-            else (lazyListState.firstVisibleItemScrollOffset / bannerHeightPx).coerceIn(0f, 1f)
+    val scrollProgress =
+        remember(lazyListState, bannerHeightPx) {
+            derivedStateOf {
+                if (lazyListState.firstVisibleItemIndex > 0) {
+                    1f
+                } else {
+                    (lazyListState.firstVisibleItemScrollOffset / bannerHeightPx).coerceIn(0f, 1f)
+                }
+            }
         }
-    }
     // the bar frosts once the name has gone under it, with the playlist bar's spring
     val collapsed by remember(scrollProgress) { derivedStateOf { scrollProgress.value > 0.62f } }
     val morph = remember { Animatable(0f) }
@@ -256,13 +280,21 @@ fun ArtistScreen(
         coroutineScope.launch {
             val top = if (page != null) viewModel.topSongs() else emptyList()
             when {
-                top.isNotEmpty() -> playerConnection.playQueue(
-                    ListQueue(title = name, items = top.map { it.toMediaItem() })
-                )
-                librarySongs.isNotEmpty() -> playerConnection.playQueue(
-                    ListQueue(title = name, items = librarySongs.map { it.toMediaItem() })
-                )
-                else -> page?.artist?.shuffleEndpoint?.let { playerConnection.playQueue(YouTubeQueue(it)) }
+                top.isNotEmpty() -> {
+                    playerConnection.playQueue(
+                        ListQueue(title = name, items = top.map { it.toMediaItem() }),
+                    )
+                }
+
+                librarySongs.isNotEmpty() -> {
+                    playerConnection.playQueue(
+                        ListQueue(title = name, items = librarySongs.map { it.toMediaItem() }),
+                    )
+                }
+
+                else -> {
+                    page?.artist?.shuffleEndpoint?.let { playerConnection.playQueue(YouTubeQueue(it)) }
+                }
             }
         }
     }
@@ -277,7 +309,7 @@ fun ArtistScreen(
             playerConnection.togglePlayPause()
         } else {
             playerConnection.playQueue(
-                YouTubeQueue(song.endpoint ?: WatchEndpoint(videoId = song.id), song.toMediaMetadata())
+                YouTubeQueue(song.endpoint ?: WatchEndpoint(videoId = song.id), song.toMediaMetadata()),
             )
         }
     }
@@ -286,15 +318,26 @@ fun ArtistScreen(
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         menuState.show {
             when (item) {
-                is SongItem -> YouTubeSongMenu(song = item, navController = navController, onDismiss = menuState::dismiss)
-                is AlbumItem -> YouTubeAlbumMenu(albumItem = item, navController = navController, onDismiss = menuState::dismiss)
-                is ArtistItem -> YouTubeArtistMenu(artist = item, onDismiss = menuState::dismiss)
-                is PlaylistItem -> YouTubePlaylistMenu(
-                    playlist = item,
-                    coroutineScope = coroutineScope,
-                    onDismiss = menuState::dismiss,
-                    onImportedPlaylist = { navController.navigate("local_playlist/$it") },
-                )
+                is SongItem -> {
+                    YouTubeSongMenu(song = item, navController = navController, onDismiss = menuState::dismiss)
+                }
+
+                is AlbumItem -> {
+                    YouTubeAlbumMenu(albumItem = item, navController = navController, onDismiss = menuState::dismiss)
+                }
+
+                is ArtistItem -> {
+                    YouTubeArtistMenu(artist = item, onDismiss = menuState::dismiss)
+                }
+
+                is PlaylistItem -> {
+                    YouTubePlaylistMenu(
+                        playlist = item,
+                        coroutineScope = coroutineScope,
+                        onDismiss = menuState::dismiss,
+                        onImportedPlaylist = { navController.navigate("local_playlist/$it") },
+                    )
+                }
             }
         }
     }
@@ -309,15 +352,17 @@ fun ArtistScreen(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .drawBehind { drawRect(background.value) }
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .drawBehind { drawRect(background.value) },
     ) {
         // the bar's frost samples the banner and the list; it sits beside this box, never in it
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .glassRoot(glassState, isActive = { morph.value > 0.01f })
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .glassRoot(glassState, isActive = { morph.value > 0.01f }),
         ) {
             ArtistBanner(
                 photoUrl = photo?.resize(1200, 1200),
@@ -339,18 +384,20 @@ fun ArtistScreen(
                 ) {
                     item(key = "header", contentType = "header") {
                         Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = bannerHeight * ArtistAvatarAt)
-                                .padding(start = PlaylistInset - 3.dp, end = PlaylistInset)
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = bannerHeight * ArtistAvatarAt)
+                                    .padding(start = PlaylistInset - 3.dp, end = PlaylistInset),
                         ) {
                             ArtistAvatar(url = header?.avatarUrl ?: photo?.resize(544, 544))
                             Spacer(Modifier.height(14.dp))
                             ArtistName(name = name, logoUrl = header?.logoUrl, logoAspect = header?.logoAspect)
-                            val stats = artistStats(
-                                subscribers = page?.subscriberCountText?.takeIf { showSubscriberCount },
-                                monthly = page?.monthlyListenerCount?.takeIf { showMonthlyListeners },
-                            )
+                            val stats =
+                                artistStats(
+                                    subscribers = page?.subscriberCountText?.takeIf { showSubscriberCount },
+                                    monthly = page?.monthlyListenerCount?.takeIf { showMonthlyListeners },
+                                )
                             if (stats.isNotEmpty()) {
                                 Spacer(Modifier.height(4.dp))
                                 Text(
@@ -379,9 +426,10 @@ fun ArtistScreen(
                         val releaseAlbum = release?.album
                         val releaseSong = release?.song
                         val nowPlaying = mediaMetadataState.value
-                        val releasePlaying = isPlayingState.value && (
-                            (releaseAlbum != null && nowPlaying?.album?.id == releaseAlbum.browseId) ||
-                                (releaseSong != null && nowPlaying?.id == releaseSong.id)
+                        val releasePlaying =
+                            isPlayingState.value && (
+                                (releaseAlbum != null && nowPlaying?.album?.id == releaseAlbum.browseId) ||
+                                    (releaseSong != null && nowPlaying?.id == releaseSong.id)
                             )
                         ArtistReleasePager(
                             release = release,
@@ -429,6 +477,7 @@ fun ArtistScreen(
                     if (shelves != null) {
                         artistShelves(
                             shelves = shelves,
+                            shelfTitles = shelfTitles,
                             screenWidth = screenWidth,
                             artistId = viewModel.artistId,
                             mediaMetadataId = playingSongId,
@@ -443,22 +492,23 @@ fun ArtistScreen(
                             onSimilarTitle = { navController.navigate("artist/${viewModel.artistId}/similar") },
                             topSongsMenu = { dismiss ->
                                 page?.artist?.shuffleEndpoint?.let { endpoint ->
-                                    ArtistMenuItem(text = "Shuffle", icon = R.drawable.shuffle) {
+                                    ArtistMenuItem(text = stringResource(R.string.artist_menu_shuffle), icon = R.drawable.shuffle) {
                                         dismiss()
                                         playerConnection.playQueue(YouTubeQueue(endpoint))
                                     }
                                 }
                                 page?.artist?.radioEndpoint?.let { endpoint ->
-                                    ArtistMenuItem(text = "Start radio", icon = R.drawable.radio) {
+                                    ArtistMenuItem(text = stringResource(R.string.artist_menu_start_radio), icon = R.drawable.radio) {
                                         dismiss()
                                         playerConnection.playQueue(YouTubeQueue(endpoint))
                                     }
                                 }
                                 page?.artist?.shareLink?.let { link ->
-                                    ArtistMenuItem(text = "Copy link", icon = R.drawable.link) {
+                                    val linkLabel = stringResource(R.string.artist_link_label)
+                                    ArtistMenuItem(text = stringResource(R.string.artist_menu_copy_link), icon = R.drawable.link) {
                                         dismiss()
                                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                        clipboard.setPrimaryClip(ClipData.newPlainText("Artist Link", link))
+                                        clipboard.setPrimaryClip(ClipData.newPlainText(linkLabel, link))
                                         Toast.makeText(context, R.string.link_copied, Toast.LENGTH_SHORT).show()
                                     }
                                 }
@@ -483,7 +533,7 @@ fun ArtistScreen(
                                     playerConnection.togglePlayPause()
                                 } else {
                                     playerConnection.playQueue(
-                                        ListQueue(title = name, items = savedSongs.map { it.toMediaItem() }, startIndex = index)
+                                        ListQueue(title = name, items = savedSongs.map { it.toMediaItem() }, startIndex = index),
                                     )
                                 }
                             },
@@ -528,9 +578,20 @@ fun ArtistScreen(
     }
 }
 
+private data class ArtistShelfTitles(
+    val topSongs: String,
+    val albums: String,
+    val singlesEps: String,
+    val videos: String,
+    val concert: String,
+    val featuredOn: String,
+    val similar: String,
+)
+
 @OptIn(ExperimentalFoundationApi::class)
 private fun LazyListScope.artistShelves(
     shelves: ArtistShelves,
+    shelfTitles: ArtistShelfTitles,
     screenWidth: Dp,
     artistId: String,
     mediaMetadataId: () -> String?,
@@ -549,20 +610,22 @@ private fun LazyListScope.artistShelves(
         val songs = section.items.filterIsInstance<SongItem>().distinctBy { it.id }
         item(key = "top_songs_title", contentType = "shelf_title") {
             ArtistShelfTitle(
-                title = "Top songs",
+                title = shelfTitles.topSongs,
                 onClick = section.moreEndpoint?.let { { onOpenMore(it) } },
                 menu = topSongsMenu,
-                modifier = Modifier
-                    .padding(top = 30.dp, bottom = 8.dp)
-                    .revealOnAppear(key = "top_songs_title", seenState = revealSeen),
+                modifier =
+                    Modifier
+                        .padding(top = 30.dp, bottom = 8.dp)
+                        .revealOnAppear(key = "top_songs_title", seenState = revealSeen),
             )
         }
         item(key = "top_songs", contentType = "track_grid") {
             val rows = minOf(3, songs.size)
             val gridState = rememberLazyGridState()
-            val snap = remember(gridState) {
-                SnapLayoutInfoProvider(lazyGridState = gridState, positionInLayout = { _, _ -> 0f })
-            }
+            val snap =
+                remember(gridState) {
+                    SnapLayoutInfoProvider(lazyGridState = gridState, positionInLayout = { _, _ -> 0f })
+                }
             val columnWidth = if (screenWidth * 0.475f >= 320.dp) screenWidth * 0.475f else screenWidth * 0.76f
             LazyHorizontalGrid(
                 state = gridState,
@@ -571,10 +634,11 @@ private fun LazyListScope.artistShelves(
                 contentPadding = PaddingValues(horizontal = PlaylistInset),
                 horizontalArrangement = Arrangement.spacedBy(39.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(homeRowHeight() * rows + 6.dp * (rows - 1).coerceAtLeast(0))
-                    .revealOnAppear(key = "top_songs", seenState = revealSeen),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(homeRowHeight() * rows + 6.dp * (rows - 1).coerceAtLeast(0))
+                        .revealOnAppear(key = "top_songs", seenState = revealSeen),
             ) {
                 itemsIndexed(items = songs, key = { _, song -> song.id }) { _, song ->
                     Box(modifier = Modifier.width(columnWidth)) {
@@ -599,11 +663,12 @@ private fun LazyListScope.artistShelves(
     shelves.albumShelves.forEachIndexed { index, section ->
         coverShelf(
             key = "albums_$index",
-            title = when (index) {
-                0 -> "Albums"
-                1 -> "Singles & EPs"
-                else -> section.title
-            },
+            title =
+                when (index) {
+                    0 -> shelfTitles.albums
+                    1 -> shelfTitles.singlesEps
+                    else -> section.title
+                },
             items = section.items,
             moreEndpoint = section.moreEndpoint,
             revealSeen = revealSeen,
@@ -617,7 +682,7 @@ private fun LazyListScope.artistShelves(
 
     videoShelf(
         key = "videos",
-        title = "Videos",
+        title = shelfTitles.videos,
         videos = shelves.videos,
         moreEndpoint = shelves.videoShelf?.moreEndpoint,
         screenWidth = screenWidth,
@@ -632,7 +697,7 @@ private fun LazyListScope.artistShelves(
 
     videoShelf(
         key = "live",
-        title = "Concert",
+        title = shelfTitles.concert,
         videos = shelves.live,
         moreEndpoint = shelves.liveShelf?.moreEndpoint,
         screenWidth = screenWidth,
@@ -648,7 +713,7 @@ private fun LazyListScope.artistShelves(
     shelves.playlistShelves.forEachIndexed { index, section ->
         coverShelf(
             key = "playlists_$index",
-            title = if (index == 0) "Featured on" else section.title,
+            title = if (index == 0) shelfTitles.featuredOn else section.title,
             items = section.items,
             moreEndpoint = section.moreEndpoint,
             revealSeen = revealSeen,
@@ -661,18 +726,21 @@ private fun LazyListScope.artistShelves(
     }
 
     shelves.similar?.let { section ->
-        val artists = section.items.filterIsInstance<ArtistItem>()
-            .distinctBy { it.id }
-            .map { FeaturedArtistUi(id = it.id, name = it.title, thumbnailUrl = it.thumbnail?.resize(300, 300)) }
+        val artists =
+            section.items
+                .filterIsInstance<ArtistItem>()
+                .distinctBy { it.id }
+                .map { FeaturedArtistUi(id = it.id, name = it.title, thumbnailUrl = it.thumbnail?.resize(300, 300)) }
         item(key = "similar", contentType = "artist_row") {
             FeaturedArtistsRow(
                 artists = artists,
                 onArtistClick = { artist -> onOpen(section.items.first { it.id == artist.id }) },
-                title = "Similar Artist",
+                title = shelfTitles.similar,
                 onTitleClick = onSimilarTitle,
-                modifier = Modifier
-                    .padding(top = 30.dp)
-                    .revealOnAppear(key = "similar", seenState = revealSeen),
+                modifier =
+                    Modifier
+                        .padding(top = 30.dp)
+                        .revealOnAppear(key = "similar", seenState = revealSeen),
             )
         }
     }
@@ -712,9 +780,10 @@ private fun LazyListScope.coverShelf(
         ArtistShelfTitle(
             title = title,
             onClick = moreEndpoint?.let { { onOpenMore(it) } },
-            modifier = Modifier
-                .padding(top = 30.dp, bottom = 8.dp)
-                .revealOnAppear(key = "${key}_title", seenState = revealSeen),
+            modifier =
+                Modifier
+                    .padding(top = 30.dp, bottom = 8.dp)
+                    .revealOnAppear(key = "${key}_title", seenState = revealSeen),
         )
     }
     item(key = "${key}_row", contentType = "cover_row") {
@@ -726,23 +795,27 @@ private fun LazyListScope.coverShelf(
             items(items = distinct, key = { it.id }) { item ->
                 HomeCoverCard(
                     title = item.title,
-                    subtitle = when (item) {
-                        is AlbumItem -> item.year?.toString()
-                        is PlaylistItem -> listOfNotNull(item.author?.name, item.songCountText).joinToString(" · ").ifBlank { null }
-                        is SongItem -> item.artists.joinToString { it.name }
-                        is ArtistItem -> null
-                    },
+                    subtitle =
+                        when (item) {
+                            is AlbumItem -> item.year?.toString()
+                            is PlaylistItem -> listOfNotNull(item.author?.name, item.songCountText).joinToString(" · ").ifBlank { null }
+                            is SongItem -> item.artists.joinToString { it.name }
+                            is ArtistItem -> null
+                        },
                     thumbnailUrl = item.thumbnail,
                     circular = item is ArtistItem,
                     isActive = item is AlbumItem && item.id == mediaAlbumId(),
                     isPlaying = isPlaying,
-                    sharedElementKey = com.mochyy.mochymusic.ui.component.coverTransitionKey(item),
-                    modifier = Modifier.combinedClickable(
-                        interactionSource = null,
-                        indication = HomeCardHighlight,
-                        onClick = { onOpen(item) },
-                        onLongClick = { onMenu(item) },
-                    ),
+                    sharedElementKey =
+                        com.mochyy.mochymusic.ui.component
+                            .coverTransitionKey(item),
+                    modifier =
+                        Modifier.combinedClickable(
+                            interactionSource = null,
+                            indication = HomeCardHighlight,
+                            onClick = { onOpen(item) },
+                            onLongClick = { onMenu(item) },
+                        ),
                 )
             }
         }
@@ -769,9 +842,10 @@ private fun LazyListScope.videoShelf(
         ArtistShelfTitle(
             title = title,
             onClick = moreEndpoint?.let { { onOpenMore(it) } },
-            modifier = Modifier
-                .padding(top = 30.dp, bottom = 8.dp)
-                .revealOnAppear(key = "${key}_title", seenState = revealSeen),
+            modifier =
+                Modifier
+                    .padding(top = 30.dp, bottom = 8.dp)
+                    .revealOnAppear(key = "${key}_title", seenState = revealSeen),
         )
     }
     item(key = "${key}_row", contentType = "video_row") {
@@ -785,19 +859,21 @@ private fun LazyListScope.videoShelf(
                 val tidy = remember(video.id, artistName) { ArtistVideos.homeVideo(video, artistName) }
                 HomeVideoCard(
                     title = tidy.title,
-                    subtitle = listOfNotNull(tidy.subtitle.ifBlank { null }, video.duration?.let { makeTimeString(it * 1000L) })
-                        .joinToString(" · "),
+                    subtitle =
+                        listOfNotNull(tidy.subtitle.ifBlank { null }, video.duration?.let { makeTimeString(it * 1000L) })
+                            .joinToString(" · "),
                     videoId = video.id,
                     fallbackThumbnailUrl = video.thumbnail,
                     width = cardWidth,
                     isActive = video.id == mediaMetadataId(),
                     isPlaying = isPlaying,
-                    modifier = Modifier.combinedClickable(
-                        interactionSource = null,
-                        indication = HomeCardHighlight,
-                        onClick = { onPlay(video) },
-                        onLongClick = { onMenu(video) },
-                    ),
+                    modifier =
+                        Modifier.combinedClickable(
+                            interactionSource = null,
+                            indication = HomeCardHighlight,
+                            onClick = { onPlay(video) },
+                            onLongClick = { onMenu(video) },
+                        ),
                 )
             }
         }
@@ -819,7 +895,7 @@ private fun LazyListScope.librarySection(
 ) {
     item(key = "library_title", contentType = "shelf_title") {
         ArtistShelfTitle(
-            title = "In your library",
+            title = stringResource(R.string.artist_in_your_library),
             onClick = onSongsTitle,
             modifier = Modifier.padding(top = 30.dp, bottom = 2.dp),
         )
@@ -829,10 +905,11 @@ private fun LazyListScope.librarySection(
             thumbnailUrl = song.song.thumbnailUrl,
             songId = song.id,
             title = song.song.title,
-            subtitle = listOfNotNull(
-                song.album?.title,
-                makeTimeString(song.song.duration * 1000L),
-            ).joinToString(" · "),
+            subtitle =
+                listOfNotNull(
+                    song.album?.title,
+                    makeTimeString(song.song.duration * 1000L),
+                ).joinToString(" · "),
             isActive = song.id == mediaMetadataId(),
             isPlaying = isPlaying(),
             onClick = { onPlay(index) },
@@ -843,7 +920,7 @@ private fun LazyListScope.librarySection(
     if (albums.isNotEmpty()) {
         item(key = "library_albums_title", contentType = "shelf_title") {
             ArtistShelfTitle(
-                title = "Albums of $artistName you saved",
+                title = stringResource(R.string.artist_saved_albums_of, artistName),
                 onClick = onAlbumsTitle,
                 modifier = Modifier.padding(top = 22.dp, bottom = 8.dp),
             )
@@ -859,12 +936,13 @@ private fun LazyListScope.librarySection(
                         subtitle = album.album.year?.toString(),
                         thumbnailUrl = album.album.thumbnailUrl,
                         sharedElementKey = "album-${album.id}",
-                        modifier = Modifier.combinedClickable(
-                            interactionSource = null,
-                            indication = HomeCardHighlight,
-                            onClick = { onAlbum(album) },
-                            onLongClick = { onAlbumMenu(album) },
-                        ),
+                        modifier =
+                            Modifier.combinedClickable(
+                                interactionSource = null,
+                                indication = HomeCardHighlight,
+                                onClick = { onAlbum(album) },
+                                onLongClick = { onAlbumMenu(album) },
+                            ),
                     )
                 }
             }
@@ -874,15 +952,20 @@ private fun LazyListScope.librarySection(
 
 /** the bio at the foot of the page: six lines, and a tap opens the rest in place */
 @Composable
-private fun ArtistAbout(name: String, bio: String, modifier: Modifier = Modifier) {
+private fun ArtistAbout(
+    name: String,
+    bio: String,
+    modifier: Modifier = Modifier,
+) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = PlaylistInset)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = PlaylistInset),
     ) {
         Text(
-            text = "About $name",
+            text = stringResource(R.string.artist_about, name),
             style = AboutTitleStyle,
             color = Color.White,
             maxLines = 2,
@@ -895,10 +978,11 @@ private fun ArtistAbout(name: String, bio: String, modifier: Modifier = Modifier
             color = Color.White.copy(alpha = 0.82f),
             maxLines = if (expanded) Int.MAX_VALUE else 6,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .animateContentSize(spring(dampingRatio = 0.9f, stiffness = 420f))
-                .clip(RoundedCornerShape(8.dp))
-                .clickable(interactionSource = null, indication = RemoteFocus) { expanded = !expanded },
+            modifier =
+                Modifier
+                    .animateContentSize(spring(dampingRatio = 0.9f, stiffness = 420f))
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(interactionSource = null, indication = RemoteFocus) { expanded = !expanded },
         )
     }
 }
@@ -907,18 +991,20 @@ private fun ArtistAbout(name: String, bio: String, modifier: Modifier = Modifier
 private fun ArtistRetry(onRetry: () -> Unit) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 40.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 40.dp),
     ) {
         Text(
-            text = "Couldn't load this artist. Tap to try again",
+            text = stringResource(R.string.artist_load_failed),
             style = PlaylistStatsStyle,
             color = Color.White.copy(alpha = 0.7f),
-            modifier = Modifier
-                .clip(RoundedCornerShape(50))
-                .clickable(onClick = onRetry)
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+            modifier =
+                Modifier
+                    .clip(RoundedCornerShape(50))
+                    .clickable(onClick = onRetry)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
         )
     }
 }

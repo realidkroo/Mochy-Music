@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -280,7 +281,7 @@ internal fun MiddleEditor(
                 alpha = { item(i) },
             )
             MenuItemLabel(
-                text = action.label,
+                text = stringResource(action.labelRes),
                 rightX = { stage.rowCircles[i].x - stage.menuZoom * chevronRect.width / 2f - stage.labelGap },
                 centerY = { lerpF(chevronCenter().y, stage.rowCircles[i].y, item(i)) },
                 scale = stage.labelScale,
@@ -288,7 +289,7 @@ internal fun MiddleEditor(
             )
         }
         MenuItemLabel(
-            text = sideAction.label,
+            text = stringResource(sideAction.labelRes),
             rightX = { stage.sideMenu.x - stage.menuZoom * sideRect.width / 2f - stage.labelGap },
             centerY = { stage.sideMenu.y },
             scale = stage.labelScale,
@@ -297,9 +298,9 @@ internal fun MiddleEditor(
 
         // what each tile edits
         val labelStyle = studioText(StudioType.Title, FontWeight.Bold)
-        MiddleLabel("Edit menus", labelStyle, stage.labelX, stage.menusTile.center.y) { tiles() * (1f - menu() * 2f) }
-        MiddleLabel("Edit Seekbar", labelStyle, stage.labelX, stage.seekTile.center.y) { tiles() * (1f - menu() * 2f) }
-        MiddleLabel("Edit end\ntimestamp", labelStyle, stage.labelX, stage.endTile.center.y) { tiles() * (1f - menu() * 2f) }
+        MiddleLabel(stringResource(R.string.ps_studio_edit_menus), labelStyle, stage.labelX, stage.menusTile.center.y) { tiles() * (1f - menu() * 2f) }
+        MiddleLabel(stringResource(R.string.ps_studio_edit_seekbar), labelStyle, stage.labelX, stage.seekTile.center.y) { tiles() * (1f - menu() * 2f) }
+        MiddleLabel(stringResource(R.string.ps_studio_edit_end_timestamp), labelStyle, stage.labelX, stage.endTile.center.y) { tiles() * (1f - menu() * 2f) }
 
         // taps
         TileTap(stage.menusTile.copy(right = w), stageMiddle) { studio.go(StudioStage.MENU) }

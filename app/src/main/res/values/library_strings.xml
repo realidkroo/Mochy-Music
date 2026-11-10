@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels -->
+    <string name="lib_artist">Artist</string>
+    <string name="lib_album">Album</string>
+    <string name="lib_playlist">Playlist</string>
+    <string name="lib_nothing_to_show">Nothing to show here</string>
+    <string name="lib_no_results">Nothing in your library matches \"%1$s\"</string>
+    <plurals name="lib_song_count">
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
+    </plurals>
+    <string name="lib_count_on_device">%1$s on this device</string>
+    <string name="lib_count_cached">%1$s cached</string>
+
+    <!-- Albums / artists / playlists / songs screens -->
+    <string name="lib_albums_local_subtitle">Albums with music on this device.</string>
+    <string name="lib_albums_cached_subtitle">Albums with songs in your cache.</string>
+    <string name="lib_artists_local_subtitle">Artists with music on this device.</string>
+    <string name="lib_artists_cached_subtitle">Artists with songs in your cache.</string>
+    <string name="lib_artists_all_subtitle">All the artists in your library are listed here.</string>
+    <string name="lib_artists_search">Find an artist by name</string>
+    <string name="lib_playlists_imported_subtitle">Playlists imported from %1$s.</string>
+    <string name="lib_playlists_local_subtitle">Playlists with music on this device.</string>
+    <string name="lib_playlists_cached_subtitle">Playlists with songs in your cache.</string>
+    <string name="lib_playlists_all_subtitle">All the playlists in your library are listed here.</string>
+    <string name="lib_playlists_search">Find a playlist by its name</string>
+    <string name="lib_songs_subtitle">All the songs in your library are listed here.</string>
+    <string name="lib_songs_search">Find a song by its title or artist</string>
+    <string name="lib_recent_title">Added</string>
+    <string name="lib_recent_subtitle">Recently</string>
+    <string name="lib_recent_search">Find a song listed here, by its lyrics or its artist</string>
+
+    <!-- Imported screen -->
+    <string name="lib_imported_unknown_source">an unknown source</string>
+    <plurals name="lib_imported_songs_subtitle">
+        <item quantity="one">%1$d song imported from %2$s.</item>
+        <item quantity="other">%1$d songs imported from %2$s.</item>
+    </plurals>
+    <string name="lib_imported_search">Find a song imported from %1$s</string>
+    <string name="lib_imported_queue_title">Imported from %1$s</string>
+
+    <!-- Tabs -->
+    <string name="lib_cached_empty">Nothing cached yet. Songs you play show up here.</string>
+    <string name="lib_manage_cache_pill">Manage cache</string>
+    <string name="lib_cached_all_music">All cached music</string>
+    <string name="lib_all_music">All music</string>
+    <string name="lib_manage_imports_pill">Manage imports</string>
+    <string name="lib_manage_local_pill">Manage local</string>
+    <string name="lib_local_or">Or</string>
+    <string name="lib_local_let_read">Let Mochy read your storage to find all your songs</string>
+    <string name="lib_local_import_here">Import your local music here</string>
+    <string name="lib_local_imported_from_local">Imported from local</string>
+
+    <!-- Import banner -->
+    <string name="lib_import_banner_title">Import your music here!</string>
+    <string name="lib_import_checking_resync">Checking \"%1$s\" for new songs…</string>
+    <string name="lib_import_adding_resync">Adding %1$d of %2$d new songs to \"%3$s\"</string>
+    <string name="lib_import_getting_ready">Getting your tracks ready…</string>
+    <string name="lib_import_adding_from">Adding %1$d of %2$d tracks from %3$s</string>
+    <string name="lib_import_adding">Adding %1$d of %2$d tracks</string>
+    <string name="lib_import_still_running">An import is still running. Try again once it\'s done.</string>
+
+    <!-- Local import -->
+    <string name="lib_local_no_access">Mochy can\'t see your music without access</string>
+    <string name="lib_local_no_new_songs">No new songs in your music folders</string>
+
+    <!-- Transfer progress -->
+    <string name="lib_transfer_download_title">Download progress</string>
+    <string name="lib_transfer_download_idle">Nothing is downloading right now.</string>
+    <string name="lib_transfer_import_title">Import progress</string>
+    <string name="lib_transfer_import_idle">Nothing is being imported right now.</string>
+    <string name="lib_transfer_n_of_m">%1$d of %2$d</string>
+    <string name="lib_transfer_failed">Couldn\'t add this one</string>
+    <string name="lib_transfer_cancel_all">Cancel all downloads</string>
+    <string name="lib_transfer_create_playlist">Create playlist</string>
+
+    <!-- Song picker sheets -->
+    <string name="lib_picker_done">Done</string>
+    <plurals name="lib_picker_add_songs">
+        <item quantity="one">Add %1$d song</item>
+        <item quantity="other">Add %1$d songs</item>
+    </plurals>
+    <plurals name="lib_picker_remove_songs">
+        <item quantity="one">Remove %1$d song</item>
+        <item quantity="other">Remove %1$d songs</item>
+    </plurals>
+    <string name="lib_picker_add_music">Add music</string>
+    <string name="lib_picker_looking">Looking for music on your phone…</string>
+    <string name="lib_picker_all_in_library">Every song on your phone is already in your library.</string>
+    <string name="lib_picker_remove_from_list">Remove from list</string>
+    <string name="lib_picker_no_local_files">No files from your phone in your library yet.</string>
+    <string name="lib_picker_files_stay">The files stay on your phone.</string>
+    <string name="lib_picker_remove_from_cache">Remove from cache</string>
+    <string name="lib_picker_nothing_cached">Nothing cached yet.</string>
+    <string name="lib_picker_cache_hint">They\'ll stream again the next time you play them.</string>
+    <string name="lib_picker_pick_to_remove">Pick songs to remove</string>
+    <string name="lib_picker_select_none">Select none</string>
+    <string name="lib_picker_select_all">Select all</string>
+    <string name="lib_picker_nothing_matches">Nothing matches \"%1$s\"</string>
+
+    <!-- Manage sheets -->
+    <string name="lib_manage_delete_all_imports">Delete all imports</string>
+    <string name="lib_manage_delete_all_imports_title">Delete all imports?</string>
+    <string name="lib_manage_delete_all_imports_msg">Every song, like and playlist you imported leaves your library. Songs that were already in it stay, and so does music YouTube sync keeps up to date.</string>
+    <string name="lib_manage_undo_session">Undo import session</string>
+    <string name="lib_manage_undo_last_title">Undo your last import?</string>
+    <string name="lib_manage_undo_last_msg">The songs, likes and playlists your last import brought in leave your library. Anything that was there before stays.</string>
+    <string name="lib_manage_undo_import">Undo import</string>
+    <string name="lib_manage_resync_all">Re-sync all</string>
+    <string name="lib_manage_delete_source">Delete %1$s imports</string>
+    <string name="lib_manage_delete_source_title">Delete %1$s imports?</string>
+    <string name="lib_manage_delete_source_msg">Everything you imported from %1$s leaves your library, playlists included.</string>
+    <string name="lib_manage_delete_source_msg_youtube">Everything you imported from %1$s leaves your library, playlists included. Music that YouTube sync keeps up to date stays.</string>
+    <string name="lib_manage_delete">Delete</string>
+    <string name="lib_manage_rescan_local">Re-scan local</string>
+    <string name="lib_manage_delete_from_list">Delete from list</string>
+    <string name="lib_manage_add_folder">Add a music folder</string>
+    <string name="lib_manage_undo_local_title">Undo your last local import?</string>
+    <string name="lib_manage_undo_local_msg">The songs it added leave your library. The files stay on your phone.</string>
+    <string name="lib_manage_clear_cache">Clear cache</string>
+    <string name="lib_manage_clear_cache_title">Clear your cache?</string>
+    <string name="lib_manage_clear_cache_msg">Every cached song is deleted from this phone and streams again the next time you play it. Your library and your downloads stay as they are.</string>
+    <string name="lib_manage_remove_songs">Remove songs</string>
+</resources>

@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.component.RemoteFocus
 
@@ -98,7 +100,7 @@ internal fun NerdsDivider() {
     ) {
         Box(Modifier.weight(1f).height(1.dp).background(InfoLine))
         Text(
-            text = "STATS FOR NERDS",
+            text = stringResource(R.string.pc_info_nerds),
             color = InfoMuted,
             fontSize = 10.sp,
             fontFamily = FontFamily.Monospace,

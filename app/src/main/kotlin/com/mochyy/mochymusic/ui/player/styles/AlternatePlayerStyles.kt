@@ -32,6 +32,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import com.mochyy.mochymusic.R
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -790,7 +792,7 @@ private fun LyricsPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                                 Column {
                                     ExpressiveTitle(text = song.track.title, baseSize = r.sp(0.112f, 32f, 56f), color = tones.ink.copy(alpha = 0.55f))
                                     Spacer(Modifier.height(10.dp))
-                                    Text("No synced lyrics for this song", color = tones.inkSoft, fontSize = r.sp(0.034f, 12f, 15f), fontWeight = FontWeight.Medium)
+                                    Text(androidx.compose.ui.res.stringResource(R.string.ps_style_no_synced_lyrics), color = tones.inkSoft, fontSize = r.sp(0.034f, 12f, 15f), fontWeight = FontWeight.Medium)
                                 }
                             } else {
                                 ExpressiveLyrics(

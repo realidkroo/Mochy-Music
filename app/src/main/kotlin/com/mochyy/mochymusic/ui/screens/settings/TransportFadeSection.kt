@@ -89,7 +89,7 @@ fun TransportFadeSection() {
     val seconds = storedSeconds.coerceIn(TransportFadeMinSeconds, TransportFadeMaxSeconds)
 
     Text(
-        text = "Pause, play, forward and backward transition",
+        text = stringResource(R.string.xmix_transport_title),
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 26.sp,
@@ -105,8 +105,8 @@ fun TransportFadeSection() {
         }
         Spacer(Modifier.height(10.dp))
         LabToggleRow(
-            title = "Enable fade",
-            subtitle = "Eases the music out when you pause or skip, and back in when you play",
+            title = stringResource(R.string.xmix_fade_enable),
+            subtitle = stringResource(R.string.xmix_fade_enable_desc),
             checked = enabled,
             onCheckedChange = onEnabledChange,
         )
@@ -122,7 +122,7 @@ fun TransportFadeSection() {
         LabCollapsible(enabled) {
             Box(Modifier.padding(horizontal = 6.dp)) {
                 LabSlider(
-                    label = "Length",
+                    label = stringResource(R.string.xmix_length),
                     valueText = secondsText(seconds),
                     value = seconds,
                     onValueChange = { onSecondsChange((it * 2f).roundToInt() / 2f) },
@@ -136,9 +136,9 @@ fun TransportFadeSection() {
             }
             Spacer(Modifier.height(14.dp))
             Column(Modifier.padding(horizontal = 6.dp)) {
-                Text("Layered effect", fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = LabColors.Primary)
+                Text(stringResource(R.string.xmix_layered_effect), fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = LabColors.Primary)
                 Text(
-                    "A CrossMix effect over the fade, like an echo trail or the record spinning back",
+                    stringResource(R.string.xmix_layered_effect_desc),
                     fontFamily = InterFontFamily,
                     fontSize = 12.sp,
                     lineHeight = 15.sp,
@@ -177,6 +177,16 @@ private fun BlendAheadRow(ahead: Int, dataSaving: Boolean, onAheadChange: (Int) 
     }
 }
 
+private fun TransportEffect.labelRes(): Int = when (this) {
+    TransportEffect.OFF -> R.string.xmix_effect_none
+    TransportEffect.ECHO -> R.string.xmix_effect_echo
+    TransportEffect.REWIND -> R.string.xmix_effect_rewind
+    TransportEffect.TAPE_STOP -> R.string.xmix_effect_tape_stop
+    TransportEffect.FAR_AWAY -> R.string.xmix_effect_far_away
+    TransportEffect.REVERB -> R.string.xmix_effect_reverb
+    TransportEffect.FILTER -> R.string.xmix_effect_filter
+}
+
 private fun secondsText(seconds: Float): String =
     if (seconds % 1f == 0f) "${seconds.toInt()}s" else "${"%.1f".format(seconds)}s"
 
@@ -198,7 +208,7 @@ private fun EffectPicker(selected: TransportEffect, onSelect: (TransportEffect) 
         ) {
             Spacer(Modifier.size(24.dp))
             Text(
-                text = selected.label,
+                text = stringResource(selected.labelRes()),
                 fontFamily = InterFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 17.sp,
@@ -208,7 +218,7 @@ private fun EffectPicker(selected: TransportEffect, onSelect: (TransportEffect) 
             )
             Icon(
                 painter = painterResource(R.drawable.expand_more),
-                contentDescription = "Choose an effect",
+                contentDescription = stringResource(R.string.xmix_choose_effect),
                 tint = Color.White,
                 modifier = Modifier.size(24.dp).graphicsLayer { rotationZ = chevron },
             )
@@ -223,7 +233,7 @@ private fun EffectPicker(selected: TransportEffect, onSelect: (TransportEffect) 
                 DropdownMenuItem(
                     text = {
                         Text(
-                            option.label,
+                            stringResource(option.labelRes()),
                             fontFamily = InterFontFamily,
                             fontWeight = if (option == selected) FontWeight.SemiBold else FontWeight.Normal,
                             fontSize = 15.sp,

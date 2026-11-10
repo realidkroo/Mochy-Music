@@ -5,6 +5,7 @@
 
 package com.mochyy.mochymusic.ui.player.share
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
@@ -70,11 +71,13 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.SheetPillButton
 import com.mochyy.mochymusic.ui.component.pressBounce
@@ -88,10 +91,10 @@ import kotlin.math.hypot
 import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 // the three looks a word can take, each with its card and its prompt
-private enum class WordMode(val label: String, val prompt: String) {
-    GLOW("Glow", "Tap or swipe the words you want to glow!"),
-    CAPS("CAPS", "Tap or swipe the words you want in CAPS!"),
-    BIG("Bigggg", "Tap or swipe the words you want bigggg!");
+private enum class WordMode(@param:StringRes val label: Int, @param:StringRes val prompt: Int) {
+    GLOW(R.string.ps_word_glow, R.string.ps_word_glow_prompt),
+    CAPS(R.string.ps_word_caps, R.string.ps_word_caps_prompt),
+    BIG(R.string.ps_word_big, R.string.ps_word_big_prompt);
 
     fun has(look: WordLook): Boolean = when (this) {
         GLOW -> look.glow
@@ -121,7 +124,7 @@ private const val PaintStepPx = 8f
 
 internal fun PopupSheetState.showWordEditor(session: LyricsShareSession) {
     val popup = this
-    show(buttonBar = { SheetPillButton(text = "Done", onClick = popup::dismiss) }) {
+    show(buttonBar = { SheetPillButton(text = stringResource(R.string.done), onClick = popup::dismiss) }) {
         WordEditorContent(session)
     }
 }
@@ -159,7 +162,7 @@ private fun ColumnScope.WordEditorContent(session: LyricsShareSession) {
         "CoolfontEditor",
         beta = true,
         subtitleSlot = {
-            val line = mode?.prompt ?: if (hinting) "Pick Glow, CAPS or Bigggg below first" else null
+            val line = mode?.let { stringResource(it.prompt) } ?: if (hinting) stringResource(R.string.ps_word_pick_first) else null
             AnimatedContent(
                 targetState = line,
                 transitionSpec = {
@@ -390,7 +393,7 @@ private fun MakeItCard(
             label = "makeItCaption",
         ) { on ->
             Text(
-                if (on) "I'm done making it" else "Make it",
+                stringResource(if (on) R.string.ps_word_done_making else R.string.ps_word_make_it),
                 fontFamily = InterFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 10.sp,
@@ -399,7 +402,7 @@ private fun MakeItCard(
             )
         }
         Text(
-            mode.label,
+            stringResource(mode.label),
             style = TextStyle(
                 fontFamily = InterFontFamily,
                 fontWeight = FontWeight.Bold,

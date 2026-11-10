@@ -2,6 +2,7 @@
 
 package com.mochyy.mochymusic.ui.screens.setup.onboarding
 
+import androidx.compose.ui.res.stringResource
 import com.mochyy.mochymusic.ui.component.rememberDeviceTilt
 import android.os.Build
 import androidx.compose.animation.core.Animatable
@@ -204,8 +205,8 @@ internal fun HelloCardStep(
                     translationY = (1f - p) * 40.dp.toPx()
                 },
         ) {
-            Text("Hello!", color = Color.White, fontSize = 64.sp, lineHeight = 66.sp, fontWeight = FontWeight.Bold, letterSpacing = (-2).sp)
-            Text("welcome to mochy!", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.onb_hello), color = Color.White, fontSize = 64.sp, lineHeight = 66.sp, fontWeight = FontWeight.Bold, letterSpacing = (-2).sp)
+            Text(stringResource(R.string.onb_welcome_to_mochy), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -262,7 +263,7 @@ internal fun DoneStep(card: CardInfo, onFinished: () -> Unit) {
             }
             Spacer(Modifier.height(18.dp))
             Text(
-                "You're good to go",
+                stringResource(R.string.onb_all_good),
                 color = Onb.Subtitle,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
