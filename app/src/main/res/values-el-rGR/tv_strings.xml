@@ -88,7 +88,7 @@
     <!-- the phone side of the tv link -->
     <string name="tv_link_title">Mochy on your TV</string>
     <string name="tv_link_row_detail">Link a TV once and it mirrors your library</string>
-    <string name="tv_link_intro">Link a TV once and it gets your whole library: likes, playlists, history and downloads. Your downloads can stream from this phone or be copied to the TV. It stays linked until you unlink it here or on the TV.</string>
+    <string name="tv_link_intro">just one time link and your library get sync and you can also stream local music too</string>
     <string name="tv_link_your_tvs">Your TVs</string>
     <string name="tv_link_tap_to_unlink">Linked. Tap to unlink.</string>
     <string name="tv_link_found">TVs on this Wi-Fi</string>
@@ -175,4 +175,12 @@
     <string name="tv_info_source">Playing from</string>
     <string name="tv_info_source_unknown">Still finding where to play it from</string>
     <string name="tv_info_close">Close</string>
+    <!-- pairing by sheet and by address -->
+    <string name="tv_pair_by_address">Or on your phone, link by address: %1$s</string>
+    <string name="tv_pair_sheet_title">Link %1$s</string>
+    <string name="tv_pair_sheet_detail">Type the code your TV shows</string>
+    <string name="tv_pair_sheet_by_address">Link by address</string>
+    <string name="tv_pair_sheet_address_detail">Type the address your TV shows under its code, then the code</string>
+    <string name="tv_pair_address_hint">192.168.1.20</string>
+    <string name="tv_link_by_address_detail">For a Wi-Fi that hides TVs from phones</string>
 </resources>
