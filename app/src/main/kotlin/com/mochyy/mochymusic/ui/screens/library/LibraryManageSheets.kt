@@ -25,6 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,36 +59,38 @@ fun PopupSheetState.showManageImportsSheet(
             sheet?.dismiss()
         }
     sheet = showWithHandle {
+        val context = LocalContext.current
         ManageLayout(
-            ManageAction(R.drawable.delete, "Delete all imports") {
+            ManageAction(R.drawable.delete, stringResource(R.string.lib_manage_delete_all_imports)) {
                 confirmThen(
-                    title = "Delete all imports?",
-                    message = "Every song, like and playlist you imported leaves your library. Songs that were " +
-                        "already in it stay, and so does music YouTube sync keeps up to date.",
-                    action = "Delete all imports",
+                    title = context.getString(R.string.lib_manage_delete_all_imports_title),
+                    message = context.getString(R.string.lib_manage_delete_all_imports_msg),
+                    action = context.getString(R.string.lib_manage_delete_all_imports),
                     run = viewModel::deleteAllImports,
                 )
             },
-            ManageAction(R.drawable.undo, "Undo import session") {
+            ManageAction(R.drawable.undo, stringResource(R.string.lib_manage_undo_session)) {
                 confirmThen(
-                    title = "Undo your last import?",
-                    message = "The songs, likes and playlists your last import brought in leave your library. " +
-                        "Anything that was there before stays.",
-                    action = "Undo import",
+                    title = context.getString(R.string.lib_manage_undo_last_title),
+                    message = context.getString(R.string.lib_manage_undo_last_msg),
+                    action = context.getString(R.string.lib_manage_undo_import),
                     run = viewModel::undoLatestImport,
                 )
             },
-            wide = ManageAction(R.drawable.sync, "Re-sync all") {
+            wide = ManageAction(R.drawable.sync, stringResource(R.string.lib_manage_resync_all)) {
                 sheet?.dismiss()
                 onResyncAll()
             },
             rows = sources.map { source ->
-                ManageAction(R.drawable.delete, "Delete ${source.label} imports") {
+                ManageAction(R.drawable.delete, stringResource(R.string.lib_manage_delete_source, source.label)) {
                     confirmThen(
-                        title = "Delete ${source.label} imports?",
-                        message = "Everything you imported from ${source.label} leaves your library, playlists included." +
-                            if (source == ImportSource.YOUTUBE_MUSIC) " Music YouTube sync keeps up to date stays." else "",
-                        action = "Delete",
+                        title = context.getString(R.string.lib_manage_delete_source_title, source.label),
+                        message = context.getString(
+                            if (source == ImportSource.YOUTUBE_MUSIC) R.string.lib_manage_delete_source_msg_youtube
+                            else R.string.lib_manage_delete_source_msg,
+                            source.label,
+                        ),
+                        action = context.getString(R.string.lib_manage_delete),
                         run = { viewModel.deleteImportsFrom(source) },
                     )
                 }
@@ -107,25 +111,26 @@ fun PopupSheetState.showManageLocalSheet(
 ) {
     var sheet: PopupSheetHandle? = null
     sheet = showWithHandle {
+        val context = LocalContext.current
         ManageLayout(
-            ManageAction(R.drawable.refresh, "Re-scan local") {
+            ManageAction(R.drawable.refresh, stringResource(R.string.lib_manage_rescan_local)) {
                 sheet?.dismiss()
                 onRescan()
             },
-            ManageAction(R.drawable.delete, "Delete from list") {
+            ManageAction(R.drawable.delete, stringResource(R.string.lib_manage_delete_from_list)) {
                 sheet?.dismiss()
                 onRemoveFromList()
             },
-            wide = ManageAction(R.drawable.library_add, "Add a music folder") {
+            wide = ManageAction(R.drawable.library_add, stringResource(R.string.lib_manage_add_folder)) {
                 sheet?.dismiss()
                 onAddFolder()
             },
             rows = listOf(
-                ManageAction(R.drawable.undo, "Undo import session") {
+                ManageAction(R.drawable.undo, stringResource(R.string.lib_manage_undo_session)) {
                     showConfirm(
-                        title = "Undo your last local import?",
-                        message = "The songs it added leave your library. The files stay on your phone.",
-                        action = "Undo import",
+                        title = context.getString(R.string.lib_manage_undo_local_title),
+                        message = context.getString(R.string.lib_manage_undo_local_msg),
+                        action = context.getString(R.string.lib_manage_undo_import),
                     ) {
                         viewModel.undoLatestLocalImport()
                         sheet?.dismiss()
@@ -147,19 +152,19 @@ fun PopupSheetState.showManageCachedSheet(
 ) {
     var sheet: PopupSheetHandle? = null
     sheet = showWithHandle {
+        val context = LocalContext.current
         ManageLayout(
-            ManageAction(R.drawable.clear_all, "Clear cache") {
+            ManageAction(R.drawable.clear_all, stringResource(R.string.lib_manage_clear_cache)) {
                 showConfirm(
-                    title = "Clear your cache?",
-                    message = "Every cached song is deleted from this phone and streams again the next time " +
-                        "you play it. Your library and your downloads stay as they are.",
-                    action = "Clear cache",
+                    title = context.getString(R.string.lib_manage_clear_cache_title),
+                    message = context.getString(R.string.lib_manage_clear_cache_msg),
+                    action = context.getString(R.string.lib_manage_clear_cache),
                 ) {
                     onClearCache()
                     sheet?.dismiss()
                 }
             },
-            ManageAction(R.drawable.delete, "Remove songs") {
+            ManageAction(R.drawable.delete, stringResource(R.string.lib_manage_remove_songs)) {
                 sheet?.dismiss()
                 showRemoveCachedSheet(cachedSongs, onRemove)
             },

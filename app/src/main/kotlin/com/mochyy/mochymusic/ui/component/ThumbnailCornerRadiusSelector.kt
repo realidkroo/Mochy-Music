@@ -153,7 +153,7 @@ fun ThumbnailCornerRadiusModal(
                             },
                             label = {
                                 Text(
-                                    text = "Custom",
+                                    text = stringResource(R.string.pc_corner_custom),
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             },
@@ -183,7 +183,7 @@ fun ThumbnailCornerRadiusModal(
                             enabled = isCustomSelected,
                             label = {
                                 Text(
-                                    text = "Value",
+                                    text = stringResource(R.string.pc_corner_value),
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             },
@@ -203,7 +203,7 @@ fun ThumbnailCornerRadiusModal(
                     Spacer(modifier = Modifier.height(24.dp))
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = "Or adjust Radius",
+                            text = stringResource(R.string.pc_corner_adjust),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -246,7 +246,7 @@ fun ThumbnailCornerRadiusModal(
                         }
 
                         Text(
-                            text = "Corner Radius: ${thumbnailCornerRadius.roundToInt()}dp",
+                            text = stringResource(R.string.pc_corner_radius, thumbnailCornerRadius.roundToInt()),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 .fillMaxWidth()

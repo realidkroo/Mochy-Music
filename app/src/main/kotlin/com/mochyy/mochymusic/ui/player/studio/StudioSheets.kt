@@ -86,7 +86,7 @@ fun StudioSheets(
             androidx.compose.material3.LocalTextStyle provides studioText(StudioType.Body),
         ) {
         when (sheet) {
-            StudioSheet.CONTROLS -> if (transportLayout != null) OptionSheet("Controls") {
+            StudioSheet.CONTROLS -> if (transportLayout != null) OptionSheet(stringResource(R.string.ps_studio_controls)) {
                 FlagshipTransportLayout.entries.forEach { layout ->
                     OptionRow(selected = layout == transportLayout, onClick = { onTransportLayout(layout) }) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -98,9 +98,9 @@ fun StudioSheets(
                         }
                     }
                 }
-            } else OptionSheet("Controls") {
+            } else OptionSheet(stringResource(R.string.ps_studio_controls)) {
                 ButtonStyle.entries.forEach { style ->
-                    OptionRow(selected = style == buttonStyle, onClick = { onButtonStyle(style) }, caption = style.displayName) {
+                    OptionRow(selected = style == buttonStyle, onClick = { onButtonStyle(style) }, caption = stringResource(style.labelRes)) {
                         if (style == ButtonStyle.DEFAULT) {
                             Row(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 listOf(R.drawable.skip_previous, R.drawable.pause, R.drawable.skip_next).forEach { icon ->
@@ -125,9 +125,9 @@ fun StudioSheets(
                 }
             }
 
-            StudioSheet.SEEKBAR -> OptionSheet("Seek bar") {
+            StudioSheet.SEEKBAR -> OptionSheet(stringResource(R.string.ps_studio_seek_bar)) {
                 SeekBarStyle.entries.forEach { style ->
-                    OptionRow(selected = style == seekBarStyle, onClick = { onSeekBarStyle(style) }, caption = style.displayName) {
+                    OptionRow(selected = style == seekBarStyle, onClick = { onSeekBarStyle(style) }, caption = stringResource(style.labelRes)) {
                         Box(Modifier.fillMaxWidth().height(28.dp)) {
                             SeekBarTrack(
                                 style = style,
@@ -143,12 +143,12 @@ fun StudioSheets(
 
             StudioSheet.END_TIME -> {
                 var shown by rememberEnumPreference(PlayerEndTimestampKey, PlayerEndTimestamp.END_TIME)
-                OptionSheet("End timestamp") {
+                OptionSheet(stringResource(R.string.ps_studio_end_timestamp)) {
                     OptionRow(selected = shown == PlayerEndTimestamp.TIME_LEFT, onClick = { shown = PlayerEndTimestamp.TIME_LEFT }) {
-                        TwoLines("Time left", "showing the time left for this song")
+                        TwoLines(stringResource(R.string.ps_studio_time_left), stringResource(R.string.ps_studio_time_left_desc))
                     }
                     OptionRow(selected = shown == PlayerEndTimestamp.END_TIME, onClick = { shown = PlayerEndTimestamp.END_TIME }) {
-                        TwoLines("End time", "showing the end / total duration for this song")
+                        TwoLines(stringResource(R.string.ps_studio_end_time), stringResource(R.string.ps_studio_end_time_desc))
                     }
                 }
             }
@@ -157,18 +157,18 @@ fun StudioSheets(
                 val slot = studio.sheetSlot
                 val current = menuLayout.actionAt(slot)
                 val used = (menuLayout.slots + menuLayout.side).toSet()
-                OptionSheet(if (slot == PlayerMenuLayout.SideSlot) "The button by the chevron" else "Menu button ${slot + 1}") {
+                OptionSheet(if (slot == PlayerMenuLayout.SideSlot) stringResource(R.string.ps_studio_side_button) else stringResource(R.string.ps_studio_menu_button, slot + 1)) {
                     PlayerMenuAction.entries.forEach { action ->
                         OptionRow(
                             selected = action == current,
                             onClick = { menuLayout.assign(slot, action) },
-                            tag = if (action != current && action in used) "SWAPS" else null,
+                            tag = if (action != current && action in used) stringResource(R.string.ps_studio_swaps) else null,
                             compact = true,
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(painterResource(action.icon), null, tint = Color.White, modifier = Modifier.size(22.dp))
                                 Spacer(Modifier.width(14.dp))
-                                Text(action.label, color = Color.White, style = studioText(StudioType.Body))
+                                Text(stringResource(action.labelRes), color = Color.White, style = studioText(StudioType.Body))
                             }
                         }
                     }
@@ -176,12 +176,12 @@ fun StudioSheets(
             }
 
             StudioSheet.COVER_OPTIONS -> OptionSheet(
-                title = "Options for this cover",
+                title = stringResource(R.string.ps_studio_cover_options),
                 subtitle = null,
             ) {
                 val options = coverStyle.options
                 if (options.isEmpty()) {
-                    Text("This cover has nothing more to set", color = Color.White.copy(alpha = 0.6f), style = studioText(StudioType.Body, FontWeight.Normal), modifier = Modifier.padding(vertical = 8.dp))
+                    Text(stringResource(R.string.ps_studio_cover_nothing), color = Color.White.copy(alpha = 0.6f), style = studioText(StudioType.Body, FontWeight.Normal), modifier = Modifier.padding(vertical = 8.dp))
                 }
                 options.forEach { option ->
                     when (option) {
@@ -195,30 +195,30 @@ fun StudioSheets(
                 var content by rememberEnumPreference(DiscLabelContentKey, DiscLabelContent.CUSTOM)
                 val connection = LocalPlayerConnection.current
                 val track = connection?.uiState?.trackInfo?.collectAsState()?.value
-                OptionSheet("The disc label") {
+                OptionSheet(stringResource(R.string.ps_studio_disc_label)) {
                     OptionRow(selected = content == DiscLabelContent.CUSTOM, onClick = { content = DiscLabelContent.CUSTOM }) {
                         Column {
-                            TwoLines("Custom name", "whatever you type")
+                            TwoLines(stringResource(R.string.ps_studio_custom_name), stringResource(R.string.ps_studio_custom_name_desc))
                             if (content == DiscLabelContent.CUSTOM) {
                                 Spacer(Modifier.height(10.dp))
-                                LabelField(DiscNameKey, "Type the label")
+                                LabelField(DiscNameKey, stringResource(R.string.ps_studio_type_label))
                             }
                         }
                     }
                     OptionRow(selected = content == DiscLabelContent.MUSIC_NAME, onClick = { content = DiscLabelContent.MUSIC_NAME }) {
-                        TwoLines("Music name", track?.title.orEmpty())
+                        TwoLines(stringResource(R.string.ps_studio_music_name), track?.title.orEmpty())
                     }
                     OptionRow(selected = content == DiscLabelContent.ARTIST_NAME, onClick = { content = DiscLabelContent.ARTIST_NAME }) {
-                        TwoLines("Artist", track?.artist.orEmpty())
+                        TwoLines(stringResource(R.string.ps_studio_artist), track?.artist.orEmpty())
                     }
                     OptionRow(selected = content == DiscLabelContent.ALBUM_NAME, onClick = { content = DiscLabelContent.ALBUM_NAME }) {
-                        TwoLines("Album", track?.album.orEmpty())
+                        TwoLines(stringResource(R.string.ps_studio_album), track?.album.orEmpty())
                     }
                     OptionRow(selected = content == DiscLabelContent.MUSIC_AND_ARTIST, onClick = { content = DiscLabelContent.MUSIC_AND_ARTIST }) {
-                        TwoLines("Music name and artist", listOfNotNull(track?.title, track?.artist).filter { it.isNotBlank() }.joinToString(" · "))
+                        TwoLines(stringResource(R.string.ps_studio_music_artist), listOfNotNull(track?.title, track?.artist).filter { it.isNotBlank() }.joinToString(" · "))
                     }
                     OptionRow(selected = content == DiscLabelContent.NONE, onClick = { content = DiscLabelContent.NONE }) {
-                        TwoLines("Nothing", "a plain label")
+                        TwoLines(stringResource(R.string.ps_studio_nothing), stringResource(R.string.ps_studio_nothing_desc))
                     }
                 }
             }
@@ -253,18 +253,18 @@ fun StyleSheets(studio: PlayerStudioState) {
     }
 }
 
-private val PosterVisualizerOption = CoverOption.Switch(
-    title = "Visualizer",
-    description = "bars round the cover, moving with the music",
-    icon = R.drawable.graphic_eq,
-    key = com.mochyy.mochymusic.constants.PosterVisualizerKey,
-    default = false,
-)
-
 @Composable
 private fun ColumnScope.PosterOptions() {
-    OptionSheet(title = "The poster") {
-        SwitchRow(PosterVisualizerOption)
+    OptionSheet(title = stringResource(R.string.ps_studio_poster)) {
+        SwitchRow(
+            CoverOption.Switch(
+                title = stringResource(R.string.ps_studio_visualizer),
+                description = stringResource(R.string.ps_studio_visualizer_desc),
+                icon = R.drawable.graphic_eq,
+                key = com.mochyy.mochymusic.constants.PosterVisualizerKey,
+                default = false,
+            ),
+        )
     }
 }
 
@@ -278,7 +278,7 @@ internal fun ColumnScope.OptionSheet(
     val close = LocalMenuSheetClose.current
     Column(modifier = Modifier.padding(horizontal = 24.dp).navigationBarsPadding()) {
         Spacer(Modifier.height(10.dp))
-        Text("What to change with", color = Color.White, style = studioText(StudioType.Title, FontWeight.Bold))
+        Text(stringResource(R.string.ps_studio_what_to_change), color = Color.White, style = studioText(StudioType.Title, FontWeight.Bold))
         Spacer(Modifier.height(4.dp))
         Text(subtitle ?: title, color = Color.White.copy(alpha = 0.55f), style = studioText(StudioType.Subtitle, FontWeight.Medium))
         Spacer(Modifier.height(18.dp))
@@ -299,7 +299,7 @@ internal fun ColumnScope.OptionSheet(
                 .clickable { close() },
             contentAlignment = Alignment.Center,
         ) {
-            Text("Done", color = Color.White, style = studioText(StudioType.Button))
+            Text(stringResource(R.string.done), color = Color.White, style = studioText(StudioType.Button))
         }
         Spacer(Modifier.height(16.dp))
     }
@@ -330,7 +330,7 @@ internal fun OptionRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(modifier = Modifier.weight(1f)) { content() }
-            val label = if (selected) "SELECTED" else tag
+            val label = if (selected) stringResource(R.string.ps_studio_selected) else tag
             if (label != null) {
                 Spacer(Modifier.width(12.dp))
                 Text(label, color = Color.White.copy(alpha = if (selected) 0.45f else 0.3f), style = studioText(StudioType.Label, FontWeight.Bold))

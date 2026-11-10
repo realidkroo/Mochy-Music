@@ -379,7 +379,7 @@ fun QueueScreen(
                     )
 
                     QueueRow.Empty -> Text(
-                        text = "Nothing else queued",
+                        text = stringResource(R.string.pc_queue_empty),
                         fontSize = 14.sp,
                         color = Color.White.copy(alpha = 0.45f),
                         modifier = Modifier
@@ -553,14 +553,16 @@ private fun QueueSectionHeader(
 ) {
     val title = when (section) {
         QueueSection.HISTORY -> stringResource(R.string.history)
-        QueueSection.NOW_PLAYING -> "Now Playing"
-        QueueSection.CONTINUE -> "Continue Playing"
-        QueueSection.AUTOPLAY -> "Autoplay"
+        QueueSection.NOW_PLAYING -> stringResource(R.string.now_playing)
+        QueueSection.CONTINUE -> stringResource(R.string.continue_playing)
+        QueueSection.AUTOPLAY -> stringResource(R.string.pc_queue_autoplay)
     }
+    val fromTitle = queueTitle?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.pc_queue_from, it) }
+    val similar = stringResource(R.string.pc_queue_similar)
     val subtitle = when (section) {
         QueueSection.HISTORY, QueueSection.NOW_PLAYING -> null
-        QueueSection.CONTINUE -> queueTitle?.takeIf { it.isNotBlank() }?.let { "Queue from $it" }
-        QueueSection.AUTOPLAY -> "Similar music"
+        QueueSection.CONTINUE -> fromTitle
+        QueueSection.AUTOPLAY -> similar
     }
 
     Row(
@@ -590,7 +592,7 @@ private fun QueueSectionHeader(
         }
         if (section == QueueSection.HISTORY) {
             Text(
-                text = "Clear",
+                text = stringResource(R.string.clear),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.White.copy(alpha = 0.85f),

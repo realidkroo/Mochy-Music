@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -84,7 +85,7 @@ internal fun LyricsSourceFooter(
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            LabeledText(label = "Source", value = sourceName(provider))
+            LabeledText(label = stringResource(R.string.pc_lyrics_source), value = sourceName(provider))
             if (onSwitchSource != null) {
                 Spacer(modifier = Modifier.width(10.dp))
                 SwitchSourceButton(onClick = onSwitchSource)
@@ -101,9 +102,10 @@ internal fun LyricsSourceFooter(
 }
 
 /** The name to show for a saved provider, including the two that aren't online sources. */
+@Composable
 private fun sourceName(provider: String): String = when (provider) {
-    EmbeddedLyrics.Provider -> "Song file"
-    LyricsMenuViewModel.USER_EDITED -> "Your edit"
+    EmbeddedLyrics.Provider -> stringResource(R.string.pc_lyrics_song_file)
+    LyricsMenuViewModel.USER_EDITED -> stringResource(R.string.pc_lyrics_your_edit)
     else -> LyricsProviderRegistry.getDisplayName(provider)
 }
 
@@ -127,7 +129,7 @@ private fun SwitchSourceButton(onClick: () -> Unit) {
         background = Color.White.copy(alpha = 0.08f),
     ) {
         FooterIcon(Icons.Rounded.SwapVert, tint = LabelColor)
-        Text(text = "Switch", style = ButtonTextStyle.copy(color = LabelColor))
+        Text(text = stringResource(R.string.pc_lyrics_switch), style = ButtonTextStyle.copy(color = LabelColor))
     }
 }
 
@@ -145,7 +147,7 @@ private fun StarOnGitHubButton(onClick: () -> Unit) {
             tint = Color.White.copy(alpha = 0.85f),
             modifier = Modifier.size(15.dp),
         )
-        Text(text = "Star on GitHub", style = ButtonTextStyle.copy(color = Color.White.copy(alpha = 0.85f)))
+        Text(text = stringResource(R.string.pc_star_github), style = ButtonTextStyle.copy(color = Color.White.copy(alpha = 0.85f)))
         FooterIcon(Icons.Rounded.Star, tint = StarColor)
     }
 }

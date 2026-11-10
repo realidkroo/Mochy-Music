@@ -29,3 +29,57 @@ files:
   - source: /app/src/main/res/values/tv_strings.xml
     skip_untranslated_strings: true
     translation: /app/src/main/res/values-%android_code%/tv_strings.xml
+  - source: /app/src/main/res/values/audiolab_core_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/audiolab_core_strings.xml
+  - source: /app/src/main/res/values/audiolab_fx_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/audiolab_fx_strings.xml
+  - source: /app/src/main/res/values/audiolab_quality_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/audiolab_quality_strings.xml
+  - source: /app/src/main/res/values/audiolab_transition_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/audiolab_transition_strings.xml
+  - source: /app/src/main/res/values/equalizer_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/equalizer_strings.xml
+  - source: /app/src/main/res/values/onboarding_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/onboarding_strings.xml
+  - source: /app/src/main/res/values/library_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/library_strings.xml
+  - source: /app/src/main/res/values/player_sheets_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/player_sheets_strings.xml
+  - source: /app/src/main/res/values/player_core_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/player_core_strings.xml
+  - source: /app/src/main/res/values/content_screens_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/content_screens_strings.xml
+  - source: /app/src/main/res/values/importsync_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/importsync_strings.xml
+  - source: /app/src/main/res/values/player_extra_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/player_extra_strings.xml
+  - source: /app/src/main/res/values/profile_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/profile_strings.xml
+  - source: /app/src/main/res/values/recap_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/recap_strings.xml
+  - source: /app/src/main/res/values/settings_extra_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/settings_extra_strings.xml
+  - source: /app/src/main/res/values/larp_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/larp_strings.xml
+  - source: /app/src/main/res/values/player_flagship_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/player_flagship_strings.xml
+  - source: /app/src/main/res/values/storage_strings.xml
+    skip_untranslated_strings: true
+    translation: /app/src/main/res/values-%android_code%/storage_strings.xml

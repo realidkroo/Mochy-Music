@@ -47,6 +47,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -74,12 +75,12 @@ import com.mochyy.mochymusic.ui.component.detail.PlaylistDetailScaffold
 import com.mochyy.mochymusic.ui.component.detail.PlaylistEndOfLine
 import com.mochyy.mochymusic.ui.component.detail.PlaylistHeader
 import com.mochyy.mochymusic.ui.component.detail.PlaylistInset
-import com.mochyy.mochymusic.ui.component.detail.PlaylistSectionTitle
-import com.mochyy.mochymusic.ui.component.detail.PlaylistStatsStyle
-import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackBones
 import com.mochyy.mochymusic.ui.component.detail.PlaylistModeBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSearchBar
+import com.mochyy.mochymusic.ui.component.detail.PlaylistSectionTitle
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSelectTick
+import com.mochyy.mochymusic.ui.component.detail.PlaylistStatsStyle
+import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackBones
 import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackRow
 import com.mochyy.mochymusic.ui.component.detail.featuredArtistsOf
 import com.mochyy.mochymusic.ui.component.detail.playlistCoverHeight
@@ -123,28 +124,30 @@ fun AlbumScreen(
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
     val hideVideoSongs by rememberPreference(key = HideVideoSongsKey, defaultValue = false)
 
-    val filteredSongs = remember(albumWithSongs, hideExplicit, hideVideoSongs) {
-        var songs = albumWithSongs?.songs ?: emptyList()
-        if (hideExplicit) songs = songs.filter { !it.song.explicit }
-        if (hideVideoSongs) songs = songs.filter { !it.song.isVideo }
-        songs
-    }
+    val filteredSongs =
+        remember(albumWithSongs, hideExplicit, hideVideoSongs) {
+            var songs = albumWithSongs?.songs ?: emptyList()
+            if (hideExplicit) songs = songs.filter { !it.song.explicit }
+            if (hideVideoSongs) songs = songs.filter { !it.song.isVideo }
+            songs
+        }
 
     // the album's own song search, from the round button beside shuffle
     var isSearching by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
     val focusRequester = remember { FocusRequester() }
-    val shownSongs = remember(filteredSongs, isSearching, query.text) {
-        val typed = query.text.trim()
-        if (!isSearching || typed.isEmpty()) {
-            filteredSongs
-        } else {
-            filteredSongs.filter { song ->
-                song.song.title.contains(typed, ignoreCase = true) ||
-                    song.artists.any { it.name.contains(typed, ignoreCase = true) }
+    val shownSongs =
+        remember(filteredSongs, isSearching, query.text) {
+            val typed = query.text.trim()
+            if (!isSearching || typed.isEmpty()) {
+                filteredSongs
+            } else {
+                filteredSongs.filter { song ->
+                    song.song.title.contains(typed, ignoreCase = true) ||
+                        song.artists.any { it.name.contains(typed, ignoreCase = true) }
+                }
             }
         }
-    }
     val closeSearch = {
         isSearching = false
         query = TextFieldValue()
@@ -154,12 +157,14 @@ fun AlbumScreen(
     }
 
     var inSelectMode by rememberSaveable { mutableStateOf(false) }
-    val selection = rememberSaveable(
-        saver = listSaver<MutableList<String>, String>(
-            save = { it.toList() },
-            restore = { it.toMutableStateList() }
-        )
-    ) { mutableStateListOf() }
+    val selection =
+        rememberSaveable(
+            saver =
+                listSaver<MutableList<String>, String>(
+                    save = { it.toList() },
+                    restore = { it.toMutableStateList() },
+                ),
+        ) { mutableStateListOf() }
     val onExitSelectionMode = {
         inSelectMode = false
         selection.clear()
@@ -183,12 +188,24 @@ fun AlbumScreen(
     val revealSeen = rememberRevealSeenState()
     val album = albumWithSongs
     val totalSeconds = remember(filteredSongs) { filteredSongs.sumOf { it.song.duration } }
-    val featuredArtists = remember(filteredSongs) {
-        featuredArtistsOf(filteredSongs.flatMap { it.artists }, id = { it.id }, name = { it.name })
-    }
+    val featuredArtists =
+        remember(filteredSongs) {
+            featuredArtistsOf(filteredSongs.flatMap { it.artists }, id = { it.id }, name = { it.name })
+        }
     val mainArtistName = album?.artists?.firstOrNull()?.name
+    val moreByArtistTitle =
+        if (mainArtistName != null) {
+            stringResource(R.string.album_more_by_artist, mainArtistName)
+        } else {
+            stringResource(R.string.album_more_by_this_artist)
+        }
+    val otherVersionsTitle = stringResource(R.string.album_other_versions)
+    val releasesForYouTitle = stringResource(R.string.album_releases_for_you)
 
-    fun play(startIndex: Int = 0, shuffled: Boolean = false) {
+    fun play(
+        startIndex: Int = 0,
+        shuffled: Boolean = false,
+    ) {
         val current = album ?: return
         playerConnection.service.getAutomix(playlistId)
         playerConnection.playQueue(
@@ -196,7 +213,7 @@ fun AlbumScreen(
                 LocalAlbumRadio(current.copy(songs = current.songs.shuffled()))
             } else {
                 LocalAlbumRadio(current, startIndex = startIndex)
-            }
+            },
         )
     }
 
@@ -207,49 +224,56 @@ fun AlbumScreen(
         onBackClick = { navController.navigateUp() },
         onBackLongClick = { navController.backToMain() },
         contentPadding = LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Bottom).asPaddingValues(),
-        onMoreClick = album?.let { current ->
-            {
-                menuState.show {
-                    AlbumMenu(
-                        originalAlbum = Album(current.album, current.artists),
-                        navController = navController,
-                        onDismiss = menuState::dismiss,
-                    )
-                }
-            }
-        },
-        topBarOverride = if (isSearching) {
-            {
-                PlaylistSearchBar(
-                    query = query,
-                    onQueryChange = { query = it },
-                    placeholder = stringResource(R.string.search_in_album),
-                    focusRequester = focusRequester,
-                    onClose = closeSearch,
-                )
-            }
-        } else null,
-        modeBar = if (inSelectMode) {
-            PlaylistModeBar.Select(
-                count = selection.size,
-                allSelected = selection.size == filteredSongs.size && selection.isNotEmpty(),
-                onToggleAll = {
-                    val selectAll = selection.size != filteredSongs.size
-                    selection.clear()
-                    if (selectAll) selection.addAll(filteredSongs.map { it.id })
-                },
-                onMore = {
+        onMoreClick =
+            album?.let { current ->
+                {
                     menuState.show {
-                        SelectionSongMenu(
-                            songSelection = selection.mapNotNull { id -> filteredSongs.find { it.id == id } },
+                        AlbumMenu(
+                            originalAlbum = Album(current.album, current.artists),
+                            navController = navController,
                             onDismiss = menuState::dismiss,
-                            clearAction = onExitSelectionMode,
                         )
                     }
-                },
-                onClose = onExitSelectionMode,
-            )
-        } else null,
+                }
+            },
+        topBarOverride =
+            if (isSearching) {
+                {
+                    PlaylistSearchBar(
+                        query = query,
+                        onQueryChange = { query = it },
+                        placeholder = stringResource(R.string.search_in_album),
+                        focusRequester = focusRequester,
+                        onClose = closeSearch,
+                    )
+                }
+            } else {
+                null
+            },
+        modeBar =
+            if (inSelectMode) {
+                PlaylistModeBar.Select(
+                    count = selection.size,
+                    allSelected = selection.size == filteredSongs.size && selection.isNotEmpty(),
+                    onToggleAll = {
+                        val selectAll = selection.size != filteredSongs.size
+                        selection.clear()
+                        if (selectAll) selection.addAll(filteredSongs.map { it.id })
+                    },
+                    onMore = {
+                        menuState.show {
+                            SelectionSongMenu(
+                                songSelection = selection.mapNotNull { id -> filteredSongs.find { it.id == id } },
+                                onDismiss = menuState::dismiss,
+                                clearAction = onExitSelectionMode,
+                            )
+                        }
+                    },
+                    onClose = onExitSelectionMode,
+                )
+            } else {
+                null
+            },
     ) {
         if (album == null || album.songs.isEmpty()) {
             item(key = "loading_header") {
@@ -261,38 +285,47 @@ fun AlbumScreen(
             return@PlaylistDetailScaffold
         }
 
-        if (!isSearching) item(key = "album_header", contentType = "header") {
-            // read here, not at the top of the screen: a track change then only redraws the header
-            val isThisAlbum = mediaMetadata?.album?.id == album.album.id
-            PlaylistHeader(
-                onSearchClick = { isSearching = true },
-                title = album.album.title,
-                creators = album.artists.map { CreatorUi(name = it.name, avatarUrl = it.thumbnailUrl, artistId = it.id) },
-                // the description takes the stats' place, and the stats move under it
-                description = description?.takeIf { it.isNotBlank() },
-                stats = albumStats(
-                    year = album.album.year,
-                    songCount = filteredSongs.size,
-                    totalSeconds = totalSeconds,
-                    explicit = album.album.explicit,
-                    format = format?.let { f ->
-                        val codec = f.codecs.substringBefore('.').uppercase().ifBlank { null }
-                        listOfNotNull(codec, (f.bitrate / 1000).takeIf { it > 0 }?.let { "$it kbps" }).joinToString(" ")
+        if (!isSearching) {
+            item(key = "album_header", contentType = "header") {
+                // read here, not at the top of the screen: a track change then only redraws the header
+                val isThisAlbum = mediaMetadata?.album?.id == album.album.id
+                PlaylistHeader(
+                    onSearchClick = { isSearching = true },
+                    title = album.album.title,
+                    creators = album.artists.map { CreatorUi(name = it.name, avatarUrl = it.thumbnailUrl, artistId = it.id) },
+                    // the description takes the stats' place, and the stats move under it
+                    description = description?.takeIf { it.isNotBlank() },
+                    stats =
+                        albumStats(
+                            year = album.album.year,
+                            songCountText = pluralStringResource(R.plurals.n_song, filteredSongs.size, filteredSongs.size),
+                            totalSeconds = totalSeconds,
+                            explicit = album.album.explicit,
+                            explicitTag = stringResource(R.string.album_explicit_tag),
+                            format =
+                                format?.let { f ->
+                                    val codec =
+                                        f.codecs
+                                            .substringBefore('.')
+                                            .uppercase()
+                                            .ifBlank { null }
+                                    listOfNotNull(codec, (f.bitrate / 1000).takeIf { it > 0 }?.let { "$it kbps" }).joinToString(" ")
+                                },
+                        ),
+                    isPlaying = isThisAlbum && isPlaying,
+                    onPlayClick = {
+                        when {
+                            isThisAlbum && isPlaying -> playerConnection.player.pause()
+                            isThisAlbum -> playerConnection.player.play()
+                            else -> play()
+                        }
                     },
-                ),
-                isPlaying = isThisAlbum && isPlaying,
-                onPlayClick = {
-                    when {
-                        isThisAlbum && isPlaying -> playerConnection.player.pause()
-                        isThisAlbum -> playerConnection.player.play()
-                        else -> play()
-                    }
-                },
-                onShuffleClick = { play(shuffled = true) },
-                isSaved = album.album.bookmarkedAt != null,
-                onSaveClick = { database.query { update(album.album.toggleLike()) } },
-                onCreatorClick = { creator -> creator.artistId?.let { navController.navigate("artist/$it") } },
-            )
+                    onShuffleClick = { play(shuffled = true) },
+                    isSaved = album.album.bookmarkedAt != null,
+                    onSaveClick = { database.query { update(album.album.toggleLike()) } },
+                    onCreatorClick = { creator -> creator.artistId?.let { navController.navigate("artist/$it") } },
+                )
+            }
         }
 
         itemsIndexed(
@@ -316,11 +349,12 @@ fun AlbumScreen(
                     subtitle = "${song.artists.joinToString { it.name }} • ${makeTimeString(song.song.duration * 1000L)}",
                     isActive = song.id == mediaMetadata?.id,
                     isPlaying = isPlaying,
-                    modifier = Modifier.revealOnAppear(
-                        key = "track_${song.id}",
-                        seenState = revealSeen,
-                        delayMillis = minOf(position, 8) * 28,
-                    ),
+                    modifier =
+                        Modifier.revealOnAppear(
+                            key = "track_${song.id}",
+                            seenState = revealSeen,
+                            delayMillis = minOf(position, 8) * 28,
+                        ),
                     onClick = {
                         if (inSelectMode) {
                             onCheckedChange(song.id !in selection)
@@ -350,9 +384,12 @@ fun AlbumScreen(
                         database.query { update(updated) }
                         syncUtils.likeSong(updated)
                     },
-                    trailing = if (inSelectMode) {
-                        { PlaylistSelectTick(checked = song.id in selection) }
-                    } else null,
+                    trailing =
+                        if (inSelectMode) {
+                            { PlaylistSelectTick(checked = song.id in selection) }
+                        } else {
+                            null
+                        },
                 )
             }
         }
@@ -374,18 +411,23 @@ fun AlbumScreen(
                 FeaturedArtistsRow(
                     artists = featuredArtists,
                     onArtistClick = { navController.navigate("artist/${it.id}") },
-                    modifier = Modifier
-                        .padding(top = 25.dp)
-                        .revealOnAppear(key = "featured_artists", seenState = revealSeen),
+                    modifier =
+                        Modifier
+                            .padding(top = 25.dp)
+                            .revealOnAppear(key = "featured_artists", seenState = revealSeen),
                 )
             }
         }
 
         albumShelf(
             key = "more_by_artist",
-            title = if (mainArtistName != null) "More by $mainArtistName" else "More by this artist",
+            title = moreByArtistTitle,
             albums = moreByArtist,
-            onTitleClick = album.artists.firstOrNull()?.id?.let { id -> { navController.navigate("artist/$id") } },
+            onTitleClick =
+                album.artists
+                    .firstOrNull()
+                    ?.id
+                    ?.let { id -> { navController.navigate("artist/$id") } },
             navController = navController,
             onLongClick = { item ->
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -396,7 +438,7 @@ fun AlbumScreen(
         )
         albumShelf(
             key = "other_versions",
-            title = "Other versions",
+            title = otherVersionsTitle,
             albums = otherVersions,
             navController = navController,
             onLongClick = { item ->
@@ -408,7 +450,7 @@ fun AlbumScreen(
         )
         albumShelf(
             key = "releases_for_you",
-            title = "Releases for you",
+            title = releasesForYouTitle,
             albums = releasesForYou,
             navController = navController,
             onLongClick = { item ->
@@ -426,14 +468,21 @@ fun AlbumScreen(
 }
 
 /** "2016 · 14 songs · 52m · Explicit · OPUS 160 kbps" */
-private fun albumStats(year: Int?, songCount: Int, totalSeconds: Int, explicit: Boolean, format: String?): String {
+private fun albumStats(
+    year: Int?,
+    songCountText: String,
+    totalSeconds: Int,
+    explicit: Boolean,
+    explicitTag: String,
+    format: String?,
+): String {
     val hours = totalSeconds / 3600
     val minutes = (totalSeconds % 3600) / 60
     return listOfNotNull(
         year?.toString(),
-        "$songCount ${if (songCount == 1) "song" else "songs"}",
+        songCountText,
         (if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m").takeIf { totalSeconds > 0 },
-        "Explicit".takeIf { explicit },
+        explicitTag.takeIf { explicit },
         format?.ifBlank { null },
     ).joinToString(" · ")
 }
@@ -465,18 +514,20 @@ private fun LazyListScope.albumShelf(
             items(items = distinct, key = { it.id }) { item ->
                 HomeCoverCard(
                     title = item.title,
-                    subtitle = listOfNotNull(
-                        item.artists?.joinToString { it.name }?.ifBlank { null },
-                        item.year?.toString(),
-                    ).joinToString(" · ").ifBlank { null },
+                    subtitle =
+                        listOfNotNull(
+                            item.artists?.joinToString { it.name }?.ifBlank { null },
+                            item.year?.toString(),
+                        ).joinToString(" · ").ifBlank { null },
                     thumbnailUrl = item.thumbnail,
                     sharedElementKey = "album-${item.id}",
-                    modifier = Modifier.combinedClickable(
-                        interactionSource = null,
-                        indication = HomeCardHighlight,
-                        onClick = { navController.navigate("album/${item.id}") },
-                        onLongClick = { onLongClick(item) },
-                    ),
+                    modifier =
+                        Modifier.combinedClickable(
+                            interactionSource = null,
+                            indication = HomeCardHighlight,
+                            onClick = { navController.navigate("album/${item.id}") },
+                            onLongClick = { onLongClick(item) },
+                        ),
                 )
             }
         }
@@ -487,18 +538,20 @@ private fun LazyListScope.albumShelf(
 private fun AlbumRetry(onRetry: () -> Unit) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 24.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 24.dp),
     ) {
         Text(
-            text = "Couldn't load this album. Tap to try again",
+            text = stringResource(R.string.album_load_failed),
             style = PlaylistStatsStyle,
             color = Color.White.copy(alpha = 0.7f),
-            modifier = Modifier
-                .clip(RoundedCornerShape(50))
-                .clickable(onClick = onRetry)
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+            modifier =
+                Modifier
+                    .clip(RoundedCornerShape(50))
+                    .clickable(onClick = onRetry)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
         )
     }
 }

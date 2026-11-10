@@ -1,5 +1,6 @@
 package com.mochyy.mochymusic.ui.screens.settings
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,7 +25,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -40,7 +43,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.DateFormat
 import java.util.Date
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /** each refresh re-downloads youtube's player script, so spamming the button just gets us throttled */
@@ -78,22 +80,26 @@ private object CipherRefreshRateLimiter {
     }
 }
 
-private fun formatDuration(millis: Long): String {
-    if (millis <= 0L) return "0s"
+private fun formatDuration(
+    context: Context,
+    millis: Long,
+): String {
+    if (millis <= 0L) return context.getString(R.string.cipher_duration_zero)
     val totalSeconds = millis / 1000
     val hours = totalSeconds / 3600
     val minutes = (totalSeconds % 3600) / 60
     val seconds = totalSeconds % 60
     return when {
-        hours > 0 -> String.format(Locale.US, "%dh %02dm %02ds", hours, minutes, seconds)
-        minutes > 0 -> String.format(Locale.US, "%dm %02ds", minutes, seconds)
-        else -> String.format(Locale.US, "%ds", seconds)
+        hours > 0 -> context.getString(R.string.cipher_duration_hms, hours, minutes, seconds)
+        minutes > 0 -> context.getString(R.string.cipher_duration_ms, minutes, seconds)
+        else -> context.getString(R.string.cipher_duration_s, seconds)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CipherSettingsScreen(navController: NavController) {
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
     var status by remember { mutableStateOf(PlayerJsFetcher.readCacheStatus()) }
@@ -114,65 +120,80 @@ fun CipherSettingsScreen(navController: NavController) {
     val cooldownMs = remember(now) { CipherRefreshRateLimiter.cooldownMs() }
     val remainingRefreshes = remember(now) { CipherRefreshRateLimiter.remaining() }
 
-    val progress = remember(status, now) {
-        if (!status.hasCache) 0f
-        else (1f - remainingMs.toFloat() / PlayerJsFetcher.CACHE_TTL_MS.toFloat()).coerceIn(0f, 1f)
-    }
+    val progress =
+        remember(status, now) {
+            if (!status.hasCache) {
+                0f
+            } else {
+                (1f - remainingMs.toFloat() / PlayerJsFetcher.CACHE_TTL_MS.toFloat()).coerceIn(0f, 1f)
+            }
+        }
 
-    val statusLabel = when {
-        !status.hasCache -> "Not loaded"
-        status.isExpired -> "Stale — refreshes on next playback"
-        else -> "Ready"
-    }
+    val statusLabel =
+        when {
+            !status.hasCache -> stringResource(R.string.cipher_status_not_loaded)
+            status.isExpired -> stringResource(R.string.cipher_status_stale)
+            else -> stringResource(R.string.cipher_status_ready)
+        }
 
     SubSettingsScaffold(
-        title = "Cipher",
+        title = stringResource(R.string.cipher_settings_title),
         onBack = { navController.navigateUp() },
     ) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = statusLabel,
                     style = MaterialTheme.typography.titleMedium,
-                    color = if (status.isExpired) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
+                    color =
+                        if (status.isExpired) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        },
                 )
 
                 Spacer(Modifier.height(4.dp))
 
                 Text(
-                    text = "YouTube signs its stream URLs with a player script that changes " +
-                        "periodically. mochy caches that script and re-downloads it automatically.",
+                    text = stringResource(R.string.cipher_card_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(Modifier.height(16.dp))
 
-                CipherInfoRow("Player ID", status.playerHash ?: "—")
+                CipherInfoRow(stringResource(R.string.cipher_player_id), status.playerHash ?: "—")
                 CipherInfoRow(
-                    "Last updated",
+                    stringResource(R.string.cipher_last_updated),
                     status.lastUpdatedMs?.let {
                         DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(it))
                     } ?: "—",
                 )
                 CipherInfoRow(
-                    "Script size",
-                    if (status.sizeBytes > 0) "${status.sizeBytes / 1024} KB" else "—",
+                    stringResource(R.string.cipher_script_size),
+                    if (status.sizeBytes > 0) stringResource(R.string.cipher_script_size_kb, status.sizeBytes / 1024) else "—",
                 )
                 CipherInfoRow(
-                    "Next refresh",
-                    if (!status.hasCache) "—" else if (remainingMs <= 0L) "Due now" else "in ${formatDuration(remainingMs)}",
+                    stringResource(R.string.cipher_next_refresh),
+                    if (!status.hasCache) {
+                        "—"
+                    } else if (remainingMs <=
+                        0L
+                    ) {
+                        stringResource(R.string.cipher_due_now)
+                    } else {
+                        stringResource(R.string.cipher_in_duration, formatDuration(context, remainingMs))
+                    },
                 )
 
                 Spacer(Modifier.height(12.dp))
@@ -195,60 +216,90 @@ fun CipherSettingsScreen(navController: NavController) {
 
         SettingsGroup(
             style = SettingsGroupStyle.Grouped,
-            items = listOf(
-                SettingsItem(
-                    title = { Text(if (isRefreshing) "Refreshing…" else "Refresh now") },
-                    descriptionText = when {
-                        isRefreshing -> "Downloading the latest player script"
-                        cooldownMs > 0L -> "Rate limited — try again in ${formatDuration(cooldownMs)}"
-                        else -> "$remainingRefreshes manual refresh${if (remainingRefreshes == 1) "" else "es"} left"
-                    },
-                    icon = painterResource(R.drawable.refresh),
-                    iconShape = CircleShape,
-                    onClick = onClick@{
-                        if (isRefreshing || CipherRefreshRateLimiter.cooldownMs() > 0L) return@onClick
-                        CipherRefreshRateLimiter.record()
-                        isRefreshing = true
-                        message = null
-                        coroutineScope.launch {
-                            val result = withContext(Dispatchers.IO) {
-                                PlayerJsFetcher.invalidateCache()
-                                PlayerJsFetcher.getPlayerJs(forceRefresh = true)
+            items =
+                listOf(
+                    SettingsItem(
+                        title = {
+                            Text(
+                                if (isRefreshing) {
+                                    stringResource(
+                                        R.string.cipher_refreshing,
+                                    )
+                                } else {
+                                    stringResource(R.string.cipher_refresh_now)
+                                },
+                            )
+                        },
+                        descriptionText =
+                            when {
+                                isRefreshing -> {
+                                    stringResource(R.string.cipher_downloading_script)
+                                }
+
+                                cooldownMs > 0L -> {
+                                    stringResource(R.string.cipher_rate_limited, formatDuration(context, cooldownMs))
+                                }
+
+                                else -> {
+                                    context.resources.getQuantityString(
+                                        R.plurals.cipher_manual_refreshes_left,
+                                        remainingRefreshes,
+                                        remainingRefreshes,
+                                    )
+                                }
+                            },
+                        icon = painterResource(R.drawable.refresh),
+                        iconShape = CircleShape,
+                        onClick = onClick@{
+                            if (isRefreshing || CipherRefreshRateLimiter.cooldownMs() > 0L) return@onClick
+                            CipherRefreshRateLimiter.record()
+                            isRefreshing = true
+                            message = null
+                            coroutineScope.launch {
+                                val result =
+                                    withContext(Dispatchers.IO) {
+                                        PlayerJsFetcher.invalidateCache()
+                                        PlayerJsFetcher.getPlayerJs(forceRefresh = true)
+                                    }
+                                status = PlayerJsFetcher.readCacheStatus()
+                                message =
+                                    if (result != null) {
+                                        context.getString(R.string.cipher_updated_to_player, result.second)
+                                    } else {
+                                        context.getString(R.string.cipher_refresh_failed)
+                                    }
+                                isRefreshing = false
                             }
-                            status = PlayerJsFetcher.readCacheStatus()
-                            message = if (result != null) {
-                                "Updated to player ${result.second}"
-                            } else {
-                                "Refresh failed — check your connection and try again"
+                        },
+                    ),
+                    SettingsItem(
+                        title = { Text(stringResource(R.string.cipher_clear_cached_title)) },
+                        descriptionText = stringResource(R.string.cipher_clear_cached_desc),
+                        icon = painterResource(R.drawable.restore),
+                        iconShape = CircleShape,
+                        onClick = {
+                            coroutineScope.launch {
+                                withContext(Dispatchers.IO) { PlayerJsFetcher.invalidateCache() }
+                                status = PlayerJsFetcher.readCacheStatus()
+                                message = context.getString(R.string.cipher_cache_cleared_msg)
                             }
-                            isRefreshing = false
-                        }
-                    },
+                        },
+                    ),
                 ),
-                SettingsItem(
-                    title = { Text("Clear cached script") },
-                    descriptionText = "Forces a fresh download on the next stream",
-                    icon = painterResource(R.drawable.restore),
-                    iconShape = CircleShape,
-                    onClick = {
-                        coroutineScope.launch {
-                            withContext(Dispatchers.IO) { PlayerJsFetcher.invalidateCache() }
-                            status = PlayerJsFetcher.readCacheStatus()
-                            message = "Cached player script cleared"
-                        }
-                    },
-                ),
-            ),
         )
     }
 }
 
 @Composable
-private fun CipherInfoRow(label: String, value: String) {
+private fun CipherInfoRow(
+    label: String,
+    value: String,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {

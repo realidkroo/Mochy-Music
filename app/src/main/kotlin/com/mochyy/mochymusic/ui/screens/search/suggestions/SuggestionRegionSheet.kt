@@ -21,26 +21,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.SuggestionRegionSlugToName
-import kotlinx.coroutines.launch
 import com.mochyy.mochymusic.ui.component.RemoteFocus
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SuggestionRegionSheet(
     currentRegionSlug: String,
     onRegionSelected: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
-    val filteredRegions = remember(searchQuery) {
-        SuggestionRegionSlugToName.toList()
-            .filter { it.first != "system" }
-            .filter { it.second.contains(searchQuery, ignoreCase = true) }
-    }
+    val filteredRegions =
+        remember(searchQuery) {
+            SuggestionRegionSlugToName
+                .toList()
+                .filter { it.first != "system" }
+                .filter { it.second.contains(searchQuery, ignoreCase = true) }
+        }
 
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -48,12 +52,12 @@ fun SuggestionRegionSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = bottomSheetState
+        sheetState = bottomSheetState,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "Choose Suggestions Region",
-                style = MaterialTheme.typography.labelLarge
+                text = stringResource(R.string.suggestion_choose_region),
+                style = MaterialTheme.typography.labelLarge,
             )
 
             DockedSearchBar(
@@ -64,41 +68,42 @@ fun SuggestionRegionSheet(
                         onSearch = {},
                         expanded = false,
                         onExpandedChange = {},
-                        placeholder = { Text("Search regions...") },
+                        placeholder = { Text(stringResource(R.string.suggestion_search_regions)) },
                         leadingIcon = {
                             Icon(
                                 Icons.Default.Search,
-                                contentDescription = "Search"
+                                contentDescription = stringResource(R.string.suggestion_search_desc),
                             )
                         },
                     )
                 },
                 expanded = false,
                 onExpandedChange = {},
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
             ) {}
 
             LazyColumn(
                 state = listState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .clip(RoundedCornerShape(24.dp)),
             ) {
-
                 item {
                     Text(
-                        text = "System",
+                        text = stringResource(R.string.suggestion_system),
                         style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                     )
                 }
                 item {
                     val isSelected = currentRegionSlug == "system"
                     RegionListItem(
-                        headlineContent = { Text("System Default") },
+                        headlineContent = { Text(stringResource(R.string.suggestion_system_default)) },
                         selected = isSelected,
                         items = 1,
                         index = 0,
@@ -109,7 +114,7 @@ fun SuggestionRegionSheet(
                                     onDismiss()
                                 }
                             }
-                        }
+                        },
                     )
                 }
 
@@ -119,14 +124,15 @@ fun SuggestionRegionSheet(
 
                 item {
                     Text(
-                        text = "Countries & Regions",
+                        text = stringResource(R.string.suggestion_countries_regions),
                         style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(
-                            top = 14.dp,
-                            bottom = 16.dp,
-                            start = 16.dp,
-                            end = 16.dp
-                        )
+                        modifier =
+                            Modifier.padding(
+                                top = 14.dp,
+                                bottom = 16.dp,
+                                start = 16.dp,
+                                end = 16.dp,
+                            ),
                     )
                 }
 
@@ -144,7 +150,7 @@ fun SuggestionRegionSheet(
                                     onDismiss()
                                 }
                             }
-                        }
+                        },
                     )
                     Spacer(Modifier.height(2.dp))
                 }
@@ -169,60 +175,79 @@ fun RegionListItem(
     items: Int,
     index: Int,
     supportingContent: @Composable (() -> Unit)? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val top by animateDpAsState(
-        if (isPressed) 36.dp
-        else {
-            if (items == 1 || index == 0) 20.dp
-            else 4.dp
+        if (isPressed) {
+            36.dp
+        } else {
+            if (items == 1 || index == 0) {
+                20.dp
+            } else {
+                4.dp
+            }
         },
-        label = "top"
+        label = "top",
     )
     val bottom by animateDpAsState(
-        if (isPressed) 36.dp
-        else {
-            if (items == 1 || index == items - 1) 20.dp
-            else 4.dp
+        if (isPressed) {
+            36.dp
+        } else {
+            if (items == 1 || index == items - 1) {
+                20.dp
+            } else {
+                4.dp
+            }
         },
-        label = "bottom"
+        label = "bottom",
     )
 
     ListItem(
         headlineContent = headlineContent,
         supportingContent = supportingContent,
-        leadingContent = if (selected) {
-            {
-                Icon(
-                    Icons.Default.Check,
-                    contentDescription = "Selected"
-                )
-            }
-        } else null,
+        leadingContent =
+            if (selected) {
+                {
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = stringResource(R.string.suggestion_selected_desc),
+                    )
+                }
+            } else {
+                null
+            },
         colors =
-            if (selected) ListItemDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(
-                    alpha = 0.3f
-                ), leadingIconColor = MaterialTheme.colorScheme.primary
-            )
-            else ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-        modifier = Modifier
-            .clip(
-                if (selected) CircleShape
-                else RoundedCornerShape(
-                    topStart = top,
-                    topEnd = top,
-                    bottomStart = bottom,
-                    bottomEnd = bottom
+            if (selected) {
+                ListItemDefaults.colors(
+                    containerColor =
+                        MaterialTheme.colorScheme.primaryContainer.copy(
+                            alpha = 0.3f,
+                        ),
+                    leadingIconColor = MaterialTheme.colorScheme.primary,
                 )
-            )
-            .clickable(
-                onClick = onClick,
-                interactionSource = interactionSource,
-                indication = RemoteFocus
-            )
+            } else {
+                ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            },
+        modifier =
+            Modifier
+                .clip(
+                    if (selected) {
+                        CircleShape
+                    } else {
+                        RoundedCornerShape(
+                            topStart = top,
+                            topEnd = top,
+                            bottomStart = bottom,
+                            bottomEnd = bottom,
+                        )
+                    },
+                ).clickable(
+                    onClick = onClick,
+                    interactionSource = interactionSource,
+                    indication = RemoteFocus,
+                ),
     )
 }

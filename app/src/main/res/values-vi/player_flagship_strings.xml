@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="flagship_output_speaker">Loa trong</string>
+    <string name="flagship_output_wired">Tai nghe có dây</string>
+    <string name="flagship_output_usb">Âm thanh USB</string>
+    <string name="flagship_output_bluetooth">Bluetooth</string>
+    <string name="flagship_output_hdmi">HDMI</string>
+    <string name="flagship_output_change">Đổi nơi phát nhạc</string>
+    <string name="flagship_play">Phát</string>
+    <string name="flagship_pause">Tạm dừng</string>
+    <string name="flagship_next">Bài tiếp theo</string>
+    <string name="flagship_previous">Bài trước</string>
+    <string name="flagship_back_ten">Lùi 10 giây</string>
+    <string name="flagship_forward_ten">Tua tới 10 giây</string>
+    <string name="flagship_lyrics">Lời bài hát</string>
+    <string name="flagship_queue">Hàng đợi</string>
+    <string name="flagship_volume">Âm lượng</string>
+    <string name="flagship_layout_three">Lùi, phát, tiếp</string>
+    <string name="flagship_layout_three_caption">Ba nút lớn, không có gì xung quanh</string>
+    <string name="flagship_layout_ten">Có nút tua 10 giây</string>
+    <string name="flagship_layout_ten_caption">Nhảy 10 giây về hai phía, nút phát nằm trong vòng tròn</string>
+</resources>

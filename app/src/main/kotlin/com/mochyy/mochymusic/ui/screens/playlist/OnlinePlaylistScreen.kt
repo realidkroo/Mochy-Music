@@ -63,30 +63,30 @@ import com.mochyy.mochymusic.LocalDownloadUtil
 import com.mochyy.mochymusic.LocalPlayerAwareWindowInsets
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.extensions.toMediaItem
 import com.mochyy.mochymusic.playback.queues.YouTubePlaylistQueue
 import com.mochyy.mochymusic.playback.queues.YouTubeQueue
-import com.mochyy.mochymusic.extensions.toMediaItem
-import com.mochyy.mochymusic.ui.component.LocalMenuState
-import com.mochyy.mochymusic.ui.component.SongSwipeBox
 import com.mochyy.mochymusic.ui.component.HomeCardHighlight
 import com.mochyy.mochymusic.ui.component.HomeCardSpacing
 import com.mochyy.mochymusic.ui.component.HomeCoverCard
+import com.mochyy.mochymusic.ui.component.LocalMenuState
+import com.mochyy.mochymusic.ui.component.SongSwipeBox
 import com.mochyy.mochymusic.ui.component.coverTransitionKey
-import com.mochyy.mochymusic.ui.component.detail.PlaylistInset
-import com.mochyy.mochymusic.ui.component.librarySwipeAction
-import com.mochyy.mochymusic.ui.component.queueSwipeAction
 import com.mochyy.mochymusic.ui.component.detail.CreatorUi
-import com.mochyy.mochymusic.ui.component.detail.featuredArtistsOf
 import com.mochyy.mochymusic.ui.component.detail.FeaturedArtistsRow
 import com.mochyy.mochymusic.ui.component.detail.PlaylistDetailScaffold
 import com.mochyy.mochymusic.ui.component.detail.PlaylistEndOfLine
 import com.mochyy.mochymusic.ui.component.detail.PlaylistHeader
+import com.mochyy.mochymusic.ui.component.detail.PlaylistInset
+import com.mochyy.mochymusic.ui.component.detail.PlaylistModeBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSearchBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSectionTitle
-import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackBones
-import com.mochyy.mochymusic.ui.component.detail.PlaylistModeBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSelectTick
+import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackBones
 import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackRow
+import com.mochyy.mochymusic.ui.component.detail.featuredArtistsOf
+import com.mochyy.mochymusic.ui.component.librarySwipeAction
+import com.mochyy.mochymusic.ui.component.queueSwipeAction
 import com.mochyy.mochymusic.ui.component.rememberRevealSeenState
 import com.mochyy.mochymusic.ui.component.revealOnAppear
 import com.mochyy.mochymusic.ui.menu.YouTubeAlbumMenu
@@ -147,8 +147,8 @@ fun OnlinePlaylistScreen(
                     Download.STATE_COMPLETED
                 } else if (songs.all {
                         downloads[it.id]?.state == Download.STATE_QUEUED ||
-                                downloads[it.id]?.state == Download.STATE_DOWNLOADING ||
-                                downloads[it.id]?.state == Download.STATE_COMPLETED
+                            downloads[it.id]?.state == Download.STATE_DOWNLOADING ||
+                            downloads[it.id]?.state == Download.STATE_COMPLETED
                     }
                 ) {
                     Download.STATE_DOWNLOADING
@@ -158,21 +158,27 @@ fun OnlinePlaylistScreen(
         }
     }
 
-    val filteredSongs = remember(songs, query) {
-        if (query.text.isEmpty()) songs.mapIndexed { i, s -> i to s }
-        else songs.mapIndexed { i, s -> i to s }.filter {
-            it.second.title.contains(query.text, true) ||
-                    it.second.artists.fastAny { a -> a.name.contains(query.text, true) }
+    val filteredSongs =
+        remember(songs, query) {
+            if (query.text.isEmpty()) {
+                songs.mapIndexed { i, s -> i to s }
+            } else {
+                songs.mapIndexed { i, s -> i to s }.filter {
+                    it.second.title.contains(query.text, true) ||
+                        it.second.artists.fastAny { a -> a.name.contains(query.text, true) }
+                }
+            }
         }
-    }
 
     var inSelectMode by rememberSaveable { mutableStateOf(false) }
-    val selection = rememberSaveable(
-        saver = listSaver<MutableList<String>, String>(
-            save = { it.toList() },
-            restore = { it.toMutableStateList() }
-        )
-    ) { mutableStateListOf() }
+    val selection =
+        rememberSaveable(
+            saver =
+                listSaver<MutableList<String>, String>(
+                    save = { it.toList() },
+                    restore = { it.toMutableStateList() },
+                ),
+        ) { mutableStateListOf() }
     val onExitSelectionMode = {
         inSelectMode = false
         selection.clear()
@@ -204,9 +210,10 @@ fun OnlinePlaylistScreen(
 
     val coverUrl = playlist?.thumbnail ?: songs.firstOrNull { !it.thumbnail.isNullOrEmpty() }?.thumbnail
     val totalSeconds = remember(songs) { songs.sumOf { it.duration ?: 0 } }
-    val featuredArtists = remember(songs) {
-        featuredArtistsOf(songs.flatMap { it.artists }, id = { it.id }, name = { it.name })
-    }
+    val featuredArtists =
+        remember(songs) {
+            featuredArtistsOf(songs.flatMap { it.artists }, id = { it.id }, name = { it.name })
+        }
 
     PlaylistDetailScaffold(
         sharedElementKey = "playlist-${viewModel.playlistId}",
@@ -214,62 +221,72 @@ fun OnlinePlaylistScreen(
         lazyListState = lazyListState,
         onBackClick = { navController.navigateUp() },
         onBackLongClick = { navController.backToMain() },
-        contentPadding = LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Bottom)
-            .union(WindowInsets.ime).asPaddingValues(),
-        onMoreClick = playlist?.let { currentPlaylist ->
-            {
-                menuState.show {
-                    YouTubePlaylistMenu(
-                        playlist = currentPlaylist,
-                        songs = songs,
-                        coroutineScope = coroutineScope,
-                        onDismiss = menuState::dismiss,
-                        onImportedPlaylist = { playlistId ->
-                            navController.navigate("local_playlist/$playlistId")
+        contentPadding =
+            LocalPlayerAwareWindowInsets.current
+                .only(WindowInsetsSides.Bottom)
+                .union(WindowInsets.ime)
+                .asPaddingValues(),
+        onMoreClick =
+            playlist?.let { currentPlaylist ->
+                {
+                    menuState.show {
+                        YouTubePlaylistMenu(
+                            playlist = currentPlaylist,
+                            songs = songs,
+                            coroutineScope = coroutineScope,
+                            onDismiss = menuState::dismiss,
+                            onImportedPlaylist = { playlistId ->
+                                navController.navigate("local_playlist/$playlistId")
+                            },
+                        )
+                    }
+                }
+            },
+        topBarOverride =
+            if (isSearching) {
+                {
+                    PlaylistSearchBar(
+                        query = query,
+                        onQueryChange = { query = it },
+                        placeholder = stringResource(R.string.search_in_playlist),
+                        focusRequester = focusRequester,
+                        onClose = {
+                            isSearching = false
+                            query = TextFieldValue()
                         },
                     )
                 }
-            }
-        },
-        topBarOverride = if (isSearching) {
-            {
-                PlaylistSearchBar(
-                    query = query,
-                    onQueryChange = { query = it },
-                    placeholder = stringResource(R.string.search_in_playlist),
-                    focusRequester = focusRequester,
-                    onClose = {
-                        isSearching = false
-                        query = TextFieldValue()
+            } else {
+                null
+            },
+        modeBar =
+            if (inSelectMode) {
+                PlaylistModeBar.Select(
+                    count = selection.size,
+                    allSelected = selection.size == filteredSongs.size && selection.isNotEmpty(),
+                    onToggleAll = {
+                        val selectAll = selection.size != filteredSongs.size
+                        selection.clear()
+                        if (selectAll) selection.addAll(filteredSongs.map { it.second.id })
                     },
+                    onMore = {
+                        menuState.show {
+                            YouTubeSelectionSongMenu(
+                                songSelection = filteredSongs.filter { it.second.id in selection }.map { it.second },
+                                onDismiss = menuState::dismiss,
+                                clearAction = onExitSelectionMode,
+                            )
+                        }
+                    },
+                    onClose = onExitSelectionMode,
                 )
-            }
-        } else null,
-        modeBar = if (inSelectMode) {
-            PlaylistModeBar.Select(
-                count = selection.size,
-                allSelected = selection.size == filteredSongs.size && selection.isNotEmpty(),
-                onToggleAll = {
-                    val selectAll = selection.size != filteredSongs.size
-                    selection.clear()
-                    if (selectAll) selection.addAll(filteredSongs.map { it.second.id })
-                },
-                onMore = {
-                    menuState.show {
-                        YouTubeSelectionSongMenu(
-                            songSelection = filteredSongs.filter { it.second.id in selection }.map { it.second },
-                            onDismiss = menuState::dismiss,
-                            clearAction = onExitSelectionMode
-                        )
-                    }
-                },
-                onClose = onExitSelectionMode,
-            )
-        } else null,
+            } else {
+                null
+            },
         overlay = {
             SnackbarHost(
                 hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter)
+                modifier = Modifier.align(Alignment.BottomCenter),
             )
         },
     ) {
@@ -277,7 +294,12 @@ fun OnlinePlaylistScreen(
         if (currentPlaylist == null || songs.isEmpty()) {
             if (isLoading) {
                 item(key = "loading_header") {
-                    Spacer(Modifier.height(com.mochyy.mochymusic.ui.component.detail.playlistCoverHeight() * 0.975f))
+                    Spacer(
+                        Modifier.height(
+                            com.mochyy.mochymusic.ui.component.detail
+                                .playlistCoverHeight() * 0.975f,
+                        ),
+                    )
                 }
                 item(key = "loading_tracks") {
                     PlaylistTrackBones()
@@ -294,9 +316,10 @@ fun OnlinePlaylistScreen(
                 PlaylistHeader(
                     onSearchClick = { isSearching = true },
                     title = currentPlaylist.title,
-                    creators = listOfNotNull(
-                        currentPlaylist.author?.let { CreatorUi(name = it.name, artistId = it.id) }
-                    ),
+                    creators =
+                        listOfNotNull(
+                            currentPlaylist.author?.let { CreatorUi(name = it.name, artistId = it.id) },
+                        ),
                     stats = playlistStats(context.resources.getQuantityString(R.plurals.n_song, songs.size, songs.size), totalSeconds),
                     isPlaying = isThisQueue && isPlaying,
                     onPlayClick = {
@@ -308,8 +331,8 @@ fun OnlinePlaylistScreen(
                                     playlistId = currentPlaylist.id,
                                     playlistTitle = currentPlaylist.title,
                                     initialSongs = songs,
-                                    initialContinuation = viewModel.continuation
-                                )
+                                    initialContinuation = viewModel.continuation,
+                                ),
                             )
                         }
                     },
@@ -319,8 +342,8 @@ fun OnlinePlaylistScreen(
                                 playlistId = currentPlaylist.id,
                                 playlistTitle = currentPlaylist.title,
                                 initialSongs = songs.shuffled(),
-                                initialContinuation = viewModel.continuation
-                            )
+                                initialContinuation = viewModel.continuation,
+                            ),
                         )
                     },
                     isSaved = if (isEditableRemote) null else dbPlaylist?.playlist?.bookmarkedAt != null,
@@ -353,11 +376,12 @@ fun OnlinePlaylistScreen(
                     subtitle = "${songItem.artists.joinToString { it.name }} • ${makeTimeString(songItem.duration?.times(1000L))}",
                     isActive = mediaMetadata?.id == songItem.id,
                     isPlaying = isPlaying,
-                    modifier = Modifier.revealOnAppear(
-                        key = "track_${songItem.id}",
-                        seenState = revealSeen,
-                        delayMillis = minOf(position, 8) * 28,
-                    ),
+                    modifier =
+                        Modifier.revealOnAppear(
+                            key = "track_${songItem.id}",
+                            seenState = revealSeen,
+                            delayMillis = minOf(position, 8) * 28,
+                        ),
                     onClick = {
                         if (inSelectMode) {
                             onCheckedChange(songItem.id !in selection)
@@ -370,8 +394,8 @@ fun OnlinePlaylistScreen(
                                     playlistTitle = currentPlaylist.title,
                                     initialSongs = filteredSongs.map { it.second },
                                     initialContinuation = viewModel.continuation,
-                                    startIndex = position
-                                )
+                                    startIndex = position,
+                                ),
                             )
                         }
                     },
@@ -388,9 +412,12 @@ fun OnlinePlaylistScreen(
                         }
                     },
                     selected = inSelectMode && songItem.id in selection,
-                    trailing = if (inSelectMode) {
-                        { PlaylistSelectTick(checked = songItem.id in selection) }
-                    } else null,
+                    trailing =
+                        if (inSelectMode) {
+                            { PlaylistSelectTick(checked = songItem.id in selection) }
+                        } else {
+                            null
+                        },
                 )
             }
         }
@@ -421,7 +448,7 @@ fun OnlinePlaylistScreen(
             if (relatedItems.isNotEmpty()) {
                 item(key = "related_title") {
                     PlaylistSectionTitle(
-                        title = "Related Playlists",
+                        title = stringResource(R.string.playlist_related),
                         modifier = Modifier.padding(top = 28.dp, bottom = 8.dp),
                     )
                 }
@@ -432,67 +459,102 @@ fun OnlinePlaylistScreen(
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = PlaylistInset),
                         horizontalArrangement = Arrangement.spacedBy(HomeCardSpacing),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         items(relatedItems.distinctBy { it.id }, key = { it.id }) { item ->
                             HomeCoverCard(
                                 title = item.title,
-                                subtitle = when (item) {
-                                    is PlaylistItem -> listOfNotNull(item.author?.name, item.songCountText).joinToString(" · ").ifBlank { null }
-                                    is AlbumItem -> listOfNotNull(
-                                        item.artists?.joinToString { it.name }?.ifBlank { null },
-                                        item.year?.toString(),
-                                    ).joinToString(" · ").ifBlank { null }
-                                    is SongItem -> item.artists.joinToString { it.name }
-                                    is ArtistItem -> null
-                                },
+                                subtitle =
+                                    when (item) {
+                                        is PlaylistItem -> {
+                                            listOfNotNull(item.author?.name, item.songCountText).joinToString(" · ").ifBlank { null }
+                                        }
+
+                                        is AlbumItem -> {
+                                            listOfNotNull(
+                                                item.artists?.joinToString { it.name }?.ifBlank { null },
+                                                item.year?.toString(),
+                                            ).joinToString(" · ").ifBlank { null }
+                                        }
+
+                                        is SongItem -> {
+                                            item.artists.joinToString { it.name }
+                                        }
+
+                                        is ArtistItem -> {
+                                            null
+                                        }
+                                    },
                                 thumbnailUrl = item.thumbnail,
                                 circular = item is ArtistItem,
                                 sharedElementKey = coverTransitionKey(item),
-                                modifier = Modifier
-                                    .combinedClickable(
-                                        interactionSource = null,
-                                        indication = HomeCardHighlight,
-                                        onClick = {
-                                            when (item) {
-                                                is PlaylistItem -> navController.navigate("online_playlist/${item.id}")
-                                                is AlbumItem -> navController.navigate("album/${item.browseId}")
-                                                is ArtistItem -> navController.navigate("artist/${item.id}")
-                                                is SongItem -> playerConnection.playQueue(
-                                                    YouTubeQueue(WatchEndpoint(videoId = item.id))
-                                                )
-                                            }
-                                        },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
+                                modifier =
+                                    Modifier
+                                        .combinedClickable(
+                                            interactionSource = null,
+                                            indication = HomeCardHighlight,
+                                            onClick = {
                                                 when (item) {
-                                                    is PlaylistItem -> YouTubePlaylistMenu(
-                                                        playlist = item,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                        onImportedPlaylist = { playlistId ->
-                                                            navController.navigate("local_playlist/$playlistId")
-                                                        }
-                                                    )
-                                                    is SongItem -> YouTubeSongMenu(
-                                                        song = item,
-                                                        navController = navController,
-                                                        onDismiss = menuState::dismiss
-                                                    )
-                                                    is AlbumItem -> YouTubeAlbumMenu(
-                                                        albumItem = item,
-                                                        navController = navController,
-                                                        onDismiss = menuState::dismiss
-                                                    )
-                                                    is ArtistItem -> YouTubeArtistMenu(
-                                                        artist = item,
-                                                        onDismiss = menuState::dismiss
-                                                    )
+                                                    is PlaylistItem -> {
+                                                        navController.navigate("online_playlist/${item.id}")
+                                                    }
+
+                                                    is AlbumItem -> {
+                                                        navController.navigate("album/${item.browseId}")
+                                                    }
+
+                                                    is ArtistItem -> {
+                                                        navController.navigate("artist/${item.id}")
+                                                    }
+
+                                                    is SongItem -> {
+                                                        playerConnection.playQueue(
+                                                            YouTubeQueue(WatchEndpoint(videoId = item.id)),
+                                                        )
+                                                    }
                                                 }
-                                            }
-                                        }
-                                    )
+                                            },
+                                            onLongClick = {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                menuState.show {
+                                                    when (item) {
+                                                        is PlaylistItem -> {
+                                                            YouTubePlaylistMenu(
+                                                                playlist = item,
+                                                                coroutineScope = coroutineScope,
+                                                                onDismiss = menuState::dismiss,
+                                                                onImportedPlaylist = { playlistId ->
+                                                                    navController.navigate("local_playlist/$playlistId")
+                                                                },
+                                                            )
+                                                        }
+
+                                                        is SongItem -> {
+                                                            YouTubeSongMenu(
+                                                                song = item,
+                                                                navController = navController,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+
+                                                        is AlbumItem -> {
+                                                            YouTubeAlbumMenu(
+                                                                albumItem = item,
+                                                                navController = navController,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+
+                                                        is ArtistItem -> {
+                                                            YouTubeArtistMenu(
+                                                                artist = item,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                        ),
                             )
                         }
                     }
@@ -507,7 +569,10 @@ fun OnlinePlaylistScreen(
 }
 
 /** "21 songs · 1h 23m" */
-internal fun playlistStats(songCountText: String, totalSeconds: Int): String {
+internal fun playlistStats(
+    songCountText: String,
+    totalSeconds: Int,
+): String {
     if (totalSeconds <= 0) return songCountText
     val hours = totalSeconds / 3600
     val minutes = (totalSeconds % 3600) / 60

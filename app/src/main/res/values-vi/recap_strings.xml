@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Stats screen -->
+    <string name="rc_stats_done">Xong</string>
+    <string name="rc_stats_title">Thống kê</string>
+    <string name="rc_stats_year_recap_link">"%1$d Re'cap  &gt;"</string>
+    <string name="rc_stats_year_recap">%1$d Re\'cap</string>
+    <string name="rc_stats_collapse_all">Thu gọn tất cả</string>
+    <string name="rc_stats_expand_all">Mở rộng tất cả</string>
+    <string name="rc_stats_empty_title">Chưa phát gì trong %1$s.</string>
+    <string name="rc_stats_empty_hint">Hãy phát vài bài hát và mục này sẽ tự được lấp đầy.</string>
+    <string name="rc_stats_often">Xem bạn thường nghe nhạc lúc nào nhé</string>
+    <string name="rc_stats_privacy">Mọi dữ liệu ở đây được thu thập từ việc bạn dùng ứng dụng này và SẼ KHÔNG BAO GIỜ được gửi tới bất kỳ máy chủ lạ nào! (Thể loại chỉ được tra cứu theo tên nghệ sĩ.)</string>
+    <string name="rc_stats_cd_profile">Hồ sơ</string>
+    <string name="rc_stats_cd_collapse">Thu gọn</string>
+    <string name="rc_stats_cd_expand">Mở rộng</string>
+
+    <string name="rc_stats_total_month">Tháng này, bạn đã nghe nhạc suốt</string>
+    <string name="rc_stats_total_year">Năm nay, bạn đã nghe nhạc suốt</string>
+    <string name="rc_stats_every_day">Mọi ngày trong %1$s</string>
+    <string name="rc_stats_every_month">Mọi tháng của năm %1$d</string>
+    <plurals name="rc_stats_fact_songs">
+        <item quantity="other">%1$d bài hát</item>
+    </plurals>
+    <plurals name="rc_stats_fact_artists">
+        <item quantity="other">%1$d nghệ sĩ</item>
+    </plurals>
+    <plurals name="rc_stats_fact_albums">
+        <item quantity="other">%1$d album</item>
+    </plurals>
+    <plurals name="rc_stats_fact_plays">
+        <item quantity="other">%1$d lượt phát</item>
+    </plurals>
+
+    <string name="rc_stats_dominant_genre">Thể loại nổi bật</string>
+    <string name="rc_stats_genre_loading">Đang phân loại thể loại của bạn…</string>
+    <string name="rc_stats_genre_unavailable">Hiện chưa xác định được thể loại của bạn - lần đầu cần có kết nối mạng.</string>
+
+    <string name="rc_stats_artist_love">Bạn thực sự rất thích nghe nghệ sĩ này</string>
+    <plurals name="rc_stats_artist_row">
+        <item quantity="other">%1$s · %2$d lượt phát</item>
+    </plurals>
+    <plurals name="rc_stats_artist_summary">
+        <item quantity="other">%1$s thời gian nghe và %2$d lượt phát từ %3$s</item>
+    </plurals>
+
+    <string name="rc_stats_song_number_one">Và bạn không hề hay biết, bài hát này là số 1 của bạn</string>
+    <plurals name="rc_stats_song_row">
+        <item quantity="other">%1$s · %2$d lượt phát · %3$s</item>
+    </plurals>
+    <string name="rc_stats_song_from">%1$s của %2$s</string>
+    <plurals name="rc_stats_song_summary">
+        <item quantity="other">%1$s thời gian nghe và %2$d lượt phát</item>
+    </plurals>
+
+    <string name="rc_stats_weekday_month">Tháng này, bạn hay nghe nhạc nhất vào</string>
+    <string name="rc_stats_weekday_year">Năm nay, bạn hay nghe nhạc nhất vào</string>
+    <string name="rc_stats_totaling_hours">tổng cộng %1$s giờ</string>
+    <string name="rc_stats_hour_morning">Và bạn thích nghe nhạc nhất vào buổi sáng, khoảng</string>
+    <string name="rc_stats_hour_afternoon">Và bạn thích nghe nhạc nhất vào buổi chiều, khoảng</string>
+    <string name="rc_stats_hour_evening">Và bạn thích nghe nhạc nhất vào buổi tối, khoảng</string>
+    <string name="rc_stats_hour_night">Và bạn thích nghe nhạc nhất vào ban đêm, khoảng</string>
+    <string name="rc_stats_totaling_hours_time">tổng cộng %1$s giờ vào khung giờ này!</string>
+
+    <string name="rc_stats_show_by">Xem theo</string>
+    <string name="rc_stats_kind_month">Tháng</string>
+    <string name="rc_stats_kind_year">Năm</string>
+    <string name="rc_stats_selected">Đã chọn</string>
+    <string name="rc_stats_what_year">Năm nào?</string>
+    <string name="rc_stats_what_month">Tháng nào?</string>
+    <string name="rc_stats_this_month_tag">(tháng này)</string>
+
+    <!-- Recap availability (why the recap is locked) -->
+
+    <!-- Recap story -->
+    <string name="rc_story_hey">chào %1$s!</string>
+    <string name="rc_story_journey_started">%1$s đã bắt đầu hành trình cùng Mochy vào ngày</string>
+    <string name="rc_story_journey_listening">và bạn đã nghe nhạc với tổng thời gian là</string>
+    <string name="rc_story_journey_bye">hẹn gặp lại nhé!</string>
+    <string name="rc_story_tap">CHẠM!</string>
+    <string name="rc_story_month_is">%1$s đã đi được</string>
+    <string name="rc_story_out_of_100" formatted="false">trên 100%</string>
+    <string name="rc_story_weekday_at_this_time">và vào lúc này,</string>
+    <string name="rc_story_weekday_favourite">là ngày bạn thích nghe nhạc nhất</string>
+    <plurals name="rc_story_hours">
+        <item quantity="other">giờ</item>
+    </plurals>
+    <plurals name="rc_story_minutes">
+        <item quantity="other">phút</item>
+    </plurals>
+    <string name="rc_story_more_than_second">nhiều hơn ngày xếp thứ hai của bạn!</string>
+    <string name="rc_story_nothing_close">không ngày nào sánh bằng!</string>
+    <string name="rc_story_again">Lặp đi\nlặp lại\nmãi</string>
+    <string name="rc_story_this_artist">nghệ sĩ\nnày..</string>
+    <string name="rc_story_recognize_artist">Nhận ra\nnghệ sĩ này?</string>
+    <string name="rc_story_favorite_artist">là nghệ sĩ bạn yêu thích nhất tháng này!</string>
+    <plurals name="rc_story_plays">
+        <item quantity="other">%1$d lượt phát</item>
+    </plurals>
+    <string name="rc_story_x_plays">x lượt phát</string>
+    <string name="rc_story_plays_bang">lượt phát!</string>
+    <string name="rc_story_might_recognize">Có thể bạn\nnhận ra bài này!</string>
+    <string name="rc_story_which_one">hmm, là bài nào nhỉ...</string>
+    <string name="rc_story_hear_melody">Nghe\ngiai điệu..</string>
+    <string name="rc_story_title_by">%1$s của\n%2$s</string>
+    <string name="rc_story_favourite_song">Bài hát yêu thích nhất\ntháng này!!!</string>
+    <string name="rc_story_bill">Xem hóa đơn của bạn nào</string>
+    <string name="rc_story_receipt_recap">Re\'cap %1$s</string>
+    <string name="rc_story_receipt_printed">in lúc %1$s/%2$s</string>
+    <string name="rc_story_receipt_top_artist">Nghệ sĩ hàng đầu</string>
+    <string name="rc_story_receipt_top_music">Bài hát hàng đầu</string>
+    <string name="rc_story_receipt_total">Tổng cộng : %1$s thời gian nghe</string>
+    <string name="rc_story_receipt_counts">%1$d lượt phát · %2$d bài hát · %3$d nghệ sĩ</string>
+    <string name="rc_story_receipt_end">HẾT HÓA ĐƠN</string>
+    <string name="rc_story_there_you_go">Đây rồi</string>
+    <string name="rc_story_thats_your">Đây là Re\'cap\n%1$s của bạn!</string>
+    <string name="rc_story_tap_finish">CHẠM ĐỂ KẾT THÚC</string>
+
+    <!-- Recap ID card back -->
+</resources>

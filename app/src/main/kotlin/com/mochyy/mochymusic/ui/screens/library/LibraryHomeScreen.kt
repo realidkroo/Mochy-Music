@@ -260,8 +260,8 @@ private fun LazyListScope.libraryProgressCards(
 ) {
     item(key = "progress_cards") {
         Column(modifier = Modifier.padding(horizontal = SearchHorizontalPadding)) {
-            LibraryProgressCard(TransferKind.Downloads.title, downloads, onClick = { onOpen(TransferKind.Downloads) })
-            LibraryProgressCard(TransferKind.LocalImport.title, localImports, onClick = { onOpen(TransferKind.LocalImport) })
+            LibraryProgressCard(stringResource(TransferKind.Downloads.title), downloads, onClick = { onOpen(TransferKind.Downloads) })
+            LibraryProgressCard(stringResource(TransferKind.LocalImport.title), localImports, onClick = { onOpen(TransferKind.LocalImport) })
         }
     }
 }

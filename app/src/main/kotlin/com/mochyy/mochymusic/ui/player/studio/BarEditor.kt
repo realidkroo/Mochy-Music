@@ -36,9 +36,11 @@ import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.PlayerBottomBarStyle
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -281,7 +283,7 @@ internal fun BarEditor(
                 }
             },
         ) {
-            Text("Card Style", color = Color.White, style = studioText(StudioType.Title, FontWeight.Bold))
+            Text(stringResource(R.string.ps_studio_card_style), color = Color.White, style = studioText(StudioType.Title, FontWeight.Bold))
             AnimatedContent(
                 targetState = barStyles.getOrNull(focused)?.displayName.orEmpty(),
                 transitionSpec = {

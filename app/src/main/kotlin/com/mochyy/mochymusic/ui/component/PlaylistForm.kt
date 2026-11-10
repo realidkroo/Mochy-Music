@@ -17,9 +17,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.playlistcover.CoverChoice
 
 private const val MaxNameLength = 80
@@ -72,7 +74,7 @@ internal fun PlaylistFormContent(
             .padding(bottom = 12.dp)
     ) {
         PlaylistCoverCarousel(
-            title = form.name.ifBlank { "My playlist" },
+            title = form.name.ifBlank { stringResource(R.string.pc_playlist_default_title) },
             seed = seed,
             artworkUrl = artworkUrl,
             startPage = startPage,
@@ -84,12 +86,12 @@ internal fun PlaylistFormContent(
 
         Spacer(Modifier.height(22.dp))
 
-        SheetLabel("Playlist title")
+        SheetLabel(stringResource(R.string.pc_playlist_title))
         Spacer(Modifier.height(8.dp))
         SheetTextField(
             value = form.name,
             onValueChange = { form.name = it.take(MaxNameLength) },
-            placeholder = "Name your playlist",
+            placeholder = stringResource(R.string.pc_playlist_name_hint),
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
                 imeAction = ImeAction.Next,
@@ -98,12 +100,12 @@ internal fun PlaylistFormContent(
 
         Spacer(Modifier.height(18.dp))
 
-        SheetLabel("Playlist desc")
+        SheetLabel(stringResource(R.string.pc_playlist_desc))
         Spacer(Modifier.height(8.dp))
         SheetTextField(
             value = form.description,
             onValueChange = { form.description = it.take(MaxDescriptionLength) },
-            placeholder = "What is it about?",
+            placeholder = stringResource(R.string.pc_playlist_desc_hint),
             singleLine = false,
             maxLines = 4,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),

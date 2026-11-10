@@ -117,7 +117,7 @@ private fun IpodFace(geometry: IpodGeometry, preview: Boolean, density: Density)
     val haptics = rememberIpodHaptics()
     val context = LocalContext.current
     val controller = remember(nav, nowPlaying, coverFlow, scope, connection, library, haptics, context) {
-        IpodController(nav, nowPlaying, coverFlow, scope, connection, library, context.getSystemService(Context.AUDIO_SERVICE) as AudioManager, haptics)
+        IpodController(nav, nowPlaying, coverFlow, scope, connection, library, context.getSystemService(Context.AUDIO_SERVICE) as AudioManager, haptics, context)
     }
     val showing = rememberStyleShowing()
     val open by remember(sheet) { derivedStateOf { sheet == null || sheet.isExpanded } }
@@ -191,7 +191,7 @@ private fun BarTimeout(nowPlaying: IpodNowPlayingState) {
 @Composable
 private fun TitleBar(nav: IpodNavigator, coverFlow: IpodCoverFlowState, scale: IpodScale) {
     val page = nav.top.page
-    val title = if (page == IpodPage.CoverFlow && coverFlow.flipped) coverFlow.current?.title ?: page.title else page.title
+    val title = if (page == IpodPage.CoverFlow && coverFlow.flipped) coverFlow.current?.title ?: page.displayTitle() else page.displayTitle()
     IpodHeader(title, scale)
 }
 

@@ -51,6 +51,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -551,18 +552,21 @@ fun BoxScope.StyleMenu(
         val transport = connection?.uiState?.transportState?.collectAsState()?.value
         // the styles have no shuffle or repeat buttons of their own, so each is a row of the list here, staying open when tapped so the change shows
         val shuffleAndRepeat = if (connection != null && transport != null) listOf(
-            MenuItem("Shuffle", R.drawable.shuffle, active = transport.shuffleModeEnabled) {
+            MenuItem(androidx.compose.ui.res.stringResource(R.string.shuffle), R.drawable.shuffle, active = transport.shuffleModeEnabled) {
                 connection.player.shuffleModeEnabled = !connection.player.shuffleModeEnabled
             },
             MenuItem(
-                label = if (transport.repeatMode == Player.REPEAT_MODE_ONE) "Repeat one" else "Repeat",
+                label = androidx.compose.ui.res.stringResource(if (transport.repeatMode == Player.REPEAT_MODE_ONE) R.string.ps_style_repeat_one else R.string.repeat),
                 icon = if (transport.repeatMode == Player.REPEAT_MODE_ONE) R.drawable.repeat_one else R.drawable.repeat,
                 active = transport.repeatMode != Player.REPEAT_MODE_OFF,
             ) { connection.player.toggleRepeatMode() },
         ) else emptyList()
         val queueLabel = androidx.compose.ui.res.stringResource(R.string.queue)
+        val lyricsLabel = androidx.compose.ui.res.stringResource(R.string.lyrics)
+        val otherMenuLabel = androidx.compose.ui.res.stringResource(R.string.ps_action_other_menu)
+        val editPlayerLabel = androidx.compose.ui.res.stringResource(R.string.menu_edit_player)
         val rows = listOfNotNull(
-            actions.onLyrics?.let { open -> MenuItem("Lyrics", R.drawable.lyrics) { onOpenChange(false); open() } },
+            actions.onLyrics?.let { open -> MenuItem(lyricsLabel, R.drawable.lyrics) { onOpenChange(false); open() } },
             actions.onQueue?.takeIf { queue }?.let { open -> MenuItem(queueLabel, R.drawable.queue_music) { onOpenChange(false); open() } },
         ) + shuffleAndRepeat + extras.map { extra ->
             MenuItem(extra.label, extra.icon, extra.active, extra.picture) {
@@ -570,8 +574,8 @@ fun BoxScope.StyleMenu(
                 extra.onClick()
             }
         } + listOf(
-            MenuItem("Other menu", R.drawable.more_horiz) { onOpenChange(false); actions.onOtherMenu() },
-            MenuItem("Edit player", R.drawable.tune) { onOpenChange(false); actions.onEditPlayer() },
+            MenuItem(otherMenuLabel, R.drawable.more_horiz) { onOpenChange(false); actions.onOtherMenu() },
+            MenuItem(editPlayerLabel, R.drawable.tune) { onOpenChange(false); actions.onEditPlayer() },
         )
         val itemGap = 10.dp
         Column(

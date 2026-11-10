@@ -16,8 +16,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -107,35 +107,35 @@ import com.mochyy.mochymusic.extensions.toMediaItem
 import com.mochyy.mochymusic.models.toMediaMetadata
 import com.mochyy.mochymusic.playback.ExoDownloadService
 import com.mochyy.mochymusic.playback.queues.ListQueue
-import com.mochyy.mochymusic.ui.component.HomeCardHighlight
+import com.mochyy.mochymusic.playlistcover.PlaylistCoverStore
 import com.mochyy.mochymusic.ui.component.BoneColor
 import com.mochyy.mochymusic.ui.component.DefaultDialog
 import com.mochyy.mochymusic.ui.component.DraggableScrollbar
 import com.mochyy.mochymusic.ui.component.EmptyPlaceholder
-import com.mochyy.mochymusic.playlistcover.PlaylistCoverStore
+import com.mochyy.mochymusic.ui.component.HomeCardHighlight
 import com.mochyy.mochymusic.ui.component.LocalMenuState
-import com.mochyy.mochymusic.ui.component.showEditPlaylistSheet
 import com.mochyy.mochymusic.ui.component.SongSwipeBox
 import com.mochyy.mochymusic.ui.component.TextFieldDialog
-import com.mochyy.mochymusic.ui.component.librarySwipeAction
-import com.mochyy.mochymusic.ui.component.queueSwipeAction
-import com.mochyy.mochymusic.ui.component.removeFromPlaylistSwipeAction
 import com.mochyy.mochymusic.ui.component.detail.CreatorUi
-import com.mochyy.mochymusic.ui.component.detail.featuredArtistsOf
 import com.mochyy.mochymusic.ui.component.detail.FeaturedArtistsRow
 import com.mochyy.mochymusic.ui.component.detail.PlaylistDetailScaffold
 import com.mochyy.mochymusic.ui.component.detail.PlaylistEndOfLine
 import com.mochyy.mochymusic.ui.component.detail.PlaylistHeader
-import com.mochyy.mochymusic.ui.component.detail.PlaylistSearchBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistModeBar
+import com.mochyy.mochymusic.ui.component.detail.PlaylistSearchBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSectionTitle
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSelectTick
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSortControl
 import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackBones
 import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackRow
+import com.mochyy.mochymusic.ui.component.detail.featuredArtistsOf
 import com.mochyy.mochymusic.ui.component.detail.playlistCoverHeight
+import com.mochyy.mochymusic.ui.component.librarySwipeAction
+import com.mochyy.mochymusic.ui.component.queueSwipeAction
 import com.mochyy.mochymusic.ui.component.rememberRevealSeenState
+import com.mochyy.mochymusic.ui.component.removeFromPlaylistSwipeAction
 import com.mochyy.mochymusic.ui.component.revealOnAppear
+import com.mochyy.mochymusic.ui.component.showEditPlaylistSheet
 import com.mochyy.mochymusic.ui.menu.LocalPlaylistMenu
 import com.mochyy.mochymusic.ui.menu.SelectionSongMenu
 import com.mochyy.mochymusic.ui.menu.SongMenu
@@ -188,16 +188,18 @@ fun LocalPlaylistScreen(
     var isSearching by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
 
-    val filteredSongs = remember(songs, query) {
-        if (query.text.isEmpty()) {
-            songs
-        } else {
-            songs.filter { song ->
-                song.song.song.title.contains(query.text, ignoreCase = true) ||
-                    song.song.artists.fastAny { it.name.contains(query.text, ignoreCase = true) }
+    val filteredSongs =
+        remember(songs, query) {
+            if (query.text.isEmpty()) {
+                songs
+            } else {
+                songs.filter { song ->
+                    song.song.song.title
+                        .contains(query.text, ignoreCase = true) ||
+                        song.song.artists.fastAny { it.name.contains(query.text, ignoreCase = true) }
+                }
             }
         }
-    }
 
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(isSearching) {
@@ -205,12 +207,14 @@ fun LocalPlaylistScreen(
     }
 
     var inSelectMode by rememberSaveable { mutableStateOf(false) }
-    val selection = rememberSaveable(
-        saver = listSaver<MutableList<Int>, Int>(
-            save = { it.toList() },
-            restore = { it.toMutableStateList() }
-        )
-    ) { mutableStateListOf() }
+    val selection =
+        rememberSaveable(
+            saver =
+                listSaver<MutableList<Int>, Int>(
+                    save = { it.toList() },
+                    restore = { it.toMutableStateList() },
+                ),
+        ) { mutableStateListOf() }
     val onExitSelectionMode = {
         inSelectMode = false
         selection.clear()
@@ -254,8 +258,8 @@ fun LocalPlaylistScreen(
                     Download.STATE_COMPLETED
                 } else if (songs.all {
                         downloads[it.song.id]?.state == Download.STATE_QUEUED ||
-                                downloads[it.song.id]?.state == Download.STATE_DOWNLOADING ||
-                                downloads[it.song.id]?.state == Download.STATE_COMPLETED
+                            downloads[it.song.id]?.state == Download.STATE_DOWNLOADING ||
+                            downloads[it.song.id]?.state == Download.STATE_COMPLETED
                     }
                 ) {
                     Download.STATE_DOWNLOADING
@@ -291,7 +295,7 @@ fun LocalPlaylistScreen(
                         songs.forEach { song ->
                             DownloadService.sendRemoveDownload(context, ExoDownloadService::class.java, song.song.id, false)
                         }
-                    }
+                    },
                 ) {
                     Text(text = stringResource(android.R.string.ok))
                 }
@@ -307,7 +311,7 @@ fun LocalPlaylistScreen(
                 Text(
                     text = stringResource(R.string.delete_playlist_confirm, playlist?.playlist?.name.orEmpty()),
                     style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(horizontal = 18.dp)
+                    modifier = Modifier.padding(horizontal = 18.dp),
                 )
             },
             buttons = {
@@ -326,11 +330,11 @@ fun LocalPlaylistScreen(
                             PlaylistCoverStore.deleteStale(context.applicationContext, viewModel.playlistId, null)
                         }
                         navController.popBackStack()
-                    }
+                    },
                 ) {
                     Text(text = stringResource(android.R.string.ok))
                 }
-            }
+            },
         )
     }
 
@@ -342,20 +346,22 @@ fun LocalPlaylistScreen(
         if (isSearching) lazyListState.scrollToItem(0)
     }
     var dragInfo by remember { mutableStateOf<Pair<Int, Int>?>(null) }
-    val reorderableState = rememberReorderableLazyListState(
-        lazyListState = lazyListState,
-        scrollThresholdPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
-    ) { from, to ->
-        if (to.index >= headerItems && from.index >= headerItems) {
-            val currentDragInfo = dragInfo
-            dragInfo = if (currentDragInfo == null) {
-                (from.index - headerItems) to (to.index - headerItems)
-            } else {
-                currentDragInfo.first to (to.index - headerItems)
+    val reorderableState =
+        rememberReorderableLazyListState(
+            lazyListState = lazyListState,
+            scrollThresholdPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
+        ) { from, to ->
+            if (to.index >= headerItems && from.index >= headerItems) {
+                val currentDragInfo = dragInfo
+                dragInfo =
+                    if (currentDragInfo == null) {
+                        (from.index - headerItems) to (to.index - headerItems)
+                    } else {
+                        currentDragInfo.first to (to.index - headerItems)
+                    }
+                mutableSongs.move(from.index - headerItems, to.index - headerItems)
             }
-            mutableSongs.move(from.index - headerItems, to.index - headerItems)
         }
-    }
 
     LaunchedEffect(reorderableState.isAnyItemDragging) {
         if (!reorderableState.isAnyItemDragging) {
@@ -364,7 +370,10 @@ fun LocalPlaylistScreen(
                     move(viewModel.playlistId, from, to)
                 }
 
-                if (viewModel.playlist.value?.playlist?.browseId != null) {
+                if (viewModel.playlist.value
+                        ?.playlist
+                        ?.browseId != null
+                ) {
                     viewModel.viewModelScope.launch(Dispatchers.IO) {
                         val playlistSongMap = database.playlistSongMaps(viewModel.playlistId, 0)
                         val successorIndex = if (from > to) to else to + 1
@@ -372,9 +381,11 @@ fun LocalPlaylistScreen(
 
                         playlistSongMap.getOrNull(from)?.setVideoId?.let { setVideoId ->
                             YouTube.moveSongPlaylist(
-                                viewModel.playlist.value?.playlist?.browseId!!,
+                                viewModel.playlist.value
+                                    ?.playlist
+                                    ?.browseId!!,
                                 setVideoId,
-                                successorSetVideoId
+                                successorSetVideoId,
                             )
                         }
                     }
@@ -385,112 +396,132 @@ fun LocalPlaylistScreen(
         }
     }
 
-    val coverUrl = remember(playlist, songs) {
-        playlist?.thumbnails?.firstOrNull()
-            ?: songs.firstOrNull { !it.song.song.thumbnailUrl.isNullOrEmpty() }?.song?.song?.thumbnailUrl
-    }
-    val featuredArtists = remember(songs) {
-        featuredArtistsOf(songs.flatMap { it.song.artists }, id = { it.id }, name = { it.name })
-    }
+    val coverUrl =
+        remember(playlist, songs) {
+            playlist?.thumbnails?.firstOrNull()
+                ?: songs
+                    .firstOrNull {
+                        !it.song.song.thumbnailUrl
+                            .isNullOrEmpty()
+                    }?.song
+                    ?.song
+                    ?.thumbnailUrl
+        }
+    val featuredArtists =
+        remember(songs) {
+            featuredArtistsOf(songs.flatMap { it.song.artists }, id = { it.id }, name = { it.name })
+        }
     val creatorAvatar = profilePicUri.takeIf { it.isNotBlank() }?.let { if (it.contains("://")) it else "file://$it" }
 
-    fun play(items: List<com.mochyy.mochymusic.db.entities.PlaylistSong>, startIndex: Int = 0) {
+    fun play(
+        items: List<com.mochyy.mochymusic.db.entities.PlaylistSong>,
+        startIndex: Int = 0,
+    ) {
         val current = playlist ?: return
         playerConnection.playQueue(
             ListQueue(
                 title = current.playlist.name,
                 items = items.map { it.song.toMediaItem() },
                 startIndex = startIndex,
-            )
+            ),
         )
         database.query { insert(PlaylistEvent(playlistId = current.id, timestamp = LocalDateTime.now())) }
     }
 
-    val openPlaylistMenu: (() -> Unit)? = playlist?.let { currentPlaylist ->
-        {
-            menuState.show {
-                LocalPlaylistMenu(
-                    playlist = currentPlaylist,
-                    songs = songs,
-                    context = context,
-                    downloadState = downloadState,
-                    // Over the menu, not instead of it: Done comes back to it.
-                    onEdit = {
-                        val top = songs.minWithOrNull(compareBy({ it.map.position }, { it.map.id }))?.song
-                        menuState.showEditPlaylistSheet(
-                            playlist = currentPlaylist.playlist,
-                            database = database,
-                            context = context,
-                            topSongId = top?.id,
-                            topSongArtworkUrl = top?.song?.thumbnailUrl,
-                        )
-                    },
-                    onSync = {
-                        coroutineScope.launch(Dispatchers.IO) {
-                            val playlistPage = YouTube.playlist(currentPlaylist.playlist.browseId!!)
-                                .completed()
-                                .getOrNull() ?: return@launch
-                            database.transaction {
-                                clearPlaylist(currentPlaylist.id)
-                                playlistPage.songs
-                                    .map(SongItem::toMediaMetadata)
-                                    .onEach(::insert)
-                                    .mapIndexed { position, song ->
-                                        PlaylistSongMap(
-                                            songId = song.id,
-                                            playlistId = currentPlaylist.id,
-                                            position = position,
-                                            setVideoId = song.setVideoId
-                                        )
+    val openPlaylistMenu: (() -> Unit)? =
+        playlist?.let { currentPlaylist ->
+            {
+                menuState.show {
+                    LocalPlaylistMenu(
+                        playlist = currentPlaylist,
+                        songs = songs,
+                        context = context,
+                        downloadState = downloadState,
+                        // Over the menu, not instead of it: Done comes back to it.
+                        onEdit = {
+                            val top = songs.minWithOrNull(compareBy({ it.map.position }, { it.map.id }))?.song
+                            menuState.showEditPlaylistSheet(
+                                playlist = currentPlaylist.playlist,
+                                database = database,
+                                context = context,
+                                topSongId = top?.id,
+                                topSongArtworkUrl = top?.song?.thumbnailUrl,
+                            )
+                        },
+                        onSync = {
+                            coroutineScope.launch(Dispatchers.IO) {
+                                val playlistPage =
+                                    YouTube
+                                        .playlist(currentPlaylist.playlist.browseId!!)
+                                        .completed()
+                                        .getOrNull() ?: return@launch
+                                database.transaction {
+                                    clearPlaylist(currentPlaylist.id)
+                                    playlistPage.songs
+                                        .map(SongItem::toMediaMetadata)
+                                        .onEach(::insert)
+                                        .mapIndexed { position, song ->
+                                            PlaylistSongMap(
+                                                songId = song.id,
+                                                playlistId = currentPlaylist.id,
+                                                position = position,
+                                                setVideoId = song.setVideoId,
+                                            )
+                                        }.forEach(::insert)
+                                }
+                            }
+                            coroutineScope.launch(Dispatchers.Main) {
+                                snackbarHostState.showSnackbar(context.getString(R.string.playlist_synced))
+                            }
+                        },
+                        onDelete = { showDeletePlaylistDialog = true },
+                        onDownload = {
+                            when (downloadState) {
+                                Download.STATE_COMPLETED -> {
+                                    showRemoveDownloadDialog = true
+                                }
+
+                                Download.STATE_DOWNLOADING -> {
+                                    songs.forEach { song ->
+                                        DownloadService.sendRemoveDownload(context, ExoDownloadService::class.java, song.song.id, false)
                                     }
-                                    .forEach(::insert)
-                            }
-                        }
-                        coroutineScope.launch(Dispatchers.Main) {
-                            snackbarHostState.showSnackbar(context.getString(R.string.playlist_synced))
-                        }
-                    },
-                    onDelete = { showDeletePlaylistDialog = true },
-                    onDownload = {
-                        when (downloadState) {
-                            Download.STATE_COMPLETED -> showRemoveDownloadDialog = true
-                            Download.STATE_DOWNLOADING -> {
-                                songs.forEach { song ->
-                                    DownloadService.sendRemoveDownload(context, ExoDownloadService::class.java, song.song.id, false)
+                                }
+
+                                else -> {
+                                    songs.forEach { song ->
+                                        val downloadRequest =
+                                            DownloadRequest
+                                                .Builder(song.song.id, song.song.id.toUri())
+                                                .setCustomCacheKey(song.song.id)
+                                                .setData(
+                                                    song.song.song.title
+                                                        .toByteArray(),
+                                                ).build()
+                                        DownloadService.sendAddDownload(context, ExoDownloadService::class.java, downloadRequest, false)
+                                    }
                                 }
                             }
-                            else -> {
-                                songs.forEach { song ->
-                                    val downloadRequest = DownloadRequest
-                                        .Builder(song.song.id, song.song.id.toUri())
-                                        .setCustomCacheKey(song.song.id)
-                                        .setData(song.song.song.title.toByteArray())
-                                        .build()
-                                    DownloadService.sendAddDownload(context, ExoDownloadService::class.java, downloadRequest, false)
-                                }
-                            }
-                        }
-                    },
-                    onQueue = {
-                        playerConnection.addToQueue(items = songs.map { it.song.toMediaItem() })
-                    },
-                    onDismiss = { menuState.dismiss() },
-                    locked = locked,
-                    onToggleLock = {
-                        locked = !locked
-                        // dragging only means something in your own order
-                        if (!locked) onSortTypeChange(PlaylistSongSortType.CUSTOM)
-                    },
-                    onShowSortDialog = { showSortDialog = true },
-                    onSearch = { isSearching = true },
-                    onPlayNext = {
-                        playerConnection.playNext(songs.map { it.song.toMediaItem() })
-                    },
-                    navController = navController,
-                )
+                        },
+                        onQueue = {
+                            playerConnection.addToQueue(items = songs.map { it.song.toMediaItem() })
+                        },
+                        onDismiss = { menuState.dismiss() },
+                        locked = locked,
+                        onToggleLock = {
+                            locked = !locked
+                            // dragging only means something in your own order
+                            if (!locked) onSortTypeChange(PlaylistSongSortType.CUSTOM)
+                        },
+                        onShowSortDialog = { showSortDialog = true },
+                        onSearch = { isSearching = true },
+                        onPlayNext = {
+                            playerConnection.playNext(songs.map { it.song.toMediaItem() })
+                        },
+                        navController = navController,
+                    )
+                }
             }
         }
-    }
 
     PlaylistDetailScaffold(
         sharedElementKey = "playlist-${viewModel.playlistId}",
@@ -498,63 +529,80 @@ fun LocalPlaylistScreen(
         lazyListState = lazyListState,
         onBackClick = { navController.navigateUp() },
         onBackLongClick = { navController.backToMain() },
-        contentPadding = LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Bottom)
-            .union(WindowInsets.ime).asPaddingValues(),
+        contentPadding =
+            LocalPlayerAwareWindowInsets.current
+                .only(WindowInsetsSides.Bottom)
+                .union(WindowInsets.ime)
+                .asPaddingValues(),
         onMoreClick = openPlaylistMenu,
-        topBarOverride = if (isSearching) {
-            {
-                PlaylistSearchBar(
-                    query = query,
-                    onQueryChange = { query = it },
-                    placeholder = stringResource(R.string.search_in_playlist),
-                    focusRequester = focusRequester,
-                    onClose = {
-                        isSearching = false
-                        query = TextFieldValue()
-                    },
-                )
-            }
-        } else null,
-        modeBar = when {
-            inSelectMode -> PlaylistModeBar.Select(
-                count = selection.size,
-                allSelected = selection.size == songs.size && selection.isNotEmpty(),
-                onToggleAll = {
-                    val selectAll = selection.size != songs.size
-                    selection.clear()
-                    if (selectAll) selection.addAll(songs.map { it.map.id })
-                },
-                onMore = {
-                    menuState.show {
-                        SelectionSongMenu(
-                            songSelection = selection.mapNotNull { mapId -> songs.find { it.map.id == mapId }?.song },
-                            songPosition = selection.mapNotNull { mapId -> songs.find { it.map.id == mapId }?.map },
-                            onDismiss = menuState::dismiss,
-                            clearAction = onExitSelectionMode
-                        )
-                    }
-                },
-                onClose = onExitSelectionMode,
-            )
-            isEditingOrder -> PlaylistModeBar.EditOrder(
-                onMore = openPlaylistMenu,
-                onDone = { locked = true },
-            )
-            else -> null
-        },
+        topBarOverride =
+            if (isSearching) {
+                {
+                    PlaylistSearchBar(
+                        query = query,
+                        onQueryChange = { query = it },
+                        placeholder = stringResource(R.string.search_in_playlist),
+                        focusRequester = focusRequester,
+                        onClose = {
+                            isSearching = false
+                            query = TextFieldValue()
+                        },
+                    )
+                }
+            } else {
+                null
+            },
+        modeBar =
+            when {
+                inSelectMode -> {
+                    PlaylistModeBar.Select(
+                        count = selection.size,
+                        allSelected = selection.size == songs.size && selection.isNotEmpty(),
+                        onToggleAll = {
+                            val selectAll = selection.size != songs.size
+                            selection.clear()
+                            if (selectAll) selection.addAll(songs.map { it.map.id })
+                        },
+                        onMore = {
+                            menuState.show {
+                                SelectionSongMenu(
+                                    songSelection = selection.mapNotNull { mapId -> songs.find { it.map.id == mapId }?.song },
+                                    songPosition = selection.mapNotNull { mapId -> songs.find { it.map.id == mapId }?.map },
+                                    onDismiss = menuState::dismiss,
+                                    clearAction = onExitSelectionMode,
+                                )
+                            }
+                        },
+                        onClose = onExitSelectionMode,
+                    )
+                }
+
+                isEditingOrder -> {
+                    PlaylistModeBar.EditOrder(
+                        onMore = openPlaylistMenu,
+                        onDone = { locked = true },
+                    )
+                }
+
+                else -> {
+                    null
+                }
+            },
         overlay = {
             DraggableScrollbar(
-                modifier = Modifier
-                    .padding(LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime).asPaddingValues())
-                    .align(Alignment.CenterEnd),
+                modifier =
+                    Modifier
+                        .padding(LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime).asPaddingValues())
+                        .align(Alignment.CenterEnd),
                 scrollState = lazyListState,
-                headerItems = headerItems
+                headerItems = headerItems,
             )
             SnackbarHost(
                 hostState = snackbarHostState,
-                modifier = Modifier
-                    .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime))
-                    .align(Alignment.BottomCenter),
+                modifier =
+                    Modifier
+                        .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime))
+                        .align(Alignment.BottomCenter),
             )
         },
     ) {
@@ -574,7 +622,7 @@ fun LocalPlaylistScreen(
                 EmptyPlaceholder(
                     icon = R.drawable.music_note,
                     text = stringResource(R.string.playlist_is_empty),
-                    modifier = Modifier.animateItem()
+                    modifier = Modifier.animateItem(),
                 )
             }
         } else if (!isSearching) {
@@ -584,11 +632,19 @@ fun LocalPlaylistScreen(
                 PlaylistHeader(
                     onSearchClick = { isSearching = true },
                     title = currentPlaylist.playlist.name,
-                    creators = if (accountName.isNotBlank()) listOf(CreatorUi(name = accountName, avatarUrl = creatorAvatar)) else emptyList(),
-                    stats = playlistStats(
-                        context.resources.getQuantityString(R.plurals.n_song, songs.size, songs.size),
-                        playlistLength,
-                    ),
+                    creators =
+                        if (accountName.isNotBlank()) {
+                            listOf(
+                                CreatorUi(name = accountName, avatarUrl = creatorAvatar),
+                            )
+                        } else {
+                            emptyList()
+                        },
+                    stats =
+                        playlistStats(
+                            context.resources.getQuantityString(R.plurals.n_song, songs.size, songs.size),
+                            playlistLength,
+                        ),
                     isPlaying = isThisQueue && isPlaying,
                     onPlayClick = {
                         if (isThisQueue) playerConnection.togglePlayPause() else play(songs)
@@ -644,8 +700,9 @@ fun LocalPlaylistScreen(
                     val removed = currentItem
                     deleteFromPlaylist()
                     val browseId = playlist?.playlist?.browseId
+                    val playlistName = playlist?.playlist?.name ?: context.getString(R.string.playlist_fallback_name)
                     com.mochyy.mochymusic.ui.component.TopToaster.show(
-                        text = "Removed ${removed.song.song.title} from ${playlist?.playlist?.name ?: "playlist"}",
+                        text = context.getString(R.string.playlist_removed_song_from, removed.song.song.title, playlistName),
                         thumbnail = removed.song.song.thumbnailUrl,
                         iconRes = R.drawable.playlist_add,
                         actionLabel = context.getString(R.string.undo),
@@ -674,11 +731,12 @@ fun LocalPlaylistScreen(
                         subtitle = "${song.song.artists.joinToString { it.name }} • ${makeTimeString(song.song.song.duration * 1000L)}",
                         isActive = song.song.id == mediaMetadata?.id,
                         isPlaying = isPlaying,
-                        modifier = Modifier.revealOnAppear(
-                            key = "track_${song.map.id}",
-                            seenState = revealSeen,
-                            delayMillis = minOf(index, 8) * 28,
-                        ),
+                        modifier =
+                            Modifier.revealOnAppear(
+                                key = "track_${song.map.id}",
+                                seenState = revealSeen,
+                                delayMillis = minOf(index, 8) * 28,
+                            ),
                         onClick = {
                             if (inSelectMode) {
                                 onCheckedChange(!selection.contains(song.map.id))
@@ -707,27 +765,32 @@ fun LocalPlaylistScreen(
                             }
                         },
                         selected = inSelectMode && selection.contains(song.map.id),
-                        trailing = when {
-                            inSelectMode -> {
-                                { PlaylistSelectTick(checked = selection.contains(song.map.id)) }
-                            }
-                            // only the handle while reordering, so a tap can't open a menu mid-drag
-                            isEditingOrder -> {
-                                {
-                                    IconButton(
-                                        onClick = { },
-                                        modifier = Modifier.draggableHandle(),
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.drag_handle),
-                                            contentDescription = "Drag to move",
-                                            tint = Color.White.copy(alpha = 0.78f),
-                                        )
+                        trailing =
+                            when {
+                                inSelectMode -> {
+                                    { PlaylistSelectTick(checked = selection.contains(song.map.id)) }
+                                }
+
+                                // only the handle while reordering, so a tap can't open a menu mid-drag
+                                isEditingOrder -> {
+                                    {
+                                        IconButton(
+                                            onClick = { },
+                                            modifier = Modifier.draggableHandle(),
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.drag_handle),
+                                                contentDescription = stringResource(R.string.playlist_drag_to_move),
+                                                tint = Color.White.copy(alpha = 0.78f),
+                                            )
+                                        }
                                     }
                                 }
-                            }
-                            else -> null
-                        },
+
+                                else -> {
+                                    null
+                                }
+                            },
                     )
                 }
 
@@ -754,23 +817,25 @@ fun LocalPlaylistScreen(
             item(key = "add_music_row") {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .combinedClickable(onClick = {
-                            menuState.showAddMusicSheet(
-                                playlistId = viewModel.playlistId,
-                                startInLibrary = songs.isEmpty(),
-                            )
-                        })
-                        .padding(start = 36.dp, end = 24.dp, top = 9.dp, bottom = 9.dp)
-                        .animateItem(),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .combinedClickable(onClick = {
+                                menuState.showAddMusicSheet(
+                                    playlistId = viewModel.playlistId,
+                                    startInLibrary = songs.isEmpty(),
+                                )
+                            })
+                            .padding(start = 36.dp, end = 24.dp, top = 9.dp, bottom = 9.dp)
+                            .animateItem(),
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(39.dp)
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(BoneColor),
+                        modifier =
+                            Modifier
+                                .size(39.dp)
+                                .clip(RoundedCornerShape(9.dp))
+                                .background(BoneColor),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.add),
@@ -808,39 +873,43 @@ fun LocalPlaylistScreen(
         if (!isSearching) {
             item(key = "related_playlists") {
                 val allPlaylists by database.playlists(PlaylistSortType.CREATE_DATE, true).collectAsState(initial = emptyList())
-                val relatedPlaylists = remember(allPlaylists, playlist) {
-                    allPlaylists.filter { it.id != playlist?.id }.shuffled().take(5)
-                }
+                val relatedPlaylists =
+                    remember(allPlaylists, playlist) {
+                        allPlaylists.filter { it.id != playlist?.id }.shuffled().take(5)
+                    }
 
                 if (relatedPlaylists.isNotEmpty()) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 28.dp)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(top = 28.dp),
                     ) {
-                        PlaylistSectionTitle(title = "Related Playlists")
+                        PlaylistSectionTitle(title = stringResource(R.string.playlist_related))
                         Spacer(Modifier.height(9.dp))
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 36.dp),
                             horizontalArrangement = Arrangement.spacedBy(15.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             items(relatedPlaylists, key = { it.id }) { related ->
                                 // no clip on the whole card: its rounded corner cut into the song count
                                 // under the cover. The press shows Home's highlight around it instead.
                                 Column(
-                                    modifier = Modifier
-                                        .width(137.dp)
-                                        .clickable(interactionSource = null, indication = HomeCardHighlight) {
-                                            navController.navigate("local_playlist/${related.id}")
-                                        }
+                                    modifier =
+                                        Modifier
+                                            .width(137.dp)
+                                            .clickable(interactionSource = null, indication = HomeCardHighlight) {
+                                                navController.navigate("local_playlist/${related.id}")
+                                            },
                                 ) {
                                     Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .aspectRatio(1f)
-                                            .clip(RoundedCornerShape(20.dp))
-                                            .background(BoneColor)
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .aspectRatio(1f)
+                                                .clip(RoundedCornerShape(20.dp))
+                                                .background(BoneColor),
                                     ) {
                                         val thumbUrl = related.playlist.thumbnailUrl ?: related.thumbnails.firstOrNull()
                                         if (thumbUrl != null) {
@@ -848,16 +917,17 @@ fun LocalPlaylistScreen(
                                                 model = thumbUrl,
                                                 contentDescription = null,
                                                 modifier = Modifier.fillMaxSize(),
-                                                contentScale = ContentScale.Crop
+                                                contentScale = ContentScale.Crop,
                                             )
                                         } else {
                                             Icon(
                                                 painter = painterResource(R.drawable.music_note),
                                                 contentDescription = null,
                                                 tint = Color.White.copy(alpha = 0.6f),
-                                                modifier = Modifier
-                                                    .size(44.dp)
-                                                    .align(Alignment.Center)
+                                                modifier =
+                                                    Modifier
+                                                        .size(44.dp)
+                                                        .align(Alignment.Center),
                                             )
                                         }
                                     }
@@ -868,14 +938,14 @@ fun LocalPlaylistScreen(
                                         fontWeight = FontWeight.SemiBold,
                                         color = Color.White.copy(alpha = 0.92f),
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        overflow = TextOverflow.Ellipsis,
                                     )
                                     Text(
                                         text = pluralStringResource(R.plurals.n_song, related.songCount, related.songCount),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color.White.copy(alpha = 0.5f),
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        overflow = TextOverflow.Ellipsis,
                                     )
                                 }
                             }
@@ -893,32 +963,47 @@ fun LocalPlaylistScreen(
     if (showSortDialog) {
         AlertDialog(
             onDismissRequest = { showSortDialog = false },
-            title = { Text("Sort order") },
+            title = { Text(stringResource(R.string.playlist_sort_order)) },
             text = {
                 Column {
                     PlaylistSongSortType.entries.forEach { type ->
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    if (sortType == type) onSortDescendingChange(!sortDescending) else onSortTypeChange(type)
-                                    showSortDialog = false
-                                }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        if (sortType == type) onSortDescendingChange(!sortDescending) else onSortTypeChange(type)
+                                        showSortDialog = false
+                                    }.padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             RadioButton(
                                 selected = sortType == type,
                                 onClick = {
                                     if (sortType == type) onSortDescendingChange(!sortDescending) else onSortTypeChange(type)
                                     showSortDialog = false
-                                }
+                                },
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = stringResource(playlistSortLabel(type)) +
-                                    if (sortType == type) (if (sortDescending) " (Desc)" else " (Asc)") else "",
-                                style = MaterialTheme.typography.bodyLarge
+                                text =
+                                    stringResource(playlistSortLabel(type)) +
+                                        if (sortType ==
+                                            type
+                                        ) {
+                                            (
+                                                if (sortDescending) {
+                                                    stringResource(
+                                                        R.string.playlist_sort_desc,
+                                                    )
+                                                } else {
+                                                    stringResource(R.string.playlist_sort_asc)
+                                                }
+                                            )
+                                        } else {
+                                            ""
+                                        },
+                                style = MaterialTheme.typography.bodyLarge,
                             )
                         }
                     }
@@ -928,15 +1013,16 @@ fun LocalPlaylistScreen(
                 TextButton(onClick = { showSortDialog = false }) {
                     Text(stringResource(R.string.cancel))
                 }
-            }
+            },
         )
     }
 }
 
-private fun playlistSortLabel(type: PlaylistSongSortType): Int = when (type) {
-    PlaylistSongSortType.CUSTOM -> R.string.sort_by_custom
-    PlaylistSongSortType.CREATE_DATE -> R.string.sort_by_create_date
-    PlaylistSongSortType.NAME -> R.string.sort_by_name
-    PlaylistSongSortType.ARTIST -> R.string.sort_by_artist
-    PlaylistSongSortType.PLAY_TIME -> R.string.sort_by_play_time
-}
+private fun playlistSortLabel(type: PlaylistSongSortType): Int =
+    when (type) {
+        PlaylistSongSortType.CUSTOM -> R.string.sort_by_custom
+        PlaylistSongSortType.CREATE_DATE -> R.string.sort_by_create_date
+        PlaylistSongSortType.NAME -> R.string.sort_by_name
+        PlaylistSongSortType.ARTIST -> R.string.sort_by_artist
+        PlaylistSongSortType.PLAY_TIME -> R.string.sort_by_play_time
+    }

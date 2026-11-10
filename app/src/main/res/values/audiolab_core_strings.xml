@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lab_back">Back</string>
+    <string name="lab_equalizer">Equalizer</string>
+    <string name="lab_audio_effect">Audio Effect</string>
+    <string name="lab_audio_quality">Audio Quality</string>
+    <string name="lab_transition">Transition</string>
+    <string name="lab_status_off">OFF</string>
+    <string name="lab_status_all_off">ALL OFF</string>
+    <string name="lab_status_custom">Custom</string>
+    <string name="lab_transition_off">Off</string>
+    <string name="lab_transition_auto">Auto</string>
+    <string name="lab_transition_manual">Manual</string>
+    <string name="lab_transition_crossmix">CrossMix</string>
+    <string name="lab_quality_monochrome">Monochrome · Lossless</string>
+    <string name="lab_quality_apple_music">Apple Music · AAC</string>
+    <string name="lab_quality_youtube">YouTube · %1$s</string>
+    <string name="lab_quality_low">Low</string>
+    <string name="lab_quality_medium">Medium</string>
+    <string name="lab_quality_high">High</string>
+    <string name="lab_quality_auto">Auto</string>
+    <string name="lab_effects_and_more">%1$s and %2$d more</string>
+    <string name="lab_effect_reverb">Reverb</string>
+    <string name="lab_effect_loudness">Loudness</string>
+    <string name="lab_effect_spatial">Spatial</string>
+    <string name="lab_effect_surround">Surround</string>
+    <string name="lab_effect_mono">Mono</string>
+    <string name="lab_effect_playback">Playback</string>
+    <string name="lab_effect_volume">Volume</string>
+    <string name="lab_fx_on">ON</string>
+    <string name="lab_fx_position">%1$d of %2$d</string>
+    <string name="lab_fx_and_other">and %1$d other</string>
+</resources>

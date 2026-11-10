@@ -31,11 +31,13 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.player.styles.LocalStyleInteractive
 import com.mochyy.mochymusic.ui.player.styles.whileStyleInteractive
 import com.mochyy.mochymusic.viewmodels.IpodAlbum
@@ -135,7 +137,7 @@ fun IpodCoverFlow(
     ) {
         if (albums.isEmpty()) {
             Text(
-                text = "No albums yet",
+                text = stringResource(R.string.ps_ipod_no_albums),
                 color = look.quietInk,
                 fontSize = scale.sp(18f),
                 fontWeight = FontWeight.Bold,

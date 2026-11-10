@@ -53,6 +53,7 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -94,22 +95,24 @@ internal val ProfilePhotoGrey = Color(0xFF4F4F4F)
 
 // both match the ID card's name and number (weight, tracking), so the copies flying between them
 // are the same text at both ends, only bigger or smaller
-internal val ProfileNameStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 60.sp,
-    lineHeight = 1.1.em,
-    letterSpacing = (-0.05).em,
-    color = Color.White,
-)
+internal val ProfileNameStyle =
+    TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 60.sp,
+        lineHeight = 1.1.em,
+        letterSpacing = (-0.05).em,
+        color = Color.White,
+    )
 
-internal val ProfileTagStyle = TextStyle(
-    fontFamily = FontFamily.Monospace,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 11.sp,
-    letterSpacing = (-0.05).em,
-    color = Color(0xFFB5B5B5),
-)
+internal val ProfileTagStyle =
+    TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 11.sp,
+        letterSpacing = (-0.05).em,
+        color = Color(0xFFB5B5B5),
+    )
 
 internal fun profileTag(cardNumber: String) = "PROFILE USR#$cardNumber"
 
@@ -119,12 +122,13 @@ private val DividerGrey = Color(0xFF262626)
 private val ListensCardGrey = Color(0xFF111111)
 private val FigureGrey = Color(0xFF707070)
 
-private val EmptyStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Medium,
-    fontSize = 13.sp,
-    color = Color.White.copy(alpha = 0.45f),
-)
+private val EmptyStyle =
+    TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 13.sp,
+        color = Color.White.copy(alpha = 0.45f),
+    )
 
 @Composable
 internal fun UserProfilePage(
@@ -142,25 +146,27 @@ internal fun UserProfilePage(
     val openEditor = { popup.showEditProfileSheet(currentName = username, currentPhoto = photo) }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
     ) {
         Spacer(Modifier.height(statusBarTop + 64.dp))
         Box(
-            modifier = Modifier
-                .padding(start = HomeContentInset)
-                .size(ProfilePhotoSize)
-                .onPlaced { state.target.photo = it }
-                .landedOnly(state)
-                .clip(CircleShape)
-                .background(ProfilePhotoGrey)
-                .clickable(onClick = openEditor),
+            modifier =
+                Modifier
+                    .padding(start = HomeContentInset)
+                    .size(ProfilePhotoSize)
+                    .onPlaced { state.target.photo = it }
+                    .landedOnly(state)
+                    .clip(CircleShape)
+                    .background(ProfilePhotoGrey)
+                    .clickable(onClick = openEditor),
         ) {
             if (photo != null) {
                 AsyncImage(
                     model = photo,
-                    contentDescription = "Profile picture",
+                    contentDescription = stringResource(R.string.profile_picture_cd),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -176,39 +182,43 @@ internal fun UserProfilePage(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     onTextLayout = { state.target.nameLayout = it },
-                    modifier = Modifier
-                        .onPlaced { state.target.name = it }
-                        .landedOnly(state),
+                    modifier =
+                        Modifier
+                            .onPlaced { state.target.name = it }
+                            .landedOnly(state),
                 )
             },
             tag = {
                 Text(
-                    text = profileTag(cardNumber),
+                    text = stringResource(R.string.profile_tag, cardNumber),
                     style = ProfileTagStyle,
                     maxLines = 1,
                     softWrap = false,
                     onTextLayout = { state.target.numberLayout = it },
-                    modifier = Modifier
-                        .onPlaced { state.target.number = it }
-                        .landedOnly(state),
+                    modifier =
+                        Modifier
+                            .onPlaced { state.target.number = it }
+                            .landedOnly(state),
                 )
             },
         )
         Spacer(Modifier.height(18.dp))
         EditProfilePill(
             onClick = openEditor,
-            modifier = Modifier
-                .padding(start = HomeContentInset)
-                .reveal(state, row = 0),
+            modifier =
+                Modifier
+                    .padding(start = HomeContentInset)
+                    .reveal(state, row = 0),
         )
         Spacer(Modifier.height(40.dp))
         Box(
-            modifier = Modifier
-                .reveal(state, row = 1)
-                .padding(horizontal = 30.dp)
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(DividerGrey),
+            modifier =
+                Modifier
+                    .reveal(state, row = 1)
+                    .padding(horizontal = 30.dp)
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(DividerGrey),
         )
         Spacer(Modifier.height(24.dp))
         ListensRow(state, viewModel, onOpenStats = { navController.navigate("stats") })
@@ -224,9 +234,10 @@ internal fun UserProfilePage(
 }
 
 /** Hidden until the flying copy of this part has landed on it. */
-private fun Modifier.landedOnly(state: ProfileMorphState): Modifier = graphicsLayer {
-    alpha = if (state.isOpen) 1f else 0f
-}
+private fun Modifier.landedOnly(state: ProfileMorphState): Modifier =
+    graphicsLayer {
+        alpha = if (state.isOpen) 1f else 0f
+    }
 
 /** The name with the card number on its baseline beside it, or tucked under it when there isn't room. */
 @Composable
@@ -261,37 +272,47 @@ private fun NameLine(
 }
 
 @Composable
-private fun EditProfilePill(onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun EditProfilePill(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Text(
-        text = "Edit profile",
-        style = TextStyle(
-            fontFamily = InterFontFamily,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 12.5.sp,
-            letterSpacing = (-0.03).em,
-            color = Color.White,
-        ),
-        modifier = modifier
-            .clip(CircleShape)
-            .background(PillGrey)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 15.dp, vertical = 8.dp),
+        text = stringResource(R.string.profile_edit_button),
+        style =
+            TextStyle(
+                fontFamily = InterFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 12.5.sp,
+                letterSpacing = (-0.03).em,
+                color = Color.White,
+            ),
+        modifier =
+            modifier
+                .clip(CircleShape)
+                .background(PillGrey)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 15.dp, vertical = 8.dp),
     )
 }
 
 // ---- Total listens ----------------------------------------------------------------------------
 
 @Composable
-private fun ListensRow(state: ProfileMorphState, viewModel: UserProfileViewModel, onOpenStats: () -> Unit) {
+private fun ListensRow(
+    state: ProfileMorphState,
+    viewModel: UserProfileViewModel,
+    onOpenStats: () -> Unit,
+) {
     val totals by viewModel.listens.collectAsState()
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         // the next card peeks in from the right, so it's clear the row scrolls
         val cardWidth = (maxWidth - HomeContentInset - 66.dp).coerceIn(240.dp, 380.dp)
         Row(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = HomeContentInset),
+            modifier =
+                Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = HomeContentInset),
         ) {
             (totals ?: ListenTotal.Placeholder).forEachIndexed { index, total ->
                 ListensCard(
@@ -306,20 +327,33 @@ private fun ListensRow(state: ProfileMorphState, viewModel: UserProfileViewModel
 }
 
 @Composable
-private fun ListensCard(total: ListenTotal, width: Dp, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ListensCard(
+    total: ListenTotal,
+    width: Dp,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val (timeValue, timeUnit) = total.timeFigure()
     Column(
-        modifier = modifier
-            .width(width)
-            .clip(RoundedCornerShape(18.dp))
-            .background(ListensCardGrey)
-            .clickable(onClick = onClick)
-            .padding(start = 22.dp, end = 16.dp, top = 18.dp, bottom = 14.dp),
+        modifier =
+            modifier
+                .width(width)
+                .clip(RoundedCornerShape(18.dp))
+                .background(ListensCardGrey)
+                .clickable(onClick = onClick)
+                .padding(start = 22.dp, end = 16.dp, top = 18.dp, bottom = 14.dp),
     ) {
         Row {
             Text(
-                text = "Total listens",
-                style = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 17.sp, letterSpacing = (-0.04).em, color = Color.White),
+                text = stringResource(R.string.profile_total_listens),
+                style =
+                    TextStyle(
+                        fontFamily = InterFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        letterSpacing = (-0.04).em,
+                        color = Color.White,
+                    ),
                 modifier = Modifier.alignByBaseline(),
             )
             Spacer(Modifier.width(6.dp))
@@ -331,7 +365,7 @@ private fun ListensCard(total: ListenTotal, width: Dp, onClick: () -> Unit, modi
         }
         Spacer(Modifier.height(4.dp))
         Row {
-            ListensFigure(total.songs.toString(), if (total.songs == 1) "Song" else "Songs", Modifier.weight(1f))
+            ListensFigure(total.songs.toString(), pluralStringResource(R.plurals.profile_unit_songs, total.songs), Modifier.weight(1f))
             ListensFigure(timeValue, timeUnit, Modifier.weight(1f))
         }
     }
@@ -339,13 +373,18 @@ private fun ListensCard(total: ListenTotal, width: Dp, onClick: () -> Unit, modi
 
 /** A big grey number with its unit. Long numbers step down a size so the unit keeps its room. */
 @Composable
-private fun ListensFigure(value: String, unit: String, modifier: Modifier = Modifier) {
-    val k = when {
-        value.length >= 5 -> 0.7f
-        value.length == 4 -> 0.8f
-        value.length == 3 -> 0.9f
-        else -> 1f
-    }
+private fun ListensFigure(
+    value: String,
+    unit: String,
+    modifier: Modifier = Modifier,
+) {
+    val k =
+        when {
+            value.length >= 5 -> 0.7f
+            value.length == 4 -> 0.8f
+            value.length == 3 -> 0.9f
+            else -> 1f
+        }
     Row(verticalAlignment = Alignment.Bottom, modifier = modifier) {
         OdometerNumber(
             value = value,
@@ -357,7 +396,14 @@ private fun ListensFigure(value: String, unit: String, modifier: Modifier = Modi
         )
         Text(
             text = unit,
-            style = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = figureSp(19f * k), letterSpacing = (-0.6).sp, color = FigureGrey),
+            style =
+                TextStyle(
+                    fontFamily = InterFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = figureSp(19f * k),
+                    letterSpacing = (-0.6).sp,
+                    color = FigureGrey,
+                ),
             maxLines = 1,
             modifier = Modifier.padding(start = 4.dp, bottom = (7 * k).dp),
         )
@@ -365,11 +411,16 @@ private fun ListensFigure(value: String, unit: String, modifier: Modifier = Modi
 }
 
 /** "26 Hours", or "42 Mins" while it's still under an hour. */
+@Composable
 private fun ListenTotal.timeFigure(): Pair<String, String> {
     val minutes = playTimeMs / 60_000L
-    if (minutes < 60) return minutes.toString() to if (minutes == 1L) "Min" else "Mins"
+    if (minutes < 60) {
+        val count = minutes.toInt()
+        return minutes.toString() to pluralStringResource(R.plurals.profile_unit_minutes, count)
+    }
     val hours = minutes / 60
-    return hours.toString() to if (hours == 1L) "Hour" else "Hours"
+    val count = hours.toInt()
+    return hours.toString() to pluralStringResource(R.plurals.profile_unit_hours, count)
 }
 
 // ---- Rows of covers ---------------------------------------------------------------------------
@@ -388,25 +439,38 @@ private fun <T> ProfileSection(
     HomeSectionTitle(title = title, modifier = Modifier.reveal(state, row))
     when {
         // not loaded yet: hold the row's height so nothing under it jumps when it arrives
-        items == null -> Spacer(Modifier.height(homeCardSize() + 44.dp))
-        items.isEmpty() -> Text(
-            text = emptyText,
-            style = EmptyStyle,
-            modifier = Modifier
-                .reveal(state, row, order = 1)
-                .padding(horizontal = HomeContentInset, vertical = 6.dp),
-        )
-        else -> LazyRow(
-            contentPadding = PaddingValues(horizontal = HomeContentInset),
-            horizontalArrangement = Arrangement.spacedBy(HomeCardSpacing),
-        ) {
-            itemsIndexed(items, key = { _, item -> key(item) }) { index, item -> card(item, index) }
+        items == null -> {
+            Spacer(Modifier.height(homeCardSize() + 44.dp))
+        }
+
+        items.isEmpty() -> {
+            Text(
+                text = emptyText,
+                style = EmptyStyle,
+                modifier =
+                    Modifier
+                        .reveal(state, row, order = 1)
+                        .padding(horizontal = HomeContentInset, vertical = 6.dp),
+            )
+        }
+
+        else -> {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = HomeContentInset),
+                horizontalArrangement = Arrangement.spacedBy(HomeCardSpacing),
+            ) {
+                itemsIndexed(items, key = { _, item -> key(item) }) { index, item -> card(item, index) }
+            }
         }
     }
 }
 
 @Composable
-private fun RecentSection(state: ProfileMorphState, viewModel: UserProfileViewModel, navController: NavController) {
+private fun RecentSection(
+    state: ProfileMorphState,
+    viewModel: UserProfileViewModel,
+    navController: NavController,
+) {
     val songs by viewModel.recentSongs.collectAsState()
     val playerConnection = LocalPlayerConnection.current ?: return
     val menuState = LocalMenuState.current
@@ -415,12 +479,12 @@ private fun RecentSection(state: ProfileMorphState, viewModel: UserProfileViewMo
     val isPlaying by playerConnection.isPlaying.collectAsState()
 
     ProfileSection(
-        title = "Listening to",
+        title = stringResource(R.string.profile_listening_to),
         state = state,
         row = 3,
         items = songs,
         key = { it.id },
-        emptyText = "Songs you play will show up here.",
+        emptyText = stringResource(R.string.profile_recent_empty),
     ) { song, order ->
         HomeCoverCard(
             title = song.title,
@@ -428,31 +492,36 @@ private fun RecentSection(state: ProfileMorphState, viewModel: UserProfileViewMo
             thumbnailUrl = song.thumbnailUrl,
             isActive = song.id == playing?.id,
             isPlaying = isPlaying,
-            modifier = Modifier
-                .reveal(state, row = 3, order = order)
-                .combinedClickable(
-                    interactionSource = null,
-                    indication = HomeCardHighlight,
-                    onClick = {
-                        if (song.id == playing?.id) {
-                            playerConnection.togglePlayPause()
-                        } else {
-                            playerConnection.playQueue(YouTubeQueue.radio(song.toMediaMetadata()))
-                        }
-                    },
-                    onLongClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        menuState.show {
-                            SongMenu(originalSong = song, navController = navController, onDismiss = menuState::dismiss)
-                        }
-                    },
-                ),
+            modifier =
+                Modifier
+                    .reveal(state, row = 3, order = order)
+                    .combinedClickable(
+                        interactionSource = null,
+                        indication = HomeCardHighlight,
+                        onClick = {
+                            if (song.id == playing?.id) {
+                                playerConnection.togglePlayPause()
+                            } else {
+                                playerConnection.playQueue(YouTubeQueue.radio(song.toMediaMetadata()))
+                            }
+                        },
+                        onLongClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            menuState.show {
+                                SongMenu(originalSong = song, navController = navController, onDismiss = menuState::dismiss)
+                            }
+                        },
+                    ),
         )
     }
 }
 
 @Composable
-private fun PlaylistsSection(state: ProfileMorphState, viewModel: UserProfileViewModel, navController: NavController) {
+private fun PlaylistsSection(
+    state: ProfileMorphState,
+    viewModel: UserProfileViewModel,
+    navController: NavController,
+) {
     val playlists by viewModel.playlists.collectAsState()
     val likedCount by viewModel.likedCount.collectAsState()
     // Liked always comes first, with its own cover; null stands for it in the row
@@ -460,7 +529,7 @@ private fun PlaylistsSection(state: ProfileMorphState, viewModel: UserProfileVie
     val shape = RoundedCornerShape(HomeCardCornerRadius)
 
     ProfileSection(
-        title = "Your playlists",
+        title = stringResource(R.string.profile_your_playlists),
         state = state,
         row = 4,
         items = entries,
@@ -469,7 +538,7 @@ private fun PlaylistsSection(state: ProfileMorphState, viewModel: UserProfileVie
     ) { playlist, order ->
         val songCount = playlist?.songCount ?: likedCount
         HomeCoverCard(
-            title = playlist?.title ?: "Liked songs",
+            title = playlist?.title ?: stringResource(R.string.liked_songs),
             subtitle = pluralStringResource(R.plurals.n_song, songCount, songCount),
             thumbnailUrl = playlist?.thumbnails?.firstOrNull(),
             sharedElementKey = "playlist-${playlist?.id ?: "liked"}",
@@ -492,52 +561,58 @@ private fun PlaylistsSection(state: ProfileMorphState, viewModel: UserProfileVie
                     )
                 }
             },
-            modifier = Modifier
-                .reveal(state, row = 4, order = order)
-                .clickable(
-                    interactionSource = null,
-                    indication = HomeCardHighlight,
-                    onClick = {
-                        navController.navigate(if (playlist == null) "auto_playlist/liked" else "local_playlist/${playlist.id}")
-                    },
-                ),
+            modifier =
+                Modifier
+                    .reveal(state, row = 4, order = order)
+                    .clickable(
+                        interactionSource = null,
+                        indication = HomeCardHighlight,
+                        onClick = {
+                            navController.navigate(if (playlist == null) "auto_playlist/liked" else "local_playlist/${playlist.id}")
+                        },
+                    ),
         )
     }
 }
 
 @Composable
-private fun ArtistsSection(state: ProfileMorphState, viewModel: UserProfileViewModel, navController: NavController) {
+private fun ArtistsSection(
+    state: ProfileMorphState,
+    viewModel: UserProfileViewModel,
+    navController: NavController,
+) {
     val artists by viewModel.topArtists.collectAsState()
     val menuState = LocalMenuState.current
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
 
     ProfileSection(
-        title = "Top artists",
+        title = stringResource(R.string.profile_top_artists),
         state = state,
         row = 5,
         items = artists,
         key = { it.id },
-        emptyText = "The artists you play the most will show up here.",
+        emptyText = stringResource(R.string.profile_top_artists_empty),
     ) { artist, order ->
         HomeCoverCard(
             title = artist.title,
             subtitle = null,
             thumbnailUrl = artist.thumbnailUrl,
             circular = true,
-            modifier = Modifier
-                .reveal(state, row = 5, order = order)
-                .combinedClickable(
-                    interactionSource = null,
-                    indication = HomeCardHighlight,
-                    onClick = { navController.navigate("artist/${artist.id}") },
-                    onLongClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        menuState.show {
-                            ArtistMenu(originalArtist = artist, coroutineScope = scope, onDismiss = menuState::dismiss)
-                        }
-                    },
-                ),
+            modifier =
+                Modifier
+                    .reveal(state, row = 5, order = order)
+                    .combinedClickable(
+                        interactionSource = null,
+                        indication = HomeCardHighlight,
+                        onClick = { navController.navigate("artist/${artist.id}") },
+                        onLongClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            menuState.show {
+                                ArtistMenu(originalArtist = artist, coroutineScope = scope, onDismiss = menuState::dismiss)
+                            }
+                        },
+                    ),
         )
     }
 }

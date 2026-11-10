@@ -48,6 +48,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -176,12 +177,11 @@ fun PlayerActionMenu(
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
-                            text = buildString {
-                                append("by ")
-                                append(trackInfo.artist.ifBlank { "unknown" })
+                            text = trackInfo.artist.ifBlank { stringResource(R.string.ps_menu_unknown) }.let { artist ->
                                 if (trackInfo.album.isNotBlank()) {
-                                    append(" on ")
-                                    append(trackInfo.album)
+                                    stringResource(R.string.ps_menu_by_artist_on_album, artist, trackInfo.album)
+                                } else {
+                                    stringResource(R.string.ps_menu_by_artist, artist)
                                 }
                             },
                             color = Color(0xFFB3B3B3),
@@ -200,7 +200,7 @@ fun PlayerActionMenu(
                     SheetActionCardRow {
                         SheetActionCard(
                             icon = R.drawable.translate,
-                            title = "Ai translation",
+                            title = stringResource(R.string.menu_ai_translation),
                             // Greyed out until the AI translation settings are filled in — an
                             // enabled button that silently does nothing is worse than a disabled
                             // one that says so.
@@ -210,7 +210,7 @@ fun PlayerActionMenu(
                         )
                         SheetActionCard(
                             icon = R.drawable.edit,
-                            title = "Edit lyrics",
+                            title = stringResource(R.string.edit_lyrics),
                             onClick = { showLyricsEditor = true },
                             modifier = Modifier.weight(1f),
                         )
@@ -223,7 +223,7 @@ fun PlayerActionMenu(
                     // outcome.
                     MenuRow(
                         icon = R.drawable.lyrics,
-                        title = "Lyrics provider",
+                        title = stringResource(R.string.video_mode_lyrics_provider),
                         onClick = { showLyricsProvider = true },
                     )
 
@@ -231,7 +231,7 @@ fun PlayerActionMenu(
 
                     MenuRow(
                         icon = R.drawable.fast_forward,
-                        title = "Lyrics offset",
+                        title = stringResource(R.string.video_mode_lyrics_offset),
                         onClick = { showLyricsOffset = true },
                     )
 
@@ -239,7 +239,7 @@ fun PlayerActionMenu(
 
                     MenuRow(
                         icon = R.drawable.translate,
-                        title = "lyrics translation",
+                        title = stringResource(R.string.video_mode_lyrics_translation),
                         onClick = { showLyricsTranslation = true },
                     )
 
@@ -261,7 +261,7 @@ fun PlayerActionMenu(
                     )
                     SheetActionCard(
                         icon = R.drawable.playlist_add,
-                        title = "Add to playlist",
+                        title = stringResource(R.string.add_to_playlist),
                         enabled = currentMetadata != null,
                         onClick = { showChoosePlaylistDialog = true },
                         modifier = Modifier.weight(1f),
@@ -328,7 +328,7 @@ fun PlayerActionMenu(
                 Spacer(modifier = Modifier.height(8.dp))
                 MenuRow(
                     icon = R.drawable.cast,
-                    title = "Change device output",
+                    title = stringResource(R.string.menu_change_output),
                     onClick = { showAudioDevices = true },
                 )
                 // a linked tv with mochy open: play there, line it up there, or work it as a remote
@@ -340,7 +340,7 @@ fun PlayerActionMenu(
                 Spacer(modifier = Modifier.height(8.dp))
                 MenuRow(
                     icon = R.drawable.speed,
-                    title = "Playback speed and tempo",
+                    title = stringResource(R.string.video_mode_speed),
                     onClick = { showPlaybackSpeed = true },
                 )
                 if (onEqualizer != null) {
@@ -359,14 +359,14 @@ fun PlayerActionMenu(
 
                 MenuRow(
                     icon = if (trackInfo.liked) R.drawable.ic_untitled_heart else R.drawable.ic_untitled_heart_unfill,
-                    title = if (trackInfo.liked) "remove from liked" else "add to liked",
+                    title = if (trackInfo.liked) stringResource(R.string.menu_remove_from_liked) else stringResource(R.string.menu_add_to_liked),
                     onClick = { playerConnection.toggleLike() },
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 val inLibrary = librarySong?.song?.inLibrary != null
                 MenuRow(
                     icon = if (inLibrary) R.drawable.library_add_check else R.drawable.library_add,
-                    title = if (inLibrary) "remove from library" else "add to library",
+                    title = if (inLibrary) stringResource(R.string.remove_from_library) else stringResource(R.string.add_to_library),
                     enabled = currentMetadata != null,
                     onClick = { playerConnection.toggleLibrary() },
                 )
@@ -386,7 +386,7 @@ fun PlayerActionMenu(
 
                 MenuRow(
                     icon = R.drawable.edit,
-                    title = "edit player",
+                    title = stringResource(R.string.menu_edit_player),
                     onClick = {
                         onDismiss()
                         onEditPlayer()
@@ -487,7 +487,7 @@ private fun KeepScreenOnRow() {
     val (keepScreenOn, setKeepScreenOn) = rememberPreference(KeepScreenOn, defaultValue = false)
     MenuRow(
         icon = R.drawable.lock_open,
-        title = "Keep screen on",
+        title = stringResource(R.string.menu_keep_screen_on),
         onClick = { setKeepScreenOn(!keepScreenOn) },
         trailing = { AppSwitch(checked = keepScreenOn, onCheckedChange = setKeepScreenOn) },
     )
@@ -498,11 +498,12 @@ private fun SleepTimerRow(onClick: () -> Unit) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val sleepTimer = playerConnection.service.sleepTimer
 
+    val endsWithSongLabel = stringResource(R.string.ps_menu_ends_with_song)
     var remainingLabel by remember { mutableStateOf("") }
-    LaunchedEffect(sleepTimer.triggerTime, sleepTimer.pauseWhenSongEnd) {
+    LaunchedEffect(sleepTimer.triggerTime, sleepTimer.pauseWhenSongEnd, endsWithSongLabel) {
         while (true) {
             remainingLabel = when {
-                sleepTimer.pauseWhenSongEnd -> "ends with song"
+                sleepTimer.pauseWhenSongEnd -> endsWithSongLabel
                 sleepTimer.triggerTime > 0L -> {
                     val left = sleepTimer.triggerTime - System.currentTimeMillis()
                     if (left <= 0L) "" else formatRemaining(left)
@@ -516,12 +517,12 @@ private fun SleepTimerRow(onClick: () -> Unit) {
 
     MenuRow(
         icon = R.drawable.sleep_timer,
-        title = "Sleep timer",
+        title = stringResource(R.string.sleep_timer),
         onClick = onClick,
         trailing = {
             if (remainingLabel.isNotEmpty()) {
                 Text(
-                    text = "$remainingLabel remaining",
+                    text = if (sleepTimer.pauseWhenSongEnd) remainingLabel else stringResource(R.string.ps_menu_remaining, remainingLabel),
                     color = Color(0xFF9A9A9A),
                     fontSize = 12.sp,
                 )
@@ -568,7 +569,7 @@ private fun DeviceVolumeRow() {
             SheetIcon(R.drawable.volume_up)
             Spacer(modifier = Modifier.width(14.dp))
             Text(
-                text = android.os.Build.MODEL ?: "this device",
+                text = android.os.Build.MODEL ?: stringResource(R.string.ps_device_this_device),
                 color = Color.White,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,

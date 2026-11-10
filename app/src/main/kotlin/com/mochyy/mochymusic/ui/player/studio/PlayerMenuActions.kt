@@ -1,6 +1,7 @@
 package com.mochyy.mochymusic.ui.player.studio
 
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -13,27 +14,28 @@ import com.mochyy.mochymusic.utils.rememberPreference
  * Everything the player's round buttons can do: the button beside the chevron and the four in the
  * menu the chevron opens are each set to one of these in the editor ("Edit menu").
  */
-enum class PlayerMenuAction(val label: String, @param:DrawableRes val icon: Int) {
-    LIKE("Like", R.drawable.ic_untitled_heart_unfill),
-    OTHER_MENU("Other menu", R.drawable.more_horiz),
-    SLEEP_TIMER("Sleep timer", R.drawable.sleep_timer),
-    SEE_VIDEO("See video", R.drawable.slow_motion_video),
-    REPEAT("Repeat", R.drawable.repeat),
-    SHUFFLE("Shuffle", R.drawable.shuffle),
-    LYRICS("Lyrics", R.drawable.lyrics),
-    QUEUE("Queue", R.drawable.queue_music),
-    SPEED("Playback speed", R.drawable.speed),
+/** [label] is the plain English name; the UI shows [labelRes], which follows the app language. */
+enum class PlayerMenuAction(val label: String, @param:StringRes val labelRes: Int, @param:DrawableRes val icon: Int) {
+    LIKE("Like", R.string.ps_action_like, R.drawable.ic_untitled_heart_unfill),
+    OTHER_MENU("Other menu", R.string.ps_action_other_menu, R.drawable.more_horiz),
+    SLEEP_TIMER("Sleep timer", R.string.ps_action_sleep_timer, R.drawable.sleep_timer),
+    SEE_VIDEO("See video", R.string.ps_action_see_video, R.drawable.slow_motion_video),
+    REPEAT("Repeat", R.string.ps_action_repeat, R.drawable.repeat),
+    SHUFFLE("Shuffle", R.string.ps_action_shuffle, R.drawable.shuffle),
+    LYRICS("Lyrics", R.string.ps_action_lyrics, R.drawable.lyrics),
+    QUEUE("Queue", R.string.ps_action_queue, R.drawable.queue_music),
+    SPEED("Playback speed", R.string.ps_action_speed, R.drawable.speed),
     // the equalizer page, the player stepping down out of its way
-    EQUALIZER("Equalizer", R.drawable.equalizer),
-    OUTPUT("Device output", R.drawable.cast),
+    EQUALIZER("Equalizer", R.string.ps_action_equalizer, R.drawable.equalizer),
+    OUTPUT("Device output", R.string.ps_action_output, R.drawable.cast),
     // the player turned sideways around the song's youtube video
-    FULL_VIDEO("Full video", R.drawable.fullscreen),
+    FULL_VIDEO("Full video", R.string.ps_action_full_video, R.drawable.fullscreen),
 
     // the ones below are worked by PlayerMenuExtras
-    KEEP_AWAKE("Keep screen on", R.drawable.lock_open),
-    TRANSLATE_LYRICS("Translate lyrics", R.drawable.translate),
-    DOWNLOAD("Download", R.drawable.download),
-    ADD_TO_PLAYLIST("Add to playlist", R.drawable.playlist_add);
+    KEEP_AWAKE("Keep screen on", R.string.ps_action_keep_awake, R.drawable.lock_open),
+    TRANSLATE_LYRICS("Translate lyrics", R.string.ps_action_translate_lyrics, R.drawable.translate),
+    DOWNLOAD("Download", R.string.ps_action_download, R.drawable.download),
+    ADD_TO_PLAYLIST("Add to playlist", R.string.ps_action_add_to_playlist, R.drawable.playlist_add);
 
     companion object {
         val DefaultSlots = listOf(OTHER_MENU, SLEEP_TIMER, SEE_VIDEO, REPEAT)

@@ -77,7 +77,8 @@ inline fun <reified T : Enum<T>> SortHeader(
         },
         trailingButton = {
             if (displayDescending) {
-                val description = "Toggle sort order"
+                val description = stringResource(R.string.pc_sort_toggle)
+                val sortState = stringResource(if (sortDescending) R.string.pc_sort_descending else R.string.pc_sort_ascending)
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
                     tooltip = { PlainTooltip { Text(description) } },
@@ -91,7 +92,7 @@ inline fun <reified T : Enum<T>> SortHeader(
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         modifier = Modifier.semantics {
-                            stateDescription = if (sortDescending) "Descending" else "Ascending"
+                            stateDescription = sortState
                             contentDescription = description
                         },
                     ) {
@@ -111,6 +112,8 @@ inline fun <reified T : Enum<T>> SortHeader(
                     }
                 }
             } else {
+                val menuState = stringResource(if (menuExpanded) R.string.pc_sort_expanded else R.string.pc_sort_collapsed)
+                val showOptions = stringResource(R.string.pc_sort_show_options)
                 SplitButtonDefaults.TrailingButton(
                     checked = menuExpanded,
                     onCheckedChange = { menuExpanded = it },
@@ -119,8 +122,8 @@ inline fun <reified T : Enum<T>> SortHeader(
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     modifier = Modifier.semantics {
-                        stateDescription = if (menuExpanded) "Expanded" else "Collapsed"
-                        contentDescription = "Show sort options"
+                        stateDescription = menuState
+                        contentDescription = showOptions
                     },
                 ) {
                     val rotation: Float by animateFloatAsState(

@@ -39,11 +39,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +51,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -60,10 +60,10 @@ import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.UsbPassthroughKey
 import com.mochyy.mochymusic.playback.audio.AudioOutputs
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.SheetIcon
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.flow.MutableStateFlow
-import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** "change playback": both volumes, then every output; picking one moves the song there, cast receivers play it themselves */
 @Composable
@@ -71,21 +71,25 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
     val context = LocalContext.current
     val playerConnection = LocalPlayerConnection.current
     val service = playerConnection?.service
-    val audioManager = remember {
-        context.getSystemService(android.content.Context.AUDIO_SERVICE) as AudioManager
-    }
-    val maxVolume = remember {
-        audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
-    }
+    val audioManager =
+        remember {
+            context.getSystemService(android.content.Context.AUDIO_SERVICE) as AudioManager
+        }
+    val maxVolume =
+        remember {
+            audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+        }
 
-    val deviceVolume = remember {
-        mutableFloatStateOf(
-            audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat() / maxVolume
-        )
-    }
-    val musicVolume = remember {
-        mutableFloatStateOf(playerConnection?.player?.volume ?: 1f)
-    }
+    val deviceVolume =
+        remember {
+            mutableFloatStateOf(
+                audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat() / maxVolume,
+            )
+        }
+    val musicVolume =
+        remember {
+            mutableFloatStateOf(playerConnection?.player?.volume ?: 1f)
+        }
 
     val devices by remember { service?.audioOutputs?.devices ?: MutableStateFlow(emptyList()) }.collectAsState()
     val cast = service?.castConnectionHandler
@@ -98,10 +102,22 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
     val (passthrough) = rememberPreference(UsbPassthroughKey, false)
     val anyChosen = devices.any { it.isChosen }
     // larping, whatever is really playing turns into the level's dac, fed straight from mochy
-    val larp = com.mochyy.mochymusic.ui.player.rememberLarpMode()
+    val larp =
+        com.mochyy.mochymusic.ui.player
+            .rememberLarpMode()
     val larping = larp != null
-    val larpName = larp?.let { androidx.compose.ui.res.stringResource(it.dac) }.orEmpty()
-    val larpDetail = larp?.let { com.mochyy.mochymusic.ui.player.larpDacDetail(it) }.orEmpty()
+    val larpName =
+        larp
+            ?.let {
+                androidx.compose.ui.res
+                    .stringResource(it.dac)
+            }.orEmpty()
+    val larpDetail =
+        larp
+            ?.let {
+                com.mochyy.mochymusic.ui.player
+                    .larpDacDetail(it)
+            }.orEmpty()
 
     // receivers are only looked for while this is open: discovery keeps the wifi radio busy
     DisposableEffect(cast) {
@@ -111,16 +127,17 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
 
     MenuSheetSurface(onDismiss = onDismiss, halfDetent = 0.66f, fullDetent = 0.92f) { _ ->
         Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .padding(top = 10.dp, bottom = 28.dp)
+            modifier =
+                Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 10.dp, bottom = 28.dp),
         ) {
-            SectionLabel("Change playback")
+            SectionLabel(stringResource(R.string.ps_device_change_playback))
 
             VolumeCard(
                 icon = R.drawable.volume_up,
-                title = android.os.Build.MODEL ?: "this device",
+                title = android.os.Build.MODEL ?: stringResource(R.string.ps_device_this_device),
                 value = deviceVolume.floatValue,
                 onValueChange = { next ->
                     deviceVolume.floatValue = next
@@ -136,7 +153,7 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
 
             VolumeCard(
                 icon = R.drawable.music_note,
-                title = "Music volume",
+                title = stringResource(R.string.ps_device_music_volume),
                 value = musicVolume.floatValue,
                 onValueChange = { next ->
                     musicVolume.floatValue = next
@@ -145,12 +162,12 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
             )
 
             Spacer(modifier = Modifier.height(22.dp))
-            SectionLabel("Play on")
+            SectionLabel(stringResource(R.string.ps_device_play_on))
 
             Column(modifier = Modifier.animateContentSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 DeviceRow(
-                    label = "Automatic",
-                    detail = "Wherever Android sends it",
+                    label = stringResource(R.string.ps_device_automatic),
+                    detail = stringResource(R.string.ps_device_automatic_desc),
                     icon = Icons.Rounded.AutoMode,
                     selected = !anyChosen && !isCasting,
                     onClick = { service?.setPreferredAudioDevice(null) },
@@ -173,12 +190,12 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
 
             if (castTargets.isNotEmpty() || isCasting) {
                 Spacer(modifier = Modifier.height(22.dp))
-                SectionLabel("Other devices on your network")
+                SectionLabel(stringResource(R.string.ps_device_other_devices))
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (isCasting) {
                         DeviceRow(
-                            label = castingTo ?: "Cast device",
-                            detail = "Playing here now · tap to stop casting",
+                            label = castingTo ?: stringResource(R.string.ps_device_cast_device),
+                            detail = stringResource(R.string.ps_device_casting_here),
                             icon = Icons.Rounded.CastConnected,
                             selected = true,
                             onClick = { cast?.disconnect() },
@@ -188,7 +205,13 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
                         val connecting = isConnecting && tappedTarget == target.id
                         DeviceRow(
                             label = target.name,
-                            detail = if (connecting) stringResource(R.string.cast_connecting) else target.detail ?: "Cast",
+                            detail =
+                                if (connecting) {
+                                    stringResource(R.string.cast_connecting)
+                                } else {
+                                    target.detail
+                                        ?: stringResource(R.string.ps_device_cast)
+                                },
                             icon = Icons.Rounded.Cast,
                             onClick = {
                                 tappedTarget = target.id
@@ -201,14 +224,15 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
             DeviceRow(
-                label = "Pair a new device",
-                detail = "Opens Bluetooth settings",
+                label = stringResource(R.string.ps_device_pair_new),
+                detail = stringResource(R.string.ps_device_opens_bluetooth),
                 icon = Icons.Rounded.SettingsBluetooth,
                 onClick = {
                     runCatching {
                         context.startActivity(
-                            android.content.Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
-                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            android.content
+                                .Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
                         )
                     }
                 },
@@ -217,42 +241,56 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
     }
 }
 
-private fun deviceLabel(device: AudioOutputs.Device): String = device.name.ifBlank {
-    when (device.kind) {
-        AudioOutputs.Kind.PHONE -> "This phone"
-        AudioOutputs.Kind.WIRED -> "Wired headphones"
-        AudioOutputs.Kind.USB -> "USB audio"
-        AudioOutputs.Kind.BLUETOOTH -> "Bluetooth device"
-        AudioOutputs.Kind.HDMI -> "HDMI"
+@Composable
+private fun deviceLabel(device: AudioOutputs.Device): String =
+    device.name.ifBlank {
+        when (device.kind) {
+            AudioOutputs.Kind.PHONE -> stringResource(R.string.ps_device_this_phone)
+            AudioOutputs.Kind.WIRED -> stringResource(R.string.ps_device_wired_headphones)
+            AudioOutputs.Kind.USB -> stringResource(R.string.ps_device_usb_audio)
+            AudioOutputs.Kind.BLUETOOTH -> stringResource(R.string.ps_device_bluetooth_device)
+            AudioOutputs.Kind.HDMI -> stringResource(R.string.hdmi)
+        }
     }
-}
 
 // a dac says what it takes, so that's shown; the rest just say what they are
-private fun deviceDetail(device: AudioOutputs.Device, passthrough: Boolean): String {
-    val kind = when (device.kind) {
-        AudioOutputs.Kind.PHONE -> "Speaker"
-        AudioOutputs.Kind.WIRED -> "Headphone jack"
-        AudioOutputs.Kind.USB -> "USB DAC"
-        AudioOutputs.Kind.BLUETOOTH -> "Bluetooth"
-        AudioOutputs.Kind.HDMI -> "HDMI"
-    }
-    val takes = listOfNotNull(
-        device.maxSampleRate?.let { "up to ${it / 1000} kHz" },
-        device.bitDepths.maxOrNull()?.let { "$it-bit" },
-    ).takeIf { device.kind == AudioOutputs.Kind.USB }.orEmpty()
-    val bypass = "passthrough on".takeIf {
-        passthrough && device.kind == AudioOutputs.Kind.USB && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE
-    }
-    return (listOf(kind) + takes + listOfNotNull(bypass) + listOfNotNull("playing".takeIf { device.isActive })).joinToString(" · ")
+@Composable
+private fun deviceDetail(
+    device: AudioOutputs.Device,
+    passthrough: Boolean,
+): String {
+    val kind =
+        when (device.kind) {
+            AudioOutputs.Kind.PHONE -> stringResource(R.string.ps_device_speaker)
+            AudioOutputs.Kind.WIRED -> stringResource(R.string.ps_device_headphone_jack)
+            AudioOutputs.Kind.USB -> stringResource(R.string.ps_device_usb_dac)
+            AudioOutputs.Kind.BLUETOOTH -> stringResource(R.string.pc_stat_bluetooth)
+            AudioOutputs.Kind.HDMI -> stringResource(R.string.hdmi)
+        }
+    val takes =
+        listOfNotNull(
+            device.maxSampleRate?.let { stringResource(R.string.ps_device_up_to_khz, it / 1000) },
+            device.bitDepths.maxOrNull()?.let { "$it-bit" },
+        ).takeIf { device.kind == AudioOutputs.Kind.USB }.orEmpty()
+    val bypass =
+        stringResource(R.string.ps_device_passthrough_on).takeIf {
+            passthrough && device.kind == AudioOutputs.Kind.USB &&
+                android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+        }
+    return (
+        listOf(kind) + takes + listOfNotNull(bypass) +
+            listOfNotNull(stringResource(R.string.ps_device_playing).takeIf { device.isActive })
+    ).joinToString(" · ")
 }
 
-private fun AudioOutputs.Kind.icon(): ImageVector = when (this) {
-    AudioOutputs.Kind.PHONE -> Icons.Rounded.Smartphone
-    AudioOutputs.Kind.WIRED -> Icons.Rounded.Headphones
-    AudioOutputs.Kind.USB -> Icons.Rounded.Usb
-    AudioOutputs.Kind.BLUETOOTH -> Icons.Rounded.Bluetooth
-    AudioOutputs.Kind.HDMI -> Icons.Rounded.Tv
-}
+private fun AudioOutputs.Kind.icon(): ImageVector =
+    when (this) {
+        AudioOutputs.Kind.PHONE -> Icons.Rounded.Smartphone
+        AudioOutputs.Kind.WIRED -> Icons.Rounded.Headphones
+        AudioOutputs.Kind.USB -> Icons.Rounded.Usb
+        AudioOutputs.Kind.BLUETOOTH -> Icons.Rounded.Bluetooth
+        AudioOutputs.Kind.HDMI -> Icons.Rounded.Tv
+    }
 
 @Composable
 private fun SectionLabel(text: String) {
@@ -273,11 +311,12 @@ private fun VolumeCard(
     onValueChange: (Float) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(MenuRowSurface)
-            .padding(horizontal = 14.dp, vertical = 14.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(MenuRowSurface)
+                .padding(horizontal = 14.dp, vertical = 14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             SheetIcon(icon, tint = Color.White)
@@ -329,16 +368,16 @@ private fun DeviceRow(
     val checkAlpha by animateFloatAsState(if (selected) 1f else 0f, label = "deviceCheck")
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (selected || playing) Color.White.copy(alpha = 0.10f) else MenuRowSurface)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = RemoteFocus,
-                onClick = onClick,
-            )
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(if (selected || playing) Color.White.copy(alpha = 0.10f) else MenuRowSurface)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = RemoteFocus,
+                    onClick = onClick,
+                ).padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
         Icon(imageVector = icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
         Spacer(modifier = Modifier.width(12.dp))
@@ -364,11 +403,12 @@ private fun DeviceRow(
         }
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(22.dp)
-                .graphicsLayer { alpha = checkAlpha }
-                .clip(CircleShape)
-                .background(Color.White),
+            modifier =
+                Modifier
+                    .size(22.dp)
+                    .graphicsLayer { alpha = checkAlpha }
+                    .clip(CircleShape)
+                    .background(Color.White),
         ) {
             Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.Black, modifier = Modifier.size(15.dp))
         }

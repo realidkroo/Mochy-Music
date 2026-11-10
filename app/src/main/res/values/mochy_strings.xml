@@ -1169,4 +1169,18 @@
     <string name="recent_search_playlist">Playlist · %1$s</string>
     <string name="recent_search_artist">Artist</string>
     <string name="recent_search_remove">Remove from recent searches</string>
+    <string name="swipe_action_library">Add or remove from library</string>
+    <string name="swipe_action_details">View details</string>
+    <string name="menu_ai_translation">AI translation</string>
+    <string name="menu_change_output">Change device output</string>
+    <string name="menu_add_to_liked">Add to liked</string>
+    <string name="menu_remove_from_liked">Remove from liked</string>
+    <string name="menu_edit_player">Edit player</string>
+    <string name="menu_keep_screen_on">Keep screen on</string>
+    <string name="menu_sort_by">Sort by</string>
+    <string name="menu_resync_title">Re-sync with %1$s</string>
+    <string name="menu_resync_desc">Add the songs that are new on %1$s</string>
+    <string name="menu_resync_paste">Paste its %1$s link</string>
+    <string name="menu_choose_version">Choose different version</string>
+    <string name="menu_choose_version_desc">Wrong recording? Pick the right one from a list</string>
 </resources>

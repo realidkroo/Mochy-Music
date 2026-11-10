@@ -1,5 +1,6 @@
 package com.mochyy.mochymusic.ui.component
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mochyy.mochymusic.R
 import kotlin.math.sin
 
 /**
@@ -31,11 +33,12 @@ import kotlin.math.sin
  * The wavy variants are drawn as a [Path] rather than an AGSL shader, so unlike the lyrics glow
  * they animate identically on every supported Android version.
  */
-enum class SeekBarStyle(val displayName: String) {
-    DEFAULT("Default"),
-    M3_EXPRESSIVE("Material 3 Expressive 1"),
-    M3_EXPRESSIVE_LINE("Material 3 Expressive slider 2"),
-    PLAIN("plain"),
+/** [displayName] is the plain English name; the UI shows [labelRes], which follows the app language. */
+enum class SeekBarStyle(val displayName: String, @StringRes val labelRes: Int) {
+    DEFAULT("Default", R.string.pc_style_default),
+    M3_EXPRESSIVE("Material 3 Expressive 1", R.string.pc_seek_m3_expressive_1),
+    M3_EXPRESSIVE_LINE("Material 3 Expressive slider 2", R.string.pc_seek_m3_expressive_2),
+    PLAIN("plain", R.string.pc_seek_plain),
 }
 
 private const val WaveSpeedMillis = 1400

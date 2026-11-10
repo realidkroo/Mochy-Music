@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -85,12 +86,12 @@ import com.mochyy.mochymusic.core.updater.isNewerThanInstalled
 import com.mochyy.mochymusic.core.updater.parseFullVersion
 import com.mochyy.mochymusic.ui.component.BetaBadge
 import com.mochyy.mochymusic.ui.component.PopupSheetState
+import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.pressBounce
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.player.menu.MenuSurface
 import com.mochyy.mochymusic.ui.screens.donate.showSupportSheet
 import kotlinx.coroutines.launch
-import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 @Composable
 fun rememberUpdateState(): androidx.compose.runtime.State<UpdateState> {
@@ -113,9 +114,12 @@ private suspend fun checkUpdate(force: Boolean): UpdateState =
     )
 
 /** shows the app version sheet as a PopupSheet, see docs/popup-sheet.skill.md */
-fun PopupSheetState.showUpdateSheet(updateState: UpdateState, onOpenDevSpace: (Int) -> Unit = {}) {
+fun PopupSheetState.showUpdateSheet(
+    updateState: UpdateState,
+    onOpenDevSpace: (Int) -> Unit = {},
+) {
     val popup = this
-    show(buttonBar = { SheetPrimaryButton(text = "Done", onClick = popup::dismiss) }) {
+    show(buttonBar = { SheetPrimaryButton(text = stringResource(R.string.done), onClick = popup::dismiss) }) {
         UpdateSheetContent(initialState = updateState, popup = popup, onOpenDevSpace = onOpenDevSpace)
     }
 }
@@ -134,16 +138,20 @@ private fun PopupSheetState.showUpdateDetailSheet(release: GithubRelease) {
 }
 
 @Composable
-internal fun SheetPrimaryButton(text: String, onClick: () -> Unit) {
+internal fun SheetPrimaryButton(
+    text: String,
+    onClick: () -> Unit,
+) {
     val interaction = remember { MutableInteractionSource() }
     Box(
-        modifier = Modifier
-            .pressBounce(interaction, pressedScale = 0.97f)
-            .fillMaxWidth()
-            .height(50.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.26f))
-            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
+        modifier =
+            Modifier
+                .pressBounce(interaction, pressedScale = 0.97f)
+                .fillMaxWidth()
+                .height(50.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.26f))
+                .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(text = text, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp)
@@ -188,23 +196,33 @@ private fun ColumnScope.UpdateSheetContent(
         // centred just inside the sheet's top-right corner so its edge cuts the ring off, no size of its own so it never pushes content around
         VersionRing(
             text = "MOCHY $installed",
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .layout { measurable, constraints ->
-                    val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0, maxWidth = Constraints.Infinity, maxHeight = Constraints.Infinity))
-                    layout(0, 0) {
-                        placeable.place(x = (-195).dp.roundToPx(), y = (-134).dp.roundToPx())
-                    }
-                },
+            modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .layout { measurable, constraints ->
+                        val placeable =
+                            measurable.measure(
+                                constraints.copy(
+                                    minWidth = 0,
+                                    minHeight = 0,
+                                    maxWidth = Constraints.Infinity,
+                                    maxHeight = Constraints.Infinity,
+                                ),
+                            )
+                        layout(0, 0) {
+                            placeable.place(x = (-195).dp.roundToPx(), y = (-134).dp.roundToPx())
+                        }
+                    },
         )
 
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
             Spacer(Modifier.height(6.dp))
             Box(
-                modifier = Modifier
-                    .size(76.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(MenuRowSurface),
+                modifier =
+                    Modifier
+                        .size(76.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(MenuRowSurface),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -237,12 +255,19 @@ private fun ColumnScope.UpdateSheetContent(
             )
 
             Spacer(Modifier.height(22.dp))
-            Text("Actions", fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp)
+            Text(stringResource(R.string.update_actions), fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp)
             Spacer(Modifier.height(10.dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 ActionRow(
                     icon = R.drawable.refresh,
-                    label = if (state is UpdateState.Checking) "Checking…" else "Check for update",
+                    label =
+                        if (state is UpdateState.Checking) {
+                            stringResource(
+                                R.string.update_checking,
+                            )
+                        } else {
+                            stringResource(R.string.update_check_for_update)
+                        },
                     spinning = state is UpdateState.Checking,
                     onClick = checkAgain,
                 )
@@ -254,26 +279,26 @@ private fun ColumnScope.UpdateSheetContent(
                     previous?.let { older ->
                         ActionRow(
                             icon = R.drawable.history,
-                            label = "Downgrade to ${shortVersion(older.version)}",
+                            label = stringResource(R.string.update_downgrade_to, shortVersion(older.version)),
                             onClick = { popup.showUpdateDetailSheet(older) },
                         )
                     }
                 }
                 ActionRow(
                     icon = R.drawable.bedtime,
-                    label = "Switch to nightly",
-                    hint = "Not out yet",
+                    label = stringResource(R.string.update_switch_nightly),
+                    hint = stringResource(R.string.update_not_out_yet),
                     enabled = false,
                     onClick = {},
                 )
                 ActionRow(
                     icon = R.drawable.info,
-                    label = "About app",
+                    label = stringResource(R.string.about_app),
                     onClick = { popup.showAboutSheet(onOpenDevSpace = onOpenDevSpace) },
                 )
                 ActionRow(
                     icon = R.drawable.favorite,
-                    label = "Help us!",
+                    label = stringResource(R.string.update_help_us),
                     onClick = { popup.showSupportSheet() },
                 )
             }
@@ -285,13 +310,15 @@ private fun ColumnScope.UpdateSheetContent(
 /** which channel this build is: nightly says so, newer than any release is beta, the rest is stable */
 @Composable
 private fun ChannelBadge(latest: GithubRelease?) {
-    val aheadOfReleases = latest != null &&
-        parseFullVersion(latest.version).copy(buildNumber = 0) < parseFullVersion(BuildConfig.VERSION_NAME).copy(buildNumber = 0)
-    val label = when {
-        BuildConfig.IS_NIGHTLY -> "NIGHTLY"
-        aheadOfReleases -> "BETA"
-        else -> StableLabel
-    }
+    val aheadOfReleases =
+        latest != null &&
+            parseFullVersion(latest.version).copy(buildNumber = 0) < parseFullVersion(BuildConfig.VERSION_NAME).copy(buildNumber = 0)
+    val label =
+        when {
+            BuildConfig.IS_NIGHTLY -> "NIGHTLY"
+            aheadOfReleases -> "BETA"
+            else -> StableLabel
+        }
     AnimatedContent(
         targetState = label,
         transitionSpec = {
@@ -313,11 +340,12 @@ private fun UpdateStatusCard(
     onRetry: () -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(MenuRowSurface)
-            .padding(horizontal = 20.dp, vertical = 18.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(MenuRowSurface)
+                .padding(horizontal = 20.dp, vertical = 18.dp),
     ) {
         AnimatedContent(
             targetState = state,
@@ -330,20 +358,31 @@ private fun UpdateStatusCard(
             label = "updateStatus",
         ) { shown ->
             when (shown) {
-                is UpdateState.Available -> StatusRow(
-                    title = "New update!",
-                    big = shortVersion(shown.release.version),
-                    action = "UPDATE NOW",
-                    onAction = { onUpdate(shown.release) },
-                )
-                UpdateState.Checking -> StatusRow(title = "Looking for updates", big = "…", pulsing = true)
-                UpdateState.UpToDate -> StatusRow(title = "You're on the latest", big = "All good")
-                is UpdateState.Failed -> StatusRow(
-                    title = "Couldn't check for updates",
-                    big = "Offline?",
-                    action = "TRY AGAIN",
-                    onAction = onRetry,
-                )
+                is UpdateState.Available -> {
+                    StatusRow(
+                        title = stringResource(R.string.update_status_new_update),
+                        big = shortVersion(shown.release.version),
+                        action = stringResource(R.string.update_action_update_now),
+                        onAction = { onUpdate(shown.release) },
+                    )
+                }
+
+                UpdateState.Checking -> {
+                    StatusRow(title = stringResource(R.string.update_status_looking), big = "…", pulsing = true)
+                }
+
+                UpdateState.UpToDate -> {
+                    StatusRow(title = stringResource(R.string.update_status_latest), big = stringResource(R.string.update_status_all_good))
+                }
+
+                is UpdateState.Failed -> {
+                    StatusRow(
+                        title = stringResource(R.string.update_status_failed),
+                        big = stringResource(R.string.update_status_offline),
+                        action = stringResource(R.string.update_action_try_again),
+                        onAction = onRetry,
+                    )
+                }
             }
         }
     }
@@ -357,16 +396,17 @@ private fun StatusRow(
     onAction: () -> Unit = {},
     pulsing: Boolean = false,
 ) {
-    val pulse = if (pulsing) {
-        rememberInfiniteTransition(label = "statusPulse").animateFloat(
-            initialValue = 0.35f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
-            label = "statusPulseAlpha",
-        )
-    } else {
-        null
-    }
+    val pulse =
+        if (pulsing) {
+            rememberInfiniteTransition(label = "statusPulse").animateFloat(
+                initialValue = 0.35f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
+                label = "statusPulseAlpha",
+            )
+        } else {
+            null
+        }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.weight(1f)) {
             Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp)
@@ -387,13 +427,14 @@ private fun StatusRow(
                 fontSize = 13.sp,
                 fontFamily = FontFamily.Monospace,
                 letterSpacing = 0.6.sp,
-                modifier = Modifier
-                    .pressBounce(interaction)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.2f))
-                    .border(1.dp, Color.White.copy(alpha = 0.22f), CircleShape)
-                    .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onAction)
-                    .padding(horizontal = 16.dp, vertical = 7.dp),
+                modifier =
+                    Modifier
+                        .pressBounce(interaction)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.2f))
+                        .border(1.dp, Color.White.copy(alpha = 0.22f), CircleShape)
+                        .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onAction)
+                        .padding(horizontal = 16.dp, vertical = 7.dp),
             )
         }
     }
@@ -425,30 +466,33 @@ private fun ActionRow(
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .pressBounce(interaction, pressedScale = 0.97f)
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(MenuRowSurface.copy(alpha = if (enabled) 1f else 0.6f))
-            .clickable(enabled = enabled, interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier
+                .pressBounce(interaction, pressedScale = 0.97f)
+                .fillMaxWidth()
+                .height(56.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(MenuRowSurface.copy(alpha = if (enabled) 1f else 0.6f))
+                .clickable(enabled = enabled, interactionSource = interaction, indication = RemoteFocus, onClick = onClick)
+                .padding(horizontal = 16.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .graphicsLayer { alpha = contentAlpha }
-                .size(28.dp)
-                .clip(CircleShape)
-                .background(Color(0xFFDADADA)),
+            modifier =
+                Modifier
+                    .graphicsLayer { alpha = contentAlpha }
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFDADADA)),
         ) {
             Icon(
                 painter = painterResource(icon),
                 contentDescription = null,
                 tint = Color(0xFF1C1C1E),
-                modifier = Modifier
-                    .size(17.dp)
-                    .graphicsLayer { rotationZ = spin.value },
+                modifier =
+                    Modifier
+                        .size(17.dp)
+                        .graphicsLayer { rotationZ = spin.value },
             )
         }
         Spacer(Modifier.width(14.dp))
@@ -485,190 +529,196 @@ private fun ColumnScope.UpdateDetailContent(
 
     val startInstall: (java.io.File) -> Unit = { file ->
         if (!installApk(context, file)) {
-            error = "Allow \"Install unknown apps\" for mochy, then tap Install here again."
+            error = context.getString(R.string.update_install_permission_error)
         }
     }
 
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
-                enabled = !downloading,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = RemoteFocus,
-                onClick = onBack,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        enabled = !downloading,
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = RemoteFocus,
+                        onClick = onBack,
+                    ).padding(vertical = 4.dp),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.arrow_back),
+                contentDescription = stringResource(R.string.update_back_desc),
+                modifier = Modifier.size(18.dp),
             )
-            .padding(vertical = 4.dp),
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.arrow_back),
-            contentDescription = "Back",
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Icon(
-            painter = painterResource(R.drawable.ic_mochy_mark),
-            contentDescription = null,
-            modifier = Modifier.size(22.dp),
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = release.title,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-
-    Spacer(modifier = Modifier.height(16.dp))
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(MenuRowSurface)
-            .padding(16.dp)
-            .animateContentSize()
-    ) {
-        Text(text = "Changelog", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(4.dp))
-        ChangelogMarkdown(
-            markdown = release.body,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            strongColor = MaterialTheme.colorScheme.onSurface,
-        )
-    }
-
-    Spacer(modifier = Modifier.height(18.dp))
-
-    Text(
-        text = "To Be Installed -",
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.SemiBold,
-    )
-    Spacer(modifier = Modifier.height(8.dp))
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(MenuRowSurface)
-            .padding(14.dp)
-    ) {
-        AppIconImage(modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)))
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                painter = painterResource(R.drawable.ic_mochy_mark),
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(modifier = Modifier.width(10.dp))
             Text(
-                text = release.apkName ?: "mochy.apk",
-                fontSize = 14.sp,
+                text = release.title,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = "${BuildConfig.APPLICATION_ID} · ${formatBytes(release.apkSizeBytes)}",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 11.sp,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
         }
-    }
 
-    error?.let {
-        Spacer(modifier = Modifier.height(10.dp))
-        Text(text = it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
-    }
+        Spacer(modifier = Modifier.height(16.dp))
 
-    Spacer(modifier = Modifier.height(18.dp))
-
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress.floatValue,
-        animationSpec = tween(durationMillis = 120),
-        label = "downloadProgress",
-    )
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .clip(RoundedCornerShape(50))
-            .background(MenuRowSurface)
-            .clickable(
-                enabled = !downloading && release.apkUrl != null,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = RemoteFocus,
-                onClick = {
-                    error = null
-                    if (isDownloaded(context, release)) {
-                        startInstall(apkFileFor(context, release))
-                    } else {
-                        downloading = true
-                        onLocked(true)
-                        progress.floatValue = 0f
-                        scope.launch {
-                            val result = downloadApk(context, release) { progress.floatValue = it }
-                            downloading = false
-                            onLocked(false)
-                            result.fold(
-                                onSuccess = { startInstall(it) },
-                                onFailure = { error = it.message ?: "Download failed" },
-                            )
-                        }
-                    }
-                },
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MenuRowSurface)
+                    .padding(16.dp)
+                    .animateContentSize(),
+        ) {
+            Text(text = stringResource(R.string.update_changelog), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(4.dp))
+            ChangelogMarkdown(
+                markdown = release.body,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                strongColor = MaterialTheme.colorScheme.onSurface,
             )
-    ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .fillMaxHeight()
-                .fillMaxWidth(fraction = animatedProgress)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
-        )
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
         Text(
-            text = when {
-                downloading -> "Downloading… ${(animatedProgress * 100).toInt()}%"
-                release.apkUrl == null -> "No APK in this release"
-                else -> "Install here"
-            },
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
+            text = stringResource(R.string.update_to_be_installed),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
         )
-    }
+        Spacer(modifier = Modifier.height(8.dp))
 
-    Spacer(modifier = Modifier.height(10.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MenuRowSurface)
+                    .padding(14.dp),
+        ) {
+            AppIconImage(modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)))
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = release.apkName ?: "mochy.apk",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = "${BuildConfig.APPLICATION_ID} · ${formatBytes(release.apkSizeBytes)}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
 
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .clip(RoundedCornerShape(50))
-            .background(MenuRowSurface)
-            .clickable(
-                enabled = !downloading,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = RemoteFocus,
-                onClick = { context.openUrl(release.htmlUrl) },
+        error?.let {
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(text = it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        val animatedProgress by animateFloatAsState(
+            targetValue = progress.floatValue,
+            animationSpec = tween(durationMillis = 120),
+            label = "downloadProgress",
+        )
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MenuRowSurface)
+                    .clickable(
+                        enabled = !downloading && release.apkUrl != null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = RemoteFocus,
+                        onClick = {
+                            error = null
+                            if (isDownloaded(context, release)) {
+                                startInstall(apkFileFor(context, release))
+                            } else {
+                                downloading = true
+                                onLocked(true)
+                                progress.floatValue = 0f
+                                scope.launch {
+                                    val result = downloadApk(context, release) { progress.floatValue = it }
+                                    downloading = false
+                                    onLocked(false)
+                                    result.fold(
+                                        onSuccess = { startInstall(it) },
+                                        onFailure = { error = it.message ?: context.getString(R.string.update_download_failed) },
+                                    )
+                                }
+                            }
+                        },
+                    ),
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterStart)
+                        .fillMaxHeight()
+                        .fillMaxWidth(fraction = animatedProgress)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
             )
-    ) {
-        Text(text = "Open the web", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-    }
+            Text(
+                text =
+                    when {
+                        downloading -> stringResource(R.string.update_downloading_progress, (animatedProgress * 100).toInt())
+                        release.apkUrl == null -> stringResource(R.string.update_no_apk)
+                        else -> stringResource(R.string.update_install_here)
+                    },
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MenuRowSurface)
+                    .clickable(
+                        enabled = !downloading,
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = RemoteFocus,
+                        onClick = { context.openUrl(release.htmlUrl) },
+                    ),
+        ) {
+            Text(text = stringResource(R.string.update_open_web), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
 internal fun android.content.Context.openUrl(url: String) {
     runCatching {
         startActivity(
-            android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
-                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            android.content
+                .Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
         )
     }
 }
@@ -676,14 +726,15 @@ internal fun android.content.Context.openUrl(url: String) {
 @Composable
 internal fun AppIconImage(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val icon = remember(context) {
-        runCatching {
-            context.packageManager
-                .getApplicationIcon(context.packageName)
-                .toBitmap(width = 192, height = 192)
-                .asImageBitmap()
-        }.getOrNull()
-    }
+    val icon =
+        remember(context) {
+            runCatching {
+                context.packageManager
+                    .getApplicationIcon(context.packageName)
+                    .toBitmap(width = 192, height = 192)
+                    .asImageBitmap()
+            }.getOrNull()
+        }
 
     if (icon != null) {
         Image(bitmap = icon, contentDescription = null, modifier = modifier)

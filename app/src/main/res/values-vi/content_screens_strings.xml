@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- About Sheet -->
+    <string name="about_app">Giới thiệu ứng dụng</string>
+    <string name="about_mochy_music_version">Mochy Music | %1$s</string>
+    <string name="about_app_description">Mochy Music là một ứng dụng nghe nhạc,\nnhưng khá là thú vị đấy.</string>
+    <string name="about_actions">Hành động</string>
+    <string name="about_support_me">Ủng hộ mình với nhé :3 \u2192</string>
+    <string name="about_github">GitHub của Mochy Music \u2192</string>
+    <string name="about_meet_lead_dev">Đội ngũ phát triển chính</string>
+    <string name="about_we_wont_exist">Ứng dụng sẽ không tồn tại nếu thiếu họ</string>
+    <string name="about_and_more">Và nhiều người khác \u2192</string>
+    <string name="about_license">Giấy phép</string>
+    <string name="about_more_license">Xem thêm về giấy phép</string>
+    <string name="about_cool_contributors">Người đóng góp tuyệt vời</string>
+    <string name="about_credits">Ghi công</string>
+
+    <!-- Update Sheet -->
+    <string name="update_actions">Hành động</string>
+    <string name="update_checking">Đang kiểm tra…</string>
+    <string name="update_check_for_update">Kiểm tra bản cập nhật</string>
+    <string name="update_downgrade_to">Hạ cấp xuống %1$s</string>
+    <string name="update_switch_nightly">Chuyển sang bản Nightly</string>
+    <string name="update_not_out_yet">Chưa phát hành</string>
+    <string name="update_help_us">Ủng hộ chúng tôi!</string>
+    <string name="update_status_new_update">Có bản cập nhật mới!</string>
+    <string name="update_action_update_now">CẬP NHẬT NGAY</string>
+    <string name="update_status_looking">Đang tìm bản cập nhật</string>
+    <string name="update_status_latest">Bạn đang ở bản mới nhất</string>
+    <string name="update_status_all_good">Mọi thứ đều tuyệt vời</string>
+    <string name="update_status_failed">Không thể kiểm tra cập nhật</string>
+    <string name="update_status_offline">Ngoại tuyến?</string>
+    <string name="update_action_try_again">THỬ LẠI</string>
+    <string name="update_install_permission_error">Vui lòng cấp quyền \"Cài đặt ứng dụng không rõ nguồn gốc\" cho Mochy, sau đó nhấn Cài đặt lại.</string>
+    <string name="update_back_desc">Quay lại</string>
+    <string name="update_changelog">Nhật ký thay đổi</string>
+    <string name="update_to_be_installed">Chuẩn bị cài đặt -</string>
+    <string name="update_download_failed">Tải xuống thất bại</string>
+    <string name="update_downloading_progress">Đang tải xuống… %1$d%%</string>
+    <string name="update_no_apk">Không có tệp APK trong bản này</string>
+    <string name="update_install_here">Cài đặt tại đây</string>
+    <string name="update_open_web">Mở trên trang web</string>
+
+    <!-- Artist Screen -->
+    <string name="artist_menu_shuffle">Trộn bài</string>
+    <string name="artist_menu_start_radio">Bật radio</string>
+    <string name="artist_menu_copy_link">Sao chép liên kết</string>
+    <string name="artist_link_label">Liên kết nghệ sĩ</string>
+    <string name="artist_top_songs">Bài hát nổi bật</string>
+    <string name="artist_albums">Album</string>
+    <string name="artist_singles_eps">Đĩa đơn &amp; EP</string>
+    <string name="artist_videos">Video</string>
+    <string name="artist_concert">Buổi biểu diễn</string>
+    <string name="artist_featured_on">Xuất hiện trong</string>
+    <string name="artist_similar">Nghệ sĩ tương tự</string>
+    <string name="artist_in_your_library">Trong thư viện của bạn</string>
+    <string name="artist_saved_albums_of">Album của %1$s bạn đã lưu</string>
+    <string name="artist_about">Giới thiệu về %1$s</string>
+    <string name="artist_load_failed">Không thể tải nghệ sĩ này. Nhấn để thử lại</string>
+
+    <!-- Playlist Screens -->
+    <string name="playlist_removed_song_from">Đã xóa %1$s khỏi %2$s</string>
+    <string name="playlist_fallback_name">danh sách phát</string>
+    <string name="playlist_drag_to_move">Kéo để di chuyển</string>
+    <string name="playlist_related">Danh sách phát liên quan</string>
+    <string name="playlist_sort_order">Thứ tự sắp xếp</string>
+    <string name="playlist_sort_desc"> (Giảm dần)</string>
+    <string name="playlist_sort_asc"> (Tăng dần)</string>
+
+    <!-- Search & Genre Screens -->
+    <string name="genre_nothing_here">Chưa có nội dung nào</string>
+    <string name="genre_featured">Nổi bật</string>
+    <string name="genre_from_the_community">Từ cộng đồng</string>
+    <string name="item_kind_album">Album</string>
+    <string name="item_kind_artist">Nghệ sĩ</string>
+    <string name="item_kind_playlist">Danh sách phát</string>
+    <string name="item_kind_video">Video</string>
+    <string name="item_kind_song">Bài hát</string>
+    <string name="search_category_all">Tất cả</string>
+    <string name="search_category_music">Nhạc</string>
+    <string name="search_category_artist">Nghệ sĩ</string>
+    <string name="search_category_video">Video</string>
+    <string name="search_category_album">Album</string>
+    <string name="search_category_playlist">Danh sách phát</string>
+    <string name="search_category_featured">Nổi bật</string>
+    <string name="search_top_results">Kết quả hàng đầu</string>
+    <string name="search_exact_matches">Khớp chính xác</string>
+    <string name="search_no_results">Không có kết quả</string>
+    <string name="search_placeholder_tracks_albums">Tìm bài hát, album, lời bài hát…</string>
+    <string name="search_by_artist">bởi %1$s</string>
+
+    <!-- Suggestion Region Sheet -->
+    <string name="suggestion_choose_region">Chọn khu vực gợi ý</string>
+    <string name="suggestion_search_regions">Tìm kiếm khu vực…</string>
+    <string name="suggestion_search_desc">Tìm kiếm</string>
+    <string name="suggestion_system">Hệ thống</string>
+    <string name="suggestion_system_default">Mặc định hệ thống</string>
+    <string name="suggestion_countries_regions">Quốc gia &amp; Vùng lãnh thổ</string>
+    <string name="suggestion_selected_desc">Đã chọn</string>
+
+    <!-- Donate Sheet -->
+    <string name="donate_dismiss_button">thôi mình không muốn đâu</string>
+    <string name="donate_thank_you_title">Arigatou! :3</string>
+    <string name="donate_subtitle">Dưới đây là các kênh để ủng hộ và đóng góp cho chúng mình!</string>
+    <string name="donate_kofi">Ủng hộ qua Ko-fi</string>
+    <string name="donate_sociabuzz">Ủng hộ qua SociaBuzz</string>
+    <string name="donate_sociabuzz_desc">Khuyên dùng cho một số quốc gia ĐNÁ và Mỹ Latinh</string>
+    <string name="donate_buymeacoffee">Ủng hộ qua Buy Me a Coffee</string>
+    <string name="donate_note">mỗi khoản ủng hộ, dù nhỏ đến đâu, cũng luôn vô cùng ý nghĩa đối với chúng mình :3</string>
+
+    <!-- Album Screen -->
+    <string name="album_more_by_artist">Thêm từ %1$s</string>
+    <string name="album_more_by_this_artist">Thêm từ nghệ sĩ này</string>
+    <string name="album_other_versions">Các phiên bản khác</string>
+    <string name="album_releases_for_you">Phát hành dành cho bạn</string>
+    <string name="album_explicit_tag">Explicit</string>
+    <string name="album_load_failed">Không thể tải album này. Nhấn để thử lại</string>
+</resources>

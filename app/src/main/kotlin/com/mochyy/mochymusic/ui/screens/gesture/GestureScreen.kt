@@ -408,7 +408,7 @@ private fun ActionDropdown(action: SongSwipeAction, onClick: () -> Unit) {
         ActionOptionBadge(action = action)
         Crossfade(targetState = action, animationSpec = tween(180), modifier = Modifier.weight(1f), label = "swipeAction") { shown ->
             Text(
-                shown.title,
+                stringResource(shown.title),
                 fontFamily = InterFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 15.sp,
@@ -434,7 +434,7 @@ private fun ActionPicker(selected: SongSwipeAction, onPick: (SongSwipeAction) ->
     Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 12.dp)) {
         SongSwipeAction.entries.forEach { option ->
             SheetOptionRow(
-                title = option.title,
+                title = stringResource(option.title),
                 onClick = { onPick(option) },
                 leading = { ActionOptionBadge(action = option) },
                 trailing = {
