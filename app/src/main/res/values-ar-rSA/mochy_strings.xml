@@ -1096,6 +1096,33 @@
     <!-- skips that cross over, the studio version of music videos, recent searches -->
     <string name="settings_blend_skips">Blend skips</string>
     <string name="settings_blend_skips_desc">Loads the songs either side ahead, so skip and back crossfade straight into them</string>
+    <string name="settings_blend_ahead">Songs loaded ahead</string>
+    <plurals name="settings_blend_ahead_value">
+        <item quantity="zero">%d songs</item>
+        <item quantity="one">%d song</item>
+        <item quantity="two">%d songs</item>
+        <item quantity="few">%d songs</item>
+        <item quantity="many">%d songs</item>
+        <item quantity="other">%d songs</item>
+    </plurals>
+    <string name="settings_blend_ahead_desc">More songs ahead keeps the fade smooth when you skip a few in a row. It uses a little more data.</string>
+    <string name="settings_blend_ahead_saver">Data saver is on, so only the next song loads ahead.</string>
+    <string name="settings_persistent_shuffle">Keep shuffle on</string>
+    <string name="settings_persistent_shuffle_desc">Shuffle stays on when you play another playlist or album, until you turn it off</string>
+    <string name="auto_download_new_songs">Download new songs</string>
+    <string name="speed_only_this_song">Save for this song only</string>
+    <string name="speed_only_this_song_detail">%1$s keeps this speed and pitch. Other songs play as usual.</string>
+    <string name="discord_custom_pick">Choose a picture</string>
+    <string name="discord_custom_change">Change picture</string>
+    <string name="discord_custom_note">Discord only shows pictures from the web, so Mochy puts yours on a free file host and shows it from there.</string>
+    <string name="discord_custom_failed">Couldn\'t use that picture. Try another one.</string>
+    <string name="search_in_playlist">Search in this playlist…</string>
+    <string name="search_in_album">Search in this album…</string>
+    <string name="close_search">Close search</string>
+    <string name="search_this_list">Search</string>
+    <string name="radio_queue_title">%1$s Radio</string>
+    <string name="radio_started">Radio on. Songs like %1$s play next, and it keeps going.</string>
+    <string name="radio_failed">Couldn\'t start a radio for this song. Check your connection and try again.</string>
     <string name="settings_studio_for_videos">Studio version for music videos</string>
     <string name="settings_studio_for_videos_desc">A music video plays its song\'s studio recording when there is one, without the video\'s skits and sound effects</string>
     <string name="playing_studio_version">Playing the studio version</string>
