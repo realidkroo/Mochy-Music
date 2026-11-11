@@ -127,6 +127,8 @@ import com.mochyy.mochymusic.constants.PlayVideoBackgroundKey
 import com.mochyy.mochymusic.constants.DisableVideoAutoplayKey
 import com.mochyy.mochymusic.constants.PlayerBackgroundStyle
 import com.mochyy.mochymusic.constants.PlayerCoverStyle
+import com.mochyy.mochymusic.constants.PlayerCoverZoomKey
+import com.mochyy.mochymusic.ui.player.customize.ZoomedCover
 import com.mochyy.mochymusic.ui.player.customize.DiscCoverStack
 import com.mochyy.mochymusic.ui.player.customize.PlayerBackgroundContent
 import com.mochyy.mochymusic.ui.player.customize.CoverGradientBackdrop
@@ -458,6 +460,9 @@ fun MorphingCover(
     // data saver turns video backgrounds and auto-playing videos off; the full video mode still plays when asked for
     val dataSaving = com.mochyy.mochymusic.utils.rememberDataSaverActive()
     val playVideoPref = rememberPreference(PlayVideoBackgroundKey, defaultValue = false).value && !dataSaving
+    // the disc styles crop the cover into the disc, so the zoom is only for the squared and edge to edge ones
+    val coverZoom = rememberPreference(PlayerCoverZoomKey, defaultValue = 1f).value
+        .takeIf { !coverStyle.isDisc && !alternateStyle && it < 1f }
     val disableVideoAutoplay = rememberPreference(DisableVideoAutoplayKey, defaultValue = false).value || dataSaving
     val currentMetadata by (playerConnection?.mediaMetadata ?: remember { kotlinx.coroutines.flow.MutableStateFlow(null) })
         .collectAsState()
@@ -1055,6 +1060,14 @@ fun MorphingCover(
                         thumbnailUrl = url,
                         modifier = (if (squaredCards) pictureModifier.then(cardGreyFilter) else pictureModifier)
                             .graphicsLayer { if (pictureHidden(url)) alpha = 0f },
+                        // filled as before in the mini player and the lyrics header, zoomed out once open
+                        zoom = coverZoom?.let { zoom ->
+                            {
+                                val open = ((progressProvider() - 0.5f) / 0.45f).coerceIn(0f, 1f) *
+                                    (1f - lyricsProgressProvider()).coerceIn(0f, 1f)
+                                1f - (1f - zoom) * open
+                            }
+                        },
                     )
                 }
 
@@ -1396,7 +1409,7 @@ private fun MiniSongLines(title: String, artist: String, album: String, modifier
 }
 
 @Composable
-private fun CoverPicture(thumbnailUrl: String?, modifier: Modifier = Modifier) {
+private fun CoverPicture(thumbnailUrl: String?, modifier: Modifier = Modifier, zoom: (() -> Float)? = null) {
     val context = LocalContext.current
     val imageRequest = remember(thumbnailUrl) {
         ImageRequest.Builder(context)
@@ -1406,6 +1419,10 @@ private fun CoverPicture(thumbnailUrl: String?, modifier: Modifier = Modifier) {
             .precision(Precision.INEXACT)
             .crossfade(false)
             .build()
+    }
+    if (zoom != null) {
+        ZoomedCover(model = imageRequest, zoom = zoom, modifier = modifier)
+        return
     }
     AsyncImage(
         model = imageRequest,

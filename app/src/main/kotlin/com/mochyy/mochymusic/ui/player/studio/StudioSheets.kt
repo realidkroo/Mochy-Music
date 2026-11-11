@@ -58,6 +58,7 @@ import com.mochyy.mochymusic.ui.component.SeekBarTrack
 import com.mochyy.mochymusic.ui.component.TransportColors
 import com.mochyy.mochymusic.ui.player.customize.CoverOption
 import com.mochyy.mochymusic.ui.player.customize.options
+import com.mochyy.mochymusic.ui.player.menu.LineSlider
 import com.mochyy.mochymusic.ui.player.menu.LocalMenuSheetClose
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.player.menu.MenuSheetSurface
@@ -187,6 +188,7 @@ fun StudioSheets(
                     when (option) {
                         is CoverOption.Switch -> SwitchRow(option)
                         is CoverOption.Text -> TextRow(option.title, option.description, option.key, option.placeholder)
+                        is CoverOption.Slider -> SliderRow(option)
                     }
                 }
             }
@@ -366,6 +368,27 @@ internal fun SwitchRow(option: CoverOption.Switch) {
         Spacer(Modifier.width(16.dp))
         Box(Modifier.weight(1f)) { TwoLines(option.title, option.description) }
         AppSwitch(checked = checked, onCheckedChange = { stored = if (option.inverted) !it else it }, enabled = parentOn)
+    }
+}
+
+@Composable
+private fun SliderRow(option: CoverOption.Slider) {
+    var stored by rememberPreference(option.key, defaultValue = option.default)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(26.dp))
+            .background(MenuRowSurface)
+            .padding(horizontal = 22.dp, vertical = 14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(painterResource(option.icon), null, tint = Color.White, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(16.dp))
+            Box(Modifier.weight(1f)) { TwoLines(option.title, option.description) }
+            Text("${(stored * 100).toInt()}%", color = Color.White.copy(alpha = 0.55f), style = studioText(StudioType.Caption, FontWeight.Medium))
+        }
+        Spacer(Modifier.height(6.dp))
+        LineSlider(value = stored, onValueChange = { stored = it })
     }
 }
 

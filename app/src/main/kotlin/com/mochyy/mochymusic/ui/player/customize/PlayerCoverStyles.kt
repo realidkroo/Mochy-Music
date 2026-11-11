@@ -11,6 +11,7 @@ import com.mochyy.mochymusic.constants.DiscRealisticModeKey
 import com.mochyy.mochymusic.constants.DiscRotatingAnimationKey
 import com.mochyy.mochymusic.constants.PlayVideoBackgroundKey
 import com.mochyy.mochymusic.constants.PlayerCoverStyle
+import com.mochyy.mochymusic.constants.PlayerCoverZoomKey
 import com.mochyy.mochymusic.constants.YtVideoBackgroundLyricsSyncKey
 
 val PlayerCoverStyle.isDisc: Boolean
@@ -69,6 +70,14 @@ sealed interface CoverOption {
         val key: Preferences.Key<String>,
         val placeholder: String,
     ) : CoverOption
+
+    data class Slider(
+        override val title: String,
+        override val description: String,
+        @param:DrawableRes override val icon: Int,
+        val key: Preferences.Key<Float>,
+        val default: Float,
+    ) : CoverOption
 }
 
 private val AnimatedCanvasOption = CoverOption.Switch(
@@ -120,12 +129,21 @@ private val DiscNameOption = CoverOption.Text(
     placeholder = "Leave empty to hide",
 )
 
+private val CoverZoomOption = CoverOption.Slider(
+    title = "Cover zoom",
+    description = "Slide left to see the whole cover",
+    icon = R.drawable.crop,
+    key = PlayerCoverZoomKey,
+    default = 1f,
+)
+
 private val DiscOptions = listOf(RotatingAnimationOption, RealisticModeOption, DiscNameOption)
 
 val PlayerCoverStyle.options: List<CoverOption>
     get() = when (this) {
-        PlayerCoverStyle.SQUARED -> listOf(AnimatedCanvasOption)
+        PlayerCoverStyle.SQUARED -> listOf(CoverZoomOption, AnimatedCanvasOption)
         PlayerCoverStyle.EDGE_TO_EDGE -> listOf(
+            CoverZoomOption,
             YtVideoOption,
             TimestampMatchingOption,
             AnimatedCanvasOption,
