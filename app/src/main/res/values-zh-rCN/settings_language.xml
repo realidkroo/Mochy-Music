@@ -48,6 +48,7 @@
     <string name="playback_mix_other_apps_detail">Mochy won\'t pause when a video, game or another music app starts playing, and it won\'t pause them either. Phone calls still pause the music, and it picks back up when the call ends.</string>
     <string name="playback_resume_bluetooth">Resume on Bluetooth connection</string>
     <string name="playback_resume_bluetooth_desc">Continue a paused song when headphones or a car connect</string>
+    <string name="pause_music_when_muted_desc">Pause when the volume hits zero, pick back up when it\u0027s raised</string>
     <string name="playback_save_state">Save Player\'s last state</string>
     <string name="playback_save_state_desc">Off clears played tracks on close</string>
     <string name="playback_save_state_detail">Turning this off removes the songs you already played when you close the app</string>
