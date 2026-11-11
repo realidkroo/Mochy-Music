@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the song edit sheet, the add to library first sheet, and select video -->
+<resources>
+    <!-- the edit sheet -->
+    <string name="song_edit_menu">Edit song info</string>
+    <string name="song_edit_cover_custom">Custom</string>
+    <string name="song_edit_cover_current">Current</string>
+    <string name="song_edit_cover_looking">Looking for more covers…</string>
+    <string name="song_edit_cover_pick">Pick a picture</string>
+    <string name="song_edit_name">Song name</string>
+    <string name="song_edit_name_hint">What\'s this song called?</string>
+    <string name="song_edit_lyrics">Custom lyrics</string>
+    <string name="song_edit_lyrics_add">Add lyrics</string>
+    <string name="song_edit_lyrics_add_hint">An .lrc, .ttml or .txt file</string>
+    <plurals name="song_edit_lyrics_lines">
+        <item quantity="other">%1$s · %2$d lines</item>
+    </plurals>
+    <string name="song_edit_lyrics_remove">Remove these lyrics</string>
+    <string name="lyrics_file_added">Now using your lyrics file</string>
+    <string name="song_edit_lyrics_unreadable">Couldn\'t read that file. Try an .lrc or .txt file.</string>
+    <string name="song_edit_lyrics_keep">Keep the lyrics it has</string>
+    <string name="song_edit_lyrics_source">%1$s · %2$s</string>
+    <string name="song_edit_lyrics_word">word synced</string>
+    <string name="song_edit_lyrics_line">line synced</string>
+    <string name="song_edit_lyrics_plain">plain</string>
+    <string name="song_edit_lyrics_source_desc">Where the lyrics come from</string>
+    <string name="song_edit_offset">Set lyric offset</string>
+    <string name="song_edit_offset_value">%1$s s</string>
+    <string name="song_edit_offset_reset">Put the lyric offset back to zero</string>
+    <string name="song_edit_offset_min">-2 minutes</string>
+    <string name="song_edit_offset_max">+3 minutes</string>
+    <string name="song_edit_speed">Set playback speed</string>
+    <string name="song_edit_speed_value">%1$s×</string>
+    <string name="song_edit_speed_min">0.25×</string>
+    <string name="song_edit_speed_max">5×</string>
+    <string name="song_edit_speed_hint">Saved with this song, so it plays at this speed every time.</string>
+    <string name="song_edit_eq">Set equalizer preset</string>
+    <string name="song_edit_eq_none">Same as every other song</string>
+    <string name="song_edit_eq_desc">Equalizer preset for this song</string>
+    <string name="song_edit_artist">Set artist</string>
+    <string name="song_edit_artist_search">Search artists</string>
+    <string name="song_edit_artist_new">Add \"%1$s\"</string>
+    <string name="song_edit_artist_pick_one">Pick at least one artist.</string>
+    <string name="song_edit_more">More details</string>
+    <string name="song_edit_album">Album</string>
+    <string name="song_edit_album_hint">Album name</string>
+    <string name="song_edit_year">Year</string>
+    <string name="song_edit_year_hint">Release year</string>
+    <string name="song_edit_video">Video</string>
+    <string name="song_edit_video_auto">Found by Mochy</string>
+    <string name="song_edit_video_picked">Picked by you</string>
+    <string name="song_edit_video_none">No video</string>
+    <string name="song_edit_saving">Saving…</string>
+    <string name="song_edit_failed">Couldn\'t save your changes. Try again.</string>
+    <!-- shown first when the song isn't in the library yet -->
+    <string name="song_edit_need_library">You need to add this song to your library to edit it.</string>
+    <string name="song_edit_add_to_library">Add to library</string>
+    <string name="song_edit_not_now">Not now</string>
+    <!-- select video -->
+    <string name="video_pick_title">Select video</string>
+    <string name="video_pick_subtitle">Wrong video? Or none?</string>
+    <string name="video_pick_search">Search YouTube videos</string>
+    <string name="video_pick_auto">Let Mochy find it</string>
+    <string name="video_pick_auto_desc">The official video, when there is one</string>
+    <string name="video_pick_none">No video</string>
+    <string name="video_pick_none_desc">This song just shows its cover</string>
+    <string name="video_pick_nothing">Nothing found. Try other words.</string>
+    <string name="video_pick_next">Next</string>
+    <string name="video_wrong">Wrong video?</string>
+    <string name="video_find">Find video</string>
+</resources>
