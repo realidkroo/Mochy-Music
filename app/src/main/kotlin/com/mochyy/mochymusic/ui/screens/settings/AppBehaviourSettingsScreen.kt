@@ -52,12 +52,14 @@ import com.mochyy.mochymusic.constants.LyricsMotionStyle
 import com.mochyy.mochymusic.constants.LyricsMotionStyleKey
 import com.mochyy.mochymusic.constants.MixWithOtherAppsKey
 import com.mochyy.mochymusic.constants.OfflineModeKey
+import com.mochyy.mochymusic.constants.PauseSearchHistoryKey
 import com.mochyy.mochymusic.constants.PersistentQueueKey
 import com.mochyy.mochymusic.constants.PersistentShuffleAcrossQueuesKey
 import com.mochyy.mochymusic.constants.ProxyEnabledKey
 import com.mochyy.mochymusic.constants.ProxyUrlKey
 import com.mochyy.mochymusic.constants.PlayVideoBackgroundKey
 import com.mochyy.mochymusic.constants.SYSTEM_DEFAULT
+import com.mochyy.mochymusic.constants.ResumeOnBluetoothConnectKey
 import com.mochyy.mochymusic.constants.ShowFormatBadgeKey
 import com.mochyy.mochymusic.constants.ShowFormatSampleRateKey
 import com.mochyy.mochymusic.constants.SkipSilenceKey
@@ -181,8 +183,10 @@ private fun generalItems(navController: NavController): List<SettingsItem> {
     val (dataSaverMobileOnly, onDataSaverMobileOnlyChange) = rememberPreference(DataSaverMobileOnlyKey, defaultValue = true)
     val (stopOnTaskRemoved, onStopOnTaskRemoved) = rememberPreference(StopPlaybackOnTaskRemovedKey, defaultValue = false)
     val (mixWithOtherApps, onMixWithOtherAppsChange) = rememberPreference(MixWithOtherAppsKey, defaultValue = false)
+    val (resumeOnBluetooth, onResumeOnBluetoothChange) = rememberPreference(ResumeOnBluetoothConnectKey, defaultValue = false)
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(PersistentQueueKey, defaultValue = true)
     val (albumsFromLikes, onAlbumsFromLikesChange) = rememberPreference(AlbumsFromLikedSongsKey, defaultValue = false)
+    val (pauseSearchHistory, onPauseSearchHistoryChange) = rememberPreference(PauseSearchHistoryKey, defaultValue = false)
     val (proxyOn) = rememberPreference(ProxyEnabledKey, defaultValue = false)
     val (proxyAddress) = rememberPreference(ProxyUrlKey, defaultValue = "")
     // the launch check's notification reads its own switch, so it follows this one too
@@ -267,6 +271,14 @@ private fun generalItems(navController: NavController): List<SettingsItem> {
             onCheckedChange = onMixWithOtherAppsChange,
         ),
         switchItem(
+            key = "Resume on Bluetooth connection",
+            title = stringResource(R.string.playback_resume_bluetooth),
+            description = stringResource(R.string.playback_resume_bluetooth_desc),
+            icon = painterResource(R.drawable.bluetooth),
+            checked = resumeOnBluetooth,
+            onCheckedChange = onResumeOnBluetoothChange,
+        ),
+        switchItem(
             key = "Save Player's last state",
             title = stringResource(R.string.playback_save_state),
             description = stringResource(R.string.playback_save_state_desc),
@@ -283,6 +295,14 @@ private fun generalItems(navController: NavController): List<SettingsItem> {
             icon = painterResource(R.drawable.album),
             checked = albumsFromLikes,
             onCheckedChange = onAlbumsFromLikesChange,
+        ),
+        switchItem(
+            key = "Pause search history",
+            title = stringResource(R.string.pause_search_history),
+            description = stringResource(R.string.settings_pause_search_history_desc),
+            icon = painterResource(R.drawable.history),
+            checked = pauseSearchHistory,
+            onCheckedChange = onPauseSearchHistoryChange,
         ),
     )
 }

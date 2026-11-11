@@ -472,7 +472,7 @@ fun MorphingCover(
         mediaId = trackInfo.mediaId,
         title = trackInfo.title,
         artist = trackInfo.artist,
-        isVideoSong = if (miniVideo) songIsVideo else trackIsVideo,
+        isVideoSong = if (miniVideo || forceVideoBackground) songIsVideo else trackIsVideo,
         enabled = playVideoBackground,
     )
     // with the full video mode opening over it, the mini player's copy steps aside so the mode takes the picture
