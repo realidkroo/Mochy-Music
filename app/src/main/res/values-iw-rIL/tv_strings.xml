@@ -66,13 +66,14 @@
     <string name="tv_copy_to_tv">Copy from your phone to this TV</string>
     <string name="tv_sync_from_phone">Sync From Phone</string>
     <string name="tv_same_wifi">Make sure your phone is on the same Wi-Fi as this TV</string>
-    <string name="tv_pair_step_open">Open Mochy on your phone and go to Settings → Mochy on your TV</string>
+    <string name="tv_pair_step_open">Open Mochy on your phone and go to Settings → Device integration → Add device</string>
     <string name="tv_pair_step_pick">Pick %1$s from the list</string>
     <string name="tv_pair_step_code">Type the code above</string>
     <string name="tv_from_phone">From %1$s</string>
     <string name="tv_sync_now">Sync now</string>
     <string name="tv_copy_all">Copy all songs here</string>
     <string name="tv_unlink">Unlink</string>
+    <string name="tv_controlled_from">Controlled from %1$s</string>
     <string name="tv_sync_looking">Looking for your phone…</string>
     <string name="tv_sync_syncing">Syncing your library…</string>
     <string name="tv_sync_away">Your phone isn\'t around. Open Mochy on it, on the same Wi-Fi.</string>
@@ -92,27 +93,13 @@
     </plurals>
     <!-- the phone side of the tv link -->
     <string name="tv_link_title">Mochy on your TV</string>
-    <string name="tv_link_row_detail">Link a TV once and it mirrors your library</string>
-    <string name="tv_link_intro">just one time link and your library get sync and you can also stream local music too</string>
-    <string name="tv_link_your_tvs">Your TVs</string>
     <string name="tv_link_tap_to_unlink">Linked. Tap to unlink.</string>
     <string name="tv_link_found">TVs on this Wi-Fi</string>
-    <string name="tv_link_looking">Looking for TVs…</string>
-    <string name="tv_link_looking_detail">Open Mochy on your TV and go to its phone page. It shows up here.</string>
-    <string name="tv_link_tap_to_pair">Tap to link</string>
     <string name="tv_link_enter_code">Type the code on %1$s</string>
     <string name="tv_link_code_label">6-digit code</string>
     <string name="tv_link_pair">Link</string>
     <string name="tv_link_pairing">Linking…</string>
-    <string name="tv_link_wrong_code">That code didn\'t match. Check the TV and try again.</string>
-    <string name="tv_link_failed">Couldn\'t reach the TV. Make sure both are on the same Wi-Fi.</string>
-    <string name="tv_link_paired">Linked with %1$s. Your library is on its way.</string>
-    <string name="tv_link_unlink_question">Unlink %1$s? The TV keeps what it already has.</string>
-    <string name="tv_link_stay_reachable">Stream to your TV in the background</string>
-    <string name="tv_link_stay_reachable_detail">Your TV can sync and stream even when Mochy is closed. Shows a quiet notification.</string>
     <string name="tv_link_channel">TV link</string>
-    <string name="tv_link_notification_title">Linked to your TV</string>
-    <string name="tv_link_notification_text">%1$s can sync and stream from this phone</string>
     <!-- the tv's mochy page -->
     <string name="tv_mochy">Mochy</string>
     <string name="tv_mochy_version">Version %1$s</string>
@@ -137,27 +124,13 @@
     <string name="tv_menu_sent">Playing on %1$s</string>
     <string name="tv_menu_next_sent">Lined up next on %1$s</string>
     <string name="tv_menu_unreachable">Couldn\'t reach %1$s. Make sure Mochy is open on it.</string>
-    <string name="tv_menu_remote_title">%1$s</string>
     <string name="tv_menu_nothing_on">Nothing playing</string>
-    <string name="tv_menu_tv_look">Player on the TV</string>
     <string name="tv_link_open_now">Open right now. Tap to unlink.</string>
     <string name="tv_link_control_title">Open now</string>
     <string name="tv_link_control_detail">Play, skip and change its player from here</string>
-    <string name="tv_link_in_player_menu">Show your TV in the player menu</string>
-    <string name="tv_link_in_player_menu_detail">Play on it, line songs up there, or control it from the player\'s menu</string>
     <!-- the phone's tv page, its notices, the tv's banner and the tv's song panel -->
-    <string name="tv_link_add_another">Link another TV</string>
-    <string name="tv_link_how_title">How the link works</string>
     <string name="tv_link_notify">Tell me when the TV syncs</string>
     <string name="tv_link_notify_detail">A short note when your TV connects and when it has your latest library</string>
-    <string name="tv_link_hero_title">Bring your library to the TV</string>
-    <string name="tv_link_hero_detail">Open Mochy on your TV, go to its Mochy page, and pick it below</string>
-    <string name="tv_link_hero_linked">Linked to %1$s</string>
-    <string name="tv_link_hero_linked_detail">It syncs and streams from this phone whenever Mochy is open on it</string>
-    <string name="tv_link_hero_connected">Connected to %1$s</string>
-    <string name="tv_link_hero_connected_detail">Your library is in step, and your downloads can stream from here</string>
-    <string name="tv_link_control">Control</string>
-    <string name="tv_link_play_there">Play here on TV</string>
     <string name="tv_link_status_open">Open now</string>
     <string name="tv_link_status_open_synced">Open now · synced %1$s</string>
     <string name="tv_link_status_seen">Last open %1$s</string>
@@ -183,9 +156,7 @@
     <!-- pairing by sheet and by address -->
     <string name="tv_pair_by_address">Or on your phone, link by address: %1$s</string>
     <string name="tv_pair_sheet_title">Link %1$s</string>
-    <string name="tv_pair_sheet_detail">Type the code your TV shows</string>
     <string name="tv_pair_sheet_by_address">Link by address</string>
     <string name="tv_pair_sheet_address_detail">Type the address your TV shows under its code, then the code</string>
     <string name="tv_pair_address_hint">192.168.1.20</string>
-    <string name="tv_link_by_address_detail">For a Wi-Fi that hides TVs from phones</string>
 </resources>
