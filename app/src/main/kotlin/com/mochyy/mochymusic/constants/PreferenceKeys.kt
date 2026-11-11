@@ -263,12 +263,29 @@ enum class CrossmixMode {
     CROSSMIX,
 }
 
-// crossmix is still being tuned, so it's greyed out and plays as auto crossfade; flip this to bring it back
-const val CrossmixAvailable = false
+// how crossmix mixes: how long the two songs overlap, how far tempos may be stretched to meet, one style or the planner's pick, and whether the stunts are in the pool
+val CrossmixLengthKey = stringPreferencesKey("crossmixLength")
+val CrossmixTempoMatchKey = stringPreferencesKey("crossmixTempoMatch")
+/** a CrossmixStyle name, or CrossmixStyleAuto for the planner's own pick */
+val CrossmixStyleKey = stringPreferencesKey("crossmixStyle")
+const val CrossmixStyleAuto = "AUTO"
+val CrossmixStuntsKey = booleanPreferencesKey("crossmixStunts")
+/** how long play() takes to be heard on this phone, learnt from each mix's first beat-lock reading */
+val CrossmixStartLatencyKey = floatPreferencesKey("crossmixStartLatencyMs")
 
-/** the mode that actually plays, a saved crossmix falls back to auto crossfade while crossmix is in progress */
-fun CrossmixMode.playable(): CrossmixMode =
-    if (this == CrossmixMode.CROSSMIX && !CrossmixAvailable) CrossmixMode.AUTO_CROSSFADE else this
+/** how long a crossmix overlap may run: scales the planner's overlap caps */
+enum class CrossmixLength(val scale: Float) {
+    SHORT(0.6f),
+    MEDIUM(1f),
+    LONG(1.5f),
+}
+
+/** how far the slower song may be sped up to meet the other; off still locks two songs already at one tempo */
+enum class CrossmixTempoMatch(val maxSpeedUp: Float) {
+    OFF(0.006f),
+    GENTLE(0.04f),
+    FULL(0.10f),
+}
 
 // pause, play and skip fades: on by default, 2 s long, no layered effect until one is picked
 val TransportFadeEnabledKey = booleanPreferencesKey("transportFadeEnabled")

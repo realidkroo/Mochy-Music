@@ -54,6 +54,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -505,3 +506,77 @@ fun rememberOnScreen(): MutableState<Boolean> = remember { mutableStateOf(true) 
 
 @Composable
 fun dpToPx(dp: Dp): Float = with(LocalDensity.current) { dp.toPx() }
+
+/** the dark pill with the chosen option in the middle and a chevron that flips while the list is open; the first option is the "none" one and reads muted */
+@Composable
+fun LabPicker(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+    mutedIndex: Int = 0,
+    accent: Color = LabColors.Nodes[9],
+) {
+    var open by remember { mutableStateOf(false) }
+    val chevron by animateFloatAsState(if (open) 180f else 0f, spring(dampingRatio = 0.8f, stiffness = 400f), label = "chevron")
+    Box(modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .clip(RoundedCornerShape(26.dp))
+                .background(LabPickerColor)
+                .clickable { open = true }
+                .padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Spacer(Modifier.size(24.dp))
+            Text(
+                text = options.getOrNull(selectedIndex).orEmpty(),
+                fontFamily = InterFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 17.sp,
+                color = if (selectedIndex == mutedIndex) LabColors.Secondary else LabColors.Primary,
+                modifier = Modifier.weight(1f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Icon(
+                painter = painterResource(com.mochyy.mochymusic.R.drawable.expand_more),
+                contentDescription = contentDescription,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp).graphicsLayer { rotationZ = chevron },
+            )
+        }
+        androidx.compose.material3.DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = LabColors.Card,
+        ) {
+            options.forEachIndexed { index, label ->
+                val picked = index == selectedIndex
+                androidx.compose.material3.DropdownMenuItem(
+                    text = {
+                        Text(
+                            label,
+                            fontFamily = InterFontFamily,
+                            fontWeight = if (picked) FontWeight.SemiBold else FontWeight.Normal,
+                            fontSize = 15.sp,
+                            color = if (picked) LabColors.Primary else LabColors.Secondary,
+                        )
+                    },
+                    trailingIcon = if (picked) {
+                        { Icon(painterResource(com.mochyy.mochymusic.R.drawable.check), contentDescription = null, tint = accent, modifier = Modifier.size(18.dp)) }
+                    } else null,
+                    onClick = {
+                        onSelect(index)
+                        open = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+private val LabPickerColor = Color(0xFF141416)

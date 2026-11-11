@@ -11,6 +11,7 @@ import com.mochyy.mochymusic.crossmix.CrossmixAnalysisRepository
 import com.mochyy.mochymusic.crossmix.CrossmixPlan
 import com.mochyy.mochymusic.crossmix.CrossmixPlanner
 import com.mochyy.mochymusic.crossmix.CrossmixRole
+import com.mochyy.mochymusic.crossmix.CrossmixSettings
 import com.mochyy.mochymusic.crossmix.CrossmixStyle
 import com.mochyy.mochymusic.crossmix.CrossmixTrackInput
 import com.mochyy.mochymusic.playback.audio.CrossmixTransitionAudioProcessor
@@ -69,6 +70,11 @@ class CrossmixDirector(
         fun onStatus(status: String)
         /** the album of the song at [index], for telling continuous albums apart */
         fun albumOf(index: Int): String?
+        /** the listener's choices: overlap length, tempo matching, a style of their own, stunts */
+        fun settings(): CrossmixSettings
+        /** how long play() takes to be heard on this phone, remembered between launches (null until the first mix taught it) */
+        fun learnedStartLatencyMs(): Double?
+        fun onStartLatencyLearned(ms: Double)
     }
 
     private var planningJob: Job? = null
@@ -80,8 +86,8 @@ class CrossmixDirector(
     private var testJump = false
     private var selfSeeking = false
 
-    // how long play() takes to be heard, learnt from each transition's first beat-lock reading
-    private var startLatencyMs = 70.0
+    // how long play() takes to be heard, learnt from each transition's first beat-lock reading and kept across launches
+    private var startLatencyMs = host.learnedStartLatencyMs() ?: DefaultStartLatencyMs
 
     /** the outgoing song brought up to a faster next song's tempo, and the speed it goes back to if the mix is called off */
     private class SpeedRamp(val player: ExoPlayer, val base: PlaybackParameters) {
@@ -183,6 +189,13 @@ class CrossmixDirector(
         if (running != null) abortRunning("item changed") else cancelPending()
     }
 
+    /** the listener changed how mixes are made: a planned one is planned again their way, a running one finishes as it is */
+    fun onSettingsChanged() {
+        if (running != null) return
+        cancelPending()
+        schedule()
+    }
+
     fun release() {
         cancelPending()
         running?.let { abortRunning("service released") }
@@ -241,21 +254,24 @@ class CrossmixDirector(
 
         val outText = outLyrics.await()
         val inText = inLyrics.await()
+        val settings = host.settings()
         // a few thousand candidate mixes are scored, so off the main thread
         val plan = withContext(Dispatchers.Default) {
             CrossmixPlanner.plan(
                 outgoing = CrossmixTrackInput(item.mediaId, durationMs, outAnalysis, outText),
                 incoming = CrossmixTrackInput(next.mediaId, 0L, inAnalysis, inText),
+                settings = settings,
             )
         }
         // the listener's own speed and pitch, read before this song is touched
         val base = host.baseParameters()
         android.util.Log.i(
             Tag,
-            "voices from: this ${voiceSource(outText, outAnalysis)}, next ${voiceSource(inText, inAnalysis)}",
+            "voices from: this ${voiceSource(outText, outAnalysis)}, next ${voiceSource(inText, inAnalysis)}; settings $settings",
         )
         report(
             "${plan.style.label} at ${clock(plan.outStartMs.toDouble())}" +
+                (if (settings.style != null && plan.style == settings.style) ", your pick" else "") +
                 (if (plan.beatMatched) ", beat-matched" else "") +
                 (if (plan.yieldAmount > 0f) ", voices kept apart" else "") +
                 (if (plan.inCueMs > 1_000) ", landing on ${clock(plan.inCueMs.toDouble())} of the next" else "")
@@ -453,7 +469,8 @@ class CrossmixDirector(
         val plan = session.plan
         val errors = ArrayList<Double>()
         var firstCorrection = true
-        delay(350)
+        // the first reading should land inside the silent run-up, where the renderer may still jump the delay into place
+        delay(250)
         while (scope.isActive && running === session) {
             val outgoing = session.outgoing
             val incoming = session.incoming
@@ -473,6 +490,7 @@ class CrossmixDirector(
                         if (firstCorrection) {
                             // a positive error means it was heard early: next time, start it later
                             startLatencyMs = (startLatencyMs - median * 0.5).coerceIn(20.0, 250.0)
+                            host.onStartLatencyLearned(startLatencyMs)
                             firstCorrection = false
                         }
                         if (abs(median) > 2.0) {
@@ -629,8 +647,10 @@ class CrossmixDirector(
         const val MinArmLeadMs = 2_500.0
         /** the next song must be ready by this long before anything happens, or it's called off */
         const val GoMarginMs = 1_200.0
-        const val BaseDelayMs = 40.0
-        const val LockIntervalMs = 120L
+        /** the next song starts this far early and is delayed back: the room the lock has to pull it later or earlier */
+        const val BaseDelayMs = 60.0
+        const val DefaultStartLatencyMs = 70.0
+        const val LockIntervalMs = 100L
         const val SpeedStep = 0.004f
         /** how much the outgoing song speeds up per beat on its way to a faster next song */
         const val RampStep = 0.005f

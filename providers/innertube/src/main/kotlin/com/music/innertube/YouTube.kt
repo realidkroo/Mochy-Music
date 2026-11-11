@@ -132,6 +132,9 @@ object YouTube {
         visitorData = it
     }
 
+    // a fresh visitor id for a client that mints its own, after youtube's bot check burned the old one
+    suspend fun refreshVisitorData(client: YouTubeClient): Result<String> = innerTube.mintVisitorId(client)
+
     fun clearGuestSession() {
         visitorData = null
         dataSyncId = null

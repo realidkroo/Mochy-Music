@@ -486,8 +486,11 @@ class CrossmixTransitionAudioProcessor : AudioProcessor {
 
             // the deck
             updateDeck(params, beat, s)
-            val maxDelayGlide = if (gain < 0.03f) 0.04 else 0.0035  // frames of delay change per frame
             val targetDelayFrames = targetDelayMs * rate / 1_000.0
+            // the beat lock moves the next song like a dj nudging a platter: while it can't be heard yet it jumps straight into place, quiet under the other song it bends up to 2%, out in front it creeps at 0.35%
+            val silentStill = s.role == CrossmixRole.Incoming && !beat.isNaN() && beat < 0f && gain < 0.001f && gainT < 0.001f
+            if (silentStill) delayFrames = targetDelayFrames
+            val maxDelayGlide = 0.0035 + 0.02 * (1f - gain.coerceIn(0f, 1f)).let { it * it * it }  // frames of delay change per frame
 
             val crushStep = 1f + crushT * 15f
             val crushLevels = 65_536f / (1 shl (crushT * 11f).toInt().coerceIn(0, 11))
@@ -502,7 +505,7 @@ class CrossmixTransitionAudioProcessor : AudioProcessor {
                 historyL[w] = l; historyR[w] = r
                 writeHead++
 
-                // beat-lock delay glides toward its target, slowly enough never to be heard as pitch
+                // beat-lock delay glides toward its target, no faster than a nudge
                 val delayError = targetDelayFrames - delayFrames
                 delayFrames += delayError.coerceIn(-maxDelayGlide, maxDelayGlide)
 

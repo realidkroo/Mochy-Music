@@ -5,21 +5,17 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -32,22 +28,32 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.constants.CrossfadeDurationKey
 import com.mochyy.mochymusic.constants.CrossfadeEnabledKey
 import com.mochyy.mochymusic.constants.CrossfadeGaplessKey
-import com.mochyy.mochymusic.constants.CrossmixAvailable
 import com.mochyy.mochymusic.constants.CrossmixMode
+import com.mochyy.mochymusic.constants.CrossmixLength
+import com.mochyy.mochymusic.constants.CrossmixLengthKey
 import com.mochyy.mochymusic.constants.CrossmixModeKey
+import com.mochyy.mochymusic.constants.CrossmixStuntsKey
+import com.mochyy.mochymusic.constants.CrossmixStyleAuto
+import com.mochyy.mochymusic.constants.CrossmixStyleKey
+import com.mochyy.mochymusic.constants.CrossmixTempoMatch
+import com.mochyy.mochymusic.constants.CrossmixTempoMatchKey
 import com.mochyy.mochymusic.constants.CrossmixTestToolsKey
-import com.mochyy.mochymusic.constants.playable
+import com.mochyy.mochymusic.crossmix.CrossmixStyle
+import com.mochyy.mochymusic.crossmix.StyleUse
 import com.mochyy.mochymusic.ui.component.SettingsGroup
 import com.mochyy.mochymusic.ui.component.SettingsGroupStyle
 import com.mochyy.mochymusic.ui.component.SubSettingsScaffold
 import com.mochyy.mochymusic.ui.screens.audiolab.LabCard
 import com.mochyy.mochymusic.ui.screens.audiolab.LabCollapsible
+import com.mochyy.mochymusic.ui.screens.audiolab.LabPicker
+import com.mochyy.mochymusic.ui.screens.audiolab.LabSegmented
 import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
 import com.mochyy.mochymusic.ui.screens.audiolab.LabSlider
 import com.mochyy.mochymusic.ui.screens.audiolab.LabStage
@@ -58,6 +64,7 @@ import com.mochyy.mochymusic.ui.screens.audiolab.rememberLabTime
 import com.mochyy.mochymusic.ui.screens.audiolab.rememberOnScreen
 import com.mochyy.mochymusic.ui.screens.audiolab.rememberPicturesHeld
 import com.mochyy.mochymusic.ui.screens.audiolab.trackOnScreen
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.utils.rememberEnumPreference
 import com.mochyy.mochymusic.utils.rememberPreference
@@ -90,12 +97,8 @@ fun CrossmixSettingsScreen(navController: NavController) {
     )
     val (testTools, _) = rememberPreference(CrossmixTestToolsKey, defaultValue = false)
 
-    // people upgrading from the old crossfade switch land on the equivalent manual mode, and a saved crossmix shows what really plays
-    val selectedMode = if (storedMode == CrossmixMode.OFF && crossfadeEnabled) {
-        CrossmixMode.MANUAL_CROSSFADE
-    } else {
-        storedMode.playable()
-    }
+    // people upgrading from the old crossfade switch land on the equivalent manual mode
+    val selectedMode = if (storedMode == CrossmixMode.OFF && crossfadeEnabled) CrossmixMode.MANUAL_CROSSFADE else storedMode
 
     fun selectMode(mode: CrossmixMode) {
         onStoredModeChange(mode)
@@ -181,29 +184,19 @@ fun CrossmixSettingsScreen(navController: NavController) {
         Spacer(Modifier.height(12.dp))
 
         LabCard(padding = 14.dp) {
-            Box {
-                // while it's in progress the picture keeps playing its glow, just dimmed, so it still shows what's coming
-                LabStage(height = 124.dp, modifier = Modifier.graphicsLayer { alpha = if (CrossmixAvailable) 1f else 0.55f }) {
-                    TransitionPicture(
-                        TransitionStyle.CrossMix,
-                        overlap = 0.42f,
-                        active = selectedMode == CrossmixMode.CROSSMIX || !CrossmixAvailable,
-                    )
-                }
-                if (!CrossmixAvailable) InProgressTag(Modifier.align(Alignment.TopEnd).padding(10.dp))
+            LabStage(height = 124.dp) {
+                TransitionPicture(TransitionStyle.CrossMix, overlap = 0.42f, active = selectedMode == CrossmixMode.CROSSMIX)
             }
             Spacer(Modifier.height(10.dp))
             LabToggleRow(
                 title = "CrossMix",
-                subtitle = if (CrossmixAvailable) {
-                    "DJ-style: reads each song's tempo, beats, key, energy and where its voice is, then picks the one of 27 transitions that fits, so two voices never sing over each other"
-                } else {
-                    "Still being tuned, so it can't be turned on yet. DJ-style mixes that read each song's tempo, beats, key and voice"
-                },
+                subtitle = stringResource(R.string.crossmix_desc),
                 checked = selectedMode == CrossmixMode.CROSSMIX,
                 onCheckedChange = { toggle(CrossmixMode.CROSSMIX, it) },
-                enabled = CrossmixAvailable,
             )
+            LabCollapsible(selectedMode == CrossmixMode.CROSSMIX) {
+                CrossmixControls()
+            }
             LabCollapsible(crossmixTools.any { it.isVisible }) {
                 Spacer(Modifier.height(8.dp))
                 SettingsGroup(style = SettingsGroupStyle.Grouped, items = crossmixTools)
@@ -331,18 +324,70 @@ private fun DrawScope.drawPlayhead(x: Float, cy: Float, reach: Float, alpha: Flo
     drawCircle(Color.White.copy(alpha = alpha), 2.5.dp.toPx(), Offset(x, cy - reach))
 }
 
-// the little pill on a card whose feature isn't ready yet
+// the styles a listener can pin, grouped the way the planner thinks of them: everyday moves, then lifts, falls and the flavours it never picks by itself
+private val PinnableStyles: List<CrossmixStyle> =
+    listOf(StyleUse.Everyday, StyleUse.Lift, StyleUse.Fall, StyleUse.Flavour).flatMap { use -> CrossmixStyle.entries.filter { it.use == use } }
+
+/** the listener's say over a mix: which transition, how long, how far tempos bend to meet, and whether the stunts are in the pool */
 @Composable
-private fun InProgressTag(modifier: Modifier = Modifier) {
-    Text(
-        "In progress",
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 11.sp,
-        color = Color.White,
-        modifier = modifier
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.16f))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+private fun CrossmixControls() {
+    val (styleName, onStyleNameChange) = rememberPreference(CrossmixStyleKey, defaultValue = CrossmixStyleAuto)
+    val (length, onLengthChange) = rememberEnumPreference(CrossmixLengthKey, defaultValue = CrossmixLength.MEDIUM)
+    val (tempoMatch, onTempoMatchChange) = rememberEnumPreference(CrossmixTempoMatchKey, defaultValue = CrossmixTempoMatch.FULL)
+    val (stunts, onStuntsChange) = rememberPreference(CrossmixStuntsKey, defaultValue = true)
+    val pinned = PinnableStyles.indexOfFirst { it.name == styleName }
+
+    Spacer(Modifier.height(14.dp))
+    ControlHeading(stringResource(R.string.crossmix_style_title), stringResource(R.string.crossmix_style_desc))
+    Spacer(Modifier.height(12.dp))
+    LabPicker(
+        options = listOf(stringResource(R.string.crossmix_style_auto)) + PinnableStyles.map { it.label },
+        selectedIndex = pinned + 1,
+        onSelect = { onStyleNameChange(if (it == 0) CrossmixStyleAuto else PinnableStyles[it - 1].name) },
+        contentDescription = stringResource(R.string.crossmix_style_choose),
     )
+
+    Spacer(Modifier.height(18.dp))
+    ControlHeading(stringResource(R.string.crossmix_length_title), stringResource(R.string.crossmix_length_desc))
+    Spacer(Modifier.height(12.dp))
+    LabSegmented(
+        options = listOf(
+            stringResource(R.string.crossmix_length_short),
+            stringResource(R.string.crossmix_length_medium),
+            stringResource(R.string.crossmix_length_long),
+        ),
+        selectedIndex = length.ordinal,
+        onSelect = { onLengthChange(CrossmixLength.entries[it]) },
+        modifier = Modifier.padding(horizontal = 6.dp),
+    )
+
+    Spacer(Modifier.height(18.dp))
+    ControlHeading(stringResource(R.string.crossmix_tempo_title), stringResource(R.string.crossmix_tempo_desc))
+    Spacer(Modifier.height(12.dp))
+    LabSegmented(
+        options = listOf(
+            stringResource(R.string.crossmix_tempo_off),
+            stringResource(R.string.crossmix_tempo_gentle),
+            stringResource(R.string.crossmix_tempo_full),
+        ),
+        selectedIndex = tempoMatch.ordinal,
+        onSelect = { onTempoMatchChange(CrossmixTempoMatch.entries[it]) },
+        modifier = Modifier.padding(horizontal = 6.dp),
+    )
+
+    Spacer(Modifier.height(10.dp))
+    LabToggleRow(
+        title = stringResource(R.string.crossmix_stunts_title),
+        subtitle = stringResource(R.string.crossmix_stunts_desc),
+        checked = stunts,
+        onCheckedChange = onStuntsChange,
+    )
+}
+
+@Composable
+private fun ControlHeading(title: String, detail: String) {
+    Column(Modifier.padding(horizontal = 6.dp)) {
+        Text(title, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = LabColors.Primary)
+        Text(detail, fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 15.sp, color = LabColors.Secondary)
+    }
 }

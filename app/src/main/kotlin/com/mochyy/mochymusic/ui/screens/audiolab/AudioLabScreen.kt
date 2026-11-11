@@ -63,7 +63,6 @@ import com.mochyy.mochymusic.constants.AudioQuality
 import com.mochyy.mochymusic.constants.AudioQualityKey
 import com.mochyy.mochymusic.constants.CrossmixMode
 import com.mochyy.mochymusic.constants.CrossmixModeKey
-import com.mochyy.mochymusic.constants.playable
 import com.mochyy.mochymusic.eq.EqPresets
 import com.mochyy.mochymusic.eq.EqSettings
 import com.mochyy.mochymusic.playback.audio.AudioOutputs
@@ -138,7 +137,7 @@ fun AudioLabScreen(
         val transition: @Composable (Modifier) -> Unit = { modifier ->
             SmallHubCard(
                 title = "Transition",
-                status = when (mode.playable()) {
+                status = when (mode) {
                     CrossmixMode.OFF -> "Off"
                     CrossmixMode.AUTO_CROSSFADE -> "Auto"
                     CrossmixMode.MANUAL_CROSSFADE -> "Manual"

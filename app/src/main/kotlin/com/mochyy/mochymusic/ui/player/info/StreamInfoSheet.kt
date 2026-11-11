@@ -47,7 +47,6 @@ import com.mochyy.mochymusic.constants.CrossmixModeKey
 import com.mochyy.mochymusic.constants.HiResOutputKey
 import com.mochyy.mochymusic.constants.MusicHapticsEnabledKey
 import com.mochyy.mochymusic.constants.SkipSilenceKey
-import com.mochyy.mochymusic.constants.playable
 import com.mochyy.mochymusic.playback.MusicService
 import com.mochyy.mochymusic.playback.PlayingFrom
 import com.mochyy.mochymusic.playback.StreamDetails
@@ -212,7 +211,7 @@ private fun rememberStatCards(service: MusicService, mediaId: String, durationMs
         value = details.decoderName?.let { name -> withContext(Dispatchers.Default) { isHardwareDecoder(name) } }
     }
 
-    val transitions = when (runCatching { CrossmixMode.valueOf(crossmixMode) }.getOrNull()?.playable()) {
+    val transitions = when (runCatching { CrossmixMode.valueOf(crossmixMode) }.getOrNull()) {
         CrossmixMode.CROSSMIX -> "Crossmix"
         CrossmixMode.AUTO_CROSSFADE, CrossmixMode.MANUAL_CROSSFADE -> "Crossfade"
         else -> null

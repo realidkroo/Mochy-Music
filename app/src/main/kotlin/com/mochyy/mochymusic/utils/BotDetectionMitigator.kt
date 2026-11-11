@@ -65,9 +65,8 @@ object BotDetectionMitigator {
             val currentLocale = YouTube.locale
 
             // the old visitorData stays until a new one arrives (refreshVisitorData swaps it in on
-            // success). It used to be cleared first, so one failed refresh left none at all, and
-            // VISIONOS - the only client that streams whole songs untokened - answers UNPLAYABLE
-            // without one: every song failed from then until the app was restarted
+            // success). It used to be cleared first, so one failed refresh left the web clients
+            // none at all until the app was restarted. visionos mints its own and isn't touched here
 
             YouTube.refreshVisitorData().onSuccess { newData ->
                 Timber.tag(TAG).i("New visitorData obtained successfully for region ${currentLocale.gl}.")

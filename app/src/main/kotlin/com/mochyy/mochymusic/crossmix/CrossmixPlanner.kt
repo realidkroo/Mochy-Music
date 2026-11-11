@@ -1,5 +1,6 @@
 package com.mochyy.mochymusic.crossmix
 
+import com.mochyy.mochymusic.constants.CrossmixLength
 import com.mochyy.mochymusic.lyrics.LyricsUtils
 import kotlin.math.abs
 import kotlin.math.ln
@@ -59,8 +60,6 @@ object CrossmixPlanner {
     /** the next song may be entered this far in, and no further */
     const val MaxEntryMs = 120_000L
 
-    /** how far the slower song may be sped up to meet the other; neither is ever slowed, a slowed stretch smears */
-    private const val MaxSpeedUp = 0.10f
     /** score lost per beat of two voices clearly heard at once: enough to outweigh any style's fit for a few beats of it */
     private const val ClashPerBeat = 0.35f
     // giving the voices bands of their own changes how a blend sounds: a shorter blend or another spot should win first
@@ -80,10 +79,11 @@ object CrossmixPlanner {
     // the nudge a pair's own move gets among the unmatched ones, so close calls differ from pair to pair but never between plays
     private const val GestureBonus = 0.3f
 
-    /** the one transition that suits these two songs best, the same two songs always get the same mix */
+    /** the one transition that suits these two songs best, within the listener's settings; the same two songs always get the same mix */
     fun plan(
         outgoing: CrossmixTrackInput,
         incoming: CrossmixTrackInput,
+        settings: CrossmixSettings = CrossmixSettings.Default,
     ): CrossmixPlan {
         val out = outgoing.analysis
         val inc = incoming.analysis
@@ -95,7 +95,8 @@ object CrossmixPlanner {
         }
         val outGrid = out.localGrid((naturalEnd - 12_000L).coerceAtLeast(0L)) ?: return smoothFade(outgoing, incoming, naturalEnd)
 
-        val tempo = tempoFactor(out, inc)
+        val maxSpeedUp = settings.tempoMatch.maxSpeedUp
+        val tempo = tempoFactor(out, inc, maxSpeedUp)
         val keyDistance = Harmony.camelotDistance(out.key, inc?.key)?.takeIf {
             out.keyConfidence > 0.3f && (inc?.keyConfidence ?: 0f) > 0.3f
         }
@@ -103,7 +104,7 @@ object CrossmixPlanner {
         val outLines = parseLines(outgoing.lyrics)
         val inLines = parseLines(incoming.lyrics)
         val bars = out.barStartsMs()
-        val exits = exitPoints(bars, outGrid, windowStart, naturalEnd)
+        val exits = exitPoints(out, bars, outGrid, windowStart, naturalEnd)
         val outVoice = Voice(outLines, out.vocal)
         val inVoice = Voice(inLines, inc?.vocal)
         // how much singing there is where these two would meet: the end of this one, the opening of the next
@@ -121,32 +122,29 @@ object CrossmixPlanner {
         // variants differ in how many beats a spin, stop or echo takes: quick tempos use the longer count so both last about as long in seconds
         val variation = if (60_000.0 / outGrid.periodMs >= 118.0) 1 else 0
 
-        for (style in CrossmixStyle.entries) {
-            if (style.use == StyleUse.Flavour) continue
-            if (style.needsBeatMatch && tempo == null) continue
-            val styleFit = styleFit(style, out, inc, tempo != null, keyDistance, outLines, naturalEnd, vocalPair)
-            if (styleFit <= -5f) continue
+        // every way this style could play between these two songs; a style the listener picked by hand is never scored out
+        fun consider(style: CrossmixStyle, picked: Boolean) {
+            if (style.needsBeatMatch && tempo == null) return
+            var styleFit = styleFit(style, out, inc, tempo != null, keyDistance, outLines, naturalEnd, vocalPair)
+            if (picked) styleFit = max(styleFit, 0f) else if (styleFit <= -5f) return
             val bonus = if (tempo == null && style == gesture) GestureBonus else 0f
+            // overlapping styles lock the beat when tempos allow, hand-over styles only need the next downbeat on the outgoing one's
+            val locked = tempo != null && (style.needsBeatMatch || !style.entersAtEnd)
             for (length in style.lengths) {
-                val lengthMs = length * outGrid.periodMs
-                // overlaps stay short: long ones only for two calm songs that lock together
-                if (!style.entersAtEnd && !overlapFits(length, lengthMs, tempo != null, calmMatch)) continue
+                // overlaps stay short: long ones only for two calm songs that lock together, or when the listener asked for long
+                if (!style.entersAtEnd && !overlapFits(length, length * outGrid.periodMs, tempo != null, calmMatch, settings.length)) continue
                 val swap = style.swapAt(length)
-                for (swapMs in exits) {
-                    // the hand-over sits on one of this song's bars, and the whole move fits in its last 30 s
-                    val start = (swapMs - swap * outGrid.periodMs).toLong()
-                    val end = (start + lengthMs).toLong()
+                for (exit in exits) {
+                    // the hand-over sits on one of this song's bars, counted on the beats fitted around it, and the whole move fits in its last 30 s
+                    val period = exit.grid.periodMs
+                    val start = (exit.swapMs - swap * period).toLong()
+                    val end = (start + length * period).toLong()
                     if (start < windowStart || end > naturalEnd - 150L) continue
-                    val exitScore = exitScore(out, bars, outGrid, swapMs, end, naturalEnd, outLines, style) ?: continue
-                    val landing = pickLanding(style, out, inc, swapMs, swap, outGrid.periodMs, tempo, outVoice, inVoice, latestLanding) ?: continue
-                    // overlapping styles lock the beat when tempos allow, hand-over styles only need the next downbeat on the outgoing one's
-                    val match = if (tempo != null && (style.needsBeatMatch || !style.entersAtEnd)) {
-                        beatMatch(inc!!, landing.timeMs, tempo, outGrid.periodMs)
-                    } else {
-                        null
-                    }
+                    val exitScore = exitScore(out, bars, exit.grid, exit.swapMs, end, naturalEnd, outLines, style) ?: continue
+                    val landing = pickLanding(style, out, inc, exit.swapMs, swap, period, tempo, locked, outVoice, inVoice, latestLanding) ?: continue
+                    val match = if (locked) beatMatch(inc!!, landing.timeMs, tempo!!, period, maxSpeedUp) else null
                     if (style.needsBeatMatch && match == null) continue
-                    val inBeat = match?.inBeatMs ?: outGrid.periodMs
+                    val inBeat = match?.inBeatMs ?: period
                     // heard from the start of a blend, or from the hand-over for a drop; up to a bar of silent run-up before that, so the beat is locked before anyone hears it
                     val heardFrom = if (style.entersAtEnd) length.toFloat() else 0f
                     val heardMs = landing.timeMs + (heardFrom - swap) * inBeat
@@ -158,7 +156,7 @@ object CrossmixPlanner {
                         lengthBeats = length,
                         swapBeat = swap,
                         outStartMs = start,
-                        outBeatMs = outGrid.periodMs,
+                        outBeatMs = period,
                         inCueMs = landing.timeMs,
                         inMediaPerBeat = inBeat,
                         inSpeed = match?.inSpeed ?: 1f,
@@ -181,6 +179,16 @@ object CrossmixPlanner {
                     }
                     candidates += Candidate(chosen, styleFit + bonus + exitScore + landing.score + lengthFit - clash)
                 }
+            }
+        }
+
+        // the listener's own style first; when it can't play here (it needs a beat match these two don't have), the planner picks as usual
+        settings.style?.let { consider(it, picked = true) }
+        if (candidates.isEmpty()) {
+            for (style in CrossmixStyle.entries) {
+                if (style.use == StyleUse.Flavour) continue
+                if (!settings.stunts && style.use != StyleUse.Everyday) continue
+                consider(style, picked = false)
             }
         }
 
@@ -270,20 +278,20 @@ object CrossmixPlanner {
 
     private data class Match(val inBeatMs: Double, val inSpeed: Float, val outSpeed: Float)
 
-    /** whether the tempos can be laid on each other: the same, or close enough that speeding the slower one up by 10% or less meets them, allowing half and double time */
-    private fun tempoFactor(out: TrackAnalysis, inc: TrackAnalysis?): Tempo? {
+    /** whether the tempos can be laid on each other: the same, or close enough that speeding the slower one up by maxSpeedUp or less meets them, allowing half and double time */
+    private fun tempoFactor(out: TrackAnalysis, inc: TrackAnalysis?, maxSpeedUp: Float): Tempo? {
         if (inc == null || !inc.isBeatReliable) return null
         val outBpm = out.bpm ?: return null
         val inBpm = inc.bpm ?: return null
         for (factor in floatArrayOf(1f, 2f, 0.5f)) {
             val ratio = outBpm / (inBpm * factor)
-            if (ratio in 1f / (1f + MaxSpeedUp)..(1f + MaxSpeedUp)) return Tempo(factor, 60_000.0 / (inBpm * factor))
+            if (ratio in 1f / (1f + maxSpeedUp)..(1f + maxSpeedUp)) return Tempo(factor, 60_000.0 / (inBpm * factor))
         }
         return null
     }
 
     /** beat length at the landing from the locally fitted beats (the song-wide tempo drifts a long blend), and the speeds that lay it on the outgoing beat: the slower song is sped up, nothing is slowed */
-    private fun beatMatch(inc: TrackAnalysis, landingMs: Long, tempo: Tempo, outBeatMs: Double): Match? {
+    private fun beatMatch(inc: TrackAnalysis, landingMs: Long, tempo: Tempo, outBeatMs: Double, maxSpeedUp: Float): Match? {
         val local = inc.localGrid(landingMs)?.periodMs ?: return null
         // the grid counts the song's own beats; half or double time counts them in pairs or halves
         val inBeat = local / tempo.factor
@@ -291,9 +299,9 @@ object CrossmixPlanner {
         val ratio = (inBeat / outBeatMs).toFloat()
         // within 0.3% nothing is stretched, the delay line keeps the two locked and that sounds cleaner than a time-stretch
         if (abs(ratio - 1f) < 0.003f) return Match(inBeat, 1f, 1f)
-        if (ratio > 1f) return if (ratio - 1f > MaxSpeedUp) null else Match(inBeat, ratio, 1f)
+        if (ratio > 1f) return if (ratio - 1f > maxSpeedUp) null else Match(inBeat, ratio, 1f)
         val outUp = 1f / ratio
-        return if (outUp - 1f > MaxSpeedUp) null else Match(inBeat, 1f, outUp)
+        return if (outUp - 1f > maxSpeedUp) null else Match(inBeat, 1f, outUp)
     }
 
     /** the unmatched move this pair leans to, the same every time the two meet: picked from their tempos and keys, never their ids */
@@ -375,25 +383,33 @@ object CrossmixPlanner {
         return score
     }
 
-    /** whether a blend this long suits the pair: long only for calm songs that lock together, short for two that can't, never over in a blink */
-    private fun overlapFits(length: Int, lengthMs: Double, matched: Boolean, calmMatch: Boolean): Boolean {
+    /** whether a blend this long suits the pair: long only for calm songs that lock together, short for two that can't, never over in a blink; the listener's length setting stretches or shrinks the caps */
+    private fun overlapFits(length: Int, lengthMs: Double, matched: Boolean, calmMatch: Boolean, setting: CrossmixLength): Boolean {
         val longest = when {
             !matched -> MaxUnmatchedOverlapMs
             calmMatch -> MaxCalmOverlapMs
             else -> MaxOverlapMs
-        }
+        } * setting.scale
         val shortest = if (60_000.0 * length / lengthMs >= 140.0) MinFastOverlapMs else MinOverlapMs
-        return lengthMs in shortest..longest && (length < 32 || calmMatch)
+        return lengthMs in shortest..longest && (length < 32 || calmMatch || setting == CrossmixLength.LONG)
     }
 
-    /** where the outgoing song can hand over: its bars near the end, or every bar of its fitted grid where the tracker lost the beat */
-    private fun exitPoints(bars: LongArray, grid: LocalGrid, fromMs: Long, toMs: Long): List<Long> {
+    /** a place the outgoing song can hand over, on the beats fitted around it */
+    private class Exit(val swapMs: Long, val grid: LocalGrid)
+
+    /** where the outgoing song can hand over: its bars near the end, each snapped to the grid fitted around it (steadier than the one detected beat), or every bar of the end grid where the tracker lost the beat */
+    private fun exitPoints(out: TrackAnalysis, bars: LongArray, grid: LocalGrid, fromMs: Long, toMs: Long): List<Exit> {
         val inWindow = bars.filter { it in fromMs..toMs }
-        if (inWindow.isNotEmpty()) return inWindow
-        val points = ArrayList<Long>()
+        if (inWindow.isNotEmpty()) {
+            return inWindow.map { bar ->
+                val local = out.localGrid(bar) ?: grid
+                Exit(local.snap(bar), local)
+            }
+        }
+        val points = ArrayList<Exit>()
         var t = grid.snap(fromMs).toDouble()
         while (t <= toMs) {
-            if (t >= fromMs) points += t.toLong()
+            if (t >= fromMs) points += Exit(t.toLong(), grid)
             t += 4 * grid.periodMs
         }
         return points
@@ -433,7 +449,7 @@ object CrossmixPlanner {
 
     private data class Landing(val timeMs: Long, val score: Float)
 
-    /** where the next song lands, heard on the swap: a blend runs its intro under this one and lands on its drop, a drop enters straight on it; null when nothing fits */
+    /** where the next song lands, heard on the swap: a blend runs its intro under this one and lands on its drop, a drop enters straight on it; a locked landing sits on the beats fitted around it; null when nothing fits */
     private fun pickLanding(
         style: CrossmixStyle,
         out: TrackAnalysis,
@@ -442,6 +458,7 @@ object CrossmixPlanner {
         swapBeat: Int,
         outBeatMs: Double,
         tempo: Tempo?,
+        locked: Boolean,
         outVoice: Voice,
         inVoice: Voice,
         latestMs: Long,
@@ -491,9 +508,12 @@ object CrossmixPlanner {
             val skipPenalty = (heardFrom - start).coerceAtLeast(0.0).toFloat() / 60_000f * 0.45f
             // an instrumental run-up is what to bring in under one that sings
             val inSinging = if (style.entersAtEnd) 0f else inVoice.average(heardFrom, time.toDouble())
-            val gridless = needsGrid && inc.localGrid(time) == null
+            val grid = inc.localGrid(time)
+            val gridless = needsGrid && grid == null
             val score = phrase * 0.8f + section + energyFit - skipPenalty - inSinging * (0.25f + outSinging * 0.9f) - (if (gridless) 2f else 0f)
-            if (best == null || score > best.score) best = Landing(time, score)
+            // the one detected beat jitters by a few ms; a locked landing takes the time the beats around it agree on
+            val landing = if (locked && grid != null) grid.snap(time) else time
+            if (best == null || score > best.score) best = Landing(landing, score)
         }
         return best
     }

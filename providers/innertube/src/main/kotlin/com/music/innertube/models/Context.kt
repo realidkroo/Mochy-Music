@@ -13,6 +13,9 @@ data class Context(
     data class Client(
         val clientName: String,
         val clientVersion: String,
+        // the native apps say which screen they're on and that they're a phone-like device, a request without them doesn't look like the app
+        val clientScreen: String? = null,
+        val platform: String? = null,
         val osName: String? = null,
         val osVersion: String? = null,
         val deviceMake: String? = null,
@@ -21,6 +24,7 @@ data class Context(
         val gl: String,
         val hl: String,
         val visitorData: String?,
+        val utcOffsetMinutes: Int? = null,
     )
 
     @Serializable

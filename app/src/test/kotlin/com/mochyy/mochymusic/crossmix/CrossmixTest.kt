@@ -597,4 +597,62 @@ class CrossmixTest {
         assertTrue("incoming bass before the swap", level(inc, before.first, before.second) < 0.02)
         assertTrue("incoming bass after the swap", level(inc, after.first, after.second) > 0.2)
     }
+
+    // -- the listener's settings ---------------------------------------------------------------
+
+    @Test
+    fun `a pinned style is the one that plays, even a flavour the planner never picks by itself`() {
+        for (style in listOf(CrossmixStyle.PhaserGlide, CrossmixStyle.FilterSweep, CrossmixStyle.EchoOut)) {
+            val plan = CrossmixPlanner.plan(
+                CrossmixTrackInput("a", 200_000L, outgoingTrack, null),
+                CrossmixTrackInput("b", 0L, nearTempoTrack, null),
+                CrossmixSettings(style = style),
+            )
+            assertEquals(style, plan.style)
+        }
+    }
+
+    @Test
+    fun `a pinned style that needs a beat match the pair can't give falls back to the planner's pick`() {
+        val plan = CrossmixPlanner.plan(
+            CrossmixTrackInput("a", 200_000L, outgoingTrack, null),
+            CrossmixTrackInput("b", 0L, farTempoTrack, null),
+            CrossmixSettings(style = CrossmixStyle.BassSwap),
+        )
+        assertFalse(plan.style.needsBeatMatch)
+    }
+
+    @Test
+    fun `tempo match off never stretches, and a short length never overlaps long`() {
+        val off = CrossmixPlanner.plan(
+            CrossmixTrackInput("a", 200_000L, outgoingTrack, null),
+            CrossmixTrackInput("b", 0L, nearTempoTrack, null),
+            CrossmixSettings(tempoMatch = com.mochyy.mochymusic.constants.CrossmixTempoMatch.OFF),
+        )
+        assertEquals(1f, off.inSpeed)
+        assertEquals(1f, off.outSpeed)
+        for (seed in 0 until 4) {
+            val short = CrossmixPlanner.plan(
+                CrossmixTrackInput("o$seed", 200_000L, outgoingTrack, null),
+                CrossmixTrackInput("i$seed", 0L, nearTempoTrack, null),
+                CrossmixSettings(length = com.mochyy.mochymusic.constants.CrossmixLength.SHORT),
+            )
+            if (!short.style.entersAtEnd) assertTrue("${short.lengthBeats} beats", short.lengthBeats * short.outBeatMs <= 16_000.0 * 0.6 + 1.0)
+        }
+    }
+
+    @Test
+    fun `the swap and the landing sit on the fitted beat grids, not on one detected beat`() {
+        val plan = CrossmixPlanner.plan(
+            CrossmixTrackInput("a", 200_000L, outgoingTrack, null),
+            CrossmixTrackInput("b", 0L, nearTempoTrack, null),
+        )
+        val swapMs = plan.outMediaAt(plan.swapBeat.toFloat()).toLong()
+        val outGrid = outgoingTrack.localGrid(swapMs)!!
+        assertEquals(outGrid.snap(swapMs).toDouble(), swapMs.toDouble(), 1.5)
+        if (plan.beatMatched) {
+            val inGrid = nearTempoTrack.localGrid(plan.inCueMs)!!
+            assertEquals(inGrid.snap(plan.inCueMs).toDouble(), plan.inCueMs.toDouble(), 1.5)
+        }
+    }
 }

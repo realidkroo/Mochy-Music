@@ -117,8 +117,17 @@ import com.mochyy.mochymusic.constants.AudioPassMode
 import com.mochyy.mochymusic.constants.AudioPassModeKey
 import com.mochyy.mochymusic.constants.AudioPassFixedVolumeKey
 import com.mochyy.mochymusic.constants.AudioPassRestoreKey
-import com.mochyy.mochymusic.constants.playable
+import com.mochyy.mochymusic.constants.CrossmixLength
+import com.mochyy.mochymusic.constants.CrossmixLengthKey
+import com.mochyy.mochymusic.constants.CrossmixStartLatencyKey
+import com.mochyy.mochymusic.constants.CrossmixStuntsKey
+import com.mochyy.mochymusic.constants.CrossmixStyleAuto
+import com.mochyy.mochymusic.constants.CrossmixStyleKey
+import com.mochyy.mochymusic.constants.CrossmixTempoMatch
+import com.mochyy.mochymusic.constants.CrossmixTempoMatchKey
 import com.mochyy.mochymusic.crossmix.CrossmixAnalysisRepository
+import com.mochyy.mochymusic.crossmix.CrossmixSettings
+import com.mochyy.mochymusic.crossmix.CrossmixStyle
 import com.mochyy.mochymusic.constants.DisableLoadMoreWhenRepeatAllKey
 import android.os.Handler
 import android.os.Looper
@@ -364,6 +373,7 @@ class MusicService :
     private var crossfadeDuration = 5000f
     private var crossfadeGapless = true
     private var crossmixMode = CrossmixMode.OFF
+    private var crossmixSettings = CrossmixSettings.Default
     private var crossfadeTriggerJob: Job? = null
 
     private val secondaryPlayerListener = object : Player.Listener {
@@ -970,8 +980,9 @@ class MusicService :
         combine(playerVolume, isMuted) { volume, muted ->
             if (muted) 0f else volume
         }.collectLatest(scope) {
-            // a running pause or skip fade sets the volume itself each frame, scaled by this
-            if (!transport.isFading) player.volume = it
+            // a running pause or skip fade sets the volume itself each frame, scaled by this; so does a
+            // crossfade, and setting it here mid-blend jumped the new song straight to full
+            if (!transport.isFading && !isCrossfading) player.volume = it
             if (crossmixDirector.isTransitioning) fadingPlayer?.volume = it
         }
 
@@ -1136,11 +1147,9 @@ class MusicService :
 
         dataStore.data.map { prefs ->
             val legacyEnabled = prefs[CrossfadeEnabledKey] ?: false
-            val mode = (
-                prefs[CrossmixModeKey]
-                    ?.let { value -> runCatching { CrossmixMode.valueOf(value) }.getOrNull() }
-                    ?: if (legacyEnabled) CrossmixMode.MANUAL_CROSSFADE else CrossmixMode.AUTO_CROSSFADE
-                ).playable()
+            val mode = prefs[CrossmixModeKey]
+                ?.let { value -> runCatching { CrossmixMode.valueOf(value) }.getOrNull() }
+                ?: if (legacyEnabled) CrossmixMode.MANUAL_CROSSFADE else CrossmixMode.AUTO_CROSSFADE
             val enabled = mode != CrossmixMode.OFF
             val duration = when (mode) {
                 CrossmixMode.AUTO_CROSSFADE -> 5f
@@ -1156,6 +1165,22 @@ class MusicService :
                 crossfadeEnabled = config.enabled
                 crossfadeDuration = config.durationSeconds * 1000f
                 crossfadeGapless = config.disableForGaplessAlbums
+            }
+
+        // how crossmix mixes; a change re-plans the mix coming up the new way
+        dataStore.data.map { prefs ->
+            CrossmixSettings(
+                length = prefs[CrossmixLengthKey].toEnum(CrossmixLength.MEDIUM),
+                tempoMatch = prefs[CrossmixTempoMatchKey].toEnum(CrossmixTempoMatch.FULL),
+                style = prefs[CrossmixStyleKey]?.takeIf { it != CrossmixStyleAuto }?.let { name -> CrossmixStyle.entries.firstOrNull { it.name == name } },
+                stunts = prefs[CrossmixStuntsKey] ?: true,
+            )
+        }
+            .distinctUntilChanged()
+            .collect(scope) { settings ->
+                val changed = crossmixSettings != settings
+                crossmixSettings = settings
+                if (changed) crossmixDirector.onSettingsChanged()
             }
 
         dataStore.data
@@ -1419,7 +1444,7 @@ class MusicService :
                 !(prefs[SkipSilenceKey] ?: false) &&
                 !(prefs[MusicHapticsEnabledKey] ?: false) &&
                 prefs[TransportEffectKey].toEnum(TransportEffect.OFF) == TransportEffect.OFF &&
-                prefs[CrossmixModeKey]?.let { runCatching { CrossmixMode.valueOf(it) }.getOrNull() }?.playable() != CrossmixMode.CROSSMIX
+                prefs[CrossmixModeKey]?.let { runCatching { CrossmixMode.valueOf(it) }.getOrNull() } != CrossmixMode.CROSSMIX
         }
         combine(wantsFloat, audioLab.shapesSound, audioLab.playback) { wants, shapesSound, playback ->
             wants && !shapesSound && playback.speed == 1f && playback.pitch == 1f
@@ -3668,6 +3693,15 @@ class MusicService :
      * Post a visible, named playback error. The media notification channel is IMPORTANCE_LOW and
      * silent by design, so failures posted there go unnoticed - errors get their own channel.
      */
+    // what the error says to the listener: plain words for the failures we understand, the resolver's own line for the rest
+    private fun friendlyReason(throwable: Throwable): String = when (throwable) {
+        is com.mochyy.mochymusic.utils.YouTubeBotCheckException -> getString(R.string.error_bot_check)
+        is com.mochyy.mochymusic.utils.YouTubePremiumOnlyException ->
+            getString(if (YouTube.cookie == null) R.string.error_premium_only_login else R.string.error_premium_only)
+        is com.mochyy.mochymusic.utils.YouTubeRateLimitedException -> getString(R.string.error_rate_limited)
+        else -> throwable.message ?: getString(R.string.error_unknown)
+    }
+
     private fun notifyPlaybackError(title: String, message: String) {
         runCatching {
             val nm = getSystemService(NotificationManager::class.java) ?: return
@@ -3781,14 +3815,12 @@ class MusicService :
                     else -> {
                         // Surface the reason rather than a silent stall; the media notification
                         // channel is silent by design so errors get their own.
+                        val reason = friendlyReason(throwable)
                         if (mediaId !in listeningOnlyStreams) {
-                            notifyPlaybackError(
-                                getString(R.string.error_stream_unavailable_title),
-                                throwable.message ?: getString(R.string.error_unknown),
-                            )
+                            notifyPlaybackError(getString(R.string.error_stream_unavailable_title), reason)
                         }
                         throw PlaybackException(
-                            getString(R.string.error_unknown),
+                            reason,
                             throwable,
                             PlaybackException.ERROR_CODE_REMOTE_ERROR
                         )
@@ -4426,7 +4458,9 @@ class MusicService :
         }
         if (target == C.INDEX_UNSET) return false
         crossfadeTriggerJob?.cancel()
-        crossfadeTo(target, SkipBlendMs)
+        // the blend lasts as long as the fade's Length slider says, not a fixed second and a half
+        val length = transport.lengthMs.toLong().coerceAtLeast(SkipBlendMinMs)
+        crossfadeTo(target, length, skipCurve = true)
         return true
     }
 
@@ -4498,7 +4532,7 @@ class MusicService :
     }
 
     // starts targetIndex on a second player and crosses the two over in durationMs; the end-of-song crossfade and blended skips both come through here
-    private fun crossfadeTo(targetIndex: Int, durationMs: Long) {
+    private fun crossfadeTo(targetIndex: Int, durationMs: Long, skipCurve: Boolean = false) {
         val savedRepeatMode = runBlocking { dataStore.get(RepeatModeKey, REPEAT_MODE_OFF) }
         val savedShuffleEnabled = runBlocking { dataStore.get(ShuffleModeKey, false) }
 
@@ -4517,7 +4551,7 @@ class MusicService :
         secPlayer.prepare()
         secPlayer.playWhenReady = true
 
-        performCrossfadeSwap(durationMs)
+        performCrossfadeSwap(durationMs, skipCurve)
     }
 
     /**
@@ -4539,7 +4573,7 @@ class MusicService :
         to.setShuffleOrder(DefaultShuffleOrder(order.toIntArray(), System.currentTimeMillis()))
     }
 
-    private fun performCrossfadeSwap(durationMs: Long) {
+    private fun performCrossfadeSwap(durationMs: Long, skipCurve: Boolean = false) {
         isCrossfading = true
         val nextPlayer = secondaryPlayer ?: return
         val currentPlayer = player
@@ -4590,21 +4624,41 @@ class MusicService :
             val startVolume = runCatching { fadingPlayer?.volume ?: 1f }.getOrDefault(1f)
             // the old song carries on as it was until the new one is really heard, so a slow start never leaves a gap
             while (isActive && !player.isPlaying) delay(CrossfadeFrameMs)
-            // stepped every frame by the time actually played: twenty fixed steps were heard as the volume jumping
+            // stepped every frame by the time actually played: twenty fixed steps were heard as the volume jumping.
+            // Timed by the new song's own position, which is what's really coming out of the speaker: the wall
+            // clock started as soon as isPlaying flipped, while the audio track was still filling, so the new
+            // song came in further up the ramp than the timer said
             var heardMs = 0L
-            var last = android.os.SystemClock.elapsedRealtime()
+            var lastClock = android.os.SystemClock.elapsedRealtime()
+            var lastPosition = player.currentPosition
             while (isActive && heardMs < durationMs) {
                 delay(CrossfadeFrameMs)
                 val now = android.os.SystemClock.elapsedRealtime()
-                // a pause mid-crossfade holds both songs where they are
-                if (player.isPlaying) heardMs += now - last
-                last = now
+                val position = player.currentPosition
+                val wallMs = now - lastClock
+                val movedMs = position - lastPosition
+                val speed = player.playbackParameters.speed.takeIf { it > 0f } ?: 1f
+                heardMs += when {
+                    // the ordinary case: as far as the song really got, at the speed it plays at
+                    movedMs in 0..(wallMs * 4 + 250) -> (movedMs / speed).toLong()
+                    // a seek or another song picked mid-fade: the clock carries it on; a pause holds both songs where they are
+                    player.isPlaying -> wallMs
+                    else -> 0L
+                }
+                lastClock = now
+                lastPosition = position
                 val progress = (heardMs.toFloat() / durationMs).coerceIn(0f, 1f)
+                val angle = progress * Math.PI / 2.0
+                // a skip uses equal-gain S-curves: the old song is heard going down from the press to the
+                // end of the timer, and the new one eases in from silence instead of jumping to near full.
+                // The end-of-song crossfade keeps its equal-power ramps
+                val inGain = if (skipCurve) kotlin.math.sin(angle).let { it * it } else kotlin.math.sin(angle)
+                val outGain = if (skipCurve) kotlin.math.cos(angle).let { it * it } else kotlin.math.cos(angle)
                 try {
                     // the new song fades up to the volume it should be at now: started from the old
                     // one's, a fade begun while muted or ducked ended at 0 or a fifth, and stayed
-                    player.volume = targetVolume() * kotlin.math.sin(progress * Math.PI / 2.0).toFloat()
-                    fadingPlayer?.volume = startVolume * kotlin.math.cos(progress * Math.PI / 2.0).toFloat()
+                    player.volume = targetVolume() * inGain.toFloat()
+                    fadingPlayer?.volume = startVolume * outGain.toFloat()
                 } catch (e: Exception) {
                     break
                 }
@@ -5078,6 +5132,14 @@ class MusicService :
         override fun onMixingChanged(mixing: Boolean) {
             crossmixMixing.value = mixing
         }
+
+        override fun settings(): CrossmixSettings = crossmixSettings
+
+        override fun learnedStartLatencyMs(): Double? = dataStore[CrossmixStartLatencyKey]?.toDouble()
+
+        override fun onStartLatencyLearned(ms: Double) {
+            scope.launch { dataStore.edit { it[CrossmixStartLatencyKey] = ms.toFloat() } }
+        }
     }
 
     companion object {
@@ -5104,8 +5166,8 @@ class MusicService :
          */
         const val ModuleCacheKeyPrefix = "module|"
 
-        // a blended skip crosses the two songs over in this long, quick enough to feel like a press
-        const val SkipBlendMs = 1_400L
+        // a blended skip crosses the two songs over in the fade's Length; never shorter than this, or it's a click
+        const val SkipBlendMinMs = 300L
         // back after this far into a song starts it over, like the previous button always did
         const val BlendRestartAfterMs = 3_000L
         const val CrossfadeFrameMs = 16L

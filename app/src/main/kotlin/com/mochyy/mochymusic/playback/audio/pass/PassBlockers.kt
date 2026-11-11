@@ -12,7 +12,6 @@ import com.mochyy.mochymusic.constants.MusicHapticsEnabledKey
 import com.mochyy.mochymusic.constants.SkipSilenceKey
 import com.mochyy.mochymusic.constants.TransportEffect
 import com.mochyy.mochymusic.constants.TransportEffectKey
-import com.mochyy.mochymusic.constants.playable
 import com.mochyy.mochymusic.eq.AudioLabStore
 import com.mochyy.mochymusic.eq.EqSettings
 import com.mochyy.mochymusic.eq.LoudnessSettings
@@ -52,7 +51,7 @@ fun passBlockersOf(prefs: Preferences, lab: LabSound, playerVolume: Float): Set<
 private fun transitionMode(prefs: Preferences): CrossmixMode {
     val legacy = prefs[CrossfadeEnabledKey] ?: false
     return (prefs[CrossmixModeKey]?.let { runCatching { CrossmixMode.valueOf(it) }.getOrNull() }
-        ?: if (legacy) CrossmixMode.MANUAL_CROSSFADE else CrossmixMode.AUTO_CROSSFADE).playable()
+        ?: if (legacy) CrossmixMode.MANUAL_CROSSFADE else CrossmixMode.AUTO_CROSSFADE)
 }
 
 /** how every blocker was set just before "turn these off", so "turn these back on" can put each one back as it was */
