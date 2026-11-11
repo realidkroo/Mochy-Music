@@ -1080,6 +1080,24 @@
     </plurals>
     <string name="settings_blend_ahead_desc">More songs ahead keeps the fade smooth when you skip a few in a row. It uses a little more data.</string>
     <string name="settings_blend_ahead_saver">Data saver is on, so only the next song loads ahead.</string>
+    <!-- crossmix: the dj-style transition and how the listener can shape it -->
+    <string name="crossmix_desc">DJ-style: reads each song\'s tempo, beats, key, energy and where its voice is, then picks the transition that fits and locks the two on the beat, so two voices never sing over each other</string>
+    <string name="crossmix_style_title">Transition</string>
+    <string name="crossmix_style_desc">Let Mochy pick the one that fits each pair, or hear the same one every time</string>
+    <string name="crossmix_style_auto">Let Mochy choose</string>
+    <string name="crossmix_style_choose">Choose a transition</string>
+    <string name="crossmix_length_title">Length</string>
+    <string name="crossmix_length_desc">How long the two songs play together. Long blends need two songs that lock on the beat.</string>
+    <string name="crossmix_length_short">Short</string>
+    <string name="crossmix_length_medium">Medium</string>
+    <string name="crossmix_length_long">Long</string>
+    <string name="crossmix_tempo_title">Tempo match</string>
+    <string name="crossmix_tempo_desc">How far the slower song may be sped up so its beat lands on the other\'s. Off only locks songs already at one tempo.</string>
+    <string name="crossmix_tempo_off">Off</string>
+    <string name="crossmix_tempo_gentle">Gentle</string>
+    <string name="crossmix_tempo_full">Full</string>
+    <string name="crossmix_stunts_title">Stunts</string>
+    <string name="crossmix_stunts_desc">Backspins, tape stops, risers and drops when the energy jumps between songs</string>
     <string name="settings_persistent_shuffle">Keep shuffle on</string>
     <string name="settings_persistent_shuffle_desc">Shuffle stays on when you play another playlist or album, until you turn it off</string>
     <string name="auto_download_new_songs">Download new songs</string>
