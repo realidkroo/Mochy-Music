@@ -176,6 +176,7 @@ private val SettingsIndex = listOf(
     SettingsEntry("Albums from liked songs", "App behaviour", "general_settings", "albums library liked songs old way apple music"),
     SettingsEntry("Keep playing even when closed", "App behaviour", "general_settings", "background close stop playback"),
     SettingsEntry("Play alongside other apps", "App behaviour", "general_settings", "audio focus mix pause other app video game sound together"),
+    SettingsEntry("Pause when muted", "App behaviour", "general_settings", "pause mute volume silent zero off automatic"),
     SettingsEntry("Save Player's last state", "App behaviour", "general_settings", "persistent queue restore track state"),
     SettingsEntry("Local song auto metadata", "App behaviour", "general_settings", "match tags id3 covers lyrics"),
     SettingsEntry("Keep shuffle on", "App behaviour", "general_settings", "shuffle persistent spotify random keep new playlist"),
