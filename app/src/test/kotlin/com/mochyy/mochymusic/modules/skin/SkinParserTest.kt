@@ -199,6 +199,124 @@ class SkinParserTest {
         assertTrue(skin(stage, base = "https://mod.dev")!!.playerShaders.isEmpty())
     }
 
+    private val motion = """
+        {
+          "id": "neon", "name": "Neon",
+          "player": {
+            "keyframes": {
+              "pop": { "0%": { "scale": 0.6, "opacity": 0 }, "60%": { "scale": 1.1, "easing": "back" }, "100%": { "scale": 1 } },
+              "wobble": [ { "at": 0.5, "rotate": 6 } ]
+            },
+            "blocks": [
+              { "type": "cover", "animate": [ "beat", { "keyframes": "wobble", "duration": 900, "repeat": "pingpong" } ],
+                "states": { "@paused": { "scale": 0.86, "blur": 99 } }, "transition": "spring", "origin": "bottom left" },
+              { "type": "title", "enter": { "keyframes": "pop", "duration": 700, "on": "song" },
+                "on": { "like": "pop", "beat": { "keyframes": [ { "at": 0, "y": -4 }, { "at": 1, "y": 0 } ], "duration": 200 }, "sneeze": "pop" } },
+              { "type": "box", "glass": true, "direction": "row", "colors": ["#40FFFFFF", "#10FFFFFF"], "gradient": "diagonal",
+                "blocks": [ { "type": "path", "d": "M2 2 L22 22 Z", "viewBox": "0 0 24 24", "stroke": 2 }, { "type": "text", "text": "{artist} · {${'$'}mood}" } ] },
+              { "type": "path", "d": "<script>" },
+              { "type": "text", "text": "glow", "animate": { "keyframes": "pop", "clock": "bass", "run": "always" }, "when": "@liked" }
+            ]
+          }
+        }
+    """
+
+    @Test
+    fun `keyframes read from both forms, fill in neutral ends and ease each step`() {
+        val player = skin(motion)!!.player!!
+        val cover = player.blocks[0] as SkinBlock.Styled
+        assertEquals(listOf(MotionKind.Beat), cover.motions.map { it.kind })
+        val wobble = cover.timelines.single()
+        assertEquals(SkinRepeat.PingPong, wobble.repeat)
+        assertEquals(900, wobble.durationMs)
+        // only the middle was given, so the turn starts and ends at rest
+        val turn = wobble.frames.tracks.single()
+        assertEquals(PoseProp.Rotate, turn.prop)
+        assertEquals(listOf(0f, 6f, 0f), turn.values.toList())
+        assertEquals(0f, turn.valueAt(0f, androidx.compose.animation.core.LinearEasing))
+        assertEquals(3f, turn.valueAt(0.25f, androidx.compose.animation.core.LinearEasing), 0.001f)
+        assertEquals(0.5f, wobble.position(450f + 900f), 0.001f)
+    }
+
+    @Test
+    fun `states, transitions, origins and events read with their values in range`() {
+        val player = skin(motion)!!.player!!
+        val cover = player.blocks[0] as SkinBlock.Styled
+        val paused = cover.states.single()
+        assertEquals(SkinCondition("@paused", null, negate = false), paused.condition)
+        assertEquals(0.86f, paused.values[PoseProp.Scale])
+        assertEquals(60f, paused.values[PoseProp.Blur])
+        assertTrue(cover.transition!!.spring)
+        assertEquals(0f, cover.originX)
+        assertEquals(1f, cover.originY)
+
+        val title = player.blocks[1] as SkinBlock.Styled
+        assertEquals(EnterKind.Keyframes, title.enter!!.kind)
+        assertTrue(title.enter!!.eachSong)
+        // an event mochy doesn't know is skipped
+        assertEquals(listOf(SkinEvent.Like, SkinEvent.Beat), title.triggers.map { it.event })
+        assertEquals(SkinRepeat.Once, title.triggers[0].timeline.repeat)
+        assertEquals(setOf(SkinEvent.Like, SkinEvent.Beat), player.events)
+        assertEquals(setOf(SkinFlag.Paused, SkinFlag.Liked), player.flags)
+        assertTrue(player.alwaysMoves.not())
+        assertEquals(SkinClock.Bass, (player.blocks[3] as SkinBlock.Styled).timelines.single().clock)
+    }
+
+    @Test
+    fun `boxes hold blocks on glass or a gradient, and paths only take path data`() {
+        val player = skin(motion)!!.player!!
+        val box = player.blocks[2] as SkinBlock.Box
+        assertTrue(box.row)
+        assertEquals(24f, box.glass)
+        assertEquals(GradientKind.Diagonal, box.gradient)
+        assertEquals(2, box.fill.size)
+        val path = box.blocks[0] as SkinBlock.Vector
+        // an outline only: a stroke and no fill unless it asks for one
+        assertTrue(path.fill.isEmpty())
+        assertEquals(SkinColor.Ink, path.strokeColor)
+        assertEquals(24f, path.viewWidth)
+        assertTrue(player.frosted)
+        // the script tag wasn't path data, so the next block is the glowing text
+        assertTrue((player.blocks[3] as SkinBlock.Styled).inner is SkinBlock.Label)
+    }
+
+    @Test
+    fun `easings by name, as css cubic-bezier and as steps`() {
+        assertNull(SkinAnimationParser.easing("wiggly"))
+        val steps = SkinAnimationParser.easing("steps(4)")!!
+        assertEquals(0.25f, steps.transform(0.3f))
+        val bezier = SkinAnimationParser.easing("cubic-bezier(0.2, -0.5, 0.8, 1.5)")!!
+        assertEquals(1f, bezier.transform(1f), 0.001f)
+        assertEquals(1f, SkinAnimationParser.easing("bounce")!!.transform(1f), 0.001f)
+    }
+
+    @Test
+    fun `a page brings a background, frosted cards and shaders, shaders only from a zip`() {
+        val text = """
+            { "id": "p", "name": "P", "pages": [ { "id": "home", "title": "Home",
+              "background": { "type": "shader", "shader": "page.agsl", "fallback": ["#101020", "#000000"], "uniforms": { "time": 3, "speed": 2 } },
+              "blocks": [
+                { "type": "shader", "shader": "orb.agsl", "height": 2000 },
+                { "type": "card", "glass": 18, "blocks": [ { "type": "heading", "text": "Hi" }, { "type": "card", "blocks": [ { "type": "text", "text": "x" } ] } ] }
+              ] } ] }
+        """
+        val page = skin(text, files = File("/data/m"))!!.pages.single()
+        val background = page.background as PageBackground.Shader
+        // mochy fills time in itself, so the module's own value is dropped
+        assertEquals(mapOf("speed" to 2f), background.program.uniforms)
+        assertEquals(2, background.fallback.size)
+        assertEquals(800.dp, (page.blocks[0] as PageBlock.Shader).height)
+        val card = page.blocks[1] as PageBlock.Card
+        assertEquals(18f, card.glass)
+        // a card inside a card is dropped
+        assertEquals(1, card.blocks.size)
+        assertTrue(page.frosted)
+
+        val fromLink = skin(text, base = "https://mod.dev")!!.pages.single()
+        assertEquals(PageBackground.Fill(listOf(SkinColor.Fixed(Color(0xFF101020)), SkinColor.Fixed(Color.Black))), fromLink.background)
+        assertTrue(fromLink.blocks.first() is PageBlock.Card)
+    }
+
     @Test
     fun `hex colours`() {
         assertEquals(Color(0xFFE8B86B), parseHexColor("#E8B86B"))

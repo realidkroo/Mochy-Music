@@ -79,13 +79,15 @@ fun FrostedChromeGlass(
     pureBlack: Boolean,
     accentWash: (() -> Color)?,
     modifier: Modifier = Modifier,
+    // which bar this is, so a look's glass shader can draw each one its own way
+    surface: ChromeSurface = ChromeSurface.NavBar,
 ) {
     // a look module can swap the frost for a glass shader of its own; android 13+ runs it, older phones and blur switched off keep the frost
     val (style) = rememberEnumPreference(ChromeGlassStyleKey, defaultValue = ChromeGlassStyle.FROSTED)
     val (blurOff) = rememberPreference(DisableBlurKey, defaultValue = false)
     val moduleGlass = com.mochyy.mochymusic.modules.skin.ActiveSkin.glass
     if (style == ChromeGlassStyle.MODULE && moduleGlass != null && !blurOff && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-        ModuleChromeGlass(state, moduleGlass, pureBlack, accentWash, modifier)
+        ModuleChromeGlass(state, moduleGlass, pureBlack, accentWash, surface, modifier)
         return
     }
     val color = if (pureBlack) Color.Black else GlassChromeColor
@@ -110,6 +112,9 @@ fun FrostedChromeGlass(
         )
     }
 }
+
+/** the bars that share the chrome glass; [kind] is the number a look's glass shader gets for each */
+enum class ChromeSurface(val kind: Float) { NavBar(0f), MiniPlayer(1f), WideBar(2f) }
 
 /**
  * The chrome's hairline round a rounded rect, kept just inside it so the parent's clip can't

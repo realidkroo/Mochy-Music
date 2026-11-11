@@ -90,8 +90,38 @@ class ModulesViewModel @Inject constructor(
     private var testJob: Job? = null
     private var signedIn = false
 
+    // the module being updated right now, for its button's spinner
+    private val _updating = MutableStateFlow<String?>(null)
+    val updating: StateFlow<String?> = _updating.asStateFlow()
+
+    // the module whose source is being asked for a newer copy by hand
+    private val _checkingUpdate = MutableStateFlow<String?>(null)
+    val checkingUpdate: StateFlow<String?> = _checkingUpdate.asStateFlow()
+
     init {
         modules.refresh()
+        // a quiet look for newer copies each time the modules open; each source is only really asked a few times a day
+        viewModelScope.launch { runCatching { registry.checkUpdates(force = false) } }
+    }
+
+    /** asks one module's github project or link for a newer copy right now */
+    fun checkUpdate(id: String) {
+        if (_checkingUpdate.value != null) return
+        _checkingUpdate.value = id
+        viewModelScope.launch {
+            runCatching { registry.checkUpdates(force = true, only = id) }
+            modules.refresh()
+            _checkingUpdate.value = null
+        }
+    }
+
+    /** puts the newer copy in place; gives back what the check came to, so a problem can be said */
+    suspend fun update(id: String): ModuleRegistry.LinkCheck {
+        _updating.value = id
+        val result = runCatching { registry.update(id) }.getOrDefault(ModuleRegistry.LinkCheck.Unreachable)
+        modules.refresh()
+        _updating.value = null
+        return result
     }
 
     fun setEnabled(id: String, on: Boolean) = modules.setEnabled(id, on)

@@ -113,12 +113,8 @@ object YTPlayerUtils {
      * with a working PoToken, and minting one blocks the first play for as long as BotGuard
      * takes. VISIONOS sidesteps both problems, so PoToken minting now only happens if playback
      * actually falls through to a web client (see the lazy mint in the loop below).
-     *
-     * It mints its own visitor id (InnerTube does, as the real app does before its first player
-     * request). Without one it answers `UNPLAYABLE`; with one that youtube's bot check has burned
-     * it answers `LOGIN_REQUIRED` "Sign in to confirm you're not a bot", so a bot check gets one
-     * fresh id and one more ask, and a second bot check rests it for a while (see below).
      */
+    // it mints its own visitor id like the real app, a burned one gets "confirm you're not a bot", so that gets one fresh id and one more ask
     private val MAIN_CLIENT: YouTubeClient = VISIONOS
 
     // the account's clients that still hand out plain links for songs youtube only plays signed in (age-restricted, premium-only), in yt-dlp's order for signed-in users
@@ -131,6 +127,9 @@ object YTPlayerUtils {
 
     private fun PlayerResponse.isBotCheck(): Boolean =
         playabilityStatus.status == "LOGIN_REQUIRED" && playabilityStatus.reason?.contains("bot", ignoreCase = true) == true
+
+    // the clients whose links carry an n that the player js has to solve: without it googlevideo throttles or refuses them
+    private fun YouTubeClient.solvesN(): Boolean = useWebPoTokens || this in ACCOUNT_CLIENTS
 
     // "this video is only available to music premium members", the same words newpipe looks for
     private fun PlayerResponse.isPremiumOnly(): Boolean =
@@ -232,9 +231,7 @@ object YTPlayerUtils {
             }
         }
 
-        // a rate limit or a bot check is the whole network, not the session, and a premium-only
-        // song is the song: rotating asks YouTube again and retrying walks every client again,
-        // which only keeps a limit in place and plays nothing new
+        // a rate limit or bot check is the network and a premium-only song is the song, so a fresh guest session and a second walk would only play nothing again
         val firstFailure = (firstAttempt.exceptionOrNull() as? UploadRefusedException)?.failure ?: firstAttempt.exceptionOrNull()
         if (firstAttempt.isFailure && YouTube.cookie == null &&
             firstFailure !is YouTubeRateLimitedException &&
@@ -323,8 +320,7 @@ object YTPlayerUtils {
         val isLoggedIn = YouTube.cookie != null
         Timber.tag(logTag).d("Session authentication status: ${if (isLoggedIn) "Logged in" else "Not logged in"}")
 
-        // the web clients need the web player's visitorData, and App.kt only fetches one
-        // asynchronously at startup, so a song played early would have none to fall back with
+        // the web clients need the web player's visitor id, and the app only fetches one in the background at startup
         if (!isLoggedIn && YouTube.visitorData.isNullOrEmpty()) {
             Timber.tag(logTag).d("No visitorData yet - fetching one before resolving playback")
             YouTube.refreshVisitorData()
@@ -388,8 +384,10 @@ object YTPlayerUtils {
             }
             mainPlayerResponse = answer
         }
+        // a bot check is about the network, not the song, so it isn't treated as an age gate below: that would drop the signature timestamp the account's ciphered links need
+        val mainBotChecked = mainPlayerResponse?.isBotCheck() == true
         // the network is flagged: when nothing else serves either, that's the reason to give
-        val botChecked = mainPlayerResponse?.isBotCheck() ?: true
+        val botChecked = mainPlayerResponse == null || mainBotChecked
         // some client called the song premium-only; set below as the answers come in
         var premiumOnly = mainPlayerResponse?.isPremiumOnly() == true
 
@@ -430,7 +428,7 @@ object YTPlayerUtils {
         val wasOriginallyAgeRestricted: Boolean
 
         val mainStatus = mainPlayerResponse?.playabilityStatus?.status
-        val isAgeRestrictedFromResponse = mainStatus in RESTRICTED_STATUSES
+        val isAgeRestrictedFromResponse = mainStatus in RESTRICTED_STATUSES && !mainBotChecked
         wasOriginallyAgeRestricted = isAgeRestrictedFromResponse
 
         if (isAgeRestrictedFromResponse && isLoggedIn) {
@@ -457,7 +455,7 @@ object YTPlayerUtils {
         var retryMainPlayerResponse: PlayerResponse? = if (usedAgeRestrictedClient != null) mainPlayerResponse else null
 
         val currentStatus = mainPlayerResponse?.playabilityStatus?.status
-        var isAgeRestricted = currentStatus in RESTRICTED_STATUSES
+        var isAgeRestricted = currentStatus in RESTRICTED_STATUSES && !mainBotChecked
 
         if (isAgeRestricted) {
             Timber.tag(logTag).d("Content is still age-restricted (status: $currentStatus), will try fallback clients")
@@ -584,7 +582,7 @@ object YTPlayerUtils {
 
                 val isPrivatelyOwnedTrack = streamPlayerResponse.videoDetails?.musicVideoType == "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK"
 
-                if (currentClient.useWebPoTokens) {
+                if (currentClient.solvesN()) {
                     try {
                         Timber.tag(logTag).d("Applying n-transform to stream URL for ${currentClient.clientName}")
                         val transformed = EjsNTransformSolver.transformNParamInUrl(streamUrl!!)
@@ -643,7 +641,7 @@ object YTPlayerUtils {
                 } else {
                     Timber.tag(logTag).d("Stream validation failed for client: ${currentClient.clientName}")
 
-                    if (currentClient.useWebPoTokens) {
+                    if (currentClient.solvesN()) {
                         var nTransformWorked = false
 
                         try {

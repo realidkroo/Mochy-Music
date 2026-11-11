@@ -69,6 +69,9 @@ internal fun ModuleList(
     onOpen: (ModuleEntry) -> Unit,
     onRemove: (ModuleEntry) -> Unit,
     onReorder: (List<String>) -> Unit,
+    // the module being updated right now, and what a tap on a row's update pill does
+    updating: String? = null,
+    onUpdate: (ModuleEntry) -> Unit = {},
 ) {
     val haptic = LocalHapticFeedback.current
     val density = LocalDensity.current
@@ -124,7 +127,7 @@ internal fun ModuleList(
                         enabled = !isDragged,
                         slab = false,
                     ) {
-                        ModuleCard(entry, lifted = isDragged, onClick = { onOpen(entry) })
+                        ModuleCard(entry, lifted = isDragged, updating = updating == id, onUpdate = { onUpdate(entry) }, onClick = { onOpen(entry) })
                     }
                     DragHandle(
                         Modifier
@@ -171,7 +174,7 @@ internal fun ModuleList(
 
 /** one module as the mock draws it: its icon, its name, how it's doing, and what it adds with its version in the corner */
 @Composable
-private fun ModuleCard(entry: ModuleEntry, lifted: Boolean, onClick: () -> Unit) {
+private fun ModuleCard(entry: ModuleEntry, lifted: Boolean, updating: Boolean, onUpdate: () -> Unit, onClick: () -> Unit) {
     val info = entry.module.info
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -186,19 +189,22 @@ private fun ModuleCard(entry: ModuleEntry, lifted: Boolean, onClick: () -> Unit)
         ModuleLogo(entry.id, info.name, size = 56, art = entry.icon, corner = 0.24f)
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
-            Column {
-                Text(
-                    info.name, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 21.sp,
-                    letterSpacing = (-0.6).sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StatusDot(statusColor(entry), size = 7.dp)
-                    Spacer(Modifier.width(6.dp))
+            Row(verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f)) {
                     Text(
-                        moduleStatus(entry), fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.85f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        info.name, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 21.sp,
+                        letterSpacing = (-0.6).sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        StatusDot(statusColor(entry), size = 7.dp)
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            moduleStatus(entry), fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
+                            color = Color.White.copy(alpha = 0.85f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
+                if (entry.update != null) UpdatePill(updating, onUpdate)
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -212,6 +218,33 @@ private fun ModuleCard(entry: ModuleEntry, lifted: Boolean, onClick: () -> Unit)
                 )
             }
         }
+    }
+}
+
+// a newer copy is out: one tap brings it in right from the list
+@Composable
+private fun UpdatePill(updating: Boolean, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(start = 8.dp)
+            .clip(RoundedCornerShape(50))
+            .background(Color.White)
+            .clickable(enabled = !updating, onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+    ) {
+        if (updating) {
+            androidx.compose.material3.CircularProgressIndicator(color = Color.Black, strokeWidth = 1.5.dp, modifier = Modifier.size(11.dp))
+        } else {
+            androidx.compose.material3.Icon(
+                androidx.compose.ui.res.painterResource(R.drawable.download), null, tint = Color.Black, modifier = Modifier.size(12.dp),
+            )
+        }
+        Spacer(Modifier.width(5.dp))
+        Text(
+            stringResource(if (updating) R.string.module_updating else R.string.module_update),
+            fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.Black, maxLines = 1,
+        )
     }
 }
 

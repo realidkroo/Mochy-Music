@@ -1,4 +1,4 @@
-// a look module's own glass for the nav bar and the mini player: what's under the bar, blurred, then the module's agsl over it (docs/notes/module-glass.md)
+// a look module's own glass for the nav bar, the wide bar and the mini player: what's under the bar, blurred, then the module's agsl over it (docs/notes/module-glass.md)
 
 package com.mochyy.mochymusic.ui.component
 
@@ -39,6 +39,7 @@ private class GlassEffectCache {
     var margin = -1
     var low = false
     var chrome = 0
+    var accent = 0
     var effect: RenderEffect? = null
 }
 
@@ -49,9 +50,11 @@ internal fun ModuleChromeGlass(
     glass: ActiveGlass,
     pureBlack: Boolean,
     accentWash: (() -> Color)?,
+    surface: ChromeSurface,
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
+    val accent = androidx.compose.material3.MaterialTheme.colorScheme.primary.toArgb()
     val low = LocalBlurQuality.current == BlurQuality.LOW
     // low quality blurs a little less, the shader hears the quality and can skip its own extras
     val blurPx = with(density) { glass.blurDp.dp.toPx() } * (if (low) 0.7f else 1f)
@@ -72,15 +75,16 @@ internal fun ModuleChromeGlass(
                 .graphicsLayer {
                     clip = true
                     if (cache.effect == null || cache.glass !== glass || cache.width != size.width || cache.height != size.height ||
-                        cache.margin != margin || cache.low != low || cache.chrome != chrome
+                        cache.margin != margin || cache.low != low || cache.chrome != chrome || cache.accent != accent
                     ) {
-                        cache.effect = glassEffect(glass, size, margin.toFloat(), density.density, low, chrome, blurPx)
+                        cache.effect = glassEffect(glass, size, margin.toFloat(), density.density, low, chrome, accent, surface.kind, blurPx)
                         cache.glass = glass
                         cache.width = size.width
                         cache.height = size.height
                         cache.margin = margin
                         cache.low = low
                         cache.chrome = chrome
+                        cache.accent = accent
                     }
                     renderEffect = cache.effect
                 },
@@ -99,7 +103,17 @@ internal fun ModuleChromeGlass(
 
 // mochy's uniforms first, then the module's own; a name the shader doesn't declare is skipped, so a shader only takes what it uses
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun glassEffect(glass: ActiveGlass, size: Size, margin: Float, density: Float, low: Boolean, chrome: Int, blur: Float): RenderEffect {
+private fun glassEffect(
+    glass: ActiveGlass,
+    size: Size,
+    margin: Float,
+    density: Float,
+    low: Boolean,
+    chrome: Int,
+    accent: Int,
+    kind: Float,
+    blur: Float,
+): RenderEffect {
     val shader = glass.shader
     fun set(block: () -> Unit) = runCatching(block)
     set { shader.setAgslUniform("size", size.width, size.height) }
@@ -108,6 +122,8 @@ private fun glassEffect(glass: ActiveGlass, size: Size, margin: Float, density: 
     set { shader.setAgslUniform("density", density) }
     set { shader.setAgslUniform("quality", if (low) 0f else 1f) }
     set { shader.setAgslColorUniform("chrome", chrome) }
+    set { shader.setAgslColorUniform("accent", accent) }
+    set { shader.setAgslUniform("kind", kind) }
     glass.uniforms.forEach { (name, value) -> set { shader.setAgslUniform(name, value) } }
     val lens = agslRenderEffect(shader, "content")
     // the blur goes first, then the shader works on the blurred picture

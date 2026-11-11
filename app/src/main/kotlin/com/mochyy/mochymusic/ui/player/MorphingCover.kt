@@ -1861,6 +1861,7 @@ private fun SheetPillGlass(
             pureBlack = pureBlack,
             accentWash = accentWash,
             modifier = Modifier.fillMaxSize(),
+            surface = com.mochyy.mochymusic.ui.component.ChromeSurface.MiniPlayer,
         )
     }
 }

@@ -1,9 +1,10 @@
-// the module player's one clock: loop time and the music's levels worked out once a frame, plus the loops and entrances blocks put on with it
+// the module player's one clock: loop time, a clock that runs while paused, and the music's levels worked out once a frame, plus the preset loops and entrances
 
 package com.mochyy.mochymusic.ui.player.styles
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,7 +25,6 @@ import com.mochyy.mochymusic.LocalAppContentObscured
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.modules.skin.EnterKind
 import com.mochyy.mochymusic.modules.skin.MotionKind
-import com.mochyy.mochymusic.modules.skin.SkinBlock
 import com.mochyy.mochymusic.modules.skin.SkinEnter
 import com.mochyy.mochymusic.modules.skin.SkinMotion
 import com.mochyy.mochymusic.playback.audio.AudioSpectrum
@@ -42,6 +42,10 @@ import kotlin.math.sin
 internal class SkinPulse {
     /** seconds of loop time, only moving while the song plays and the player can be seen */
     var time by mutableFloatStateOf(0f)
+        internal set
+
+    /** seconds the player has been on screen, paused or not, for animations that ask to run always */
+    var wall by mutableFloatStateOf(0f)
         internal set
 
     /** 0..1, eased: the low end, the middle, the top and all of it */
@@ -73,15 +77,15 @@ internal class SkinPulse {
     }
 }
 
-/** one clock for the whole player; it only runs when the layout has something that moves, and rests under the mini player */
+/** one clock for the whole player; it only runs when the layout has something that moves, and rests under the mini player; [always] keeps it going while paused */
 @Composable
-internal fun rememberSkinPulse(needed: Boolean, preview: Boolean): SkinPulse {
+internal fun rememberSkinPulse(needed: Boolean, preview: Boolean, always: Boolean = false): SkinPulse {
     val pulse = remember { SkinPulse() }
     val connection = LocalPlayerConnection.current
     val showing = rememberStyleShowing()
     val obscured = LocalAppContentObscured.current
     val playing = connection?.isPlaying?.collectAsState()?.value == true
-    LaunchedEffect(needed, preview, connection, playing, showing) {
+    LaunchedEffect(needed, preview, connection, playing, showing, always) {
         if (!needed || preview || connection == null) {
             pulse.settle()
             return@LaunchedEffect
@@ -97,6 +101,7 @@ internal fun rememberSkinPulse(needed: Boolean, preview: Boolean): SkinPulse {
                 val dt = if (last == 0L) 0.016f else ((now - last) / 1e9f).coerceIn(0.001f, 0.1f)
                 last = now
                 if (playing) pulse.time += dt
+                pulse.wall += dt
                 val spectrum = connection.service.spectrumOf(connection.player)
                 val heard = playing && spectrum != null &&
                     spectrum.read(connection.player.currentPosition, pulse.bars.target(AudioSpectrum.Bands))
@@ -108,8 +113,8 @@ internal fun rememberSkinPulse(needed: Boolean, preview: Boolean): SkinPulse {
                 pulse.treble = average(shown, 26, shown.size)
                 pulse.level = average(shown, 0, shown.size)
                 pulse.frame = now
-                // paused and settled: nothing left to move until play is pressed
-                if (!playing && pulse.bars.settled()) break
+                // paused and settled: nothing left to move until play is pressed, unless something asked to run always
+                if (!playing && !always && pulse.bars.settled()) break
             }
         }
     }
@@ -138,20 +143,12 @@ internal fun rememberEnterProgress(enter: SkinEnter?, preview: Boolean): () -> F
                 progress.snapTo(0f)
                 if (!shown) return@collectLatest
                 delay(enter.delayMs.toLong())
-                progress.animateTo(1f, tween(enter.durationMs, easing = FastOutSlowInEasing))
+                // keyframes carry their own easing, so their progress runs straight
+                val easing = if (enter.kind == EnterKind.Keyframes) LinearEasing else FastOutSlowInEasing
+                progress.animateTo(1f, tween(enter.durationMs, easing = easing))
             }
     }
     return remember(progress) { { progress.value } }
-}
-
-/** a styled block's loop, entrance, nudge, turn and see-through, all in one layer so they never recompose it */
-internal fun Modifier.skinStyled(block: SkinBlock.Styled, pulse: SkinPulse, enter: () -> Float): Modifier = graphicsLayer {
-    translationX = block.x.toPx()
-    translationY = block.y.toPx()
-    rotationZ = block.rotate
-    alpha = block.opacity
-    block.motion?.let { applyMotion(it, pulse) }
-    block.enter?.let { applyEnter(it.kind, enter()) }
 }
 
 /** a background layer's loop and see-through */
@@ -160,7 +157,7 @@ internal fun Modifier.skinLayerMotion(motion: SkinMotion?, opacity: Float, pulse
     motion?.let { applyMotion(it, pulse) }
 }
 
-private fun GraphicsLayerScope.applyMotion(motion: SkinMotion, pulse: SkinPulse) {
+internal fun GraphicsLayerScope.applyMotion(motion: SkinMotion, pulse: SkinPulse) {
     val t = pulse.time * motion.speed
     val a = motion.amount
     when (motion.kind) {
@@ -182,8 +179,8 @@ private fun GraphicsLayerScope.applyMotion(motion: SkinMotion, pulse: SkinPulse)
     }
 }
 
-private fun GraphicsLayerScope.applyEnter(kind: EnterKind, progress: Float) {
-    if (progress >= 1f) return
+internal fun GraphicsLayerScope.applyEnter(kind: EnterKind, progress: Float) {
+    if (progress >= 1f || kind == EnterKind.Keyframes) return
     val rest = 1f - progress
     alpha *= progress
     when (kind) {
@@ -193,6 +190,7 @@ private fun GraphicsLayerScope.applyEnter(kind: EnterKind, progress: Float) {
         EnterKind.Zoom -> (0.85f + 0.15f * progress).let { scaleX *= it; scaleY *= it }
         EnterKind.SlideStart -> translationX -= rest * 40.dp.toPx()
         EnterKind.SlideEnd -> translationX += rest * 40.dp.toPx()
+        EnterKind.Keyframes -> Unit
     }
 }
 

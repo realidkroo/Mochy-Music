@@ -13,9 +13,14 @@ internal object GitHubReleases {
     /** a project, and the release [tag] when the link named one; null tag means the newest */
     data class Link(val owner: String, val repo: String, val tag: String?)
 
+    /** a release's module zip as github lists it; [stamp] changes whenever the file is uploaded again, even under the same tag */
+    data class Release(val tag: String, val asset: String, val url: String, val stamp: String)
+
     sealed interface Found {
-        /** the zip in the cache, and what the add sheet shows it came from */
-        data class Zip(val file: File, val from: String) : Found
+        /** the zip in the cache, what the add sheet shows it came from, and the release it was */
+        data class Zip(val file: File, val from: String, val release: Release) : Found
+        /** the release and its zip, read without downloading anything */
+        data class Newest(val release: Release) : Found
         data object NoRelease : Found
         data object NoModule : Found
         data object Unreachable : Found
@@ -36,8 +41,8 @@ internal object GitHubReleases {
         return Link(owner, repo, tag)
     }
 
-    /** the release's module zip, downloaded into the cache; blocking, so off the main thread */
-    fun download(client: OkHttpClient, cacheDir: File, link: Link, preferDebug: Boolean): Found {
+    /** the release the link points at and its module zip, without downloading the zip; blocking, so off the main thread */
+    fun release(client: OkHttpClient, link: Link, preferDebug: Boolean): Found {
         val api = "https://api.github.com/repos/${link.owner}/${link.repo}/releases/" + (link.tag?.let { "tags/$it" } ?: "latest")
         val release = try {
             client.newCall(apiRequest(api)).execute().use { response ->
@@ -50,36 +55,49 @@ internal object GitHubReleases {
             return Found.Unreachable
         }
         val asset = pickAsset(release, preferDebug) ?: return Found.NoModule
+        val tag = release.optString("tag_name").ifBlank { release.optString("name") }.ifBlank { asset.name }
+        return Found.Newest(Release(tag, asset.name, asset.url, asset.stamp))
+    }
+
+    /** the release's module zip, downloaded into the cache; blocking, so off the main thread */
+    fun download(client: OkHttpClient, cacheDir: File, link: Link, preferDebug: Boolean): Found {
+        val release = when (val found = release(client, link, preferDebug)) {
+            is Found.Newest -> found.release
+            else -> return found
+        }
         val folder = File(cacheDir, "github_modules").apply {
             deleteRecursively()
             mkdirs()
         }
-        val target = File(folder, asset.first.replace(Regex("[^A-Za-z0-9._-]"), "-"))
+        val target = File(folder, release.asset.replace(Regex("[^A-Za-z0-9._-]"), "-"))
         return try {
-            client.newCall(Request.Builder().url(asset.second).header("User-Agent", "Mochy").build()).execute().use { response ->
+            client.newCall(Request.Builder().url(release.url).header("User-Agent", "Mochy").build()).execute().use { response ->
                 if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
                 copyCapped(response.body.byteStream(), target)
             }
-            val tag = release.optString("tag_name").takeIf { it.isNotBlank() }
-            Found.Zip(target, "github.com/${link.owner}/${link.repo}" + (tag?.let { " · $it" } ?: ""))
+            Found.Zip(target, "github.com/${link.owner}/${link.repo} · ${release.tag}", release)
         } catch (e: Exception) {
             target.delete()
             Found.Unreachable
         }
     }
 
+    private class Asset(val name: String, val url: String, val stamp: String)
+
     // the zips with mochyymodule in their name; with a debug and a release one side by side, the one signed like this mochy
-    private fun pickAsset(release: JSONObject, preferDebug: Boolean): Pair<String, String>? {
+    private fun pickAsset(release: JSONObject, preferDebug: Boolean): Asset? {
         val assets = release.optJSONArray("assets") ?: return null
         val zips = (0 until assets.length()).mapNotNull { i ->
             val asset = assets.optJSONObject(i) ?: return@mapNotNull null
             val name = asset.optString("name")
             val url = asset.optString("browser_download_url")
             val fits = name.contains(Marker, ignoreCase = true) && name.endsWith(".zip", ignoreCase = true) && url.startsWith("https://")
-            if (fits && asset.optLong("size") <= MaxZipBytes) name to url else null
+            // the id and upload time change when an author swaps the file for a fixed one without a new tag
+            val stamp = "${asset.optLong("id")}:${asset.optString("updated_at")}:${asset.optLong("size")}"
+            if (fits && asset.optLong("size") <= MaxZipBytes) Asset(name, url, stamp) else null
         }
         if (zips.size <= 1) return zips.firstOrNull()
-        return zips.firstOrNull { it.first.contains("debug", ignoreCase = true) == preferDebug } ?: zips.first()
+        return zips.firstOrNull { it.name.contains("debug", ignoreCase = true) == preferDebug } ?: zips.first()
     }
 
     private fun apiRequest(url: String) = Request.Builder()

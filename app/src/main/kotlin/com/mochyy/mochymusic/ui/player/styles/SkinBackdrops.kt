@@ -22,6 +22,7 @@ import coil3.compose.AsyncImage
 import com.mochyy.mochymusic.LocalAppContentObscured
 import com.mochyy.mochymusic.constants.PlayerBackgroundStyle
 import com.mochyy.mochymusic.modules.skin.SkinBackground
+import com.mochyy.mochymusic.ui.component.glassRoot
 import com.mochyy.mochymusic.ui.player.customize.PlayerBackgroundContent
 import com.mochyy.mochymusic.ui.player.flagship.AmbientBackdrop
 import com.mochyy.mochymusic.ui.player.flagship.FollowPicture
@@ -31,9 +32,13 @@ import com.mochyy.mochymusic.ui.player.flagship.rememberAmbientColors
 @Composable
 internal fun BoxScope.SkinBackdrop(context: SkinContext) {
     val layout = context.layout
-    SkinBackgroundFill(layout.background, context, Modifier.fillMaxSize())
-    SkinLayers(context)
-    if (layout.dim > 0f) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = layout.dim)))
+    // captured for the frosted boxes when one asks; the boxes sit in the blocks above, never inside what they read
+    val capture = context.glass?.let { Modifier.glassRoot(it) } ?: Modifier
+    Box(Modifier.fillMaxSize().then(capture)) {
+        SkinBackgroundFill(layout.background, context, Modifier.fillMaxSize())
+        SkinLayers(context)
+        if (layout.dim > 0f) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = layout.dim)))
+    }
 }
 
 /** the layers over the first background, each in its own layer so its loop only moves that layer */

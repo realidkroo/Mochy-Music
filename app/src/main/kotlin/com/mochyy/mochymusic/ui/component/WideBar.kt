@@ -149,6 +149,7 @@ fun WideBarBackground(
                 pureBlack = pureBlack,
                 accentWash = accentWash,
                 modifier = Modifier.fillMaxSize(),
+                surface = ChromeSurface.WideBar,
             )
         }
     }

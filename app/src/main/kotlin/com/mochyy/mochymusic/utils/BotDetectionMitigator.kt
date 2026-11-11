@@ -64,9 +64,7 @@ object BotDetectionMitigator {
 
             val currentLocale = YouTube.locale
 
-            // the old visitorData stays until a new one arrives (refreshVisitorData swaps it in on
-            // success). It used to be cleared first, so one failed refresh left the web clients
-            // none at all until the app was restarted. visionos mints its own and isn't touched here
+            // the old visitor id stays until a new one arrives, clearing it first left the web clients none after one failed refresh (visionos mints its own)
 
             YouTube.refreshVisitorData().onSuccess { newData ->
                 Timber.tag(TAG).i("New visitorData obtained successfully for region ${currentLocale.gl}.")

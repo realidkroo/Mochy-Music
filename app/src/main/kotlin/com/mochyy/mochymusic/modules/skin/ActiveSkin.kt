@@ -169,7 +169,7 @@ object ActiveSkin {
 
     private const val MaxShaderBytes = 64 * 1024
     // "uniform float time;" or "layout(color) uniform half4 played;", the name is what a frame may set
-    private val DeclaredUniform = Regex("""\buniform\s+\w+\s+(\w+)\s*[;\[]""")
+    internal val DeclaredUniform = Regex("""\buniform\s+\w+\s+(\w+)\s*[;\[]""")
 }
 
 /** the look as it's applied: a module with its own player or glass switches to it, and a fixed accent turns the cover-coloured theme off */

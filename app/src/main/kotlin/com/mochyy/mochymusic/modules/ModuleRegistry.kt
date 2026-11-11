@@ -88,6 +88,12 @@ data class ModuleEntry(
     val values: Map<String, String> = emptyMap(),
     /** when it was added, null for built-in ones and ones added before mochy kept the date */
     val addedAt: Long? = null,
+    /** the github project or link it can update from, null for one added from a file */
+    val source: ModuleSource? = null,
+    /** a newer copy waiting at [source] */
+    val update: ModuleUpdate? = null,
+    /** when [source] was last asked for a newer copy */
+    val checkedAt: Long? = null,
 ) {
     val id: String get() = module.info.id
 
@@ -109,6 +115,7 @@ class ModuleRegistry @Inject constructor(
     private val prefs = context.getSharedPreferences("source_modules", Context.MODE_PRIVATE)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val looks = ModuleLooks(context)
+    private val updates by lazy { ModuleUpdates(prefs, client) }
 
     private val client by lazy {
         OkHttpClient.Builder()
@@ -232,6 +239,9 @@ class ModuleRegistry @Inject constructor(
                 fields = runCatching { (module as? ModuleFields)?.fields }.getOrNull().orEmpty(),
                 values = valuesFor(module),
                 addedAt = prefs.getLong("added_$id", 0L).takeIf { it > 0L },
+                source = updates.source(id),
+                update = updates.update(id),
+                checkedAt = updates.checkedAt(id),
             )
         }.sortedBy { entry -> order.indexOf(entry.id).let { if (it < 0) Int.MAX_VALUE else it } }
         _entries.value = list
@@ -263,6 +273,8 @@ class ModuleRegistry @Inject constructor(
             val zipRoot: String = "",
             // the zip's own code, already checked to be signed like mochy, waiting in the cache to be installed
             val code: File? = null,
+            // where a newer copy can be found later: the github project or the link it came from
+            val source: ModuleSource? = null,
         ) : LinkCheck
         data object NotALink : LinkCheck
         data object Unreachable : LinkCheck
@@ -292,20 +304,25 @@ class ModuleRegistry @Inject constructor(
         val manifest = WebModuleManifest.parse(text) ?: return@withContext LinkCheck.NotAModule
         val found = WebModule(base, manifest, context.resources)
         if (found.adds.isEmpty()) return@withContext LinkCheck.NotAModule
-        LinkCheck.Ready(base, text, found.info.name, found.adds, alreadyAdded = module(found.info.id) != null, from = base.substringAfter("://"))
+        LinkCheck.Ready(
+            base, text, found.info.name, found.adds, alreadyAdded = module(found.info.id) != null, from = base.substringAfter("://"),
+            source = ModuleSource.Link(base, ModuleUpdates.fingerprint(text)),
+        )
     }
 
     // the release's zip lands in the cache, then it's read exactly like a zip picked from the phone
     private suspend fun checkGitHub(link: GitHubReleases.Link): LinkCheck {
-        val found = GitHubReleases.download(client, context.cacheDir, link, preferDebug = com.mochyy.mochymusic.BuildConfig.BUILD_TYPE != "release")
+        val found = GitHubReleases.download(client, context.cacheDir, link, preferDebug = PreferDebugZips)
         val zip = when (found) {
             is GitHubReleases.Found.Zip -> found
+            is GitHubReleases.Found.Newest -> return LinkCheck.Unreachable
             GitHubReleases.Found.NoRelease -> return LinkCheck.NoRelease
             GitHubReleases.Found.NoModule -> return LinkCheck.NoModuleInRelease
             GitHubReleases.Found.Unreachable -> return LinkCheck.Unreachable
         }
         val result = checkZip(Uri.fromFile(zip.file))
-        return (result as? LinkCheck.Ready)?.copy(from = zip.from) ?: result
+        val source = ModuleSource.GitHub(link.owner, link.repo, zip.release.tag, zip.release.stamp)
+        return (result as? LinkCheck.Ready)?.copy(from = zip.from, source = source) ?: result
     }
 
     /** reads a module's zip without adding anything: its manifest.json, and the service it names when it plays songs or lyrics */
@@ -395,6 +412,7 @@ class ModuleRegistry @Inject constructor(
             LocalModule(manifest, files) to ModuleOrigin.File(ready.from)
         }
         val id = module.info.id
+        val before = module(id)
         synchronized(this) {
             if (base != null) {
                 val saved = savedWebModules().filter { it.optString("base") != base }
@@ -409,6 +427,8 @@ class ModuleRegistry @Inject constructor(
             handValues(module)
             loaded = modules.filter { it.first.info.id != id } + (module to origin)
         }
+        updates.installed(id, ready.source)
+        swapLook(id, before, module)
         refresh()
         return id
     }
@@ -419,6 +439,7 @@ class ModuleRegistry @Inject constructor(
         val installed = CodeModules.install(context, key, apk) ?: return null
         val fresh = installed.module
         val id = fresh.info.id
+        val before = module(id)
         synchronized(this) {
             val saved = savedCodeModules().filter { it.optString("id") != id }
             val entry = JSONObject().put("id", id).put("folder", installed.folder).put("file", ready.from)
@@ -430,8 +451,50 @@ class ModuleRegistry @Inject constructor(
             handValues(fresh)
             loaded = modules.filter { it.first.info.id != id } + (fresh to ModuleOrigin.Code(ready.from))
         }
+        updates.installed(id, ready.source)
+        swapLook(id, before, fresh)
         refresh()
         return id
+    }
+
+    // an update of a look that's on gives the old values back and puts the new ones on, so the new copy shows straight away
+    private fun swapLook(id: String, before: MochyModule?, after: MochyModule) {
+        if (before == null || !isEnabled(id)) return
+        val old = (before as? LookModule)?.takeIf(::restyles)?.look
+        val new = (after as? LookModule)?.takeIf(::restyles)?.look
+        if (old == new) return
+        scope.launch {
+            old?.let { looks.restore(id, it) }
+            new?.let { looks.apply(id, it) }
+            refresh()
+        }
+    }
+
+    // ---- updates --------------------------------------------------------------------------------
+
+    /** asks every module's github project or link whether a newer copy is out; [force] skips the wait between checks, [only] checks one */
+    suspend fun checkUpdates(force: Boolean, only: String? = null) = withContext(Dispatchers.IO) {
+        modules.map { it.first }.filter { only == null || it.info.id == only }.forEach { module ->
+            runCatching { updates.check(module.info.id, module.info.version, force, preferDebug = PreferDebugZips) }
+        }
+        refresh()
+    }
+
+    /** fetches the newer copy from where the module came from and puts it in place; its switch and settings stay */
+    suspend fun update(id: String): LinkCheck {
+        val source = updates.source(id) ?: return LinkCheck.NotALink
+        val check = check(source.link)
+        if (check !is LinkCheck.Ready) return check
+        // a link the author moved to another module can't replace this one
+        if (check.code == null && idOf(check) != id) return LinkCheck.NotAModule
+        withContext(Dispatchers.IO) { install(check) } ?: return LinkCheck.NotAModule
+        return check
+    }
+
+    // the id a checked link or zip turns into once it's added
+    private fun idOf(ready: LinkCheck.Ready): String? {
+        val manifest = WebModuleManifest.parse(ready.manifestText) ?: return null
+        return ready.base?.let { WebModuleManifest.idFor(it, manifest) } ?: LocalModule.idFor(manifest)
     }
 
     /** takes a module added from a link or a zip away for good, its look, lyrics and files go with it */
@@ -447,6 +510,7 @@ class ModuleRegistry @Inject constructor(
         }
         module.signOut()
         (module as? BridgedModule)?.close()
+        updates.forget(id)
         synchronized(this) {
             prefs.edit {
                 when (origin) {
@@ -587,6 +651,8 @@ class ModuleRegistry @Inject constructor(
         private const val MaxZipEntries = 200
         private const val MaxManifestBytes = 256 * 1024
         private val ServiceResources = setOf("search", "stream", "lyrics", "metadata")
+        // a release with a debug and a release zip: debug, fast and profileable builds are signed with the debug key
+        private val PreferDebugZips = com.mochyy.mochymusic.BuildConfig.BUILD_TYPE != "release"
         const val ModuleAction = "com.mochyy.mochymusic.SOURCE_MODULE"
         const val EntryMetaKey = "com.mochyy.mochymusic.module.entry"
     }

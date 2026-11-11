@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -60,6 +61,7 @@ import com.mochyy.mochymusic.ui.component.coverTintBackground
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.ui.utils.stableStatusBars
 import com.mochyy.mochymusic.viewmodels.ModulesViewModel
+import kotlinx.coroutines.launch
 
 private val BannerHeight = 260.dp
 
@@ -70,6 +72,7 @@ fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesVie
     val context = LocalContext.current
     val overlay = LocalZoomOutOverlayState.current
     val bottom = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
+    val scope = rememberCoroutineScope()
 
     fun signIn() {
         val module = entry?.module ?: return
@@ -105,6 +108,13 @@ fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesVie
                 EnableCard(entry) { viewModel.setEnabled(id, it) }
                 Spacer(Modifier.height(10.dp))
                 InfoCard(entry)
+                UpdateCard(
+                    entry = entry,
+                    updating = viewModel.updating.collectAsState().value == id,
+                    checking = viewModel.checkingUpdate.collectAsState().value == id,
+                    onUpdate = { scope.launch { context.updateModule(viewModel, entry) } },
+                    onCheck = { viewModel.checkUpdate(id) },
+                )
                 AccountActions(
                     entry = entry,
                     checking = viewModel.checking.collectAsState().value,
@@ -240,4 +250,13 @@ private fun RemoveButton(onClick: () -> Unit) {
         Spacer(Modifier.width(12.dp))
         Text(stringResource(R.string.module_remove), fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFFFF8A80))
     }
+}
+
+/** brings in a module's newer copy and says how it went */
+internal suspend fun android.content.Context.updateModule(viewModel: ModulesViewModel, entry: ModuleEntry) {
+    val name = entry.module.info.name
+    val result = viewModel.update(entry.id)
+    val problem = linkProblem(this, result)
+    val message = if (problem == null) getString(R.string.module_updated, name) else getString(R.string.module_update_failed, name, problem)
+    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
 }

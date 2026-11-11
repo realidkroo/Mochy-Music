@@ -257,3 +257,46 @@ internal fun PageSectionTitle(text: String, subtitle: String? = null) {
     }
     Spacer(Modifier.height(12.dp))
 }
+
+/** where the module updates from, and the button that brings the newer copy in once one is out */
+@Composable
+internal fun UpdateCard(entry: ModuleEntry, updating: Boolean, checking: Boolean, onUpdate: () -> Unit, onCheck: () -> Unit) {
+    val source = entry.source ?: return
+    val update = entry.update
+    val checked = entry.checkedAt?.let { android.text.format.DateUtils.getRelativeTimeSpanString(it).toString() }
+    val headline = when {
+        update?.version != null -> stringResource(R.string.module_update_ready, update.version)
+        update != null -> stringResource(R.string.module_update_ready_unnamed)
+        checked != null -> stringResource(R.string.module_update_none, checked)
+        else -> stringResource(R.string.module_update_never)
+    }
+    Spacer(Modifier.height(10.dp))
+    PageCard(padding = 16) {
+        Text(stringResource(R.string.module_update_title), fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = PageSoftText)
+        Spacer(Modifier.height(6.dp))
+        Text(headline, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 20.sp, color = Color.White)
+        Spacer(Modifier.height(2.dp))
+        Text(stringResource(R.string.module_update_from, source.label), fontFamily = InterFontFamily, fontSize = 12.sp, color = PageSoftText)
+        Spacer(Modifier.height(12.dp))
+        if (update != null) {
+            PillButton(
+                text = when {
+                    updating -> stringResource(R.string.module_updating)
+                    update.version != null -> stringResource(R.string.module_update_to, update.version)
+                    else -> stringResource(R.string.module_update_now)
+                },
+                icon = R.drawable.download,
+                filled = true,
+                busy = updating,
+                onClick = onUpdate,
+            )
+        } else {
+            PillButton(
+                text = stringResource(if (checking) R.string.module_checking else R.string.module_update_check),
+                icon = R.drawable.refresh,
+                busy = checking,
+                onClick = onCheck,
+            )
+        }
+    }
+}
