@@ -52,6 +52,7 @@ import com.mochyy.mochymusic.constants.LyricsMotionStyle
 import com.mochyy.mochymusic.constants.LyricsMotionStyleKey
 import com.mochyy.mochymusic.constants.MixWithOtherAppsKey
 import com.mochyy.mochymusic.constants.OfflineModeKey
+import com.mochyy.mochymusic.constants.PauseOnMute
 import com.mochyy.mochymusic.constants.PauseSearchHistoryKey
 import com.mochyy.mochymusic.constants.PersistentQueueKey
 import com.mochyy.mochymusic.constants.PersistentShuffleAcrossQueuesKey
@@ -184,6 +185,7 @@ private fun generalItems(navController: NavController): List<SettingsItem> {
     val (stopOnTaskRemoved, onStopOnTaskRemoved) = rememberPreference(StopPlaybackOnTaskRemovedKey, defaultValue = false)
     val (mixWithOtherApps, onMixWithOtherAppsChange) = rememberPreference(MixWithOtherAppsKey, defaultValue = false)
     val (resumeOnBluetooth, onResumeOnBluetoothChange) = rememberPreference(ResumeOnBluetoothConnectKey, defaultValue = false)
+    val (pauseOnMute, onPauseOnMuteChange) = rememberPreference(PauseOnMute, defaultValue = false)
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(PersistentQueueKey, defaultValue = true)
     val (albumsFromLikes, onAlbumsFromLikesChange) = rememberPreference(AlbumsFromLikedSongsKey, defaultValue = false)
     val (pauseSearchHistory, onPauseSearchHistoryChange) = rememberPreference(PauseSearchHistoryKey, defaultValue = false)
@@ -277,6 +279,14 @@ private fun generalItems(navController: NavController): List<SettingsItem> {
             icon = painterResource(R.drawable.bluetooth),
             checked = resumeOnBluetooth,
             onCheckedChange = onResumeOnBluetoothChange,
+        ),
+        switchItem(
+            key = "Pause when muted",
+            title = stringResource(R.string.pause_music_when_media_is_muted),
+            description = stringResource(R.string.pause_music_when_muted_desc),
+            icon = painterResource(R.drawable.volume_off),
+            checked = pauseOnMute,
+            onCheckedChange = onPauseOnMuteChange,
         ),
         switchItem(
             key = "Save Player's last state",
