@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.scrobble.ScrobbleSite
+import com.mochyy.mochymusic.ui.screens.devices.showDeviceIntegration
 import com.mochyy.mochymusic.ui.screens.settings.importsync.YouTubeSyncRoute
 import com.mochyy.mochymusic.ui.screens.settings.integrations.IntegrationsRoute
 import com.mochyy.mochymusic.ui.screens.settings.integrations.discord.DiscordRoute
@@ -195,7 +196,7 @@ private val SettingsIndex = listOf(
 
     // Audio Lab
     SettingsEntry("Audio Lab", "Audio Lab", "audio_lab", "sound effects equalizer fx quality"),
-    SettingsEntry("Crossfade", "Audio Lab", "crossmix_settings", "crossmix automix transition gapless blend"),
+    SettingsEntry("Transition", "Audio Lab", "crossmix_settings", "crossfade crossmix automix transition gapless blend"),
     SettingsEntry("Blend skips", "Audio Lab", "crossmix_settings", "skip next previous back crossfade seamless preload transition fade blend"),
     SettingsEntry("Equalizer", "Audio Lab", "equalizer", "eq bass treble band parametric graph autoeq headphones correction preset"),
     SettingsEntry("AutoEQ", "Audio Lab", "equalizer", "headphones earbuds correction harman database model"),
@@ -233,7 +234,7 @@ private val SettingsIndex = listOf(
     SettingsEntry("Remove all downloads", "Storage", "storage_settings", "delete clear downloads offline space"),
 
     // Experimental
-    SettingsEntry("Mochy on your TV", "Import & sync", com.mochyy.mochymusic.ui.screens.settings.tvlink.TvLinkRoute, "tv television android tv google tv pair link phone sync stream downloads big screen"),
+    SettingsEntry("Device integration", "Import & sync", com.mochyy.mochymusic.ui.screens.devices.DeviceIntegrationRoute, "tv television android tv google tv phone tablet car head unit pair link sync stream downloads big screen remote control devices"),
     SettingsEntry("Import & sync", "Experimental", "experimental_settings", "import spotify apple music deezer tidal tunemymusic csv youtube sync export backup transfer"),
     SettingsEntry("Big disc cover styles", "Experimental", "experimental_settings", "disc vinyl cover"),
     SettingsEntry("Music haptics", "Experimental", "experimental_settings", "vibration haptic"),
@@ -291,9 +292,15 @@ private val IconBgColor = Color(0xFF333338)
 @Composable
 fun MochySettingsScreen(navController: NavController, pane: SettingsPane? = null) {
     val focusManager = LocalFocusManager.current
-    // on a wide screen the list stays put and its pages open beside it
+    val sheets = com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState.current
+    val devices = com.mochyy.mochymusic.ui.screens.devices.rememberDevicesLink()
+    // on a wide screen the list stays put and its pages open beside it; device integration is a sheet over either
     val open: (String) -> Unit = { route ->
-        if (pane != null) navController.openSettingsPage(route) else navController.navigate(route)
+        when {
+            route == com.mochyy.mochymusic.ui.screens.devices.DeviceIntegrationRoute -> sheets.showDeviceIntegration(devices)
+            pane != null -> navController.openSettingsPage(route)
+            else -> navController.navigate(route)
+        }
     }
     val selected = pane?.selectedRoute
     val scrollState = rememberScrollState()
@@ -557,10 +564,10 @@ fun MochySettingsScreen(navController: NavController, pane: SettingsPane? = null
                         )
 
                         CategoryBubble(
-                            title = stringResource(R.string.tv_link_title),
+                            title = stringResource(R.string.devices_title),
                             iconRes = R.drawable.cast_connected,
-                            selected = selected == com.mochyy.mochymusic.ui.screens.settings.tvlink.TvLinkRoute,
-                            onClick = { open(com.mochyy.mochymusic.ui.screens.settings.tvlink.TvLinkRoute) }
+                            selected = false,
+                            onClick = { open(com.mochyy.mochymusic.ui.screens.devices.DeviceIntegrationRoute) }
                         )
 
                         CategoryBubble(

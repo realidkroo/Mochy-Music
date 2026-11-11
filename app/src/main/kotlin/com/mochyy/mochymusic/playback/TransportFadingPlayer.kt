@@ -49,6 +49,16 @@ class TransportFadingPlayer(
         super.seekTo(positionMs)
     }
 
+    // a song picked from the queue on the lock screen or in the car fades or blends in like one picked in the app
+    override fun seekToDefaultPosition(mediaItemIndex: Int) {
+        if (mediaItemIndex == exoPlayer.currentMediaItemIndex) {
+            transport.cancel()
+            super.seekToDefaultPosition(mediaItemIndex)
+        } else {
+            transport.jumpTo { mediaItemIndex }
+        }
+    }
+
     override fun stop() {
         transport.cancel()
         super.stop()

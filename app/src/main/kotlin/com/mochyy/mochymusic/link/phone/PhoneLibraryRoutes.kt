@@ -127,6 +127,26 @@ internal class PhoneLibraryRoutes(
         internalDatabase.invalidationTracker.refreshVersionsAsync()
     }
 
+    // a short sum of what a tv shows from this library: likes, library songs, saved albums and artists, playlists and their order; plays leave it alone
+    fun mark(): String {
+        val db = database.openHelper.readableDatabase
+        var sum = 1_125_899_906_842_597L
+        fun add(sql: String) {
+            db.query(sql).use { cursor ->
+                while (cursor.moveToNext()) {
+                    for (i in 0 until cursor.columnCount) sum = 31 * sum + (cursor.getString(i)?.hashCode() ?: 0)
+                }
+            }
+        }
+        add("SELECT id, likedDate FROM song WHERE liked = 1 ORDER BY id")
+        add("SELECT id FROM song WHERE inLibrary IS NOT NULL ORDER BY id")
+        add("SELECT id FROM album WHERE bookmarkedAt IS NOT NULL ORDER BY id")
+        add("SELECT id FROM artist WHERE bookmarkedAt IS NOT NULL ORDER BY id")
+        add("SELECT id, name, bookmarkedAt FROM playlist ORDER BY id")
+        add("SELECT playlistId, songId, position FROM playlist_song_map ORDER BY playlistId, position")
+        return java.lang.Long.toHexString(sum)
+    }
+
     private fun mimeTypes(): Map<String, String> =
         database.openHelper.readableDatabase.query("SELECT id, mimeType FROM format").use { cursor ->
             buildMap { while (cursor.moveToNext()) cursor.getString(1)?.let { put(cursor.getString(0), it) } }

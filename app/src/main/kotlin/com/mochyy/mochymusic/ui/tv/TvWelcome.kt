@@ -138,7 +138,7 @@ internal fun TvPairWelcome(pairing: TvPairing, onPaired: (TvProfile) -> Unit, on
             modifier = Modifier.align(Alignment.TopCenter).padding(top = 64.dp),
         )
         TvPhoneMock(
-            tvName = pairing.code.value?.tvName.orEmpty(),
+            tvName = pairing.code.value?.deviceName.orEmpty(),
             modifier = Modifier
                 .padding(start = 94.dp, top = 140.dp)
                 .width(maxWidth * 0.35f)

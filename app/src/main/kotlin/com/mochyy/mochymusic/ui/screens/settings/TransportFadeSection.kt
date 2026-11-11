@@ -46,7 +46,7 @@ import com.mochyy.mochymusic.constants.TransportFadeMinSeconds
 import com.mochyy.mochymusic.constants.TransportFadeSecondsKey
 import com.mochyy.mochymusic.ui.screens.audiolab.LabCard
 import com.mochyy.mochymusic.ui.screens.audiolab.LabCollapsible
-import com.mochyy.mochymusic.ui.screens.audiolab.LabPicker
+import com.mochyy.mochymusic.ui.screens.audiolab.LabSelect
 import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
 import com.mochyy.mochymusic.ui.screens.audiolab.LabSlider
 import com.mochyy.mochymusic.ui.screens.audiolab.LabStage
@@ -78,16 +78,7 @@ fun TransportFadeSection() {
     val dataSaving = rememberDataSaverActive()
     val seconds = storedSeconds.coerceIn(TransportFadeMinSeconds, TransportFadeMaxSeconds)
 
-    Text(
-        text = "Pause, play, forward and backward transition",
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 26.sp,
-        lineHeight = 30.sp,
-        letterSpacing = (-0.6).sp,
-        color = LabColors.Secondary,
-        modifier = Modifier.padding(start = 4.dp, end = 24.dp, top = 28.dp, bottom = 20.dp),
-    )
+    TransitionHeading(stringResource(R.string.transition_transport_heading), Modifier.padding(top = 28.dp))
 
     LabCard(padding = 14.dp) {
         LabStage(height = 150.dp) {
@@ -95,8 +86,8 @@ fun TransportFadeSection() {
         }
         Spacer(Modifier.height(10.dp))
         LabToggleRow(
-            title = "Enable fade",
-            subtitle = "Eases the music out when you pause or skip, and back in when you play",
+            title = stringResource(R.string.transition_fade_title),
+            subtitle = stringResource(R.string.transition_fade_desc),
             checked = enabled,
             onCheckedChange = onEnabledChange,
         )
@@ -139,7 +130,7 @@ fun TransportFadeSection() {
                 )
             }
             Spacer(Modifier.height(12.dp))
-            LabPicker(
+            LabSelect(
                 options = TransportEffect.entries.map { it.label },
                 selectedIndex = effect.ordinal,
                 onSelect = { onEffectChange(TransportEffect.entries[it]) },

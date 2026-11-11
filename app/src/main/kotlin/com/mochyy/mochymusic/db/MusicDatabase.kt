@@ -39,6 +39,7 @@ import com.mochyy.mochymusic.db.entities.SearchHistory
 import com.mochyy.mochymusic.db.entities.SetVideoIdEntity
 import com.mochyy.mochymusic.db.entities.SongAlbumMap
 import com.mochyy.mochymusic.db.entities.SongArtistMap
+import com.mochyy.mochymusic.db.entities.SongEdit
 import com.mochyy.mochymusic.db.entities.SongEntity
 import com.mochyy.mochymusic.db.entities.SpeedDialItem
 import com.mochyy.mochymusic.db.entities.SortedSongAlbumMap
@@ -106,7 +107,7 @@ class MusicDatabase(
 }
 
 // bump this with every schema change and add its migration to AllMigrations, the import checks old exports against it too
-const val MusicDatabaseVersion = 42
+const val MusicDatabaseVersion = 43
 
 @Database(
     entities = [
@@ -133,6 +134,7 @@ const val MusicDatabaseVersion = 42
         ImportSessionSong::class,
         ImportedPlaylist::class,
         ImportedPlaylistTrack::class,
+        SongEdit::class,
     ],
     views = [
         SortedSongArtistMap::class,
@@ -197,6 +199,7 @@ val AllMigrations: Array<Migration>
         MIGRATION_39_40,
         MIGRATION_40_41,
         MIGRATION_41_42,
+        MIGRATION_42_43,
     )
 
 val MIGRATION_1_2 =
@@ -866,6 +869,17 @@ val MIGRATION_41_42 =
                     "AND `id` NOT IN (SELECT `songId` FROM `imported_song` WHERE `source` != 'youtube_music') " +
                     "AND (`likedDate` IS NULL OR ABS(`likedDate` - `inLibrary`) < 5000 " +
                     "OR `id` IN (SELECT `songId` FROM `imported_song` WHERE `source` = 'youtube_music'))",
+            )
+        }
+    }
+
+val MIGRATION_42_43 =
+    object : Migration(42, 43) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // the song edit sheet's hand edits, kept apart from the song so a refetch can't wash them out
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `song_edit` (`songId` TEXT NOT NULL, `title` TEXT, `artists` TEXT, `album` TEXT, " +
+                    "`year` INTEGER, `cover` TEXT, `videoId` TEXT, `noVideo` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`songId`))",
             )
         }
     }

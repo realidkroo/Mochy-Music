@@ -73,6 +73,8 @@ internal fun VideoModeMenu(
     onOpenPane: (VideoPane) -> Unit,
     onAddToPlaylist: () -> Unit,
     onSongInfo: () -> Unit,
+    // opens select video once the card has gone, the mode hosts it so it stays when the menu leaves
+    onPickVideo: () -> Unit,
 ) {
     val connection = LocalPlayerConnection.current ?: return
     val track by connection.uiState.trackInfo.collectAsState()
@@ -186,6 +188,13 @@ internal fun VideoModeMenu(
                     title = stringResource(R.string.video_mode_whole_video),
                     onClick = { setWholeVideo(!wholeVideo) },
                     trailing = { AppSwitch(checked = wholeVideo, onCheckedChange = setWholeVideo) },
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // a playing video can be swapped for the right one, a song with none can have one found
+                MenuRow(
+                    icon = R.drawable.slow_motion_video,
+                    title = stringResource(if (session != null) R.string.video_wrong else R.string.video_find),
+                    onClick = { closeThen(onPickVideo) },
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))

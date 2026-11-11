@@ -219,7 +219,7 @@ internal fun TvPairingSteps(pairing: TvPairing, modifier: Modifier = Modifier) {
         Spacer(Modifier.height(22.dp))
         listOf(
             stringResource(R.string.tv_pair_step_open),
-            stringResource(R.string.tv_pair_step_pick, code?.tvName.orEmpty()),
+            stringResource(R.string.tv_pair_step_pick, code?.deviceName.orEmpty()),
             stringResource(R.string.tv_pair_step_code),
         ).forEachIndexed { index, step ->
             Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {

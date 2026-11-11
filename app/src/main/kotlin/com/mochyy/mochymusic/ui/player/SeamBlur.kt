@@ -31,6 +31,9 @@ import coil3.request.allowHardware
 import coil3.toBitmap
 import com.mochyy.mochymusic.ui.component.GlassPillBackground
 import com.mochyy.mochymusic.ui.component.GlassState
+import com.mochyy.mochymusic.ui.component.BlurDirection
+import com.mochyy.mochymusic.ui.component.ProgressiveGlassBackground
+import com.mochyy.mochymusic.ui.component.rememberProgressiveBlur
 import com.mochyy.mochymusic.ui.component.rememberCoverBlurAvailable
 import com.mochyy.mochymusic.ui.player.models.TrackInfo
 import com.mochyy.mochymusic.ui.theme.PlayerColorExtractor
@@ -59,6 +62,8 @@ fun SeamBlur(
     // Without blur the glass below has nothing to draw, yet still ran its mask effect (and an
     // offscreen layer below Android 12). The cover fades its own bottom edge instead then.
     val blurAvailable = rememberCoverBlurAvailable() && !noBlur
+
+    val lowQuality = com.mochyy.mochymusic.ui.component.LocalBlurQuality.current == com.mochyy.mochymusic.constants.BlurQuality.LOW
 
     val bandTop = maxHeight * 0.52f
     val bandBottom = maxHeight * 0.74f
@@ -110,7 +115,16 @@ fun SeamBlur(
                 alpha = ((p - 0.5f) / 0.45f).coerceIn(0f, 1f) * fadeProvider().coerceIn(0f, 1f)
             }
     ) {
-        if (blurAvailable) GlassPillBackground(
+        if (blurAvailable && rememberProgressiveBlur()) ProgressiveGlassBackground(
+            state = glassState,
+            // low quality is a stack of steps whose first ones are barely blurred: more, stronger steps so it reads as tall as the smooth one
+            maxBlurRadius = { if (lowQuality) 90f else 60f },
+            direction = BlurDirection.TopToBottom,
+            steps = if (lowQuality) 8 else 5,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+        ) else if (blurAvailable) GlassPillBackground(
             state = glassState,
             blurRadius = { 130f },
             tileMode = android.graphics.Shader.TileMode.CLAMP,
@@ -128,9 +142,12 @@ fun SeamBlur(
                 .height(bandBottom - bandTop)
                 .background(
                     Brush.verticalGradient(
-                        0f to Color.Transparent,
-                        0.5f to scrimColor.copy(alpha = 0.38f),
-                        1f to Color.Transparent,
+                        colorStops = Array(17) { i ->
+                            val t = i / 16f
+                            val tri = 1f - kotlin.math.abs(t * 2f - 1f)
+                            val eased = tri * tri * tri * (tri * (tri * 6f - 15f) + 10f)
+                            t to scrimColor.copy(alpha = 0.38f * eased)
+                        }
                     )
                 )
         )

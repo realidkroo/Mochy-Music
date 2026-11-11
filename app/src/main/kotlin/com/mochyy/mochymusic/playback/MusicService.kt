@@ -892,6 +892,18 @@ class MusicService :
                 }
         }
 
+        // a song given its own eq preset in its edit sheet plays through it, every other song through audio lab's curve
+        scope.launch {
+            combine(songTuning.eqPresets, audioLab.presets, currentMediaMetadata) { picks, _, metadata ->
+                picks[metadata?.id]?.let(audioLab::presetById)
+            }
+                .distinctUntilChanged()
+                .collect { audioLab.useSongPreset(it) }
+        }
+
+        // the hand edits from the song edit sheet, kept in memory for building queue items and the player
+        com.mochyy.mochymusic.songedit.SongEdits.follow(database, scope)
+
         scope.launch {
             connectivityObserver.networkStatus.collect { isConnected ->
                 isNetworkConnected.value = isConnected
@@ -1940,6 +1952,16 @@ class MusicService :
             return
         }
 
+        // a song picked while another plays crosses over with blend skips on, otherwise the old one fades out first, the same as a skip
+        if (playWhenReady) {
+            transport.startQueue(blend = { blendIntoQueue(queue) }) { startQueue(queue, playWhenReady = true) }
+        } else {
+            startQueue(queue, playWhenReady = false)
+        }
+    }
+
+    // [blend] means the old song is still playing: a queue with a first song has it crossing over already, one without crosses once it's read
+    private fun startQueue(queue: Queue, playWhenReady: Boolean, blend: Boolean = false) {
         currentQueue = queue
         queueTitle = null
         resetQueueRunway()
@@ -1952,14 +1974,14 @@ class MusicService :
         }
 
         originalQueueSize = 0
-        if (queue.preloadItem != null) {
+        if (queue.preloadItem != null && !blend) {
             player.setMediaItem(queue.preloadItem!!.toMediaItem())
             player.prepare()
             player.playWhenReady = playWhenReady
         }
         scope.launch(SilentHandler) {
             try {
-                loadInitialQueue(queue, generation, playWhenReady)
+                loadInitialQueue(queue, generation, playWhenReady, blend)
             } finally {
                 if (generation == queueGeneration) {
                     initialQueueLoading = false
@@ -1974,6 +1996,7 @@ class MusicService :
         queue: Queue,
         generation: Int,
         playWhenReady: Boolean,
+        blend: Boolean = false,
     ) {
         val initialStatus =
             withContext(Dispatchers.IO) {
@@ -2007,19 +2030,19 @@ class MusicService :
                 player.addMediaItems(items)
             }
         } else {
-            player.setMediaItems(
-                initialStatus.items,
-                if (initialStatus.mediaItemIndex >
-                    0
-                ) {
-                    initialStatus.mediaItemIndex
-                } else {
-                    0
-                },
-                initialStatus.position,
-            )
-            player.prepare()
-            player.playWhenReady = playWhenReady
+            val startIndex = initialStatus.mediaItemIndex.coerceAtLeast(0)
+            // the old song played on while the queue was read; if nothing has stopped it since, the two cross over now
+            if (blend && canBlendSkip()) {
+                val shuffle = player.shuffleModeEnabled
+                crossfadeInto(blendLengthMs(), skipCurve = true) { next ->
+                    next.setMediaItems(initialStatus.items, startIndex, initialStatus.position)
+                }
+                player.shuffleModeEnabled = shuffle
+            } else {
+                player.setMediaItems(initialStatus.items, startIndex, initialStatus.position)
+                player.prepare()
+                player.playWhenReady = playWhenReady
+            }
         }
 
         if (player.shuffleModeEnabled) {
@@ -4445,10 +4468,17 @@ class MusicService :
         crossfadeTo(targetIndex, crossfadeDuration.toLong())
     }
 
+    // "blend skips" can cross over right now: it's on, a song is really playing, and nothing else is mixing or casting
+    private fun canBlendSkip(): Boolean =
+        skipBlend && !isCrossfading && !crossmixDirector.isTransitioning &&
+            castConnectionHandler?.isCasting?.value != true && player.isPlaying
+
+    // the blend lasts as long as the fade's Length slider says, not a fixed second and a half
+    private fun blendLengthMs(): Long = transport.lengthMs.toLong().coerceAtLeast(SkipBlendMinMs)
+
     // "blend skips": the song asked for starts on a second player and the two cross over, a crossfade on the press
     private fun blendSkip(previous: Boolean): Boolean {
-        if (!skipBlend || isCrossfading || crossmixDirector.isTransitioning) return false
-        if (castConnectionHandler?.isCasting?.value == true || !player.isPlaying) return false
+        if (!canBlendSkip()) return false
         val target = when {
             // back a few seconds in starts the song over, which stays a plain jump
             previous && (player.currentPosition > BlendRestartAfterMs || !player.hasPreviousMediaItem()) -> return false
@@ -4458,9 +4488,27 @@ class MusicService :
         }
         if (target == C.INDEX_UNSET) return false
         crossfadeTriggerJob?.cancel()
-        // the blend lasts as long as the fade's Length slider says, not a fixed second and a half
-        val length = transport.lengthMs.toLong().coerceAtLeast(SkipBlendMinMs)
-        crossfadeTo(target, length, skipCurve = true)
+        crossfadeTo(target, blendLengthMs(), skipCurve = true)
+        return true
+    }
+
+    // a song tapped in the queue or swiped back to blends in the same way; it may not be fetched ahead, so the old song plays on until it starts
+    private fun blendJump(index: Int): Boolean {
+        if (!canBlendSkip() || index == C.INDEX_UNSET || index >= player.mediaItemCount || index == player.currentMediaItemIndex) return false
+        crossfadeTriggerJob?.cancel()
+        crossfadeTo(index, blendLengthMs(), skipCurve = true)
+        return true
+    }
+
+    // a song picked from a list: one the queue starts with crosses over at once, the rest of its queue loading in behind it
+    private fun blendIntoQueue(queue: Queue): Boolean {
+        if (!canBlendSkip()) return false
+        crossfadeTriggerJob?.cancel()
+        val first = queue.preloadItem
+        if (first != null) {
+            crossfadeInto(blendLengthMs(), skipCurve = true) { it.setMediaItem(first.toMediaItem()) }
+        }
+        startQueue(queue, playWhenReady = true, blend = true)
         return true
     }
 
@@ -4533,6 +4581,16 @@ class MusicService :
 
     // starts targetIndex on a second player and crosses the two over in durationMs; the end-of-song crossfade and blended skips both come through here
     private fun crossfadeTo(targetIndex: Int, durationMs: Long, skipCurve: Boolean = false) {
+        val items = (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
+        crossfadeInto(durationMs, skipCurve) { next ->
+            next.setMediaItems(items)
+            copyPlayOrder(from = player, to = next)
+            next.seekTo(targetIndex, 0L)
+        }
+    }
+
+    // starts a second player on whatever [load] gives it and crosses the two over in durationMs
+    private fun crossfadeInto(durationMs: Long, skipCurve: Boolean, load: (ExoPlayer) -> Unit) {
         val savedRepeatMode = runBlocking { dataStore.get(RepeatModeKey, REPEAT_MODE_OFF) }
         val savedShuffleEnabled = runBlocking { dataStore.get(ShuffleModeKey, false) }
 
@@ -4540,11 +4598,8 @@ class MusicService :
         val secPlayer = secondaryPlayer!!
         secPlayer.addListener(secondaryPlayerListener)
 
-        val items = (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
-        secPlayer.setMediaItems(items)
-        copyPlayOrder(from = player, to = secPlayer)
+        load(secPlayer)
         secPlayer.playbackParameters = player.playbackParameters
-        secPlayer.seekTo(targetIndex, 0L)
         secPlayer.volume = 0f
         secPlayer.repeatMode = savedRepeatMode
         secPlayer.shuffleModeEnabled = savedShuffleEnabled
@@ -4983,6 +5038,10 @@ class MusicService :
             mediaId?.let { crossmixAnalysisRepository.cached(it)?.bpm }?.takeIf { it in 40f..240f }?.let { 60_000.0 / it }
 
         override fun blendSkip(previous: Boolean): Boolean = this@MusicService.blendSkip(previous)
+
+        override fun blendJump(index: Int): Boolean = this@MusicService.blendJump(index)
+
+        override fun blendsSkips(): Boolean = canBlendSkip()
     }
 
     /** what the Crossmix director needs from the service: players, the session, the queue */

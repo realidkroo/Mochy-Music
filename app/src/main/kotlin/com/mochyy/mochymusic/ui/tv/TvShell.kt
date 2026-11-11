@@ -272,6 +272,8 @@ private fun TvChromeLayer(
                 },
         )
         TvLogo(Modifier.align(Alignment.TopStart).padding(start = TvSpace.Start, top = TvSpace.ChromeTop + 4.dp))
+        // which phone is steering the tv, under the logo while it does
+        TvControllerPill(Modifier.align(Alignment.TopStart).padding(start = TvSpace.Start, top = TvSpace.ChromeTop + 40.dp))
         if (player != null) {
             TvNowPlayingPill(
                 player,

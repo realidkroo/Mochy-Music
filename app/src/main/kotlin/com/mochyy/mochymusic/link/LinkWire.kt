@@ -24,14 +24,14 @@ import java.util.concurrent.TimeUnit
 
 // the names both sides agree on, so a phone and a tv on different app versions still find each other
 object LinkWire {
-    // the phone keeps this one up while it has a tv paired
+    // a phone keeps this one up while it has any device paired
     const val PhoneServiceType = "_mochylink._tcp."
 
-    // the tv only shows up as this while its pairing screen is open
-    const val TvServiceType = "_mochytv._tcp."
+    // a device only shows up as this while its pairing screen is open, the name is from when only tvs had one
+    const val PairServiceType = "_mochytv._tcp."
 
     const val PhonePort = 47_801
-    const val TvPairPort = 47_802
+    const val PairPort = 47_802
 
     // the tv listens here for its phone's play, skip and look commands while a linked profile is open
     const val TvControlPort = 47_803
@@ -43,6 +43,7 @@ object LinkWire {
 
     const val AttrId = "id"
     const val AttrName = "n"
+    const val AttrKind = "k"
 
     // a lan is fast and a phone that's gone should be noticed quickly, so short waits
     val client: OkHttpClient by lazy {
@@ -52,6 +53,14 @@ object LinkWire {
             .retryOnConnectionFailure(false)
             .build()
     }
+
+    // a big library takes the phone a while to copy and squeeze before the first byte goes out
+    private val slowClient: OkHttpClient by lazy {
+        client.newBuilder().readTimeout(3, TimeUnit.MINUTES).build()
+    }
+
+    fun getSlow(url: String, key: String?): Response =
+        slowClient.newCall(Request.Builder().url(url).apply { key?.let { header(KeyHeader, it) } }.build()).execute()
 
     fun baseUrl(host: String, port: Int) = "http://${if (host.contains(':')) "[$host]" else host}:$port"
 
@@ -93,8 +102,8 @@ object LinkIdentity {
     }
 }
 
-// a device found on the wi-fi, with where to reach it
-data class LinkPeer(val id: String, val name: String, val host: String, val port: Int)
+// a device found on the wi-fi, with where to reach it; kind is a tv when the device didn't say
+data class LinkPeer(val id: String, val name: String, val host: String, val port: Int, val kind: DeviceKind = DeviceKind.Tv)
 
 // puts this device on the wi-fi under a service type until close is called
 class LinkAdvert(context: Context, type: String, name: String, port: Int, attributes: Map<String, String>) {
@@ -155,7 +164,8 @@ fun discoverPeers(context: Context, type: String): Flow<List<LinkPeer>> = callba
                     val id = attrs[LinkWire.AttrId]?.toString(Charsets.UTF_8)
                     if (host != null && id != null) {
                         val name = attrs[LinkWire.AttrName]?.toString(Charsets.UTF_8) ?: info.serviceName
-                        found[info.serviceName] = LinkPeer(id, name, host, info.port)
+                        val kind = DeviceKind.fromWire(attrs[LinkWire.AttrKind]?.toString(Charsets.UTF_8), DeviceKind.Tv)
+                        found[info.serviceName] = LinkPeer(id, name, host, info.port, kind)
                         publish()
                     }
                     resolving.set(false)

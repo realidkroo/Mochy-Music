@@ -34,7 +34,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,9 +45,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,7 +90,7 @@ import com.mochyy.mochymusic.ui.component.SheetHeaderGap
 import com.mochyy.mochymusic.ui.component.SheetHeader
 import com.mochyy.mochymusic.ui.component.SheetHeaderButton
 import com.mochyy.mochymusic.ui.component.SongListItem
-import com.mochyy.mochymusic.ui.component.TextFieldDialog
+import com.mochyy.mochymusic.ui.menu.songedit.SongEditSheet
 import com.mochyy.mochymusic.utils.listItemShape
 import com.mochyy.mochymusic.ui.utils.ShowMediaInfo
 import com.mochyy.mochymusic.viewmodels.CachePlaylistViewModel
@@ -158,57 +155,9 @@ fun SongMenu(
         mutableStateOf(false)
     }
 
-    val TextFieldValueSaver: Saver<TextFieldValue, *> = Saver(
-        save = { it.text },
-        restore = { text -> TextFieldValue(text, TextRange(text.length)) }
-    )
-
-    var titleField by rememberSaveable(stateSaver = TextFieldValueSaver) {
-        mutableStateOf(TextFieldValue(song.song.title))
-    }
-
-    var artistField by rememberSaveable(stateSaver = TextFieldValueSaver) {
-        mutableStateOf(TextFieldValue(song.artists.firstOrNull()?.name.orEmpty()))
-    }
-
+    // the full song edit sheet: cover, name, lyrics, offset, speed, eq, artists, album and its video
     if (showEditDialog) {
-        TextFieldDialog(
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.edit),
-                    contentDescription = null
-                )
-            },
-            title = {
-                Text(text = stringResource(R.string.edit_song))
-            },
-            textFields = listOf(
-                stringResource(R.string.song_title) to titleField,
-                stringResource(R.string.artist_name) to artistField
-            ),
-            onTextFieldsChange = { index, newValue ->
-                if (index == 0) titleField = newValue
-                else artistField = newValue
-            },
-            onDoneMultiple = { values ->
-                val newTitle = values[0]
-                val newArtist = values[1]
-
-                coroutineScope.launch {
-                    database.query {
-                        update(song.song.copy(title = newTitle))
-                        val artist = song.artists.firstOrNull()
-                        if (artist != null) {
-                            update(artist.copy(name = newArtist))
-                        }
-                    }
-
-                    showEditDialog = false
-                    onDismiss()
-                }
-            },
-            onDismiss = { showEditDialog = false }
-        )
+        SongEditSheet(metadata = song.toMediaMetadata(), onDismiss = { showEditDialog = false })
     }
 
     var showChoosePlaylistDialog by rememberSaveable {

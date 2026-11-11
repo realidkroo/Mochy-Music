@@ -1,5 +1,6 @@
 package com.mochyy.mochymusic.playback
 
+import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -50,6 +51,10 @@ class TransportTransitions(
         fun beatMsFor(mediaId: String?): Double?
         // with "blend skips" on, the service plays the skip as a crossfade on a second player; false leaves it to the fade here
         fun blendSkip(previous: Boolean): Boolean = false
+        // the same crossfade into a song picked from the queue
+        fun blendJump(index: Int): Boolean = false
+        // whether a skip pressed now would be a crossfade, which changes the song at once instead of after a fade out
+        fun blendsSkips(): Boolean = false
     }
 
     @Volatile var enabled = true
@@ -155,7 +160,7 @@ class TransportTransitions(
     // how long a skip pressed now keeps the old song on, fading, before it changes; 0 when it changes at once
     fun skipDelayMs(): Long {
         val player = host.player
-        if (!player.playWhenReady || !shouldFade(player) || phase == Phase.Skipping) return 0L
+        if (!player.playWhenReady || !shouldFade(player) || phase == Phase.Skipping || host.blendsSkips()) return 0L
         return (min(lengthMs / 2f, SkipOutMaxMs) + TailSettleMs).toLong()
     }
 
@@ -167,6 +172,34 @@ class TransportTransitions(
         stopFade()
     }
 
+    /** a song picked from the queue in front of you, by a tap or a swipe back: crossfaded with blend skips on, otherwise faded like a skip; [index] is read again when the song changes, in case the queue moved meanwhile */
+    fun jumpTo(index: () -> Int) {
+        val player = host.player
+        val target = index()
+        if (target == C.INDEX_UNSET || target >= player.mediaItemCount) return
+        if (player.playWhenReady && phase != Phase.Pausing && host.blendJump(target)) {
+            stopFade(keepVolume = true)
+            return
+        }
+        switchSong(keepIfInterrupted = true) { p ->
+            val now = index()
+            if (now == C.INDEX_UNSET || now >= p.mediaItemCount) return@switchSong
+            p.seekToDefaultPosition(now)
+            if (p.playbackState == Player.STATE_IDLE || p.playbackState == Player.STATE_ENDED) p.prepare()
+            p.playWhenReady = true
+        }
+    }
+
+    /** a new queue picked from a list while a song plays: [blend] tries the crossfade first, otherwise the old song fades out and [start] loads the new one, which swells in */
+    fun startQueue(blend: () -> Boolean, start: () -> Unit) {
+        val player = host.player
+        if (player.playWhenReady && phase != Phase.Pausing && blend()) {
+            stopFade(keepVolume = true)
+            return
+        }
+        switchSong(keepIfInterrupted = true) { start() }
+    }
+
     private fun skip(previous: Boolean) {
         val player = host.player
         // the two songs cross over on two players; the crossfade drives both volumes from here, so this fade lets go without touching them
@@ -174,9 +207,16 @@ class TransportTransitions(
             stopFade(keepVolume = true)
             return
         }
+        // a song that moved on by itself mid-fade has already skipped, so the skip isn't made twice
+        switchSong(keepIfInterrupted = false) { doSkip(it, previous) }
+    }
+
+    // fades the playing song out, makes [change] once it's quiet and swells the next song in; [keepIfInterrupted] still makes the change if the song moved on by itself mid-fade, so a song picked by hand is never dropped
+    private fun switchSong(keepIfInterrupted: Boolean, change: (ExoPlayer) -> Unit) {
+        val player = host.player
         if (!player.playWhenReady || !shouldFade(player) || phase == Phase.Skipping || !scope.isActive) {
             stopFade()
-            doSkip(player, previous)
+            change(player)
             return
         }
         val from = currentLevel()
@@ -196,6 +236,7 @@ class TransportTransitions(
             }
             if (!done) {
                 stopFade()
+                if (keepIfInterrupted) change(player)
                 return@launch
             }
             settleTails(processor)
@@ -203,10 +244,10 @@ class TransportTransitions(
             heard = 0f
             applyLevel(player)
             disarm()
-            doSkip(player, previous)
+            change(player)
             // the swell waits until the next song is really heard: timed from the press, a slow start came in at full volume with no fade at all
             var waited = 0L
-            while (waited < StartWaitMs && !(player.isPlaying && (player.currentMediaItemIndex != index || player.currentPosition < 1_000L))) {
+            while (waited < StartWaitMs && !(player.isPlaying && (player.currentMediaItemIndex != index || player.currentMediaItem?.mediaId != songId || player.currentPosition < 1_000L))) {
                 delay(FrameMs)
                 waited += FrameMs
             }

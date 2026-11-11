@@ -75,6 +75,7 @@ import androidx.compose.animation.core.spring
 import com.mochyy.mochymusic.ui.component.WideBarPillGap
 import com.mochyy.mochymusic.ui.utils.isWideLayout
 import com.mochyy.mochymusic.link.isTelevision
+import com.mochyy.mochymusic.ui.utils.stableStatusBars
 import com.mochyy.mochymusic.ui.utils.stableSystemBars
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
@@ -287,6 +288,10 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var syncUtils: SyncUtils
 
+    // made only when first used, so a phone with nothing paired never builds it on the way in
+    @Inject
+    lateinit var phoneLink: dagger.Lazy<com.mochyy.mochymusic.link.phone.PhoneLinkHost>
+
     private lateinit var navController: NavHostController
     private var pendingIntent: Intent? = null
 
@@ -294,6 +299,9 @@ class MainActivity : ComponentActivity() {
 
     /** Bumped when launched from an update notification; the composition opens the version sheet. */
     private var openUpdateRequests by mutableStateOf(0)
+
+    // the device link's notification asks for its sheet through this
+    private var openDevicesRequests by mutableStateOf(0)
 
     /** A fresh launch from the launcher plays the launch intro (ui/launch/LaunchIntro.kt). */
     private var introRequested = false
@@ -324,6 +332,7 @@ class MainActivity : ComponentActivity() {
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
+            com.mochyy.mochymusic.link.LinkPlayer.release(playerConnection)
             playerConnection?.dispose()
             playerConnection = null
         }
@@ -335,13 +344,18 @@ class MainActivity : ComponentActivity() {
         playerConnection = PlayerConnection(this, binder, database, lifecycleScope).also {
             // the retry above can land after onStop, so it starts resting if the app is already hidden
             it.isUiVisible.value = lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)
+            // another phone steering this one plays through it
+            com.mochyy.mochymusic.link.LinkPlayer.connection = it
         }
+        com.mochyy.mochymusic.link.LinkPlayer.release(previous)
         previous?.dispose()
     }
 
     override fun onStart() {
         super.onStart()
         playerConnection?.isUiVisible?.value = true
+        // paired phones are checked on, and a steered device asked what it plays, only while mochy is on screen
+        if (!isTelevision()) phoneLink.get().appShown()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -358,6 +372,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         playerConnection?.isUiVisible?.value = false
+        if (!isTelevision()) phoneLink.get().appHidden()
         unbindService(serviceConnection)
         super.onStop()
     }
@@ -374,6 +389,7 @@ class MainActivity : ComponentActivity() {
             unbindService(serviceConnection)
         }
         // the service outlives us, so take our listener off its player or a recreate leaves the old one firing
+        com.mochyy.mochymusic.link.LinkPlayer.release(playerConnection)
         playerConnection?.dispose()
         playerConnection = null
         // closed for good while the music plays on: the covers decoded for this screen have nothing left to show on
@@ -934,6 +950,7 @@ class MainActivity : ComponentActivity() {
                             com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState.current,
                         ),
                     ) {
+                    com.mochyy.mochymusic.ui.screens.devices.DeviceIntegrationOpener(requests = openDevicesRequests)
                     com.mochyy.mochymusic.ui.screens.update.UpdateNotificationOpener(
                         requests = openUpdateRequests,
                         onOpenDevSpace = { personIndex ->
@@ -1309,6 +1326,19 @@ class MainActivity : ComponentActivity() {
                     }
                     }
 
+                    // "controlling living room tv" sits over the app at the top left, and steps aside while the player is open
+                    val playerOpen by remember { derivedStateOf { playerBottomSheetState.progress > 0.2f } }
+                    if (!playerOpen) {
+                        Box(Modifier.fillMaxSize()) {
+                            com.mochyy.mochymusic.ui.screens.devices.ControllingPill(
+                                Modifier
+                                    .align(Alignment.TopStart)
+                                    .windowInsetsPadding(WindowInsets.stableStatusBars)
+                                    .padding(start = 12.dp, top = 4.dp),
+                            )
+                        }
+                    }
+
                     // action feedback ("Added to Queue", "Undo"...) drops in over the sheets too
                     com.mochyy.mochymusic.ui.component.TopToastHost()
 
@@ -1513,10 +1543,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleDeepLinkIntent(intent: Intent, navController: NavHostController) {
-        // the tv link's notification opens its settings page
+        // the device link's notification opens its sheet
         if (intent.action == com.mochyy.mochymusic.link.phone.PhoneLinkService.ActionOpenTvLink) {
             intent.action = null
-            navController.navigate(com.mochyy.mochymusic.ui.screens.settings.tvlink.TvLinkRoute)
+            openDevicesRequests++
             return
         }
         if (importSharedAudio(intent)) return

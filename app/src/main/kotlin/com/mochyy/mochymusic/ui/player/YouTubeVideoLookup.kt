@@ -19,6 +19,7 @@ import com.music.innertube.models.WatchEndpoint.WatchEndpointMusicSupportedConfi
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.constants.YtVideoBackgroundLyricsSyncKey
 import com.mochyy.mochymusic.db.entities.LyricsEntity.Companion.LYRICS_NOT_FOUND
+import com.mochyy.mochymusic.songedit.SongEdits
 import com.mochyy.mochymusic.utils.VideoStreams
 import com.mochyy.mochymusic.utils.YTPlayerUtils
 import com.mochyy.mochymusic.utils.rememberPreference
@@ -138,13 +139,16 @@ fun rememberSongVideoLookup(
     isVideoSong: Boolean,
     enabled: Boolean,
 ): SongVideoLookup {
+    // a video picked in "select video" (or none) changes what's looked up, so it keys everything below
+    val edits by SongEdits.all.collectAsState()
+    val pick = edits[mediaId]?.let { if (it.noVideo) NoVideoPick else it.videoId }
     // the first song takes its video straight from the cache, so the cover's video turning into the full video mode never gaps; later songs settle first
     val firstId = remember { mediaId }
-    var found by remember(mediaId) {
+    var found by remember(mediaId, pick) {
         mutableStateOf(if (enabled && mediaId == firstId) cachedVideo(mediaId, isVideoSong) else null)
     }
-    var searching by remember(mediaId) { mutableStateOf(enabled && found == null) }
-    LaunchedEffect(mediaId, title, artist, enabled, isVideoSong) {
+    var searching by remember(mediaId, pick) { mutableStateOf(enabled && found == null) }
+    LaunchedEffect(mediaId, title, artist, enabled, isVideoSong, pick) {
         if (!enabled || mediaId.isBlank()) {
             found = null
             searching = false
@@ -169,22 +173,42 @@ fun rememberSongVideoLookup(
 // how long a song has to stay before its video is looked up
 private const val LookupSettleMs = 500L
 
-private fun videoCacheKey(mediaId: String, isVideoSong: Boolean) = if (isVideoSong) "self:$mediaId" else mediaId
+private const val NoVideoPick = "none"
+
+private fun videoCacheKey(mediaId: String, isVideoSong: Boolean): String {
+    val picked = SongEdits.of(mediaId)?.videoId
+    return when {
+        picked != null -> "pick:$picked"
+        isVideoSong -> "self:$mediaId"
+        else -> mediaId
+    }
+}
 
 private fun cachedVideo(mediaId: String, isVideoSong: Boolean): OfficialMusicVideo? {
+    if (SongEdits.of(mediaId)?.noVideo == true) return null
     val key = videoCacheKey(mediaId, isVideoSong)
     return if (YouTubeVideoUrlCache.contains(key)) YouTubeVideoUrlCache.get(key) else null
 }
+
+// what the menus offer for a song's video: "wrong video?" once one was found, "find video" when the lookup came back empty or it was turned off
+fun hasFoundVideo(mediaId: String, isVideoSong: Boolean): Boolean = cachedVideo(mediaId, isVideoSong) != null
 
 // one lookup at a time: the mini player and the full video mode both ask for the playing song, and the second finds the first's answer cached
 private val lookupLock = Mutex()
 
 internal suspend fun lookUpVideo(mediaId: String, title: String, artist: String, isVideoSong: Boolean): OfficialMusicVideo? =
     lookupLock.withLock {
+        val edit = SongEdits.of(mediaId)
+        if (edit?.noVideo == true) return@withLock null
         val key = videoCacheKey(mediaId, isVideoSong)
         if (YouTubeVideoUrlCache.contains(key)) return@withLock YouTubeVideoUrlCache.get(key)
-        if (!isVideoSong && (title.isBlank() || artist.isBlank())) return@withLock null
-        val resolved = if (isVideoSong) ownMusicVideo(mediaId) else findOfficialMusicVideo(title, artist)
+        val picked = edit?.videoId
+        if (picked == null && !isVideoSong && (title.isBlank() || artist.isBlank())) return@withLock null
+        val resolved = when {
+            picked != null -> ownMusicVideo(picked)
+            isVideoSong -> ownMusicVideo(mediaId)
+            else -> findOfficialMusicVideo(title, artist)
+        }
         YouTubeVideoUrlCache.put(key, resolved)
         resolved
     }

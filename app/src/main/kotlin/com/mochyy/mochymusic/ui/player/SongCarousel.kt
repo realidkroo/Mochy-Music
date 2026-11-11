@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
@@ -238,6 +239,10 @@ class SongCarousel internal constructor(private val scope: CoroutineScope) {
     private var pendingSkip: (() -> Unit)? = null
     private var pendingTarget = 0
 
+    // how a swipe changes the song: through the service, so it fades or blends like the buttons do; rememberSongCarousel fills these in
+    internal var swipeSkip: ((forward: Boolean) -> Unit)? = null
+    internal var swipeChangesAfterMs: () -> Long = { 0L }
+
     // the step a skip that has gone will land on, until the queue says it has (so nothing glides back meanwhile)
     private var expectedStep: Int? = null
     private var confirmJob: Job? = null
@@ -397,16 +402,33 @@ class SongCarousel internal constructor(private val scope: CoroutineScope) {
             back -> -1
             else -> 0
         }
-        pendingTarget = target
-        pendingSkip = when {
+        val skip: (() -> Unit)? = when {
             player == null -> null
-            forward -> { { player.seekToNextMediaItem() } }
-            back -> { { player.seekToPreviousMediaItem() } }
+            forward -> { { swipeTo(player, forward = true) } }
+            back -> { { swipeTo(player, forward = false) } }
             else -> null
+        }
+        val changesAfter = if (skip != null) swipeChangesAfterMs() else 0L
+        pendingTarget = target
+        if (skip != null && changesAfter >= GlideStillMs) {
+            // a fade out keeps the old song on past the glide anyway, so it starts with the swipe and the row waits for the change
+            expect(target, SkipConfirmMs + changesAfter)
+            skip()
+        } else {
+            pendingSkip = skip
         }
         // the finger's own speed carries straight into the settle, so letting go never jolts
         velocity = speed
         glideTo(target)
+    }
+
+    private fun swipeTo(player: Player, forward: Boolean) {
+        val skip = swipeSkip
+        when {
+            skip != null -> skip(forward)
+            forward -> player.seekToNextMediaItem()
+            else -> player.seekToPreviousMediaItem()
+        }
     }
 
     // the finger was taken away by something else: back to the song it belongs on
@@ -423,6 +445,10 @@ class SongCarousel internal constructor(private val scope: CoroutineScope) {
 fun rememberSongCarousel(connection: PlayerConnection): SongCarousel {
     val scope = rememberCoroutineScope()
     val carousel = remember(scope) { SongCarousel(scope) }
+    SideEffect {
+        carousel.swipeSkip = { forward -> if (forward) connection.seekToNext() else connection.skipToPreviousSong() }
+        carousel.swipeChangesAfterMs = { connection.service.transport.skipDelayMs() }
+    }
     SongCarouselFeed(carousel, connection)
     return carousel
 }

@@ -1,6 +1,6 @@
-// TvPairSheet.kt
+// PairCodeSheet.kt
 
-package com.mochyy.mochymusic.ui.screens.settings.tvlink
+package com.mochyy.mochymusic.ui.screens.devices
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
@@ -31,10 +31,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,26 +60,27 @@ import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.SheetLabel
 import com.mochyy.mochymusic.ui.screens.update.SheetPrimaryButton
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
+import kotlinx.coroutines.launch
 
 private val BoxColor = Color(0xFF2A2A2E)
-private val Muted = Color.White.copy(alpha = 0.6f)
 
-// the code from the tv's screen, typed into six boxes on a sheet; tv is null when it's linked by its address instead
-fun PopupSheetState.showTvPairSheet(tv: LinkPeer?, viewModel: TvLinkViewModel) {
-    viewModel.resetPairing()
+// the code from the other device's screen, typed into six boxes on a sheet; peer is null when it's linked by its address instead
+fun PopupSheetState.showPairCode(link: DevicesLink, peer: LinkPeer?) {
     var sheet: PopupSheetHandle? = null
     sheet = showWithHandle {
-        TvPairSheetContent(tv = tv, viewModel = viewModel, onClose = { sheet?.dismiss() })
+        PairCodeContent(link = link, tv = peer, onClose = { sheet?.dismiss() })
     }
 }
 
 @Composable
-private fun ColumnScope.TvPairSheetContent(tv: LinkPeer?, viewModel: TvLinkViewModel, onClose: () -> Unit) {
-    val state by viewModel.pairing.collectAsState()
+private fun ColumnScope.PairCodeContent(link: DevicesLink, tv: LinkPeer?, onClose: () -> Unit) {
+    val attempt = remember { PairAttempt(link.host) }
+    val state = attempt.state
+    val scope = rememberCoroutineScope()
     var code by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     val target = tv ?: address.trim().takeIf { it.isNotEmpty() }?.let {
-        LinkPeer(id = "", name = it, host = it.substringBefore(':'), port = it.substringAfter(':', "").toIntOrNull() ?: LinkWire.TvPairPort)
+        LinkPeer(id = "", name = it, host = it.substringBefore(':'), port = it.substringAfter(':', "").toIntOrNull() ?: LinkWire.PairPort)
     }
     val codeFocus = remember { FocusRequester() }
     val addressFocus = remember { FocusRequester() }
@@ -107,7 +108,7 @@ private fun ColumnScope.TvPairSheetContent(tv: LinkPeer?, viewModel: TvLinkViewM
                 }
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    stringResource(R.string.tv_link_paired, (state as? PairUi.Done)?.tvName.orEmpty()),
+                    stringResource(R.string.devices_paired_with, (state as? PairUi.Done)?.name.orEmpty()),
                     fontFamily = InterFontFamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 17.sp,
@@ -123,7 +124,7 @@ private fun ColumnScope.TvPairSheetContent(tv: LinkPeer?, viewModel: TvLinkViewM
                     Modifier.padding(start = 4.dp),
                 )
                 Text(
-                    stringResource(if (tv != null) R.string.tv_pair_sheet_detail else R.string.tv_pair_sheet_address_detail),
+                    if (tv != null) stringResource(R.string.devices_pair_detail, tv.name) else stringResource(R.string.tv_pair_sheet_address_detail),
                     fontFamily = InterFontFamily,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
@@ -157,21 +158,15 @@ private fun ColumnScope.TvPairSheetContent(tv: LinkPeer?, viewModel: TvLinkViewM
                     onCode = { typed ->
                         code = typed
                         val peer = target
-                        if (typed.length == CodeLength && peer != null && state != PairUi.Working) viewModel.pair(peer, typed)
+                        if (typed.length == CodeLength && peer != null && state != PairUi.Working) scope.launch { attempt.pair(listOf(peer), typed) }
                     },
                 )
                 Spacer(Modifier.height(14.dp))
-                val note = when (state) {
-                    PairUi.Working -> stringResource(R.string.tv_link_pairing)
-                    PairUi.WrongCode -> stringResource(R.string.tv_link_wrong_code)
-                    PairUi.Failed -> stringResource(R.string.tv_link_failed)
-                    else -> null
-                }
                 Text(
-                    note.orEmpty(),
+                    state.note?.let { stringResource(it) }.orEmpty(),
                     fontFamily = InterFontFamily,
                     fontSize = 13.sp,
-                    color = if (state == PairUi.WrongCode || state == PairUi.Failed) Color(0xFFFF8A80) else Muted,
+                    color = if (state.isProblem) Color(0xFFFF8A80) else Muted,
                     modifier = Modifier.padding(start = 4.dp, bottom = 8.dp).height(18.dp),
                 )
             }

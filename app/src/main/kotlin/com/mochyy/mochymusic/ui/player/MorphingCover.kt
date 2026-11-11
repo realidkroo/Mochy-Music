@@ -1703,10 +1703,10 @@ private fun Modifier.coverMorphFade(
  */
 private object CoverFadeMask {
     val paint = android.graphics.Paint().apply {
-        val steps = 8
+        val steps = 16
         val colors = IntArray(steps + 1) { i ->
             val t = i / steps.toFloat()
-            val eased = t * t * (3f - 2f * t)
+            val eased = t * t * t * (t * (t * 6f - 15f) + 10f)
             android.graphics.Color.argb(((1f - eased) * 255f).roundToInt(), 0, 0, 0)
         }
         val positions = FloatArray(steps + 1) { it / steps.toFloat() }
@@ -1731,7 +1731,7 @@ private object CoverFadeMask {
 private val NoCoverFade: () -> Float = { 0f }
 
 /** How much of the cover, from its bottom up, [coverMorphFade] fades without blur. */
-private const val CoverEdgeFadeFraction = 0.3f
+private const val CoverEdgeFadeFraction = 0.2f
 
 // the new flagship's sharp cover fades from the middle of the title down (this much of its bottom), into its blurred copy behind it
 private const val FrostedEdgeFadeFraction = 0.13f

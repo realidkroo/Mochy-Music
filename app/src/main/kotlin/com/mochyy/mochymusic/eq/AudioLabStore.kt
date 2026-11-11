@@ -156,6 +156,10 @@ class AudioLabStore @Inject constructor(
     private val _eq = MutableStateFlow(load("eq") ?: EqSettings())
     val eq: StateFlow<EqSettings> = _eq.asStateFlow()
 
+    // the playing song's own preset from its edit sheet, heard instead of the curve above; never saved, the service sets it per song
+    private val _songPreset = MutableStateFlow<EqPreset?>(null)
+    val songPreset: StateFlow<EqPreset?> = _songPreset.asStateFlow()
+
     private val _reverb = MutableStateFlow(load("reverb") ?: ReverbSettings())
     val reverb: StateFlow<ReverbSettings> = _reverb.asStateFlow()
 
@@ -179,8 +183,8 @@ class AudioLabStore @Inject constructor(
     val normalize: StateFlow<NormalizeSettings> = _normalize.asStateFlow()
 
     /** whether anything here changes the sound: offloaded playback skips every effect, so it has to stay off while this is true */
-    val shapesSound: Flow<Boolean> = combine(eq, reverb, loudness, spatial) { eq, reverb, loudness, spatial ->
-        eq.enabled || reverb.enabled || loudness.enabled || spatial.enabled || spatial.mono
+    val shapesSound: Flow<Boolean> = combine(eq, reverb, loudness, spatial, songPreset) { eq, reverb, loudness, spatial, songPreset ->
+        eq.enabled || songPreset != null || reverb.enabled || loudness.enabled || spatial.enabled || spatial.mono
     }.distinctUntilChanged()
 
     init {
@@ -237,6 +241,18 @@ class AudioLabStore @Inject constructor(
         updateEq { it.copy(presetId = preset.id) }
     }
 
+    // a song's own preset while it plays, null to go back to the user's curve; the headphone correction stays on either way
+    fun useSongPreset(preset: EqPreset?) {
+        if (_songPreset.value == preset) return
+        _songPreset.value = preset
+        pushEq()
+    }
+
+    // a built in or saved preset by its id, as the song edit sheet stores it
+    fun presetById(id: String): EqPreset? =
+        _presets.value.firstOrNull { it.id == id }
+            ?: EqPresets.BuiltIn.firstOrNull { it.id == id }?.let { EqPreset(it.id, it.name, it.nodes) }
+
     fun deletePreset(id: String) {
         _presets.update { list -> list.filterNot { it.id == id } }
         if (_eq.value.presetId == id) updateEq { it.copy(presetId = null) } else scheduleSave()
@@ -271,7 +287,11 @@ class AudioLabStore @Inject constructor(
         return own + correction.filter(Biquad::isAudible)
     }
 
-    private fun pushEq() = equalizerService.apply(design(_eq.value))
+    private fun pushEq() {
+        val song = _songPreset.value
+        val playing = if (song == null) _eq.value else _eq.value.copy(enabled = true, nodes = song.nodes, preamp = song.preamp, presetId = song.id)
+        equalizerService.apply(design(playing))
+    }
 
     private fun pushFx() {
         audioFx.reverb = _reverb.value.toParams()

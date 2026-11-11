@@ -299,7 +299,8 @@ private fun NudgeLabel(symbol: String, onClick: () -> Unit) {
 @Composable
 private fun OffsetTrack(offset: Int, onOffsetChange: (Int) -> Unit) {
     var widthPx by remember { mutableIntStateOf(0) }
-    val fraction = (offset + MaxOffsetMs) / (2f * MaxOffsetMs)
+    // the edit sheet allows minutes either way, past this bar's ten seconds, so it stops at the ends
+    val fraction = ((offset + MaxOffsetMs) / (2f * MaxOffsetMs)).coerceIn(0f, 1f)
 
     fun valueAt(x: Float): Int {
         if (widthPx <= 0) return offset

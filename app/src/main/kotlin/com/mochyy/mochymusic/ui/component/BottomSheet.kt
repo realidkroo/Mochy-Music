@@ -680,9 +680,10 @@ fun BottomSheet(
                                         val shouldChangeSong = (kotlin.math.abs(currentOffset) > 50f && kotlin.math.abs(horizontalVelocity) > 2f) ||
                                                 (kotlin.math.abs(currentOffset) > size.width / 3f)
 
+                                        // through the connection, so the swipe fades or blends like the skip buttons
                                         if (shouldChangeSong && playerConnection != null) {
-                                            if (currentOffset > 0) playerConnection.player.seekToPreviousMediaItem()
-                                            else playerConnection.player.seekToNext()
+                                            if (currentOffset > 0) playerConnection.skipToPreviousSong()
+                                            else playerConnection.seekToNext()
                                         }
                                     }
 

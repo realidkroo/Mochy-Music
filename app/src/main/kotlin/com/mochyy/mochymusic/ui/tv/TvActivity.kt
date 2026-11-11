@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.mochyy.mochymusic.db.MusicDatabase
+import com.mochyy.mochymusic.link.LinkPlayer
 import com.mochyy.mochymusic.link.tv.TvControl
 import com.mochyy.mochymusic.link.tv.TvPairing
 import com.mochyy.mochymusic.link.tv.TvPhoneSync
@@ -61,12 +62,13 @@ class TvActivity : ComponentActivity() {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             if (service !is MusicBinder) return
             val previous = playerConnection
-            playerConnection = PlayerConnection(this@TvActivity, service, database, lifecycleScope).also { TvControl.player = it }
+            playerConnection = PlayerConnection(this@TvActivity, service, database, lifecycleScope).also { LinkPlayer.connection = it }
+            LinkPlayer.release(previous)
             previous?.dispose()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            TvControl.player = null
+            LinkPlayer.release(playerConnection)
             playerConnection?.dispose()
             playerConnection = null
         }
@@ -108,6 +110,8 @@ class TvActivity : ComponentActivity() {
             return false
         }
         profileOpen = true
+        // a phone's remote can ask the tv to pull its library right now, after a playlist change there
+        TvControl.onSyncRequest = phoneSync::syncNow
         TvControl.start(this)
         phoneSync.resume()
         return true
@@ -129,7 +133,8 @@ class TvActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        TvControl.player = null
+        LinkPlayer.release(playerConnection)
+        TvControl.onSyncRequest = null
         TvControl.stop()
         playerConnection?.dispose()
         playerConnection = null

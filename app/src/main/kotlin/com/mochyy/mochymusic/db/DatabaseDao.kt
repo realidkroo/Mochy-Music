@@ -51,6 +51,7 @@ import com.mochyy.mochymusic.db.entities.SetVideoIdEntity
 import com.mochyy.mochymusic.db.entities.Song
 import com.mochyy.mochymusic.db.entities.SongAlbumMap
 import com.mochyy.mochymusic.db.entities.SongArtistMap
+import com.mochyy.mochymusic.db.entities.SongEdit
 import com.mochyy.mochymusic.db.entities.SongEntity
 import com.mochyy.mochymusic.db.entities.SongWithStats
 import com.mochyy.mochymusic.extensions.reversed
@@ -1651,15 +1652,18 @@ interface DatabaseDao {
     @Transaction
     fun update(
         song: Song,
-        mediaMetadata: MediaMetadata,
+        fetched: MediaMetadata,
     ) {
+        // whatever was edited by hand stays, a refetch only freshens the rest
+        val edit = songEditBlocking(song.id)
+        val mediaMetadata = edit?.applyTo(fetched) ?: fetched
         update(
             song.song.copy(
                 title = mediaMetadata.title,
                 duration = mediaMetadata.duration,
                 thumbnailUrl = mediaMetadata.thumbnailUrl,
                 albumId = mediaMetadata.album?.id,
-                albumName = mediaMetadata.album?.title,
+                albumName = edit?.album ?: mediaMetadata.album?.title,
                 libraryAddToken = mediaMetadata.libraryAddToken,
                 libraryRemoveToken = mediaMetadata.libraryRemoveToken
             ),
@@ -1690,6 +1694,20 @@ interface DatabaseDao {
 
     @Query("UPDATE song SET lyricsOffset = :offsetMs WHERE id = :songId")
     fun updateLyricsOffset(songId: String, offsetMs: Int)
+
+    // ---- hand edits from the song edit sheet ----
+
+    @Query("SELECT * FROM song_edit WHERE songId = :songId")
+    fun songEdit(songId: String?): Flow<SongEdit?>
+
+    @Query("SELECT * FROM song_edit WHERE songId = :songId")
+    fun songEditBlocking(songId: String): SongEdit?
+
+    @Query("SELECT * FROM song_edit")
+    fun songEdits(): Flow<List<SongEdit>>
+
+    @Upsert
+    fun upsert(edit: SongEdit)
 
     // ---- imported music ----
 

@@ -72,6 +72,7 @@ import com.mochyy.mochymusic.ui.player.PlaybackClock
 import com.mochyy.mochymusic.ui.player.SongVideo
 import com.mochyy.mochymusic.ui.player.models.TrackInfo
 import com.mochyy.mochymusic.ui.player.rememberSongVideoLookup
+import com.mochyy.mochymusic.ui.menu.songedit.VideoPickerSheet
 import com.mochyy.mochymusic.ui.player.styles.StyleActions
 import com.mochyy.mochymusic.ui.player.styles.quarterTurn
 import com.mochyy.mochymusic.ui.player.styles.sin01
@@ -188,6 +189,8 @@ private fun VideoModeScreen(actions: StyleActions, modifier: Modifier) {
     )
 
     var showAddToPlaylist by remember { mutableStateOf(false) }
+    // the song select video was opened for, held so a skip doesn't swap it mid-pick
+    var songForVideo by remember { mutableStateOf<TrackInfo?>(null) }
     // the lyrics, the queue and the sheets in here fling the right way while the whole frame is turned
     com.mochyy.mochymusic.ui.player.styles.TurnedFlingFix(active = turned)
     // its own sheet host, inside the turned frame, so "add to playlist" opens the right way up
@@ -229,6 +232,7 @@ private fun VideoModeScreen(actions: StyleActions, modifier: Modifier) {
                             onOpenPane = { state.openPane(it) },
                             onAddToPlaylist = { showAddToPlaylist = true },
                             onSongInfo = { state.songInfoOpen = true },
+                            onPickVideo = { songForVideo = track },
                         )
                     }
                     if (state.songInfoOpen) {
@@ -245,6 +249,14 @@ private fun VideoModeScreen(actions: StyleActions, modifier: Modifier) {
                         )
                     }
                     VideoAddToPlaylist(visible = showAddToPlaylist, onDismiss = { showAddToPlaylist = false })
+                    songForVideo?.let { song ->
+                        VideoPickerSheet(
+                            songId = song.mediaId,
+                            title = song.title,
+                            artist = song.artist,
+                            onDismiss = { songForVideo = null },
+                        )
+                    }
                 }
             }
         }

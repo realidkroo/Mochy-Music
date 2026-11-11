@@ -135,8 +135,8 @@ class App : Application(), SingletonImageLoader.Factory {
         }
 
         applicationScope.launch(Dispatchers.IO) {
-            // a paired tv can reach this phone again as soon as mochy is up, after the intro has had the main thread
-            if (isTelevision() || !com.mochyy.mochymusic.link.phone.PhoneLinkHost.hasPairedTvs(this@App)) return@launch
+            // a paired device can reach this phone again as soon as mochy is up, after the intro has had the main thread
+            if (isTelevision() || !com.mochyy.mochymusic.link.phone.PhoneLinkHost.hasPairedDevices(this@App)) return@launch
             com.mochyy.mochymusic.ui.launch.LaunchGate.awaitIntro()
             phoneLink.get().refresh()
             com.mochyy.mochymusic.link.phone.PhoneLinkService.start(this@App)
