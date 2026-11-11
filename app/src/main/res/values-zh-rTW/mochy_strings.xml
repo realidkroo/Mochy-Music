@@ -1053,7 +1053,7 @@
     <string name="atmos_streaming_note">Apple encodes Atmos for FairPlay only and Monochrome streams stereo FLAC, so Atmos comes from a module added from a link: set its Dolby Atmos choice to Atmos. Your own surround files are rendered too.</string>
     <!-- skips that cross over, the studio version of music videos, recent searches -->
     <string name="settings_blend_skips">Blend skips</string>
-    <string name="settings_blend_skips_desc">Loads the songs either side ahead, so skip and back crossfade straight into them</string>
+    <string name="settings_blend_skips_desc">Loads the songs either side ahead, so skips, swipes and songs you pick crossfade straight in</string>
     <string name="settings_blend_ahead">Songs loaded ahead</string>
     <plurals name="settings_blend_ahead_value">
         <item quantity="other">%d songs</item>
@@ -1078,6 +1078,21 @@
     <string name="crossmix_tempo_full">Full</string>
     <string name="crossmix_stunts_title">Stunts</string>
     <string name="crossmix_stunts_desc">Backspins, tape stops, risers and drops when the energy jumps between songs</string>
+    <string name="transition_title">Transition</string>
+    <string name="transition_music_heading">Music transitions</string>
+    <string name="transition_off">Off (I hate having fun)</string>
+    <string name="transition_off_desc">Each song ends before the next one starts</string>
+    <string name="transition_selected">Selected</string>
+    <string name="transition_auto">Auto Crossfade</string>
+    <string name="transition_auto_desc">A smooth %1$d-second blend from every song into the next</string>
+    <string name="transition_manual">Manual Crossfade</string>
+    <string name="transition_manual_desc">Pick how long each song blends into the next</string>
+    <string name="transition_manual_length">Length</string>
+    <string name="transition_seconds">%1$ds</string>
+    <string name="transition_crossmix">CrossMix</string>
+    <string name="transition_transport_heading">Pause, play, forward and backward transitions</string>
+    <string name="transition_fade_title">Enable fade</string>
+    <string name="transition_fade_desc">Eases the music out when you pause, skip or pick another song, and back in when you play</string>
     <string name="settings_persistent_shuffle">Keep shuffle on</string>
     <string name="settings_persistent_shuffle_desc">Shuffle stays on when you play another playlist or album, until you turn it off</string>
     <string name="auto_download_new_songs">Download new songs</string>
