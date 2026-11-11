@@ -189,6 +189,20 @@
       if (b.dataset.bar) document.getElementById("glassBar").className = "bar " + b.dataset.bar;
     });
   });
+  // the states demo: a picked state is set on the demo and the css blends to it; "song" plays the pop again like an event
+  document.querySelectorAll(".demo-row[data-target]").forEach(function (row) {
+    row.addEventListener("click", function (e) {
+      var b = e.target.closest(".opt");
+      var target = document.getElementById(row.dataset.target);
+      if (!b || !b.dataset.state || !target) return;
+      var disc = target.querySelector(".disc");
+      if (b.dataset.state !== "song") { target.dataset.state = b.dataset.state; return; }
+      target.dataset.state = "playing";
+      disc.classList.remove("pop");
+      void disc.offsetWidth;
+      disc.classList.add("pop");
+    });
+  });
   document.querySelectorAll(".switch").forEach(function (s) {
     s.addEventListener("click", function () { s.classList.toggle("on"); saver(); });
   });
