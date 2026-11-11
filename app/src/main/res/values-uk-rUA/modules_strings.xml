@@ -141,4 +141,18 @@
     <string name="skin_customise_title">Customise</string>
     <string name="skin_customise_body">These change how %1$s looks. They\'re the same settings as on the module\'s page.</string>
     <string name="skin_customise_empty">Turn the module on to change these.</string>
+    <string name="module_update">Update</string>
+    <string name="module_updating">Updating…</string>
+    <string name="module_update_title">Updates</string>
+    <string name="module_update_ready">A newer version is out: %1$s</string>
+    <string name="module_update_ready_unnamed">Something new was published for it.</string>
+    <string name="module_update_to">Update to %1$s</string>
+    <string name="module_update_now">Update now</string>
+    <string name="module_update_none">You\'re on the newest one. Checked %1$s.</string>
+    <string name="module_update_never">Mochy looks for a newer one a few times a day.</string>
+    <string name="module_update_from">From %1$s</string>
+    <string name="module_update_check">Check for updates</string>
+    <string name="module_updated">%1$s is up to date now.</string>
+    <string name="module_update_failed">Couldn\'t update %1$s. %2$s</string>
+    <string name="module_page_shader_problem">This page\'s shader didn\'t load, so it shows its fallback: %1$s</string>
 </resources>
