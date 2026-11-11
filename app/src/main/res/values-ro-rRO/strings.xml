@@ -226,6 +226,10 @@
     <string name="error_no_internet">No network connection</string>
     <string name="error_timeout">Timeout</string>
     <string name="error_unknown">Unknown error</string>
+    <string name="error_bot_check">YouTube wants a bot check from this network right now. Try again in a few minutes, switch between Wi-Fi and mobile data, or log in to your YouTube account.</string>
+    <string name="error_premium_only_login">YouTube only plays this song for Music Premium members. Log in with a Premium account to play it.</string>
+    <string name="error_premium_only">YouTube only plays this song for Music Premium members, and it wouldn\'t play it for your account.</string>
+    <string name="error_rate_limited">YouTube is limiting requests from this network. Try again in a few minutes.</string>
     <!-- Player action -->
     <string name="action_like">Like</string>
     <string name="action_like_all">Like all</string>
