@@ -156,6 +156,18 @@ class PhoneLinkHost @Inject constructor(
         )
     }
 
+    // the advert made before android 17 let us on the wi-fi never went out, so it's made again
+    fun advertiseAgain() {
+        scope.launch(Dispatchers.IO) {
+            synchronized(this@PhoneLinkHost) {
+                advert?.close()
+                advert = null
+                advertPort = -1
+                refresh()
+            }
+        }
+    }
+
     @Synchronized
     fun stop() {
         peers.stop()

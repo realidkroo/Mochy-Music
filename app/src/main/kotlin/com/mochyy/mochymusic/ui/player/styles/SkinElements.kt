@@ -80,7 +80,7 @@ internal fun SkinShape(block: SkinBlock.Shape, context: SkinContext, modifier: M
 /** how far into the song, how much is left, or how long it is */
 @Composable
 internal fun SkinTime(block: SkinBlock.Time, context: SkinContext, modifier: Modifier) {
-    val fill = modifier.fillMaxWidth()
+    val fill = modifier.textWidth(block.text)
     when (block.kind) {
         TimeKind.Elapsed -> {
             val seconds = rememberPlayedSeconds(context.position)

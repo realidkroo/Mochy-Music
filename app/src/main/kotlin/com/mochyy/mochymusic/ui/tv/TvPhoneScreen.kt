@@ -201,6 +201,8 @@ private fun TvPhonePairing(profile: TvProfile) {
 @Composable
 internal fun TvPairingSteps(pairing: TvPairing, modifier: Modifier = Modifier) {
     val code by pairing.code.collectAsState()
+    // the phone finds this code over the wi-fi, which android 17 asks about first
+    com.mochyy.mochymusic.link.AskForLocalNetwork(onGranted = { pairing.advertiseAgain() })
     val seen = remember { HashSet<Any>() }
     Column(modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

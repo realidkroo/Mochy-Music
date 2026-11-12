@@ -658,9 +658,11 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 
 <article class="page" id="modules-fonts" data-group="Looks" data-title="Fonts">
 <h1>Fonts</h1>
-<p class="sub">your own letters, everywhere</p>
+<p class="sub">your own letters, on your player or everywhere</p>
 <pre><code class="json">"font": { "regular": "fonts/Sora-Regular.ttf", "bold": "fonts/Sora-Bold.ttf" }</code></pre>
-<p>while your look is on, the whole app uses this font, your player and pages included.</p>
+<p>while your look is on, <a href="#modules-player">your player</a> uses this font. the rest of the app keeps its own, so a quirky font never makes the library hard to read.</p>
+<p>want it on every screen, your pages included? add <code>"scope": "app"</code>:</p>
+<pre><code class="json">"font": { "regular": "fonts/Sora-Regular.ttf", "bold": "fonts/Sora-Bold.ttf", "scope": "app" }</code></pre>
 <ul>
   <li><code>.ttf</code> and <code>.otf</code> work.</li>
   <li><code>bold</code> is optional. without it, bold text is drawn thicker from the regular one.</li>
@@ -722,6 +724,9 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>styles</code></td><td>rules shared by many blocks, css style (<a href="#modules-player-styles">style sheets</a>)</td><td></td></tr>
 <tr><td><code>customise</code></td><td>the settings in your player's customise sheet (<a href="#modules-player-custom">customise &amp; menu</a>)</td><td></td></tr>
 <tr><td><code>menu</code></td><td>up to 4 items of your own in the chevron menu</td><td></td></tr>
+<tr><td><code>menuButton</code></td><td>where the chevron sits and how it looks (<a href="#modules-player-custom">customise &amp; menu</a>)</td><td><code>end</code></td></tr>
+<tr><td><code>header</code></td><td>up to 8 blocks in a row level with the chevron, at the very top, taking no room from the rest</td><td></td></tr>
+<tr><td><code>scroll</code></td><td><code>true</code> lets the blocks scroll when they're taller than the screen. swiping down at the top still closes the player. grow spaces don't grow while it scrolls, they're just their <code>size</code></td><td><code>false</code></td></tr>
 </table></div>
 <h2>Laying things out</h2>
 <ul>
@@ -753,7 +758,7 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>title</code></td><td>the song's title</td><td><a href="#modules-player-blocks">text fields</a> (24, bold, ink)</td></tr>
 <tr><td><code>artist</code></td><td>every artist</td><td>text fields (16, medium, inkSoft)</td></tr>
 <tr><td><code>album</code></td><td>the album</td><td>text fields (14, medium, inkSoft)</td></tr>
-<tr><td><code>lyrics</code></td><td>the synced lyrics, sung through word by word</td><td><code>height</code> 60–600 (160) · <code>size</code> 14–60 (28) · <code>color</code> (ink)</td></tr>
+<tr><td><code>lyrics</code></td><td>the synced lyrics, sung through word by word. <code>"style": "flow"</code> is a few small lines rolling up instead, the sung one lit</td><td><code>height</code> 60–600 (160) · <code>size</code> 14–60 (28) · <code>color</code> (ink). with <code>flow</code>: <code>height</code> 16–600 (72) · <code>size</code> 8–60 (14) · <code>active</code> the sung line's colour · <code>prefix</code> up to 8 characters before the sung line, like <code>"&gt; "</code> · <code>align</code></td></tr>
 <tr><td><code>time</code></td><td>a time on its own</td><td><code>show</code>: elapsed, remaining, length (elapsed) · text fields (13, semibold, inkSoft)</td></tr>
 </table></div>
 <h2>Controls</h2>
@@ -799,7 +804,15 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>class</code></td><td>style sheet rules it uses (<a href="#modules-player-styles">style sheets</a>)</td></tr>
 </table></div>
 <h2>Text fields</h2>
-<p>for <code>title</code>, <code>artist</code>, <code>album</code>, <code>text</code> and <code>time</code>: <code>size</code> 8–72 · <code>weight</code>: thin, light, normal, medium, semibold, bold, black · <code>color</code> · <code>lines</code> 1–4, longer text ends in "…" · <code>upper</code> true for CAPITALS · <code>align</code>: start, center, end.</p>
+<p>for <code>title</code>, <code>artist</code>, <code>album</code>, <code>text</code> and <code>time</code>: <code>size</code> 8–72 · <code>weight</code>: thin, light, normal, medium, semibold, bold, black · <code>color</code> · <code>lines</code> 1–4, longer text ends in "…" · <code>upper</code> true for CAPITALS · <code>align</code>: start, center, end · <code>spacing</code> extra room between letters in em, −0.1–1 · <code>wrap</code> true to hug the words in a row instead of sharing its width.</p>
+<p><code>wrap</code> is how you put a label and its value side by side in two colours, with a growing space pushing the next pair to the edge:</p>
+<pre><code class="json">{ "type": "row", "gap": 0, "blocks": [
+  { "type": "text", "text": "fmt:", "color": "accent", "wrap": true },
+  { "type": "space", "size": 8 },
+  { "type": "text", "text": "{codec}", "color": "#FFFFFF", "wrap": true },
+  { "type": "space", "grow": true },
+  { "type": "text", "text": "VOL {volume}%", "color": "#FFFFFF", "wrap": true }
+]}</code></pre>
 <p>a <code>text</code> block fills in placeholders. the song ones ride the swipe between songs like the title does:</p>
 <pre><code class="json">{ "type": "text", "text": "now spinning · {artist}", "upper": true }
 { "type": "text", "text": "{title} — from {album}" }
@@ -809,6 +822,20 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>{title}</code>, <code>{artist}</code>, <code>{album}</code></td><td>the song's</td></tr>
 <tr><td><code>{$key}</code></td><td>whatever one of your <a href="#modules-settings">settings</a> is set to right now</td></tr>
 </table></div>
+<p>and these follow what's actually playing and where it goes. they're numbers or short words, so you write the units yourself (<code>{kbps} kbps</code>, <code>{size}mb</code>). one mochy doesn't know yet shows as –.</p>
+<div class="tbl"><table>
+<tr><th>you write</th><th>it becomes</th></tr>
+<tr><td><code>{codec}</code></td><td>MP3, AAC, OPUS, FLAC…</td></tr>
+<tr><td><code>{khz}</code></td><td>the sample rate, 44.1 or 48</td></tr>
+<tr><td><code>{kbps}</code></td><td>the bitrate, 160. a lossless file works it out from its size</td></tr>
+<tr><td><code>{bits}</code></td><td>the bit depth, 16 or 24</td></tr>
+<tr><td><code>{size}</code></td><td>the file size in mb, 7.4</td></tr>
+<tr><td><code>{quality}</code></td><td>Lossy or Lossless (add <code>"upper": true</code> for capitals)</td></tr>
+<tr><td><code>{device}</code></td><td>where it plays: Speaker, Headphones, or your bluetooth or usb device's name</td></tr>
+<tr><td><code>{volume}</code></td><td>the phone's media volume, 0–100</td></tr>
+<tr><td><code>{cpu}</code></td><td>how much of the phone's cpu mochy is using, 0–100</td></tr>
+</table></div>
+<p>the volume and cpu are read once a second, only while the player is open. the rest only change with the song or the output.</p>
 <h2>Colours</h2>
 <p>anywhere a colour goes you can write a fixed one, <code>"#FFFFFF"</code> or <code>"#80FFFFFF"</code> (with see-through), or one that follows the song:</p>
 <div class="tbl"><table>
@@ -1248,6 +1275,20 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
   { "title": "Like", "action": "like" }
 ]</code></pre>
 <p>titles are up to 30 characters. toggles (like, shuffle, repeat, play) keep the menu open so you see the change, everything else closes it.</p>
+<h2>Moving the chevron</h2>
+<p><code>menuButton</code> puts it on the other side, recolours it, or hides it:</p>
+<pre><code class="json">"menuButton": { "side": "start", "color": "accent", "fill": "#00000000" }
+"menuButton": "start"
+"menuButton": "hidden"</code></pre>
+<p><code>side</code> is <code>start</code> or <code>end</code> (the menu opens on the same side), <code>color</code> is the chevron's, <code>fill</code> its circle's (<code>#00000000</code> leaves just the chevron). hidden, put a <a href="#modules-player-custom">button</a> with <code>"action": "menu"</code> wherever you like so people can still reach lyrics and the other menu.</p>
+<p>words you want on the same line as the chevron go in <code>header</code>, a row that keeps clear of it:</p>
+<pre><code class="json">"header": [
+  { "type": "stack", "align": "end", "blocks": [
+    { "type": "text", "text": "[LIKED]", "when": "@liked", "align": "end" },
+    { "type": "text", "text": "[LIKE]", "when": "!@liked", "align": "end", "opacity": 0.5 },
+    { "type": "button", "action": "like", "fill": "#00000000", "image": "images/blank.png", "size": 36 }
+  ]}
+]</code></pre>
 </article>
 
 <article class="page" id="modules-player-shaders" data-group="Your own player" data-title="Shader code">

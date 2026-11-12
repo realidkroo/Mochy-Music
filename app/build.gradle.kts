@@ -20,15 +20,15 @@ plugins {
 
 extensions.configure<ApplicationExtension> {
     namespace = "com.mochyy.mochymusic"
-    compileSdk = 36
+    compileSdk = 37
     ndkVersion = "27.0.12077973"
 
     defaultConfig {
         applicationId = "com.mochyy.mochymusic"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 73
-        versionName = "8.3.2 build#1243"
+        versionName = "8.4.0 build#1247"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

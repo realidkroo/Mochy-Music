@@ -47,6 +47,8 @@ class TvPairing @Inject constructor(
 
     fun close() = door.close()
 
+    fun advertiseAgain() = door.advertiseAgain()
+
     // the code matched: the phone lands in a profile, new or the one that asked for it
     private fun accept(body: JSONObject, remoteHost: String, code: String): LinkResponse {
         val phoneId = body.optString("phoneId").ifBlank { return LinkResponse.status(400) }

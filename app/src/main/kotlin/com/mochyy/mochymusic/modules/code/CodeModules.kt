@@ -124,14 +124,17 @@ internal object CodeModules {
         val names = zip.entries().asSequence().filter { !it.isDirectory && it.name.endsWith(".so") }.map { it.name }.toList()
         val abi = abis.firstOrNull { abi -> names.any { it.startsWith("lib/$abi/") } } ?: return null
         val target = File(dir, "lib/$abi")
-        if (target.isDirectory) return target
+        // android 17 won't load a native library the app could still write to, the same rule 14 set for code
+        if (target.isDirectory) return target.also { libs -> libs.listFiles()?.forEach { it.setReadOnly() } }
         // unpacked beside and moved in whole, so a crash halfway never leaves half a folder that looks done
         val staging = File(dir, "lib/.$abi").apply {
             deleteRecursively()
             mkdirs()
         }
         names.filter { it.startsWith("lib/$abi/") }.forEach { name ->
-            zip.getInputStream(zip.getEntry(name)).use { input -> File(staging, name.substringAfterLast('/')).outputStream().use { input.copyTo(it) } }
+            val library = File(staging, name.substringAfterLast('/'))
+            zip.getInputStream(zip.getEntry(name)).use { input -> library.outputStream().use { input.copyTo(it) } }
+            library.setReadOnly()
         }
         target.takeIf { staging.renameTo(it) }
     }

@@ -535,7 +535,17 @@ fun BoxScope.StyleMenu(
     extras: List<StyleMenuExtra> = emptyList(),
     // a queue row under lyrics, opening the queue page over the style
     queue: Boolean = false,
+    /** the button and its menu at the start edge instead of the end; [end] is then the room from the start */
+    atStart: Boolean = false,
+    /** the chevron's own fill and ink, when a module dresses it apart from the menu's circles */
+    buttonTones: StyleTones = tones,
 ) {
+    val corner = when {
+        atStart && atBottom -> Alignment.BottomStart
+        atStart -> Alignment.TopStart
+        atBottom -> Alignment.BottomEnd
+        else -> Alignment.TopEnd
+    }
     val reveal = remember { Animatable(0f) }
     LaunchedEffect(open) {
         reveal.animateTo(if (open) 1f else 0f, spring(dampingRatio = 0.72f, stiffness = 420f))
@@ -576,13 +586,14 @@ fun BoxScope.StyleMenu(
         val itemGap = 10.dp
         Column(
             modifier = Modifier
-                .align(if (atBottom) Alignment.BottomEnd else Alignment.TopEnd)
+                .align(corner)
                 .padding(
-                    end = end - 3.dp,
+                    start = if (atStart) end - 3.dp else 0.dp,
+                    end = if (atStart) 0.dp else end - 3.dp,
                     top = if (atBottom) 0.dp else edge + buttonSize + itemGap,
                     bottom = if (atBottom) edge + buttonSize + itemGap else 0.dp,
                 ),
-            horizontalAlignment = Alignment.End,
+            horizontalAlignment = if (atStart) Alignment.Start else Alignment.End,
             verticalArrangement = Arrangement.spacedBy(itemGap),
         ) {
             rows.forEachIndexed { index, item ->
@@ -600,11 +611,16 @@ fun BoxScope.StyleMenu(
                         val s = 0.7f + 0.3f * p
                         scaleX = s
                         scaleY = s
-                        transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0.5f)
+                        transformOrigin = androidx.compose.ui.graphics.TransformOrigin(if (atStart) 0f else 1f, 0.5f)
                     },
                 ) {
-                    Text(text = item.label, style = com.mochyy.mochymusic.ui.player.chevronMenuLabelStyle(if (pill) Color.White else tones.ink, 13.sp))
+                    // the circle stays nearest the edge the button sits on, the words face into the screen
+                    val label = @Composable {
+                        Text(text = item.label, style = com.mochyy.mochymusic.ui.player.chevronMenuLabelStyle(if (pill) Color.White else tones.ink, 13.sp))
+                    }
+                    if (!atStart) label()
                     StyleCircle(icon = item.icon, tones = tones, size = buttonSize + 6.dp, onClick = item.onClick, pill = pill, active = item.active, picture = item.picture)
+                    if (atStart) label()
                 }
             }
         }
@@ -612,10 +628,15 @@ fun BoxScope.StyleMenu(
     if (showButton) {
         Box(
             modifier = Modifier
-                .align(if (atBottom) Alignment.BottomEnd else Alignment.TopEnd)
-                .padding(end = end, top = if (atBottom) 0.dp else edge, bottom = if (atBottom) edge else 0.dp),
+                .align(corner)
+                .padding(
+                    start = if (atStart) end else 0.dp,
+                    end = if (atStart) 0.dp else end,
+                    top = if (atBottom) 0.dp else edge,
+                    bottom = if (atBottom) edge else 0.dp,
+                ),
         ) {
-            MenuChevron(open, tones, buttonSize, pill, opensDown = !atBottom, onOpenChange)
+            MenuChevron(open, buttonTones, buttonSize, pill, opensDown = !atBottom, onOpenChange)
         }
     }
 }
