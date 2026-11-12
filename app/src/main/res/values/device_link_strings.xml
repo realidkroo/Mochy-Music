@@ -54,6 +54,7 @@
     <string name="devices_wrong_code">That code didn\'t match. Check the other screen and try again.</string>
     <string name="devices_pair_full">One of you already has 10 devices. Unlink one first.</string>
     <string name="devices_pair_failed">Couldn\'t reach it. Make sure both are on the same Wi-Fi.</string>
+    <string name="devices_pair_outdated">That device runs an older Mochy. Update it, then try the code again</string>
 
     <!-- remote control mode -->
     <string name="remote_controlling">Controlling %1$s</string>

@@ -15,7 +15,7 @@ object PhoneFiles {
     // the player caches a phone's stream under this, so it never mixes with youtube's copy of the same song
     const val CacheKeyPrefix = "phone|"
 
-    private class Remote(val baseUrl: String, val key: String)
+    private class Remote(val baseUrl: String, val auth: LinkCredentials)
 
     @Volatile private var remote: Remote? = null
 
@@ -32,8 +32,8 @@ object PhoneFiles {
         _files.value = files
     }
 
-    fun reachedAt(baseUrl: String, key: String) {
-        remote = Remote(baseUrl, key)
+    fun reachedAt(baseUrl: String, auth: LinkCredentials) {
+        remote = Remote(baseUrl, auth)
         _reachable.value = true
     }
 
@@ -50,11 +50,12 @@ object PhoneFiles {
 
     fun has(songId: String): Boolean = _files.value.containsKey(songId)
 
-    // where to stream a song from right now, null when the phone doesn't have it or can't be reached
+    // where to stream a song from right now, null when the phone doesn't have it or can't be reached; signed in the query, since the player sends no headers of ours
     fun streamUrl(songId: String): String? {
         if (!_reachable.value || !has(songId)) return null
         val at = remote ?: return null
-        return "${at.baseUrl}/file/${URLEncoder.encode(songId, "UTF-8")}?k=${at.key}"
+        val signed = LinkAuth.signedQuery(at.auth, "/file/$songId", System.currentTimeMillis() + LinkAuth.LinkGoodForMs)
+        return "${at.baseUrl}/file/${URLEncoder.encode(songId, "UTF-8")}?$signed"
     }
 
     fun cacheKeyOf(songId: String) = "$CacheKeyPrefix$songId"

@@ -18,6 +18,8 @@ sealed interface PairUi {
     data object WrongCode : PairUi
     data object Full : PairUi
     data object Failed : PairUi
+    // the device found runs an older mochy that pairs the old, unsafe way
+    data object Outdated : PairUi
     data object NoneFound : PairUi
     data class Done(val name: String) : PairUi
 }
@@ -29,12 +31,13 @@ internal val PairUi.note: Int?
         PairUi.WrongCode -> R.string.devices_wrong_code
         PairUi.Full -> R.string.devices_pair_full
         PairUi.Failed -> R.string.devices_pair_failed
+        PairUi.Outdated -> R.string.devices_pair_outdated
         PairUi.NoneFound -> R.string.devices_enter_code_none
         else -> null
     }
 
 internal val PairUi.isProblem: Boolean
-    get() = this == PairUi.WrongCode || this == PairUi.Full || this == PairUi.Failed || this == PairUi.NoneFound
+    get() = this == PairUi.WrongCode || this == PairUi.Full || this == PairUi.Failed || this == PairUi.Outdated || this == PairUi.NoneFound
 
 // one go at pairing with a typed code; with several devices in pairing mode it's tried on each, since only the right one takes it
 @Stable
@@ -54,6 +57,7 @@ internal class PairAttempt(private val host: PhoneLinkHost) {
         state = PairUi.Working
         var wrong = false
         var full = false
+        var outdated = false
         for (peer in peers) {
             val result = host.pair(peer, code)
             val paired = result.getOrNull()
@@ -64,12 +68,14 @@ internal class PairAttempt(private val host: PhoneLinkHost) {
             when ((result.exceptionOrNull() as? PairException)?.reason) {
                 PairException.Reason.WrongCode -> wrong = true
                 PairException.Reason.Full -> full = true
+                PairException.Reason.Outdated -> outdated = true
                 else -> Unit
             }
         }
         state = when {
             full -> PairUi.Full
             wrong -> PairUi.WrongCode
+            outdated -> PairUi.Outdated
             else -> PairUi.Failed
         }
     }

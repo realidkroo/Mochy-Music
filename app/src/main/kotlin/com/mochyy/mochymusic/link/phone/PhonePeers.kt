@@ -4,6 +4,8 @@ package com.mochyy.mochymusic.link.phone
 
 import android.content.Context
 import com.mochyy.mochymusic.link.DeviceKind
+import com.mochyy.mochymusic.link.LinkCredentials
+import com.mochyy.mochymusic.link.LinkIdentity
 import com.mochyy.mochymusic.link.LinkWire
 import com.mochyy.mochymusic.link.discoverPeers
 import kotlinx.coroutines.CoroutineScope
@@ -72,7 +74,7 @@ internal class PhonePeers(
     // true when the peer answered, whatever it said
     private fun hello(peer: PairedDevice, address: String, port: Int, myPort: Int): Boolean = try {
         val url = "${LinkWire.baseUrl(address, port)}/hello?port=$myPort&kind=${DeviceKind.of(context).wire}"
-        LinkWire.get(url, peer.key).use { response ->
+        LinkWire.get(url, LinkCredentials(LinkIdentity.id(context), peer.key)).use { response ->
             when (response.code) {
                 200 -> {
                     host.markLive(peer, address, port)

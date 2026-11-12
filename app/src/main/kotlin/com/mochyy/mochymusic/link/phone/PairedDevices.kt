@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import androidx.compose.runtime.Immutable
 import androidx.core.content.edit
 import com.mochyy.mochymusic.link.DeviceKind
+import com.mochyy.mochymusic.utils.SecretVault
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -44,7 +45,7 @@ data class LiveDevice(
     val seenAt: Long,
 )
 
-// paired devices as json in plain shared preferences, so the boot receiver can read them without hilt
+// paired devices as json in shared preferences (the keys sealed), so the boot receiver can read them without hilt
 internal object PairedDeviceStore {
     // the names are from when only tvs could pair, kept so nobody has to pair again
     const val Prefs = "mochy_link_tvs"
@@ -57,7 +58,8 @@ internal object PairedDeviceStore {
             PairedDevice(
                 id = json.optString("id"),
                 name = json.optString("name"),
-                key = json.optString("key").ifBlank { return@mapNotNull null },
+                // sealed by this phone's vault; one from another phone's backup can't be opened, so that device pairs again
+                key = SecretVault.open(json.optString("key"))?.ifBlank { null } ?: return@mapNotNull null,
                 // saved before kinds existed, so it can only be a tv
                 kind = DeviceKind.fromWire(json.optString("kind").ifBlank { null }, DeviceKind.Tv),
                 pairedAt = json.optLong("pairedAt"),
@@ -79,7 +81,7 @@ internal object PairedDeviceStore {
                 JSONObject()
                     .put("id", it.id)
                     .put("name", it.name)
-                    .put("key", it.key)
+                    .put("key", SecretVault.seal(it.key))
                     .put("kind", it.kind.wire)
                     .put("pairedAt", it.pairedAt)
                     .put("lastSeenAt", it.lastSeenAt)

@@ -6,6 +6,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.edit
+import com.mochyy.mochymusic.link.LinkAuth
 import com.mochyy.mochymusic.link.LinkControlRoutes
 import com.mochyy.mochymusic.link.LinkHttpServer
 import com.mochyy.mochymusic.link.LinkPlayer
@@ -28,6 +29,7 @@ object TvControl {
     private const val ControllerQuietMs = 12_000L
 
     private val server = LinkHttpServer("TvControl", ::route)
+    private val verifier = LinkAuth.Verifier()
     private val main = Handler(Looper.getMainLooper())
     private var appContext: Context? = null
     @Volatile private var routes: LinkControlRoutes? = null
@@ -79,7 +81,9 @@ object TvControl {
 
     private fun route(request: LinkRequest): LinkResponse {
         val phone = TvProfiles.active()?.phone ?: return LinkResponse.status(409, "no phone linked")
-        if (request.key != phone.key) return LinkResponse.status(401)
+        if (request.header(LinkWire.OldKeyHeader) != null) return LinkResponse.status(426, "update mochy on the phone")
+        // signed by the linked phone's key, which never travels; anything else is turned away
+        verifier.verify(request) { id -> phone.key.takeIf { id == phone.id } } ?: return LinkResponse.status(401)
         if (!_allowed.value) return LinkResponse.status(403, "control is off on the tv")
         val connection = LinkPlayer.connection ?: return LinkResponse.status(409, "mochy isn't open on the tv")
         val handler = routes ?: return LinkResponse.status(409)

@@ -26,9 +26,6 @@ class LinkRequest(
 ) {
     fun header(name: String): String? = headers[name.lowercase()]
 
-    // the key a paired device sends, in the header for api calls or the link itself for a song the player streams
-    val key: String? get() = header(LinkWire.KeyHeader) ?: query["k"]
-
     fun bodyText(): String = body.toString(Charsets.UTF_8)
 }
 
@@ -182,9 +179,7 @@ class LinkHttpServer(
         }
         val target = parts[1]
         val path = URLDecoder.decode(target.substringBefore('?'), "UTF-8")
-        val query = target.substringAfter('?', "").split('&').filter { it.isNotEmpty() }.associate { pair ->
-            URLDecoder.decode(pair.substringBefore('='), "UTF-8") to URLDecoder.decode(pair.substringAfter('=', ""), "UTF-8")
-        }
+        val query = LinkAuth.parseQuery(target.substringAfter('?', ""))
         return LinkRequest(parts[0].uppercase(), path, query, headers, body, remoteHost)
     }
 
@@ -220,6 +215,7 @@ class LinkHttpServer(
         404 -> "Not Found"
         409 -> "Conflict"
         416 -> "Range Not Satisfiable"
+        426 -> "Upgrade Required"
         else -> "Error"
     }
 

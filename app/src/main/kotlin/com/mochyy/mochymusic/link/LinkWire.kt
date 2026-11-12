@@ -17,7 +17,8 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import timber.log.Timber
-import java.security.SecureRandom
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import java.net.URLDecoder
 import java.util.ArrayDeque
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -36,10 +37,11 @@ object LinkWire {
     // the tv listens here for its phone's play, skip and look commands while a linked profile is open
     const val TvControlPort = 47_803
 
-    const val KeyHeader = "X-Mochy-Key"
+    // bumped when a route changes shape, so an old phone and a new tv can say so instead of failing quietly; 2 signs every call and pairs without sending the key
+    const val ProtocolVersion = 2
 
-    // bumped when a route changes shape, so an old phone and a new tv can say so instead of failing quietly
-    const val ProtocolVersion = 1
+    // the header the old protocol carried the key itself in; only looked for, so an un-updated device hears "update" instead of "unpaired"
+    const val OldKeyHeader = "X-Mochy-Key"
 
     const val AttrId = "id"
     const val AttrName = "n"
@@ -59,27 +61,26 @@ object LinkWire {
         client.newBuilder().readTimeout(3, TimeUnit.MINUTES).build()
     }
 
-    fun getSlow(url: String, key: String?): Response =
-        slowClient.newCall(Request.Builder().url(url).apply { key?.let { header(KeyHeader, it) } }.build()).execute()
+    fun getSlow(url: String, auth: LinkCredentials?): Response = slowClient.newCall(request(url, auth, null)).execute()
 
     fun baseUrl(host: String, port: Int) = "http://${if (host.contains(':')) "[$host]" else host}:$port"
 
-    fun newKey(): String {
-        val bytes = ByteArray(24)
-        SecureRandom().nextBytes(bytes)
-        return bytes.joinToString("") { "%02x".format(it) }
+    fun get(url: String, auth: LinkCredentials?): Response = client.newCall(request(url, auth, null)).execute()
+
+    fun postJson(url: String, auth: LinkCredentials?, json: String): Response = client.newCall(request(url, auth, json)).execute()
+
+    // a call signed with the key when there is one; the path and query are read back the way the server reads them, so both sign the same thing
+    private fun request(url: String, auth: LinkCredentials?, json: String?): Request {
+        val body = json?.toByteArray(Charsets.UTF_8)
+        val builder = Request.Builder().url(url)
+        if (auth != null) {
+            val parsed = url.toHttpUrl()
+            val path = URLDecoder.decode(parsed.encodedPath, "UTF-8")
+            builder.header(LinkAuth.Header, LinkAuth.header(auth, if (body == null) "GET" else "POST", path, LinkAuth.parseQuery(parsed.encodedQuery), body))
+        }
+        if (body != null) builder.post(body.toRequestBody("application/json; charset=utf-8".toMediaType()))
+        return builder.build()
     }
-
-    fun get(url: String, key: String?): Response =
-        client.newCall(Request.Builder().url(url).apply { key?.let { header(KeyHeader, it) } }.build()).execute()
-
-    fun postJson(url: String, key: String?, json: String): Response =
-        client.newCall(
-            Request.Builder().url(url)
-                .apply { key?.let { header(KeyHeader, it) } }
-                .post(json.toRequestBody("application/json; charset=utf-8".toMediaType()))
-                .build()
-        ).execute()
 }
 
 // this device as the other side sees it: a stable id that survives renames, and a name people recognise

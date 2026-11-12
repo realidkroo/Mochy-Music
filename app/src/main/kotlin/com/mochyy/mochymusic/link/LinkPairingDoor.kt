@@ -19,7 +19,8 @@ data class PairingCode(val code: String, val deviceName: String, val address: St
 internal class LinkPairingDoor(
     private val context: Context,
     private val serverName: String,
-    private val onPaired: (body: JSONObject, remoteHost: String) -> LinkResponse,
+    // given the code that matched too, since the key both sides work out is mixed from it
+    private val onPaired: (body: JSONObject, remoteHost: String, code: String) -> LinkResponse,
 ) {
     private val server = LinkHttpServer(serverName, ::route)
     private var advert: LinkAdvert? = null
@@ -95,7 +96,7 @@ internal class LinkPairingDoor(
             if (wrongTries >= MaxWrongTries) newCode()
             return LinkResponse.status(403, "wrong code")
         }
-        val reply = onPaired(body, request.remoteHost)
+        val reply = onPaired(body, request.remoteHost, expected)
         // a used code is never good twice
         if (reply.status == 200) newCode()
         return reply

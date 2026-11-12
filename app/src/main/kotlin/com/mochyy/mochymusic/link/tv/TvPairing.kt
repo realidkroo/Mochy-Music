@@ -4,6 +4,7 @@ package com.mochyy.mochymusic.link.tv
 
 import android.content.Context
 import com.mochyy.mochymusic.link.DeviceKind
+import com.mochyy.mochymusic.link.LinkAuth
 import com.mochyy.mochymusic.link.LinkIdentity
 import com.mochyy.mochymusic.link.LinkPairingDoor
 import com.mochyy.mochymusic.link.LinkResponse
@@ -47,13 +48,18 @@ class TvPairing @Inject constructor(
     fun close() = door.close()
 
     // the code matched: the phone lands in a profile, new or the one that asked for it
-    private fun accept(body: JSONObject, remoteHost: String): LinkResponse {
+    private fun accept(body: JSONObject, remoteHost: String, code: String): LinkResponse {
+        val phoneId = body.optString("phoneId").ifBlank { return LinkResponse.status(400) }
+        // a phone on the old protocol sends the key itself instead of a public half; it has to update first
+        val otherPublic = body.optString("pub").ifBlank { return LinkResponse.status(426, "update mochy on the phone") }
+        val keyPair = LinkAuth.newKeyPair()
+        val key = LinkAuth.sharedKey(keyPair, otherPublic, code, listOf(phoneId, LinkIdentity.id(context))) ?: return LinkResponse.status(400)
         val phone = LinkedPhone(
-            id = body.optString("phoneId"),
+            id = phoneId,
             name = body.optString("phoneName").ifBlank { "Phone" },
             host = remoteHost,
             port = body.optInt("port", LinkWire.PhonePort),
-            key = body.optString("key").ifBlank { return LinkResponse.status(400) },
+            key = key,
             pairedAt = System.currentTimeMillis(),
         )
         val userName = body.optString("userName").ifBlank { phone.name }
@@ -63,11 +69,12 @@ class TvPairing @Inject constructor(
                 TvProfiles.byId(goingTo.id)
             }
             // the same phone paired again lands in the profile it already had instead of a second copy of it
+            // and takes the name the phone has now, which may have changed since
             PairTarget.NewProfile -> TvProfiles.byPhone(phone.id)?.also { existing ->
-                TvProfiles.update(context, existing.id) { it.copy(phone = phone) }
+                TvProfiles.update(context, existing.id) { it.copy(phone = phone, name = userName) }
             } ?: TvProfiles.create(context, userName, avatarPath = null, phone = phone)
         } ?: return LinkResponse.status(409, "profile gone")
-        if (body.optBoolean("hasAvatar")) sync.fetchAvatarAfterPairing(profile.id)
+        if (body.optBoolean("hasAvatar")) sync.fetchAvatarAfterPairing(profile.id, body.optString("avatar").ifBlank { null })
         _paired.tryEmit(TvProfiles.byId(profile.id) ?: profile)
         return LinkResponse.json(
             JSONObject()
@@ -75,6 +82,7 @@ class TvPairing @Inject constructor(
                 .put("tvName", LinkIdentity.name(context))
                 .put("kind", DeviceKind.Tv.wire)
                 .put("profileId", profile.id)
+                .put("pub", LinkAuth.publicText(keyPair))
                 .toString(),
         )
     }

@@ -13,6 +13,8 @@ import com.mochyy.mochymusic.db.MusicDatabaseVersion
 import com.mochyy.mochymusic.di.ApplicationScope
 import com.mochyy.mochymusic.link.DeviceKind
 import com.mochyy.mochymusic.link.LinkAdvert
+import com.mochyy.mochymusic.link.LinkAuth
+import com.mochyy.mochymusic.link.LinkCredentials
 import com.mochyy.mochymusic.link.LinkControlRoutes
 import com.mochyy.mochymusic.link.LinkHttpServer
 import com.mochyy.mochymusic.link.LinkIdentity
@@ -115,6 +117,7 @@ class PhoneLinkHost @Inject constructor(
     @Volatile private var mark: Pair<Long, String>? = null
 
     private val library = PhoneLibraryRoutes(context, database, internalDatabase, downloadUtil)
+    private val verifier = LinkAuth.Verifier()
     private val control = LinkControlRoutes(context)
     private val peers = PhonePeers(context, this, scope)
 
@@ -179,7 +182,8 @@ class PhoneLinkHost @Inject constructor(
         runCatching {
             if (_devices.value.none { it.id == peer.id } && _devices.value.size >= MaxDevices) throw PairException(PairException.Reason.Full)
             val port = server.start(LinkWire.PhonePort)
-            val key = LinkWire.newKey()
+            // only this phone's public half goes over; the key both sides use is worked out from the two halves and the code, never sent
+            val keyPair = LinkAuth.newKeyPair()
             val profile = context.dataStore.data.first()
             val body = JSONObject()
                 .put("code", code.trim())
@@ -188,14 +192,16 @@ class PhoneLinkHost @Inject constructor(
                 .put("kind", DeviceKind.of(context).wire)
                 .put("userName", profile[UsernameKey].orEmpty())
                 .put("hasAvatar", !profile[ProfilePicUriKey].isNullOrBlank())
+                .put("avatar", avatarStamp(profile))
                 .put("port", port)
-                .put("key", key)
+                .put("pub", LinkAuth.publicText(keyPair))
                 .put("protocol", LinkWire.ProtocolVersion)
             LinkWire.postJson("${LinkWire.baseUrl(peer.host, peer.port)}/pair", null, body.toString()).use { response ->
                 val text = response.body.string()
                 when {
                     response.code == 200 -> Unit
                     response.code == 403 -> throw PairException(PairException.Reason.WrongCode)
+                    response.code == 426 -> throw PairException(PairException.Reason.Outdated)
                     response.code == 409 && text == FullReply -> throw PairException(PairException.Reason.Full)
                     else -> throw PairException(PairException.Reason.Failed)
                 }
@@ -203,6 +209,10 @@ class PhoneLinkHost @Inject constructor(
                 val now = System.currentTimeMillis()
                 val kind = DeviceKind.fromWire(reply.optString("kind").ifBlank { null }, peer.kind)
                 val id = reply.optString("tvId").ifBlank { peer.id }
+                // a device on the old protocol sends no public half; it has to update before it can pair
+                val otherPublic = reply.optString("pub").ifBlank { throw PairException(PairException.Reason.Outdated) }
+                val key = LinkAuth.sharedKey(keyPair, otherPublic, code, listOf(LinkIdentity.id(context), id))
+                    ?: throw PairException(PairException.Reason.Failed)
                 val fresh = PairedDevice(id = id, name = "", key = "", kind = kind, pairedAt = now, lastSeenAt = now)
                 // pairing again keeps the switches set for it before
                 val paired = (_devices.value.firstOrNull { it.id == id } ?: fresh).copy(
@@ -227,12 +237,16 @@ class PhoneLinkHost @Inject constructor(
         }
     }
 
-    // another phone typed the code this one shows; null when there's no room for it
-    internal fun acceptPairing(body: JSONObject, remoteHost: String): PairedDevice? {
-        val id = body.optString("phoneId").ifBlank { return null }
-        val key = body.optString("key").ifBlank { return null }
+    // another phone typed the code this one shows: the key is worked out from its public half and ours, and ours goes back in the reply
+    internal fun acceptPairing(body: JSONObject, remoteHost: String, code: String): Result<Accepted> {
+        val id = body.optString("phoneId").ifBlank { return Result.failure(PairException(PairException.Reason.Failed)) }
+        // a phone on the old protocol sends the key itself instead of a public half; it has to update first
+        val otherPublic = body.optString("pub").ifBlank { return Result.failure(PairException(PairException.Reason.Outdated)) }
         val previous = _devices.value.firstOrNull { it.id == id }
-        if (previous == null && _devices.value.size >= MaxDevices) return null
+        if (previous == null && _devices.value.size >= MaxDevices) return Result.failure(PairException(PairException.Reason.Full))
+        val keyPair = LinkAuth.newKeyPair()
+        val key = LinkAuth.sharedKey(keyPair, otherPublic, code, listOf(id, LinkIdentity.id(context)))
+            ?: return Result.failure(PairException(PairException.Reason.Failed))
         val now = System.currentTimeMillis()
         // only phones and tablets pair from this side, a tv always shows the code itself
         val kind = DeviceKind.fromWire(body.optString("kind").ifBlank { null }, DeviceKind.Phone)
@@ -250,14 +264,17 @@ class PhoneLinkHost @Inject constructor(
         refresh()
         markLive(device, remoteHost, port, now)
         PhoneLinkService.start(context)
-        return device
+        return Result.success(Accepted(device, LinkAuth.publicText(keyPair)))
     }
+
+    // this phone's id and the key it shares with one device, for signing a call to it
+    private fun credentials(key: String) = LinkCredentials(LinkIdentity.id(context), key)
 
     // sends one call to a device that's around: a get without a body, a post with one; null when it couldn't be reached or said no
     suspend fun tell(device: LiveDevice, path: String, body: JSONObject? = null): JSONObject? = withContext(Dispatchers.IO) {
         runCatching {
             val url = "${LinkWire.baseUrl(device.host, device.port)}$path"
-            val response = if (body == null) LinkWire.get(url, device.key) else LinkWire.postJson(url, device.key, body.toString())
+            val response = if (body == null) LinkWire.get(url, credentials(device.key)) else LinkWire.postJson(url, credentials(device.key), body.toString())
             response.use { if (it.isSuccessful) JSONObject(it.body.string().ifBlank { "{}" }) else null }
         }.getOrNull()
     }
@@ -268,7 +285,7 @@ class PhoneLinkHost @Inject constructor(
         forget(id)
         if (live != null && !live.kind.isTv) {
             scope.launch(Dispatchers.IO) {
-                runCatching { LinkWire.postJson("${LinkWire.baseUrl(live.host, live.port)}/unlink", live.key, "{}").close() }
+                runCatching { LinkWire.postJson("${LinkWire.baseUrl(live.host, live.port)}/unlink", credentials(live.key), "{}").close() }
             }
         }
     }
@@ -308,7 +325,11 @@ class PhoneLinkHost @Inject constructor(
     }
 
     private fun route(request: LinkRequest): LinkResponse {
-        val device = _devices.value.firstOrNull { it.key == request.key }
+        // a device still on the old protocol sends its key in a header; told to update rather than turned away as unpaired, which made it forget this phone
+        if (request.header(LinkWire.OldKeyHeader) != null) return LinkResponse.status(426, "update mochy on that device")
+        // the call must be signed by a paired device's key; the key itself is never in the call
+        val from = verifier.verify(request) { id -> _devices.value.firstOrNull { it.id == id }?.key }
+        val device = from?.let { id -> _devices.value.firstOrNull { it.id == id } }
             ?: return LinkResponse.status(401, "not paired")
         seen(device)
         return when {
@@ -354,6 +375,7 @@ class PhoneLinkHost @Inject constructor(
             .put("name", LinkIdentity.name(context))
             .put("kind", DeviceKind.of(context).wire)
             .put("user", profile[UsernameKey].orEmpty())
+            .put("avatar", avatarStamp(profile))
             .put("protocol", LinkWire.ProtocolVersion)
             .put("dbVersion", MusicDatabaseVersion)
             .put("appVersion", BuildConfig.VERSION_NAME)
@@ -380,6 +402,13 @@ class PhoneLinkHost @Inject constructor(
         val fresh = runCatching { library.mark() }.getOrElse { now.toString() }
         mark = now to fresh
         return fresh
+    }
+
+    // which picture the phone has right now, so a tv fetches it again only when it changed; empty with no picture
+    private fun avatarStamp(profile: androidx.datastore.preferences.core.Preferences): String {
+        val path = profile[ProfilePicUriKey].orEmpty()
+        val file = File(path.removePrefix("file://")).takeIf { path.isNotBlank() && it.isFile } ?: return ""
+        return "${file.length()}:${file.lastModified()}"
     }
 
     private fun avatar(): LinkResponse {
@@ -439,7 +468,10 @@ class PhoneLinkHost @Inject constructor(
     }
 }
 
+// a pairing this phone accepted: the device, and this phone's public half for the reply
+internal class Accepted(val device: PairedDevice, val publicKey: String)
+
 // why a pairing didn't go through, so the phone can say the right thing
 class PairException(val reason: Reason) : Exception(reason.name) {
-    enum class Reason { WrongCode, Full, Failed }
+    enum class Reason { WrongCode, Full, Failed, Outdated }
 }

@@ -36,15 +36,22 @@ class PhonePairing @Inject constructor(
 
     fun close() = door.close()
 
-    private fun accept(body: JSONObject, remoteHost: String): LinkResponse {
-        val device = host.acceptPairing(body, remoteHost) ?: return LinkResponse.status(409, PhoneLinkHost.FullReply)
-        _paired.tryEmit(device)
+    private fun accept(body: JSONObject, remoteHost: String, code: String): LinkResponse {
+        val accepted = host.acceptPairing(body, remoteHost, code).getOrElse {
+            return when ((it as? PairException)?.reason) {
+                PairException.Reason.Full -> LinkResponse.status(409, PhoneLinkHost.FullReply)
+                PairException.Reason.Outdated -> LinkResponse.status(426, "update mochy on the other device")
+                else -> LinkResponse.status(400)
+            }
+        }
+        _paired.tryEmit(accepted.device)
         return LinkResponse.json(
             JSONObject()
                 .put("tvId", LinkIdentity.id(context))
                 .put("tvName", LinkIdentity.name(context))
                 .put("kind", DeviceKind.of(context).wire)
                 .put("port", host.port)
+                .put("pub", accepted.publicKey)
                 .toString(),
         )
     }

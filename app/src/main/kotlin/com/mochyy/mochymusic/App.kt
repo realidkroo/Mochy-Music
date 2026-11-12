@@ -81,6 +81,8 @@ class App : Application(), SingletonImageLoader.Factory {
         }
 
         PreferencesCache.start(this, applicationScope)
+        // tokens saved before the vault existed are sealed on the first start after the update
+        applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) { (dataStore as? com.mochyy.mochymusic.utils.SecretPreferences)?.sealLeftovers() }
         com.mochyy.mochymusic.utils.NotRecommended.init(this)
 
         applicationScope.launch(Dispatchers.IO) {
