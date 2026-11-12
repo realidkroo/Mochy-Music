@@ -117,6 +117,9 @@ enum class CrossmixStyle(
     /** the beat the low end changes hands and the next song's landing is heard: the end for a drop, otherwise up to two bars before it */
     fun swapAt(length: Int): Int = if (entersAtEnd) length else length - min(8, length / 2)
 
+    /** both songs really play together in it: not a drop at the very end, not one fading away behind the other */
+    val blendsBoth: Boolean get() = !entersAtEnd && this != FarAway && this != Dampen
+
     /** fills out for one side at a transition beat; length is where the outgoing song has handed over, swap where the bass changes hands, variation (0..3) picks close variants */
     fun evaluate(role: CrossmixRole, beat: Float, length: Float, swap: Float, variation: Int, out: FxParams) {
         out.reset()

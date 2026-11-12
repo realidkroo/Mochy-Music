@@ -278,6 +278,7 @@ fun ArtistItemsScreen(
                     library = { librarySwipeAction(song) },
                     queue = { queueSwipeAction { song.toMediaItem() } },
                 ) {
+                    val active = song.id == mediaMetadata?.id
                     PlaylistTrackRow(
                         thumbnailUrl = song.thumbnail,
                         songId = song.id,
@@ -286,8 +287,8 @@ fun ArtistItemsScreen(
                             song.album?.name ?: song.artists.joinToString { it.name },
                             song.duration?.let { makeTimeString(it * 1000L) },
                         ).joinToString(" • "),
-                        isActive = song.id == mediaMetadata?.id,
-                        isPlaying = isPlaying,
+                        isActive = active,
+                        isPlaying = active && isPlaying,
                         modifier = Modifier.revealOnAppear(key = "song_${song.id}", seenState = revealSeen, delayMillis = minOf(position, 8) * 28),
                         onClick = { open(song) },
                         onLongClick = { showMenu(song) },
@@ -299,6 +300,7 @@ fun ArtistItemsScreen(
             kind == ItemsKind.Videos && !gridMode -> items(rows, key = { it.id }, contentType = { "video_card" }) { item ->
                 val video = item as SongItem
                 val tidy = remember(video.id, artistName) { ArtistVideos.homeVideo(video, artistName) }
+                val active = video.id == mediaMetadata?.id
                 HomeVideoCard(
                     title = tidy.title,
                     subtitle = listOfNotNull(
@@ -308,8 +310,8 @@ fun ArtistItemsScreen(
                     videoId = video.id,
                     fallbackThumbnailUrl = video.thumbnail,
                     width = screenWidth - PlaylistInset * 2,
-                    isActive = video.id == mediaMetadata?.id,
-                    isPlaying = isPlaying,
+                    isActive = active,
+                    isPlaying = active && isPlaying,
                     modifier = Modifier
                         .padding(horizontal = PlaylistInset, vertical = 7.dp)
                         .animateItem()
@@ -334,40 +336,45 @@ fun ArtistItemsScreen(
                     when (item) {
                         is SongItem -> {
                             val tidy = remember(item.id, artistName) { ArtistVideos.homeVideo(item, artistName) }
+                            val active = item.id == mediaMetadata?.id
                             SubpageVideoCell(
                                 title = tidy.title,
                                 subtitle = item.duration?.let { makeTimeString(it * 1000L) },
                                 videoId = item.id,
                                 fallbackThumbnailUrl = item.thumbnail,
-                                isActive = item.id == mediaMetadata?.id,
-                                isPlaying = isPlaying,
+                                isActive = active,
+                                isPlaying = active && isPlaying,
                                 onClick = { open(item) },
                                 onLongClick = { showMenu(item) },
                             )
                         }
-                        else -> SubpageSquareCell(
-                            title = item.title,
-                            subtitle = cellSubtitle(item),
-                            thumbnailUrl = item.thumbnail,
-                            round = item is ArtistItem,
-                            sharedElementKey = com.mochyy.mochymusic.ui.component.coverTransitionKey(item),
-                            isActive = item is AlbumItem && item.id == mediaMetadata?.album?.id,
-                            isPlaying = isPlaying,
-                            onClick = { open(item) },
-                            onLongClick = { showMenu(item) },
-                        )
+                        else -> {
+                            val active = item is AlbumItem && item.id == mediaMetadata?.album?.id
+                            SubpageSquareCell(
+                                title = item.title,
+                                subtitle = cellSubtitle(item),
+                                thumbnailUrl = item.thumbnail,
+                                round = item is ArtistItem,
+                                sharedElementKey = com.mochyy.mochymusic.ui.component.coverTransitionKey(item),
+                                isActive = active,
+                                isPlaying = active && isPlaying,
+                                onClick = { open(item) },
+                                onLongClick = { showMenu(item) },
+                            )
+                        }
                     }
                 }
             }
 
             else -> itemsIndexed(rows, key = { _, it -> it.id }, contentType = { _, _ -> "row" }) { position, item ->
+                val active = item is AlbumItem && item.id == mediaMetadata?.album?.id
                 PlaylistTrackRow(
                     thumbnailUrl = item.thumbnail,
                     songId = (item as? SongItem)?.id,
                     title = item.title,
                     subtitle = cellSubtitle(item).orEmpty(),
-                    isActive = item is AlbumItem && item.id == mediaMetadata?.album?.id,
-                    isPlaying = isPlaying,
+                    isActive = active,
+                    isPlaying = active && isPlaying,
                     coverShape = if (item is ArtistItem) CircleShape else com.mochyy.mochymusic.ui.component.detail.TrackShape,
                     coverModifier = Modifier.containerTransformSource(
                         key = com.mochyy.mochymusic.ui.component.coverTransitionKey(item),

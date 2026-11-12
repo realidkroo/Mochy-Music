@@ -116,7 +116,7 @@ fun rememberPlaylistResync(
     val context = LocalContext.current
     val database = LocalDatabase.current
     val scope = rememberCoroutineScope()
-    val imported by database.importedPlaylist(playlistId).collectAsState(initial = null)
+    val imported by remember(database, playlistId) { database.importedPlaylist(playlistId) }.collectAsState(initial = null)
     val state = remember(playlistId) {
         val resync = EntryPointAccessors.fromApplication(context.applicationContext, PlaylistResyncEntryPoint::class.java)
             .playlistResync()

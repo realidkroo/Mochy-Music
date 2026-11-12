@@ -32,11 +32,17 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
 
     data class DacVolume(val minDb: Double, val maxDb: Double, val currentDb: Double)
 
+    /** why a song went the normal way while audio pass was on, so the stats sheet can say it instead of leaving people guessing */
+    enum class Skip { Busy, Format, Lossy, FellBefore, NoDac, NoUsbAccess, DacCantPlay }
+
     private val audio = context.getSystemService(AudioManager::class.java)
     internal val usb = UsbDacAccess(context) { bump() }
 
     private val _status = MutableStateFlow<Status>(Status.Off)
     val status: StateFlow<Status> = _status.asStateFlow()
+
+    private val _skip = MutableStateFlow<Skip?>(null)
+    val skip: StateFlow<Skip?> = _skip.asStateFlow()
 
     private val _dacVolume = MutableStateFlow<DacVolume?>(null)
     val dacVolume: StateFlow<DacVolume?> = _dacVolume.asStateFlow()
@@ -76,6 +82,7 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
     fun update(enabled: Boolean, mode: AudioPassMode, blocked: Boolean, allowFixedVolume: Boolean) {
         if (enabled == this.enabled && mode == this.mode && blocked == this.blocked && allowFixedVolume == this.allowFixedVolume) return
         if (mode != this.mode || allowFixedVolume != this.allowFixedVolume) failed.clear()
+        _skip.value = null
         this.enabled = enabled
         this.mode = mode
         this.blocked = blocked
@@ -104,23 +111,47 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
 
     @Synchronized
     internal fun canTake(format: Format, source: Format?, requester: Any): Boolean {
-        if (!engaged || (owner != null && owner !== requester)) return false
-        if (format.sampleMimeType != MimeTypes.AUDIO_RAW || format.channelCount !in 1..2 || format.sampleRate <= 0) return false
-        if (format.pcmEncoding !in PassPcm.Encodings) return false
-        if (!takesLossy && !isLossless(source)) return false
+        if (!engaged) return false
+        val skip = skipFor(format, source, requester)
+        if (skip != _skip.value && skip != null) Timber.tag("AudioPass").i("$mode left a ${format.sampleRate} Hz song to android: $skip")
+        _skip.value = skip
+        return skip == null
+    }
+
+    // why this song can't go to the exclusive output right now, null when it can
+    private fun skipFor(format: Format, source: Format?, requester: Any): Skip? {
+        if (owner != null && owner !== requester) return Skip.Busy
+        if (format.sampleMimeType != MimeTypes.AUDIO_RAW || format.channelCount !in 1..2 || format.sampleRate <= 0) return Skip.Format
+        if (format.pcmEncoding !in PassPcm.Encodings) return Skip.Format
+        if (!takesLossy && !isLossless(source)) return Skip.Lossy
         val bits = PassPcm.sourceBits(format.pcmEncoding, source?.pcmEncoding)
-        if (key(format.sampleRate, format.channelCount, bits) in failed) return false
+        if (key(format.sampleRate, format.channelCount, bits) in failed) return Skip.FellBefore
         val rate = format.sampleRate
         val channels = format.channelCount
         return when (mode) {
-            AudioPassMode.SONG_RATE -> false
-            AudioPassMode.BIT_PERFECT -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-                usbOutput()?.let { MixerPass.pick(audio, it, rate, channels, bits) } != null
-            AudioPassMode.EXCLUSIVE_USB -> usbOutput() != null && ExclusivePass.containerFor(bits) != null
-            AudioPassMode.EXCLUSIVE_DAC -> wiredOutput() != null && ExclusivePass.containerFor(bits) != null
-            AudioPassMode.DIRECT_USB -> usb.device()?.let { device ->
-                usb.hasPermission(device) && usb.dac(device)?.let { UsbAudioDescriptors.plans(it, rate, channels, bits).isNotEmpty() } == true
-            } == true
+            AudioPassMode.SONG_RATE -> Skip.Format
+            AudioPassMode.BIT_PERFECT -> {
+                val output = usbOutput() ?: return Skip.NoDac
+                Skip.DacCantPlay.takeIf {
+                    Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE || MixerPass.pick(audio, output, rate, channels, bits) == null
+                }
+            }
+            AudioPassMode.EXCLUSIVE_USB -> when {
+                usbOutput() == null -> Skip.NoDac
+                ExclusivePass.containerFor(bits) == null -> Skip.DacCantPlay
+                else -> null
+            }
+            AudioPassMode.EXCLUSIVE_DAC -> when {
+                wiredOutput() == null -> Skip.NoDac
+                ExclusivePass.containerFor(bits) == null -> Skip.DacCantPlay
+                else -> null
+            }
+            AudioPassMode.DIRECT_USB -> {
+                val device = usb.device() ?: return Skip.NoDac
+                if (!usb.hasPermission(device)) return Skip.NoUsbAccess
+                val dac = usb.dac(device) ?: return Skip.NoUsbAccess
+                Skip.DacCantPlay.takeIf { UsbAudioDescriptors.plans(dac, rate, channels, bits).isEmpty() }
+            }
         }
     }
 

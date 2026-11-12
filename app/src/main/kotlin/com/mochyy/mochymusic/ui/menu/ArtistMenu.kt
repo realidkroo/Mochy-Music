@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -57,9 +58,9 @@ fun ArtistMenu(
     val context = LocalContext.current
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
-    val artistState = database.artist(originalArtist.id).collectAsState(initial = originalArtist)
+    val artistState = remember(database, originalArtist.id) { database.artist(originalArtist.id) }.collectAsState(initial = originalArtist)
     val artist = artistState.value ?: originalArtist
-    val isPinned by database.speedDialDao.isPinned(artist.id).collectAsState(initial = false)
+    val isPinned by remember(database, artist.id) { database.speedDialDao.isPinned(artist.id) }.collectAsState(initial = false)
 
     SheetHeader(
         thumbnailUrl = artist.artist.thumbnailUrl,

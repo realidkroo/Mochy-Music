@@ -3,6 +3,7 @@
 package com.mochyy.mochymusic.constants
 
 import android.os.Build
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -263,6 +264,17 @@ enum class CrossmixMode {
     CROSSMIX,
 }
 
+// crossmix unless someone picked otherwise: the old default was a plain 5 s crossfade that never mixed anything
+val DefaultTransitionMode = CrossmixMode.CROSSMIX
+
+// the transition that really plays: the saved pick, then the old crossfade switch for those who set it before modes existed, then crossmix
+fun transitionModeOf(prefs: Preferences): CrossmixMode =
+    prefs[CrossmixModeKey]?.let { saved -> runCatching { CrossmixMode.valueOf(saved) }.getOrNull() }
+        ?: if (prefs[CrossfadeEnabledKey] == true) CrossmixMode.MANUAL_CROSSFADE else DefaultTransitionMode
+
+// set once the old plain-crossfade default has been moved over to crossmix, so it never happens twice
+val CrossmixDefaultMovedKey = booleanPreferencesKey("crossmixDefaultMoved")
+
 // how crossmix mixes: how long the two songs overlap, how far tempos may be stretched to meet, one style or the planner's pick, and whether the stunts are in the pool
 val CrossmixLengthKey = stringPreferencesKey("crossmixLength")
 val CrossmixTempoMatchKey = stringPreferencesKey("crossmixTempoMatch")
@@ -270,6 +282,8 @@ val CrossmixTempoMatchKey = stringPreferencesKey("crossmixTempoMatch")
 val CrossmixStyleKey = stringPreferencesKey("crossmixStyle")
 const val CrossmixStyleAuto = "AUTO"
 val CrossmixStuntsKey = booleanPreferencesKey("crossmixStunts")
+// every hand-over a real blend of both songs, never a drop right at the end and never a plain fade
+val CrossmixAlwaysMixKey = booleanPreferencesKey("crossmixAlwaysMix")
 /** how long play() takes to be heard on this phone, learnt from each mix's first beat-lock reading */
 val CrossmixStartLatencyKey = floatPreferencesKey("crossmixStartLatencyMs")
 
@@ -873,6 +887,8 @@ val PlayerBackgroundStyleKey = stringPreferencesKey("playerBackgroundStyle")
 val MiniPlayerBackgroundStyleKey = stringPreferencesKey("miniPlayerBackgroundStyle")
 val ShowLyricsKey = booleanPreferencesKey("showLyrics")
 val SwipeLyricsKey = booleanPreferencesKey("swipeLyrics")
+// the line being sung shown as the title and cover on android auto's player while a car is connected, on unless turned off
+val CarLyricsKey = booleanPreferencesKey("carLyrics")
 val EnableLyricsThumbnailPlayPauseKey = booleanPreferencesKey("enableLyricsThumbnailPlayPause")
 val LyricsTextPositionKey = stringPreferencesKey("lyricsTextPosition")
 val LyricsClickKey = booleanPreferencesKey("lyricsClick")

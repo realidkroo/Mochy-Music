@@ -124,13 +124,14 @@ fun ArtistAlbumsScreen(
                         .animateItem()
                         .revealOnAppear(key = "grid_${pair.first().id}", seenState = revealSeen),
                 ) { album ->
+                    val active = album.id == mediaMetadata?.album?.id
                     SubpageSquareCell(
                         title = album.album.title,
                         subtitle = album.album.year?.toString(),
                         thumbnailUrl = album.album.thumbnailUrl,
                         sharedElementKey = "album-${album.id}",
-                        isActive = album.id == mediaMetadata?.album?.id,
-                        isPlaying = isPlaying,
+                        isActive = active,
+                        isPlaying = active && isPlaying,
                         onClick = { navController.navigate("album/${album.id}") },
                         onLongClick = { showMenu(album) },
                     )
@@ -138,12 +139,13 @@ fun ArtistAlbumsScreen(
             }
         } else {
             itemsIndexed(rows, key = { _, album -> album.id }, contentType = { _, _ -> "row" }) { position, album ->
+                val active = album.id == mediaMetadata?.album?.id
                 PlaylistTrackRow(
                     thumbnailUrl = album.album.thumbnailUrl,
                     title = album.album.title,
                     subtitle = listOfNotNull(album.album.year?.toString(), "${album.album.songCount} songs").joinToString(" • "),
-                    isActive = album.id == mediaMetadata?.album?.id,
-                    isPlaying = isPlaying,
+                    isActive = active,
+                    isPlaying = active && isPlaying,
                     coverModifier = Modifier.containerTransformSource(
                         key = "album-${album.id}",
                         cornerRadius = 9.dp,

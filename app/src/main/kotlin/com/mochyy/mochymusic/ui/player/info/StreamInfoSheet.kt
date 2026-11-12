@@ -47,6 +47,7 @@ import com.mochyy.mochymusic.constants.CrossmixModeKey
 import com.mochyy.mochymusic.constants.HiResOutputKey
 import com.mochyy.mochymusic.constants.MusicHapticsEnabledKey
 import com.mochyy.mochymusic.constants.SkipSilenceKey
+import com.mochyy.mochymusic.constants.DefaultTransitionMode
 import com.mochyy.mochymusic.playback.MusicService
 import com.mochyy.mochymusic.playback.PlayingFrom
 import com.mochyy.mochymusic.playback.StreamDetails
@@ -203,7 +204,7 @@ private fun rememberStatCards(service: MusicService, mediaId: String, durationMs
     val (skipSilence) = rememberPreference(SkipSilenceKey, false)
     val (haptics) = rememberPreference(MusicHapticsEnabledKey, false)
     val (hiRes) = rememberPreference(HiResOutputKey, false)
-    val (crossmixMode) = rememberPreference(CrossmixModeKey, CrossmixMode.AUTO_CROSSFADE.name)
+    val (crossmixMode) = rememberPreference(CrossmixModeKey, DefaultTransitionMode.name)
     val systemMixerRate = remember {
         (context.getSystemService(Context.AUDIO_SERVICE) as AudioManager).getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE)?.toIntOrNull()
     }
@@ -216,6 +217,8 @@ private fun rememberStatCards(service: MusicService, mediaId: String, durationMs
         CrossmixMode.AUTO_CROSSFADE, CrossmixMode.MANUAL_CROSSFADE -> "Crossfade"
         else -> null
     }
+    val activeDevice = devices.firstOrNull { it.isActive }
+    val passthrough = rememberPassthroughStat(service, activeDevice)
     val input = StatsInput(
         mediaId = mediaId,
         details = details.takeIf { it.mediaId == null || it.mediaId == mediaId } ?: StreamDetails(mediaId = mediaId),
@@ -226,7 +229,7 @@ private fun rememberStatCards(service: MusicService, mediaId: String, durationMs
         durationMs = durationMs,
         playerVolume = volume,
         decoderHardware = hardware,
-        device = devices.firstOrNull { it.isActive },
+        device = activeDevice,
         mixer = mixer,
         systemMixerRate = systemMixerRate,
         castingTo = castName.takeIf { casting },
@@ -246,6 +249,7 @@ private fun rememberStatCards(service: MusicService, mediaId: String, durationMs
             hiResWanted = hiRes,
             floatAllowed = service.audioOutputs.floatAllowed,
         ),
+        passthrough = passthrough,
     )
     val cards = remember(input) { buildStatCards(input) }
     // larping, the nerds get the level's gear story instead

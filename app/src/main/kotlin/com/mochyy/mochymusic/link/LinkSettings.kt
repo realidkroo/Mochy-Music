@@ -23,6 +23,7 @@ import com.mochyy.mochymusic.constants.StudioForVideosKey
 import com.mochyy.mochymusic.constants.TransportFadeEnabledKey
 import com.mochyy.mochymusic.constants.VideoQuality
 import com.mochyy.mochymusic.constants.VideoQualityKey
+import com.mochyy.mochymusic.constants.transitionModeOf
 import com.mochyy.mochymusic.eq.AudioLabStore
 import com.mochyy.mochymusic.eq.EqPresets
 import com.mochyy.mochymusic.utils.dataStore
@@ -200,12 +201,8 @@ internal class LinkSettings(context: Context) {
         private val Speeds = listOf(0.75f, 1f, 1.25f, 1.5f)
         private val VideoQualities = listOf(VideoQuality.AUTO, VideoQuality.Q1080, VideoQuality.Q720, VideoQuality.Q480, VideoQuality.Q360)
 
-        // the transition that really plays, read the way the player reads it: no saved mode means auto crossfade
-        private fun transitionOf(prefs: Preferences): CrossmixMode {
-            val legacy = prefs[CrossfadeEnabledKey] ?: false
-            return prefs[CrossmixModeKey]?.let { runCatching { CrossmixMode.valueOf(it) }.getOrNull() }
-                ?: if (legacy) CrossmixMode.MANUAL_CROSSFADE else CrossmixMode.AUTO_CROSSFADE
-        }
+        // the transition that really plays, read the way the player reads it
+        private fun transitionOf(prefs: Preferences): CrossmixMode = transitionModeOf(prefs)
 
         // a tv only draws the looks made for a big screen
         fun stylesOn(context: Context): List<PlayerStyle> =

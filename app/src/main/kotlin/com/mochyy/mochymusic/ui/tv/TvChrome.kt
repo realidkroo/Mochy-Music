@@ -168,7 +168,7 @@ internal fun TvNowPlayingPill(
 
 // the four places, down the right edge like the concept
 internal enum class TvTab(val route: String, val icon: Any, val label: Int) {
-    Home(TvRoutes.Home, R.raw.home, R.string.home),
+    Home(TvRoutes.Home, R.drawable.nav_mochy_outline, R.string.home),
     Search(TvRoutes.Search, R.raw.search, R.string.search),
     Library(TvRoutes.Library, R.raw.lib, R.string.your_library),
     Mochy(TvRoutes.Mochy, R.drawable.nav_mochy_outline, R.string.tv_mochy),

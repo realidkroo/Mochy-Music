@@ -67,6 +67,7 @@ import com.mochyy.mochymusic.playback.audio.UsbDacReader
 import com.mochyy.mochymusic.playback.audio.pass.AudioPass
 import com.mochyy.mochymusic.playback.audio.pass.PassBlocker
 import com.mochyy.mochymusic.ui.component.AppSwitch
+import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.utils.rememberEnumPreference
 import com.mochyy.mochymusic.utils.rememberPreference
@@ -153,7 +154,24 @@ fun AudioPassScreen(navController: NavController) {
         Spacer(Modifier.height(12.dp))
         val (passthrough, onPassthrough) = rememberPreference(UsbPassthroughKey, defaultValue = false)
         val (mode, onMode) = rememberEnumPreference(AudioPassModeKey, defaultValue = AudioPassMode.Default)
-        PassthroughCard(passthrough, onPassthrough, mode, onMode, status.takeIf { mode.exclusive })
+        // switching it on while something changes the sound offers to turn those off then and there
+        val overlay = LocalZoomOutOverlayState.current
+        val offerToClear = {
+            if (blockers.isNotEmpty()) overlay.showPassBlockersOffer(blockers) { service?.clearPassBlockers() }
+        }
+        PassthroughCard(
+            on = passthrough,
+            onChange = { turnedOn ->
+                onPassthrough(turnedOn)
+                if (turnedOn && mode.exclusive) offerToClear()
+            },
+            mode = mode,
+            onMode = { picked ->
+                onMode(picked)
+                if (passthrough && picked.exclusive && !mode.exclusive) offerToClear()
+            },
+            status = status.takeIf { mode.exclusive },
+        )
 
         LabCollapsible(passthrough && mode == AudioPassMode.DIRECT_USB) {
             Spacer(Modifier.height(12.dp))
@@ -448,7 +466,7 @@ private fun PassthroughCard(
 
 /** what the exclusive output is doing with the song playing now, in a sentence */
 @Composable
-private fun statusLine(status: AudioPass.Status?): String? = when (status) {
+internal fun statusLine(status: AudioPass.Status?): String? = when (status) {
     null, AudioPass.Status.Off -> null
     AudioPass.Status.Waiting -> stringResource(R.string.audiopass_now_waiting)
     is AudioPass.Status.Fell -> stringResource(R.string.audiopass_now_fell, khz(status.sampleRate), status.sourceBits.toString())
@@ -527,7 +545,7 @@ private val AudioPassMode.description: Int
         AudioPassMode.EXCLUSIVE_DAC -> R.string.audiopass_mode_exclusive_dac_desc
     }
 
-private fun androidName(sdk: Int): String = when (sdk) {
+internal fun androidName(sdk: Int): String = when (sdk) {
     27 -> "8.1"
     34 -> "14"
     else -> "7"
@@ -570,7 +588,7 @@ private fun BlockersCard(active: Set<PassBlocker>, lossyToo: Boolean, canRestore
     }
 }
 
-private val PassBlocker.label: Int
+internal val PassBlocker.label: Int
     @StringRes get() = when (this) {
         PassBlocker.EQUALIZER -> R.string.audiopass_blocker_equalizer
         PassBlocker.AUDIO_FX -> R.string.audiopass_blocker_fx

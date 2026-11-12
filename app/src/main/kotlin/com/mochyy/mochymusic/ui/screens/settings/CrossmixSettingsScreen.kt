@@ -30,6 +30,8 @@ import com.mochyy.mochymusic.constants.CrossmixTempoMatch
 import com.mochyy.mochymusic.constants.CrossmixTempoMatchKey
 import com.mochyy.mochymusic.constants.CrossmixTestToolsKey
 import com.mochyy.mochymusic.constants.HideSettingsDescriptionsKey
+import com.mochyy.mochymusic.constants.DefaultTransitionMode
+import com.mochyy.mochymusic.constants.CrossmixAlwaysMixKey
 import com.mochyy.mochymusic.crossmix.CrossmixStyle
 import com.mochyy.mochymusic.crossmix.StyleUse
 import com.mochyy.mochymusic.ui.component.SettingsGroup
@@ -57,7 +59,7 @@ private val HeadingColor = Color.White.copy(alpha = 0.82f)
 fun CrossmixSettingsScreen(navController: NavController) {
     val (storedMode, onStoredModeChange) = rememberEnumPreference(
         CrossmixModeKey,
-        defaultValue = CrossmixMode.AUTO_CROSSFADE,
+        defaultValue = DefaultTransitionMode,
     )
     val (crossfadeEnabled, onCrossfadeEnabledChange) = rememberPreference(
         CrossfadeEnabledKey,
@@ -102,8 +104,8 @@ fun CrossmixSettingsScreen(navController: NavController) {
                 title = stringResource(R.string.transition_off),
                 subtitle = stringResource(R.string.transition_off_desc),
                 checked = selectedMode == CrossmixMode.OFF,
-                // turning "off" off brings back the everyday blend
-                onCheckedChange = { selectMode(if (it) CrossmixMode.OFF else CrossmixMode.AUTO_CROSSFADE) },
+                // turning "off" off brings back the everyday mix
+                onCheckedChange = { selectMode(if (it) CrossmixMode.OFF else DefaultTransitionMode) },
             )
         }
         Spacer(Modifier.height(10.dp))
@@ -232,6 +234,7 @@ private fun CrossmixControls() {
     val (length, onLengthChange) = rememberEnumPreference(CrossmixLengthKey, defaultValue = CrossmixLength.MEDIUM)
     val (tempoMatch, onTempoMatchChange) = rememberEnumPreference(CrossmixTempoMatchKey, defaultValue = CrossmixTempoMatch.FULL)
     val (stunts, onStuntsChange) = rememberPreference(CrossmixStuntsKey, defaultValue = true)
+    val (alwaysMix, onAlwaysMixChange) = rememberPreference(CrossmixAlwaysMixKey, defaultValue = true)
     val pinned = PinnableStyles.indexOfFirst { it.name == styleName }
 
     Spacer(Modifier.height(16.dp))
@@ -273,6 +276,12 @@ private fun CrossmixControls() {
     )
 
     Spacer(Modifier.height(10.dp))
+    LabToggleRow(
+        title = stringResource(R.string.crossmix_always_mix_title),
+        subtitle = stringResource(R.string.crossmix_always_mix_desc),
+        checked = alwaysMix,
+        onCheckedChange = onAlwaysMixChange,
+    )
     LabToggleRow(
         title = stringResource(R.string.crossmix_stunts_title),
         subtitle = stringResource(R.string.crossmix_stunts_desc),

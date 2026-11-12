@@ -248,14 +248,15 @@ fun OnlineSearchScreen(
         }
 
         itemsIndexed(viewState.items, key = { _, it -> "item_${it.id}" }) { index, item ->
+            val active = when (item) {
+                is SongItem -> mediaMetadata?.id == item.id
+                is AlbumItem -> mediaMetadata?.album?.id == item.id
+                else -> false
+            }
             YouTubeListItem(
                 item = item,
-                isActive = when (item) {
-                    is SongItem -> mediaMetadata?.id == item.id
-                    is AlbumItem -> mediaMetadata?.album?.id == item.id
-                    else -> false
-                },
-                isPlaying = isPlaying,
+                isActive = active,
+                isPlaying = active && isPlaying,
                 shape = listItemShape(index, viewState.items.size),
                 trailingContent = {
                     IconButton(

@@ -85,6 +85,9 @@ import com.music.innertube.models.SongItem
 import com.music.innertube.models.WatchEndpoint
 import com.mochyy.mochymusic.MainActivity
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.car.CarLyrics
+import com.mochyy.mochymusic.car.CarLyricsPlayer
+import com.mochyy.mochymusic.car.CarLyricsSource
 import com.mochyy.mochymusic.constants.AudioNormalizationKey
 import com.mochyy.mochymusic.constants.AudioOffload
 import com.mochyy.mochymusic.constants.AudioQualityKey
@@ -94,7 +97,6 @@ import com.mochyy.mochymusic.constants.AutoSkipNextOnErrorKey
 import com.mochyy.mochymusic.constants.DontSkipOnFailureKey
 import com.mochyy.mochymusic.constants.StreamFailureTimeoutKey
 import com.mochyy.mochymusic.constants.CrossfadeDurationKey
-import com.mochyy.mochymusic.constants.CrossfadeEnabledKey
 import com.mochyy.mochymusic.constants.TransportEffect
 import com.mochyy.mochymusic.constants.TransportEffectKey
 import com.mochyy.mochymusic.constants.TransportFadeDefaultSeconds
@@ -108,7 +110,6 @@ import com.mochyy.mochymusic.constants.SkipBlendAheadKey
 import com.mochyy.mochymusic.constants.SkipBlendAheadMax
 import com.mochyy.mochymusic.constants.StudioForVideosKey
 import com.mochyy.mochymusic.constants.CrossmixMode
-import com.mochyy.mochymusic.constants.CrossmixModeKey
 import com.mochyy.mochymusic.constants.HiFiResamplerKey
 import com.mochyy.mochymusic.constants.HiResOutputKey
 import com.mochyy.mochymusic.constants.PreferUsbDacKey
@@ -234,6 +235,8 @@ import com.mochyy.mochymusic.utils.YTPlayerUtils
 import com.mochyy.mochymusic.constants.ShowStreamSourceToastKey
 import com.mochyy.mochymusic.constants.YtReportPlaysKey
 import com.mochyy.mochymusic.constants.ForcePlaybackKey
+import com.mochyy.mochymusic.constants.transitionModeOf
+import com.mochyy.mochymusic.constants.CrossmixAlwaysMixKey
 import com.mochyy.mochymusic.utils.dataStore
 import com.mochyy.mochymusic.utils.get
 import com.mochyy.mochymusic.utils.reportException
@@ -660,6 +663,13 @@ class MusicService :
 
     private lateinit var mediaSession: MediaLibrarySession
 
+    // the line being sung on android auto's own player while a car is connected
+    private var carLyrics: CarLyrics? = null
+
+    // what android auto's templated player reads, handed over by the car app
+    val platformSessionToken: android.media.session.MediaSession.Token
+        get() = mediaSession.platformToken
+
     private val playerInitialized = MutableStateFlow(false)
     val isPlayerReady: kotlinx.coroutines.flow.StateFlow<Boolean> = playerInitialized.asStateFlow()
 
@@ -833,13 +843,15 @@ class MusicService :
         setupAudioFocusRequest()
 
         mediaLibrarySessionCallback.apply {
+            service = this@MusicService
             toggleLike = ::toggleLike
             toggleStartRadio = ::toggleStartRadio
             toggleLibrary = ::toggleLibrary
         }
+        val sessionPlayer = CarLyricsPlayer(TransportFadingPlayer(player, transport, audioPass))
         mediaSession =
             MediaLibrarySession
-                .Builder(this, TransportFadingPlayer(player, transport, audioPass), mediaLibrarySessionCallback)
+                .Builder(this, sessionPlayer, mediaLibrarySessionCallback)
                 .setSessionActivity(
                     PendingIntent.getActivity(
                         this,
@@ -849,6 +861,8 @@ class MusicService :
                     ),
                 ).setBitmapLoader(CoilBitmapLoader(this, scope))
                 .build()
+        carLyrics = CarLyrics(this, CarLyricsSource(database, lyricsHelper), currentMediaMetadata, { player }, sessionPlayer, scope)
+            .also { it.start() }
         player.repeatMode = dataStore.get(RepeatModeKey, REPEAT_MODE_OFF)
 
         if (dataStore.get(RememberShuffleAndRepeatKey, true)) {
@@ -1113,10 +1127,10 @@ class MusicService :
         // offload skips the app's own audio processing, so the equalizer and effects would go silent
         combine(
             dataStore.data.map { it[AudioOffload] ?: false },
-            dataStore.data.map { it[CrossfadeEnabledKey] ?: false },
+            dataStore.data.map { transitionModeOf(it) != CrossmixMode.OFF },
             audioLab.shapesSound,
-        ) { offloadPref, crossfadeEnabled, shapesSound ->
-             offloadPref && !crossfadeEnabled && !shapesSound
+        ) { offloadPref, transitions, shapesSound ->
+             offloadPref && !transitions && !shapesSound
         }.distinctUntilChanged()
         .collectLatest(scope) { useOffload ->
              player.setOffloadEnabled(useOffload)
@@ -1158,10 +1172,7 @@ class MusicService :
             }
 
         dataStore.data.map { prefs ->
-            val legacyEnabled = prefs[CrossfadeEnabledKey] ?: false
-            val mode = prefs[CrossmixModeKey]
-                ?.let { value -> runCatching { CrossmixMode.valueOf(value) }.getOrNull() }
-                ?: if (legacyEnabled) CrossmixMode.MANUAL_CROSSFADE else CrossmixMode.AUTO_CROSSFADE
+            val mode = transitionModeOf(prefs)
             val enabled = mode != CrossmixMode.OFF
             val duration = when (mode) {
                 CrossmixMode.AUTO_CROSSFADE -> 5f
@@ -1186,6 +1197,7 @@ class MusicService :
                 tempoMatch = prefs[CrossmixTempoMatchKey].toEnum(CrossmixTempoMatch.FULL),
                 style = prefs[CrossmixStyleKey]?.takeIf { it != CrossmixStyleAuto }?.let { name -> CrossmixStyle.entries.firstOrNull { it.name == name } },
                 stunts = prefs[CrossmixStuntsKey] ?: true,
+                alwaysMix = prefs[CrossmixAlwaysMixKey] ?: true,
             )
         }
             .distinctUntilChanged()
@@ -1430,8 +1442,8 @@ class MusicService :
         player.apply {
                 runBlocking {
                     val offload = dataStore.get(AudioOffload, false)
-                    val crossfade = dataStore.get(CrossfadeEnabledKey, false)
-                    setOffloadEnabled(if (crossfade) false else offload)
+                    val transitions = transitionModeOf(dataStore.data.first()) != CrossmixMode.OFF
+                    setOffloadEnabled(if (transitions) false else offload)
                     skipSilenceEnabled = dataStore.get(SkipSilenceKey, false)
                 }
                 addAnalyticsListener(PlaybackStatsListener(false, this@MusicService))
@@ -1456,7 +1468,7 @@ class MusicService :
                 !(prefs[SkipSilenceKey] ?: false) &&
                 !(prefs[MusicHapticsEnabledKey] ?: false) &&
                 prefs[TransportEffectKey].toEnum(TransportEffect.OFF) == TransportEffect.OFF &&
-                prefs[CrossmixModeKey]?.let { runCatching { CrossmixMode.valueOf(it) }.getOrNull() } != CrossmixMode.CROSSMIX
+                transitionModeOf(prefs) != CrossmixMode.CROSSMIX
         }
         combine(wantsFloat, audioLab.shapesSound, audioLab.playback) { wants, shapesSound, playback ->
             wants && !shapesSound && playback.speed == 1f && playback.pitch == 1f
@@ -4254,6 +4266,8 @@ class MusicService :
         crossmixDirector.release()
         fadingLoudnessEnhancer?.runCatching { release() }
         fadingLoudnessEnhancer = null
+        carLyrics?.stop()
+        carLyrics = null
         mediaSession.release()
         player.removeListener(this)
         player.removeListener(sleepTimer)
@@ -4646,21 +4660,26 @@ class MusicService :
         fadingPlayer?.pauseAtEndOfMediaItems = true
 
         nextPlayer.addListener(object : Player.Listener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
+            // only the listener's own pause and play move both songs together: the new song stalling while it loads used to pause the old one too, a cut or a hitch right as the fade began
+            private fun follow() {
                 val out = fadingPlayer
                 if (!isCrossfading || out == null) {
                     nextPlayer.removeListener(this)
                     return
                 }
-                // pause and resume both sides together; an old song that has played out stays put
-                if (isPlaying) {
-                    val finished = out.playbackState == Player.STATE_ENDED ||
-                        (out.duration > 0 && out.currentPosition >= out.duration - 250)
-                    if (!finished) out.play()
-                } else {
+                if (!nextPlayer.playWhenReady) {
                     out.pause()
+                    return
                 }
+                // an old song that has played out stays put
+                val finished = out.playbackState == Player.STATE_ENDED ||
+                    (out.duration > 0 && out.currentPosition >= out.duration - 250)
+                if (!finished && !out.playWhenReady) out.play()
             }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) = follow()
+
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) = follow()
         })
 
         nextPlayer.removeListener(secondaryPlayerListener)

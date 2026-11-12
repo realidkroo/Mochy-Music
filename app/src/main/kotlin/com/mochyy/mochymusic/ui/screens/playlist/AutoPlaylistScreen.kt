@@ -528,13 +528,14 @@ fun AutoPlaylistScreen(
                 library = { librarySwipeAction(song.song) },
                 queue = { queueSwipeAction { song.toMediaItem() } },
             ) {
+                val active = song.song.id == mediaMetadata?.id
                 PlaylistTrackRow(
                     thumbnailUrl = song.song.thumbnailUrl,
                     songId = song.id,
                     title = song.song.title,
                     subtitle = "${song.artists.joinToString { it.name }} • ${makeTimeString(song.song.duration * 1000L)}",
-                    isActive = song.song.id == mediaMetadata?.id,
-                    isPlaying = isPlaying,
+                    isActive = active,
+                    isPlaying = active && isPlaying,
                     modifier = Modifier.revealOnAppear(
                         key = "track_${song.id}",
                         seenState = revealSeen,

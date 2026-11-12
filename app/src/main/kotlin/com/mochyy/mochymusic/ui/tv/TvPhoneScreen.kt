@@ -201,11 +201,14 @@ private fun TvPhonePairing(profile: TvProfile) {
 @Composable
 internal fun TvPairingSteps(pairing: TvPairing, modifier: Modifier = Modifier) {
     val code by pairing.code.collectAsState()
+    val seen = remember { HashSet<Any>() }
     Column(modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            code?.code.orEmpty().forEach { digit ->
+            // each digit rises in after the one before it, and again only when a new code changes it
+            code?.code.orEmpty().forEachIndexed { index, digit ->
                 Box(
                     Modifier
+                        .tvReveal(index to digit, seen, delayMillis = 200 + index * 70)
                         .size(width = 44.dp, height = 56.dp)
                         .clip(RoundedCornerShape(14.dp))
                         .background(TvColors.Card)

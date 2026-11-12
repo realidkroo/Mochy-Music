@@ -492,7 +492,8 @@ class MainActivity : ComponentActivity() {
                 // Same cached lookup the version sheet and home prompt use (this app's own
                 // releases - the old checker here queried another project's repo). Launch-time
                 // only: nothing about updates runs in the background.
-                val release = com.mochyy.mochymusic.core.updater.getLatestRelease().getOrNull()
+                val channel = com.mochyy.mochymusic.core.updater.updateChannel(context)
+                val release = com.mochyy.mochymusic.core.updater.getLatestRelease(channel).getOrNull()
                 val isAvailable = release != null &&
                     com.mochyy.mochymusic.core.updater.isNewerThanInstalled(release.version)
                 saveUpdateAvailableState(context, isAvailable)

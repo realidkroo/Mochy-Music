@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,7 +74,12 @@ import androidx.core.graphics.drawable.toBitmap
 import com.mochyy.mochymusic.BuildConfig
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.core.updater.GithubRelease
+import com.mochyy.mochymusic.core.updater.UpdateChannel
 import com.mochyy.mochymusic.core.updater.UpdateState
+import com.mochyy.mochymusic.core.updater.canLeaveNightly
+import com.mochyy.mochymusic.core.updater.installedIsNightly
+import com.mochyy.mochymusic.core.updater.saveUpdateChannel
+import com.mochyy.mochymusic.core.updater.updateChannel
 import com.mochyy.mochymusic.core.updater.apkFileFor
 import com.mochyy.mochymusic.core.updater.downloadApk
 import com.mochyy.mochymusic.core.updater.formatBytes
@@ -94,14 +100,15 @@ import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 @Composable
 fun rememberUpdateState(): androidx.compose.runtime.State<UpdateState> {
+    val context = LocalContext.current
     val state = remember { mutableStateOf<UpdateState>(UpdateState.Checking) }
-    LaunchedEffect(Unit) { state.value = checkUpdate(force = false) }
+    LaunchedEffect(Unit) { state.value = checkUpdate(updateChannel(context), force = false) }
     return state
 }
 
-/** asks github (or the shared copy, unless force is set) whether a newer release is out */
-private suspend fun checkUpdate(force: Boolean): UpdateState =
-    getLatestRelease(force).fold(
+/** asks github (or the shared copy, unless force is set) whether a newer release is out on the channel */
+private suspend fun checkUpdate(channel: UpdateChannel, force: Boolean): UpdateState =
+    getLatestRelease(channel, force).fold(
         onSuccess = { release ->
             when {
                 release == null -> UpdateState.UpToDate
@@ -163,24 +170,32 @@ private fun ColumnScope.UpdateSheetContent(
     popup: PopupSheetState,
     onOpenDevSpace: (Int) -> Unit,
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var channel by remember { mutableStateOf(updateChannel(context)) }
     var state by remember { mutableStateOf(initialState) }
-    var latest by remember { mutableStateOf((initialState as? UpdateState.Available)?.release) }
+    // the newest plain release, which decides the badge and whether a nightly may switch back
+    var latestRelease by remember { mutableStateOf<GithubRelease?>(null) }
     var previous by remember { mutableStateOf<GithubRelease?>(null) }
 
     suspend fun refresh(force: Boolean) {
-        state = checkUpdate(force)
+        state = checkUpdate(channel, force)
         // a failed check keeps what it knew, so the rows don't vanish when offline
-        latest = getLatestRelease().getOrNull() ?: latest
-        previous = getPreviousRelease().getOrNull() ?: previous
+        getLatestRelease(UpdateChannel.Release).onSuccess { latestRelease = it }
+        getPreviousRelease(channel).onSuccess { previous = it }
     }
-    // the shared copy answers instantly when the app already checked on launch
-    LaunchedEffect(Unit) { refresh(force = false) }
+    // the shared copy answers instantly when the app already checked on launch, and again after a channel switch
+    LaunchedEffect(channel) { refresh(force = false) }
     val checkAgain: () -> Unit = {
         if (state !is UpdateState.Checking) {
             state = UpdateState.Checking
             scope.launch { refresh(force = true) }
         }
+    }
+    fun switchTo(target: UpdateChannel) {
+        saveUpdateChannel(context, target)
+        state = UpdateState.Checking
+        channel = target
     }
 
     val installed = shortVersion(BuildConfig.VERSION_NAME)
@@ -226,7 +241,7 @@ private fun ColumnScope.UpdateSheetContent(
                     letterSpacing = (-2).sp,
                 )
                 Spacer(Modifier.width(14.dp))
-                ChannelBadge(latest)
+                ChannelBadge(latestRelease)
             }
 
             Spacer(Modifier.height(16.dp))
@@ -259,13 +274,29 @@ private fun ColumnScope.UpdateSheetContent(
                         )
                     }
                 }
-                ActionRow(
-                    icon = R.drawable.bedtime,
-                    label = "Switch to nightly",
-                    hint = "Not out yet",
-                    enabled = false,
-                    onClick = {},
-                )
+                if (channel == UpdateChannel.Release) {
+                    ActionRow(
+                        icon = R.drawable.bedtime,
+                        label = stringResource(R.string.channel_switch_to_nightly),
+                        onClick = { popup.showPathChangeSheet(toNightly = true) { switchTo(UpdateChannel.Nightly) } },
+                    )
+                } else {
+                    val canLeave = canLeaveNightly(latestRelease)
+                    ActionRow(
+                        icon = R.drawable.update,
+                        label = stringResource(R.string.channel_switch_to_release),
+                        hint = if (canLeave) null else stringResource(R.string.channel_release_waits),
+                        enabled = canLeave,
+                        onClick = {
+                            // nothing nightly installed yet, so there's nothing to warn about
+                            if (installedIsNightly) {
+                                popup.showPathChangeSheet(toNightly = false) { switchTo(UpdateChannel.Release) }
+                            } else {
+                                switchTo(UpdateChannel.Release)
+                            }
+                        },
+                    )
+                }
                 ActionRow(
                     icon = R.drawable.info,
                     label = "About app",
@@ -284,11 +315,11 @@ private fun ColumnScope.UpdateSheetContent(
 
 /** which channel this build is: nightly says so, newer than any release is beta, the rest is stable */
 @Composable
-private fun ChannelBadge(latest: GithubRelease?) {
-    val aheadOfReleases = latest != null &&
-        parseFullVersion(latest.version).copy(buildNumber = 0) < parseFullVersion(BuildConfig.VERSION_NAME).copy(buildNumber = 0)
+private fun ChannelBadge(latestRelease: GithubRelease?) {
+    val aheadOfReleases = latestRelease != null &&
+        parseFullVersion(latestRelease.version).copy(buildNumber = 0) < parseFullVersion(BuildConfig.VERSION_NAME).copy(buildNumber = 0)
     val label = when {
-        BuildConfig.IS_NIGHTLY -> "NIGHTLY"
+        installedIsNightly -> "NIGHTLY"
         aheadOfReleases -> "BETA"
         else -> StableLabel
     }

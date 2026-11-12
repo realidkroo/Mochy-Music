@@ -256,10 +256,11 @@ fun ExploreScreen(
                                 items = sectionSongs,
                                 key = { _, it -> it.id },
                             ) { index, song ->
+                                val active = song.id == mediaMetadata?.id
                                 YouTubeListItem(
                                     item = song,
-                                    isActive = song.id == mediaMetadata?.id,
-                                    isPlaying = isPlaying,
+                                    isActive = active,
+                                    isPlaying = active && isPlaying,
                                     isSwipeable = false,
                                     shape = listItemShape(index % 4, 4),
                                     trailingContent = {
@@ -331,10 +332,11 @@ fun ExploreScreen(
                             items = distinctNewReleases,
                             key = { it.id },
                         ) { album ->
+                            val active = mediaMetadata?.album?.id == album.id
                             YouTubeGridItem(
                                 item = album,
-                                isActive = mediaMetadata?.album?.id == album.id,
-                                isPlaying = isPlaying,
+                                isActive = active,
+                                isPlaying = active && isPlaying,
                                 coroutineScope = coroutineScope,
                                 modifier = Modifier
                                     .combinedClickable(
@@ -374,10 +376,11 @@ fun ExploreScreen(
                             items = topVideos,
                             key = { it.id },
                         ) { video ->
+                            val active = video.id == mediaMetadata?.id
                             YouTubeGridItem(
                                 item = video,
-                                isActive = video.id == mediaMetadata?.id,
-                                isPlaying = isPlaying,
+                                isActive = active,
+                                isPlaying = active && isPlaying,
                                 coroutineScope = coroutineScope,
                                 modifier = Modifier
                                     .combinedClickable(

@@ -48,6 +48,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import androidx.compose.ui.res.stringResource
 import com.mochyy.mochymusic.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
@@ -480,14 +481,14 @@ fun LikedLabel(
         },
     ) {
         if (likeShown > 0.001f) NoteText("Added to Library and Liked Songs", likeShown)
-        if (mixShown > 0.001f) MixingNote("Mixxing…", mixShown, active = { sheetProgressProvider() > 0.9f })
+        if (mixShown > 0.001f) MixingNote(stringResource(R.string.crossmix_mixing_note), mixShown, active = { sheetProgressProvider() > 0.9f })
     }
 }
 
 @Composable
 private fun NoteText(text: String, shown: Float) {
     val density = LocalDensity.current
-    // the same faint halo as the mixing note, so it reads over a bright cover too
+    // a faint dark halo, so it reads over a bright cover too
     val style = remember(density) { NoteTextStyle.copy(shadow = noteShadow(density)) }
     Text(
         text = text,

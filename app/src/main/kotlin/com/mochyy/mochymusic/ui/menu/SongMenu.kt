@@ -112,7 +112,7 @@ fun SongMenu(
     val context = LocalContext.current
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
-    val songState = database.song(originalSong.id).collectAsState(initial = originalSong)
+    val songState = remember(database, originalSong.id) { database.song(originalSong.id) }.collectAsState(initial = originalSong)
     val song = songState.value ?: originalSong
     val downloadUtil = LocalDownloadUtil.current
 
@@ -132,7 +132,7 @@ fun SongMenu(
         label = "",
     )
 
-    val isPinned by database.speedDialDao.isPinned(song.id).collectAsState(initial = false)
+    val isPinned by remember(database, song.id) { database.speedDialDao.isPinned(song.id) }.collectAsState(initial = false)
 
     // the track an import brought this song in as: offers "Choose different version", and makes
     // Refetch search for that track again rather than only refresh this song's details

@@ -51,6 +51,8 @@ data class StatsInput(
     val systemMixerRate: Int?,
     val castingTo: String?,
     val effects: EffectsSnapshot,
+    /** passthrough's own line, already worded: straight to the dac, or why not */
+    val passthrough: Pair<String, String>? = null,
 )
 
 /** format, decoder, resampler, dsp, output: the song's road to the speaker, nothing guessed */
@@ -203,6 +205,7 @@ private fun outputCard(input: StatsInput): StatCard {
                 "DAC mixer" to (if (it.bitPerfect) "Bit-perfect, " else "Locked to the song, ") +
                     listOfNotNull(kHz(it.sampleRate), StreamInspector.bitDepthOf(it.encoding)?.let { b -> "$b-bit" }).joinToString(" ")
             },
+            input.passthrough,
             d.outputEncoding?.let { enc ->
                 "Audio track" to listOfNotNull(pcmShort(enc), d.outputSampleRate?.let(::kHz), channelCountOf(d.outputChannelConfig)?.let(::channelName)).joinToString(" · ")
             },

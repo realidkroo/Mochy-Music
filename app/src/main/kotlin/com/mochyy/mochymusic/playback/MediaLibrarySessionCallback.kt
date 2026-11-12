@@ -11,6 +11,7 @@ import androidx.core.net.toUri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.session.LibraryResult
@@ -42,10 +43,14 @@ import com.mochyy.mochymusic.db.entities.Song
 import com.mochyy.mochymusic.extensions.toMediaItem
 import com.mochyy.mochymusic.extensions.toggleRepeatMode
 import com.mochyy.mochymusic.models.toMediaMetadata
+import com.mochyy.mochymusic.playback.voice.VoicePicker
+import com.mochyy.mochymusic.playback.voice.VoiceRequest
+import com.mochyy.mochymusic.playback.voice.VoiceSearch
 import com.mochyy.mochymusic.utils.dataStore
 import com.mochyy.mochymusic.utils.get
 import com.mochyy.mochymusic.utils.reportException
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -53,6 +58,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.guava.future
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import javax.inject.Inject
 
@@ -66,6 +72,7 @@ constructor(
 ) : MediaLibrarySession.Callback {
     private val scope = CoroutineScope(Dispatchers.Main) + Job()
     lateinit var service: MusicService
+    private val voice by lazy { VoicePicker(context, database) }
     var toggleLike: () -> Unit = {}
     var toggleStartRadio: () -> Unit = {}
     var toggleLibrary: () -> Unit = {}
@@ -384,8 +391,9 @@ constructor(
         mediaItems: MutableList<MediaItem>,
         startIndex: Int,
         startPositionMs: Long,
-    ): ListenableFuture<MediaItemsWithStartPosition> =
-        scope.future {
+    ): ListenableFuture<MediaItemsWithStartPosition> {
+        mediaItems.singleOrNull()?.takeIf(VoiceSearch::isRequest)?.let { return playVoice(mediaSession, controller, it) }
+        return scope.future {
             val defaultResult = MediaItemsWithStartPosition(emptyList(), startIndex, startPositionMs)
             val path = mediaItems.firstOrNull()?.mediaId?.split("/")
                 ?: return@future defaultResult
@@ -573,6 +581,57 @@ constructor(
                 else -> defaultResult
             }
         }
+    }
+
+    // "hey google, play … on mochy" from the car or the phone: the service starts the queue itself, so the answer is cancelled and media3 leaves the player be
+    private fun playVoice(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        item: MediaItem,
+    ): ListenableFuture<MediaItemsWithStartPosition> {
+        val answer = SettableFuture.create<MediaItemsWithStartPosition>()
+        scope.launch {
+            try {
+                startVoice(session, controller, item.requestMetadata.searchQuery, item.requestMetadata.extras)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                reportException(e)
+                session.sendError(controller, SessionError(SessionError.ERROR_IO, context.getString(R.string.voice_offline)))
+            } finally {
+                answer.cancel(false)
+            }
+        }
+        return answer
+    }
+
+    private suspend fun startVoice(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        query: String?,
+        extras: Bundle?,
+    ) {
+        val request = VoiceSearch.parse(query, extras)
+        val player = session.player
+        // "play music" carries on with the queue that's there, through the session's player so it fades in like the play button
+        if (request == VoiceRequest.Resume && player.mediaItemCount > 0) {
+            if (player.playbackState == Player.STATE_IDLE) player.prepare()
+            player.play()
+            return
+        }
+        val queue = voice.queueFor(request)
+        if (queue == null) {
+            val heard = query?.trim().orEmpty()
+            val message = if (heard.isEmpty()) {
+                context.getString(R.string.voice_nothing_to_play)
+            } else {
+                context.getString(R.string.voice_nothing_found, heard)
+            }
+            session.sendError(controller, SessionError(SessionError.ERROR_BAD_VALUE, message))
+            return
+        }
+        service.playQueue(queue)
+    }
 
     private fun drawableUri(
         @DrawableRes id: Int,

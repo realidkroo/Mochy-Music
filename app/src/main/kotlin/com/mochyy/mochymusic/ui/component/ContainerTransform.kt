@@ -16,9 +16,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +37,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.navigation.NavBackStackEntry
 
 /** every Home cover card is drawn with this radius, so the open transition starts from it */
 var HomeCardCornerRadius by mutableStateOf(25.dp)
@@ -69,16 +73,25 @@ private val ContainerBoundsTransform = BoundsTransform { initial, target ->
 }
 
 /**
- * what each tapped card looked like (width and corner radius, by key) plus the width an opened
- * screen settles at, so both sides of the transition clip to exactly the same outline.
+ * what each tapped card looked like (width and corner radius, by its screen's key) plus the width an
+ * opened screen settles at, so both sides of the transition clip to exactly the same outline.
  * only touched on the main thread.
  */
 private object ContainerTransformRegistry {
     val sourceWidths = HashMap<String, Float>()
     val sourceRadii = HashMap<String, Dp>()
     val sourceCovers = HashMap<String, String>()
+    // which screens are showing a card for each key right now, so a page can tell where it was opened from
+    val hosts = HashMap<String, MutableList<String>>()
     var targetWidth = 0f
 }
+
+// the nav entry this is composed in, "" outside a nav host
+@Composable
+private fun currentScreenId(): String = (LocalViewModelStoreOwner.current as? NavBackStackEntry)?.id.orEmpty()
+
+// cards only pair with a page inside one screen's key, so Home's and Library's Liked cards never morph into each other on a tab switch
+private fun screenKey(key: String, screenId: String?) = "$key@$screenId"
 
 /**
  * the cover the tapped card was showing. the opened screen draws it from its very first frame,
@@ -146,17 +159,27 @@ fun Modifier.containerTransformSource(
     if (key == null) return this
     val sharedScope = LocalSharedTransitionScope.current ?: return this
     val visibilityScope = LocalNavAnimatedContentScope.current ?: return this
-    val clip = rememberMorphingCornerClip(key, cornerRadius)
+    val screenId = currentScreenId()
+    DisposableEffect(key, screenId) {
+        val hosts = ContainerTransformRegistry.hosts.getOrPut(key) { mutableListOf() }
+        hosts += screenId
+        onDispose {
+            hosts.remove(screenId)
+            if (hosts.isEmpty()) ContainerTransformRegistry.hosts.remove(key)
+        }
+    }
+    val scoped = screenKey(key, screenId)
+    val clip = rememberMorphingCornerClip(scoped, cornerRadius)
 
     return with(sharedScope) {
         this@containerTransformSource
             .onPlaced {
-                ContainerTransformRegistry.sourceWidths[key] = it.size.width.toFloat()
-                ContainerTransformRegistry.sourceRadii[key] = cornerRadius
+                ContainerTransformRegistry.sourceWidths[scoped] = it.size.width.toFloat()
+                ContainerTransformRegistry.sourceRadii[scoped] = cornerRadius
                 if (coverUrl != null) ContainerTransformRegistry.sourceCovers[key] = coverUrl
             }
             .sharedBounds(
-                sharedContentState = rememberSharedContentState(key),
+                sharedContentState = rememberSharedContentState(scoped),
                 animatedVisibilityScope = visibilityScope,
                 // the opened screen is drawn above the card, so the card only has to be gone
                 // under it on the way out and back in under it before it fades off
@@ -179,13 +202,16 @@ fun Modifier.containerTransformTarget(
     if (key == null) return this
     val sharedScope = LocalSharedTransitionScope.current ?: return this
     val visibilityScope = LocalNavAnimatedContentScope.current ?: return this
-    val clip = rememberMorphingCornerClip(key, sourceCornerRadius)
+    // the screen still showing this card as the page comes in is the one it opened from, saved so a tab coming back can't re-pick it
+    val own = currentScreenId()
+    val scoped = rememberSaveable(key) { screenKey(key, ContainerTransformRegistry.hosts[key]?.lastOrNull { it != own }) }
+    val clip = rememberMorphingCornerClip(scoped, sourceCornerRadius)
 
     return with(sharedScope) {
         this@containerTransformTarget
             .onSizeChanged { ContainerTransformRegistry.targetWidth = it.width.toFloat() }
             .sharedBounds(
-                sharedContentState = rememberSharedContentState(key),
+                sharedContentState = rememberSharedContentState(scoped),
                 animatedVisibilityScope = visibilityScope,
                 // on the way back it stays solid for the first stretch of the shrink, so it doesn't
                 // ghost over Home while it's still nearly full screen, and is gone by ~320ms when

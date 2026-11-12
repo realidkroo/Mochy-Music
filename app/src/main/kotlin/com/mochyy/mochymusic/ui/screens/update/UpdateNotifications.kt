@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -18,6 +19,7 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.core.updater.GithubRelease
 import com.mochyy.mochymusic.core.updater.UpdateState
 import com.mochyy.mochymusic.core.updater.getLatestRelease
+import com.mochyy.mochymusic.core.updater.updateChannel
 import com.mochyy.mochymusic.core.updater.isNewerThanInstalled
 import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 
@@ -102,9 +104,10 @@ private fun postNotification(context: Context, release: GithubRelease): Boolean 
 @Composable
 fun UpdateNotificationOpener(requests: Int, onOpenDevSpace: (Int) -> Unit = {}) {
     val popup = LocalZoomOutOverlayState.current
+    val context = LocalContext.current
     LaunchedEffect(requests) {
         if (requests == 0) return@LaunchedEffect
-        val release = getLatestRelease().getOrNull()
+        val release = getLatestRelease(updateChannel(context)).getOrNull()
         val state = if (release != null && isNewerThanInstalled(release.version)) {
             UpdateState.Available(release)
         } else {

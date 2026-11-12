@@ -11,6 +11,8 @@ data class CrossmixSettings(
     val style: CrossmixStyle? = null,
     /** whether backspins, tape stops, risers and the like may be picked when the energy jumps */
     val stunts: Boolean = true,
+    /** every hand-over a real blend of the two songs: no drop right at the end, no plain fade, even without a beat to lock to */
+    val alwaysMix: Boolean = true,
 ) {
     companion object {
         val Default = CrossmixSettings()

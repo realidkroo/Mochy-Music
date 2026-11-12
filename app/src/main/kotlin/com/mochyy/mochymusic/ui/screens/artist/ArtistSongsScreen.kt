@@ -131,13 +131,14 @@ fun ArtistSongsScreen(
                 library = { librarySwipeAction(song.song) },
                 queue = { queueSwipeAction { song.toMediaItem() } },
             ) {
+                val active = song.id == mediaMetadata?.id
                 PlaylistTrackRow(
                     thumbnailUrl = song.song.thumbnailUrl,
                     songId = song.id,
                     title = song.song.title,
                     subtitle = listOfNotNull(song.album?.title, makeTimeString(song.song.duration * 1000L)).joinToString(" • "),
-                    isActive = song.id == mediaMetadata?.id,
-                    isPlaying = isPlaying,
+                    isActive = active,
+                    isPlaying = active && isPlaying,
                     modifier = Modifier.revealOnAppear(key = "song_${song.id}", seenState = revealSeen, delayMillis = minOf(index, 8) * 28),
                     onClick = {
                         if (song.id == mediaMetadata?.id) playerConnection.togglePlayPause() else play(startIndex = index)

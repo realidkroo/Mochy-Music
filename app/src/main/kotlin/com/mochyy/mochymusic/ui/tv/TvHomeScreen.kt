@@ -90,6 +90,7 @@ import com.mochyy.mochymusic.viewmodels.HomeViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import java.time.LocalDate
 
 // one card in home's header: the month's recap, or one of the phone's own hero picks
@@ -128,7 +129,8 @@ internal fun TvHomeScreen(profile: TvProfile, viewModel: HomeViewModel = hiltVie
     LaunchedEffect(player) { player?.let(viewModel::attachPlayer) }
 
     val playing by remember(player) { player?.mediaMetadata ?: MutableStateFlow<MediaMetadata?>(null) }.collectAsState()
-    val isPlaying by remember(player) { player?.isPlaying ?: MutableStateFlow(false) }.collectAsState()
+    // read by the hero's words only, so play and pause don't recompose all of home
+    val isPlaying = remember(player) { player?.isPlaying ?: MutableStateFlow(false) }.collectAsState()
     val lastPlayed by viewModel.lastPlayedSong.collectAsState()
     val keepListening by viewModel.keepListening.collectAsState()
     val dailyDiscover by viewModel.dailyDiscover.collectAsState()
@@ -166,14 +168,16 @@ internal fun TvHomeScreen(profile: TvProfile, viewModel: HomeViewModel = hiltVie
         }
     }
 
-    // a focused card's picture takes the backdrop after a short pause, so racing along a row doesn't load every one
+    // a focused card's picture takes the backdrop after a short pause, so racing along a row doesn't load every one; a flow, so each press doesn't recompose home
     var focusedArt by remember { mutableStateOf<String?>(null) }
-    var pendingArt by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(pendingArt) {
-        delay(350)
-        focusedArt = pendingArt
+    val pendingArt = remember { MutableStateFlow<String?>(null) }
+    LaunchedEffect(Unit) {
+        pendingArt.collectLatest {
+            delay(350)
+            focusedArt = it
+        }
     }
-    val backdrop = focusedArt ?: hero?.art ?: rows.firstNotNullOfOrNull { row ->
+    val restingArt = hero?.art ?: rows.firstNotNullOfOrNull { row ->
         when (row) {
             is TvHomeRow.Online -> row.items.firstOrNull()?.thumbnail
             is TvHomeRow.Library -> row.items.firstOrNull()?.thumbnailUrl
@@ -191,8 +195,9 @@ internal fun TvHomeScreen(profile: TvProfile, viewModel: HomeViewModel = hiltVie
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val heroHeight = maxHeight * 0.66f
-        TvHomeBackdrop(
-            url = backdrop,
+        TvFocusedBackdrop(
+            focused = { focusedArt },
+            resting = restingArt,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(heroHeight + 70.dp)
@@ -210,10 +215,10 @@ internal fun TvHomeScreen(profile: TvProfile, viewModel: HomeViewModel = hiltVie
                         TvHeroText(
                             card = hero,
                             profileName = profile.name,
-                            isPlaying = isPlaying && hero is TvHeroCard.Pick && hero.item.mediaId != null && hero.item.mediaId == playing?.id,
+                            isPlaying = { isPlaying.value && hero is TvHeroCard.Pick && hero.item.mediaId != null && hero.item.mediaId == playing?.id },
                             focus = heroFocus,
                             onFocused = {
-                                pendingArt = null
+                                pendingArt.value = null
                                 scope.launch { listState.animateScrollToItem(0) }
                             },
                             onTurn = { step ->
@@ -239,8 +244,8 @@ internal fun TvHomeScreen(profile: TvProfile, viewModel: HomeViewModel = hiltVie
                 items(rows, key = { it.key }, contentType = { it::class.simpleName }) { row ->
                     Box(Modifier.padding(top = 14.dp).tvReveal(row.key, seen)) {
                         when (row) {
-                            is TvHomeRow.Online -> TvShelf(title = row.title, items = row.items, onFocused = { pendingArt = it.thumbnail })
-                            is TvHomeRow.Library -> TvLocalShelf(row.title, row.items, onFocused = { pendingArt = it.thumbnailUrl })
+                            is TvHomeRow.Online -> TvShelf(title = row.title, items = row.items, onFocused = { pendingArt.value = it.thumbnail })
+                            is TvHomeRow.Library -> TvLocalShelf(row.title, row.items, onFocused = { pendingArt.value = it.thumbnailUrl })
                         }
                     }
                 }
@@ -254,7 +259,7 @@ internal fun TvHomeScreen(profile: TvProfile, viewModel: HomeViewModel = hiltVie
 private fun TvHeroText(
     card: TvHeroCard?,
     profileName: String,
-    isPlaying: Boolean,
+    isPlaying: () -> Boolean,
     focus: FocusRequester,
     onFocused: () -> Unit,
     onTurn: (Int) -> Unit,
@@ -275,7 +280,7 @@ private fun TvHeroText(
                 when (shown) {
                     is TvHeroCard.Recap -> Text(stringResource(R.string.tv_recap_headline), style = TvText.Hero)
                     is TvHeroCard.Pick -> {
-                        val label = shown.item.label(isPlaying)
+                        val label = shown.item.label(isPlaying())
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(label.text, style = TvText.Sub.copy(color = Color(0xFFD0D0D0), fontSize = 12.sp))
                             label.subject?.let { subject ->
@@ -414,6 +419,12 @@ private fun rememberHomeRows(viewModel: HomeViewModel, keepListening: List<Local
             sections.drop(1).forEachIndexed { index, section -> addOnline("home_${index + 1}_${section.title}", section.title, section.items) }
         }.distinctBy { it.key }
     }
+}
+
+// reads the focused card's picture itself, so a card settling recomposes the backdrop alone and not all of home
+@Composable
+private fun TvFocusedBackdrop(focused: () -> String?, resting: String?, modifier: Modifier = Modifier) {
+    TvHomeBackdrop(url = focused() ?: resting, modifier = modifier)
 }
 
 // the big picture behind home's and the artist page's header: anchored right, its own left and bottom edges melting away so no line ever shows where it starts

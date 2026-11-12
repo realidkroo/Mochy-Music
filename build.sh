@@ -17,10 +17,15 @@ PUBLISH_RELEASE=false
 CHANGELOG_TEXT=""
 CUSTOM_BUILD_INFO=""
 IS_CUSTOM_BUILD=false
+NIGHTLY_NUMBER=""
 
 BETA_NOTICE_FILE="app/src/main/kotlin/com/mochyy/mochymusic/ui/screens/beta/BetaNoticeScreen.kt"
 
 cleanup() {
+    # a nightly's fourth number only lives for its own build
+    if [ -n "$NIGHTLY_NUMBER" ] && [ -n "$BASE_VERSION" ] && [ -n "$BUILD_ATTEMPT" ]; then
+        sed -i '' "s/versionName = \".*\"/versionName = \"$BASE_VERSION build#$BUILD_ATTEMPT\"/g" app/build.gradle.kts
+    fi
     if [ "$IS_CUSTOM_BUILD" = true ]; then
         echo ""
         echo "Restoring original build files after custom build..."
@@ -55,6 +60,9 @@ while [[ "$#" -gt 0 ]]; do
             echo "                           Format: -g \"2026-08-12,6.0.2,999\" or -g \"date,ver,attempt\""
             echo "  -commit <changelog>,     Publish release to GitHub 'dev' tag with the given changelog"
             echo "  --commit <changelog>"
+            echo "  -n, --nightly <number>   Build a nightly: version becomes <base>.<number> (e.g. 8.3.2.4), and"
+            echo "                           -commit publishes it as a GitHub prerelease that only the nightly"
+            echo "                           channel picks up. Count up from the release it's built on."
             echo "  -k, --kill               Kill all active Gradle daemons and build processes and exit"
             echo ""
             echo "Examples:"
@@ -65,6 +73,7 @@ while [[ "$#" -gt 0 ]]; do
             echo "  ./build.sh -fd --release -a                        # Build F-Droid release for all architectures"
             echo "  ./build.sh --release -a -commit \"lyrics fix\"       # Build all & publish to GitHub dev tag"
             echo "  ./build.sh --install-only --release -commit \"notes\" # Publish existing release APKs"
+            echo "  ./build.sh --release -cc -n 4 -commit \"notes\"    # Build and publish nightly <base>.4"
             echo "  ./build.sh -k                                      # Kill all active build processes"
             exit 0
             ;;
@@ -88,6 +97,14 @@ while [[ "$#" -gt 0 ]]; do
         -commit|--commit|-m|--publish)
             PUBLISH_RELEASE=true
             CHANGELOG_TEXT="$2"
+            shift
+            ;;
+        -n|--nightly)
+            NIGHTLY_NUMBER="$2"
+            if ! [[ "$NIGHTLY_NUMBER" =~ ^[0-9]+$ ]] || [ "$NIGHTLY_NUMBER" -lt 1 ]; then
+                echo "A nightly needs a number from 1 up, like -n 4"
+                exit 1
+            fi
             shift
             ;;
         -k|--kill)
@@ -141,8 +158,15 @@ if [ "$SKIP_BUILD" = false ]; then
     # read base version
     BASE_VERSION=$(grep 'versionName =' app/build.gradle.kts | head -n 1 | sed 's/.*versionName = "\(.*\)".*/\1/' | sed 's/ build#.*//')
 
-    # update version name
-    sed -i '' "s/versionName = \".*\"/versionName = \"$BASE_VERSION build#$BUILD_ATTEMPT\"/g" app/build.gradle.kts
+    # update version name, a nightly gets its fourth number for this build only (cleanup puts it back)
+    VERSION_LABEL="$BASE_VERSION"
+    GRADLE_FLAGS=""
+    if [ -n "$NIGHTLY_NUMBER" ]; then
+        VERSION_LABEL="$BASE_VERSION.$NIGHTLY_NUMBER"
+        GRADLE_FLAGS="-Pnightly=true"
+        echo "Building nightly $VERSION_LABEL..."
+    fi
+    sed -i '' "s/versionName = \".*\"/versionName = \"$VERSION_LABEL build#$BUILD_ATTEMPT\"/g" app/build.gradle.kts
 
     # update beta notice
     if [ -f "$BETA_NOTICE_FILE" ]; then
@@ -172,7 +196,7 @@ if [ "$SKIP_BUILD" = false ]; then
     fi
 
     # run gradle build
-    ./gradlew $TASK
+    ./gradlew $TASK $GRADLE_FLAGS
 
     # clean old apks
     OUTPUT_DIR="apk-generated"
@@ -184,6 +208,8 @@ else
     echo "Skipping compilation (--install-only/--no-compile requested for $VARIANT variant)..."
     BUILD_ATTEMPT=$(cat "$BUILD_ATTEMPT_FILE")
     BASE_VERSION=$(grep 'versionName =' app/build.gradle.kts | head -n 1 | sed 's/.*versionName = "\(.*\)".*/\1/' | sed 's/ build#.*//')
+    VERSION_LABEL="$BASE_VERSION"
+    [ -n "$NIGHTLY_NUMBER" ] && VERSION_LABEL="$BASE_VERSION.$NIGHTLY_NUMBER"
 fi
 
 # publish github release
@@ -203,16 +229,35 @@ if [ "$PUBLISH_RELEASE" = true ]; then
         fi
     }
 
-    format_apk "*universal-${FLAVOR}-release.apk" "mochy-$BASE_VERSION-universal.apk"
-    format_apk "*arm64-${FLAVOR}-release.apk" "mochy-$BASE_VERSION-arm64-v8a.apk"
-    format_apk "*armeabi-${FLAVOR}-release.apk" "mochy-$BASE_VERSION-armeabi-v7a.apk"
-    format_apk "*x86_64-${FLAVOR}-release.apk" "mochy-$BASE_VERSION-x86_64.apk"
-    format_apk "*x86-${FLAVOR}-release.apk" "mochy-$BASE_VERSION-x86.apk"
+    format_apk "*universal-${FLAVOR}-release.apk" "mochy-$VERSION_LABEL-universal.apk"
+    format_apk "*arm64-${FLAVOR}-release.apk" "mochy-$VERSION_LABEL-arm64-v8a.apk"
+    format_apk "*armeabi-${FLAVOR}-release.apk" "mochy-$VERSION_LABEL-armeabi-v7a.apk"
+    format_apk "*x86_64-${FLAVOR}-release.apk" "mochy-$VERSION_LABEL-x86_64.apk"
+    format_apk "*x86-${FLAVOR}-release.apk" "mochy-$VERSION_LABEL-x86.apk"
 
     if [ -z "$CHANGELOG_TEXT" ]; then
-        CHANGELOG_TEXT="mochy $BASE_VERSION ($BUILD_ATTEMPT)"
+        CHANGELOG_TEXT="mochy $VERSION_LABEL ($BUILD_ATTEMPT)"
     fi
 
+    # a nightly is its own prerelease, tagged by its version, so the app's nightly channel can tell them apart
+    if [ -n "$NIGHTLY_NUMBER" ]; then
+        TAG="nightly-$VERSION_LABEL"
+        TITLE="Mochy $VERSION_LABEL nightly ($BUILD_ATTEMPT)"
+        echo "Publishing nightly prerelease: '$TITLE'..."
+        git tag -f "$TAG" main 2>/dev/null || true
+        git push -f origin "$TAG" 2>/dev/null || true
+        if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TITLE" --notes "$CHANGELOG_TEXT" --prerelease
+            gh release upload "$TAG" "$OUTPUT_DIR"/mochy-"$VERSION_LABEL"-*.apk --clobber
+        else
+            gh release create "$TAG" "$OUTPUT_DIR"/mochy-"$VERSION_LABEL"-*.apk --title "$TITLE" --notes "$CHANGELOG_TEXT" --prerelease
+        fi
+        echo "Nightly published to https://github.com/realidkroo/Mochy-Music/releases/tag/$TAG"
+        PUBLISH_RELEASE=false
+    fi
+fi
+
+if [ "$PUBLISH_RELEASE" = true ]; then
     # update dev tag
     echo "Updating git tag 'dev' on main..."
     git tag -f dev main 2>/dev/null || true

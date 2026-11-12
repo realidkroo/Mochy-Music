@@ -263,10 +263,11 @@ fun OnlineSearchResult(
                                 SearchSectionHeader(title = "Top Results", ruleAbove = false)
                             }
                             item(key = "top_card") {
+                                val active = mediaMetadata?.id == top.id
                                 TopResultCard(
                                     item = top,
-                                    isActive = mediaMetadata?.id == top.id,
-                                    isPlaying = isPlaying,
+                                    isActive = active,
+                                    isPlaying = active && isPlaying,
                                     onClick = { onItemClick(top) },
                                     onLongClick = { onItemLongClick(top) },
                                 )

@@ -365,11 +365,11 @@ class PhoneLinkHost @Inject constructor(
         return LinkResponse.json(json.toString())
     }
 
-    // another phone steering this one: only while both allow it, and only while mochy has a screen up here
+    // another phone steering this one: only while both allow it, and only while mochy has a screen up here or android auto is open
     private fun controlled(request: LinkRequest, device: PairedDevice): LinkResponse {
         if (device.kind.isTv) return LinkResponse.status(404)
         if (!device.remoteControl) return LinkResponse.status(403, "remote control is off on this phone")
-        val connection = LinkPlayer.connection ?: return LinkResponse.status(409, "mochy isn't open on this phone")
+        val connection = LinkPlayer.current() ?: return LinkResponse.status(409, "mochy isn't open on this phone")
         return control.handle(request, connection)
     }
 

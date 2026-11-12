@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- lets android auto draw mochy's own player from the media session -->
+    <uses-permission android:name="androidx.car.app.MEDIA_TEMPLATES" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
@@ -1056,6 +1058,33 @@
             </intent-filter>
         </service>
 
+        <!-- mochy's own android auto screens: tabs, lists, the player and lyrics, all from google's car templates -->
+        <service
+            android:name=".car.MochyCarAppService"
+            android:exported="true"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.MEDIA" />
+            </intent-filter>
+        </service>
+
+        <!-- "hey google, play … on mochy" on the phone: the assistant only offers apps that take this intent with no data, and the phone is often locked in the car -->
+        <activity
+            android:name=".playback.voice.VoicePlayActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            tools:targetApi="27">
+            <intent-filter>
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <!-- keeps a paired tv able to reach this phone while mochy is closed -->
         <service
             android:name=".link.phone.PhoneLinkService"
@@ -1092,6 +1121,10 @@
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
+        <!-- the media player template and the tabbed home need car api 8 -->
+        <meta-data
+            android:name="androidx.car.app.minCarApiLevel"
+            android:value="8" />
         <!-- Music Widget -->
         <receiver
             android:name=".widget.MusicWidgetReceiver"

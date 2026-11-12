@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -56,8 +57,8 @@ fun YouTubeArtistMenu(
     val context = LocalContext.current
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
-    val libraryArtist by database.artist(artist.id).collectAsState(initial = null)
-    val isPinned by database.speedDialDao.isPinned(artist.id).collectAsState(initial = false)
+    val libraryArtist by remember(database, artist.id) { database.artist(artist.id) }.collectAsState(initial = null)
+    val isPinned by remember(database, artist.id) { database.speedDialDao.isPinned(artist.id) }.collectAsState(initial = false)
     val coroutineScope = rememberCoroutineScope()
 
     SheetHeader(

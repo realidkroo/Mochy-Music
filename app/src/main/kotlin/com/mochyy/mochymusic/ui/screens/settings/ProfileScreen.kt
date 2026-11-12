@@ -191,6 +191,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
 import com.mochyy.mochymusic.ui.component.RemoteFocus
+import com.mochyy.mochymusic.ui.component.rememberResourcePainter
 
 private object MochyGreeting {
     private fun pick() = listOf("Hello again", "Hey", "Welcome back", "Good to see you").random()
@@ -259,7 +260,7 @@ fun ProfileScreen(navController: NavController) {
         com.music.innertube.YouTube.accountInfo().onSuccess { liveAccountName = it.name }
     }
     val accountName = localUsername.ifBlank { liveAccountName.orEmpty() }
-    val totalListeningMs by database.totalListeningTimeMs().collectAsState(initial = 0L)
+    val totalListeningMs by remember(database) { database.totalListeningTimeMs() }.collectAsState(initial = 0L)
 
     // the onboarding writes the card's number and join date; an install from before it gets them once, here
     LaunchedEffect(cardNumberPref, joinedEpochDay) {
@@ -1124,7 +1125,7 @@ private fun DiscordCard(onClick: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Image(
-            painter = painterResource(R.drawable.mochy_discord),
+            painter = rememberResourcePainter(R.drawable.mochy_discord),
             contentDescription = "Discord",
             contentScale = ContentScale.Crop,
             modifier = Modifier

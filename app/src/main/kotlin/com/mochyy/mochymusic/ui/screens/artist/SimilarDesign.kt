@@ -346,6 +346,7 @@ internal fun SimilarPage(
                                 modifier = Modifier.revealOnAppear(key = "albums", seenState = revealSeen),
                             ) {
                                 items(groups.albums, key = { it.id }) { album ->
+                                    val active = album.id == mediaMetadata?.album?.id
                                     HomeCoverCard(
                                         title = album.title,
                                         subtitle = listOfNotNull(
@@ -354,8 +355,8 @@ internal fun SimilarPage(
                                         ).joinToString(" · ").ifBlank { null },
                                         thumbnailUrl = album.thumbnail,
                                         sharedElementKey = "album-${album.id}",
-                                        isActive = album.id == mediaMetadata?.album?.id,
-                                        isPlaying = isPlaying,
+                                        isActive = active,
+                                        isPlaying = active && isPlaying,
                                         modifier = Modifier.combinedClickable(
                                             interactionSource = null,
                                             indication = HomeCardHighlight,
@@ -622,13 +623,14 @@ internal fun PagedSongGrid(
     ) {
         items(items = songs, key = { it.id }) { song ->
             Box(modifier = Modifier.width(columnWidth)) {
+                val active = song.id == activeId
                 HomeTrackRow(
                     thumbnailUrl = song.thumbnail,
                     songId = song.id,
                     title = song.title,
                     subtitle = song.artists.joinToString { it.name },
-                    isActive = song.id == activeId,
-                    isPlaying = isPlaying,
+                    isActive = active,
+                    isPlaying = active && isPlaying,
                     onClick = { onClick(song) },
                     onLongClick = { onMenu(song) },
                     onMoreClick = { onMenu(song) },

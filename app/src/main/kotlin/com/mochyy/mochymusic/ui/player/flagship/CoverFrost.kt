@@ -33,7 +33,6 @@ private const val FrostBottom = 1.03f
 
 // 70% of peak blur by the middle of the title (the shader grows as t^2, so t = sqrt(0.7)), full strength right below it and held from there down
 private const val FrostFull = FrostTop + (FrostTitle - FrostTop) / 0.83666f
-private const val TitleAt = (FrostTitle - FrostTop) / (FrostBottom - FrostTop)
 private const val FullAt = (FrostFull - FrostTop) / (FrostBottom - FrostTop)
 
 private val FrostRadius = 40.dp
@@ -45,11 +44,17 @@ private val ProgressiveMask = Brush.verticalGradient(
     1f to Color.Black,
 )
 
-// one even blur (low quality, android 12): 70% by the middle of the title, full just below, then held
+// one even blur (low quality, android 12) can only fade in, which reads much shorter than the growing one, so it starts higher and is full by the title's top
+private const val FlatTop = 0.44f
+private const val FlatFull = 0.545f
+private const val FlatFullAt = (FlatFull - FlatTop) / (FrostBottom - FlatTop)
+
+// smoothstep from clear to full, so the fade has no visible start or end line
 private val FlatMask = Brush.verticalGradient(
-    0f to Color.Transparent,
-    TitleAt to Color.Black.copy(alpha = 0.7f),
-    FullAt to Color.Black,
+    *Array(9) { i ->
+        val t = i / 8f
+        t * FlatFullAt to Color.Black.copy(alpha = t * t * (3f - 2f * t))
+    },
     1f to Color.Black,
 )
 
@@ -68,6 +73,7 @@ fun CoverFrost(
     if (!drawn || !rememberCoverBlurAvailable()) return
     val smooth = Build.VERSION.SDK_INT >= 33 && LocalBlurQuality.current == BlurQuality.HIGH
     val radiusPx = with(LocalDensity.current) { FrostRadius.toPx() }
+    val top = if (smooth) FrostTop else FlatTop
     val currentProgress by rememberUpdatedState(progressProvider)
     val currentFade by rememberUpdatedState(fadeProvider)
     GlassPillBackground(
@@ -79,8 +85,8 @@ fun CoverFrost(
         progressiveRamp = FullAt,
         modifier = Modifier
             .fillMaxWidth()
-            .height(maxHeight * (FrostBottom - FrostTop))
-            .offset { IntOffset(0, (maxHeight.toPx() * FrostTop + offsetProvider()).roundToInt()) }
+            .height(maxHeight * (FrostBottom - top))
+            .offset { IntOffset(0, (maxHeight.toPx() * top + offsetProvider()).roundToInt()) }
             // the blur is one draw, so its fade-in is laid on that draw instead of a second offscreen pass
             .graphicsLayer {
                 alpha = ((currentProgress() - 0.5f) / 0.45f).coerceIn(0f, 1f) * currentFade().coerceIn(0f, 1f)

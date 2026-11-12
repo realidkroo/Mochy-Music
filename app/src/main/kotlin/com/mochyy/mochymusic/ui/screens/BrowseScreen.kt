@@ -54,7 +54,6 @@ package com.mochyy.mochymusic.ui.screens
 ) {
      val menuState = LocalMenuState.current
      val playerConnection = LocalPlayerConnection.current ?: return
-     val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
      val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
      val title by viewModel.title.collectAsState()
@@ -77,7 +76,6 @@ package com.mochyy.mochymusic.ui.screens
              ) { item ->
                  YouTubeGridItem(
                      item = item,
-                     isPlaying = isPlaying,
                      fillMaxWidth = true,
                      coroutineScope = coroutineScope,
                      modifier = Modifier

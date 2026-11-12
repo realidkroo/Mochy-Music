@@ -245,13 +245,14 @@ fun SectionDetailScreen(
             val (name, sub) = rowText(item)
             val id = rowKey(item)
             val row: @Composable () -> Unit = {
+                val active = id == mediaMetadata?.id || (item is AlbumItem && item.id == mediaMetadata?.album?.id)
                 PlaylistTrackRow(
                     thumbnailUrl = rowThumbnail(item),
                     songId = id.takeIf { item is Song || item is SongItem },
                     title = name,
                     subtitle = sub,
-                    isActive = id == mediaMetadata?.id || (item is AlbumItem && item.id == mediaMetadata?.album?.id),
-                    isPlaying = isPlaying,
+                    isActive = active,
+                    isPlaying = active && isPlaying,
                     coverShape = if (item is ArtistItem || item is Artist) CircleShape else com.mochyy.mochymusic.ui.component.detail.TrackShape,
                     // albums and playlists open growing out of their cover, as from Home
                     coverModifier = Modifier.containerTransformSource(

@@ -87,14 +87,15 @@ fun YouTubeBrowseScreen(
             key = { it.id },
             contentType = { it::class }
         ) { item ->
+            val active = when (item) {
+                is SongItem -> mediaMetadata?.id == item.id
+                is AlbumItem -> mediaMetadata?.album?.id == item.id
+                else -> false
+            }
             YouTubeGridItem(
                 item = item,
-                isActive = when (item) {
-                    is SongItem -> mediaMetadata?.id == item.id
-                    is AlbumItem -> mediaMetadata?.album?.id == item.id
-                    else -> false
-                },
-                isPlaying = isPlaying,
+                isActive = active,
+                isPlaying = active && isPlaying,
                 fillMaxWidth = true,
                 coroutineScope = coroutineScope,
                 modifier = Modifier

@@ -302,10 +302,34 @@ class CrossmixTest {
         val plan = CrossmixPlanner.plan(
             CrossmixTrackInput("x", 240_000L, null, null),
             CrossmixTrackInput("y", 0L, null, null),
+            CrossmixSettings(alwaysMix = false),
         )
         assertEquals(CrossmixStyle.Dampen, plan.style)
         assertTrue(plan.outStartMs >= 240_000L - CrossmixPlanner.MaxLeadMs)
         assertTrue(plan.outMediaAt(plan.lengthBeats.toFloat()) <= 240_000.0)
+    }
+
+    @Test
+    fun `always mix still blends both songs with no analysis at all`() {
+        val plan = CrossmixPlanner.plan(
+            CrossmixTrackInput("x", 240_000L, null, null),
+            CrossmixTrackInput("y", 0L, null, null),
+        )
+        assertTrue(plan.style.label, plan.style.blendsBoth)
+        assertTrue(plan.outStartMs >= 240_000L - CrossmixPlanner.MaxLeadMs)
+        assertTrue(plan.outMediaAt(plan.lengthBeats.toFloat()) <= 240_000.0)
+    }
+
+    @Test
+    fun `always mix never drops the next song in at the very end or just fades`() {
+        for (inc in listOf(nearTempoTrack, outgoingTrack)) {
+            val plan = CrossmixPlanner.plan(
+                CrossmixTrackInput("a", 200_000L, outgoingTrack, null),
+                CrossmixTrackInput("b", 0L, inc, null),
+            )
+            assertTrue(plan.style.label, plan.style.blendsBoth)
+            assertTrue("${plan.lengthBeats} beats", plan.lengthBeats * plan.outBeatMs >= 6_000.0 - 1.0)
+        }
     }
 
     /** synced lyrics with a sung line every [everyMs], from [fromMs] to [toMs] */
@@ -323,9 +347,11 @@ class CrossmixTest {
     @Test
     fun `two songs that sing all the way through never have both voices out in front`() {
         // the outgoing song sings to its last second, the next one from its first
+        // always mix rules out the drops and fades, so this checks the planner left to itself
         val plan = CrossmixPlanner.plan(
             CrossmixTrackInput("sing-out", 200_000L, outgoingTrack, lrc(0L, 200_000L)),
             CrossmixTrackInput("sing-in", 0L, nearTempoTrack, lrc(0L, 150_000L)),
+            CrossmixSettings(alwaysMix = false),
         )
         val dealtWith = plan.yieldAmount > 0f || plan.style.entersAtEnd ||
             plan.style == CrossmixStyle.FarAway || plan.style == CrossmixStyle.Dampen

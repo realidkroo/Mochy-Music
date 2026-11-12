@@ -21,11 +21,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.importer.account.AccountService
+import com.mochyy.mochymusic.ui.component.rememberResourcePainter
 
 @Composable
 internal fun ProviderSquircle(service: AccountService, size: Dp = 40.dp, modifier: Modifier = Modifier) {
@@ -51,7 +51,7 @@ internal fun ProviderSquircle(service: AccountService, size: Dp = 40.dp, modifie
         contentAlignment = Alignment.Center,
     ) {
         Image(
-            painter = painterResource(art.drawable),
+            painter = rememberResourcePainter(art.drawable),
             contentDescription = service.label,
             contentScale = ContentScale.Crop,
             modifier = Modifier

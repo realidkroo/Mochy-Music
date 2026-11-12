@@ -89,7 +89,7 @@ fun PlaylistMenu(
     val database = LocalDatabase.current
     val downloadUtil = LocalDownloadUtil.current
     val playerConnection = LocalPlayerConnection.current ?: return
-    val dbPlaylist by database.playlist(playlist.id).collectAsState(initial = playlist)
+    val dbPlaylist by remember(database, playlist.id) { database.playlist(playlist.id) }.collectAsState(initial = playlist)
     var songs by remember {
         mutableStateOf(emptyList<Song>())
     }
@@ -112,7 +112,7 @@ fun PlaylistMenu(
 
     val editable: Boolean = playlist.playlist.isEditable == true
 
-    val isPinned by database.speedDialDao.isPinned(playlist.id).collectAsState(initial = false)
+    val isPinned by remember(database, playlist.id) { database.speedDialDao.isPinned(playlist.id) }.collectAsState(initial = false)
     val resync = rememberPlaylistResync(playlist.id, playlist.playlist.browseId, navController, onDismiss)
 
     LaunchedEffect(songs) {

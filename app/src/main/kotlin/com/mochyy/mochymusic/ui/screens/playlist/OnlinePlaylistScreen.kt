@@ -346,13 +346,14 @@ fun OnlinePlaylistScreen(
                 library = { librarySwipeAction(songItem) },
                 queue = { queueSwipeAction { songItem.toMediaItem() } },
             ) {
+                val active = mediaMetadata?.id == songItem.id
                 PlaylistTrackRow(
                     thumbnailUrl = songItem.thumbnail,
                     songId = songItem.id,
                     title = songItem.title,
                     subtitle = "${songItem.artists.joinToString { it.name }} • ${makeTimeString(songItem.duration?.times(1000L))}",
-                    isActive = mediaMetadata?.id == songItem.id,
-                    isPlaying = isPlaying,
+                    isActive = active,
+                    isPlaying = active && isPlaying,
                     modifier = Modifier.revealOnAppear(
                         key = "track_${songItem.id}",
                         seenState = revealSeen,

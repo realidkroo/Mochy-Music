@@ -4,13 +4,16 @@ package com.mochyy.mochymusic.ui.tv
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 
 // the tv's one easing: quick out of the gate, a long soft landing
 internal val TvEase = CubicBezierEasing(0.2f, 0f, 0f, 1f)
@@ -41,5 +44,20 @@ internal fun Modifier.tvPopIn(): Modifier {
         val scale = 0.92f + 0.08f * p
         scaleX = scale
         scaleY = scale
+    }
+}
+
+// something big coming up from below on a soft spring, like the phone on the pairing page
+@Composable
+internal fun Modifier.tvRiseIn(delayMillis: Int = 0, distance: Dp = 220.dp): Modifier {
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        delay(delayMillis.toLong())
+        progress.animateTo(1f, spring(dampingRatio = 0.72f, stiffness = 150f))
+    }
+    return graphicsLayer {
+        val p = progress.value
+        alpha = p.coerceIn(0f, 1f)
+        translationY = (1f - p) * distance.toPx()
     }
 }

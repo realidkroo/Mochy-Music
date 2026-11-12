@@ -63,6 +63,7 @@ import com.mochyy.mochymusic.constants.AudioQuality
 import com.mochyy.mochymusic.constants.AudioQualityKey
 import com.mochyy.mochymusic.constants.CrossmixMode
 import com.mochyy.mochymusic.constants.CrossmixModeKey
+import com.mochyy.mochymusic.constants.DefaultTransitionMode
 import com.mochyy.mochymusic.eq.EqPresets
 import com.mochyy.mochymusic.eq.EqSettings
 import com.mochyy.mochymusic.playback.audio.AudioOutputs
@@ -100,7 +101,7 @@ fun AudioLabScreen(
         if (id == com.mochyy.mochymusic.modules.SourceModules.YouTubeId) youTubeOn
         else modules.any { it.module.info.id == id && it.enabled && it.account is com.mochyy.mochymusic.module.AccountState.SignedIn }
     }
-    val (mode) = rememberEnumPreference(CrossmixModeKey, defaultValue = CrossmixMode.AUTO_CROSSFADE)
+    val (mode) = rememberEnumPreference(CrossmixModeKey, defaultValue = DefaultTransitionMode)
 
     val effects = activeEffects(reverb, loudness, spatial, playback, volume)
 

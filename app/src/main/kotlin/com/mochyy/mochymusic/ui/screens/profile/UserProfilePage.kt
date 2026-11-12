@@ -422,12 +422,13 @@ private fun RecentSection(state: ProfileMorphState, viewModel: UserProfileViewMo
         key = { it.id },
         emptyText = "Songs you play will show up here.",
     ) { song, order ->
+        val active = song.id == playing?.id
         HomeCoverCard(
             title = song.title,
             subtitle = song.artists.joinToString(", ") { it.name },
             thumbnailUrl = song.thumbnailUrl,
-            isActive = song.id == playing?.id,
-            isPlaying = isPlaying,
+            isActive = active,
+            isPlaying = active && isPlaying,
             modifier = Modifier
                 .reveal(state, row = 3, order = order)
                 .combinedClickable(

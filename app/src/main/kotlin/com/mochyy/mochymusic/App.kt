@@ -92,6 +92,20 @@ class App : Application(), SingletonImageLoader.Factory {
         }
 
         applicationScope.launch(Dispatchers.IO) {
+            // the plain 5 s crossfade used to be the default and onboarding's pick, and it never mixed a thing: anyone left on it moves to crossmix once
+            try {
+                if (dataStore.data.first()[CrossmixDefaultMovedKey] != true) {
+                    dataStore.edit { prefs ->
+                        if (prefs[CrossmixModeKey] == CrossmixMode.AUTO_CROSSFADE.name) prefs[CrossmixModeKey] = CrossmixMode.CROSSMIX.name
+                        prefs[CrossmixDefaultMovedKey] = true
+                    }
+                }
+            } catch (e: Exception) {
+                reportException(e)
+            }
+        }
+
+        applicationScope.launch(Dispatchers.IO) {
             // lyrics saved by older versions are cleared once, the first time 7.1.0 runs, so every
             // song fetches them fresh. only the lyrics table is touched (songs, playlists, the
             // library and the profile stay), and lyrics someone typed in or edited by hand are kept.

@@ -97,7 +97,7 @@ fun YouTubeSongMenu(
     val context = LocalContext.current
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
-    val librarySong by database.song(song.id).collectAsState(initial = null)
+    val librarySong by remember(database, song.id) { database.song(song.id) }.collectAsState(initial = null)
     val downloadUtil = LocalDownloadUtil.current
 
     val download by remember(downloadUtil, song.id) {
@@ -105,7 +105,7 @@ fun YouTubeSongMenu(
     }.collectAsState(initial = null)
     val coroutineScope = rememberCoroutineScope()
     val syncUtils = LocalSyncUtils.current
-    val isPinned by database.speedDialDao.isPinned(song.id).collectAsState(initial = false)
+    val isPinned by remember(database, song.id) { database.speedDialDao.isPinned(song.id) }.collectAsState(initial = false)
     val artists = remember {
         song.artists.mapNotNull {
             it.id?.let { artistId ->
