@@ -1080,6 +1080,9 @@
     <string name="crossmix_tempo_full">Full</string>
     <string name="crossmix_stunts_title">Stunts</string>
     <string name="crossmix_stunts_desc">Backspins, tape stops, risers and drops when the energy jumps between songs</string>
+    <string name="crossmix_always_mix_title">Always mix</string>
+    <string name="crossmix_always_mix_desc">Both songs play together on every change, even when their beats don\'t line up. Off lets Crossmix drop the next song in at the very end, or just fade.</string>
+    <string name="crossmix_mixing_note">Mixxing…</string>
     <string name="transition_title">Transition</string>
     <string name="transition_music_heading">Music transitions</string>
     <string name="transition_off">Off (I hate having fun)</string>
