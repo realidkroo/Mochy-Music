@@ -80,4 +80,18 @@
     <string name="new_update">New update</string>
     <string name="release_date_v">Released on: %1$s</string>
     <string name="update_size_v">Size: %1$s MB</string>
+
+    <!-- update channels: release, or the nightly prereleases -->
+    <string name="channel_switch_to_nightly">Switch to nightly</string>
+    <string name="channel_switch_to_release">Switch to release</string>
+    <string name="channel_release_waits">Needs a newer release</string>
+    <string name="channel_nightly_title">Path\nChange</string>
+    <string name="channel_nightly_tagline">oh no, look at these new eyecandy features! i hope it goes… well.. i hope.</string>
+    <string name="channel_nightly_question">Are you sure?</string>
+    <string name="channel_nightly_warning">Nightly builds can be unstable, and you may get up to 5 updates a day, though the chance is kinda low. But it is what it is. Going back to an older release build can also break your data.</string>
+    <string name="channel_release_title">Back to\nrelease</string>
+    <string name="channel_release_tagline">a release newer than your nightly is out, so you can hop back on.</string>
+    <string name="channel_release_warning">You\'ll get the next release as an update, and nightlies stop showing up.</string>
+    <string name="channel_yes">Yes</string>
+    <string name="channel_no">No</string>
 </resources>
