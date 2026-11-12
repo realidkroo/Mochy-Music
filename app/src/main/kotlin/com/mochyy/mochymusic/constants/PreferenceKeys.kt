@@ -869,6 +869,9 @@ val DiscRealisticModeKey = booleanPreferencesKey("discRealisticMode")
 
 val DiscNameKey = stringPreferencesKey("discName")
 
+/** how far the squared and edge to edge covers fill their box: 1 crops to fill it, 0 shows the whole picture */
+val PlayerCoverZoomKey = floatPreferencesKey("playerCoverZoom")
+
 enum class PlayerTextContent {
     MUSIC_NAME,
     ALBUM_NAME,
