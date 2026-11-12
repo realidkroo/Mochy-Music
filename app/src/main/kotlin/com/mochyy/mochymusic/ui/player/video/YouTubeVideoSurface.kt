@@ -126,6 +126,8 @@ fun YouTubeVideoSurface(
     modifier: Modifier = Modifier,
     // 0 zooms the picture to fill the view, 1 shows all of it with room round it; anything between eases from one to the other
     fit: () -> Float = { 0f },
+    // the most of the picture filling may cut away; a picture that would lose more (upright, square, 4:3) sits whole-ish with room round it instead
+    fillMaxLoss: Float = 1f,
     glassState: GlassState? = null,
     glassActive: () -> Boolean = { true },
     keepScreenOn: Boolean = false,
@@ -202,7 +204,7 @@ fun YouTubeVideoSurface(
                 insetY = barInsetY.value,
                 maxLoss = maxLoss,
             )
-            val filled = transform(1f)
+            val filled = transform(fillMaxLoss)
             if (t == 0f) filled else filled.lerpTo(transform(0f), t)
         }.collect { transform ->
             textureView.scaleX = transform.scaleX

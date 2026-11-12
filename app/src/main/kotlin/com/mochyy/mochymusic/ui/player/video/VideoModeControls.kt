@@ -86,7 +86,7 @@ import com.mochyy.mochymusic.ui.component.RemoteFocus
 // how far down the top row sits; how far in from the sides comes from the frame, upright or sideways
 private val TopRow = 32.dp
 
-// the round buttons at the top right: rotate, leave full screen, close
+// the round buttons at the top right: leave full screen, close
 private val TopButtonSize = 30.dp
 private val TopButtonGap = 10.dp
 
@@ -123,12 +123,10 @@ internal fun BoxScope.VideoTopBar(
     controls: () -> Float,
     onClose: () -> Unit,
     onSongInfo: () -> Unit,
-    // null where the phone itself turns the mode, a window already on its side
-    onRotate: (() -> Unit)?,
     onExitFullScreen: () -> Unit,
 ) {
     val visible by rememberControlsVisible(controls)
-    val buttonCount = if (onRotate != null) 3 else 2
+    val buttonCount = 2
     val buttonsWidth = TopButtonSize * buttonCount + TopButtonGap * (buttonCount - 1)
     AsyncImage(
         model = track.thumbnailUrl?.resize(240, 240),
@@ -204,9 +202,6 @@ internal fun BoxScope.VideoTopBar(
                 .padding(end = frame.edgeEnd, top = TopRow + 9.dp)
                 .graphicsLayer { alpha = controls() },
         ) {
-            if (onRotate != null) {
-                TopButton(R.drawable.screen_rotation, stringResource(R.string.video_mode_rotate), guarded(onRotate))
-            }
             TopButton(R.drawable.fullscreen_exit, stringResource(R.string.video_mode_exit_full_screen), guarded(onExitFullScreen))
             TopButton(R.drawable.close, stringResource(R.string.video_mode_close_player), guarded(onClose))
         }

@@ -160,10 +160,13 @@ import kotlin.math.sin
 /** the hero takes this share of the screen height (527 of 874 in the Figma frame) */
 const val HeroHeightFraction = 0.6f
 
-// on its side the screen is short, so the hero takes a little more of it to keep room for the title and the pill
-private const val LandscapeHeroHeightFraction = 0.7f
+// on its side the hero is the whole screen, like the tv: only the first row's title and the tops of its cards show under it
+private const val LandscapeHeroHeightFraction = 0.86f
 
-// in the wide layout each card takes this share of the hero's width, the next one peeking in after a gap
+// on its side the title and the pill sit lower in the taller hero, just over the first row
+private val LandscapeHeroTextBottom = 46.dp
+
+// an upright tablet: each card takes this share of the hero's width, the next one peeking in after a gap
 private const val PeekPageShare = 0.8f
 
 // on a tv the hero is shorter, so the first row of music shows under it without scrolling
@@ -799,8 +802,8 @@ private fun HeroPager(
     }
     val wipeCurve by animateFloatAsState(if (userSwipe) 1f else 0f, tween(260), label = "heroWipeCurve")
 
-    // the wide layout: cards side by side, the next one peeking in on the right
-    val peek = isWideLayout()
+    // an upright tablet: cards side by side, the next one peeking in on the right; on its side each card fills the screen and wipes like the phone's
+    val peek = isWideLayout() && !isLandscapeWindow()
 
     // the hero animates nearly all the time (video, gacha drift, the switch); bounded, that only
     // ever repaints the hero instead of the whole screen and every glass surface sampling it
@@ -1163,8 +1166,9 @@ private fun HeroText(
     modifier: Modifier = Modifier,
     pillEnabled: Boolean = true,
 ) {
+    val bottom = if (isWideLayout() && isLandscapeWindow() && !isTvLayout()) LandscapeHeroTextBottom else 64.dp
     Column(
-        modifier = modifier.padding(start = HomeContentInset, end = HomeContentInset, bottom = 64.dp)
+        modifier = modifier.padding(start = HomeContentInset, end = HomeContentInset, bottom = bottom)
     ) {
         HeroLabelLine(label)
         AnimatedContent(

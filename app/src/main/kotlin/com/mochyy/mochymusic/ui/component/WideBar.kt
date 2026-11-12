@@ -29,6 +29,26 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import com.mochyy.mochymusic.LocalGlassState
+import com.mochyy.mochymusic.LocalPlayerConnection
+import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.extensions.toggleRepeatMode
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.media3.common.Player
 import com.mochyy.mochymusic.ui.screens.Screens
 import com.mochyy.mochymusic.ui.utils.stableSystemBars
 
@@ -51,6 +71,10 @@ val LocalMiniPillFrame = staticCompositionLocalOf { PhoneMiniPill }
 // each tab of the wide bar, as wide as the bar is tall, like the concept
 private val WideTabWidth = 64.dp
 
+// shuffle and repeat at the pill's right end, a little narrower than a tab so they read as the player's
+private val WideExtraWidth = 46.dp
+private const val WideExtraCount = 2
+
 // the mini player's share of the wide bar, and the least it can shrink to on a narrow tablet
 private val WideMiniWidth = 340.dp
 private val WideMiniMinWidth = 240.dp
@@ -61,12 +85,14 @@ private val WideBarMargin = 24.dp
 // the pill sits this far under the top of the bar's row, as on the phone, and the collapsed player lines up with it
 val WideBarPillGap = 8.dp
 
-// the wide bar: one pill centred along the bottom, the mini player on its left and the tabs on its right
+// the wide bar: one pill centred along the bottom, the mini player on its left, the tabs, then shuffle and repeat
 @Immutable
 class WideBar(
     val pillStart: Dp,
     val miniWidth: Dp,
     val tabsWidth: Dp,
+    // shuffle and repeat after the tabs, there only while something plays
+    val extrasWidth: Dp,
     val screenWidth: Dp,
     // where the tabs sit on their own, centred, while nothing is playing
     val tabsAloneStart: Dp,
@@ -74,7 +100,8 @@ class WideBar(
     val miniAloneStart: Dp,
 ) {
     val tabsStart: Dp get() = pillStart + miniWidth
-    val pillWidth: Dp get() = miniWidth + tabsWidth
+    val extrasStart: Dp get() = tabsStart + tabsWidth
+    val pillWidth: Dp get() = miniWidth + tabsWidth + extrasWidth
 
     val miniFrame = MiniPillFrame(
         start = pillStart,
@@ -102,13 +129,15 @@ fun rememberWideBar(screenWidth: Dp, tabCount: Int): WideBar {
     return remember(screenWidth, tabCount, safeStart, safeEnd) {
         val room = screenWidth - safeStart - safeEnd
         val tabsWidth = WideTabWidth * tabCount + NavRowPadding * 2
+        val extrasWidth = WideExtraWidth * WideExtraCount + NavRowPadding
         val miniWidth = WideMiniWidth
-            .coerceAtMost(room - WideBarMargin * 2 - tabsWidth)
+            .coerceAtMost(room - WideBarMargin * 2 - tabsWidth - extrasWidth)
             .coerceAtLeast(WideMiniMinWidth)
         WideBar(
-            pillStart = safeStart + (room - miniWidth - tabsWidth) / 2,
+            pillStart = safeStart + (room - miniWidth - tabsWidth - extrasWidth) / 2,
             miniWidth = miniWidth,
             tabsWidth = tabsWidth,
+            extrasWidth = extrasWidth,
             screenWidth = screenWidth,
             tabsAloneStart = safeStart + (room - tabsWidth) / 2,
             miniAloneStart = safeStart + (room - miniWidth) / 2,
@@ -188,5 +217,81 @@ fun WideBarTabs(
                 )
             }
         }
+    }
+}
+
+// shuffle and repeat at the pill's right end; they fade in with the player and slide in as the pill grows out of the tabs
+@Composable
+fun WideBarExtras(
+    bar: WideBar,
+    withPlayer: () -> Float,
+    // with the player away the toggles aren't there at all: faded out they still sat on the last tabs and took their taps
+    shown: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    if (!shown) return
+    val connection = LocalPlayerConnection.current ?: return
+    // the two flows themselves, not the transport state, so a play or pause leaves the toggles alone
+    val shuffle by connection.shuffleModeEnabled.collectAsState()
+    val repeatMode by connection.repeatMode.collectAsState()
+    Box(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .offset { IntOffset(lerp(bar.tabsAloneStart + bar.tabsWidth - bar.extrasWidth, bar.extrasStart, withPlayer()).roundToPx(), WideBarPillGap.roundToPx()) }
+                .width(bar.extrasWidth)
+                .height(NavBarHeight)
+                .padding(end = NavRowPadding)
+                .graphicsLayer { alpha = ((withPlayer() - 0.4f) / 0.6f).coerceIn(0f, 1f) },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            WideBarToggle(
+                icon = R.drawable.shuffle,
+                on = shuffle,
+                label = stringResource(R.string.shuffle),
+                onClick = { connection.player.shuffleModeEnabled = !connection.player.shuffleModeEnabled },
+            )
+            WideBarToggle(
+                icon = if (repeatMode == Player.REPEAT_MODE_ONE) R.drawable.repeat_one else R.drawable.repeat,
+                on = repeatMode != Player.REPEAT_MODE_OFF,
+                label = stringResource(R.string.repeat),
+                onClick = { connection.player.toggleRepeatMode() },
+            )
+        }
+    }
+}
+
+// one of the pill's player toggles: bright with a dot under it while on, dim while off
+@Composable
+private fun RowScope.WideBarToggle(icon: Int, on: Boolean, label: String, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val lit by animateFloatAsState(if (on) 1f else 0f, tween(200), label = "wideBarToggle")
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .fillMaxHeight()
+            .pressBounce(interaction, pressedScale = 0.85f)
+            .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = label,
+            tint = Color.White,
+            modifier = Modifier
+                .size(21.dp)
+                .graphicsLayer { alpha = 0.5f + 0.5f * lit },
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .offset(y = 15.dp)
+                .size(4.dp)
+                .graphicsLayer {
+                    alpha = lit
+                    scaleX = lit
+                    scaleY = lit
+                }
+                .background(Color.White, CircleShape),
+        )
     }
 }

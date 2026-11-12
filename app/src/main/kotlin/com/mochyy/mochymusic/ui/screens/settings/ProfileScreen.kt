@@ -37,6 +37,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import com.mochyy.mochymusic.LocalPlayerAwareWindowInsets
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -418,8 +421,24 @@ fun ProfileScreen(navController: NavController) {
 
     BackHandler(enabled = stage == HeaderStage.Expanded || stage == HeaderStage.Invalid || stage == HeaderStage.Pulling) { collapse() }
 
+    // on its side the card sits at the left and the cards at the right; the recap only plays upright
+    val landscape = com.mochyy.mochymusic.ui.utils.isLandscapeLayout()
+    // the recap asked for from the sideways page: the window turns upright first, then the card flips
+    var recapAsked by remember { mutableStateOf(false) }
+    com.mochyy.mochymusic.ui.utils.HoldOrientation(
+        orientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+        active = recapAsked || stage != HeaderStage.Collapsed || story != null,
+    )
+    LaunchedEffect(recapAsked, landscape) {
+        if (recapAsked && !landscape) {
+            recapAsked = false
+            expandFully()
+        }
+    }
+
     val scrollState = rememberScrollState()
     val glassState = remember { GlassState() }
+    val bottomBarInset = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
 
     // the Mochy page, and over it the profile page when the card has been tapped
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
@@ -440,10 +459,22 @@ fun ProfileScreen(navController: NavController) {
         ) {
             val viewportH = constraints.maxHeight.toFloat()
             val inset = with(density) { HomeContentInset.toPx() }
-            val cardW = constraints.maxWidth - 2 * inset
+            // on its side the header is the left pane, the card as big as fits between the logo and the bottom bar
+            val paneW = if (landscape) constraints.maxWidth * LandscapePaneShare else constraints.maxWidth.toFloat()
+            val landscapeTop = topPx + with(density) { LandscapeCardTop.toPx() }
+            val landscapeBottom = viewportH - with(density) { (bottomBarInset + LandscapeHintRoom).toPx() }
+            val cardW = if (landscape) {
+                minOf(paneW - 2 * inset, (landscapeBottom - landscapeTop).coerceAtLeast(1f) * IdCardAspect)
+            } else {
+                constraints.maxWidth - 2 * inset
+            }
             val cardH = cardW / IdCardAspect
-            val collapsedH = collapsedHeaderPx(topPx, cardH, density.density)
-            val cardTopCollapsed = topPx + with(density) { CardTopDp.dp.toPx() }
+            val collapsedH = if (landscape) viewportH else collapsedHeaderPx(topPx, cardH, density.density)
+            val cardTopCollapsed = if (landscape) {
+                landscapeTop + ((landscapeBottom - landscapeTop - cardH) / 2f).coerceAtLeast(0f)
+            } else {
+                topPx + with(density) { CardTopDp.dp.toPx() }
+            }
             val cardTopExpanded = viewportH * 0.49f - cardH / 2f
             val pullRange = (viewportH - collapsedH).coerceAtLeast(1f)
             val collapseProgress by remember { derivedStateOf { (scrollState.value / with(density) { 120.dp.toPx() }).coerceIn(0f, 1f) } }
@@ -482,16 +513,17 @@ fun ProfileScreen(navController: NavController) {
                     .fillMaxSize()
                     .glassRoot(glassState, isActive = { collapseProgress > 0f && stage == HeaderStage.Collapsed }),
             ) {
-                Column(
-                    modifier = Modifier
+                ProfilePageLayout(
+                    landscape = landscape,
+                    pageModifier = Modifier
                         .fillMaxSize()
-                        .nestedScroll(pullConnection)
-                        .verticalScroll(scrollState, enabled = stage == HeaderStage.Collapsed || stage == HeaderStage.Pulling),
-                ) {
+                        .nestedScroll(pullConnection),
+                    scroll = Modifier.verticalScroll(scrollState, enabled = stage == HeaderStage.Collapsed || stage == HeaderStage.Pulling),
+                    header = {
                     // header: grows to the viewport as it's pulled
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .then(if (landscape) Modifier.width(with(density) { paneW.toDp() }) else Modifier.fillMaxWidth())
                             .layout { measurable, constraints ->
                                 val h = lerpF(collapsedH, viewportH, expand).roundToInt()
                                 val p = measurable.measure(Constraints.fixed(constraints.maxWidth, h))
@@ -534,13 +566,13 @@ fun ProfileScreen(navController: NavController) {
                                     expand = (1f + dy.coerceAtMost(0f) / pullRange * 0.8f).coerceIn(0.4f, 1f)
                                 }
                             }
-                            .clipBottomRounded { cornerPx * (1f - expand) }
+                            .then(if (landscape) Modifier.clipEndRounded(cornerPx) else Modifier.clipBottomRounded { cornerPx * (1f - expand) })
                             .drawBehind { drawRect(lerp(HeaderGrey, StoryDark, expand)) }
                             .giantText(giant, time, measurer, centerY = { windowHeight / 2f - rootOnScreen.y })
                             .recapDots(color = { lerp(HeaderDots, StoryDots, expand) }),
                     ) {
-                        // greeting (in the header; its scrolled-away twin lives in the top bar)
-                        Text(
+                        // greeting (in the header; its scrolled-away twin lives in the top bar); on its side it heads the cards at the right
+                        if (!landscape) Text(
                             text = "${MochyGreeting.current}, ${accountName.ifBlank { "there" }}!",
                             style = PageTitle,
                             maxLines = 1,
@@ -558,8 +590,17 @@ fun ProfileScreen(navController: NavController) {
                         val coatingGone by remember(scratch) { derivedStateOf { scratch.dissolve.value >= 1f } }
                         Box(
                             modifier = Modifier
-                                .padding(horizontal = HomeContentInset)
-                                .fillMaxWidth()
+                                .then(
+                                    if (landscape) {
+                                        Modifier
+                                            .padding(start = with(density) { ((paneW - cardW) / 2f).toDp() })
+                                            .width(with(density) { cardW.toDp() })
+                                    } else {
+                                        Modifier
+                                            .padding(horizontal = HomeContentInset)
+                                            .fillMaxWidth()
+                                    }
+                                )
                                 .aspectRatio(IdCardAspect)
                                 .offset { androidx.compose.ui.unit.IntOffset(0, lerpF(cardTopCollapsed, cardTopExpanded, expand).roundToInt()) }
                                 .onPlaced { profile.cardSlot = it }
@@ -628,13 +669,23 @@ fun ProfileScreen(navController: NavController) {
                             }
                         }
 
-                        // pull hint: a chevron that, with a recap waiting, turns into words now and then
+                        // pull hint: a chevron that, with a recap waiting, turns into words now and then; on its side
+                        // there's nothing to pull, so a tap turns the phone upright and opens the recap
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                                 .offset { androidx.compose.ui.unit.IntOffset(0, (cardTopCollapsed + cardH + 14.dp.toPx()).roundToInt()) }
                                 .height(30.dp)
+                                .then(
+                                    if (landscape) {
+                                        Modifier.clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = RemoteFocus,
+                                            enabled = stage == HeaderStage.Collapsed,
+                                        ) { recapAsked = true }
+                                    } else Modifier
+                                )
                                 .graphicsLayer {
                                     alpha = (1f - expand * 4f).coerceIn(0f, 1f) * contentIn.value
                                     translationY = ((sin(time.sway * 2.4f) + 1f) / 2f) * 4.dp.toPx()
@@ -656,7 +707,7 @@ fun ProfileScreen(navController: NavController) {
                             )
                             if (recapWaiting) {
                                 Text(
-                                    text = "swipe down here!!",
+                                    text = if (landscape) stringResource(R.string.recap_tap_hint) else "swipe down here!!",
                                     style = MonoSmall.copy(color = Color.White.copy(alpha = 0.6f)),
                                     maxLines = 1,
                                     modifier = Modifier.graphicsLayer {
@@ -703,7 +754,9 @@ fun ProfileScreen(navController: NavController) {
                         }
                     }
 
-                    // ---- everything under the header ----
+                    },
+                    content = {
+                    // ---- everything under the header (beside it, on its side) ----
                     Column(
                         modifier = Modifier
                             .padding(horizontal = 20.dp)
@@ -712,6 +765,16 @@ fun ProfileScreen(navController: NavController) {
                                 translationY = (1f - contentIn.value) * 60.dp.toPx()
                             },
                     ) {
+                        if (landscape) {
+                            Spacer(Modifier.height(statusBarTop + 30.dp))
+                            Text(
+                                text = "${MochyGreeting.current}, ${accountName.ifBlank { "there" }}!",
+                                style = PageTitle,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.graphicsLayer { alpha = 1f - collapseProgress },
+                            )
+                        }
                         Spacer(Modifier.height(24.dp))
                         ListeningTimeCard(totalListeningMs, onViewStats = { navController.navigate("stats") })
                         Spacer(Modifier.height(16.dp))
@@ -740,7 +803,8 @@ fun ProfileScreen(navController: NavController) {
                         OpenSettingsRow(onClick = { navController.navigate("mochy_settings") })
                         Spacer(Modifier.height(180.dp))
                     }
-                }
+                    },
+                )
             }
 
             // ---- the glass top bar, a sibling of the glassRoot box (never inside it) ------------------
@@ -856,6 +920,47 @@ fun ProfileScreen(navController: NavController) {
 }
 
 private const val CardTopDp = 130f
+
+// on its side: the card's pane takes this share of the width, the card starts under the logo and keeps room under it for the hint
+private const val LandscapePaneShare = 0.46f
+private val LandscapeCardTop = 92.dp
+private val LandscapeHintRoom = 50.dp
+
+// upright the header and the cards scroll as one column; on its side the header stands still at the left and the cards scroll beside it
+@Composable
+private fun ProfilePageLayout(
+    landscape: Boolean,
+    pageModifier: Modifier,
+    scroll: Modifier,
+    header: @Composable () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    if (landscape) {
+        Row(modifier = pageModifier) {
+            header()
+            Column(modifier = Modifier.weight(1f).fillMaxHeight().then(scroll)) { content() }
+        }
+    } else {
+        Column(modifier = pageModifier.then(scroll)) {
+            header()
+            content()
+        }
+    }
+}
+
+// the header pane on its side: rounded on the side that faces the cards
+private fun Modifier.clipEndRounded(radius: Float): Modifier = drawWithCache {
+    val path = Path().apply {
+        addRoundRect(
+            RoundRect(
+                rect = Rect(0f, 0f, size.width, size.height),
+                topRight = CornerRadius(radius),
+                bottomRight = CornerRadius(radius),
+            ),
+        )
+    }
+    onDrawWithContent { clipPath(path) { this@onDrawWithContent.drawContent() } }
+}
 
 /** The logo's top below the status bar: Settings and Library centre a 32dp mark in a 62dp block 18dp down. */
 private val TopBarLogoTop = 32.dp

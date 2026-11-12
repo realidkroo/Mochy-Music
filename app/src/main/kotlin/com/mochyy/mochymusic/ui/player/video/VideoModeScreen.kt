@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,7 +63,6 @@ import com.mochyy.mochymusic.ui.component.LocalPlayerBottomSheetState
 import com.mochyy.mochymusic.ui.component.PopupSheetHost
 import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.glassRoot
-import com.mochyy.mochymusic.constants.VideoModeUprightKey
 import com.mochyy.mochymusic.constants.VideoModeWholeVideoKey
 import com.mochyy.mochymusic.ui.menu.AddToPlaylistDialog
 import com.mochyy.mochymusic.ui.player.menu.LocalMenuSheetFloating
@@ -88,6 +88,10 @@ import kotlinx.coroutines.launch
 // the whole screen up close: auto may go up to full hd here
 private const val ModeAutoCap = 1080
 
+// filling the screen may cut at most this much of the picture: a 16:9 video on any phone fills it, an upright or 4:3 one
+// no longer gets zoomed down to a thin slice, it sits whole with the edge light round it
+private const val ModeFillMaxLoss = 0.3f
+
 // how long the picture takes to go between zoomed to fill and shown whole
 private const val FitMs = 600
 
@@ -111,7 +115,7 @@ private const val PaneDragShare = 0.7f
 // a pull down this far on the video closes the player
 private val CloseDrag = 48.dp
 
-// the player round the song's youtube video, its lyrics sliding in from the right; on a phone held upright it turns itself sideways unless rotated back
+// the player round the song's youtube video, its lyrics sliding in from the right; always sideways, the window held that way while it's open
 @Composable
 fun VideoPlayerStyle(actions: StyleActions, modifier: Modifier = Modifier, preview: Boolean = false) {
     if (preview) VideoModePreview(modifier) else VideoModeScreen(actions, modifier)
@@ -176,14 +180,26 @@ private fun VideoModeScreen(actions: StyleActions, modifier: Modifier) {
     // collapsed, the mini player plays this same session; the mode only holds it while any of it shows
     val session = if (sheetShowing) video?.let { rememberYouTubeVideoSession(it.videoId) } else null
     if (session != null && video != null) DriveYouTubeVideo(session, video, running, ModeAutoCap)
-    // a window on its side needs no turn, the phone already did it; upright the mode turns itself unless its rotate button stood it up
-    val windowUpright = !isLandscapeWindow()
-    val (standUpright, onStandUpright) = rememberPreference(VideoModeUprightKey, defaultValue = false)
-    val turned = windowUpright && !standUpright
-    // zoomed to fill by default; the menu's switch eases it out to the whole picture and back, and stood upright it's always whole, a filled 16:9 would show a sliver
+    // once the player is all the way open the window turns sideways and stays that way until it closes to the mini player;
+    // until the window has turned (or for good, with landscape locked) the mode turns itself, so it's sideways from the first frame
+    var holdSideways by remember { mutableStateOf(sheet == null) }
+    LaunchedEffect(sheet) {
+        if (sheet == null) return@LaunchedEffect
+        snapshotFlow { sheet.isExpanded to (sheet.isCollapsed || sheet.isDismissed) }.collect { (open, closed) ->
+            if (open) holdSideways = true else if (closed) holdSideways = false
+        }
+    }
+    // with landscape still locked (Experimental) the window stays upright and the turned frame does it all, as it used to
+    val (landscapeUnlocked) = rememberPreference(com.mochyy.mochymusic.constants.LandscapeUnlockedKey, defaultValue = false)
+    com.mochyy.mochymusic.ui.utils.HoldOrientation(
+        orientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
+        active = holdSideways && landscapeUnlocked,
+    )
+    val turned = !isLandscapeWindow()
+    // zoomed to fill by default, the menu's switch eases it out to the whole picture and back
     val (wholeVideo) = rememberPreference(VideoModeWholeVideoKey, defaultValue = false)
     val fit = animateFloatAsState(
-        targetValue = if (wholeVideo || (windowUpright && standUpright)) 1f else 0f,
+        targetValue = if (wholeVideo) 1f else 0f,
         animationSpec = tween(FitMs, easing = FastOutSlowInEasing),
         label = "videoFit",
     )
@@ -221,7 +237,6 @@ private fun VideoModeScreen(actions: StyleActions, modifier: Modifier) {
                         controls = controls,
                         fit = { fit.value },
                         onClose = { sheet?.collapseSoft() },
-                        onRotate = if (windowUpright) { { onStandUpright(!standUpright) } } else null,
                         onExitFullScreen = actions.onExitVideoMode,
                     )
                     if (state.menuOpen) {
@@ -282,7 +297,6 @@ private fun VideoModeLayout(
     controls: () -> Float,
     fit: () -> Float,
     onClose: () -> Unit,
-    onRotate: (() -> Unit)?,
     onExitFullScreen: () -> Unit,
 ) {
     val sheet = LocalPlayerBottomSheetState.current
@@ -353,6 +367,7 @@ private fun VideoModeLayout(
                         session = session,
                         isPlaying = running,
                         fit = fit,
+                        fillMaxLoss = ModeFillMaxLoss,
                         keepScreenOn = running,
                         onAmbient = ambient::follow,
                         modifier = Modifier.fillMaxSize(),
@@ -434,7 +449,6 @@ private fun VideoModeLayout(
                 controls = controls,
                 onClose = onClose,
                 onSongInfo = { state.songInfoOpen = true },
-                onRotate = onRotate,
                 onExitFullScreen = onExitFullScreen,
             )
             VideoTransport(state = state, controls = controls, isPlaying = isPlaying)
@@ -549,6 +563,11 @@ private fun VideoTurnFrame(turned: Boolean, modifier: Modifier, content: @Compos
         if (turned != shown) {
             arriving = false
             shown = turned
+            // the window itself just turned sideways under it, so the frame lands straight there instead of swinging round a second time
+            if (!turned) {
+                turn.snapTo(1f)
+                return@LaunchedEffect
+            }
             turn.snapTo(0f)
         } else if (turn.value < 1f) {
             repeat(2) { withFrameNanos { } }

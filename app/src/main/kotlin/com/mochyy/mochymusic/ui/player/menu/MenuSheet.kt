@@ -197,7 +197,9 @@ fun MenuSheetSurface(
     val stack = LocalMenuSheetStack.current
     val peekPx = with(density) { PeekHeight.toPx() }
     // a floating card is as tall as what's in it and scrolls inside itself; it never grows to a taller detent
-    val floating = LocalMenuSheetFloating.current
+    val forcedFloating = LocalMenuSheetFloating.current
+    // on its side every sheet floats the way the video mode's do, a full-width sheet there is a wall of rows
+    val floating = forcedFloating || com.mochyy.mochymusic.ui.utils.isLandscapeLayout()
     val wraps = wrapHeight || floating
     val floatingMarginPx = if (floating) with(density) { FloatingMargin.toPx() } else 0f
 
@@ -265,7 +267,12 @@ fun MenuSheetSurface(
         // No sheet edge ever goes above the status bar. A sheet covering another stops a peek strip
         // lower still, so the one behind can rise to peek above it and stay below the status bar.
         // a floating card sits in a frame of its own with no status bar, just its margin all round
-        val safeTopPx = if (floating) floatingMarginPx else (statusBarBottomPx - parentTopInWindowPx).coerceAtLeast(0f)
+        val belowStatusBarPx = (statusBarBottomPx - parentTopInWindowPx).coerceAtLeast(0f)
+        val safeTopPx = when {
+            forcedFloating -> floatingMarginPx
+            floating -> maxOf(floatingMarginPx, belowStatusBarPx)
+            else -> belowStatusBarPx
+        }
         val capPx = (parentHeightPx - safeTopPx - floatingMarginPx - if (isCovering) peekPx else 0f).coerceAtLeast(0f)
         val detentSheetPx = if (floating) capPx else minOf(with(density) { (maxHeight * fullDetent).toPx() }, capPx)
         val maxSheetPx = minOf(maxOf(detentSheetPx, coveredVisiblePx), capPx)

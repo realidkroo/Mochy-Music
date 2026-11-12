@@ -66,8 +66,8 @@ val SettingsPaneRoutes = setOf(
     DevPlaygroundRoute,
 )
 
-// how wide the list is beside the open page
-val SettingsListWidth = 360.dp
+// how wide the list is beside the open page: a phone's column on a phone on its side, a little more on a tablet
+private fun settingsListWidth(windowWidth: androidx.compose.ui.unit.Dp) = (windowWidth * 0.38f).coerceIn(300.dp, 400.dp)
 
 // the list on a wide screen: the page open beside it, so its bubble stays lit
 @Immutable
@@ -95,7 +95,8 @@ fun NavController.openSettingsPage(route: String) {
 // the list at the left of a wide screen, a hairline between it and the page beside it
 @Composable
 fun SettingsListPane(navController: NavController, selectedRoute: String?, modifier: Modifier = Modifier) {
-    Box(modifier = modifier.width(SettingsListWidth).fillMaxHeight()) {
+    val windowWidth = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp
+    Box(modifier = modifier.width(settingsListWidth(windowWidth)).fillMaxHeight()) {
         MochySettingsScreen(navController = navController, pane = SettingsPane(selectedRoute))
         Box(
             modifier = Modifier

@@ -122,7 +122,7 @@ private enum class CustomiseSection(@StringRes val titleRes: Int, val keys: List
     ICONS(R.string.customise_icons, listOf("Icons", "App icon"), "icon icons app launcher home screen mochy outline anime material you white black dark transparent"),
     ROUNDING(R.string.customise_cover_rounding, listOf("Cover rounding"), "cover rounding corner radius square rounded art"),
     PLAYLIST(R.string.customise_playlist_styles, listOf("Playlist styles"), "playlist styles flow classic minimal header"),
-    PLAYER(R.string.customise_player_styles, listOf("Player styles"), "player styles flagship turntable ipod poster timeline lyrics editor customize"),
+    PLAYER(R.string.customise_player_styles, listOf("Player styles"), "player styles flagship turntable ipod poster timeline lyrics editor customize landscape sideways full cover square"),
     HOME(R.string.customise_home_styles, listOf("Home styles"), "home styles mochyy listen now hop in hero"),
     BLUR(R.string.appearance_blur, listOf("Blur", "Progressive blur", "Blur quality", "Blur strength"), "blur glass frosted progressive flat quality low high strength px"),
     ELEMENT_BLUR(R.string.customise_element_blur, listOf("Element blur"), "element blur lyrics lines cover zoom titles menus page swipes"),
@@ -257,6 +257,7 @@ private fun PlayerSection() {
     val playerSheetState = LocalPlayerBottomSheetState.current
     val playerStyle by rememberEnumPreference(PlayerStyleKey, defaultValue = PlayerStyle.FLAGSHIP)
     val playFirst = stringResource(R.string.customise_play_first)
+    Column {
     PlayerStyleCard(
         selected = playerStyle,
         onOpenEditor = {
@@ -269,6 +270,40 @@ private fun PlayerSection() {
             }
         },
     )
+    Spacer(Modifier.height(16.dp))
+    LandscapePlayerCard()
+    }
+}
+
+// the flagship turned sideways: a rounded square beside the controls, or the whole cover melting into them
+@Composable
+private fun LandscapePlayerCard() {
+    val (fullCover, setFullCover) = rememberPreference(com.mochyy.mochymusic.constants.LandscapeFullCoverKey, defaultValue = false)
+    LabCard(padding = CardPadding) {
+        Text(
+            stringResource(R.string.customise_landscape_player),
+            fontFamily = InterFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+            letterSpacing = (-0.02).em,
+            color = LabColors.Primary,
+        )
+        Text(
+            stringResource(R.string.customise_landscape_player_desc),
+            fontFamily = InterFontFamily,
+            fontWeight = FontWeight.Medium,
+            fontSize = 13.sp,
+            color = LabColors.Secondary,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+        Spacer(Modifier.height(14.dp))
+        LabToggleRow(
+            title = stringResource(R.string.customise_landscape_full_cover),
+            subtitle = stringResource(R.string.customise_landscape_full_cover_desc),
+            checked = fullCover,
+            onCheckedChange = setFullCover,
+        )
+    }
 }
 
 @Composable

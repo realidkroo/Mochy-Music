@@ -1081,6 +1081,7 @@ private fun PlayerSheet(
                 }
                 FlagshipLandscape(
                     pages = transition,
+                    turntable = isTurntable,
                     sheetShowing = sheetShowing,
                     interactive = remember(state) { { landscapeOpen } },
                     expanded = remember(state) { { state.isExpanded } },

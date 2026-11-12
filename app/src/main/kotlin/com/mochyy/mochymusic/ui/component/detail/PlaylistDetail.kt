@@ -254,7 +254,7 @@ fun <A> featuredArtistsOf(
         .map { (artistId, names) -> FeaturedArtistUi(id = artistId, name = names.first()) }
 
 // passes the scaffold's cover composable down to PlaylistHeader when classic or minimal style draws a framed cover
-private val LocalPlaylistFramedCover = staticCompositionLocalOf<(@Composable (Modifier) -> Unit)?> { null }
+internal val LocalPlaylistFramedCover = staticCompositionLocalOf<(@Composable (Modifier) -> Unit)?> { null }
 
 /** the cover band at the top of a playlist, shared by the header item and the backdrop behind it */
 @Composable
@@ -400,6 +400,28 @@ fun PlaylistDetailScaffold(
     // the Edit order pill is frosted even with the cover still showing, so the glass has to run
     // before the bar collapses
     val pillNeedsGlass = rememberUpdatedState(modeBar is PlaylistModeBar.EditOrder)
+
+    // on its side the cover stays at the left with the title on it, and the songs take the right
+    if (com.mochyy.mochymusic.ui.utils.isLandscapeLayout()) {
+        PlaylistSideBySide(
+            sharedElementKey = sharedElementKey,
+            coverUrl = coverUrl,
+            cover = cover,
+            framedCover = framedCover,
+            background = background,
+            lazyListState = lazyListState,
+            contentPadding = contentPadding,
+            onBackClick = onBackClick,
+            onBackLongClick = onBackLongClick,
+            onMoreClick = onMoreClick,
+            topBarOverride = topBarOverride,
+            modeBar = modeBar,
+            modifier = modifier,
+            overlay = overlay,
+            content = content,
+        )
+        return
+    }
 
     CompositionLocalProvider(LocalPlaylistFramedCover provides framedCover) {
     Box(
@@ -670,7 +692,7 @@ private fun PlaylistClassicBackdrop(
 }
 
 @Composable
-private fun PlaylistTopBar(
+internal fun PlaylistTopBar(
     glassState: GlassState,
     morph: () -> Float,
     coverUrl: String?,
@@ -953,8 +975,10 @@ fun PlaylistHeader(
 ) {
     val playlistStyle by rememberEnumPreference(PlaylistStyleKey, defaultValue = PlaylistStyle.FLOW)
     val framedCover = LocalPlaylistFramedCover.current
-    val useMinimal = compact || playlistStyle == PlaylistStyle.MINIMAL
-    val useClassic = !compact && playlistStyle == PlaylistStyle.CLASSIC
+    // on its side the block sits on the cover at the left, so it never draws a framed cover of its own
+    val side = LocalPlaylistSideHeader.current
+    val useMinimal = compact || (side == null && playlistStyle == PlaylistStyle.MINIMAL)
+    val useClassic = side == null && !compact && playlistStyle == PlaylistStyle.CLASSIC
 
     val body: @Composable () -> Unit = {
         Column(
@@ -1046,7 +1070,9 @@ fun PlaylistHeader(
         }
     }
 
-    if (useMinimal || useClassic) {
+    if (side != null) {
+        PublishSideHeader(side, body)
+    } else if (useMinimal || useClassic) {
         Column(
             modifier = modifier
                 .fillMaxWidth()

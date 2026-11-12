@@ -411,6 +411,12 @@ data class PartTransform(val scale: Float = 1f, val dx: Float = 0f, val dy: Floa
 /** the selector card's size against the screen, and where its centre sits */
 internal const val CardScale = 0.72f
 internal const val CardCenterY = 0.465f
+
+// on its side the screen is short: smaller cards a touch lower, so the header above and the dots and buttons under them still fit
+private const val LandscapeCardScale = 0.54f
+private const val LandscapeCardCenterY = 0.485f
+internal fun cardScaleFor(w: Float, h: Float): Float = if (w > h) LandscapeCardScale else CardScale
+internal fun cardCenterYFor(w: Float, h: Float): Float = if (w > h) LandscapeCardCenterY else CardCenterY
 internal val CardCorner: Dp = 34.dp
 internal val CardGap: Dp = 18.dp
 

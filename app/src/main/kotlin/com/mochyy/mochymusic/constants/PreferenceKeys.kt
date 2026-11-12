@@ -480,8 +480,6 @@ val VideoModeReturnStyleKey = stringPreferencesKey("videoModeReturnStyle")
 
 // the full video mode shows the whole picture with room round it, instead of zooming it to fill the screen
 val VideoModeWholeVideoKey = booleanPreferencesKey("videoModeWholeVideo")
-// the full video mode stood upright by its rotate button, instead of turning itself sideways on a phone held upright
-val VideoModeUprightKey = booleanPreferencesKey("videoModeUpright")
 
 val LocalSongAutoMetadataKey = booleanPreferencesKey("local_song_auto_metadata")
 
@@ -746,6 +744,10 @@ val PlayerStyleKey = stringPreferencesKey("playerStyle")
 
 // the tv's "flagship square": the flagship with its whole cover as a rounded square
 val TvFlagshipSquareKey = booleanPreferencesKey("tvFlagshipSquare")
+// a phone on its side: the flagship's cover fills the left and melts into the controls, instead of a rounded square beside them
+val LandscapeFullCoverKey = booleanPreferencesKey("landscapeFullCover")
+// Experimental: the app may turn sideways into its wide layout; off (the default) it stays upright
+val LandscapeUnlockedKey = booleanPreferencesKey("landscapeUnlocked")
 
 // the ipod player's body colours, ipod.js's three plus a pitch black one with a dark screen
 enum class IpodTheme { SILVER, BLACK, U2, TRUE_DARK }

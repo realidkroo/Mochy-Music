@@ -437,6 +437,10 @@ class MainActivity : ComponentActivity() {
 
         window.decorView.layoutDirection = View.LAYOUT_DIRECTION_LTR
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        // upright unless landscape is unlocked in Experimental; set before the first frame, so it never opens sideways and then turns
+        if (!isTelevision()) {
+            com.mochyy.mochymusic.ui.utils.WindowTurning.setUnlocked(this, dataStore[com.mochyy.mochymusic.constants.LandscapeUnlockedKey] == true)
+        }
         systemScaleObserver = com.mochyy.mochymusic.ui.utils.AppMotion.followSystemScale(this)
         moveOffOldLyricsShaderSwitch()
         followLookSettings()
@@ -635,6 +639,11 @@ class MainActivity : ComponentActivity() {
                         Screens.MainScreens
                 }
                 val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
+                // flipped in Experimental while the app is open: it starts (or stops) turning right away
+                val (landscapeUnlocked) = rememberPreference(com.mochyy.mochymusic.constants.LandscapeUnlockedKey, defaultValue = false)
+                LaunchedEffect(landscapeUnlocked) {
+                    if (!isTelevision()) com.mochyy.mochymusic.ui.utils.WindowTurning.setUnlocked(this@MainActivity, landscapeUnlocked)
+                }
 
                 val defaultOpenTab = remember {
                     dataStore[DefaultOpenTabKey].toEnum<NavigationTab>(defaultValue = NavigationTab.HOME)
@@ -664,9 +673,11 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                val (query, onQueryChange) = rememberSaveable(stateSaver = TextFieldValue.Saver) {
+                // the state itself, never read here: the sideways search pane writes it on every keystroke, and a read at this level recomposed the whole app per key
+                val queryState = rememberSaveable(stateSaver = TextFieldValue.Saver) {
                     mutableStateOf(TextFieldValue())
                 }
+                val onQueryChange: (TextFieldValue) -> Unit = remember(queryState) { { queryState.value = it } }
 
                 val onSearch: (String) -> Unit = remember {
                     { searchQuery ->
@@ -901,9 +912,10 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val pauseListenHistory by rememberPreference(PauseListenHistoryKey, defaultValue = false)
-                val eventCount by remember(database) { database.eventCount() }.collectAsState(initial = 0)
-                val showHistoryButton = remember(pauseListenHistory, eventCount) {
-                    !(pauseListenHistory && eventCount == 0)
+                // only whether there's any history at all: the count itself grows with every song played, and collecting it here recomposed the whole app on each song change
+                val hasEvents by remember(database) { database.eventCount().map { it > 0 }.distinctUntilChanged() }.collectAsState(initial = true)
+                val showHistoryButton = remember(pauseListenHistory, hasEvents) {
+                    !(pauseListenHistory && !hasEvents)
                 }
 
                 val baseBg = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
@@ -1168,6 +1180,12 @@ class MainActivity : ComponentActivity() {
                                                 onSearchDoubleTap = onSearchDoubleTap,
                                                 modifier = barMotion.fillMaxWidth(),
                                             )
+                                            com.mochyy.mochymusic.ui.component.WideBarExtras(
+                                                bar = wideBar,
+                                                withPlayer = withPlayerNow,
+                                                shown = !playerBottomSheetState.isDismissed,
+                                                modifier = barMotion.fillMaxWidth(),
+                                            )
                                         } else {
                                             AppNavigationBar(
                                                 navigationItems = navigationItems,
@@ -1246,6 +1264,18 @@ class MainActivity : ComponentActivity() {
                                         com.mochyy.mochymusic.ui.screens.settings.SettingsListPane(
                                             navController = navController,
                                             selectedRoute = com.mochyy.mochymusic.ui.screens.settings.settingsPaneSelection(backStack),
+                                        )
+                                    }
+                                    // on its side the search field and its history stay at the left while the categories or results change beside it
+                                    if (com.mochyy.mochymusic.ui.utils.isLandscapeLayout() &&
+                                        com.mochyy.mochymusic.ui.screens.search.showsSearchPane(currentRoute)
+                                    ) {
+                                        com.mochyy.mochymusic.ui.screens.search.SearchSidePane(
+                                            navController = navController,
+                                            currentRoute = currentRoute,
+                                            query = queryState,
+                                            onQueryChange = onQueryChange,
+                                            pureBlack = pureBlack,
                                         )
                                     }
                                     NavHost(

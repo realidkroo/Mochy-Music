@@ -268,6 +268,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -4482,9 +4484,10 @@ class MusicService :
         crossfadeTo(targetIndex, crossfadeDuration.toLong())
     }
 
-    // "blend skips" can cross over right now: it's on, a song is really playing, and nothing else is mixing or casting
+    // "blend skips" can cross over right now: it's on, a song is really playing, nothing else is mixing or casting,
+    // and Crossmix isn't the transition: with Crossmix on nothing plays a plain crossfade, a skip is a skip and the mixes are left to it
     private fun canBlendSkip(): Boolean =
-        skipBlend && !isCrossfading && !crossmixDirector.isTransitioning &&
+        skipBlend && crossmixMode != CrossmixMode.CROSSMIX && !isCrossfading && !crossmixDirector.isTransitioning &&
             castConnectionHandler?.isCasting?.value != true && player.isPlaying
 
     // the blend lasts as long as the fade's Length slider says, not a fixed second and a half
@@ -4643,8 +4646,8 @@ class MusicService :
     }
 
     private fun performCrossfadeSwap(durationMs: Long, skipCurve: Boolean = false) {
-        isCrossfading = true
         val nextPlayer = secondaryPlayer ?: return
+        isCrossfading = true
         val currentPlayer = player
 
         fadingPlayer = currentPlayer
@@ -4695,54 +4698,71 @@ class MusicService :
         }
 
         crossfadeJob = scope.launch {
-            val startVolume = runCatching { fadingPlayer?.volume ?: 1f }.getOrDefault(1f)
-            // the old song carries on as it was until the new one is really heard, so a slow start never leaves a gap
-            while (isActive && !player.isPlaying) delay(CrossfadeFrameMs)
-            // stepped every frame by the time actually played: twenty fixed steps were heard as the volume jumping.
-            // Timed by the new song's own position, which is what's really coming out of the speaker: the wall
-            // clock started as soon as isPlaying flipped, while the audio track was still filling, so the new
-            // song came in further up the ramp than the timer said
-            var heardMs = 0L
-            var lastClock = android.os.SystemClock.elapsedRealtime()
-            var lastPosition = player.currentPosition
-            while (isActive && heardMs < durationMs) {
-                delay(CrossfadeFrameMs)
-                val now = android.os.SystemClock.elapsedRealtime()
-                val position = player.currentPosition
-                val wallMs = now - lastClock
-                val movedMs = position - lastPosition
-                val speed = player.playbackParameters.speed.takeIf { it > 0f } ?: 1f
-                heardMs += when {
-                    // the ordinary case: as far as the song really got, at the speed it plays at
-                    movedMs in 0..(wallMs * 4 + 250) -> (movedMs / speed).toLong()
-                    // a seek or another song picked mid-fade: the clock carries it on; a pause holds both songs where they are
-                    player.isPlaying -> wallMs
-                    else -> 0L
-                }
-                lastClock = now
-                lastPosition = position
-                val progress = (heardMs.toFloat() / durationMs).coerceIn(0f, 1f)
-                val angle = progress * Math.PI / 2.0
-                // a skip uses equal-gain S-curves: the old song is heard going down from the press to the
-                // end of the timer, and the new one eases in from silence instead of jumping to near full.
-                // The end-of-song crossfade keeps its equal-power ramps
-                val inGain = if (skipCurve) kotlin.math.sin(angle).let { it * it } else kotlin.math.sin(angle)
-                val outGain = if (skipCurve) kotlin.math.cos(angle).let { it * it } else kotlin.math.cos(angle)
-                try {
-                    // the new song fades up to the volume it should be at now: started from the old
-                    // one's, a fade begun while muted or ducked ended at 0 or a fifth, and stayed
-                    player.volume = targetVolume() * inGain.toFloat()
-                    fadingPlayer?.volume = startVolume * outGain.toFloat()
-                } catch (e: Exception) {
-                    break
-                }
-            }
-
+            // however it ends (finished, the new song never started, or called off) the old player goes and the flag comes down:
+            // left up, Crossmix said "a plain crossfade is running" with nothing fading and never mixed again
             try {
-                fadingPlayer?.volume = 0f
-                player.volume = targetVolume()
-                cleanupCrossfade()
-            } catch (e: Exception) { }
+                rampCrossfade(durationMs, skipCurve)
+            } finally {
+                runCatching {
+                    fadingPlayer?.volume = 0f
+                    player.volume = targetVolume()
+                }
+                runCatching { cleanupCrossfade() }
+                // cleanup can stop partway on a player that's already gone; the flag still comes down
+                isCrossfading = false
+            }
+        }
+    }
+
+    // the two volume ramps of a crossfade, stepped every frame by the time the new song has really played
+    private suspend fun rampCrossfade(durationMs: Long, skipCurve: Boolean) {
+        val startVolume = runCatching { fadingPlayer?.volume ?: 1f }.getOrDefault(1f)
+        // the old song carries on as it was until the new one is really heard, so a slow start never leaves a gap;
+        // a new song that never starts (a dead link, paused before its first sound) only gets so long
+        val started = withTimeoutOrNull(CrossfadeStartWaitMs) {
+            while (currentCoroutineContext().isActive && !player.isPlaying) delay(CrossfadeFrameMs)
+            true
+        }
+        // still silent after the wait: the ramp below would sit at zero heard time forever, so the cleanup takes over now
+        if (started == null) return
+        // stepped every frame by the time actually played: twenty fixed steps were heard as the volume jumping.
+        // Timed by the new song's own position, which is what's really coming out of the speaker: the wall
+        // clock started as soon as isPlaying flipped, while the audio track was still filling, so the new
+        // song came in further up the ramp than the timer said
+        var heardMs = 0L
+        var lastClock = android.os.SystemClock.elapsedRealtime()
+        var lastPosition = player.currentPosition
+        while (currentCoroutineContext().isActive && heardMs < durationMs) {
+            delay(CrossfadeFrameMs)
+            val now = android.os.SystemClock.elapsedRealtime()
+            val position = player.currentPosition
+            val wallMs = now - lastClock
+            val movedMs = position - lastPosition
+            val speed = player.playbackParameters.speed.takeIf { it > 0f } ?: 1f
+            heardMs += when {
+                // the ordinary case: as far as the song really got, at the speed it plays at
+                movedMs in 0..(wallMs * 4 + 250) -> (movedMs / speed).toLong()
+                // a seek or another song picked mid-fade: the clock carries it on; a pause holds both songs where they are
+                player.isPlaying -> wallMs
+                else -> 0L
+            }
+            lastClock = now
+            lastPosition = position
+            val progress = (heardMs.toFloat() / durationMs).coerceIn(0f, 1f)
+            val angle = progress * Math.PI / 2.0
+            // a skip uses equal-gain S-curves: the old song is heard going down from the press to the
+            // end of the timer, and the new one eases in from silence instead of jumping to near full.
+            // The end-of-song crossfade keeps its equal-power ramps
+            val inGain = if (skipCurve) kotlin.math.sin(angle).let { it * it } else kotlin.math.sin(angle)
+            val outGain = if (skipCurve) kotlin.math.cos(angle).let { it * it } else kotlin.math.cos(angle)
+            try {
+                // the new song fades up to the volume it should be at now: started from the old
+                // one's, a fade begun while muted or ducked ended at 0 or a fifth, and stayed
+                player.volume = targetVolume() * inGain.toFloat()
+                fadingPlayer?.volume = startVolume * outGain.toFloat()
+            } catch (e: Exception) {
+                break
+            }
         }
     }
 
@@ -5249,6 +5269,8 @@ class MusicService :
         // back after this far into a song starts it over, like the previous button always did
         const val BlendRestartAfterMs = 3_000L
         const val CrossfadeFrameMs = 16L
+        // how long a crossfade waits for the new song to be heard before it lets go and the new song plays on its own
+        const val CrossfadeStartWaitMs = 12_000L
         // about the first 20 to 30 seconds of a song, enough for a skip to start straight from the cache
         const val PrefetchBytes = 512L * 1024L
         const val PrefetchDelayMs = 4_000L

@@ -18,6 +18,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.R
@@ -66,6 +67,12 @@ fun ExperimentalSettingsScreen(navController: NavController) {
     val crossmixTools = crossmixTestItems(isVisible = crossmixTestTools)
     val (sourceBanner, onSourceBannerChange) = rememberPreference(ShowStreamSourceToastKey, defaultValue = false)
     val (forcePlayback, onForcePlaybackChange) = rememberPreference(ForcePlaybackKey, defaultValue = false)
+    // off by default: the whole app stays upright until the wide layout is ready
+    val (landscapeUnlocked, onLandscapeUnlockedChange) = rememberPreference(
+        com.mochyy.mochymusic.constants.LandscapeUnlockedKey,
+        defaultValue = false,
+    )
+    val unlockLandscapeTitle = stringResource(R.string.experimental_unlock_landscape)
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -77,6 +84,20 @@ fun ExperimentalSettingsScreen(navController: NavController) {
             SettingsGroup(
                 style = SettingsGroupStyle.Grouped,
                 items = buildList {
+                    add(
+                        SettingsItem(
+                            title = { Text(unlockLandscapeTitle) },
+                            highlightKey = unlockLandscapeTitle,
+                            descriptionText = stringResource(R.string.experimental_unlock_landscape_desc),
+                            detail = stringResource(R.string.experimental_unlock_landscape_detail),
+                            icon = painterResource(R.drawable.screen_rotation),
+                            iconShape = androidx.compose.foundation.shape.CircleShape,
+                            onClick = { onLandscapeUnlockedChange(!landscapeUnlocked) },
+                            trailingContent = {
+                                AppSwitch(checked = landscapeUnlocked, onCheckedChange = onLandscapeUnlockedChange)
+                            }
+                        )
+                    )
                     add(
                         SettingsItem(
                             title = { Text("Import & sync") },

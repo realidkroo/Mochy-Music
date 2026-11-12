@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -77,9 +78,9 @@ private fun variantFade(column: Int, row: Int, studio: PlayerStudioState, e: Flo
 
 /** the selector's geometry at progress [e] (0 the full player, 1 cards) on a [w] x [h] screen */
 internal class CardGeometry(val e: Float, val w: Float, val h: Float, gapPx: Float) {
-    val scale = 1f + (CardScale - 1f) * e
+    val scale = 1f + (cardScaleFor(w, h) - 1f) * e
     val stride = w * scale + gapPx
-    val centerY = h / 2f + (CardCenterY * h - h / 2f) * e
+    val centerY = h / 2f + (cardCenterYFor(w, h) * h - h / 2f) * e
     val cardW = w * scale
     val cardH = h * scale
     // a column's variants sit one card and a gap apart, top to bottom
@@ -503,6 +504,8 @@ fun PlayerSelectorOverlay(
                 val style = styles.getOrNull(focused)
                 Row(
                     modifier = Modifier
+                        // on its side they keep to about the card's width instead of stretching across the screen
+                        .then(if (w > h) Modifier.widthIn(max = 440.dp) else Modifier)
                         .fillMaxWidth()
                         .padding(horizontal = 30.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),

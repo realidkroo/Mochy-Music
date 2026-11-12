@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.pressBounce
+import com.mochyy.mochymusic.ui.component.rememberResourcePainter
 import com.mochyy.mochymusic.ui.player.findActivity
 import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
 import com.mochyy.mochymusic.utils.AppIcon
@@ -142,11 +143,11 @@ internal fun IconsSection() {
     }
 }
 
-// each piece of art loaded once and shared by every tile; anime mochy is a bitmap, and every tile used to decode its own
+// each piece of art loaded once and shared by every tile, through coil so the anime bitmap decodes off the main thread (it cost 20 ms on the page's first frame)
 @Composable
 private fun rememberIconArt(): Map<Int, Painter> {
     val ids = remember { AppIcon.entries.map { it.foreground }.distinct() }
-    return ids.associateWith { painterResource(it) }
+    return ids.associateWith { rememberResourcePainter(it) }
 }
 
 // the icon in use with its name and family, and the chevron that opens every other choice
