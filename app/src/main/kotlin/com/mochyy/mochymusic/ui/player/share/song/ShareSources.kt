@@ -82,6 +82,7 @@ internal suspend fun loadShareLyrics(session: SongShareSession, database: MusicD
         fetched?.lyrics
     }
     loadLyricsOffset(session, database)
+    session.lyricsEntity = stored
     if (raw.isNullOrBlank() || raw == LyricsEntity.LYRICS_NOT_FOUND) {
         session.lyrics = Fetched.Missing
         return

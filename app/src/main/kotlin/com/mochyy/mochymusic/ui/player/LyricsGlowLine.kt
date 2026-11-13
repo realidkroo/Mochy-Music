@@ -799,7 +799,7 @@ private const val MergeEpsilonPx = 0.1f
  */
 private const val NoLigatures = "liga 0, clig 0"
 
-private fun androidx.compose.ui.text.TextStyle.withLetterMotionFeatures(letterMotion: Boolean) =
+internal fun androidx.compose.ui.text.TextStyle.withLetterMotionFeatures(letterMotion: Boolean) =
     if (letterMotion) copy(fontFeatureSettings = NoLigatures) else this
 
 /**
@@ -1552,6 +1552,54 @@ private fun rememberBloomModifier(
         }
 
         renderEffect = cache.effectFor(shader, headX, amp, glow, headLine, size.width, size.height)
+    }
+}
+
+// where a sweep's head is, in the layer's own pixels, for the bloom around it; glow is how strongly it shines, 0 to 1
+internal class SweepHeadGeometry(
+    val headX: Float,
+    val lineTop: Float,
+    val lineBottom: Float,
+    val lineStart: Float,
+    val charWidth: Float,
+    val glow: Float,
+)
+
+// the page's bloom around a sweep head on any text that can say where its head is (the share's cinematic words); android 13+, nothing at all before that
+@Suppress("NewApi")
+@Composable
+internal fun Modifier.sweepBloom(highBloom: Boolean, head: androidx.compose.ui.unit.Density.() -> SweepHeadGeometry?): Modifier {
+    val shader = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            sharedBloomShader ?: createAgslShader(BloomAgsl).also { sharedBloomShader = it }
+        } else {
+            null
+        }
+    } ?: return this
+    val cache = remember { WaveEffectCache() }
+    return graphicsLayer {
+        val at = head()
+        val bloom = if (at == null) 0f else BloomStrength * at.glow.coerceIn(0f, 1f)
+        if (at == null || bloom <= BloomCutoff) {
+            renderEffect = null
+            return@graphicsLayer
+        }
+        shader.setAgslUniform("layerSize", size.width, size.height)
+        shader.setAgslUniform("headX", at.headX)
+        shader.setAgslUniform("lineTop", at.lineTop)
+        shader.setAgslUniform("lineBottom", at.lineBottom)
+        shader.setAgslUniform("lineStart", at.lineStart)
+        shader.setAgslUniform("flowDir", 1f)
+        shader.setAgslUniform("bloom", bloom)
+        shader.setAgslUniform("bloomR", BloomRadiusPx)
+        shader.setAgslUniform("bloomLag", at.charWidth * BloomLagChars)
+        shader.setAgslUniform("bloomSpan", at.charWidth * BloomSpanChars)
+        shader.setAgslUniform("highQuality", if (highBloom) 1f else 0f)
+        shader.setAgslUniform("hasPrev", 0f)
+        shader.setAgslUniform("prevTop", 0f)
+        shader.setAgslUniform("prevBottom", 0f)
+        shader.setAgslUniform("prevEnd", 0f)
+        renderEffect = cache.effectFor(shader, at.headX, 1f, at.glow, 0, size.width, size.height)
     }
 }
 

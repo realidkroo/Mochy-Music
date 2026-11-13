@@ -48,6 +48,9 @@ import com.mochyy.mochymusic.lyrics.LyricsEntry
 import com.mochyy.mochymusic.lyrics.LyricsUtils
 import com.mochyy.mochymusic.ui.player.LyricsAlignment
 import com.mochyy.mochymusic.ui.player.LyricsGlowLine
+import com.mochyy.mochymusic.ui.player.RubyPlacement
+import com.mochyy.mochymusic.ui.player.rememberShownLyric
+import com.mochyy.mochymusic.ui.player.ShownLyric
 import com.mochyy.mochymusic.ui.player.alignmentFor
 import com.mochyy.mochymusic.ui.player.lineLook
 import com.mochyy.mochymusic.ui.player.lyricAnchorIndex
@@ -265,15 +268,16 @@ private fun SungLyrics(session: SongShareSession, lines: List<LyricsEntry>, posi
     val current by remember(sung) { derivedStateOf { LyricsUtils.findCurrentLineIndex(sung, positionMs()).coerceAtMost(sung.lastIndex) } }
     val anchor by remember(sung) { derivedStateOf { lyricAnchorIndex(sung, positionMs()).coerceAtMost(sung.lastIndex) } }
     val density = LocalDensity.current
-    val scale = rememberLineScale(sung, useAgentAlignment)
+    val shownLines = sung.map { rememberShownLyric(it) }
+    val scale = rememberLineScale(shownLines, useAgentAlignment)
     CompositionLocalProvider(
         LocalDensity provides Density(density.density * scale, fontScale = 1f),
         LocalContentColor provides Color.White,
     ) {
         Column(Modifier.fillMaxWidth()) {
-            sung.forEachIndexed { index, entry ->
+            shownLines.forEachIndexed { index, shown ->
                 key(index) {
-                    SungLine(entry, index, current = { current }, anchor = { anchor }, positionMs, look, alignmentFor(entry, useAgentAlignment))
+                    SungLine(shown, index, current = { current }, anchor = { anchor }, positionMs, look, alignmentFor(shown.entry, useAgentAlignment))
                 }
             }
         }
@@ -282,19 +286,23 @@ private fun SungLyrics(session: SongShareSession, lines: List<LyricsEntry>, posi
 
 // how small the page's lines are drawn on the card: the usual size, or smaller when the picked lines would run past the card's room
 @Composable
-private fun rememberLineScale(sung: List<LyricsEntry>, useAgentAlignment: Boolean): Float {
+private fun rememberLineScale(sung: List<ShownLyric>, useAgentAlignment: Boolean): Float {
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val base = MaterialTheme.typography.headlineSmall
+    val small = MaterialTheme.typography.bodyLarge
     return remember(sung, useAgentAlignment, density, base) {
         // everything here is in the page's own size, before the card shrinks it
         val column = LyricsColumnWidth / LineScale
         val style = restingLineStyle(base, active = true, letterMotion = false)
-        val height = sung.sumOf { entry ->
+        val height = sung.sumOf { shown ->
+            val entry = shown.entry
             val insets = lyricsLineInsets(alignmentFor(entry, useAgentAlignment))
             val width = with(density) { (column - insets.start - insets.end - insets.padH * 2).roundToPx() }.coerceAtLeast(1)
             val text = measurer.measure(entry.text, style, constraints = Constraints(maxWidth = width)).size.height
-            text + with(density) { (insets.top * 2 + insets.padV * 2).roundToPx() }
+            // the reading and the translation take their room under the line too
+            val extra = listOfNotNull(shown.subLine, shown.translation).sumOf { measurer.measure(it, small, constraints = Constraints(maxWidth = width)).size.height }
+            text + extra + with(density) { (insets.top * 2 + insets.padV * 2).roundToPx() }
         }
         val room = with(density) { (LyricsRoom / LineScale).toPx() }
         LineScale * minOf(1f, room / height.coerceAtLeast(1))
@@ -303,7 +311,7 @@ private fun rememberLineScale(sung: List<LyricsEntry>, useAgentAlignment: Boolea
 
 @Composable
 private fun SungLine(
-    entry: LyricsEntry,
+    shown: ShownLyric,
     index: Int,
     current: () -> Int,
     anchor: () -> Int,
@@ -316,7 +324,7 @@ private fun SungLine(
         derivedStateOf { lineLook(index, current(), anchor(), unsynced = false, interlude = false) }
     }
     LyricsGlowLine(
-        entry = entry,
+        entry = shown.entry,
         state = lineLook.state,
         // every picked line stays sharp on the card, so the whole passage can be read
         blurStage = 0,
@@ -324,6 +332,11 @@ private fun SungLine(
         accentColor = Color.White,
         onClick = {},
         alignment = alignment,
+        // the reading and the translation, the way the lyrics page lays them out
+        subLine = shown.subLine,
+        ruby = shown.ruby,
+        rubyPlacement = if (shown.translation != null) RubyPlacement.ABOVE else RubyPlacement.BELOW,
+        translation = shown.translation,
         waveEnabled = look.motionStyle.shaded,
         highBloom = look.highBloom,
         motionStyle = look.motionStyle,

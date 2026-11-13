@@ -227,19 +227,56 @@ internal fun AnimationSection(modifier: Modifier = Modifier) {
     }
 }
 
-// the four lyric styles to swipe through, each singing on its card as it really would
+// the four lyric styles to swipe through, each singing on its card as it really would, with the readings and the translation they're drawn with under them
 @Composable
 internal fun LyricsStyleSection(modifier: Modifier = Modifier) {
     val (style, onStyle) = rememberEnumPreference(LyricsMotionStyleKey, defaultValue = LyricsMotionStyle.MOTION)
     val names = LyricsMotionStyle.entries.associateWith { stringResource(lyricStyleNameRes(it)) }
-    StylePagerSection(
-        category = stringResource(R.string.customise_lyrics_animation),
-        styles = LyricsMotionStyle.entries,
-        selected = style,
-        nameOf = { names.getValue(it) },
-        onSelect = onStyle,
-        modifier = modifier,
-    ) { LyricsStylePreview(it) }
+    Column(modifier.fillMaxWidth()) {
+        StylePagerSection(
+            category = stringResource(R.string.customise_lyrics_animation),
+            styles = LyricsMotionStyle.entries,
+            selected = style,
+            nameOf = { names.getValue(it) },
+            onSelect = onStyle,
+        ) { LyricsStylePreview(it) }
+        Spacer(Modifier.height(11.dp))
+        LyricsReadingToggles(Modifier.padding(horizontal = CustomisePageMargin))
+    }
+}
+
+// romanisation, the romanisation as the line itself, and translation: what every style draws under and over its words
+@Composable
+private fun LyricsReadingToggles(modifier: Modifier = Modifier) {
+    val languages = com.mochyy.mochymusic.ui.player.RomanizeLanguageKeys.map { rememberPreference(it, defaultValue = true) }
+    val romanize = languages.any { it.value }
+    val (asMain, onAsMain) = rememberPreference(com.mochyy.mochymusic.constants.LyricsRomanizeAsMainKey, defaultValue = false)
+    val (translate, onTranslate) = rememberPreference(com.mochyy.mochymusic.constants.TranslateLyricsKey, defaultValue = false)
+    com.mochyy.mochymusic.ui.screens.audiolab.LabCard(padding = 20.dp, modifier = modifier) {
+        com.mochyy.mochymusic.ui.screens.audiolab.LabToggleRow(
+            title = stringResource(R.string.customise_lyrics_romanisation),
+            subtitle = stringResource(R.string.customise_lyrics_romanisation_desc),
+            checked = romanize,
+            onCheckedChange = { on -> languages.forEach { it.value = on } },
+        )
+        com.mochyy.mochymusic.ui.screens.audiolab.LabToggleRow(
+            title = stringResource(R.string.settings_romanize_as_main),
+            subtitle = stringResource(R.string.settings_romanize_as_main_desc),
+            checked = asMain,
+            onCheckedChange = onAsMain,
+            enabled = romanize,
+        )
+        com.mochyy.mochymusic.ui.screens.audiolab.LabToggleRow(
+            title = stringResource(R.string.customise_lyrics_translation),
+            subtitle = stringResource(R.string.customise_lyrics_translation_desc),
+            checked = translate,
+            onCheckedChange = { on ->
+                onTranslate(on)
+                // takes effect on the song playing now, not only from the next one
+                if (on) com.mochyy.mochymusic.lyrics.LyricsTranslationHelper.triggerManualTranslation() else com.mochyy.mochymusic.lyrics.LyricsTranslationHelper.triggerClearTranslations()
+            },
+        )
+    }
 }
 
 // a lyric style's name in the app's language

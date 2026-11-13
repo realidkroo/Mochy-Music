@@ -156,6 +156,12 @@ internal class SongShareSession(val song: MediaMetadata) {
     var cardBounds by mutableStateOf<Rect?>(null)
 
     var lyrics by mutableStateOf<Fetched<List<LyricsEntry>>>(Fetched.Looking)
+
+    // the stored row the lines came from, for a translation saved with it
+    var lyricsEntity: com.mochyy.mochymusic.db.entities.LyricsEntity? = null
+
+    // held from the lyrics page: those lines already carry the page's readings, so the share doesn't work them out again
+    var fromLyricsPage = false
     var lyricsOffsetMs by mutableLongStateOf(0L)
     var lyricsLook by mutableStateOf(ShareLyricsLook())
     var musicVideo by mutableStateOf<Fetched<ShareMusicVideo>>(Fetched.Looking)

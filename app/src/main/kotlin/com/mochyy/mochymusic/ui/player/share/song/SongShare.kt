@@ -107,12 +107,14 @@ private fun SongShareDialog(
                     started.kind = SongShareKind.Lyrics
                     started.pick = pick
                     started.lyrics = Fetched.Found(heldLyrics)
+                    started.fromLyricsPage = true
                 }
             }
         }
         val sheets = remember { PopupSheetState() }
 
         ReadLyricsLook(session)
+        ShareLyricReadings(session)
 
         LaunchedEffect(Unit) {
             if (pick != null) {
@@ -179,6 +181,14 @@ private fun MovesThePlayhead(session: SongShareSession) {
             while (true) withFrameMillis { session.playhead.longValue = session.previewPositionMs() }
         }
     }
+}
+
+// the share's own copies of the lines get their readings and translation, so the card and the cinematic words show them like the page does
+@Composable
+private fun ShareLyricReadings(session: SongShareSession) {
+    if (session.fromLyricsPage) return
+    val lines = session.lyrics.found ?: return
+    com.mochyy.mochymusic.ui.player.LyricsReadings(lines, session.song.id, LocalDatabase.current, session.lyricsEntity)
 }
 
 // the lyrics page's look, read here once so the card's lyrics and the exports use the same one

@@ -416,6 +416,7 @@ object LyricsUtils {
                 romanizedTextFlow = MutableStateFlow(null),
                 rubyFlow = MutableStateFlow(null),
                 translatedTextFlow = MutableStateFlow(null),
+                romanizedWordsFlow = MutableStateFlow(null),
             )
         }
     }
@@ -895,6 +896,88 @@ object LyricsUtils {
         if ((counts[Script.KANA] ?: 0) > 0) return Script.KANA
         if ((counts[Script.HANGUL] ?: 0) * 4 >= total) return Script.HANGUL
         return counts.maxByOrNull { it.value }?.key ?: Script.UNKNOWN
+    }
+
+    // the script the readings are for: kana settles it; otherwise the commonest script that isn't latin, as long as a tenth of the letters are in it, so a korean song with english verses still reads as korean instead of losing its readings
+    fun romanizableScript(text: String): Script {
+        val counts = HashMap<Script, Int>()
+        var total = 0
+        for (ch in text) {
+            val s = scriptOf(ch) ?: continue
+            counts[s] = (counts[s] ?: 0) + 1
+            total++
+        }
+        if (total == 0) return Script.UNKNOWN
+        if ((counts[Script.KANA] ?: 0) > 0) return Script.KANA
+        val (script, count) = counts.filterKeys { it != Script.LATIN }.maxByOrNull { it.value } ?: return Script.UNKNOWN
+        return if (count * 10 >= total) script else Script.UNKNOWN
+    }
+
+    // the line read out: each run with a reading replaced by it, the rest (latin words, say) kept as it is
+    fun readingLine(text: String, ruby: List<RubyToken>): String = buildString {
+        var at = 0
+        ruby.sortedBy { it.start }.forEach { token ->
+            if (token.start > at) append(text, at, token.start.coerceAtMost(text.length))
+            if (isNotEmpty() && !last().isWhitespace()) append(' ')
+            append(token.text)
+            at = maxOf(at, token.end)
+        }
+        if (at < text.length) append(text, at, text.length)
+    }.trim()
+
+    // the line's timed pieces said in romanisation, so the romanised line can be sung piece by piece like the original; a reading that spans several pieces goes to the first and the rest lengthen it
+    suspend fun romanizedWords(
+        text: String,
+        pieces: List<WordTimestamp>,
+        ruby: List<RubyToken>?,
+        romanizeWord: suspend (String) -> String?,
+    ): List<WordTimestamp>? {
+        if (pieces.isEmpty()) return null
+        val ranges = wordCharRanges(text, pieces)
+        val said = ArrayList<String>(pieces.size)
+        if (ruby != null) {
+            val tokens = ruby.sortedBy { it.start }
+            var next = 0
+            for (range in ranges) {
+                val out = StringBuilder()
+                if (!range.isEmpty()) {
+                    var at = range.first
+                    while (next < tokens.size && tokens[next].start <= range.last) {
+                        val token = tokens[next]
+                        next++
+                        if (token.start < range.first) continue
+                        if (token.start > at) out.append(text, at, token.start)
+                        if (out.isNotEmpty() && !out.last().isWhitespace()) out.append(' ')
+                        out.append(token.text)
+                        at = maxOf(at, token.end)
+                    }
+                    if (at <= range.last) out.append(text, at, (range.last + 1).coerceAtMost(text.length))
+                }
+                said += out.toString().trim()
+            }
+        } else {
+            for (piece in pieces) {
+                val word = piece.text.trim()
+                said += (romanizeWord(word) ?: word).trim()
+            }
+        }
+        // a piece left with nothing to say lengthens the one before it, or waits for the first that says something
+        val out = ArrayList<WordTimestamp>(pieces.size)
+        var pendingStart: Double? = null
+        for (i in pieces.indices) {
+            val piece = pieces[i]
+            val word = said[i]
+            if (word.isEmpty()) {
+                if (out.isNotEmpty()) out[out.lastIndex] = out.last().copy(endTime = maxOf(out.last().endTime, piece.endTime))
+                else if (pendingStart == null) pendingStart = piece.startTime
+                continue
+            }
+            out += WordTimestamp(word, pendingStart ?: piece.startTime, piece.endTime)
+            pendingStart = null
+        }
+        if (out.isEmpty()) return null
+        // a space after every piece but the last, so the pieces add up to the line they make
+        return out.mapIndexed { i, piece -> if (i < out.lastIndex) piece.copy(text = piece.text + " ") else piece }
     }
 
     /** Whether a payload carries `{agent:…}` voice tags — i.e. can drive left/right duet layout. */

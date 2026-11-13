@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.mochyy.mochymusic.ui.player.rememberShownLyric
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -149,7 +150,11 @@ internal fun CinematicLayout(
     // in a video the words light up as they're sung; null keeps them all lit for a picture
     flow: CinematicFlow? = null,
 ) {
-    val textSize = rememberCinematicTextSize(session)
+    // the reading (or the original, when the romanisation is the line) and the translation under each line
+    val readings = session.chosen.map { (line, _) ->
+        session.entries.getOrNull(line)?.let { rememberShownLyric(it) }?.let { listOfNotNull(it.subLine, it.translation) }.orEmpty()
+    }
+    val textSize = rememberCinematicTextSize(session, readings)
     val below = animateFloatAsState(
         if (session.headerBelow) 1f else 0f,
         spring(dampingRatio = 0.8f, stiffness = 240f),
@@ -172,12 +177,15 @@ internal fun CinematicLayout(
                     verticalArrangement = Arrangement.spacedBy(CinematicLineGap),
                     modifier = if (regions != null) Modifier.onGloballyPositioned { regions.words = it.boundsInParent() } else Modifier,
                 ) {
-                    session.chosen.forEach { (line, text) ->
+                    session.chosen.forEachIndexed { i, (line, text) ->
                         val style = shareText(textSize, color = ink, tracking = -1f)
                         if (flow == null) {
                             Text(cinematicLine(session, line, text, ink, textSize), style = style)
                         } else {
                             SungLine(session, line, text, ink, textSize, style, flow)
+                        }
+                        readings.getOrNull(i)?.forEach { reading ->
+                            Text(reading, style = readingText(textSize, ink))
                         }
                     }
                 }
@@ -219,22 +227,23 @@ internal fun CinematicLayout(
  * to 40 words with big ones mixed in can't all sit at full size.
  */
 @Composable
-private fun rememberCinematicTextSize(session: LyricsShareSession): Float {
+private fun rememberCinematicTextSize(session: LyricsShareSession, readings: List<List<String>>): Float {
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val chosen = session.chosen
     val looks = session.looks.toMap()
-    return remember(chosen, looks, density) {
+    return remember(chosen, looks, readings, density) {
         val width = with(density) { (ShareWidth - CinematicSide * 2).roundToPx() }
         val room = with(density) { CinematicWordsRoom.toPx() }
         val lineGap = with(density) { CinematicLineGap.toPx() }
-        fun heightAt(size: Float): Float = chosen.sumOf { (line, text) ->
+        fun heightAt(size: Float): Float = chosen.mapIndexed { i, (line, text) ->
             measurer.measure(
                 cinematicLine(session, line, text, Color.White, size),
                 style = shareText(size, color = Color.White, tracking = -1f),
                 constraints = Constraints(maxWidth = width),
-            ).size.height
-        } + lineGap * (chosen.size - 1).coerceAtLeast(0)
+            ).size.height +
+                readings.getOrNull(i).orEmpty().sumOf { measurer.measure(it, readingText(size, Color.White), constraints = Constraints(maxWidth = width)).size.height }
+        }.sum() + lineGap * (chosen.size - 1).coerceAtLeast(0)
 
         val full = heightAt(CinematicTextSize)
         if (full <= room) return@remember CinematicTextSize
@@ -244,6 +253,13 @@ private fun rememberCinematicTextSize(session: LyricsShareSession): Float {
         size
     }
 }
+
+// a reading or a translation under a cinematic line: half the size, softer, no bold
+private fun readingText(base: Float, ink: Color) =
+    shareText(base * CinematicReadingShare, weight = FontWeight.Medium, color = ink.copy(alpha = ink.alpha * CinematicReadingAlpha), tracking = -0.3f)
+
+private const val CinematicReadingShare = 0.5f
+private const val CinematicReadingAlpha = 0.72f
 
 internal fun cinematicLine(
     session: LyricsShareSession,

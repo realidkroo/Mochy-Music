@@ -31,6 +31,8 @@ data class LyricsEntry(
     /** Per-word readings drawn above the line. Null when this script isn't romanised as ruby. */
     val rubyFlow: MutableStateFlow<List<RubyToken>?> = MutableStateFlow(null),
     val translatedTextFlow: MutableStateFlow<String?> = MutableStateFlow(null),
+    /** The timed pieces of [romanizedTextFlow], when the line has word timing: the romanised line sung word by word like the original. */
+    val romanizedWordsFlow: MutableStateFlow<List<WordTimestamp>?> = MutableStateFlow(null),
     val agent: String? = null,
     val isBackground: Boolean = false,
     /**

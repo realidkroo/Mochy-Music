@@ -80,7 +80,7 @@ fun LyricsReadings(
     // lines of one song were being sent to the pinyin romanizer and came back as Mandarin
     // readings of Japanese words. A song has one language; decide it from all the evidence.
     val bodyScript = remember(lines) {
-        LyricsUtils.dominantScript(lines.joinToString(" ") { it.text })
+        LyricsUtils.romanizableScript(lines.joinToString(" ") { it.text })
     }
     val romanizerEnabled = when (bodyScript) {
         LyricsUtils.Script.KANA -> romanizeJapanese
@@ -93,7 +93,11 @@ fun LyricsReadings(
 
     LaunchedEffect(lines, bodyScript, romanizerEnabled) {
         if (!romanizerEnabled) {
-            lines.forEach { it.romanizedTextFlow.value = null }
+            lines.forEach {
+                it.romanizedWordsFlow.value = null
+                it.romanizedTextFlow.value = null
+                it.rubyFlow.value = null
+            }
             return@LaunchedEffect
         }
         // One sequential pass on a background dispatcher, not one coroutine per line. Launching a
@@ -133,14 +137,18 @@ fun LyricsReadings(
                 // underneath as one unbroken string. Everything else stays a sub-line: Cyrillic
                 // and Devanagari are alphabetic, so a per-word reading over them adds nothing.
                 val ruby = LyricsUtils.rubyFor(entry.text, bodyScript)
-                entry.rubyFlow.value = ruby
-
-                entry.romanizedTextFlow.value = if (ruby != null) {
-                    // The ruby row carries the reading now; a duplicate underneath is just noise.
-                    null
+                // the whole line's reading too, ruby or not: it's what the line says when the romanisation is shown as the line itself
+                val romanized = if (ruby != null) LyricsUtils.readingLine(entry.text, ruby) else romanizeOne(entry.text)
+                val reading = romanized?.takeIf { it.isNotBlank() && it != entry.text }
+                val pieces = entry.syllables ?: entry.words
+                // the pieces first, so whoever sees the reading land finds its timing already there
+                entry.romanizedWordsFlow.value = if (reading != null && !pieces.isNullOrEmpty()) {
+                    LyricsUtils.romanizedWords(entry.text, pieces, ruby) { romanizeOne(it) }
                 } else {
-                    romanizeOne(entry.text)?.takeIf { it.isNotBlank() && it != entry.text }
+                    null
                 }
+                entry.rubyFlow.value = ruby
+                entry.romanizedTextFlow.value = reading
             }
         }
     }
@@ -261,3 +269,49 @@ fun LyricsReadings(
 
 internal fun hasAiKeyFor(provider: String, openRouterKey: String, deeplKey: String): Boolean =
     if (provider == "DeepL") deeplKey.isNotBlank() else openRouterKey.isNotBlank()
+
+// every language the readings can be switched off for; the style page's one switch sets them all
+val RomanizeLanguageKeys = listOf(
+    LyricsRomanizeJapaneseKey,
+    LyricsRomanizeKoreanKey,
+    LyricsRomanizeChineseKey,
+    LyricsRomanizeRussianKey,
+    LyricsRomanizeUkrainianKey,
+    LyricsRomanizeSerbianKey,
+    LyricsRomanizeBulgarianKey,
+    LyricsRomanizeBelarusianKey,
+    LyricsRomanizeKyrgyzKey,
+    LyricsRomanizeMacedonianKey,
+    LyricsRomanizeHindiKey,
+    LyricsRomanizePunjabiKey,
+)
+
+// a line as the settings want it drawn: the original with its readings, or the romanisation as the line with the original underneath
+@androidx.compose.runtime.Immutable
+class ShownLyric(
+    val entry: LyricsEntry,
+    val subLine: String?,
+    val ruby: List<com.mochyy.mochymusic.lyrics.RubyToken>?,
+    val translation: String?,
+)
+
+// what to draw for [entry] right now; the same on the lyrics page, the card, the video mode and a share, so they all agree
+@Composable
+fun rememberShownLyric(entry: LyricsEntry): ShownLyric {
+    val (asMain) = rememberPreference(com.mochyy.mochymusic.constants.LyricsRomanizeAsMainKey, defaultValue = false)
+    val romanized by entry.romanizedTextFlow.collectAsState()
+    val romanizedWords by entry.romanizedWordsFlow.collectAsState()
+    val ruby by entry.rubyFlow.collectAsState()
+    val translated by entry.translatedTextFlow.collectAsState()
+    val translation = translated?.takeIf { it.isNotBlank() }
+    return remember(entry, asMain, romanized, romanizedWords, ruby, translation) {
+        val reading = romanized?.takeIf { it.isNotBlank() }
+        if (asMain && reading != null) {
+            // the romanised pieces carry the timing, so the line sings letter by letter the same way; without them it rises whole
+            ShownLyric(entry.copy(text = reading, words = romanizedWords, syllables = null), subLine = entry.text, ruby = null, translation = translation)
+        } else {
+            // ruby carries the reading over the words, so a line under it would only say it twice
+            ShownLyric(entry, subLine = if (ruby.isNullOrEmpty()) reading else null, ruby = ruby, translation = translation)
+        }
+    }
+}

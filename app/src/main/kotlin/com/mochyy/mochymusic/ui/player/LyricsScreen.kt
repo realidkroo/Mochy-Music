@@ -704,9 +704,7 @@ fun LyricsScreen(
                                 val state = look.state
                                 val blurStage = if (suppressEffects || !lineBlurAllowed) 0 else look.blurStage
 
-                                val romanized by entry.romanizedTextFlow.collectAsState()
-                                val ruby by entry.rubyFlow.collectAsState()
-                                val translated by entry.translatedTextFlow.collectAsState()
+                                val shown = rememberShownLyric(entry)
                                 val rowIndex = rowOfLine[index]
                                 val lineAlignment = alignmentFor(entry, useAgentAlignment, mirrored)
                                 // any alignment grows from the card: a centred or right-aligned line measures where its words start
@@ -758,14 +756,14 @@ fun LyricsScreen(
                                             shareSession?.let { alpha *= it.lyricsLineAlpha(index) }
                                         }
                                         .onPlaced { lineCoords[index] = it },
-                                    entry = entry,
+                                    entry = shown.entry,
                                     state = state,
                                     blurStage = blurStage,
                                     suppressEffects = suppressEffects,
                                     positionProvider = positionProvider,
                                     accentColor = accent,
-                                    subLine = romanized,
-                                    ruby = ruby,
+                                    subLine = shown.subLine,
+                                    ruby = shown.ruby,
                                     // Readings sit under the line normally. With a translation on
                                     // screen they move above it, so the line keeps one thing on
                                     // each side instead of two stacked underneath.
@@ -773,13 +771,13 @@ fun LyricsScreen(
                                     // Keyed on "translation requested", not "translation arrived",
                                     // so the layout settles once when you press the button rather
                                     // than shifting a second time when the text lands.
-                                    rubyPlacement = if (isTranslating || !translated.isNullOrBlank()) {
+                                    rubyPlacement = if (isTranslating || shown.translation != null) {
                                         RubyPlacement.ABOVE
                                     } else {
                                         RubyPlacement.BELOW
                                     },
-                                    translationLoading = isTranslating && translated.isNullOrBlank(),
-                                    translation = translated,
+                                    translationLoading = isTranslating && shown.translation == null,
+                                    translation = shown.translation,
                                     alignment = lineAlignment,
                                     waveEnabled = lyricsWaveAnimation && !suppressEffects,
                                     motionStyle = motionStyle,
