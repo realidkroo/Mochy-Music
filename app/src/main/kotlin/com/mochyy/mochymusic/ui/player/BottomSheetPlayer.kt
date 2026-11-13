@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -1261,7 +1262,7 @@ private fun PlayerSheet(
 
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-
+                        .widthIn(max = 600.dp)
                         .padding(horizontal = 26.dp)
                         .then(Modifier.studioAnchor(studioAnchors) { it.card })
                         .then(Modifier.studioBarLayer(studioParts) { it.card })
@@ -1278,6 +1279,7 @@ private fun PlayerSheet(
             if ((showVolumeBar || barLifted) && deckMounted) {
                 val volumeBarModifier = Modifier
                     .align(Alignment.BottomCenter)
+                    .widthIn(max = 600.dp)
                     .padding(
                         bottom = if (newBottomBar) flagshipBarFootprint() - FlagshipBarHeight
                         else playerVolumeBarFootprint() - PlayerVolumeBarHeight
@@ -1352,6 +1354,7 @@ private fun PlayerSheet(
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
+                    .widthIn(max = 600.dp)
                     .fillMaxWidth()
                     .padding(bottom = belowControls + transportGap.coerceAtLeast(0.dp))
                     // where the editor's hold put them; only placed, so a drag never recomposes
@@ -1663,6 +1666,7 @@ private fun PlayerSheet(
                     onStreamInfoClick = { if (!studioEngaged) showStreamInfo = true },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
+                        .widthIn(max = 600.dp)
                         .padding(bottom = belowControls + TurntableControlsLift)
                         .graphicsLayer {
                             alpha = (1f - controlsHidden) * (1f - turntablePageProgress)

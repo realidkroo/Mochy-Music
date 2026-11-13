@@ -9,6 +9,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,6 +23,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.unit.Dp
+import com.mochyy.mochymusic.ui.utils.isWideLayout
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -236,12 +240,14 @@ fun OnlineSearchResult(
             .fillMaxSize()
             .background(SearchColors.page(pureBlack))
     ) {
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 // recorded while scrolling too, so the bar's blur never drops out mid-scroll
                 .glassRoot(glassState, isActive = { progressProvider() > 0.01f })
         ) {
+            // ponytail: chunk search results into 2 columns on wide layout; upgrade to dynamic adaptive column grid when 3+ column tablet layout designed
+            val columns = if (maxWidth >= 600.dp) 2 else 1
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
@@ -293,17 +299,18 @@ fun OnlineSearchResult(
                                         ruleAbove = ruleAbove,
                                     )
                                 }
+                                val chunked = rows.chunked(columns)
                                 items(
-                                    items = rows,
-                                    key = { "summary_${index}_${it.id}" },
+                                    items = chunked,
+                                    key = { chunk -> "c${columns}_summary_${index}_${chunk.first().id}" },
                                     contentType = { "resultRow" },
-                                ) { item ->
-                                    ResultRow(
-                                        item = item,
-                                        isActive = mediaMetadata?.id == item.id,
-                                        onClick = { onItemClick(item) },
-                                        onLongClick = { onItemLongClick(item) },
-                                        onMenu = { onItemLongClick(item) },
+                                ) { rowItems ->
+                                    ResultRowChunk(
+                                        items = rowItems,
+                                        columns = columns,
+                                        mediaMetadataId = mediaMetadata?.id,
+                                        onItemClick = onItemClick,
+                                        onItemLongClick = onItemLongClick,
                                     )
                                 }
                                 item(key = "summary_gap_$index") {
@@ -337,17 +344,18 @@ fun OnlineSearchResult(
                             }
                         }
                     } else {
+                        val chunked = page.items.chunked(columns)
                         items(
-                            items = page.items,
-                            key = { it.id },
+                            items = chunked,
+                            key = { chunk -> "c${columns}_${chunk.first().id}" },
                             contentType = { "resultRow" },
-                        ) { item ->
-                            ResultRow(
-                                item = item,
-                                isActive = mediaMetadata?.id == item.id,
-                                onClick = { onItemClick(item) },
-                                onLongClick = { onItemLongClick(item) },
-                                onMenu = { onItemLongClick(item) },
+                        ) { rowItems ->
+                            ResultRowChunk(
+                                items = rowItems,
+                                columns = columns,
+                                mediaMetadataId = mediaMetadata?.id,
+                                onItemClick = onItemClick,
+                                onItemLongClick = onItemLongClick,
                             )
                         }
                     }
@@ -471,6 +479,7 @@ private fun TopResultCard(
     isPlaying: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val kind = when (item) {
         is SongItem -> if (item.isVideoSong) "Video" else "Song"
@@ -497,7 +506,7 @@ private fun TopResultCard(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = SearchHorizontalPadding)
             .clip(RoundedCornerShape(16.dp))
@@ -592,6 +601,48 @@ private fun TopResultCard(
     }
 }
 
+@Composable
+private fun ResultRowChunk(
+    items: List<YTItem>,
+    columns: Int,
+    mediaMetadataId: String?,
+    onItemClick: (YTItem) -> Unit,
+    onItemLongClick: (YTItem) -> Unit,
+) {
+    if (columns > 1) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = SearchHorizontalPadding - 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items.forEach { item ->
+                ResultRow(
+                    item = item,
+                    isActive = mediaMetadataId == item.id,
+                    onClick = { onItemClick(item) },
+                    onLongClick = { onItemLongClick(item) },
+                    onMenu = { onItemLongClick(item) },
+                    horizontalPadding = 8.dp,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            repeat(columns - items.size) {
+                Spacer(Modifier.weight(1f))
+            }
+        }
+    } else {
+        val item = items.first()
+        ResultRow(
+            item = item,
+            isActive = mediaMetadataId == item.id,
+            onClick = { onItemClick(item) },
+            onLongClick = { onItemLongClick(item) },
+            onMenu = { onItemLongClick(item) },
+        )
+    }
+}
+
 // no play state here: rows only tint the active title, so a play or pause leaves every row alone
 @Composable
 private fun ResultRow(
@@ -600,6 +651,8 @@ private fun ResultRow(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onMenu: () -> Unit,
+    modifier: Modifier = Modifier,
+    horizontalPadding: Dp = SearchHorizontalPadding,
 ) {
     val subtitle = when (item) {
         is SongItem -> listOfNotNull(
@@ -626,7 +679,7 @@ private fun ResultRow(
                     onClick = onClick,
                     onLongClick = onLongClick,
                 )
-                .padding(horizontal = SearchHorizontalPadding, vertical = 8.dp),
+                .padding(horizontal = horizontalPadding, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SearchArtwork(
@@ -661,7 +714,7 @@ private fun ResultRow(
         }
     }
 
-    Column {
+    Column(modifier = modifier) {
         // songs slide to queue or save to the library; Settings > Gesture sets which side does which
         if (item is SongItem) {
             SongSwipeBox(
@@ -673,7 +726,7 @@ private fun ResultRow(
         } else {
             row()
         }
-        SearchRule()
+        SearchRule(horizontalPadding = horizontalPadding)
     }
 }
 
