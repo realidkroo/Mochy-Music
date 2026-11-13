@@ -959,6 +959,11 @@ private fun PlayerSheet(
                             likeBurst.likeFromDoubleTap(position, trackInfo.liked, playerConnection::toggleLike)
                         }
                     },
+                    // a tap on the art opens the song's details, like a tap on its title; the
+                    // turntable is left out, its record has its own taps
+                    onTapCover = if (playerStyle.flagshipFamily && !isTurntable && !landscapeFlagship) {
+                        { if (!studioEngaged) showSongDetails = true }
+                    } else null,
                     onArtBoundsChanged = { rects.cover = it },
                     onVideoShowingChange = { videoShowing = it },
                     ambient = if (isFlagship || backgroundStyle == PlayerBackgroundStyle.AMBIENT) ambient else null,
