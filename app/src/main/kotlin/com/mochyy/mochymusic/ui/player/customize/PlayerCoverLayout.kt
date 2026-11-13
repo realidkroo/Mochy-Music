@@ -47,12 +47,13 @@ fun coverArtBoxF(
     val region = (usualRegion + offset).coerceIn(height * MinCoverRegionFraction, height * MaxCoverRegionFraction)
     if (!boxed) return CoverBoxF(0f, 0f, width, region)
 
-    val usualSide = (width - StageInsetDp * unit * 2f).coerceAtLeast(0f)
     val top = statusTop + 16f * unit
-    var side = usualSide * region / usualRegion
-    // each limit only in the direction it's moved, so an unmoved cover is never touched
-    if (offset > 0f) side = side.coerceAtMost(maxOf(usualSide, width - MinStageInsetDp * unit * 2f))
-    if (offset < 0f) side = side.coerceAtMost((region - top - 8f * unit).coerceAtLeast(usualSide * 0.5f))
+    // ponytail: cap side to available height inside region; upgrade with two-pane layout when width allows
+    val maxSide = (region - top - 8f * unit).coerceAtLeast(0f)
+    val usualSide = (width - StageInsetDp * unit * 2f).coerceIn(0f, maxSide)
+    var side = (usualSide * region / usualRegion).coerceAtMost(maxSide)
+    if (offset > 0f) side = side.coerceAtMost(minOf(maxSide, maxOf(usualSide, width - MinStageInsetDp * unit * 2f)))
+    if (offset < 0f) side = side.coerceAtMost(maxSide.coerceAtLeast(usualSide * 0.5f))
     val y = ((region - side) / 2f).coerceAtLeast(top)
     return CoverBoxF((width - side) / 2f, y, side, side)
 }

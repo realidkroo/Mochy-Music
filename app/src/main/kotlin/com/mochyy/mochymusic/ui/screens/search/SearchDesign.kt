@@ -830,11 +830,11 @@ fun SearchOverflowDots(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun SearchRule(modifier: Modifier = Modifier) {
+fun SearchRule(modifier: Modifier = Modifier, horizontalPadding: Dp = SearchHorizontalPadding) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = SearchHorizontalPadding)
+            .padding(horizontal = horizontalPadding)
             .height(1.dp)
             .background(SearchColors.Divider)
     )

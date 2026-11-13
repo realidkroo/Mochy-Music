@@ -4,7 +4,11 @@ package com.mochyy.mochymusic.ui.player.customize
 
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -118,9 +122,17 @@ fun DiscCoverStack(
 
     val measurer = rememberTextMeasurer(cacheSize = 96)
 
-    Box(modifier = modifier) {
-        // the Turntable's arm stands on a slab the record sits over
-        if (style == PlayerCoverStyle.TURNTABLE) TurntableBase(Modifier.fillMaxSize())
+    BoxWithConstraints(modifier = modifier) {
+        // ponytail: constrain turntable width to fit available height on wide/square viewports
+        val turntableWidth = if (style == PlayerCoverStyle.TURNTABLE) minOf(maxWidth, maxHeight * 0.75f) else maxWidth
+        Box(
+            modifier = Modifier
+                .width(turntableWidth)
+                .fillMaxHeight()
+                .align(Alignment.Center),
+        ) {
+            // the Turntable's arm stands on a slab the record sits over
+            if (style == PlayerCoverStyle.TURNTABLE) TurntableBase(Modifier.fillMaxSize())
 
         for (slot in slots) {
             key(slot.uid) {
@@ -163,6 +175,7 @@ fun DiscCoverStack(
                 liftProvider = { ((carousel?.away ?: 0f) * 3f).coerceIn(0f, 1f) },
                 modifier = Modifier.fillMaxSize(),
             )
+        }
         }
     }
 }
