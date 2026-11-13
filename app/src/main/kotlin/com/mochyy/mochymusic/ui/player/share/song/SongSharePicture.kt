@@ -143,7 +143,8 @@ private fun CinematicWords(
     } else {
         null
     }
-    CinematicLayout(pick, regions, ink = session.wordsInk, cover = session.art.cover, flow = flow)
+    val readings = pick.chosen.map { (line, _) -> pick.entries.getOrNull(line)?.let(session::cinematicUnder).orEmpty() }
+    CinematicLayout(pick, regions, ink = session.wordsInk, cover = session.art.cover, flow = flow, readings = readings)
 }
 
 @Composable

@@ -70,7 +70,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.net.URLDecoder
 import javax.inject.Inject
 
 @HiltViewModel
@@ -88,7 +87,8 @@ internal class TvSearchViewModel @Inject constructor(
     private val _searching = MutableStateFlow(false)
     val searching: StateFlow<Boolean> = _searching.asStateFlow()
 
-    val initialQuery: String = savedStateHandle.get<String>("q")?.let { URLDecoder.decode(it, "UTF-8") }.orEmpty()
+    // navigation already decoded it, decoding again turned a typed + into a space
+    val initialQuery: String = savedStateHandle.get<String>("q").orEmpty()
 
     init {
         if (initialQuery.isNotBlank()) search(initialQuery)

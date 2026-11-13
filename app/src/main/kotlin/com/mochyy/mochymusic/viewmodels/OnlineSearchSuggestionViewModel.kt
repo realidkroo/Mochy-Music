@@ -86,7 +86,10 @@ constructor(
                                         ?.queries
                                         ?.filter { suggestionQuery ->
                                             history.none { it.query == suggestionQuery }
-                                        }.orEmpty(),
+                                        }
+                                        // a suggestion repeated twice gave two rows the same key and closed the app
+                                        ?.distinct()
+                                        .orEmpty(),
                                     items = listOfNotNull(parsedItem) +
                                     result
                                         ?.recommendedItems

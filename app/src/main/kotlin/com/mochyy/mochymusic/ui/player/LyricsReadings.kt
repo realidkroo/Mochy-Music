@@ -6,6 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.datastore.preferences.core.Preferences
 import com.mochyy.mochymusic.constants.AiProviderKey
 import com.mochyy.mochymusic.constants.DeeplApiKey
 import com.mochyy.mochymusic.constants.DeeplFormalityKey
@@ -33,6 +34,8 @@ import com.mochyy.mochymusic.db.MusicDatabase
 import com.mochyy.mochymusic.lyrics.LyricsEntry
 import com.mochyy.mochymusic.lyrics.LyricsTranslationHelper
 import com.mochyy.mochymusic.lyrics.LyricsUtils
+import com.mochyy.mochymusic.lyrics.RubyToken
+import com.mochyy.mochymusic.lyrics.WordTimestamp
 import com.mochyy.mochymusic.lyrics.YouTubeCaptionTranslation
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
@@ -56,100 +59,17 @@ fun LyricsReadings(
     lyricsEntity: com.mochyy.mochymusic.db.entities.LyricsEntity?,
 ) {
     val context = LocalContext.current
-    // Romanisation preferences. Every one of these keys existed already and none of them were
-    // read by this screen — it romanised unconditionally, so turning any of them off did nothing.
-    val (romanizeJapanese) = rememberPreference(LyricsRomanizeJapaneseKey, defaultValue = true)
-    val (romanizeKorean) = rememberPreference(LyricsRomanizeKoreanKey, defaultValue = true)
-    val (romanizeChinese) = rememberPreference(LyricsRomanizeChineseKey, defaultValue = true)
-    val (romanizeRussian) = rememberPreference(LyricsRomanizeRussianKey, defaultValue = true)
-    val (romanizeUkrainian) = rememberPreference(LyricsRomanizeUkrainianKey, defaultValue = true)
-    val (romanizeSerbian) = rememberPreference(LyricsRomanizeSerbianKey, defaultValue = true)
-    val (romanizeBulgarian) = rememberPreference(LyricsRomanizeBulgarianKey, defaultValue = true)
-    val (romanizeBelarusian) = rememberPreference(LyricsRomanizeBelarusianKey, defaultValue = true)
-    val (romanizeKyrgyz) = rememberPreference(LyricsRomanizeKyrgyzKey, defaultValue = true)
-    val (romanizeMacedonian) = rememberPreference(LyricsRomanizeMacedonianKey, defaultValue = true)
-    val (romanizeHindi) = rememberPreference(LyricsRomanizeHindiKey, defaultValue = true)
-    val (romanizePunjabi) = rememberPreference(LyricsRomanizePunjabiKey, defaultValue = true)
+    // every language switch, in the order of RomanizeLanguageKeys; the list never changes, so reading them in a loop is safe
+    val switches = RomanizeLanguageKeys.map { key -> rememberPreference(key, defaultValue = true).value }
 
-    // Detect the script ONCE over the whole lyric body rather than per line.
-    //
-    // Per-line detection was the "multi language exists but not at their target" bug: in a song
-    // that mixes English and Japanese, the English lines detect as nothing and the Japanese ones
-    // as Japanese, so romanisation appeared under a scattered subset of lines. Worse, a Japanese
-    // line made mostly of kanji looks identical to Chinese character-by-character, so individual
-    // lines of one song were being sent to the pinyin romanizer and came back as Mandarin
-    // readings of Japanese words. A song has one language; decide it from all the evidence.
-    val bodyScript = remember(lines) {
-        LyricsUtils.romanizableScript(lines.joinToString(" ") { it.text })
-    }
-    val romanizerEnabled = when (bodyScript) {
-        LyricsUtils.Script.KANA -> romanizeJapanese
-        LyricsUtils.Script.HANGUL -> romanizeKorean
-        LyricsUtils.Script.HAN -> romanizeChinese
-        LyricsUtils.Script.DEVANAGARI -> romanizeHindi
-        LyricsUtils.Script.CYRILLIC -> true
-        else -> false
-    }
-
-    LaunchedEffect(lines, bodyScript, romanizerEnabled) {
-        if (!romanizerEnabled) {
-            lines.forEach {
-                it.romanizedWordsFlow.value = null
-                it.romanizedTextFlow.value = null
-                it.rubyFlow.value = null
-            }
-            return@LaunchedEffect
-        }
-        // One sequential pass on a background dispatcher, not one coroutine per line. Launching a
-        // coroutine per line meant a 60-line song fired 60 concurrent kuromoji tokenizations the
-        // instant the lyrics loaded, which is what stalled the player on opening a Japanese track.
-        withContext(Dispatchers.Default) {
-            val body = lines.joinToString(" ") { it.text }
-            // Gurmukhi and the individual Cyrillic languages aren't separable by codepoint block
-            // alone, so they still go through the existing detectors — but on the whole body.
-            val punjabi = LyricsUtils.isPunjabi(body)
-            val cyrillicAllowed = when {
-                bodyScript != LyricsUtils.Script.CYRILLIC -> false
-                LyricsUtils.isUkrainian(body) -> romanizeUkrainian
-                LyricsUtils.isSerbian(body) -> romanizeSerbian
-                LyricsUtils.isBelarusian(body) -> romanizeBelarusian
-                LyricsUtils.isKyrgyz(body) -> romanizeKyrgyz
-                LyricsUtils.isMacedonian(body) -> romanizeMacedonian
-                LyricsUtils.isBulgarian(body) -> romanizeBulgarian
-                else -> romanizeRussian
-            }
-
-            suspend fun romanizeOne(text: String): String? = when {
-                punjabi && romanizePunjabi -> LyricsUtils.romanizePunjabi(text)
-                bodyScript == LyricsUtils.Script.KANA -> LyricsUtils.romanizeJapanese(text)
-                bodyScript == LyricsUtils.Script.HANGUL -> LyricsUtils.romanizeKorean(text)
-                bodyScript == LyricsUtils.Script.HAN -> LyricsUtils.romanizeChinese(text)
-                bodyScript == LyricsUtils.Script.DEVANAGARI -> LyricsUtils.romanizeHindi(text)
-                cyrillicAllowed -> LyricsUtils.romanizeCyrillic(text)
-                else -> null
-            }
-
-            for (entry in lines) {
-                if (entry.text.isBlank()) continue
-
-                // Japanese and Chinese get readings placed ABOVE each word, the way furigana works
-                // on a printed lyric sheet, rather than the whole line's romanisation dumped
-                // underneath as one unbroken string. Everything else stays a sub-line: Cyrillic
-                // and Devanagari are alphabetic, so a per-word reading over them adds nothing.
-                val ruby = LyricsUtils.rubyFor(entry.text, bodyScript)
-                // the whole line's reading too, ruby or not: it's what the line says when the romanisation is shown as the line itself
-                val romanized = if (ruby != null) LyricsUtils.readingLine(entry.text, ruby) else romanizeOne(entry.text)
-                val reading = romanized?.takeIf { it.isNotBlank() && it != entry.text }
-                val pieces = entry.syllables ?: entry.words
-                // the pieces first, so whoever sees the reading land finds its timing already there
-                entry.romanizedWordsFlow.value = if (reading != null && !pieces.isNullOrEmpty()) {
-                    LyricsUtils.romanizedWords(entry.text, pieces, ruby) { romanizeOne(it) }
-                } else {
-                    null
-                }
-                entry.rubyFlow.value = ruby
-                entry.romanizedTextFlow.value = reading
-            }
+    LaunchedEffect(lines, switches) {
+        val allowed = RomanizeLanguageKeys.zip(switches).toMap()
+        readSong(lines, allowed = { allowed[it] != false }) { index, reading ->
+            val entry = lines[index]
+            // the pieces first, so whoever sees the reading land finds its timing already there
+            entry.romanizedWordsFlow.value = reading?.words
+            entry.rubyFlow.value = reading?.ruby
+            entry.romanizedTextFlow.value = reading?.text
         }
     }
 
@@ -263,6 +183,80 @@ fun LyricsReadings(
     LaunchedEffect(lines) {
         LyricsTranslationHelper.clearTranslationsTrigger.collect {
             lines.forEach { it.translatedTextFlow.value = null }
+        }
+    }
+}
+
+// one line's romanisation: the whole line read out, its timed pieces when the line has timing, and the ruby over japanese and chinese words
+class LineReading(val text: String?, val words: List<WordTimestamp>?, val ruby: List<RubyToken>?)
+
+// the switch for the language a song is sung in, or null when it's in nothing mochy can romanise
+fun romanizeSwitchFor(lines: List<LyricsEntry>): Preferences.Key<Boolean>? {
+    val body = lines.joinToString(" ") { it.text }
+    return switchFor(body, LyricsUtils.romanizableScript(body))
+}
+
+private fun switchFor(body: String, script: LyricsUtils.Script): Preferences.Key<Boolean>? = when (script) {
+    LyricsUtils.Script.KANA -> LyricsRomanizeJapaneseKey
+    LyricsUtils.Script.HANGUL -> LyricsRomanizeKoreanKey
+    LyricsUtils.Script.HAN -> LyricsRomanizeChineseKey
+    LyricsUtils.Script.DEVANAGARI -> LyricsRomanizeHindiKey
+    // the cyrillic languages share one alphabet, so the words tell them apart
+    LyricsUtils.Script.CYRILLIC -> when {
+        LyricsUtils.isUkrainian(body) -> LyricsRomanizeUkrainianKey
+        LyricsUtils.isSerbian(body) -> LyricsRomanizeSerbianKey
+        LyricsUtils.isBelarusian(body) -> LyricsRomanizeBelarusianKey
+        LyricsUtils.isKyrgyz(body) -> LyricsRomanizeKyrgyzKey
+        LyricsUtils.isMacedonian(body) -> LyricsRomanizeMacedonianKey
+        LyricsUtils.isBulgarian(body) -> LyricsRomanizeBulgarianKey
+        else -> LyricsRomanizeRussianKey
+    }
+    else -> null
+}
+
+// every line's reading in one pass off the main thread, each handed to onLine as it's done; a language that isn't allowed gets null for every line
+suspend fun readSong(
+    lines: List<LyricsEntry>,
+    allowed: (Preferences.Key<Boolean>) -> Boolean,
+    onLine: (index: Int, reading: LineReading?) -> Unit,
+) = withContext(Dispatchers.Default) {
+    // the whole song decides the language: a kanji line alone looks chinese, and an english verse alone looks like nothing
+    val body = lines.joinToString(" ") { it.text }
+    val script = LyricsUtils.romanizableScript(body)
+    val switch = switchFor(body, script)
+    if (switch == null || !allowed(switch)) {
+        lines.indices.forEach { onLine(it, null) }
+        return@withContext
+    }
+    val punjabi = LyricsUtils.isPunjabi(body) && allowed(LyricsRomanizePunjabiKey)
+
+    suspend fun romanizeOne(text: String): String? = when {
+        punjabi -> LyricsUtils.romanizePunjabi(text)
+        script == LyricsUtils.Script.KANA -> LyricsUtils.romanizeJapanese(text)
+        script == LyricsUtils.Script.HANGUL -> LyricsUtils.romanizeKorean(text)
+        script == LyricsUtils.Script.HAN -> LyricsUtils.romanizeChinese(text)
+        script == LyricsUtils.Script.DEVANAGARI -> LyricsUtils.romanizeHindi(text)
+        script == LyricsUtils.Script.CYRILLIC -> LyricsUtils.romanizeCyrillic(text)
+        else -> null
+    }
+
+    // one line after another, never a coroutine each: sixty kuromoji runs at once stalled the player opening a japanese song
+    lines.forEachIndexed { index, entry ->
+        if (entry.text.isBlank()) {
+            onLine(index, null)
+        } else {
+            // japanese and chinese get ruby over each word like furigana; alphabets only get a line underneath
+            val ruby = LyricsUtils.rubyFor(entry.text, script)
+            // the whole line's reading too, ruby or not: it's what the line says when the romanisation is shown as the line itself
+            val romanized = if (ruby != null) LyricsUtils.readingLine(entry.text, ruby) else romanizeOne(entry.text)
+            val reading = romanized?.takeIf { it.isNotBlank() && it != entry.text }
+            val pieces = entry.syllables ?: entry.words
+            val words = if (reading != null && !pieces.isNullOrEmpty()) {
+                LyricsUtils.romanizedWords(entry.text, pieces, ruby) { romanizeOne(it) }
+            } else {
+                null
+            }
+            onLine(index, LineReading(reading, words, ruby))
         }
     }
 }

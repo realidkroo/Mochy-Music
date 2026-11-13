@@ -58,11 +58,11 @@ import com.mochyy.mochymusic.ui.component.GlassState
 import com.mochyy.mochymusic.ui.component.SubSettingsScaffold
 import com.mochyy.mochymusic.ui.component.glassRoot
 import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
+import com.mochyy.mochymusic.ui.screens.search.searchRoute
 import com.mochyy.mochymusic.ui.screens.settings.devspace.openDevUrl
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.viewmodels.ModulesViewModel
 import com.music.innertube.models.WatchEndpoint
-import java.net.URLEncoder
 
 const val ModulePageRoutePattern = "module_page/{id}/{page}"
 fun modulePageRoute(id: String, page: String) = "module_page/${Uri.encode(id)}/${Uri.encode(page)}"
@@ -265,7 +265,7 @@ private fun PageBlockView(block: PageBlock, skin: ModuleSkin, navController: Nav
             navController.navigate("artist/${block.id}")
         }
         is PageBlock.Search -> PageRow(R.drawable.search_filled, block.title, block.query.takeIf { it != block.title }) {
-            navController.navigate("search/${URLEncoder.encode(block.query, "UTF-8")}")
+            navController.navigate(searchRoute(block.query))
         }
         // drawn by the page itself, which knows the module's values and its background
         is PageBlock.Setting, is PageBlock.Card, is PageBlock.Shader -> Unit

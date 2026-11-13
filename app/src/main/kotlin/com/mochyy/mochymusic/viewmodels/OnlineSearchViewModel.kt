@@ -26,7 +26,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import java.net.URLDecoder
 import javax.inject.Inject
 
 @HiltViewModel
@@ -36,11 +35,8 @@ constructor(
     @ApplicationContext val context: Context,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    val query = try {
-        URLDecoder.decode(savedStateHandle.get<String>("query")!!, "UTF-8")
-    } catch (e: IllegalArgumentException) {
-        savedStateHandle.get<String>("query")!!
-    }
+    // navigation already decoded it, decoding again turned a typed + into a space
+    val query = savedStateHandle.get<String>("query").orEmpty()
     val filter = MutableStateFlow<YouTube.SearchFilter?>(null)
     var summaryPage by mutableStateOf<SearchSummaryPage?>(null)
     val viewStateMap = mutableStateMapOf<String, ItemsPage?>()
@@ -59,7 +55,7 @@ constructor(
                                 summaryPage =
                                     it.filterExplicit(
                                         hideExplicit,
-                                    ).filterVideoSongs(hideVideoSongs).filterYoutubeShorts(hideYoutubeShorts)
+                                    ).filterVideoSongs(hideVideoSongs).filterYoutubeShorts(hideYoutubeShorts).withoutRepeats()
                             }.onFailure {
                                 reportException(it)
                             }
@@ -91,6 +87,10 @@ constructor(
             }
         }
     }
+
+    // youtube sometimes lists the same song twice in one section, and two rows with one key closed the app
+    private fun SearchSummaryPage.withoutRepeats() =
+        copy(summaries = summaries.map { section -> section.copy(items = section.items.distinctBy { it.id }) })
 
     fun loadMore() {
         val filter = filter.value?.value

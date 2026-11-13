@@ -5,6 +5,7 @@ package com.mochyy.mochymusic.playback
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import androidx.media3.datasource.cache.ContentMetadata
 import androidx.media3.exoplayer.offline.Download
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.io.File
 import java.io.IOException
 import java.io.OutputStream
 import javax.inject.Inject
@@ -108,7 +110,7 @@ class DownloadExporter @Inject constructor(
                 return@forEachIndexed
             }
             val base = uniqueName(usedNames.getOrPut(entry.path) { HashSet() }, baseName(entry.song))
-            documents.write(folder, "$base.${audio.extension}") { out -> audio.copyTo(out) }
+            writeAudio(documents, folder, base, audio)
 
             if (choice.lyrics) lyricsOf(entry.song.id)?.let { (text, ext) ->
                 documents.write(folder, "$base.$ext") { it.write(text.toByteArray()) }
@@ -190,8 +192,24 @@ class DownloadExporter @Inject constructor(
         return candidate
     }
 
+    // the song exactly as it was downloaded, only youtube's webm opus moves into an .opus file since players skip .webm
+    private fun writeAudio(documents: DocumentTree, folder: String, base: String, audio: CachedAudio) {
+        if (audio.extension == "webm" && Build.VERSION.SDK_INT >= 29) {
+            val temp = File.createTempFile("export", ".opus", context.cacheDir)
+            try {
+                if (OggOpusRemux.remux(audio.spans, temp)) {
+                    documents.write(folder, "$base.opus") { out -> temp.inputStream().use { it.copyTo(out, 256 * 1024) } }
+                    return
+                }
+            } finally {
+                temp.delete()
+            }
+        }
+        documents.write(folder, "$base.${audio.extension}") { out -> audio.copyTo(out) }
+    }
+
     // a downloaded song's bytes, straight from the pieces in the download cache, and what kind of file they make
-    private class CachedAudio(private val spans: List<java.io.File>, val extension: String) {
+    private class CachedAudio(val spans: List<File>, val extension: String) {
         fun copyTo(out: OutputStream) = spans.forEach { span -> span.inputStream().use { it.copyTo(out, 256 * 1024) } }
     }
 
@@ -212,14 +230,15 @@ class DownloadExporter @Inject constructor(
     }
 
     // read off the file's first bytes rather than the saved format, since a module download can carry any container
-    private fun extensionOf(first: java.io.File): String {
-        val head = ByteArray(12)
+    private fun extensionOf(first: File): String {
+        val head = ByteArray(64)
         val read = runCatching { first.inputStream().use { it.read(head) } }.getOrDefault(0)
         if (read < 4) return "m4a"
         fun at(offset: Int, text: String) = text.indices.all { head[offset + it] == text[it].code.toByte() }
         return when {
             at(0, "fLaC") -> "flac"
-            at(0, "OggS") -> "ogg"
+            // ogg holding opus is an .opus file, anything else in ogg stays .ogg
+            at(0, "OggS") -> if (read >= 36 && (28..read - 8).any { at(it, "OpusHead") }) "opus" else "ogg"
             at(0, "ID3") || (head[0] == 0xFF.toByte() && (head[1].toInt() and 0xE0) == 0xE0) -> "mp3"
             at(0, "RIFF") -> "wav"
             head[0] == 0x1A.toByte() && head[1] == 0x45.toByte() && head[2] == 0xDF.toByte() && head[3] == 0xA3.toByte() -> "webm"

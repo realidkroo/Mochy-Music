@@ -103,7 +103,6 @@ import com.mochyy.mochymusic.utils.rememberPreference
 import com.mochyy.mochymusic.viewmodels.OnlineSearchViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.net.URLEncoder
 import com.mochyy.mochymusic.ui.component.navigateToTab
 import com.mochyy.mochymusic.ui.component.RemoteFocus
 
@@ -173,8 +172,8 @@ fun OnlineSearchResult(
             val text = raw.trim()
             if (text.isNotEmpty() && text != viewModel.query) {
                 focusManager.clearFocus()
-                navController.navigate("search/${URLEncoder.encode(text, "UTF-8")}") {
-                    popUpTo("search/${URLEncoder.encode(viewModel.query, "UTF-8")}") {
+                navController.navigate(searchRoute(text)) {
+                    popUpTo(searchRoute(viewModel.query)) {
                         inclusive = true
                     }
                 }

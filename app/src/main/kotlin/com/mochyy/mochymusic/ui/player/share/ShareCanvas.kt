@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import com.mochyy.mochymusic.ui.player.rememberShownLyric
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -149,11 +148,9 @@ internal fun CinematicLayout(
     cover: ImageBitmap? = null,
     // in a video the words light up as they're sung; null keeps them all lit for a picture
     flow: CinematicFlow? = null,
+    // the reading and the translation under each picked line, as the share's switches want them
+    readings: List<List<String>> = emptyList(),
 ) {
-    // the reading (or the original, when the romanisation is the line) and the translation under each line
-    val readings = session.chosen.map { (line, _) ->
-        session.entries.getOrNull(line)?.let { rememberShownLyric(it) }?.let { listOfNotNull(it.subLine, it.translation) }.orEmpty()
-    }
     val textSize = rememberCinematicTextSize(session, readings)
     val below = animateFloatAsState(
         if (session.headerBelow) 1f else 0f,
