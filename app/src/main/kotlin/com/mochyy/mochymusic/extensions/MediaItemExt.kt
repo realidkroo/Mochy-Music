@@ -86,3 +86,21 @@ fun MediaItem.withAutoplay(autoplay: Boolean): MediaItem {
         .setMediaMetadata(mediaMetadata.buildUpon().setExtras(extras).build())
         .build()
 }
+
+/**
+ * Flags a song the user queued by hand ("Add to Queue" / "Play next"), as opposed to one that
+ * came with the queue they started or one Autoplay lined up. These are the queue's "Next in Queue"
+ * songs: they play ahead of everything else, and starting another song doesn't drop them.
+ */
+private const val ManualQueueExtra = "mochy.manualqueue"
+
+val MediaItem.isManualQueued: Boolean
+    get() = mediaMetadata.extras?.getBoolean(ManualQueueExtra, false) == true
+
+fun MediaItem.withManualQueued(manual: Boolean): MediaItem {
+    if (isManualQueued == manual) return this
+    val extras = Bundle(mediaMetadata.extras ?: Bundle()).apply { putBoolean(ManualQueueExtra, manual) }
+    return buildUpon()
+        .setMediaMetadata(mediaMetadata.buildUpon().setExtras(extras).build())
+        .build()
+}
