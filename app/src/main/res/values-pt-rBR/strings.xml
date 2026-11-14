@@ -205,7 +205,7 @@
     <string name="playlist_synced">A playlist foi sincronizada</string>
     <string name="undo">Desfazer</string>
     <!-- Player -->
-    <string name="lyrics_not_found">A letra não foi encontrada</string>
+    <string name="lyrics_not_found">No lyrics found</string>
     <string name="sleep_timer">Timer para dormir</string>
     <string name="end_of_song">Fim da música</string>
     <plurals name="minute">
@@ -214,6 +214,7 @@
     </plurals>
     <string name="error_no_stream">Nenhum canal de reprodução disponível</string>
     <string name="error_no_internet">Sem conexão à internet</string>
+    <string name="no_internet_next_on_phone">No internet, so here\'s the next song saved on your phone</string>
     <string name="error_timeout">Tempo esgotado</string>
     <string name="error_unknown">Erro desconhecido</string>
     <string name="error_bot_check">YouTube wants a bot check from this network right now. Try again in a few minutes, switch between Wi-Fi and mobile data, or log in to your YouTube account.</string>
