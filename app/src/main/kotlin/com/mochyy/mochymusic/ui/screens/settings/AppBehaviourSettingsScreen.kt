@@ -481,6 +481,7 @@ private fun playerLookItems(): List<SettingsItem> {
     val (highBloom, onHighBloomChange) = rememberPreference(LyricsHighBloomKey, defaultValue = true)
     val (lyricsStyle) = rememberEnumPreference(LyricsMotionStyleKey, defaultValue = LyricsMotionStyle.MOTION)
     val (romanizeAsMain, onRomanizeAsMainChange) = rememberPreference(com.mochyy.mochymusic.constants.LyricsRomanizeAsMainKey, defaultValue = false)
+    val (floatingLyrics, onFloatingLyricsChange) = com.mochyy.mochymusic.floating.rememberFloatingLyricsSwitch()
     return listOf(
         switchItem(
             key = "Audio format badge",
@@ -551,6 +552,15 @@ private fun playerLookItems(): List<SettingsItem> {
             icon = painterResource(R.drawable.lyrics),
             checked = romanizeAsMain,
             onCheckedChange = onRomanizeAsMainChange,
+        ),
+        switchItem(
+            key = "Floating lyrics overlay bubble",
+            title = stringResource(R.string.settings_floating_lyrics),
+            description = stringResource(R.string.settings_floating_lyrics_desc),
+            detail = stringResource(R.string.settings_floating_lyrics_detail),
+            icon = painterResource(R.drawable.lyrics),
+            checked = floatingLyrics,
+            onCheckedChange = onFloatingLyricsChange,
         ),
     )
 }

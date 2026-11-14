@@ -671,6 +671,9 @@ class MusicService :
     // the line being sung on android auto's own player while a car is connected
     private var carLyrics: CarLyrics? = null
 
+    // the line being sung floating over other apps, when it's turned on
+    private var floatingLyrics: com.mochyy.mochymusic.floating.FloatingLyrics? = null
+
     // what android auto's templated player reads, handed over by the car app
     val platformSessionToken: android.media.session.MediaSession.Token
         get() = mediaSession.platformToken
@@ -869,6 +872,9 @@ class MusicService :
                 .build()
         carLyrics = CarLyrics(this, CarLyricsSource(database, lyricsHelper), currentMediaMetadata, { player }, sessionPlayer, scope)
             .also { it.start() }
+        floatingLyrics = com.mochyy.mochymusic.floating.FloatingLyrics(
+            this, database, CarLyricsSource(database, lyricsHelper), currentMediaMetadata, playerFlow, scope,
+        ).also { it.start() }
         player.repeatMode = dataStore.get(RepeatModeKey, REPEAT_MODE_OFF)
 
         if (dataStore.get(RememberShuffleAndRepeatKey, true)) {
@@ -4317,6 +4323,8 @@ class MusicService :
         fadingLoudnessEnhancer = null
         carLyrics?.stop()
         carLyrics = null
+        floatingLyrics?.stop()
+        floatingLyrics = null
         mediaSession.release()
         player.removeListener(this)
         player.removeListener(sleepTimer)

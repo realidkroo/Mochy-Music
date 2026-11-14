@@ -245,13 +245,14 @@ internal fun LyricsStyleSection(modifier: Modifier = Modifier) {
     }
 }
 
-// romanisation, the romanisation as the line itself, and translation: what every style draws under and over its words
+// romanisation, the romanisation as the line itself and translation, what every style draws under and over its words, plus the lyrics floating over other apps
 @Composable
 private fun LyricsReadingToggles(modifier: Modifier = Modifier) {
     val languages = com.mochyy.mochymusic.ui.player.RomanizeLanguageKeys.map { rememberPreference(it, defaultValue = true) }
     val romanize = languages.any { it.value }
     val (asMain, onAsMain) = rememberPreference(com.mochyy.mochymusic.constants.LyricsRomanizeAsMainKey, defaultValue = false)
     val (translate, onTranslate) = rememberPreference(com.mochyy.mochymusic.constants.TranslateLyricsKey, defaultValue = false)
+    val (floating, onFloating) = com.mochyy.mochymusic.floating.rememberFloatingLyricsSwitch()
     com.mochyy.mochymusic.ui.screens.audiolab.LabCard(padding = 20.dp, modifier = modifier) {
         com.mochyy.mochymusic.ui.screens.audiolab.LabToggleRow(
             title = stringResource(R.string.customise_lyrics_romanisation),
@@ -275,6 +276,12 @@ private fun LyricsReadingToggles(modifier: Modifier = Modifier) {
                 // takes effect on the song playing now, not only from the next one
                 if (on) com.mochyy.mochymusic.lyrics.LyricsTranslationHelper.triggerManualTranslation() else com.mochyy.mochymusic.lyrics.LyricsTranslationHelper.triggerClearTranslations()
             },
+        )
+        com.mochyy.mochymusic.ui.screens.audiolab.LabToggleRow(
+            title = stringResource(R.string.settings_floating_lyrics),
+            subtitle = stringResource(R.string.settings_floating_lyrics_desc),
+            checked = floating,
+            onCheckedChange = onFloating,
         )
     }
 }

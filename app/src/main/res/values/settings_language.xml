@@ -188,4 +188,7 @@
     <string name="customise_lyrics_translation">Translation</string>
     <string name="customise_lyrics_translation_desc">Translates every song\'s lyrics as it plays</string>
     <string name="customise_lyrics_preview_translation">si je suis une pierre</string>
+    <string name="settings_floating_lyrics">Floating lyrics</string>
+    <string name="settings_floating_lyrics_desc">Keep the line being sung in a little bubble over other apps</string>
+    <string name="settings_floating_lyrics_detail">Tap the cover to open Mochy, or hold it for play and pause. Drag the bubble anywhere, or drop it on the cross to hide it until you come back to Mochy.</string>
 </resources>
