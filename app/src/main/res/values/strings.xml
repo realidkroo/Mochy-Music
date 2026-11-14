@@ -22,6 +22,7 @@
 
     <!-- Home -->
     <string name="history">History</string>
+    <string name="queue_next_in_queue">Next in Queue</string>
     <string name="stats">Stats</string>
     <string name="mood_and_genres">Mood and Genres</string>
     <string name="account">Account</string>

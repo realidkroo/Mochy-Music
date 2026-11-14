@@ -571,7 +571,7 @@ private fun QueueSectionHeader(
     val title = when (section) {
         QueueSection.HISTORY -> stringResource(R.string.history)
         QueueSection.NOW_PLAYING -> "Now Playing"
-        QueueSection.NEXT_IN_QUEUE -> "Next in Queue"
+        QueueSection.NEXT_IN_QUEUE -> stringResource(R.string.queue_next_in_queue)
         QueueSection.CONTINUE -> "Continue Playing"
         QueueSection.AUTOPLAY -> "Autoplay"
     }

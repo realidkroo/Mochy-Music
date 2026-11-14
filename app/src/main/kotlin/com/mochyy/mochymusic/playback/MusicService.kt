@@ -2672,7 +2672,8 @@ class MusicService :
     fun playNext(items: List<MediaItem>) {
         if (items.isEmpty()) return
         val queued = items.asManualQueue()
-        if (player.mediaItemCount == 0) {
+        // a stopped player starts fresh with these, like before
+        if (player.mediaItemCount == 0 || player.playbackState == STATE_IDLE) {
             player.setMediaItems(queued)
             player.prepare()
 
