@@ -551,30 +551,34 @@ private fun SleepTimerRow(onClick: () -> Unit) {
     val sleepTimer = playerConnection.service.sleepTimer
 
     var remainingLabel by remember { mutableStateOf("") }
-    LaunchedEffect(sleepTimer.triggerTime, sleepTimer.pauseWhenSongEnd, sleepTimer.isPaused) {
+    LaunchedEffect(sleepTimer.triggerTime, sleepTimer.pauseWhenSongEnd) {
         while (true) {
             remainingLabel = when {
                 sleepTimer.pauseWhenSongEnd -> "ends with song"
-                sleepTimer.isPaused -> "paused (" + formatRemaining(sleepTimer.remainingMillisWhenPaused) + ")"
                 sleepTimer.triggerTime > 0L -> {
                     val left = sleepTimer.triggerTime - System.currentTimeMillis()
                     if (left <= 0L) "" else formatRemaining(left)
                 }
                 else -> ""
             }
-            if (remainingLabel.isEmpty() || sleepTimer.pauseWhenSongEnd || sleepTimer.isPaused) break
+            if (remainingLabel.isEmpty() || sleepTimer.pauseWhenSongEnd) break
             kotlinx.coroutines.delay(1000)
         }
     }
+    // a paused timer doesn't count down, so it needs no ticking label
+    val pausedLabel = if (sleepTimer.isPaused) {
+        androidx.compose.ui.res.stringResource(R.string.sleep_timer_paused_left, formatRemaining(sleepTimer.remainingMillisWhenPaused))
+    } else null
 
     MenuRow(
         icon = R.drawable.sleep_timer,
         title = "Sleep timer",
         onClick = onClick,
         trailing = {
-            if (remainingLabel.isNotEmpty()) {
+            val label = pausedLabel ?: remainingLabel.takeIf { it.isNotEmpty() }?.let { "$it remaining" }
+            if (label != null) {
                 Text(
-                    text = "$remainingLabel remaining",
+                    text = label,
                     color = Color(0xFF9A9A9A),
                     fontSize = 12.sp,
                 )

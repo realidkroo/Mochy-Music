@@ -12,7 +12,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.minutes
 
 class SleepTimer(
     private val scope: CoroutineScope,
@@ -30,6 +29,7 @@ class SleepTimer(
     var pauseWhenSongEnd by mutableStateOf(false)
         private set
 
+    // a paused timer still counts as set, so the menu row and the cancel button keep showing it
     val isActive: Boolean
         get() = triggerTime != -1L || isPaused || pauseWhenSongEnd
 
@@ -82,6 +82,7 @@ class SleepTimer(
         }
     }
 
+    // the -1 / +1 min buttons; going below zero ends the timer right away, like it ran out
     fun adjust(deltaSeconds: Long) {
         val deltaMillis = deltaSeconds * 1000L
         if (isPaused) {
@@ -102,23 +103,6 @@ class SleepTimer(
                 triggerTime = System.currentTimeMillis() + left
                 scheduleJob(left)
             }
-        }
-    }
-
-    fun reset() {
-        if (totalDurationMillis > 0L) {
-            cancelJob()
-            isPaused = true
-            remainingMillisWhenPaused = totalDurationMillis
-            triggerTime = -1L
-        } else {
-            clear()
-        }
-    }
-
-    fun restart() {
-        if (totalDurationMillis > 0L) {
-            startSeconds(totalDurationMillis / 1000L)
         }
     }
 
@@ -150,7 +134,6 @@ class SleepTimer(
             player.pause()
         }
     }
-
 
     override fun onMediaItemTransition(
         mediaItem: MediaItem?,
