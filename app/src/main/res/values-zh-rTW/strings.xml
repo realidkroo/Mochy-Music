@@ -196,7 +196,7 @@
     <string name="playlist_synced">同步完成</string>
     <string name="undo">復原</string>
     <!-- Player -->
-    <string name="lyrics_not_found">沒有歌詞</string>
+    <string name="lyrics_not_found">No lyrics found</string>
     <string name="sleep_timer">睡眠定時器</string>
     <string name="end_of_song">這首歌曲播放完畢</string>
     <plurals name="minute">
@@ -204,6 +204,7 @@
     </plurals>
     <string name="error_no_stream">沒有可用的音源</string>
     <string name="error_no_internet">沒有網路連線</string>
+    <string name="no_internet_next_on_phone">No internet, so here\'s the next song saved on your phone</string>
     <string name="error_timeout">連線逾時</string>
     <string name="error_unknown">未知的錯誤</string>
     <string name="error_bot_check">YouTube wants a bot check from this network right now. Try again in a few minutes, switch between Wi-Fi and mobile data, or log in to your YouTube account.</string>
