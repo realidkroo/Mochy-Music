@@ -139,6 +139,10 @@
     <string name="modules_github_no_module">The newest release has no module in it. Mochy looks for a .zip with \"mochyymodule\" in its name, like glass.mochyymodule.zip.</string>
     <string name="skin_customise_row">Customise %1$s</string>
     <string name="skin_customise_title">Customise</string>
+    <string name="skin_audio_lossy">Lossy</string>
+    <string name="skin_audio_lossless">Lossless</string>
+    <string name="skin_output_speaker">Speaker</string>
+    <string name="skin_output_wired">Headphones</string>
     <string name="skin_customise_body">These change how %1$s looks. They\'re the same settings as on the module\'s page.</string>
     <string name="skin_customise_empty">Turn the module on to change these.</string>
     <string name="module_update">Update</string>
