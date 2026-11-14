@@ -465,11 +465,11 @@ class PlayerConnection(
         return order
     }
 
-    // a tap in the queue fades or blends into the song like a skip does; the uid is looked up again when the song really changes
+    // a tap in the queue is picked like a song from a list, or blended in; the uid is looked up again when the song really changes
     fun playQueueItem(uid: Int) {
         if (mediaIndexOf(uid) == C.INDEX_UNSET) return
         try {
-            service.transport.jumpTo { mediaIndexOf(uid) }
+            service.transport.pickFromQueue { mediaIndexOf(uid) }
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error in playQueueItem")
         }

@@ -16,7 +16,7 @@ internal val LyricsJson = Json {
     isLenient = true
 }
 
-// one client for netease, qq music and deezer, some label their json as plain text or html so those are read as json too
+// one client for netease, qq music, deezer and lrc.red, some label their json as plain text or html so those are read as json too
 internal val lyricsHttp by lazy {
     HttpClient(OkHttp) {
         expectSuccess = true

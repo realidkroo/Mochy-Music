@@ -72,6 +72,7 @@ import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import androidx.media3.extractor.ExtractorsFactory
 import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
+import androidx.media3.session.CacheBitmapLoader
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaController
@@ -127,6 +128,7 @@ import com.mochyy.mochymusic.constants.CrossmixStyleKey
 import com.mochyy.mochymusic.constants.CrossmixTempoMatch
 import com.mochyy.mochymusic.constants.CrossmixTempoMatchKey
 import com.mochyy.mochymusic.crossmix.CrossmixAnalysisRepository
+import com.mochyy.mochymusic.crossmix.CrossmixRole
 import com.mochyy.mochymusic.crossmix.CrossmixSettings
 import com.mochyy.mochymusic.crossmix.CrossmixStyle
 import com.mochyy.mochymusic.constants.DisableLoadMoreWhenRepeatAllKey
@@ -248,6 +250,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -850,7 +853,7 @@ class MusicService :
             toggleStartRadio = ::toggleStartRadio
             toggleLibrary = ::toggleLibrary
         }
-        val sessionPlayer = CarLyricsPlayer(TransportFadingPlayer(player, transport, audioPass))
+        val sessionPlayer = sessionPlayer(player)
         mediaSession =
             MediaLibrarySession
                 .Builder(this, sessionPlayer, mediaLibrarySessionCallback)
@@ -861,7 +864,8 @@ class MusicService :
                         Intent(this, MainActivity::class.java),
                         PendingIntent.FLAG_IMMUTABLE,
                     ),
-                ).setBitmapLoader(CoilBitmapLoader(this, scope))
+                // the same cover comes back done at once, so a new car lyric line doesn't blank the picture while it loads again
+                ).setBitmapLoader(CacheBitmapLoader(CoilBitmapLoader(this, scope)))
                 .build()
         carLyrics = CarLyrics(this, CarLyricsSource(database, lyricsHelper), currentMediaMetadata, { player }, sessionPlayer, scope)
             .also { it.start() }
@@ -1820,7 +1824,9 @@ class MusicService :
             return
         }
         val reason = when {
-            !isNetworkConnected.value || (e != null && isNetworkRelatedError(e)) -> "no internet connection"
+            // a file on the phone failing has nothing to do with the connection
+            (!isNetworkConnected.value && player.currentMediaItem?.let(::playsOffline) != true) ||
+                (e != null && isNetworkRelatedError(e)) -> "no internet connection"
             e != null && getHttpResponseCode(e) != null -> "server error ${getHttpResponseCode(e)}"
             e != null -> plainReason(e)
             else -> "unknown error"
@@ -1966,16 +1972,48 @@ class MusicService :
             return
         }
 
-        // a song picked while another plays crosses over with blend skips on, otherwise the old one fades out first, the same as a skip
+        // a song picked while another plays crosses over with blend skips on; otherwise the old one dips while the new one is read and fetched, then makes way
         if (playWhenReady) {
-            transport.startQueue(blend = { blendIntoQueue(queue) }) { startQueue(queue, playWhenReady = true) }
+            var status: Queue.Status? = null
+            transport.startQueue(
+                song = queue.firstSongId,
+                ready = { status = readyQueue(queue) },
+                blend = { blendIntoQueue(queue) },
+            ) { startQueue(queue, playWhenReady = true, read = status) }
         } else {
             startQueue(queue, playWhenReady = false)
         }
     }
 
-    // [blend] means the old song is still playing: a queue with a first song has it crossing over already, one without crosses once it's read
-    private fun startQueue(queue: Queue, playWhenReady: Boolean, blend: Boolean = false) {
+    // gets a picked queue going while the old song still plays: a queue that only knows its first song once it's read is read now, and that song's start is fetched
+    private suspend fun readyQueue(queue: Queue): Queue.Status? {
+        val status = if (queue.firstSongId == null) {
+            try {
+                readQueue(queue)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.tag(TAG).d(e, "Couldn't read the picked queue ahead, it's read again when it starts")
+                null
+            }
+        } else {
+            null
+        }
+        val first = queue.firstSongId ?: status?.items?.getOrNull(status.mediaItemIndex)?.mediaId
+        if (first != null) warmPick(first)
+        return status
+    }
+
+    // a queue's songs, with the ones the listener hides already taken out
+    private suspend fun readQueue(queue: Queue): Queue.Status =
+        withContext(Dispatchers.IO) {
+            queue.getInitialStatus()
+                .filterExplicit(dataStore.get(HideExplicitKey, false))
+                .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
+        }
+
+    // [blend] means the old song is still playing: a queue with a first song has it crossing over already, one without crosses once it's read; [read] is the queue already read while the old song played
+    private fun startQueue(queue: Queue, playWhenReady: Boolean, blend: Boolean = false, read: Queue.Status? = null) {
         currentQueue = queue
         queueTitle = null
         resetQueueRunway()
@@ -1995,7 +2033,7 @@ class MusicService :
         }
         scope.launch(SilentHandler) {
             try {
-                loadInitialQueue(queue, generation, playWhenReady, blend)
+                loadInitialQueue(queue, generation, playWhenReady, blend, read)
             } finally {
                 if (generation == queueGeneration) {
                     initialQueueLoading = false
@@ -2011,13 +2049,10 @@ class MusicService :
         generation: Int,
         playWhenReady: Boolean,
         blend: Boolean = false,
+        read: Queue.Status? = null,
     ) {
-        val initialStatus =
-            withContext(Dispatchers.IO) {
-                queue.getInitialStatus()
-                    .filterExplicit(dataStore.get(HideExplicitKey, false))
-                    .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
-            }
+        // read once only: a youtube queue moves on to its next page if it's asked twice
+        val initialStatus = read ?: readQueue(queue)
         if (generation != queueGeneration) return
 
         val preloadId = queue.preloadItem?.id
@@ -3227,14 +3262,25 @@ class MusicService :
         ) {
             val next = nextOfflineIndex()
             if (next != C.INDEX_UNSET) {
-                player.seekTo(next, C.TIME_UNSET)
-                player.prepare()
-                if (castConnectionHandler?.isCasting?.value != true) player.play()
+                playOfflineSong(next)
             } else {
                 player.pause()
                 showBanner("Offline mode: nothing after this is on your device")
             }
             return
+        }
+
+        // read before the cache clear below, which can take a cached song off the phone
+        val onPhone = player.currentMediaItem?.let(::playsOffline) == true
+        // no internet and this song needs it: waiting stopped the queue for good, so go on to the next song that's on the phone
+        if (!onPhone && !connectivityObserver.isCurrentlyConnected()) {
+            val next = nextOfflineIndex()
+            if (next != C.INDEX_UNSET) {
+                Timber.tag(TAG).i("No internet for ${player.currentMediaItem?.mediaId}, moving on to the next song on the phone")
+                playOfflineSong(next)
+                showBanner(getString(R.string.no_internet_next_on_phone))
+                return
+            }
         }
 
         lastPlaybackError = error
@@ -3296,7 +3342,8 @@ class MusicService :
                 return
             }
 
-            !isNetworkConnected.value || isNetworkRelatedError(error) -> {
+            // a song on the phone gets the usual retry below, the internet coming back would never fix it
+            isNetworkRelatedError(error) || (!isNetworkConnected.value && !onPhone) -> {
                 Timber.tag(TAG).d("Network-related error detected, waiting for connection")
                 waitOnNetworkError()
                 return
@@ -4290,6 +4337,10 @@ class MusicService :
         super.onTaskRemoved(rootIntent)
     }
 
+    // every player the session is handed keeps the car's lyric wrapper, a crossfade's new player used to come without it and the lyrics left the car for good
+    private fun sessionPlayer(base: ExoPlayer): CarLyricsPlayer =
+        CarLyricsPlayer(TransportFadingPlayer(base, transport, audioPass)).also { carLyrics?.attach(it) }
+
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -4443,8 +4494,8 @@ class MusicService :
     }
 
     private fun scheduleCrossfade() {
-        // Crossmix plans its own hand-overs; it cancels itself when it's off or can't run
-        crossmixDirector.schedule()
+        // crossmix plans its own hand-overs, but not mid-blend: standing down then wiped the new song's effect, so it's asked again once the blend is over
+        if (!isCrossfading) crossmixDirector.schedule()
         crossfadeTriggerJob?.cancel()
         crossfadeTriggerJob = null
         if (crossmixMode == CrossmixMode.CROSSMIX) return
@@ -4484,16 +4535,15 @@ class MusicService :
         crossfadeTo(targetIndex, crossfadeDuration.toLong())
     }
 
-    // "blend skips" can cross over right now: it's on, a song is really playing, nothing else is mixing or casting,
-    // and Crossmix isn't the transition: with Crossmix on nothing plays a plain crossfade, a skip is a skip and the mixes are left to it
+    // "blend skips" can cross over right now: it's on, a song is really playing, and nothing else is mixing or casting; crossmix still gets the song endings
     private fun canBlendSkip(): Boolean =
-        skipBlend && crossmixMode != CrossmixMode.CROSSMIX && !isCrossfading && !crossmixDirector.isTransitioning &&
+        skipBlend && !isCrossfading && !crossmixDirector.isTransitioning &&
             castConnectionHandler?.isCasting?.value != true && player.isPlaying
 
     // the blend lasts as long as the fade's Length slider says, not a fixed second and a half
     private fun blendLengthMs(): Long = transport.lengthMs.toLong().coerceAtLeast(SkipBlendMinMs)
 
-    // "blend skips": the song asked for starts on a second player and the two cross over, a crossfade on the press
+    // "blend skips": the song asked for starts on a second player and the two cross over on the press, through the layered effect when one is picked
     private fun blendSkip(previous: Boolean): Boolean {
         if (!canBlendSkip()) return false
         val target = when {
@@ -4532,10 +4582,7 @@ class MusicService :
     // with "blend skips" on, the songs either side get their first seconds fetched ahead, so a skip either way starts at once
     private fun prefetchNeighbours() {
         prefetchJob?.cancel()
-        if (!skipBlend || com.mochyy.mochymusic.utils.OfflineMode.isOn || player.mediaItemCount == 0) return
-        // only songs youtube plays: a source module's stream is found and cached its own way
-        val youTubeFirst = sourceModules.order.value.firstOrNull { sourceModules.isUsable(it) } == com.mochyy.mochymusic.modules.SourceModules.YouTubeId
-        if (!youTubeFirst) return
+        if (!skipBlend || player.mediaItemCount == 0 || !canFetchAhead()) return
         // data saver keeps it to the next one, the extra songs are only worth it on a connection that doesn't count
         val ahead = if (com.mochyy.mochymusic.utils.DataSaver.isActive(this)) 1 else blendAhead
         val upcoming = upcomingIndices(ahead)
@@ -4550,10 +4597,29 @@ class MusicService :
             delay(PrefetchDelayMs)
             for (id in ids) {
                 if (!isActive) break
-                if (id.startsWith("LOCAL_") || isFullyDownloaded(id) || com.mochyy.mochymusic.link.PhoneFiles.has(id)) continue
+                if (onThePhone(id)) continue
                 runCatching { warmStart(id) }.onFailure { Timber.tag(TAG).d(it, "Couldn't fetch the start of $id ahead") }
             }
         }
+    }
+
+    // only songs youtube plays get their start fetched ahead: a source module's stream is found and cached its own way
+    private fun canFetchAhead(): Boolean =
+        !com.mochyy.mochymusic.utils.OfflineMode.isOn &&
+            sourceModules.order.value.firstOrNull { sourceModules.isUsable(it) } == com.mochyy.mochymusic.modules.SourceModules.YouTubeId
+
+    // an imported file, a download or a song on the linked phone: it starts at once with nothing to fetch
+    private fun onThePhone(mediaId: String): Boolean =
+        mediaId.startsWith("LOCAL_") || isFullyDownloaded(mediaId) || com.mochyy.mochymusic.link.PhoneFiles.has(mediaId)
+
+    // a picked song's stream found and its first seconds cached; the fetch runs on its own, so a pick that stops waiting still leaves it to the player
+    private suspend fun warmPick(mediaId: String) {
+        if (!canFetchAhead()) return
+        scope.async(Dispatchers.IO) {
+            if (!onThePhone(mediaId)) {
+                runCatching { warmStart(mediaId) }.onFailure { Timber.tag(TAG).d(it, "Couldn't fetch the start of picked $mediaId") }
+            }
+        }.await()
     }
 
     // the next [count] songs in play order, shuffle included; repeat one counts as off here, the way the skip buttons see it
@@ -4608,6 +4674,8 @@ class MusicService :
 
     // starts a second player on whatever [load] gives it and crosses the two over in durationMs
     private fun crossfadeInto(durationMs: Long, skipCurve: Boolean, load: (ExoPlayer) -> Unit) {
+        // a skip calls off what crossmix had lined up for the old song, its tempo ramp included, before the new one copies the speed
+        if (skipCurve) crossmixDirector.onItemChanged()
         val savedRepeatMode = runBlocking { dataStore.get(RepeatModeKey, REPEAT_MODE_OFF) }
         val savedShuffleEnabled = runBlocking { dataStore.get(ShuffleModeKey, false) }
 
@@ -4620,10 +4688,12 @@ class MusicService :
         secPlayer.volume = 0f
         secPlayer.repeatMode = savedRepeatMode
         secPlayer.shuffleModeEnabled = savedShuffleEnabled
+        // armed before it decodes a thing, so the new song's very first note already comes in through the effect
+        val incomingFx = if (skipCurve) armBlend(secPlayer, CrossmixRole.Incoming, durationMs) else null
         secPlayer.prepare()
         secPlayer.playWhenReady = true
 
-        performCrossfadeSwap(durationMs, skipCurve)
+        performCrossfadeSwap(durationMs, skipCurve, incomingFx)
     }
 
     /**
@@ -4645,7 +4715,7 @@ class MusicService :
         to.setShuffleOrder(DefaultShuffleOrder(order.toIntArray(), System.currentTimeMillis()))
     }
 
-    private fun performCrossfadeSwap(durationMs: Long, skipCurve: Boolean = false) {
+    private fun performCrossfadeSwap(durationMs: Long, skipCurve: Boolean = false, incomingFx: CrossmixTransitionAudioProcessor? = null) {
         val nextPlayer = secondaryPlayer ?: return
         isCrossfading = true
         val currentPlayer = player
@@ -4692,7 +4762,7 @@ class MusicService :
         sleepTimer.player = player
 
         try {
-            (mediaSession as MediaSession).player = TransportFadingPlayer(player, transport, audioPass)
+            (mediaSession as MediaSession).player = sessionPlayer(player)
         } catch (e: Exception) {
             timber.log.Timber.e(e, "Failed to swap player in MediaSession")
         }
@@ -4701,7 +4771,7 @@ class MusicService :
             // however it ends (finished, the new song never started, or called off) the old player goes and the flag comes down:
             // left up, Crossmix said "a plain crossfade is running" with nothing fading and never mixed again
             try {
-                rampCrossfade(durationMs, skipCurve)
+                rampCrossfade(durationMs, skipCurve, incomingFx)
             } finally {
                 runCatching {
                     fadingPlayer?.volume = 0f
@@ -4710,12 +4780,14 @@ class MusicService :
                 runCatching { cleanupCrossfade() }
                 // cleanup can stop partway on a player that's already gone; the flag still comes down
                 isCrossfading = false
+                // crossmix sat out the blend, so it plans the new song's ending now
+                runCatching { scheduleCrossfade() }
             }
         }
     }
 
-    // the two volume ramps of a crossfade, stepped every frame by the time the new song has really played
-    private suspend fun rampCrossfade(durationMs: Long, skipCurve: Boolean) {
+    // the two volume ramps of a crossfade, stepped every frame by the time the new song has really played; [incomingFx] is the new song's layered effect, armed before it started
+    private suspend fun rampCrossfade(durationMs: Long, skipCurve: Boolean, incomingFx: CrossmixTransitionAudioProcessor?) {
         val startVolume = runCatching { fadingPlayer?.volume ?: 1f }.getOrDefault(1f)
         // the old song carries on as it was until the new one is really heard, so a slow start never leaves a gap;
         // a new song that never starts (a dead link, paused before its first sound) only gets so long
@@ -4725,6 +4797,11 @@ class MusicService :
         }
         // still silent after the wait: the ramp below would sit at zero heard time forever, so the cleanup takes over now
         if (started == null) return
+        // the new song in a format the renderer can't mix plays by untouched, so its volume brings it in instead
+        val inFx = incomingFx?.takeIf { it.canRender && !it.idle }
+        if (inFx == null) incomingFx?.clear()
+        // the old song's effect starts the moment the new one is heard, so both sides move on one clock for the whole length
+        val outFx = fadingPlayer?.takeIf { skipCurve }?.let { armBlend(it, CrossmixRole.Outgoing, durationMs) }
         // stepped every frame by the time actually played: twenty fixed steps were heard as the volume jumping.
         // Timed by the new song's own position, which is what's really coming out of the speaker: the wall
         // clock started as soon as isPlaying flipped, while the audio track was still filling, so the new
@@ -4750,11 +4827,18 @@ class MusicService :
             lastPosition = position
             val progress = (heardMs.toFloat() / durationMs).coerceIn(0f, 1f)
             val angle = progress * Math.PI / 2.0
-            // a skip uses equal-gain S-curves: the old song is heard going down from the press to the
-            // end of the timer, and the new one eases in from silence instead of jumping to near full.
-            // The end-of-song crossfade keeps its equal-power ramps
-            val inGain = if (skipCurve) kotlin.math.sin(angle).let { it * it } else kotlin.math.sin(angle)
-            val outGain = if (skipCurve) kotlin.math.cos(angle).let { it * it } else kotlin.math.cos(angle)
+            // a skip's own effect does the fading on its side; without one a skip eases on equal-gain s-curves, the end-of-song crossfade on equal-power ramps
+            val inGain = when {
+                inFx != null -> 1.0
+                skipCurve -> kotlin.math.sin(angle).let { it * it }
+                else -> kotlin.math.sin(angle)
+            }
+            val outGain = when {
+                // held so the effect is heard, then the volume takes its last echoes away
+                outFx != null -> tailFade(progress).toDouble()
+                skipCurve -> kotlin.math.cos(angle).let { it * it }
+                else -> kotlin.math.cos(angle)
+            }
             try {
                 // the new song fades up to the volume it should be at now: started from the old
                 // one's, a fade begun while muted or ducked ended at 0 or a fifth, and stayed
@@ -4764,6 +4848,20 @@ class MusicService :
                 break
             }
         }
+        // the new song steps out of its effect once the blend is over
+        inFx?.finish()
+    }
+
+    // one side of a blended skip's layered effect; null with no effect picked or a renderer that can't mix this song
+    private fun armBlend(player: ExoPlayer, role: CrossmixRole, durationMs: Long): CrossmixTransitionAudioProcessor? {
+        val processor = playerCrossmixProcessors[player] ?: return null
+        // the old song's renderer is set up already; the new one's only once it starts, so all it can say yet is a format it turned down
+        val ready = if (role == CrossmixRole.Outgoing) processor.canRender else !processor.unsupported
+        if (!ready) return null
+        val calibrationNanos = if (player.isPlaying) System.nanoTime() else 0L
+        val script = transport.blendScript(player, role, durationMs.toFloat(), calibrationNanos) ?: return null
+        processor.arm(script)
+        return processor
     }
 
     private fun cleanupCrossfade() {
@@ -5038,6 +5136,13 @@ class MusicService :
         return C.INDEX_UNSET
     }
 
+    // starts the song at [index] from the top, and plays it unless a cast is doing the playing
+    private fun playOfflineSong(index: Int) {
+        player.seekTo(index, C.TIME_UNSET)
+        player.prepare()
+        if (castConnectionHandler?.isCasting?.value != true) player.play()
+    }
+
     /** An imported file, a download, or a song the player has cached whole. */
     private fun playsOffline(item: androidx.media3.common.MediaItem): Boolean {
         val scheme = item.localConfiguration?.uri?.scheme
@@ -5081,6 +5186,8 @@ class MusicService :
         override fun blendJump(index: Int): Boolean = this@MusicService.blendJump(index)
 
         override fun blendsSkips(): Boolean = canBlendSkip()
+
+        override suspend fun getReady(mediaId: String) = warmPick(mediaId)
     }
 
     /** what the Crossmix director needs from the service: players, the session, the queue */
@@ -5142,7 +5249,7 @@ class MusicService :
             })
 
             try {
-                (mediaSession as MediaSession).player = TransportFadingPlayer(incoming, transport, audioPass)
+                (mediaSession as MediaSession).player = sessionPlayer(incoming)
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Failed to swap player in MediaSession")
             }

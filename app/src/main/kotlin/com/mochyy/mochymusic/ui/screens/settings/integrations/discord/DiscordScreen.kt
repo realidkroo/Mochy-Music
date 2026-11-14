@@ -222,16 +222,23 @@ private fun AccountButton(
         )
     }
     if (inviting) {
-        Text(
-            text = "Opens Discord's own login page in your browser. Your password stays with Discord.",
-            color = DiscordColors.Secondary,
-            fontSize = 12.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        )
+        LoginNote(stringResource(R.string.discord_login_note), Modifier.padding(top = 8.dp))
+        // discord's consent page lists the whole presence bundle, so say up front what mochy really uses
+        LoginNote(stringResource(R.string.discord_permissions_note), Modifier.padding(top = 4.dp, bottom = 8.dp))
     }
+}
+
+@Composable
+private fun LoginNote(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        color = DiscordColors.Secondary,
+        fontSize = 12.sp,
+        textAlign = TextAlign.Center,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+    )
 }
 
 @Composable

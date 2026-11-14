@@ -13,6 +13,8 @@ class ListQueue(
 ) : Queue {
     override val preloadItem: MediaMetadata? = null
 
+    override val firstSongId: String? get() = items.getOrNull(startIndex)?.mediaId
+
     override suspend fun getInitialStatus() = Queue.Status(title, items, startIndex, position)
 
     override fun hasNextPage(): Boolean = false

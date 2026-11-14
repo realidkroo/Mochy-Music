@@ -77,7 +77,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrainHeight
@@ -577,6 +579,8 @@ fun LyricsScreen(
         Box(
             modifier = Modifier
                 .weight(1f)
+                // without it the box shrinks to the no-lyrics text and parks it on the left edge
+                .fillMaxWidth()
                 // Ends at the top of the seek bar (contentBottomInset). It used to reach 28dp past
                 // its bottom, so lines scrolled behind the bar and the timestamps.
                 // Read in layout, so the immersive toggle doesn't recompose the whole page.
@@ -598,10 +602,13 @@ fun LyricsScreen(
                     LyricsLoadingDots(modifier = Modifier.align(Alignment.Center))
                 } else {
                     Text(
-                        text = "No lyrics found",
+                        text = stringResource(R.string.lyrics_not_found),
                         style = MaterialTheme.typography.bodyLarge,
                         color = Color.White.copy(alpha = 0.5f),
-                        modifier = Modifier.align(Alignment.Center)
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = LyricsHeaderArtX)
                     )
                 }
             } else {
@@ -680,7 +687,8 @@ fun LyricsScreen(
                                     // A provider, not the position itself: passing the value would
                                     // recompose this row on every playback tick.
                                     positionProvider = positionProvider,
-                                    accentColor = accent,
+                                    bloom = lyricsWaveAnimation,
+                                    highBloom = lyricsHighBloom,
                                     visible = activeInterlude == row.afterIndex,
                                     collapseEasing = recenterEasingFor(motionStyle),
                                     // The gap belongs to whoever sings next, so it waits on that

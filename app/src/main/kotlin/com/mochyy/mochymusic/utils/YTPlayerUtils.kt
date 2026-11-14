@@ -28,6 +28,7 @@ import com.music.innertube.models.YouTubeClient.Companion.WEB_EMBEDDED_PLAYER
 import com.music.innertube.models.YouTubeClient.Companion.WEB_REMIX
 import com.music.innertube.models.response.PlayerResponse
 import com.mochyy.mochymusic.constants.AudioQuality
+import com.mochyy.mochymusic.constants.StreamBackend
 import com.mochyy.mochymusic.utils.cipher.CipherDeobfuscator
 import com.mochyy.mochymusic.utils.YTPlayerUtils.MAIN_CLIENT
 import com.mochyy.mochymusic.utils.YTPlayerUtils.STREAM_FALLBACK_CLIENTS
@@ -84,6 +85,19 @@ object YTPlayerUtils {
         .build()
 
     private val poTokenGenerator = PoTokenGenerator()
+
+    // who finds a song's stream: innertubex with the client walk below as its backup, or the walk alone; App keeps it in step with the setting
+    @Volatile
+    var backend: StreamBackend = StreamBackend.INNERTUBEX
+
+    private val innerTubeX = InnerTubeXStreams(httpClient) { videoId, sessionId -> poTokenGenerator.poTokenFor(videoId, sessionId) }
+
+    // compiles youtube's player script before the first song needs it; nothing to do on the classic backend
+    suspend fun preWarmInnerTubeX() {
+        if (backend != StreamBackend.INNERTUBEX) return
+        runCatching { innerTubeX.prewarm() }
+            .onFailure { Timber.tag(TAG).w(it, "InnerTubeX couldn't warm up, the first song will do it") }
+    }
 
     /** True once the BotGuard engine holds a usable session token. Surfaced in diagnostics. */
     val hasPoToken: Boolean
@@ -304,6 +318,34 @@ object YTPlayerUtils {
     private fun Result<PlaybackData>.unwrapRefusal(): Result<PlaybackData> =
         (exceptionOrNull() as? UploadRefusedException)?.let { Result.failure(it.failure) } ?: this
 
+    // innertubex's answer, or null so the walk takes over; a library that won't even load counts as a miss, not a crash
+    private suspend fun innerTubeXFirst(
+        videoId: String,
+        playlistId: String?,
+        audioQuality: AudioQuality,
+        connectivityManager: ConnectivityManager,
+    ): PlaybackData? {
+        val found = try {
+            innerTubeX.resolve(videoId, playlistId, audioQuality, connectivityManager)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.tag(logTag).w(e, "InnerTubeX couldn't play $videoId, trying the client walk")
+            PlaybackLogManager.log(PlaybackLogLevel.WARNING, "InnerTubeX missed, using the client walk", "$videoId: ${e.shortReason()}")
+            return null
+        } catch (e: LinkageError) {
+            Timber.tag(logTag).e(e, "InnerTubeX failed to load, trying the client walk")
+            PlaybackLogManager.log(PlaybackLogLevel.ERROR, "InnerTubeX failed to load", e.javaClass.simpleName)
+            return null
+        }
+        if (found == null) {
+            PlaybackLogManager.log(PlaybackLogLevel.WARNING, "InnerTubeX found nothing, using the client walk", videoId)
+            return null
+        }
+        PlaybackLogManager.log(PlaybackLogLevel.INFO, "InnerTubeX found the stream", "$videoId via ${found.streamClient}")
+        return found
+    }
+
     private suspend fun resolvePlaybackData(
         videoId: String,
         playlistId: String? = null,
@@ -325,6 +367,11 @@ object YTPlayerUtils {
             Timber.tag(logTag).d("No visitorData yet - fetching one before resolving playback")
             YouTube.refreshVisitorData()
                 .onFailure { Timber.tag(logTag).w(it, "Could not fetch visitorData: ${it.message}") }
+        }
+
+        // innertubex goes first; whatever it can't find goes on to the walk below exactly as before
+        if (backend == StreamBackend.INNERTUBEX) {
+            innerTubeXFirst(videoId, playlistId, audioQuality, connectivityManager)?.let { return@runCatching it }
         }
 
         // NewPipe's signature-timestamp lookup is a blocking network round trip, and it is only

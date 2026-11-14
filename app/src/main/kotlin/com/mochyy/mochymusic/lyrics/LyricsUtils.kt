@@ -38,6 +38,15 @@ object LyricsUtils {
         "ビャ" to "bya", "ビュ" to "byu", "ビョ" to "byo",
         "ピャ" to "pya", "ピュ" to "pyu", "ピョ" to "pyo",
 
+        // loanword sounds built with small kana, which used to leak into the reading as katakana
+        "ティ" to "ti", "ディ" to "di", "トゥ" to "tu", "ドゥ" to "du", "テュ" to "tyu", "デュ" to "dyu",
+        "ファ" to "fa", "フィ" to "fi", "フェ" to "fe", "フォ" to "fo", "フュ" to "fyu",
+        "ウィ" to "wi", "ウェ" to "we", "ウォ" to "wo", "イェ" to "ye",
+        "ヴァ" to "va", "ヴィ" to "vi", "ヴェ" to "ve", "ヴォ" to "vo", "ヴュ" to "vyu",
+        "シェ" to "she", "ジェ" to "je", "チェ" to "che",
+        "ツァ" to "tsa", "ツィ" to "tsi", "ツェ" to "tse", "ツォ" to "tso",
+        "クァ" to "kwa", "グァ" to "gwa",
+
         "ア" to "a", "イ" to "i", "ウ" to "u", "エ" to "e", "オ" to "o",
         "カ" to "ka", "キ" to "ki", "ク" to "ku", "ケ" to "ke", "コ" to "ko",
         "サ" to "sa", "シ" to "shi", "ス" to "su", "セ" to "se", "ソ" to "so",
@@ -55,8 +64,11 @@ object LyricsUtils {
 
         "バ" to "ba", "ビ" to "bi", "ブ" to "bu", "ベ" to "be", "ボ" to "bo",
         "パ" to "pa", "ピ" to "pi", "プ" to "pu", "ペ" to "pe", "ポ" to "po",
+        "ヴ" to "vu",
 
-        "ー" to ""
+        "ァ" to "a", "ィ" to "i", "ゥ" to "u", "ェ" to "e", "ォ" to "o",
+        "ャ" to "ya", "ュ" to "yu", "ョ" to "yo", "ヮ" to "wa",
+        "ヰ" to "i", "ヱ" to "e", "ヵ" to "ka", "ヶ" to "ke",
     )
 
     private val HANGUL_ROMAJA_MAP: Map<String, Map<String, String>> = mapOf(
@@ -1184,38 +1196,6 @@ object LyricsUtils {
         return dominantScript(stripped)
     }
 
-    fun katakanaToRomaji(katakana: String?): String {
-        if (katakana.isNullOrEmpty()) return ""
-
-        val romajiBuilder = StringBuilder(katakana.length)
-        var i = 0
-        val n = katakana.length
-        while (i < n) {
-            var consumed = false
-            if (i + 1 < n) {
-                val twoCharCandidate = katakana.substring(i, i + 2)
-                val mappedTwoChar = KANA_ROMAJI_MAP[twoCharCandidate]
-                if (mappedTwoChar != null) {
-                    romajiBuilder.append(mappedTwoChar)
-                    i += 2
-                    consumed = true
-                }
-            }
-
-            if (!consumed) {
-                val oneCharCandidate = katakana[i].toString()
-                val mappedOneChar = KANA_ROMAJI_MAP[oneCharCandidate]
-                if (mappedOneChar != null) {
-                    romajiBuilder.append(mappedOneChar)
-                } else {
-                    romajiBuilder.append(oneCharCandidate)
-                }
-                i += 1
-            }
-        }
-        return romajiBuilder.toString().lowercase()
-    }
-
     suspend fun romanizeJapanese(text: String): String = withContext(Dispatchers.Default) {
         val tokens = kuromojiTokenizer.tokenize(text)
         val romanizedTokens = tokens.mapIndexed { index, token ->
@@ -1234,47 +1214,52 @@ object LyricsUtils {
         romanizedTokens.joinToString(" ")
     }
 
+    // a word's katakana reading in romaji; the next word's reading is only for a small tsu that ends this one
     fun katakanaToRomaji(katakana: String?, nextKatakana: String? = null): String {
         if (katakana.isNullOrEmpty()) return ""
 
-        val romajiBuilder = StringBuilder(katakana.length)
+        val romaji = StringBuilder(katakana.length * 2)
         var i = 0
-        val n = katakana.length
-        while (i < n) {
-            var consumed = false
-            if (i + 1 < n) {
-                val twoCharCandidate = katakana.substring(i, i + 2)
-                val mappedTwoChar = KANA_ROMAJI_MAP[twoCharCandidate]
-                if (mappedTwoChar != null) {
-                    romajiBuilder.append(mappedTwoChar)
-                    i += 2
-                    consumed = true
+        while (i < katakana.length) {
+            val ch = katakana[i]
+            when (ch) {
+                // a small tsu doubles the sound right after it, so ハッピー is happii, not the next word's letter
+                'ッ' -> {
+                    val after = if (i + 1 < katakana.length) katakana.substring(i + 1) else nextKatakana
+                    doubledConsonant(after)?.let { romaji.append(it) }
+                    i++
                 }
-            }
-
-            if (!consumed && katakana[i] == 'ッ') {
-                val nextCharToDouble = nextKatakana?.getOrNull(0)
-                if (nextCharToDouble != null) {
-                    val nextCharRomaji = KANA_ROMAJI_MAP[nextCharToDouble.toString()]?.getOrNull(0)?.toString()
-                        ?: nextCharToDouble.toString()
-                    romajiBuilder.append(nextCharRomaji.lowercase().trim())
+                // a long-vowel mark stretches the vowel before it, so デザート reads dezaato instead of dezato
+                'ー' -> {
+                    romaji.lastOrNull()?.takeIf { it in "aiueo" }?.let { romaji.append(it) }
+                    i++
                 }
-                i += 1
-                consumed = true
-            }
-
-            if (!consumed) {
-                val oneCharCandidate = katakana[i].toString()
-                val mappedOneChar = KANA_ROMAJI_MAP[oneCharCandidate]
-                if (mappedOneChar != null) {
-                    romajiBuilder.append(mappedOneChar)
-                } else {
-                    romajiBuilder.append(oneCharCandidate)
+                else -> {
+                    val pair = if (i + 1 < katakana.length) KANA_ROMAJI_MAP[katakana.substring(i, i + 2)] else null
+                    if (pair != null) {
+                        romaji.append(pair)
+                        i += 2
+                    } else {
+                        romaji.append(KANA_ROMAJI_MAP[ch.toString()] ?: ch.toString())
+                        i++
+                    }
                 }
-                i += 1
             }
         }
-        return romajiBuilder.toString().lowercase()
+        return romaji.toString().lowercase()
+    }
+
+    // the consonant a small tsu doubles before kana, or null when there's no consonant to double
+    private fun doubledConsonant(kana: String?): Char? {
+        if (kana.isNullOrEmpty()) return null
+        val sound = (if (kana.length >= 2) KANA_ROMAJI_MAP[kana.substring(0, 2)] else null)
+            ?: KANA_ROMAJI_MAP[kana.substring(0, 1)]
+            ?: return null
+        return when {
+            sound.startsWith("ch") -> 't'
+            sound.first() in "aiueon" -> null
+            else -> sound.first()
+        }
     }
 
     suspend fun romanizeKorean(text: String): String = withContext(Dispatchers.Default) {

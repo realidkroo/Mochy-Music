@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.lyrics.LyricsUtils
+import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.component.PopupSheetHandle
 import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.SheetPillButton
@@ -152,6 +153,62 @@ internal fun PopupSheetState.showStylePage(session: SongShareSession) {
                 ) { TilePicture(session, SongShareKind.Lyrics, style) }
             }
         }
+        ReadingSwitches(session)
+    }
+}
+
+// what the picked lines carry on the picture: their romanisation, which of the two sings on the card, and their translation
+@Composable
+private fun ReadingSwitches(session: SongShareSession) {
+    val choice = session.readingChoice
+    // english lyrics, say, have nothing to romanise
+    val canRomanize = session.lineReadings.isNotEmpty()
+    val change = { next: ShareReadingChoice ->
+        session.readingChoiceTouched = true
+        session.readingChoice = next
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 20.dp)) {
+        ShareSwitchRow(
+            title = stringResource(R.string.customise_lyrics_romanisation),
+            hint = stringResource(if (canRomanize) R.string.song_share_romanisation_hint else R.string.song_share_romanisation_none),
+            checked = canRomanize && choice.romanize,
+            enabled = canRomanize,
+            onCheckedChange = { change(choice.copy(romanize = it)) },
+        )
+        ShareSwitchRow(
+            title = stringResource(R.string.settings_romanize_as_main),
+            hint = stringResource(R.string.song_share_romanisation_main_hint),
+            checked = canRomanize && choice.romanize && choice.asMain,
+            enabled = canRomanize && choice.romanize,
+            onCheckedChange = { change(choice.copy(asMain = it)) },
+        )
+        ShareSwitchRow(
+            title = stringResource(R.string.customise_lyrics_translation),
+            hint = stringResource(R.string.song_share_translation_hint),
+            checked = choice.translate,
+            enabled = true,
+            onCheckedChange = { change(choice.copy(translate = it)) },
+        )
+    }
+}
+
+// one switch in the share's sheets: what it does, a line on what that means, and the switch
+@Composable
+internal fun ShareSwitchRow(title: String, hint: String, checked: Boolean, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { alpha = if (enabled) 1f else 0.45f }
+            .clip(RoundedCornerShape(16.dp))
+            .background(MenuRowSurface)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color.White)
+            Text(hint, fontFamily = InterFontFamily, fontWeight = FontWeight.Medium, fontSize = 12.sp, color = ShareMuted)
+        }
+        AppSwitch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
 }
 

@@ -1,22 +1,4 @@
 // LyricsInterludeDots.kt
-// The three dots that count down an instrumental gap between two sung lines.
-//
-// Two things about an earlier version made this "just broken", and both still matter:
-//
-//   1. There were two competing implementations. LyricsUtils.insertInstrumentalPauses() injected
-//      literal LyricsEntry(text = "•••") rows into the parsed lyrics for gaps over 15s, while this
-//      composable drew an animated row for gaps over 4s. Those injected rows are gone; this is the
-//      only interlude UI.
-//
-//   2. Progress is a direct function of the playback clock, so it is read in a frame callback and
-//      applied in graphicsLayer/drawBehind - never through animateFloatAsState with a target that
-//      changes every frame (that restarted the animation every frame and never settled).
-//
-// What it does now, Apple Music style: the row grows in on a spring when the gap starts (the
-// lines below move down to make room) and collapses when the next line takes over, in step with
-// the recenter scroll, so that line slides up into the dots' place. The dots pop in with a little
-// spring, bob slowly while they wait, and each one glows only as it lights up, then lets the glow
-// fade.
 
 package com.mochyy.mochymusic.ui.player
 
@@ -40,10 +22,9 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.unit.dp
@@ -57,89 +38,60 @@ import kotlin.math.sin
 
 private const val DotCount = 3
 
-/** Gaps shorter than this are just breathing room between lines, not an interlude. */
+// gaps shorter than this are just a breath between lines, not an interlude
 const val MinInterludeGapMs = 4_000L
 
-/** Height of the row when fully grown in. */
 private val RowHeight = 56.dp
 
 private val DotSize = 12.dp
 private val DotGap = 7.dp
 
 private const val RestAlpha = 0.3f
-private const val RestScale = 0.8f
-private const val LitScale = 1.1f
 
-/** How far past the dot the glow reaches, as a multiple of its radius. */
-private const val GlowRadiusFactor = 2.8f
-private const val GlowPeakAlpha = 0.55f
+// room round the dots for their glow, so the bloom layer never cuts it off
+private val GlowRoom = 8.dp
 
-/** After a dot finishes lighting, its glow fades over roughly this long. */
+// once a dot is lit its glow lets go over about this long, a flare and not a constant halo
 private const val GlowFadeMs = 900f
 
-/** Idle bob: one slow breath up and down, each dot a little behind the one before it. */
+// idle bob: one slow breath up and down, each dot a little behind the one before it
 private const val BobPeriodMs = 2_600f
 private val BobHeight = 1.8.dp
 private const val BobPhaseStep = 0.9f
 
-/** Pop-in stagger between dots. */
 private const val PopStaggerMs = 70L
 
-/**
- * Floor applied to the accent before it is used as a glow.
- *
- * The accent arrives from PlayerColorExtractor.darkenIfTooLight(), which is right for text sitting
- * ON the colour and wrong for light emitted BY something: a dark-artwork track gave a near-black
- * glow. Light sources get lightened, never darkened.
- */
-private fun Color.asGlow(): Color {
-    val target = 0.85f
-    return Color(
-        red = red + (target - red).coerceAtLeast(0f) * 0.65f,
-        green = green + (target - green).coerceAtLeast(0f) * 0.65f,
-        blue = blue + (target - blue).coerceAtLeast(0f) * 0.65f,
-        alpha = 1f,
-    )
-}
-
-/** How long a dot takes to travel from unlit to lit, as a fraction of its own slice. */
+// how long a dot takes to go from unlit to lit, as a share of its own slice of the gap
 private const val DotFadeFraction = 0.55f
 
-/**
- * The last beat before the next line: all three dots swell together, so the gap ends on a visible
- * cue instead of the row simply vanishing.
- */
+// the last beat before the next line, where the glow spreads over all three dots so the gap ends on a cue
 private const val FinaleFraction = 0.88f
 
-/**
- * @param startMs when the previous line stopped being sung.
- * @param endMs when the next line starts.
- * @param positionProvider read every frame, never passed by value (that would recompose the row
- *   60+ times a second inside a LazyColumn).
- * @param visible whether this gap is the one playing. Drives the row growing in / collapsing; the
- *   row itself stays in the list either way, at zero height when hidden.
- */
+/** the three dots that count down an instrumental gap, lit one by one with the same bloom as a sung word */
 @Composable
 fun LyricsInterludeDots(
     startMs: Long,
     endMs: Long,
+    // read every frame, never passed by value, or the row recomposes 60+ times a second inside a lazy list
     positionProvider: () -> Long,
-    accentColor: Color,
     modifier: Modifier = Modifier,
+    // whether this gap is the one playing; the row stays in the list either way, at zero height when hidden
     visible: Boolean = true,
-    /** Which side the gap sits on, following the voice that is about to sing. */
+    // follows the voice that's about to sing
     alignment: LyricsAlignment = LyricsAlignment.CENTER,
-    /** Must be the recenter scroll's curve, so the collapse and the scroll are one motion. */
+    // has to be the recenter scroll's curve, so the collapse and the scroll are one motion
     collapseEasing: androidx.compose.animation.core.Easing = LyricsRecenterEasing,
+    // the lyrics' shader setting, so the dots glow exactly when the sung words do
+    bloom: Boolean = true,
+    highBloom: Boolean = true,
     /** told where the first dot's left edge and middle are inside the row (px), for the dots the card grows into */
     onDotsStart: ((Offset) -> Unit)? = null,
 ) {
     // the row's own frame, so the first dot can say where it sits inside it
     val rowCoords = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
     val span = (endMs - startMs).coerceAtLeast(1L)
-    val glowColor = remember(accentColor) { accentColor.asGlow() }
 
-    // Written in a frame callback and read in graphicsLayer/drawBehind - no recomposition.
+    // written in a frame callback and read in layers and draws, so the clock never recomposes anything
     val fills = remember { Array(DotCount) { mutableFloatStateOf(0f) } }
     val glows = remember { Array(DotCount) { mutableFloatStateOf(0f) } }
     val finale = remember { mutableFloatStateOf(0f) }
@@ -159,13 +111,12 @@ fun LyricsInterludeDots(
             pops.forEachIndexed { index, pop ->
                 launch {
                     delay(index * PopStaggerMs)
-                    // A touch of bounce: the dots land, they don't just appear.
+                    // a touch of bounce, so the dots land instead of just appearing
                     pop.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 260f))
                 }
             }
         } else {
-            // Same duration and easing as the recenter scroll that runs at this exact moment, so the
-            // next line slides into the dots' place in one motion (see LyricsScreen).
+            // same length and curve as the recenter scroll running right now, so the next line slides into the dots' place
             launch {
                 height.animateTo(0f, tween(LyricsRecenterDurationMs, easing = collapseEasing))
             }
@@ -175,30 +126,21 @@ fun LyricsInterludeDots(
         }
     }
 
-    // Only ticks while the row is on screen and grown; a hidden gap row costs nothing per frame.
+    // only ticks while the row is grown, a hidden gap row costs nothing per frame
     LaunchedEffect(startMs, endMs, positionProvider, visible) {
         if (!visible) return@LaunchedEffect
         while (true) {
             withFrameMillis { frameMs ->
                 clockMs.longValue = frameMs
                 val progress = ((positionProvider() - startMs).toFloat() / span).coerceIn(0f, 1f)
-                val finaleNow = smoothstep((progress - FinaleFraction) / (1f - FinaleFraction))
-                finale.floatValue = finaleNow
+                finale.floatValue = smoothstep((progress - FinaleFraction) / (1f - FinaleFraction))
                 for (index in 0 until DotCount) {
                     val sliceStart = index.toFloat() / DotCount
-                    val within = (progress - sliceStart) * DotCount / DotFadeFraction
-                    val fill = smoothstep(within)
+                    val fill = smoothstep((progress - sliceStart) * DotCount / DotFadeFraction)
                     fills[index].floatValue = fill
-
-                    // Glow rides the fill up while the dot is lighting, then lets go slowly once it's
-                    // lit - a flare, not a constant halo. The finale gives one last soft pulse.
+                    // the glow rides the fill up while the dot lights, then eases off once it's lit
                     val litAt = sliceStart + DotFadeFraction / DotCount
-                    val glow = if (progress < litAt) {
-                        fill
-                    } else {
-                        exp(-((progress - litAt) * span) / GlowFadeMs)
-                    }
-                    glows[index].floatValue = maxOf(glow, sin(PI.toFloat() * finaleNow) * 0.7f)
+                    glows[index].floatValue = if (progress < litAt) fill else exp(-((progress - litAt) * span) / GlowFadeMs)
                 }
             }
         }
@@ -208,9 +150,7 @@ fun LyricsInterludeDots(
         modifier = modifier
             .then(if (onDotsStart != null) Modifier.onPlaced { rowCoords[0] = it } else Modifier)
             .fillMaxWidth()
-            // The row's height is part of the list's layout, so it's set here rather than faked
-            // with a translation: lines below really move to make room, and really take the space
-            // back when the gap ends.
+            // the height is real layout, so the lines below truly move to make room and take it back when the gap ends
             .layout { measurable, constraints ->
                 val full = RowHeight.roundToPx()
                 val placeable = measurable.measure(constraints.copy(minHeight = full, maxHeight = full))
@@ -231,68 +171,86 @@ fun LyricsInterludeDots(
             LyricsAlignment.END -> Arrangement.End
         },
     ) {
-        repeat(DotCount) { index ->
-            Spacer(
-                modifier = Modifier
-                    .size(DotSize)
-                    .then(
-                        if (index == 0 && onDotsStart != null) {
-                            // before the dot's own bob and swell, so the point the card flies to holds still
-                            Modifier.onPlaced { dot ->
-                                val row = rowCoords[0]
-                                if (row != null && row.isAttached) {
-                                    val at = row.localPositionOf(dot, Offset.Zero)
-                                    onDotsStart(Offset(at.x, at.y + dot.size.height / 2f))
+        Row(
+            modifier = Modifier
+                .layerBleed(GlowRoom)
+                .sweepBloom(highBloom) {
+                    if (!bloom) return@sweepBloom null
+                    dotsGlow(glows, finale.floatValue, height.value.coerceIn(0f, 1f))
+                }
+                .padding(GlowRoom),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            repeat(DotCount) { index ->
+                Spacer(
+                    modifier = Modifier
+                        .size(DotSize)
+                        .then(
+                            if (index == 0 && onDotsStart != null) {
+                                // before the dot's own bob, so the point the card flies to holds still
+                                Modifier.onPlaced { dot ->
+                                    val row = rowCoords[0]
+                                    if (row != null && row.isAttached) {
+                                        val at = row.localPositionOf(dot, Offset.Zero)
+                                        onDotsStart(Offset(at.x, at.y + dot.size.height / 2f))
+                                    }
                                 }
+                            } else {
+                                Modifier
                             }
-                        } else {
-                            Modifier
+                        )
+                        .graphicsLayer {
+                            // the dot keeps its size as it lights, only the pop-in on arrival scales it
+                            val pop = pops[index].value
+                            scaleX = pop
+                            scaleY = pop
+                            alpha = (RestAlpha + (1f - RestAlpha) * fills[index].floatValue) * pop.coerceIn(0f, 1f)
+                            val phase = clockMs.longValue / BobPeriodMs * 2f * PI.toFloat() - index * BobPhaseStep
+                            translationY = sin(phase) * BobHeight.toPx()
                         }
-                    )
-                    .graphicsLayer {
-                        val fill = fills[index].floatValue
-                        // The finale lifts every dot, including lit ones, so the whole row pulses
-                        // once just before the next line arrives.
-                        val swell = finale.floatValue
-                        val pop = pops[index].value
-                        val s = (RestScale + (LitScale - RestScale) * fill + 0.14f * swell) * pop
-                        scaleX = s
-                        scaleY = s
-                        alpha = (RestAlpha + (1f - RestAlpha) * maxOf(fill, swell)) * pop.coerceIn(0f, 1f)
-
-                        val phase = clockMs.longValue / BobPeriodMs * 2f * PI.toFloat() - index * BobPhaseStep
-                        translationY = sin(phase) * BobHeight.toPx()
-                    }
-                    // drawBehind, not background(): the colour depends on per-frame state, and
-                    // reading it in composition would recompose this row every frame.
-                    .drawBehind {
-                        val fill = fills[index].floatValue
-                        val glow = glows[index].floatValue
-                        val radius = size.minDimension / 2f
-
-                        // The glow is the only thing carrying the artwork's colour. The dot stays
-                        // white and only brightens, so it can't read as a dark blob.
-                        if (glow > 0.01f) {
-                            val glowRadius = radius * GlowRadiusFactor
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(
-                                        glowColor.copy(alpha = GlowPeakAlpha * glow),
-                                        Color.Transparent,
-                                    ),
-                                    center = center,
-                                    radius = glowRadius,
-                                ),
-                                radius = glowRadius,
-                            )
+                        // read in draw so the per-frame fill never recomposes the row
+                        .drawBehind {
+                            val fill = fills[index].floatValue
+                            drawCircle(Color.White.copy(alpha = 0.75f + 0.25f * fill), size.minDimension / 2f)
                         }
-
-                        drawCircle(Color.White.copy(alpha = 0.75f + 0.25f * fill), radius)
-                    }
-            )
-            if (index < DotCount - 1) Spacer(modifier = Modifier.size(DotGap))
+                )
+                if (index < DotCount - 1) Spacer(modifier = Modifier.size(DotGap))
+            }
         }
     }
+}
+
+// where the bloom sits: on the dots that are glowing, spreading over all three for the finale, in the bloom layer's own px
+private fun androidx.compose.ui.unit.Density.dotsGlow(
+    glows: Array<androidx.compose.runtime.MutableFloatState>,
+    finale: Float,
+    shown: Float,
+): SweepHeadGeometry? {
+    val pulse = sin(PI.toFloat() * finale) * 0.7f
+    var strongest = pulse
+    var weight = 0f
+    var weighted = 0f
+    val dot = DotSize.toPx()
+    val pitch = dot + DotGap.toPx()
+    val room = GlowRoom.toPx()
+    for (index in 0 until DotCount) {
+        val glow = glows[index].floatValue
+        strongest = maxOf(strongest, glow)
+        weight += glow
+        weighted += glow * (room + index * pitch + dot / 2f)
+    }
+    val strength = strongest * shown
+    if (strength < 0.01f) return null
+    val groupCentre = room + (DotCount - 1) * pitch / 2f + dot / 2f
+    val lit = if (weight > 0f) weighted / weight else groupCentre
+    val groupWidth = DotCount * dot + (DotCount - 1) * DotGap.toPx()
+    return glowAround(
+        centreX = lit + (groupCentre - lit) * finale,
+        spanPx = pitch + (groupWidth - pitch) * finale,
+        top = 0f,
+        bottom = dot + room * 2f,
+        glow = strength,
+    )
 }
 
 private fun smoothstep(t: Float): Float {

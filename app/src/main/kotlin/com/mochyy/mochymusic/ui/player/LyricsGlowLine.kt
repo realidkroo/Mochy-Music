@@ -637,9 +637,8 @@ private fun rememberRubyOverlay(
 
             val line = layout.getLineForOffset(start)
             val left = layout.getHorizontalPosition(start, true)
-            // A token can straddle a wrap. Clamp it to the line its first character is on rather
-            // than measuring to a coordinate that belongs to the line below.
-            val right = if (layout.getLineForOffset(end - 1) != line) {
+            // a word that reaches the wrap ends at its line's edge, since the offset after it already sits at the start of the next line and the reading got skipped
+            val right = if (end >= layout.getLineEnd(line)) {
                 layout.getLineRight(line)
             } else {
                 layout.getHorizontalPosition(end, true)
@@ -1563,6 +1562,16 @@ internal class SweepHeadGeometry(
     val lineStart: Float,
     val charWidth: Float,
     val glow: Float,
+)
+
+// the same bloom centred on a point instead of trailing a head, fading out spanPx either side, for things that aren't letters like the gap dots
+internal fun glowAround(centreX: Float, spanPx: Float, top: Float, bottom: Float, glow: Float) = SweepHeadGeometry(
+    headX = centreX + spanPx * BloomLagChars / BloomSpanChars,
+    lineTop = top,
+    lineBottom = bottom,
+    lineStart = 0f,
+    charWidth = spanPx / BloomSpanChars,
+    glow = glow,
 )
 
 // the page's bloom around a sweep head on any text that can say where its head is (the share's cinematic words); android 13+, nothing at all before that

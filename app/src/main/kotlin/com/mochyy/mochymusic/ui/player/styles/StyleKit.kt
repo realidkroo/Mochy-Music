@@ -443,7 +443,13 @@ class StyleActions(
     val onClose: () -> Unit = {},
     // opens the queue over the style, for the styles whose menu offers it (the poster)
     val onQueue: (() -> Unit)? = null,
+    // the rotate item; none in the selector's cards or on a tv
+    val turn: StyleTurn? = null,
 )
+
+// whether the style on now is turned sideways and the switch for it, read as lambdas since the actions are built once
+@Stable
+class StyleTurn(val isTurned: () -> Boolean, val toggle: () -> Unit)
 
 /**
  * Double tap plays or pauses; a sideways swipe slides the player's row of songs under the finger
@@ -571,6 +577,9 @@ fun BoxScope.StyleMenu(
             ) { connection.player.toggleRepeatMode() },
         ) else emptyList()
         val queueLabel = androidx.compose.ui.res.stringResource(R.string.queue)
+        val turnLabel = androidx.compose.ui.res.stringResource(
+            if (actions.turn?.isTurned?.invoke() == true) R.string.player_turn_upright else R.string.player_rotate,
+        )
         val rows = listOfNotNull(
             actions.onLyrics?.let { open -> MenuItem("Lyrics", R.drawable.lyrics) { onOpenChange(false); open() } },
             actions.onQueue?.takeIf { queue }?.let { open -> MenuItem(queueLabel, R.drawable.queue_music) { onOpenChange(false); open() } },
@@ -581,6 +590,9 @@ fun BoxScope.StyleMenu(
             }
         } + listOf(
             MenuItem("Other menu", R.drawable.more_horiz) { onOpenChange(false); actions.onOtherMenu() },
+        ) + listOfNotNull(
+            actions.turn?.let { turn -> MenuItem(turnLabel, R.drawable.screen_rotation) { onOpenChange(false); turn.toggle() } },
+        ) + listOf(
             MenuItem("Edit player", R.drawable.tune) { onOpenChange(false); actions.onEditPlayer() },
         )
         val itemGap = 10.dp

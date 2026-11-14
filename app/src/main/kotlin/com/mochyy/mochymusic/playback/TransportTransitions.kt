@@ -8,6 +8,7 @@ import com.mochyy.mochymusic.constants.TransportEffect
 import com.mochyy.mochymusic.crossmix.CrossmixRole
 import com.mochyy.mochymusic.crossmix.CrossmixStyle
 import com.mochyy.mochymusic.playback.audio.CrossmixTransitionAudioProcessor
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -16,12 +17,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.max
 import kotlin.math.min
 
 // a skip shouldn't keep you waiting on the old song, so its fade out is short whatever the length is set to
 private const val SkipOutMaxMs = 1_500f
-// the effects' last repeats are faded by volume over the end of a pause, so nothing rings into the stop
+// the effects' last repeats are faded by volume over the end of a pause or skip, so nothing rings into the stop
 private const val TailFadeFrom = 0.8f
 // a song restarts instead of going back once it's this far in, like the previous button always did
 private const val RestartAfterMs = 3_000L
@@ -32,6 +34,12 @@ private const val TailSettleMs = 80L
 private const val DefaultBeatMs = 500.0
 // how long a skip waits, silent, for the next song to start before it fades in anyway
 private const val StartWaitMs = 6_000L
+// a picked song gets this long to be found before the old one makes way for it anyway
+private const val PickReadyWaitMs = 5_000L
+// how far the old song dips while a picked one is still loading: enough to hear the tap land, never the silence that sounded like a stop
+private const val PickHoldLevel = 0.35f
+// the shortest the old song's last stretch down can be once the picked one is ready
+private const val PickOutMinMs = 200f
 
 // fades and crossmix effects for pause, play and skips, so stopping or switching songs eases out instead of cutting
 @UnstableApi
@@ -55,6 +63,8 @@ class TransportTransitions(
         fun blendJump(index: Int): Boolean = false
         // whether a skip pressed now would be a crossfade, which changes the song at once instead of after a fade out
         fun blendsSkips(): Boolean = false
+        // finds a picked song's stream and fetches its first seconds, so it starts the moment the old one is gone
+        suspend fun getReady(mediaId: String) {}
     }
 
     @Volatile var enabled = true
@@ -74,6 +84,8 @@ class TransportTransitions(
     private var level = 1f
     // roughly how loud it sounds, which is what a change of mind fades back from
     private var heard = 1f
+    // the song a pick is on its way to, so tapping it again while it loads doesn't start over
+    private var pickedSong: String? = null
 
     val isFading: Boolean get() = phase != Phase.Idle
 
@@ -172,7 +184,7 @@ class TransportTransitions(
         stopFade()
     }
 
-    /** a song picked from the queue in front of you, by a tap or a swipe back: crossfaded with blend skips on, otherwise faded like a skip; [index] is read again when the song changes, in case the queue moved meanwhile */
+    /** a swipe back to the song before: crossfaded with blend skips on, otherwise faded like a skip, on the timing the row's glide expects; [index] is read again when the song changes, in case the queue moved meanwhile */
     fun jumpTo(index: () -> Int) {
         val player = host.player
         val target = index()
@@ -181,23 +193,30 @@ class TransportTransitions(
             stopFade(keepVolume = true)
             return
         }
-        switchSong(keepIfInterrupted = true) { p ->
-            val now = index()
-            if (now == C.INDEX_UNSET || now >= p.mediaItemCount) return@switchSong
-            p.seekToDefaultPosition(now)
-            if (p.playbackState == Player.STATE_IDLE || p.playbackState == Player.STATE_ENDED) p.prepare()
-            p.playWhenReady = true
-        }
+        switchSong(keepIfInterrupted = true) { seekToPicked(it, index) }
     }
 
-    /** a new queue picked from a list while a song plays: [blend] tries the crossfade first, otherwise the old song fades out and [start] loads the new one, which swells in */
-    fun startQueue(blend: () -> Boolean, start: () -> Unit) {
+    /** a song tapped in the queue or picked on the lock screen: crossfaded with blend skips on, otherwise picked like a song from a list; [index] is read again when the song changes */
+    fun pickFromQueue(index: () -> Int) {
+        val player = host.player
+        val target = index()
+        if (target == C.INDEX_UNSET || target >= player.mediaItemCount) return
+        if (player.playWhenReady && phase != Phase.Pausing && host.blendJump(target)) {
+            stopFade(keepVolume = true)
+            return
+        }
+        val song = player.getMediaItemAt(target).mediaId
+        pick(song, ready = { host.getReady(song) }) { seekToPicked(it, index) }
+    }
+
+    /** a new queue picked from a list while a song plays: [blend] tries the crossfade first, otherwise [ready] reads the queue and fetches the start of its first song ([song], when that's known up front) while the old one dips, and [start] loads it */
+    fun startQueue(song: String?, ready: suspend () -> Unit, blend: () -> Boolean, start: () -> Unit) {
         val player = host.player
         if (player.playWhenReady && phase != Phase.Pausing && blend()) {
             stopFade(keepVolume = true)
             return
         }
-        switchSong(keepIfInterrupted = true) { start() }
+        pick(song, ready) { start() }
     }
 
     private fun skip(previous: Boolean) {
@@ -246,19 +265,102 @@ class TransportTransitions(
             disarm()
             change(player)
             // the swell waits until the next song is really heard: timed from the press, a slow start came in at full volume with no fade at all
-            var waited = 0L
-            while (waited < StartWaitMs && !(player.isPlaying && (player.currentMediaItemIndex != index || player.currentMediaItem?.mediaId != songId || player.currentPosition < 1_000L))) {
-                delay(FrameMs)
-                waited += FrameMs
-            }
+            awaitNewSong(player, songId, index)
             armIn(player, inMs)
             phase = Phase.Resuming
             fadeIn(player, inMs, from = 0f)
         }
     }
 
+    // a song picked by hand: the old one dips at once while [ready] gets the new one going, goes the rest of the way once it's ready, then [change] switches and the new one swells in
+    private fun pick(song: String?, ready: suspend () -> Unit, change: (ExoPlayer) -> Unit) {
+        val player = host.player
+        // tapped again while it's still on its way: the first tap is already bringing it
+        if (song != null && song == pickedSong && phase == Phase.Skipping) return
+        // paused, still loading with nothing heard yet, or no fade to make: the change happens at once
+        if (!player.playWhenReady || !shouldFade(player) || !scope.isActive || (phase == Phase.Idle && !player.isPlaying)) {
+            stopFade()
+            change(player)
+            return
+        }
+        // a pick on top of another one carries on from wherever that one had got to, never jumping back up
+        val from = currentLevel()
+        stopFade(keepVolume = true)
+        val outMs = min(lengthMs / 2f, SkipOutMaxMs)
+        val inMs = max(lengthMs / 2f, 300f)
+        phase = Phase.Skipping
+        pickedSong = song
+        job = scope.launch {
+            val readying = launch { awaitReady(ready) }
+            val dipStart = System.nanoTime()
+            while (!readying.isCompleted) {
+                val p = ((System.nanoTime() - dipStart) / 1_000_000f / outMs).coerceIn(0f, 1f)
+                heard = from * (1f - (1f - PickHoldLevel) * smoothstep(p))
+                level = heard
+                applyLevel(host.player)
+                delay(FrameMs)
+            }
+            // the rest of the way down takes the share of the fade that's left
+            val down = heard
+            val outgoing = host.player
+            if (down > 0f) {
+                val length = max(outMs * down / max(from, 0.01f), PickOutMinMs)
+                val processor = armOut(outgoing, length)
+                runFade(outgoing, length) { p ->
+                    heard = down * (1f - smoothstep(p))
+                    level = if (processor != null) down * tailFade(p) else heard
+                    true
+                }
+                settleTails(processor)
+            }
+            level = 0f
+            heard = 0f
+            applyLevel(host.player)
+            disarm()
+            // read just before the switch: the old song may have rolled on by itself while it dipped
+            val oldSong = host.player.currentMediaItem?.mediaId
+            val oldIndex = host.player.currentMediaItemIndex
+            change(host.player)
+            val incoming = host.player
+            awaitNewSong(incoming, oldSong, oldIndex)
+            armIn(incoming, inMs)
+            fadeIn(incoming, inMs, from = 0f)
+        }
+    }
+
+    // gives [ready] up to PickReadyWaitMs; if it fails the pick still goes ahead and the player finds the song itself
+    private suspend fun awaitReady(ready: suspend () -> Unit) {
+        withTimeoutOrNull(PickReadyWaitMs) {
+            try {
+                ready()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    // waits, silent, until something other than [oldSong] is playing (or it starts over), for at most StartWaitMs
+    private suspend fun awaitNewSong(player: ExoPlayer, oldSong: String?, oldIndex: Int) {
+        var waited = 0L
+        while (waited < StartWaitMs && !(player.isPlaying && (player.currentMediaItemIndex != oldIndex || player.currentMediaItem?.mediaId != oldSong || player.currentPosition < 1_000L))) {
+            delay(FrameMs)
+            waited += FrameMs
+        }
+    }
+
+    // moves to the song at [index] as it is now and plays it
+    private fun seekToPicked(player: ExoPlayer, index: () -> Int) {
+        val now = index()
+        if (now == C.INDEX_UNSET || now >= player.mediaItemCount) return
+        player.seekToDefaultPosition(now)
+        if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) player.prepare()
+        player.playWhenReady = true
+    }
+
     private fun fadeIn(player: ExoPlayer, length: Float, from: Float) {
         phase = Phase.Resuming
+        pickedSong = null
         _playIntent.value = true
         job = scope.launch {
             runFade(player, length) { p ->
@@ -319,29 +421,39 @@ class TransportTransitions(
     // borrows the player's crossmix renderer for the layered effect, when there is one and it's free
     private fun arm(player: ExoPlayer, role: CrossmixRole, length: Float, calibrationNanos: Long): CrossmixTransitionAudioProcessor? {
         disarm()
-        val move = effect.takeIf { it != TransportEffect.OFF } ?: return null
         // the renderer only notices it's free once audio flows again, so being outside a crossmix (canFade) is the check
         val processor = host.processorFor(player)?.takeIf { it.canRender } ?: return null
-        val position = player.currentPosition.toDouble()
-        processor.arm(
-            CrossmixTransitionAudioProcessor.Script(
-                role = role,
-                style = CrossmixStyle.SilkBlend,
-                variation = 0,
-                lengthBeats = 1f,
-                anchorMs = position,
-                mediaPerBeatMs = length.toDouble(),
-                musicalBeatMs = host.beatMsFor(player.currentMediaItem?.mediaId) ?: DefaultBeatMs,
-                // the leaving side is faded out by settleTails; this hard mute only backs it up
-                endBeat = if (role == CrossmixRole.Outgoing) 1.5f else 1f,
-                calibrationMs = position,
-                calibrationNanos = calibrationNanos,
-                transport = move,
-                transportLengthMs = length,
-            )
-        )
+        val script = effectScript(player, role, length, calibrationNanos) ?: return null
+        processor.arm(script)
         armed = processor
         return processor
+    }
+
+    /** one side of a blended skip's layered effect, timed to [lengthMs] as heard; null with the fade off or no effect picked */
+    fun blendScript(player: ExoPlayer, role: CrossmixRole, lengthMs: Float, calibrationNanos: Long): CrossmixTransitionAudioProcessor.Script? =
+        if (enabled) effectScript(player, role, lengthMs, calibrationNanos) else null
+
+    // the picked effect for one side, starting where the player is now and lasting [length] ms as heard
+    private fun effectScript(player: ExoPlayer, role: CrossmixRole, length: Float, calibrationNanos: Long): CrossmixTransitionAudioProcessor.Script? {
+        val move = effect.takeIf { it != TransportEffect.OFF } ?: return null
+        val position = player.currentPosition.toDouble()
+        val speed = player.playbackParameters.speed.takeIf { it > 0f } ?: 1f
+        return CrossmixTransitionAudioProcessor.Script(
+            role = role,
+            style = CrossmixStyle.SilkBlend,
+            variation = 0,
+            lengthBeats = 1f,
+            anchorMs = position,
+            // the renderer counts the song's own time, which runs ahead of the clock on a sped-up song and ended the effect early
+            mediaPerBeatMs = length.toDouble() * speed,
+            musicalBeatMs = host.beatMsFor(player.currentMediaItem?.mediaId) ?: DefaultBeatMs,
+            // the leaving side is faded out by volume first; this hard mute only backs it up
+            endBeat = if (role == CrossmixRole.Outgoing) 1.5f else 1f,
+            calibrationMs = position,
+            calibrationNanos = calibrationNanos,
+            transport = move,
+            transportLengthMs = length,
+        )
     }
 
     private fun disarm() {
@@ -354,6 +466,7 @@ class TransportTransitions(
         job = null
         disarm()
         phase = Phase.Idle
+        pickedSong = null
         _playIntent.value = null
         if (!keepVolume) {
             level = 1f
@@ -390,8 +503,9 @@ class TransportTransitions(
         if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) player.prepare()
         player.playWhenReady = true
     }
-
-    private fun tailFade(p: Float): Float = 1f - smoothstep(((p - TailFadeFrom) / (1f - TailFadeFrom)).coerceIn(0f, 1f))
-
-    private fun smoothstep(x: Float): Float = x * x * (3f - 2f * x)
 }
+
+// the volume under a leaving effect at progress p: held while the effect does the fading, then down over the last fifth
+fun tailFade(p: Float): Float = 1f - smoothstep(((p - TailFadeFrom) / (1f - TailFadeFrom)).coerceIn(0f, 1f))
+
+private fun smoothstep(x: Float): Float = x * x * (3f - 2f * x)

@@ -113,6 +113,7 @@ val EnablePaxsenixKey = booleanPreferencesKey("enablePaxsenix")
 val EnableNetEaseKey = booleanPreferencesKey("enableNetEase")
 val EnableQQMusicKey = booleanPreferencesKey("enableQQMusic")
 val EnableDeezerKey = booleanPreferencesKey("enableDeezer")
+val EnableLrcRedKey = booleanPreferencesKey("enableLrcRed")
 val HideExplicitKey = booleanPreferencesKey("hideExplicit")
 val HideVideoSongsKey = booleanPreferencesKey("hideVideoSongs")
 // no switch for it in settings, so every reader defaults it to on and shorts stay out
@@ -161,6 +162,14 @@ val AudioQualityKey = stringPreferencesKey("audioQuality")
 val DataSaverKey = booleanPreferencesKey("dataSaver")
 val DataSaverMobileOnlyKey = booleanPreferencesKey("dataSaverMobileOnly")
 val IpVersionKey = stringPreferencesKey("ipVersion")
+
+// who finds a youtube song's stream: innertubex first with mochy's own client walk behind it, or only the walk
+val StreamBackendKey = stringPreferencesKey("streamBackend")
+
+enum class StreamBackend {
+    INNERTUBEX,
+    CLASSIC,
+}
 
 enum class AudioQuality {
     /** Best available from whichever backend is active. */
@@ -712,6 +721,12 @@ enum class PlayerStyle(val displayName: String, val selectorName: String) {
     // the two flagships the full editor works on: cover, middle part, controls and bottom bar
     val hasFullEditor: Boolean get() = this == FLAGSHIP || this == CLASSIC
 
+    // the styles whose menu has a rotate button, each with a landscape layout of its own to turn into
+    val turnable: Boolean get() = this == TURNTABLE || this == POSTER || this == TIMELINE || this == LYRICS || this == MODULE || isBedside
+
+    // laid out sideways until someone turns it upright, the way a phone stands on a nightstand
+    val startsSideways: Boolean get() = this == BEDSIDE_TILES
+
     // the looks that read well across a room and stay smooth on a tv's gpu; the rest stay on phones
     val availableOnTv: Boolean get() = this == FLAGSHIP || this == POSTER || this == VIDEO || this == TIMELINE || isBedside
 
@@ -789,6 +804,9 @@ val BedsideLockScreenKey = booleanPreferencesKey("bedsideLockScreen")
 
 // "not now" on the bedside's lock screen prompt, so it asks once and then leaves it to the sheet
 val BedsideLockPromptDismissedKey = booleanPreferencesKey("bedsideLockPromptDismissed")
+
+// whether a style's rotate button turned it sideways; the same key as before, so a style someone had turned comes back turned
+fun playerStyleRotatedKey(style: PlayerStyle) = booleanPreferencesKey("playerStyleRotated_${style.name}")
 
 // the page each bedside tile was left on, so it opens where it was
 val BedsideMusicTilePageKey = intPreferencesKey("bedsideMusicTilePage")

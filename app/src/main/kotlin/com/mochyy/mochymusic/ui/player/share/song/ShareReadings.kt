@@ -51,7 +51,7 @@ internal fun SongShareSession.cardLine(entry: LyricsEntry): ShareLine {
     val translation = lineTranslations[entry]?.takeIf { choice.translate }
     if (choice.asMain && readingText != null) {
         // the romanised pieces carry the timing, so the line still sings word by word in a video
-        return ShareLine(entry.copy(text = readingText, words = reading.words, syllables = null), listOfNotNull(entry.text.trim(), translation))
+        return ShareLine(entry.copy(text = readingText, words = reading?.words, syllables = null), listOfNotNull(entry.text.trim(), translation))
     }
     return ShareLine(entry, listOfNotNull(readingText, translation))
 }

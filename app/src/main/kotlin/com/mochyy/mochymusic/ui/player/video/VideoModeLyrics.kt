@@ -429,7 +429,8 @@ private fun BoxScope.RegularSlot(
                 startMs = startMs,
                 endMs = endMs,
                 positionProvider = positionProvider,
-                accentColor = Color.White,
+                bloom = look.motion.shaded,
+                highBloom = look.highBloom,
                 alignment = alignment,
                 modifier = Modifier.regularPlace(alignment, frame),
             )
@@ -671,7 +672,8 @@ internal fun FollowingLyrics(
                             startMs = row.startMs,
                             endMs = row.endMs,
                             positionProvider = positionProvider,
-                            accentColor = Color.White,
+                            bloom = look.motion.shaded && !userScrolling,
+                            highBloom = look.highBloom,
                             visible = activeInterlude == row.afterIndex,
                             collapseEasing = recenterEasingFor(look.motion),
                             alignment = lines.getOrNull(row.afterIndex + 1)?.let { alignmentFor(it, useAgents) }

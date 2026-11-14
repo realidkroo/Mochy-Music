@@ -55,7 +55,7 @@ class TransportFadingPlayer(
             transport.cancel()
             super.seekToDefaultPosition(mediaItemIndex)
         } else {
-            transport.jumpTo { mediaItemIndex }
+            transport.pickFromQueue { mediaItemIndex }
         }
     }
 

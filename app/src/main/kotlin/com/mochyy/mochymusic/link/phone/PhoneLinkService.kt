@@ -20,6 +20,7 @@ import com.mochyy.mochymusic.link.isTelevision
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import javax.inject.Inject
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 // keeps the phone reachable for its paired devices while mochy is closed, with a quiet notification saying so
@@ -66,8 +67,10 @@ class PhoneLinkService : Service() {
         if (watching) return
         watching = true
         scope.launch {
-            kotlinx.coroutines.flow.combine(host.devices, host.live, host.lastStream, ticks()) { _, _, _, _ -> notification() }
-                .collect { NotificationManagerCompat.from(this@PhoneLinkService).runCatching { notify(NotificationId, it) } }
+            // posted again only when its words change, so one swiped away on android 14+ stays away instead of coming back every 30 seconds
+            kotlinx.coroutines.flow.combine(host.devices, host.live, host.lastStream, ticks()) { _, _, _, _ -> status() }
+                .distinctUntilChanged()
+                .collect { NotificationManagerCompat.from(this@PhoneLinkService).runCatching { notify(NotificationId, notification(it)) } }
         }
     }
 
@@ -79,7 +82,21 @@ class PhoneLinkService : Service() {
         }
     }
 
-    private fun notification(): android.app.Notification {
+    // says what's really going on: streaming to a tv, a device around and in step, or only linked and waiting
+    private fun status(): Pair<String, String> {
+        val now = System.currentTimeMillis()
+        val around = host.liveDevices(now)
+        val streaming = around.filter { device -> host.lastStream.value[device.id]?.let { now - it < StreamingForMs } == true }
+        val names = host.devices.value.joinToString { it.name }
+        return when {
+            streaming.isNotEmpty() -> getString(R.string.tv_link_status_streaming, streaming.joinToString { it.name }) to getString(R.string.tv_link_status_streaming_detail)
+            around.isNotEmpty() -> getString(R.string.tv_link_status_connected, around.joinToString { it.name }) to
+                getString(if (around.any { it.kind.isTv }) R.string.tv_link_status_connected_detail else R.string.devices_status_connected_detail)
+            else -> getString(R.string.devices_notification_title) to getString(R.string.devices_notification_text, names)
+        }
+    }
+
+    private fun notification(status: Pair<String, String> = status()): android.app.Notification {
         val manager = NotificationManagerCompat.from(this)
         manager.createNotificationChannel(
             NotificationChannelCompat.Builder(ChannelId, NotificationManagerCompat.IMPORTANCE_MIN)
@@ -87,17 +104,7 @@ class PhoneLinkService : Service() {
                 .setShowBadge(false)
                 .build(),
         )
-        val now = System.currentTimeMillis()
-        val around = host.liveDevices(now)
-        val streaming = around.filter { device -> host.lastStream.value[device.id]?.let { now - it < StreamingForMs } == true }
-        val names = host.devices.value.joinToString { it.name }
-        // says what's really going on: streaming to a tv, a device around and in step, or only linked and waiting
-        val (title, text) = when {
-            streaming.isNotEmpty() -> getString(R.string.tv_link_status_streaming, streaming.joinToString { it.name }) to getString(R.string.tv_link_status_streaming_detail)
-            around.isNotEmpty() -> getString(R.string.tv_link_status_connected, around.joinToString { it.name }) to
-                getString(if (around.any { it.kind.isTv }) R.string.tv_link_status_connected_detail else R.string.devices_status_connected_detail)
-            else -> getString(R.string.devices_notification_title) to getString(R.string.devices_notification_text, names)
-        }
+        val (title, text) = status
         val open = android.app.PendingIntent.getActivity(
             this,
             0,

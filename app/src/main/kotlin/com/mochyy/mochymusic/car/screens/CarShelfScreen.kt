@@ -5,7 +5,6 @@ package com.mochyy.mochymusic.car.screens
 import androidx.car.app.Screen
 import androidx.car.app.model.Action
 import androidx.car.app.model.CarIcon
-import androidx.car.app.model.GridSection
 import androidx.car.app.model.Header
 import androidx.car.app.model.RowSection
 import androidx.car.app.model.SectionedItemTemplate
@@ -45,7 +44,7 @@ class CarShelfScreen(
             val tiles = lists.mapIndexed { index, list ->
                 collectionTile(list.title, list.subtitle, listIcons[index]) { app.push(CarSongsScreen(app, list.title, list.songs)) }
             }
-            template.addSection(GridSection.Builder().setItems(tiles).build())
+            template.addSection(coverGrid().setItems(tiles).build())
         }
         if (songs.isNotEmpty()) {
             val rows = songs.mapIndexed { index, song -> songRow(song, songIcons[index]) { app.play(app.catalog.radio(song)) } }

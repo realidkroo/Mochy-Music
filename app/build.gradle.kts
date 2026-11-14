@@ -28,7 +28,7 @@ extensions.configure<ApplicationExtension> {
         minSdk = 24
         targetSdk = 37
         versionCode = 73
-        versionName = "8.4.0 build#1248"
+        versionName = "8.4.0 build#1255"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -458,6 +458,8 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.json)
+    // finds song streams first, with mochy's own client walk as the backup (YTPlayerUtils)
+    implementation(libs.innertubex)
 
     // Protobuf for message serialization (lite version for Android)
     implementation(libs.protobuf.javalite)

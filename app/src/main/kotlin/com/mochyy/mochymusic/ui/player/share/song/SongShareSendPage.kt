@@ -59,7 +59,6 @@ import androidx.media3.datasource.DataSource
 import androidx.media3.transformer.ExportException
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
-import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.SheetPillButton
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
@@ -247,41 +246,17 @@ private fun SendContent(send: SendState, live: Boolean) {
 
 @Composable
 private fun ShareAsVideoRow(session: SongShareSession, enabled: Boolean) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer { alpha = if (enabled) 1f else 0.45f }
-            .clip(RoundedCornerShape(16.dp))
-            .background(MenuRowSurface)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                stringResource(R.string.song_share_as_video),
-                fontFamily = InterFontFamily,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = Color.White,
-            )
-            Text(
-                stringResource(R.string.song_share_as_video_hint),
-                fontFamily = InterFontFamily,
-                fontWeight = FontWeight.Medium,
-                fontSize = 12.sp,
-                color = ShareMuted,
-            )
-        }
-        AppSwitch(
-            checked = session.shareAsVideo,
-            onCheckedChange = { on ->
-                session.shareAsVideo = on
-                // the lyrics play the lines that were picked, unless the part was moved by hand
-                if (on && session.pick != null && !session.windowTouched) session.fitWindowToPick()
-            },
-            enabled = enabled,
-        )
-    }
+    ShareSwitchRow(
+        title = stringResource(R.string.song_share_as_video),
+        hint = stringResource(R.string.song_share_as_video_hint),
+        checked = session.shareAsVideo,
+        enabled = enabled,
+        onCheckedChange = { on ->
+            session.shareAsVideo = on
+            // the lyrics play the lines that were picked, unless the part was moved by hand
+            if (on && session.pick != null && !session.windowTouched) session.fitWindowToPick()
+        },
+    )
 }
 
 @Composable

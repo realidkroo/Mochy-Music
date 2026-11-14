@@ -69,10 +69,7 @@ private val EffectRed = LabColors.Nodes[9]
 
 // the pause, play, forward and backward fades: a picture of the curve, the switch, its length and the layered effect
 @Composable
-fun TransportFadeSection(
-    // with Crossmix on nothing plays a plain crossfade, so blended skips sit out and say so
-    crossmixOn: Boolean = false,
-) {
+fun TransportFadeSection() {
     val (enabled, onEnabledChange) = rememberPreference(TransportFadeEnabledKey, defaultValue = true)
     val (storedSeconds, onSecondsChange) = rememberPreference(TransportFadeSecondsKey, defaultValue = TransportFadeDefaultSeconds)
     val (effect, onEffectChange) = rememberEnumPreference(TransportEffectKey, defaultValue = TransportEffect.OFF)
@@ -96,7 +93,7 @@ fun TransportFadeSection(
         )
         LabToggleRow(
             title = androidx.compose.ui.res.stringResource(com.mochyy.mochymusic.R.string.settings_blend_skips),
-            subtitle = stringResource(if (crossmixOn) R.string.settings_blend_skips_crossmix else R.string.settings_blend_skips_desc),
+            subtitle = stringResource(R.string.settings_blend_skips_desc),
             checked = blendSkips,
             onCheckedChange = onBlendSkipsChange,
         )

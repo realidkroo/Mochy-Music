@@ -841,6 +841,8 @@
     <string name="discord_behaviour">Behaviour</string>
     <string name="discord_clear_on_pause">Clear status when paused</string>
     <string name="discord_clear_on_pause_desc">Takes the song off your profile as soon as you pause, and puts it back when you play again.</string>
+    <string name="discord_login_note">Opens Discord\'s own login page in your browser. Your password stays with Discord.</string>
+    <string name="discord_permissions_note">Discord\'s page also lists your friends and invites, because they come bundled with status sharing. Mochy only reads your name and picture, and shows what you\'re playing.</string>
     <string name="discord_button_text_variables">Variables: {song_name}, {artist_name}, {album_name}</string>
     <string name="discord_rpc_preview">Rich Presence Preview</string>
     <string name="discord_presence">Presence</string>
@@ -900,6 +902,31 @@
 
     <!-- Onboarding -->
     <string name="welcome_to">Welcome to</string>
+    <string name="welcome_lets_listen">Let\'s start listening!</string>
+    <string name="welcome_tap_anywhere">Tap anywhere to continue</string>
+    <!-- "welcome" in twenty languages drifting behind the welcome page, the same in every language on purpose -->
+    <string-array name="welcome_words" translatable="false">
+        <item>WELCOME</item>
+        <item>SELAMAT DATANG</item>
+        <item>ようこそ</item>
+        <item>欢迎</item>
+        <item>환영합니다</item>
+        <item>BIENVENIDO</item>
+        <item>BIENVENUE</item>
+        <item>WILLKOMMEN</item>
+        <item>BENVENUTO</item>
+        <item>BEM-VINDO</item>
+        <item>ДОБРО ПОЖАЛОВАТЬ</item>
+        <item>أهلاً وسهلاً</item>
+        <item>स्वागत है</item>
+        <item>ยินดีต้อนรับ</item>
+        <item>CHÀO MỪNG</item>
+        <item>HOŞ GELDİNİZ</item>
+        <item>WELKOM</item>
+        <item>SUGENG RAWUH</item>
+        <item>MABUHAY</item>
+        <item>ΚΑΛΩΣ ΗΡΘΑΤΕ</item>
+    </string-array>
     <string name="welcome_preparing_subtitle">Let\'s get everything ready for you.</string>
     <string name="get_started">Get Started</string>
 
@@ -1014,6 +1041,12 @@
     <string name="experimental_unlock_landscape">Unlock landscape</string>
     <string name="experimental_unlock_landscape_desc">Let the app turn sideways into its wide layout</string>
     <string name="experimental_unlock_landscape_detail">Off, the whole app stays upright however you hold your phone. On, it turns with your phone and lays pages out side by side. Still being worked on, so some screens may look off</string>
+    <string name="player_rotate">Rotate</string>
+    <string name="player_turn_upright">Turn upright</string>
+    <string name="experimental_stream_backend">Stream backend</string>
+    <string name="experimental_stream_backend_innertubex">InnerTubeX, then classic</string>
+    <string name="experimental_stream_backend_classic">Classic only</string>
+    <string name="experimental_stream_backend_detail">How YouTube songs find their stream. InnerTubeX tries first, and anything it can\'t play goes to the classic finder, so songs keep playing either way. Classic only skips InnerTubeX. Tap to switch</string>
     <string name="video_mode_whole_video">Show the whole video</string>
     <string name="video_mode_whole_video_desc">Off, the video is zoomed in to fill the screen</string>
     <plurals name="video_mode_seek_seconds">
@@ -1109,6 +1142,10 @@
     <string name="song_share_style_too_many">Too many words for this one</string>
     <string name="song_share_as_video">Share as video</string>
     <string name="song_share_as_video_hint">The song plays and the lyrics flow</string>
+    <string name="song_share_romanisation_hint">How the words are read, under each line</string>
+    <string name="song_share_romanisation_none">These lyrics read fine as they are</string>
+    <string name="song_share_romanisation_main_hint">The card sings the romanisation, the original goes under it</string>
+    <string name="song_share_translation_hint">Each line in your language, under it</string>
     <string name="song_share_caption">%1$s · %2$s</string>
     <!-- a meta app id from developers.facebook.com; while it's empty instagram and facebook get the finished video instead of a story with a sticker -->
     <string name="meta_app_id" translatable="false"></string>
@@ -1138,8 +1175,7 @@
 
     <!-- skips that cross over, the studio version of music videos, recent searches -->
     <string name="settings_blend_skips">Blend skips</string>
-    <string name="settings_blend_skips_desc">Loads the songs either side ahead, so skips, swipes and songs you pick crossfade straight in</string>
-    <string name="settings_blend_skips_crossmix">Off while Crossmix is on: Crossmix does the mixing, so skips just skip. The songs either side still load ahead</string>
+    <string name="settings_blend_skips_desc">Loads the songs either side ahead, so skips, swipes and songs you pick mix straight in, over your fade length and through your effect</string>
     <string name="settings_blend_ahead">Songs loaded ahead</string>
     <plurals name="settings_blend_ahead_value">
         <item quantity="one">%d song</item>

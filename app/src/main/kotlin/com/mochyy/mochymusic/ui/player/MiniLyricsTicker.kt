@@ -310,7 +310,8 @@ internal fun MiniLyricsTicker(
                             startMs = startMs,
                             endMs = endMs,
                             positionProvider = positionProvider,
-                            accentColor = Color.White,
+                            bloom = waveEnabled,
+                            highBloom = highBloom,
                             alignment = LyricsAlignment.START,
                             modifier = Modifier.graphicsLayer {
                                 scaleX = DotsScale

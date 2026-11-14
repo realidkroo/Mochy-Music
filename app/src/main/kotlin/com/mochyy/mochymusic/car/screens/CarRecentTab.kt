@@ -3,7 +3,6 @@
 package com.mochyy.mochymusic.car.screens
 
 import androidx.car.app.model.CarIcon
-import androidx.car.app.model.GridSection
 import androidx.car.app.model.RowSection
 import androidx.car.app.model.SectionedItemTemplate
 import androidx.car.app.model.Template
@@ -41,7 +40,7 @@ internal class CarRecentTab(app: CarApp) : CarDataTab<CarRecentTab.Data>(app, "r
             val tiles = data.lists.mapIndexed { index, list ->
                 collectionTile(list.title, list.subtitle, data.listCovers[index]) { app.push(CarSongsScreen(app, list.title, list.songs)) }
             }
-            template.addSection(GridSection.Builder().setTitle(app.string(R.string.car_recent_lists)).setItems(tiles).build())
+            template.addSection(coverGrid().setTitle(app.string(R.string.car_recent_lists)).setItems(tiles).build())
         }
         val title = app.string(R.string.car_tab_recent)
         val rows = data.songs.mapIndexed { index, song ->

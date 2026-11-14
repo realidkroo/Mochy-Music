@@ -61,7 +61,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -514,9 +518,16 @@ private fun ColumnScope.UpdateDetailContent(
     var error by remember { mutableStateOf<String?>(null) }
     val progress = remember { mutableFloatStateOf(0f) }
 
+    // a tv remote starts on Install, the back row at the top would close this the moment OK is pressed
+    val installFocus = remember { FocusRequester() }
+    val remote = LocalInputModeManager.current.inputMode == InputMode.Keyboard
+    LaunchedEffect(Unit) {
+        if (remote && release.apkUrl != null) runCatching { installFocus.requestFocus() }
+    }
+
     val startInstall: (java.io.File) -> Unit = { file ->
         if (!installApk(context, file)) {
-            error = "Allow \"Install unknown apps\" for mochy, then tap Install here again."
+            error = context.getString(R.string.update_allow_unknown_apps)
         }
     }
 
@@ -631,11 +642,14 @@ private fun ColumnScope.UpdateDetailContent(
             .height(48.dp)
             .clip(RoundedCornerShape(50))
             .background(MenuRowSurface)
+            .focusRequester(installFocus)
             .clickable(
-                enabled = !downloading && release.apkUrl != null,
+                // stays pressable while downloading, so a tv remote resting on it isn't thrown off the sheet
+                enabled = release.apkUrl != null,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = RemoteFocus,
                 onClick = {
+                    if (downloading) return@clickable
                     error = null
                     if (isDownloaded(context, release)) {
                         startInstall(apkFileFor(context, release))

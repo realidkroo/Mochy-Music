@@ -2,13 +2,13 @@
 <resources>
     <!-- android auto -->
     <string name="car_tab_home">Home</string>
-    <string name="car_tab_remote">Remote control</string>
+    <string name="car_tab_remote">Remote</string>
     <string name="car_tab_recent">Recent</string>
     <string name="car_tab_library">Library</string>
 
     <string name="car_quick_picks">Quick picks</string>
     <string name="car_categories">Categories</string>
-    <string name="car_home_empty">Play a few songs on your phone and your picks show up here.</string>
+    <string name="car_home_empty">Play a few songs on your phone and your picks show up here!</string>
 
     <string name="car_recent_songs">Songs</string>
     <string name="car_recent_lists">Albums and playlists</string>
@@ -26,7 +26,7 @@
     <string name="car_lyrics">Lyrics</string>
     <string name="car_lyrics_on_player">On the player</string>
     <string name="car_lyrics_none">No lyrics for this song.</string>
-    <string name="car_lyrics_player_on">Lyrics now show on the player while you drive.</string>
+    <string name="car_lyrics_player_on">lyrics now may show on the player while you drive, hey, its in beta!</string>
     <string name="car_lyrics_player_off">Lyrics on the player are off.</string>
 
     <string name="car_pair_code">Pairing code</string>
