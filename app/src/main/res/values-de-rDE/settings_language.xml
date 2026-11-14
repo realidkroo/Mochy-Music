@@ -181,4 +181,14 @@
     <string name="customise_landscape_player_desc">How the player looks when you turn your phone sideways</string>
     <string name="customise_landscape_full_cover">Full cover</string>
     <string name="customise_landscape_full_cover_desc">The cover fills the left side and melts into the controls. Off, it sits as a rounded square</string>
+    <string name="settings_romanize_as_main">Romanisation as the main line</string>
+    <string name="settings_romanize_as_main_desc">The romanised words are the line that sings, the original stays underneath</string>
+    <string name="customise_lyrics_romanisation">Romanisation</string>
+    <string name="customise_lyrics_romanisation_desc">Readings for Japanese, Korean, Chinese, Hindi and Cyrillic lyrics</string>
+    <string name="customise_lyrics_translation">Translation</string>
+    <string name="customise_lyrics_translation_desc">Translates every song\'s lyrics as it plays</string>
+    <string name="customise_lyrics_preview_translation">si je suis une pierre</string>
+    <string name="settings_floating_lyrics">Floating lyrics</string>
+    <string name="settings_floating_lyrics_desc">Keep the line being sung in a little bubble over other apps</string>
+    <string name="settings_floating_lyrics_detail">Tap the cover to open Mochy, or hold it for play and pause. Drag the bubble anywhere, or drop it on the cross to hide it until you come back to Mochy.</string>
 </resources>
