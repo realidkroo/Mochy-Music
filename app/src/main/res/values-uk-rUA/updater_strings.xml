@@ -91,4 +91,5 @@
     <string name="channel_release_warning">You\'ll get the next release as an update, and nightlies stop showing up.</string>
     <string name="channel_yes">Yes</string>
     <string name="channel_no">No</string>
+    <string name="update_allow_unknown_apps">Let Mochy install unknown apps in Settings, then come back and press Install here again.</string>
 </resources>
