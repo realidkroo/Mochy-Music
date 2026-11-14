@@ -466,6 +466,7 @@ fun QueueScreen(
 private enum class QueueSection(val reorderable: Boolean) {
     HISTORY(false),
     NOW_PLAYING(false),
+    NEXT_IN_QUEUE(true),
     CONTINUE(true),
     AUTOPLAY(true),
 }
@@ -494,7 +495,8 @@ private sealed interface QueueRow {
  * each song's key as it moves History <- Now Playing <- Continue, so a song change slides the
  * rows up a place rather than swapping them out. Autoplay songs are the tail of what's to come
  * (the service only appends them and keeps user-queued songs in front), so Continue Playing runs
- * up to the first of them.
+ * up to the first of them. Songs the user queued by hand lead the upcoming ones, in their own
+ * Next in Queue section.
  */
 private fun buildQueueRows(items: List<QueueItemData>, currentIndex: Int): List<QueueRow> {
     val rows = ArrayList<QueueRow>(items.size + 4)
@@ -517,16 +519,31 @@ private fun buildQueueRows(items: List<QueueItemData>, currentIndex: Int): List<
         addSong(current, QueueSection.NOW_PLAYING)
     }
 
-    rows += QueueRow.Header(QueueSection.CONTINUE)
+    // what the user queued by hand comes first, in the order they queued it
     var i = current + 1
-    val continueStart = rows.size
-    while (i < items.size && !items[i].isAutoplay) addSong(i++, QueueSection.CONTINUE)
+    val nextStart = i
+    while (i < items.size && items[i].isManual && !items[i].isAutoplay) i++
+    val hasNext = i > nextStart
+    if (hasNext) {
+        rows += QueueRow.Header(QueueSection.NEXT_IN_QUEUE)
+        for (j in nextStart until i) addSong(j, QueueSection.NEXT_IN_QUEUE)
+    }
 
-    if (i < items.size) {
+    val continueStart = i
+    var continueEnd = i
+    while (continueEnd < items.size && !items[continueEnd].isAutoplay) continueEnd++
+    val hasContinue = continueEnd > continueStart
+    val hasAutoplay = continueEnd < items.size
+
+    if (hasContinue || !hasNext) {
+        rows += QueueRow.Header(QueueSection.CONTINUE)
+        for (j in continueStart until continueEnd) addSong(j, QueueSection.CONTINUE)
+        if (!hasContinue && !hasAutoplay) rows += QueueRow.Empty
+    }
+
+    if (hasAutoplay) {
         rows += QueueRow.Header(QueueSection.AUTOPLAY)
-        while (i < items.size) addSong(i++, QueueSection.AUTOPLAY)
-    } else if (rows.size == continueStart) {
-        rows += QueueRow.Empty
+        for (j in continueEnd until items.size) addSong(j, QueueSection.AUTOPLAY)
     }
     return rows
 }
@@ -554,11 +571,12 @@ private fun QueueSectionHeader(
     val title = when (section) {
         QueueSection.HISTORY -> stringResource(R.string.history)
         QueueSection.NOW_PLAYING -> "Now Playing"
+        QueueSection.NEXT_IN_QUEUE -> "Next in Queue"
         QueueSection.CONTINUE -> "Continue Playing"
         QueueSection.AUTOPLAY -> "Autoplay"
     }
     val subtitle = when (section) {
-        QueueSection.HISTORY, QueueSection.NOW_PLAYING -> null
+        QueueSection.HISTORY, QueueSection.NOW_PLAYING, QueueSection.NEXT_IN_QUEUE -> null
         QueueSection.CONTINUE -> queueTitle?.takeIf { it.isNotBlank() }?.let { "Queue from $it" }
         QueueSection.AUTOPLAY -> "Similar music"
     }
