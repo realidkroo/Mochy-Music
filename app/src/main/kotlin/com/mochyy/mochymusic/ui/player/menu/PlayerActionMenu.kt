@@ -551,17 +551,18 @@ private fun SleepTimerRow(onClick: () -> Unit) {
     val sleepTimer = playerConnection.service.sleepTimer
 
     var remainingLabel by remember { mutableStateOf("") }
-    LaunchedEffect(sleepTimer.triggerTime, sleepTimer.pauseWhenSongEnd) {
+    LaunchedEffect(sleepTimer.triggerTime, sleepTimer.pauseWhenSongEnd, sleepTimer.isPaused) {
         while (true) {
             remainingLabel = when {
                 sleepTimer.pauseWhenSongEnd -> "ends with song"
+                sleepTimer.isPaused -> "paused (" + formatRemaining(sleepTimer.remainingMillisWhenPaused) + ")"
                 sleepTimer.triggerTime > 0L -> {
                     val left = sleepTimer.triggerTime - System.currentTimeMillis()
                     if (left <= 0L) "" else formatRemaining(left)
                 }
                 else -> ""
             }
-            if (remainingLabel.isEmpty() || sleepTimer.pauseWhenSongEnd) break
+            if (remainingLabel.isEmpty() || sleepTimer.pauseWhenSongEnd || sleepTimer.isPaused) break
             kotlinx.coroutines.delay(1000)
         }
     }
