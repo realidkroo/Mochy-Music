@@ -196,7 +196,7 @@
     <string name="playlist_synced">播放列表已同步</string>
     <string name="undo">撤销</string>
     <!-- Player -->
-    <string name="lyrics_not_found">未找到歌词</string>
+    <string name="lyrics_not_found">No lyrics found</string>
     <string name="sleep_timer">睡眠定时器</string>
     <string name="end_of_song">这首歌曲播放完毕</string>
     <plurals name="minute">
@@ -204,6 +204,7 @@
     </plurals>
     <string name="error_no_stream">没有可用音源</string>
     <string name="error_no_internet">没有网络连接</string>
+    <string name="no_internet_next_on_phone">No internet, so here\'s the next song saved on your phone</string>
     <string name="error_timeout">连接超时</string>
     <string name="error_unknown">未知错误</string>
     <string name="error_bot_check">YouTube wants a bot check from this network right now. Try again in a few minutes, switch between Wi-Fi and mobile data, or log in to your YouTube account.</string>
