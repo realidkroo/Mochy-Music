@@ -217,6 +217,7 @@ Mochy is an independent, unofficial project made for personal and educational us
 - **Monochrome Music** by [monochrome-music](https://github.com/monochrome-music) ([Repository](https://github.com/monochrome-music/monochrome) / ([Website](https://monochrome.st)) -- Flac streams, visit their web, very cool one.
 - **Auto Eq** ([Web](https://autoeq.app)) -- The equalizer database
 - **lrc.red** ([Web](https://lrc.red)) -- Word-timed lyrics for millions of songs, free for everyone
+- **InnertubeX** by [nyxireal](https://github.com/nyxiereal) [Their repo](https://github.com/metrolistGroup/innertubex) For The Youtube API Access
 
 ---
 
