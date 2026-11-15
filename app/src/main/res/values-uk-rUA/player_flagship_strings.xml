@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- the new flagship player's bottom bar: where the sound is going -->
+    <string name="flagship_output_speaker">Internal speaker</string>
+    <string name="flagship_output_wired">Wired headphones</string>
+    <string name="flagship_output_usb">USB audio</string>
+    <string name="flagship_output_bluetooth">Bluetooth</string>
+    <string name="flagship_output_hdmi">HDMI</string>
+    <string name="flagship_output_change">Change where the music plays</string>
+    <!-- read out for the buttons that only show an icon -->
+    <string name="flagship_play">Play</string>
+    <string name="flagship_pause">Pause</string>
+    <string name="flagship_next">Next song</string>
+    <string name="flagship_previous">Previous song</string>
+    <string name="flagship_back_ten">Back 10 seconds</string>
+    <string name="flagship_forward_ten">Forward 10 seconds</string>
+    <string name="flagship_lyrics">Lyrics</string>
+    <string name="flagship_queue">Queue</string>
+    <string name="flagship_volume">Volume</string>
+    <!-- the flagship's controls sheet in the player editor -->
+    <string name="flagship_layout_three">Back, play, next</string>
+    <string name="flagship_layout_three_caption">Three big buttons, nothing round them</string>
+    <string name="flagship_layout_ten">With 10 second skips</string>
+    <string name="flagship_layout_ten_caption">Jump 10 seconds either way, play in a circle</string>
+</resources>
