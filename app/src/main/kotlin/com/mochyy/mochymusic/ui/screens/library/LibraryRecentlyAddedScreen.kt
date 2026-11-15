@@ -12,10 +12,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.LocalPlayerConnection
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.extensions.toMediaItem
 import com.mochyy.mochymusic.playback.queues.ListQueue
 import com.mochyy.mochymusic.viewmodels.LibraryHomeViewModel
@@ -31,7 +33,8 @@ fun LibraryRecentlyAddedScreen(
     val viewModel: LibraryHomeViewModel = hiltViewModel()
     // with the lifecycle: the Cached shelf looks at the cache every couple of seconds while watched
     val songs by (shelf?.let(viewModel::shelf)?.songs ?: viewModel.songs).collectAsStateWithLifecycle()
-    val queueTitle = shelf?.label ?: "Recently added"
+    val recentlyAdded = stringResource(R.string.library_recently_added)
+    val queueTitle = shelf?.label ?: recentlyAdded
     val playerConnection = LocalPlayerConnection.current ?: return
 
     val entries = remember(songs) {
@@ -58,9 +61,9 @@ fun LibraryRecentlyAddedScreen(
     }
 
     LibraryGridScreen(
-        title = "Added",
-        subtitle = "Recently",
-        searchPlaceholder = "Find song listed here, by the lyrics, or the artist",
+        title = stringResource(R.string.lib_recent_title),
+        subtitle = stringResource(R.string.lib_recent_subtitle),
+        searchPlaceholder = stringResource(R.string.lib_recent_search),
         entries = entries,
         onOpen = { entry -> play(songs.indexOfFirst { it.id == entry.id }.coerceAtLeast(0), shuffle = false) },
         onPlay = { play(0, shuffle = false) },

@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -73,14 +74,14 @@ class PlaylistResyncState internal constructor(
     }
 
     /** "Re-sync with Spotify"; null for a playlist made here. */
-    val title: String? get() = source?.let { "Re-sync with ${it.label}" }
+    val title: String? get() = source?.let { context.getString(R.string.menu_resync_title, it.label) }
 
     /** The menu row; null for a playlist made here. */
     fun menuItem(): Material3MenuItemData? {
         val from = source ?: return null
         return Material3MenuItemData(
-            title = { Text("Re-sync with ${from.label}") },
-            description = { Text("Add the songs that are new on ${from.label}") },
+            title = { Text(stringResource(R.string.menu_resync_title, from.label)) },
+            description = { Text(stringResource(R.string.menu_resync_desc, from.label)) },
             icon = { Icon(painter = painterResource(R.drawable.sync), contentDescription = null) },
             onClick = ::start,
         )
@@ -89,13 +90,13 @@ class PlaylistResyncState internal constructor(
     private fun handle(start: ResyncStart) {
         when (start) {
             ResyncStart.Started -> {
-                toast("Looking for new songs on ${source?.label ?: "the service"}…")
+                toast(context.getString(R.string.pc_resync_looking_on, source?.label ?: context.getString(R.string.pc_resync_service_fallback)))
                 onDismiss()
             }
             is ResyncStart.ThroughAccount -> {
                 onDismiss()
                 navController?.navigate(accountResyncRoute(start.service, playlistId))
-                    ?: toast("Open the playlist and re-sync it from its menu there.")
+                    ?: toast(context.getString(R.string.pc_resync_open_playlist))
             }
             ResyncStart.NeedsLink -> askingForLink = true
             is ResyncStart.Failed -> toast(start.message)
@@ -124,7 +125,7 @@ fun rememberPlaylistResync(
     }
     state.source = resyncSourceOf(imported, browseId)
     if (state.askingForLink) {
-        ResyncLinkDialog(sourceLabel = state.source?.label ?: "music service", onDismiss = state::cancelLink, onDone = state::startFromLink)
+        ResyncLinkDialog(sourceLabel = state.source?.label ?: stringResource(R.string.pc_resync_service_fallback), onDismiss = state::cancelLink, onDone = state::startFromLink)
     }
     return state
 }
@@ -144,7 +145,7 @@ fun rememberResyncAll(navController: NavController): () -> Unit {
         {
             scope.launch {
                 val start = resync.startAll()
-                resyncAllMessage(start)?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
+                resyncAllMessage(context, start)?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
                 if (!start.busy && start.throughAccount.isNotEmpty()) {
                     navController.navigate(accountResyncAllRoute(start.throughAccount))
                 }
@@ -153,21 +154,15 @@ fun rememberResyncAll(navController: NavController): () -> Unit {
     }
 }
 
-private fun resyncAllMessage(start: ResyncAllStart): String? {
-    if (start.busy) return "An import is still running. Try again once it's done."
+private fun resyncAllMessage(context: Context, start: ResyncAllStart): String? {
+    if (start.busy) return context.getString(R.string.pc_resync_busy)
     if (start.started == 0 && start.throughAccount.isEmpty() && start.needLink == 0) {
-        return "None of your playlists came from a music service, so there's nothing to re-sync."
+        return context.getString(R.string.pc_resync_nothing)
     }
-    val started = when (start.started) {
-        0 -> null
-        1 -> "Looking for new songs in 1 playlist…"
-        else -> "Looking for new songs in ${start.started} playlists…"
-    }
-    val needLink = when (start.needLink) {
-        0 -> null
-        1 -> "1 older import needs its link, so re-sync it from its own menu."
-        else -> "${start.needLink} older imports need their link, so re-sync them from their own menus."
-    }
+    val started = if (start.started == 0) null
+    else context.resources.getQuantityString(R.plurals.pc_resync_looking_playlists, start.started, start.started)
+    val needLink = if (start.needLink == 0) null
+    else context.resources.getQuantityString(R.plurals.pc_resync_need_link, start.needLink, start.needLink)
     return listOfNotNull(started, needLink).joinToString(" ").ifEmpty { null }
 }
 
@@ -176,14 +171,14 @@ private fun resyncAllMessage(start: ResyncAllStart): String? {
 fun ResyncLinkDialog(sourceLabel: String, onDismiss: () -> Unit, onDone: (String) -> Unit) {
     TextFieldDialog(
         icon = { Icon(painter = painterResource(R.drawable.link), contentDescription = null) },
-        title = { Text("Paste its $sourceLabel link") },
+        title = { Text(stringResource(R.string.menu_resync_paste, sourceLabel)) },
         placeholder = { Text("https://…") },
         keyboardType = KeyboardType.Uri,
         onDone = onDone,
         onDismiss = onDismiss,
         extraContent = {
             Text(
-                "This playlist was imported before Mochy saved where it came from. Its link is how Re-sync finds it again.",
+                stringResource(R.string.pc_resync_link_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 12.dp),

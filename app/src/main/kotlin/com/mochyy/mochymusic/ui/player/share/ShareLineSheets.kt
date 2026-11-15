@@ -56,10 +56,13 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.PopupSheetHandle
 import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.SheetPillButton
@@ -83,7 +86,7 @@ internal fun PopupSheetState.showLinePicker(session: LyricsShareSession): PopupS
     return showWithHandle(
         buttonBar = {
             SheetPillButton(
-                text = "Select",
+                text = stringResource(R.string.ps_share_select),
                 enabled = session.lineCount > 0,
                 onClick = { session.onLinesPicked(popup) },
             )
@@ -97,7 +100,7 @@ internal fun PopupSheetState.showLinePicker(session: LyricsShareSession): PopupS
 private fun LinePickerContent(session: LyricsShareSession) {
     LaunchedEffect(Unit) { session.choreography.playForward() }
     Column(Modifier.fillMaxWidth().fillMaxHeight()) {
-        ShareTitle("Share")
+        ShareTitle(stringResource(R.string.share))
         PickedSummary(session)
         LazyColumn(
             state = session.choreography.listState,
@@ -142,10 +145,10 @@ private fun PickedSummary(session: LyricsShareSession) {
                     label = "pickedCount",
                 ) { count ->
                     Text(
-                        when (count) {
-                            0 -> "Pick some lines"
-                            1 -> "1 line selected"
-                            else -> "$count lines selected"
+                        if (count == 0) {
+                            stringResource(R.string.ps_share_pick_lines)
+                        } else {
+                            pluralStringResource(R.plurals.ps_share_lines_selected, count, count)
                         },
                         fontFamily = InterFontFamily,
                         fontWeight = FontWeight.Bold,
@@ -168,14 +171,15 @@ private fun PickedSummary(session: LyricsShareSession) {
     }
 }
 
+@Composable
 private fun limitText(session: LyricsShareSession): String {
     val words = session.wordCount
     val card = ShareStyle.Card.maxWords
     return when {
-        words == 0 -> "Tap the lines you want to share"
-        session.atLimit -> "$words words · that's as much as fits"
-        words <= card -> "$words of $card words · fits every style"
-        else -> "$words of $ShareWordLimit words · Cinematic only"
+        words == 0 -> stringResource(R.string.ps_share_tap_lines)
+        session.atLimit -> stringResource(R.string.ps_share_words_max, words)
+        words <= card -> stringResource(R.string.ps_share_words_fit_all, words, card)
+        else -> stringResource(R.string.ps_share_words_cinematic, words, ShareWordLimit)
     }
 }
 

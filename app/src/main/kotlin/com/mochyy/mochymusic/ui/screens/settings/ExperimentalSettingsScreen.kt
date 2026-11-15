@@ -83,7 +83,7 @@ fun ExperimentalSettingsScreen(navController: NavController) {
     val coroutineScope = rememberCoroutineScope()
 
     SubSettingsScaffold(
-        title = "Experimental",
+        title = stringResource(R.string.experimental_settings_title),
         onBack = { navController.navigateUp() },
     ) {
             SettingsGroup(
@@ -105,9 +105,9 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     )
                     add(
                         SettingsItem(
-                            title = { Text("Import & sync") },
+                            title = { Text(stringResource(R.string.experimental_import_sync_title)) },
                             highlightKey = "Import & sync",
-                            descriptionText = "Bring playlists from other services, sync with YouTube, export a backup",
+                            descriptionText = stringResource(R.string.experimental_import_sync_desc),
                             icon = painterResource(R.drawable.sync),
                             iconShape = androidx.compose.foundation.shape.CircleShape,
                             onClick = { navController.navigate(com.mochyy.mochymusic.ui.screens.settings.importsync.ImportSyncRoute) }
@@ -115,10 +115,10 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     )
                     add(
                         SettingsItem(
-                            title = { Text("Crossmix test tools") },
+                            title = { Text(stringResource(R.string.experimental_crossmix_tools_title)) },
                             highlightKey = "Crossmix test tools",
-                            descriptionText = "Live status and a jump-to-mix button",
-                            detail = "Live status and a button that jumps to just before the next mix; also shown in Crossmix",
+                            descriptionText = stringResource(R.string.experimental_crossmix_tools_desc),
+                            detail = stringResource(R.string.experimental_crossmix_tools_detail),
                             icon = painterResource(R.drawable.graphic_eq),
                             iconShape = androidx.compose.foundation.shape.CircleShape,
                             onClick = { onCrossmixTestToolsChange(!crossmixTestTools) },
@@ -133,10 +133,10 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     crossmixTools.forEach { add(it.copy(isSubOption = true)) }
                     add(
                         SettingsItem(
-                            title = { Text("Show where songs play from") },
+                            title = { Text(stringResource(R.string.experimental_show_stream_source_title)) },
                             highlightKey = "Show where songs play from",
-                            descriptionText = "Banner showing each song's source and quality",
-                            detail = "A banner at the top names each song's source: Apple Music, Monochrome or YouTube, and its quality",
+                            descriptionText = stringResource(R.string.experimental_show_stream_source_desc),
+                            detail = stringResource(R.string.experimental_show_stream_source_detail),
                             icon = painterResource(R.drawable.info),
                             iconShape = androidx.compose.foundation.shape.CircleShape,
                             onClick = { onSourceBannerChange(!sourceBanner) },
@@ -174,10 +174,10 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     )
                     add(
                         SettingsItem(
-                            title = { Text("Force playback") },
+                            title = { Text(stringResource(R.string.experimental_force_playback_title)) },
                             highlightKey = "Force playback",
-                            descriptionText = "If a provider fails, try the next one",
-                            detail = "Never stop on a song: if one provider can't play it, the next in the provider order does; if none can, it's skipped. A banner says which",
+                            descriptionText = stringResource(R.string.experimental_force_playback_desc),
+                            detail = stringResource(R.string.experimental_force_playback_detail),
                             icon = painterResource(R.drawable.play),
                             iconShape = androidx.compose.foundation.shape.CircleShape,
                             onClick = { onForcePlaybackChange(!forcePlayback) },
@@ -188,9 +188,9 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     )
                     add(
                         SettingsItem(
-                            title = { Text("Force 1500 px YouTube blur") },
+                            title = { Text(stringResource(R.string.experimental_force_yt_blur_title)) },
                             highlightKey = "Force 1500 px YouTube blur",
-                            descriptionText = "Override the 120 px default; may increase GPU load",
+                            descriptionText = stringResource(R.string.experimental_force_yt_blur_desc),
                             icon = painterResource(R.drawable.tune),
                             iconShape = androidx.compose.foundation.shape.CircleShape,
                             onClick = { onForceYtBackdropBlur1500Change(!forceYtBackdropBlur1500) },
@@ -204,10 +204,10 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     )
                     add(
                         SettingsItem(
-                            title = { Text("Force show monthly recap") },
+                            title = { Text(stringResource(R.string.experimental_force_recap_title)) },
                             highlightKey = "Force show monthly recap",
-                            descriptionText = "Unlock the recap early",
-                            detail = "Unlock the recap behind the Mochy card now, before the 3rd or 10 songs",
+                            descriptionText = stringResource(R.string.experimental_force_recap_desc),
+                            detail = stringResource(R.string.experimental_force_recap_detail),
                             icon = painterResource(R.drawable.history),
                             iconShape = androidx.compose.foundation.shape.CircleShape,
                             onClick = { onForceRecapChange(!forceRecap) },
@@ -221,9 +221,9 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     )
                     add(
                         SettingsItem(
-                            title = { Text("Big disc cover styles") },
+                            title = { Text(stringResource(R.string.experimental_big_disc_title)) },
                             highlightKey = "Big disc cover styles",
-                            descriptionText = "Unfinished — oversized discs that bleed off screen",
+                            descriptionText = stringResource(R.string.experimental_big_disc_desc),
                             icon = painterResource(R.drawable.album),
                             iconShape = androidx.compose.foundation.shape.CircleShape,
                             onClick = { onShowBigDiscStylesChange(!showBigDiscStyles) },
@@ -237,9 +237,9 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     )
                     add(
                         SettingsItem(
-                            title = { Text("Music haptics") },
+                            title = { Text(stringResource(R.string.experimental_music_haptics_title)) },
                             highlightKey = "Music haptics",
-                            descriptionText = "Vibrate to the beat — uses battery",
+                            descriptionText = stringResource(R.string.experimental_music_haptics_desc),
                             icon = painterResource(R.drawable.music_note),
                             iconShape = androidx.compose.foundation.shape.CircleShape,
                             onClick = { onMusicHapticsEnabledChange(!musicHapticsEnabled) },
@@ -250,13 +250,13 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     )
                     add(
                         SettingsItem(
-                            title = { Text("Haptics sensitivity") },
+                            title = { Text(stringResource(R.string.experimental_haptic_sensitivity_title)) },
                             description = {
                                 Text(
                                     when (musicHapticsSensitivity) {
-                                        HapticSensitivity.LOW -> "Low"
-                                        HapticSensitivity.MEDIUM -> "Medium"
-                                        HapticSensitivity.HIGH -> "High"
+                                        HapticSensitivity.LOW -> stringResource(R.string.experimental_haptic_sensitivity_low)
+                                        HapticSensitivity.MEDIUM -> stringResource(R.string.experimental_haptic_sensitivity_medium)
+                                        HapticSensitivity.HIGH -> stringResource(R.string.experimental_haptic_sensitivity_high)
                                     }
                                 )
                             },
@@ -276,14 +276,14 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     )
                     add(
                         SettingsItem(
-                            title = { Text("Haptic focus") },
+                            title = { Text(stringResource(R.string.experimental_haptic_focus_title)) },
                             description = {
                                 Text(
                                     when (hapticFocus) {
-                                        HapticFocus.BALANCE -> "Balance"
-                                        HapticFocus.VOCAL -> "Focus on vocal"
-                                        HapticFocus.VIBE -> "Focus on vibe"
-                                        HapticFocus.BASS -> "Focus on bass"
+                                        HapticFocus.BALANCE -> stringResource(R.string.experimental_haptic_focus_balance)
+                                        HapticFocus.VOCAL -> stringResource(R.string.experimental_haptic_focus_vocal)
+                                        HapticFocus.VIBE -> stringResource(R.string.experimental_haptic_focus_vibe)
+                                        HapticFocus.BASS -> stringResource(R.string.experimental_haptic_focus_bass)
                                     }
                                 )
                             },
@@ -304,9 +304,9 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     )
                     add(
                         SettingsItem(
-                            title = { Text("Cipher") },
+                            title = { Text(stringResource(R.string.experimental_cipher_title)) },
                             highlightKey = "Cipher",
-                            descriptionText = "Player script status, countdown and refresh",
+                            descriptionText = stringResource(R.string.experimental_cipher_desc),
                             icon = painterResource(R.drawable.key),
                             iconShape = androidx.compose.foundation.shape.CircleShape,
                             onClick = { navController.navigate("cipher_settings") }
@@ -314,9 +314,9 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     )
                     add(
                         SettingsItem(
-                            title = { Text("Playback diagnostics") },
+                            title = { Text(stringResource(R.string.experimental_playback_diagnostics_title)) },
                             highlightKey = "Playback diagnostics",
-                            descriptionText = "Which client served each track, and PoToken state",
+                            descriptionText = stringResource(R.string.experimental_playback_diagnostics_desc),
                             icon = painterResource(R.drawable.info),
                             iconShape = androidx.compose.foundation.shape.CircleShape,
                             onClick = { navController.navigate("playback_diagnostics") }
@@ -324,9 +324,9 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                     )
                     add(
                         SettingsItem(
-                            title = { Text("Repeat initial setup") },
+                            title = { Text(stringResource(R.string.experimental_repeat_setup_title)) },
                             highlightKey = "Repeat initial setup",
-                            descriptionText = "Re-run the setup wizard",
+                            descriptionText = stringResource(R.string.experimental_repeat_setup_desc),
                             icon = painterResource(R.drawable.restore),
                             iconShape = androidx.compose.foundation.shape.CircleShape,
                             onClick = {

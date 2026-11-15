@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -79,25 +80,32 @@ internal fun DiscordToggleCard(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(DiscordColors.ToggleCard)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(DiscordColors.ToggleCard)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Image(
             painter = painterResource(R.drawable.integration_discord),
             contentDescription = null,
-            modifier = Modifier
-                .size(22.dp)
-                .clip(CircleShape),
+            modifier =
+                Modifier
+                    .size(22.dp)
+                    .clip(CircleShape),
         )
         Column(
             Modifier
                 .weight(1f)
                 .padding(horizontal = 12.dp),
         ) {
-            Text("Enable rich presence", color = DiscordColors.Primary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                stringResource(R.string.discord_enable_rich_presence),
+                color = DiscordColors.Primary,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
             Text(status, color = DiscordColors.Secondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
         }
         AppSwitch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
@@ -113,10 +121,11 @@ internal fun DiscordProfileCard(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(DiscordColors.Profile),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(DiscordColors.Profile),
     ) {
         Box(
             Modifier
@@ -126,14 +135,15 @@ internal fun DiscordProfileCard(
             Banner(profile)
             Avatar(
                 url = profile?.avatarUrl,
-                modifier = Modifier
-                    .padding(start = 22.dp)
-                    .align(Alignment.BottomStart),
+                modifier =
+                    Modifier
+                        .padding(start = 22.dp)
+                        .align(Alignment.BottomStart),
             )
         }
         Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 10.dp)) {
             Text(
-                text = profile?.displayName ?: "Not connected",
+                text = profile?.displayName ?: stringResource(R.string.discord_not_connected),
                 color = DiscordColors.Primary,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
@@ -141,8 +151,9 @@ internal fun DiscordProfileCard(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = profile?.let { listOfNotNull(it.username, it.pronouns).joinToString(" · ") }
-                    ?: "Log in to show your profile here",
+                text =
+                    profile?.let { listOfNotNull(it.username, it.pronouns).joinToString(" · ") }
+                        ?: stringResource(R.string.discord_login_to_show_profile),
                 color = DiscordColors.Secondary,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
@@ -186,18 +197,27 @@ private fun Banner(profile: DiscordProfile?) {
 }
 
 @Composable
-private fun Avatar(url: String?, modifier: Modifier) {
+private fun Avatar(
+    url: String?,
+    modifier: Modifier,
+) {
     Box(
-        modifier = modifier
-            .size(AvatarSize)
-            .clip(CircleShape)
-            .background(DiscordColors.Banner)
-            .padding(AvatarRing)
-            .clip(CircleShape)
-            .background(Color(0xFFD9D9D9)),
+        modifier =
+            modifier
+                .size(AvatarSize)
+                .clip(CircleShape)
+                .background(DiscordColors.Banner)
+                .padding(AvatarRing)
+                .clip(CircleShape)
+                .background(Color(0xFFD9D9D9)),
     ) {
         if (url != null) {
-            AsyncImage(model = url, contentDescription = "Your Discord picture", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            AsyncImage(
+                model = url,
+                contentDescription = stringResource(R.string.discord_cd_avatar),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
     }
 }
@@ -219,14 +239,23 @@ internal fun DiscordActivityPreview(
     val activity = remember(track, settings, now) { PresenceActivity.build(track, settings, now) }
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(DiscordColors.Activity)
-            .padding(14.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(DiscordColors.Activity)
+                .padding(14.dp),
     ) {
+        val prefix =
+            if (activity.kind ==
+                PresenceKind.LISTENING
+            ) {
+                stringResource(R.string.discord_listening_prefix)
+            } else {
+                stringResource(R.string.discord_playing_prefix)
+            }
         Text(
-            text = (if (activity.kind == PresenceKind.LISTENING) "Listening to " else "Playing ") + activity.name,
+            text = prefix + activity.name,
             color = DiscordColors.Primary,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
@@ -253,11 +282,12 @@ internal fun DiscordActivityPreview(
                 activity.buttons.forEach { button ->
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(30.dp)
-                            .clip(CircleShape)
-                            .background(DiscordColors.Profile),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(30.dp)
+                                .clip(CircleShape)
+                                .background(DiscordColors.Profile),
                     ) {
                         Text(button.label, color = DiscordColors.Primary, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                     }
@@ -268,22 +298,36 @@ internal fun DiscordActivityPreview(
 }
 
 @Composable
-private fun Line(text: String, size: Int = 11, weight: FontWeight = FontWeight.Normal, color: Color = DiscordColors.Secondary) {
+private fun Line(
+    text: String,
+    size: Int = 11,
+    weight: FontWeight = FontWeight.Normal,
+    color: Color = DiscordColors.Secondary,
+) {
     Text(text, color = color, fontSize = size.sp, fontWeight = weight, maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
 
 /** listening shows a bar from start to end, playing counts up, a paused song shows neither */
 @Composable
-private fun Times(activity: PresenceActivity, now: Long) {
+private fun Times(
+    activity: PresenceActivity,
+    now: Long,
+) {
     val start = activity.startMs ?: return
     val mono = Modifier.padding(top = 6.dp)
     val end = activity.endMs
     if (end == null) {
-        Text("${clock(now - start)} elapsed", color = DiscordColors.Secondary, fontSize = 10.sp, fontFamily = FontFamily.Monospace, modifier = mono)
+        Text(
+            stringResource(R.string.discord_time_elapsed, clock(now - start)),
+            color = DiscordColors.Secondary,
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+            modifier = mono,
+        )
         return
     }
-    val total = (end - start).coerceAtLeast(1)
-    val elapsed = (now - start).coerceIn(0, total)
+    val total = (end - start).coerceAtLeast(1L)
+    val elapsed = (now - start).coerceIn(0L, total)
     Row(verticalAlignment = Alignment.CenterVertically, modifier = mono) {
         Text(clock(elapsed), color = DiscordColors.Secondary, fontSize = 9.sp, fontFamily = FontFamily.Monospace)
         Box(
@@ -312,7 +356,10 @@ private fun clock(ms: Long): String {
 
 /** the big picture with the small round one tucked into its corner, as discord lays them out */
 @Composable
-private fun Pictures(large: PresencePicture?, small: PresencePicture?) {
+private fun Pictures(
+    large: PresencePicture?,
+    small: PresencePicture?,
+) {
     Box(Modifier.size(66.dp)) {
         Box(
             Modifier
@@ -344,28 +391,46 @@ private fun Pictures(large: PresencePicture?, small: PresencePicture?) {
 private fun PictureView(picture: PresencePicture) {
     val fill = Modifier.fillMaxSize()
     when (picture) {
-        is PresencePicture.Web -> AsyncImage(model = picture.url, contentDescription = null, contentScale = ContentScale.Crop, modifier = fill)
-        is PresencePicture.Local -> AsyncImage(model = picture.sourceUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = fill)
-        PresencePicture.Logo -> Box(fill.background(Color(0xFF1A1A1A))) {
-            Image(
-                painter = painterResource(R.drawable.ic_launcher_mark),
-                contentDescription = "Mochy",
-                contentScale = ContentScale.Crop,
-                // the launcher picture has a safe margin around it, the github copy is cropped the same
-                modifier = fill.graphicsLayer {
-                    scaleX = 1.5f
-                    scaleY = 1.5f
-                },
-            )
+        is PresencePicture.Web -> {
+            AsyncImage(model = picture.url, contentDescription = null, contentScale = ContentScale.Crop, modifier = fill)
         }
-        is PresencePicture.Status -> StatusBadge(picture, fill)
-        is PresencePicture.Spinning -> SpinningPicture(picture.sourceUrl, picture.style.secondsPerTurn, fill)
+
+        is PresencePicture.Local -> {
+            AsyncImage(model = picture.sourceUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = fill)
+        }
+
+        PresencePicture.Logo -> {
+            Box(fill.background(Color(0xFF1A1A1A))) {
+                Image(
+                    painter = painterResource(R.drawable.ic_launcher_mark),
+                    contentDescription = "Mochy",
+                    contentScale = ContentScale.Crop,
+                    // the launcher picture has a safe margin around it, the github copy is cropped the same
+                    modifier =
+                        fill.graphicsLayer {
+                            scaleX = 1.5f
+                            scaleY = 1.5f
+                        },
+                )
+            }
+        }
+
+        is PresencePicture.Status -> {
+            StatusBadge(picture, fill)
+        }
+
+        is PresencePicture.Spinning -> {
+            SpinningPicture(picture.sourceUrl, picture.style.secondsPerTurn, fill)
+        }
     }
 }
 
 /** the same badge scripts/discord_presence_images.py draws, at preview size */
 @Composable
-private fun StatusBadge(status: PresencePicture.Status, modifier: Modifier) {
+private fun StatusBadge(
+    status: PresencePicture.Status,
+    modifier: Modifier,
+) {
     Canvas(modifier) {
         val s = size.minDimension
         drawCircle(Color(0xFF1E1F22))
@@ -382,12 +447,13 @@ private fun StatusBadge(status: PresencePicture.Status, modifier: Modifier) {
         val cy = s / 2
         if (status.playing) {
             val left = cx - glyph * 0.38f
-            val triangle = Path().apply {
-                moveTo(left, cy - glyph / 2)
-                lineTo(left, cy + glyph / 2)
-                lineTo(left + glyph * 0.9f, cy)
-                close()
-            }
+            val triangle =
+                Path().apply {
+                    moveTo(left, cy - glyph / 2)
+                    lineTo(left, cy + glyph / 2)
+                    lineTo(left + glyph * 0.9f, cy)
+                    close()
+                }
             drawPath(triangle, Color.White)
         } else {
             val bar = glyph * 0.3f
@@ -406,7 +472,11 @@ private fun StatusBadge(status: PresencePicture.Status, modifier: Modifier) {
 
 /** the rotating disc, turning at the user's speed like the gif */
 @Composable
-private fun SpinningPicture(url: String, secondsPerTurn: Int, modifier: Modifier) {
+private fun SpinningPicture(
+    url: String,
+    secondsPerTurn: Int,
+    modifier: Modifier,
+) {
     val turn = rememberInfiniteTransition(label = "spin")
     val degrees by turn.animateFloat(
         initialValue = 0f,
@@ -418,9 +488,10 @@ private fun SpinningPicture(url: String, secondsPerTurn: Int, modifier: Modifier
         model = url,
         contentDescription = null,
         contentScale = ContentScale.Crop,
-        modifier = modifier
-            .graphicsLayer { rotationZ = degrees }
-            .clip(CircleShape),
+        modifier =
+            modifier
+                .graphicsLayer { rotationZ = degrees }
+                .clip(CircleShape),
     )
 }
 
@@ -441,9 +512,10 @@ internal fun DiscordFloatingPreview(
         DiscordActivityPreview(
             track = track,
             settings = settings,
-            modifier = Modifier
-                .shadow(elevation = 18.dp, shape = RoundedCornerShape(14.dp))
-                .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(14.dp)),
+            modifier =
+                Modifier
+                    .shadow(elevation = 18.dp, shape = RoundedCornerShape(14.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(14.dp)),
         )
     }
 }

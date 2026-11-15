@@ -16,11 +16,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.db.entities.Album
 import com.mochyy.mochymusic.db.entities.Artist
 import com.mochyy.mochymusic.db.entities.Playlist
@@ -127,7 +129,7 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.librarySearchResults
     if (results.isEmpty()) {
         item(key = "no_results") {
             Text(
-                text = "Nothing in your library matches \"$query\"",
+                text = stringResource(R.string.lib_no_results, query),
                 color = SearchColors.Secondary,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(horizontal = SearchHorizontalPadding, vertical = 24.dp),
@@ -138,9 +140,9 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.librarySearchResults
     items(results, key = { it.id }) { item ->
         val subtitle = when (item) {
             is SongItem -> item.artists.joinToString { it.name }
-            is AlbumItem -> "Album"
-            is ArtistItem -> "Artist"
-            is PlaylistItem -> "Playlist"
+            is AlbumItem -> stringResource(R.string.lib_album)
+            is ArtistItem -> stringResource(R.string.lib_artist)
+            is PlaylistItem -> stringResource(R.string.lib_playlist)
         }
         LibraryListRow(
             title = item.title,

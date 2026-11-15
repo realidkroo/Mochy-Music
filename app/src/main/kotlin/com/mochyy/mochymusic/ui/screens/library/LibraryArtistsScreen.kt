@@ -6,9 +6,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.LocalMenuState
 import com.mochyy.mochymusic.ui.menu.ArtistMenu
 import com.mochyy.mochymusic.viewmodels.LibraryHomeViewModel
@@ -29,23 +32,26 @@ fun LibraryArtistsScreen(
     val artists by (shelf?.let(viewModel::shelf)?.artists ?: viewModel.artists).collectAsStateWithLifecycle()
     val menuState = LocalMenuState.current
     val coroutineScope = rememberCoroutineScope()
+    val resources = LocalContext.current.resources
 
     LibraryEntityListScreen(
-        title = "Artist",
-        subtitle = when (shelf) {
-            LibraryShelfKind.Local -> "Artists with music on this device."
-            LibraryShelfKind.Cached -> "Artists with songs in your cache."
-            null -> "All artist on your library listed here."
-        },
-        searchPlaceholder = "Find an artist by name",
+        title = stringResource(R.string.lib_artist),
+        subtitle = stringResource(
+            when (shelf) {
+                LibraryShelfKind.Local -> R.string.lib_artists_local_subtitle
+                LibraryShelfKind.Cached -> R.string.lib_artists_cached_subtitle
+                null -> R.string.lib_artists_all_subtitle
+            },
+        ),
+        searchPlaceholder = stringResource(R.string.lib_artists_search),
         items = artists,
         idOf = { it.id },
         nameOf = { it.artist.name },
         subtitleOf = {
-            val count = if (it.songCount == 1) "1 song" else "${it.songCount} songs"
+            val count = resources.getQuantityString(R.plurals.lib_song_count, it.songCount, it.songCount)
             when (shelf) {
-                LibraryShelfKind.Local -> "$count on this device"
-                LibraryShelfKind.Cached -> "$count cached"
+                LibraryShelfKind.Local -> resources.getString(R.string.lib_count_on_device, count)
+                LibraryShelfKind.Cached -> resources.getString(R.string.lib_count_cached, count)
                 null -> count
             }
         },

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lab_back">Quay lại</string>
+    <string name="lab_equalizer">Bộ chỉnh âm</string>
+    <string name="lab_audio_effect">Hiệu ứng âm thanh</string>
+    <string name="lab_audio_quality">Chất lượng âm thanh</string>
+    <string name="lab_transition">Chuyển bài</string>
+    <string name="lab_status_off">TẮT</string>
+    <string name="lab_status_all_off">TẮT HẾT</string>
+    <string name="lab_status_custom">Tùy chỉnh</string>
+    <string name="lab_transition_off">Tắt</string>
+    <string name="lab_transition_auto">Tự động</string>
+    <string name="lab_transition_manual">Thủ công</string>
+    <string name="lab_transition_crossmix">CrossMix</string>
+    <string name="lab_quality_monochrome">Monochrome · Lossless</string>
+    <string name="lab_quality_apple_music">Apple Music · AAC</string>
+    <string name="lab_quality_youtube">YouTube · %1$s</string>
+    <string name="lab_quality_low">Thấp</string>
+    <string name="lab_quality_medium">Trung bình</string>
+    <string name="lab_quality_high">Cao</string>
+    <string name="lab_quality_auto">Tự động</string>
+    <string name="lab_effects_and_more">%1$s và %2$d hiệu ứng khác</string>
+    <string name="lab_effect_reverb">Reverb</string>
+    <string name="lab_effect_loudness">Độ lớn âm</string>
+    <string name="lab_effect_spatial">Không gian</string>
+    <string name="lab_effect_surround">Vòng quanh</string>
+    <string name="lab_effect_mono">Mono</string>
+    <string name="lab_effect_playback">Phát lại</string>
+    <string name="lab_effect_volume">Âm lượng</string>
+    <string name="lab_fx_on">BẬT</string>
+    <string name="lab_fx_position">%1$d / %2$d</string>
+    <string name="lab_fx_and_other">và %1$d hiệu ứng khác</string>
+</resources>

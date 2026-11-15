@@ -55,6 +55,7 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -64,6 +65,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.mochyy.mochymusic.LocalPlayerConnection
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.db.entities.LyricsEntity.Companion.LYRICS_NOT_FOUND
 import com.mochyy.mochymusic.lyrics.LyricsUtils
 import com.mochyy.mochymusic.ui.component.GlassState
@@ -602,7 +604,7 @@ private fun NextSongRow(
         Column(modifier = Modifier.weight(1f).fadingRightEdge()) {
 
             Text(
-                text = "Next Song",
+                text = stringResource(R.string.pc_next_song),
                 style = MaterialTheme.typography.labelSmall.copy(lineHeight = 11.sp),
                 color = Color.White.copy(alpha = 0.5f),
             )
@@ -611,7 +613,7 @@ private fun NextSongRow(
                     listOfNotNull(nextTitle, nextArtist?.takeIf { it.isNotBlank() })
                         .joinToString(" - ")
                 } else {
-                    "End of queue"
+                    stringResource(R.string.pc_end_of_queue)
                 },
                 style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 15.sp),
                 fontWeight = FontWeight.SemiBold,

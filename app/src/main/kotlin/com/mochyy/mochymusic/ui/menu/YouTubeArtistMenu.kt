@@ -64,7 +64,7 @@ fun YouTubeArtistMenu(
     SheetHeader(
         thumbnailUrl = artist.thumbnail,
         title = artist.title,
-        subtitle = "Artist",
+        subtitle = stringResource(R.string.recent_search_artist),
     )
 
     Spacer(Modifier.height(SheetHeaderGap))
@@ -133,7 +133,7 @@ fun YouTubeArtistMenu(
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             },
-                            text = if (isPinned) "Unpin" else "Pin",
+                            text = stringResource(if (isPinned) R.string.pc_unpin else R.string.pc_pin),
                             onClick = {
                                 coroutineScope.launch(Dispatchers.IO) {
                                     if (isPinned) {

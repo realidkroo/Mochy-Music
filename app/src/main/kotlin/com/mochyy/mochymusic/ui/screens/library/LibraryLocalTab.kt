@@ -22,12 +22,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.screens.search.SearchColors
 import com.mochyy.mochymusic.ui.screens.search.SearchHorizontalPadding
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
@@ -52,14 +54,14 @@ internal fun LazyListScope.libraryLocalTab(
     if (!hasStorageAccess) {
         item(key = "local_storage") {
             Text(
-                text = "Or",
+                text = stringResource(R.string.lib_local_or),
                 color = SearchColors.Primary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = SearchHorizontalPadding + 2.dp, vertical = 10.dp),
             )
             LocalCard(onClick = onScan, modifier = Modifier.padding(horizontal = SearchHorizontalPadding)) {
-                LocalCardTitle("Let Mochy read your storage to find all your songs")
+                LocalCardTitle(stringResource(R.string.lib_local_let_read))
             }
         }
     }
@@ -72,7 +74,7 @@ internal fun LazyListScope.libraryLocalTab(
 
     item(key = "local_manage") {
         Spacer(modifier = Modifier.height(12.dp))
-        LibraryManagePill(text = "Manage local", onClick = onManage)
+        LibraryManagePill(text = stringResource(R.string.lib_manage_local_pill), onClick = onManage)
     }
 }
 
@@ -80,7 +82,7 @@ internal fun LazyListScope.libraryLocalTab(
 @Composable
 private fun LocalImportCard(count: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
     LocalCard(onClick = onClick, modifier = modifier) {
-        LocalCardTitle("Import your local music here")
+        LocalCardTitle(stringResource(R.string.lib_local_import_here))
         Spacer(modifier = Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
@@ -95,7 +97,7 @@ private fun LocalImportCard(count: Int, onClick: () -> Unit, modifier: Modifier 
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Imported from local",
+                text = stringResource(R.string.lib_local_imported_from_local),
                 color = SearchColors.Secondary,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- common -->
+    <string name="onb_next">Tiếp</string>
+    <string name="onb_next_lower">tiếp</string>
+    <string name="onb_done">Xong</string>
+    <string name="onb_close">Đóng</string>
+    <string name="onb_go_back">thôi, quay lại</string>
+    <string name="onb_yes">Có!</string>
+    <string name="onb_skip">Bỏ qua</string>
+    <string name="onb_stop">Dừng</string>
+    <string name="onb_selected">Đã chọn</string>
+
+    <!-- welcome -->
+    <string name="onb_welcome_title">Chào mừng đến\nmochy!</string>
+    <string name="onb_welcome_subtitle">Một cách khác để nghe và\nsở hữu âm nhạc của bạn.</string>
+
+    <!-- photo cropper -->
+    <string name="onb_adjust_photo">Chỉnh ảnh hồ sơ của bạn</string>
+    <string name="onb_select_new_image">Chọn ảnh mới</string>
+
+    <!-- import -->
+    <string name="onb_import_title">Nhập nhạc</string>
+    <string name="onb_import_ask_subtitle">Bạn có muốn nhập nhạc từ các nền tảng khác như Spotify, Apple Music, Tidal hoặc SoundCloud, hay đồng bộ dữ liệu với YouTube Music không?</string>
+    <string name="onb_import_mode_subtitle">bạn muốn làm gì?</string>
+    <string name="onb_import_previous_title">Nhập dữ liệu cũ</string>
+    <string name="onb_import_previous_desc">tệp .zip bạn đã xuất từ ứng dụng cũ, gồm thư viện, lịch sử, tải xuống và cài đặt</string>
+    <string name="onb_import">Nhập</string>
+    <string name="onb_import_desc">nhập nhạc, danh sách phát và album từ các nguồn được hỗ trợ như Apple Music, Spotify, Tidal và YouTube Music</string>
+    <string name="onb_import_backup_title">Nhập từ bản sao lưu</string>
+    <string name="onb_import_backup_desc">nếu bạn tình cờ có bản sao lưu Mochy</string>
+
+    <!-- restoring previous data -->
+    <string name="onb_all_set">Xong rồi!</string>
+    <string name="onb_bringing_over">Đang chuyển nhạc của bạn sang</string>
+    <string name="onb_restart_once">Mochy sẽ khởi động lại một lần để hoàn tất. Hẹn gặp lại ngay!</string>
+    <string name="onb_restore_counts">%1$s, %2$s và %3$s từ ứng dụng cũ của bạn.</string>
+    <string name="onb_reading_export">Đang đọc tệp xuất của bạn…</string>
+    <string name="onb_restarting">Đang khởi động lại…</string>
+    <string name="onb_restore_progress">%1$d%% · hãy để Mochy mở, ứng dụng sẽ tự khởi động lại khi xong</string>
+    <plurals name="onb_songs">
+        <item quantity="other">%1$,d bài hát</item>
+    </plurals>
+    <plurals name="onb_playlists">
+        <item quantity="other">%1$,d danh sách phát</item>
+    </plurals>
+    <plurals name="onb_plays">
+        <item quantity="other">%1$,d lượt phát</item>
+    </plurals>
+
+    <!-- provider -->
+    <string name="onb_select_provider">Chọn nguồn</string>
+    <string name="onb_provider_spotify_desc">Bài hát đã thích và danh sách phát</string>
+    <string name="onb_provider_apple_desc">Danh sách phát trong thư viện và Bài hát yêu thích</string>
+    <string name="onb_provider_youtube_desc">Nhạc đã thích và danh sách phát · có hỗ trợ đồng bộ</string>
+    <string name="onb_provider_tidal_desc">My Tracks và danh sách phát của bạn</string>
+    <string name="onb_provider_setup_title">Thiết lập %1$s</string>
+    <string name="onb_provider_setup_subtitle">Bạn sẽ đăng nhập vào tài khoản của mình. Chúng tôi không bao giờ thấy mật khẩu của bạn. Một trang web sẽ mở ra.</string>
+    <string name="onb_sign_in_again">Đăng nhập lại</string>
+    <string name="onb_try_again">Thử lại</string>
+    <string name="onb_open_sign_in">Mở trang đăng nhập</string>
+    <string name="onb_provider_setup_body">Đăng nhập trên trang của %1$s. Khi đăng nhập xong, trang sẽ đóng và danh sách phát của bạn hiện ở đây.</string>
+    <string name="onb_sign_in_to">Đăng nhập vào %1$s</string>
+
+    <!-- what to import -->
+    <string name="onb_what_to_import">Nhập gì</string>
+    <string name="onb_signed_in_as">Đã đăng nhập với tên %1$s</string>
+    <string name="onb_choose_what_to_import">Chọn nội dung để nhập</string>
+    <string name="onb_import_count">Nhập %1$d</string>
+    <string name="onb_reading_progress">%1$s (%2$d/%3$d)</string>
+    <string name="onb_select_none">Bỏ chọn tất cả</string>
+    <string name="onb_select_all">Chọn tất cả</string>
+    <string name="onb_nothing_in_account">Tài khoản này chưa có gì.</string>
+
+    <!-- sync options -->
+    <string name="onb_sync_title">Đồng bộ luôn nhé?</string>
+    <string name="onb_sync_subtitle">YouTube Music có thể luôn khớp với Mochy: danh sách phát, lượt thích và lịch sử, hai chiều.</string>
+    <string name="onb_import_and_sync">Nhập &amp; đồng bộ</string>
+    <string name="onb_just_import">Chỉ nhập</string>
+    <string name="onb_sync_launch_title">Đồng bộ thư viện khi mở app</string>
+    <string name="onb_sync_launch_desc">Lượt thích, thư viện và các danh sách phát bạn đã chọn, mỗi lần Mochy mở</string>
+    <string name="onb_sync_new_playlists_title">Danh sách phát mới lên YouTube</string>
+    <string name="onb_sync_new_playlists_desc">Danh sách phát bạn tạo ở đây cũng được tạo trên YouTube</string>
+    <string name="onb_sync_push_plays_title">Đẩy lượt phát lên lịch sử YouTube</string>
+    <string name="onb_sync_push_plays_desc">Những gì bạn phát ở đây sẽ hiện trong lịch sử YouTube của bạn</string>
+    <string name="onb_sync_bring_history_title">Đưa lịch sử YouTube về đây</string>
+    <string name="onb_sync_bring_history_desc">Lượt phát từ các thiết bị khác của bạn được thêm vào lịch sử của Mochy</string>
+
+    <!-- profile -->
+    <string name="onb_profile_title">Hãy tạo hồ sơ của bạn!</string>
+    <string name="onb_never_store">Mochy sẽ không bao giờ lưu dữ liệu của bạn trực tuyến!</string>
+    <string name="onb_username_prompt">tên người dùng của bạn là gì?</string>
+    <string name="onb_username_hint">tên người dùng</string>
+    <string name="onb_set_photo">Đặt ảnh hồ sơ tại đây!</string>
+    <string name="onb_profile_picture">Ảnh hồ sơ</string>
+    <string name="onb_add_profile_picture">Thêm ảnh hồ sơ</string>
+    <string name="onb_card_profile_usr">HỒ SƠ USR#%1$s</string>
+    <string name="onb_card_id_of">THẺ CỦA</string>
+    <string name="onb_card_of_name">THẺ CỦA %1$s</string>
+
+    <!-- hello / done -->
+    <string name="onb_hello">Xin chào!</string>
+    <string name="onb_welcome_to_mochy">chào mừng đến với mochy!</string>
+    <string name="onb_all_good">Bạn đã sẵn sàng</string>
+
+    <!-- blur warning -->
+    <string name="onb_warning">Cảnh báo</string>
+    <string name="onb_blur_warning_body">Điện thoại của bạn có thể quá yếu để chạy hiệu ứng làm mờ. Bạn có muốn tắt làm mờ không? Bạn luôn có thể đổi lại trong Cài đặt.</string>
+    <string name="onb_disable_blur">Tắt làm mờ</string>
+    <string name="onb_measured">Đo được: %1$s</string>
+    <string name="onb_continue">tiếp tục</string>
+    <string name="onb_no_continue">không, tiếp tục</string>
+    <string name="onb_blur_needs_android_12">Làm mờ cần Android 12</string>
+    <string name="onb_blur_slow_frames">%1$d%% khung hình chậm ở %2$d Hz</string>
+    <string name="onb_blur_low_memory">%1$s · thiết bị bộ nhớ thấp</string>
+
+    <!-- last one -->
+    <string name="onb_last_one">Bước cuối</string>
+    <string name="onb_last_one_subtitle">Tắt bất cứ thứ gì bạn không thích</string>
+    <string name="onb_auto_crossfade_title">Crossfade tự động</string>
+    <string name="onb_auto_crossfade_desc">Tự động chuyển bài mờ dần, phân tích cao độ, nhịp độ và hơn thế nữa để chọn thời điểm hoàn hảo</string>
+    <string name="onb_ai_filter_title">Bộ lọc nghệ sĩ AI</string>
+    <string name="onb_ai_filter_desc">Tắt mục này có thể khiến bạn nhận được đề xuất nhạc AI kém chất lượng</string>
+</resources>

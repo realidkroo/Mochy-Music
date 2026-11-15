@@ -53,6 +53,7 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -160,7 +161,7 @@ internal fun UserProfilePage(
             if (photo != null) {
                 AsyncImage(
                     model = photo,
-                    contentDescription = "Profile picture",
+                    contentDescription = stringResource(R.string.profile_picture_cd),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -183,7 +184,7 @@ internal fun UserProfilePage(
             },
             tag = {
                 Text(
-                    text = profileTag(cardNumber),
+                    text = stringResource(R.string.profile_tag, cardNumber),
                     style = ProfileTagStyle,
                     maxLines = 1,
                     softWrap = false,
@@ -263,7 +264,7 @@ private fun NameLine(
 @Composable
 private fun EditProfilePill(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Text(
-        text = "Edit profile",
+        text = stringResource(R.string.profile_edit_button),
         style = TextStyle(
             fontFamily = InterFontFamily,
             fontWeight = FontWeight.SemiBold,
@@ -318,7 +319,7 @@ private fun ListensCard(total: ListenTotal, width: Dp, onClick: () -> Unit, modi
     ) {
         Row {
             Text(
-                text = "Total listens",
+                text = stringResource(R.string.profile_total_listens),
                 style = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 17.sp, letterSpacing = (-0.04).em, color = Color.White),
                 modifier = Modifier.alignByBaseline(),
             )
@@ -331,7 +332,7 @@ private fun ListensCard(total: ListenTotal, width: Dp, onClick: () -> Unit, modi
         }
         Spacer(Modifier.height(4.dp))
         Row {
-            ListensFigure(total.songs.toString(), if (total.songs == 1) "Song" else "Songs", Modifier.weight(1f))
+            ListensFigure(total.songs.toString(), pluralStringResource(R.plurals.profile_unit_songs, total.songs), Modifier.weight(1f))
             ListensFigure(timeValue, timeUnit, Modifier.weight(1f))
         }
     }
@@ -365,11 +366,12 @@ private fun ListensFigure(value: String, unit: String, modifier: Modifier = Modi
 }
 
 /** "26 Hours", or "42 Mins" while it's still under an hour. */
+@Composable
 private fun ListenTotal.timeFigure(): Pair<String, String> {
     val minutes = playTimeMs / 60_000L
-    if (minutes < 60) return minutes.toString() to if (minutes == 1L) "Min" else "Mins"
+    if (minutes < 60) return minutes.toString() to pluralStringResource(R.plurals.profile_unit_minutes, minutes.toInt())
     val hours = minutes / 60
-    return hours.toString() to if (hours == 1L) "Hour" else "Hours"
+    return hours.toString() to pluralStringResource(R.plurals.profile_unit_hours, hours.toInt())
 }
 
 // ---- Rows of covers ---------------------------------------------------------------------------
@@ -415,12 +417,12 @@ private fun RecentSection(state: ProfileMorphState, viewModel: UserProfileViewMo
     val isPlaying by playerConnection.isPlaying.collectAsState()
 
     ProfileSection(
-        title = "Listening to",
+        title = stringResource(R.string.profile_listening_to),
         state = state,
         row = 3,
         items = songs,
         key = { it.id },
-        emptyText = "Songs you play will show up here.",
+        emptyText = stringResource(R.string.profile_recent_empty),
     ) { song, order ->
         val active = song.id == playing?.id
         HomeCoverCard(
@@ -461,7 +463,7 @@ private fun PlaylistsSection(state: ProfileMorphState, viewModel: UserProfileVie
     val shape = RoundedCornerShape(HomeCardCornerRadius)
 
     ProfileSection(
-        title = "Your playlists",
+        title = stringResource(R.string.profile_your_playlists),
         state = state,
         row = 4,
         items = entries,
@@ -470,7 +472,7 @@ private fun PlaylistsSection(state: ProfileMorphState, viewModel: UserProfileVie
     ) { playlist, order ->
         val songCount = playlist?.songCount ?: likedCount
         HomeCoverCard(
-            title = playlist?.title ?: "Liked songs",
+            title = playlist?.title ?: stringResource(R.string.liked_songs),
             subtitle = pluralStringResource(R.plurals.n_song, songCount, songCount),
             thumbnailUrl = playlist?.thumbnails?.firstOrNull(),
             sharedElementKey = "playlist-${playlist?.id ?: "liked"}",
@@ -514,12 +516,12 @@ private fun ArtistsSection(state: ProfileMorphState, viewModel: UserProfileViewM
     val scope = rememberCoroutineScope()
 
     ProfileSection(
-        title = "Top artists",
+        title = stringResource(R.string.profile_top_artists),
         state = state,
         row = 5,
         items = artists,
         key = { it.id },
-        emptyText = "The artists you play the most will show up here.",
+        emptyText = stringResource(R.string.profile_top_artists_empty),
     ) { artist, order ->
         HomeCoverCard(
             title = artist.title,

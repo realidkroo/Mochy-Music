@@ -198,12 +198,18 @@ import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.rememberResourcePainter
 
 private object MochyGreeting {
-    private fun pick() = listOf("Hello again", "Hey", "Welcome back", "Good to see you").random()
+    private fun pick() = listOf(
+        R.string.profile_greeting_hello_again,
+        R.string.profile_greeting_hey,
+        R.string.profile_greeting_welcome_back,
+        R.string.profile_greeting_good_to_see_you,
+    ).random()
 
-    private val greetingState = mutableStateOf("Hello again")
+    // a string id, so the greeting follows the app language
+    private val greetingState = mutableIntStateOf(R.string.profile_greeting_hello_again)
     private var wasBackgrounded = false
 
-    val current: String get() = greetingState.value
+    val currentRes: Int get() = greetingState.intValue
 
     init {
         ProcessLifecycleOwner.get().lifecycle.addObserver(
@@ -211,7 +217,7 @@ private object MochyGreeting {
                 when (event) {
                     Lifecycle.Event.ON_STOP -> wasBackgrounded = true
                     Lifecycle.Event.ON_START -> if (wasBackgrounded) {
-                        greetingState.value = pick()
+                        greetingState.intValue = pick()
                         wasBackgrounded = false
                     }
                     else -> Unit
@@ -273,7 +279,7 @@ fun ProfileScreen(navController: NavController) {
     }
     val cardNumber = cardNumberPref.ifBlank { "00000000000" }
     val joinedDate = if (joinedEpochDay >= 0L) LocalDate.ofEpochDay(joinedEpochDay) else LocalDate.now()
-    val joinedText = "joined at " + joinedDate.format(DateLong)
+    val joinedText = stringResource(R.string.profile_joined_at, joinedDate.format(DateLong)) + joinedDate.format(DateLong)
     val photo: Any? = profilePicUri.takeIf { it.isNotBlank() }?.let { if (it.contains("://")) it else "file://$it" }
 
     // ---- header state -------------------------------------------------------------------------
@@ -576,7 +582,7 @@ fun ProfileScreen(navController: NavController) {
                     ) {
                         // greeting (in the header; its scrolled-away twin lives in the top bar); on its side it heads the cards at the right
                         if (!landscape) Text(
-                            text = "${MochyGreeting.current}, ${accountName.ifBlank { "there" }}!",
+                            text = stringResource(R.string.profile_greeting_format, stringResource(MochyGreeting.currentRes), accountName.ifBlank { stringResource(R.string.profile_greeting_fallback) }),
                             style = PageTitle,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -698,7 +704,7 @@ fun ProfileScreen(navController: NavController) {
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.expand_more),
-                                contentDescription = "Pull down",
+                                contentDescription = stringResource(R.string.profile_pull_down_cd),
                                 tint = Color.White.copy(alpha = 0.35f),
                                 modifier = Modifier
                                     .size(30.dp)
@@ -712,7 +718,7 @@ fun ProfileScreen(navController: NavController) {
                             )
                             if (recapWaiting) {
                                 Text(
-                                    text = if (landscape) stringResource(R.string.recap_tap_hint) else "swipe down here!!",
+                                    text = if (landscape) stringResource(R.string.recap_tap_hint) else stringResource(R.string.profile_swipe_down_hint),
                                     style = MonoSmall.copy(color = Color.White.copy(alpha = 0.6f)),
                                     maxLines = 1,
                                     modifier = Modifier.graphicsLayer {
@@ -740,7 +746,9 @@ fun ProfileScreen(navController: NavController) {
                         ) {
                             val invalid = stage == HeaderStage.Invalid
                             Text(
-                                text = if (invalid) "come back later" else "scratch!",
+                                text = if (invalid) stringResource(
+                                            R.string.profile_come_back_later,
+                                        ) else stringResource(R.string.profile_scratch_hint),
                                 style = PageTitle.copy(fontSize = 20.sp, textAlign = TextAlign.Center),
                                 modifier = Modifier.graphicsLayer { alpha = if (invalid) 1f else 1f - scratch.dissolve.value },
                             )
@@ -751,7 +759,7 @@ fun ProfileScreen(navController: NavController) {
                                     modifier = Modifier.padding(top = 6.dp),
                                 )
                                 Text(
-                                    text = "swipe up to close",
+                                    text = stringResource(R.string.profile_swipe_up_to_close),
                                     style = MonoSmall.copy(color = Color.White.copy(alpha = 0.35f)),
                                     modifier = Modifier.padding(top = 26.dp),
                                 )
@@ -773,7 +781,7 @@ fun ProfileScreen(navController: NavController) {
                         if (landscape) {
                             Spacer(Modifier.height(statusBarTop + 30.dp))
                             Text(
-                                text = "${MochyGreeting.current}, ${accountName.ifBlank { "there" }}!",
+                                text = stringResource(R.string.profile_greeting_format, stringResource(MochyGreeting.currentRes), accountName.ifBlank { stringResource(R.string.profile_greeting_fallback) }),
                                 style = PageTitle,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -804,7 +812,7 @@ fun ProfileScreen(navController: NavController) {
                         Spacer(Modifier.height(16.dp))
                         DiscordCard(onClick = { context.openDevUrl(DiscordUrl) })
                         Spacer(Modifier.height(28.dp))
-                        Text("Settings", style = PageTitle.copy(fontSize = 15.sp), modifier = Modifier.padding(start = 2.dp, bottom = 10.dp))
+                        Text(stringResource(R.string.profile_settings_title), style = PageTitle.copy(fontSize = 15.sp), modifier = Modifier.padding(start = 2.dp, bottom = 10.dp))
                         OpenSettingsRow(onClick = { navController.navigate("mochy_settings") })
                         Spacer(Modifier.height(180.dp))
                     }
@@ -864,7 +872,7 @@ fun ProfileScreen(navController: NavController) {
             )
             if (collapseProgress > 0.01f) {
                 Text(
-                    text = "${MochyGreeting.current}, ${accountName.ifBlank { "there" }}!",
+                    text = stringResource(R.string.profile_greeting_format, stringResource(MochyGreeting.currentRes), accountName.ifBlank { stringResource(R.string.profile_greeting_fallback) }),
                     style = PageTitle.copy(fontSize = 18.sp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -1030,7 +1038,7 @@ private fun ListeningTimeCard(totalMs: Long, onViewStats: () -> Unit) {
             // long hour counts ("1234h") shrink the figures a step so the label keeps its room
             val k = widthScale(maxWidth.value + 40f) * if (hours >= 1000) 0.8f else if (hours >= 100) 0.9f else 1f
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TimeValue(hours.toString(), "h", k)
+                TimeValue(hours.toString(), stringResource(R.string.profile_unit_hour_short), k)
                 Box(
                     modifier = Modifier
                         .padding(horizontal = (14 * k).dp)
@@ -1038,10 +1046,10 @@ private fun ListeningTimeCard(totalMs: Long, onViewStats: () -> Unit) {
                         .height((34 * k).dp)
                         .background(Color.White.copy(alpha = 0.4f)),
                 )
-                TimeValue((totalMinutes % 60).toString(), "m", k)
+                TimeValue((totalMinutes % 60).toString(), stringResource(R.string.profile_unit_minute_short), k)
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    "Total Listening\ntime",
+                    stringResource(R.string.profile_total_listening_time),
                     style = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 14.sp, lineHeight = 18.sp, color = Color(0xFF8A8A8A), textAlign = TextAlign.End),
                     modifier = Modifier.weight(1f),
                 )
@@ -1051,7 +1059,7 @@ private fun ListeningTimeCard(totalMs: Long, onViewStats: () -> Unit) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF474747)))
         Spacer(Modifier.height(12.dp))
         Text(
-            "View Stats  >",
+            stringResource(R.string.profile_view_stats),
             style = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF8A8A8A)),
         )
     }
@@ -1094,7 +1102,7 @@ private fun VersionCard(
                 .padding(CardPadding),
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Version & about app", style = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF9A9A9A)))
+                Text(stringResource(R.string.profile_version_about_app), style = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF9A9A9A)))
                 Text(
                     // "7.1.1 build#1093" -> "7.1.1"
                     BuildConfig.VERSION_NAME.substringBefore(' '),
@@ -1113,13 +1121,13 @@ private fun VersionCard(
 }
 
 /**
- * The version card's capsule: "About app", or "Update" once one is out. The swap pops - the
+ * The version card's capsule: "About app", or stringResource(R.string.profile_capsule_update) once one is out. The swap pops - the
  * capsule squashes and springs back past its size while the new word grows in on a bounce and
  * the width springs to fit it.
  */
 @Composable
 private fun VersionCapsule(update: Boolean, onAbout: () -> Unit) {
-    val shown = if (update) "Update" else "About app"
+    val shown = if (update) "Update" else stringResource(R.string.profile_capsule_about)
 
     // the pop: a quick squash, then a spring that carries past full size and settles
     val pop = remember { Animatable(1f) }
@@ -1213,7 +1221,7 @@ private fun DeveloperCard(onClick: () -> Unit) {
         }
         Spacer(Modifier.width(12.dp))
         Text(
-            "meet da dev and contributors :3",
+            stringResource(R.string.profile_meet_dev_contributors),
             style = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 15.sp, letterSpacing = (-0.6).sp, color = Color(0xFF9A9A9A)),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -1236,7 +1244,7 @@ private fun DiscordCard(onClick: () -> Unit) {
     ) {
         Image(
             painter = rememberResourcePainter(R.drawable.mochy_discord),
-            contentDescription = "Discord",
+            contentDescription = stringResource(R.string.profile_discord_cd),
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(face)
@@ -1245,7 +1253,7 @@ private fun DiscordCard(onClick: () -> Unit) {
         )
         Spacer(Modifier.width(12.dp))
         Text(
-            "Join mochy’s discord server!",
+            stringResource(R.string.profile_join_discord),
             style = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 15.sp, letterSpacing = (-0.6).sp, color = Color.White),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -1276,6 +1284,6 @@ private fun OpenSettingsRow(onClick: () -> Unit) {
         ) {
             Icon(painterResource(R.drawable.settings), contentDescription = null, tint = Color(0xFF232323), modifier = Modifier.size(18.dp))
         }
-        Text("Open settings", style = PageTitle.copy(fontSize = 17.sp, fontWeight = FontWeight.SemiBold))
+        Text(stringResource(R.string.profile_open_settings), style = PageTitle.copy(fontSize = 17.sp, fontWeight = FontWeight.SemiBold))
     }
 }
