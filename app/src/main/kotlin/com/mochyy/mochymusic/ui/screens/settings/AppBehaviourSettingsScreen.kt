@@ -87,6 +87,11 @@ import com.mochyy.mochymusic.ui.component.SubSettingsScaffold
 import com.mochyy.mochymusic.ui.component.SubSettingsSearchBar
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.utils.rememberEnumPreference
+import com.mochyy.mochymusic.constants.CanvasOrder
+import com.mochyy.mochymusic.constants.CanvasOrderKey
+import com.mochyy.mochymusic.constants.CanvasSource
+import com.mochyy.mochymusic.constants.SpotifyCanvasKey
+import com.mochyy.mochymusic.ui.screens.audiolab.LabSelect
 import com.mochyy.mochymusic.utils.AppProxy
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.CancellationException
@@ -478,7 +483,13 @@ private fun playerLookItems(navController: NavController): List<SettingsItem> {
     val (lyricsSync, onLyricsSyncChange) = rememberPreference(YtVideoBackgroundLyricsSyncKey, defaultValue = true)
     val (canvasEnabled, onCanvasEnabledChange) = rememberPreference(CanvasThumbnailAnimationKey, defaultValue = true)
     val (canvasWifiOnly, onCanvasWifiOnlyChange) = rememberPreference(CanvasWifiOnlyKey, defaultValue = true)
-    val (spotifyToken) = rememberPreference(com.mochyy.mochymusic.constants.SpotifyCanvasTokenKey, defaultValue = "")
+    val (canvasOrder, onCanvasOrderChange) = rememberEnumPreference(CanvasOrderKey, defaultValue = CanvasOrder.APPLE_TIDAL_SPOTIFY)
+    val (spotifyCanvas) = rememberPreference(SpotifyCanvasKey, defaultValue = false)
+    val canvasSourceNames = mapOf(
+        CanvasSource.APPLE_MUSIC to stringResource(R.string.canvas_source_apple),
+        CanvasSource.TIDAL to stringResource(R.string.canvas_source_tidal),
+        CanvasSource.SPOTIFY to stringResource(R.string.canvas_source_spotify),
+    )
     val (highBloom, onHighBloomChange) = rememberPreference(LyricsHighBloomKey, defaultValue = true)
     val (lyricsStyle) = rememberEnumPreference(LyricsMotionStyleKey, defaultValue = LyricsMotionStyle.MOTION)
     val (romanizeAsMain, onRomanizeAsMainChange) = rememberPreference(com.mochyy.mochymusic.constants.LyricsRomanizeAsMainKey, defaultValue = false)
@@ -528,10 +539,28 @@ private fun playerLookItems(navController: NavController): List<SettingsItem> {
             onCheckedChange = onCanvasEnabledChange,
         ),
         SettingsItem(
-            title = { Text("Spotify Canvas") },
+            title = { Text(stringResource(R.string.canvas_order)) },
+            highlightKey = "Canvas order",
+            searchText = stringResource(R.string.canvas_order),
+            description = {
+                LabSelect(
+                    options = CanvasOrder.entries.map { order -> order.sources.joinToString(" → ") { canvasSourceNames.getValue(it) } },
+                    selectedIndex = canvasOrder.ordinal,
+                    onSelect = { onCanvasOrderChange(CanvasOrder.entries[it]) },
+                    contentDescription = stringResource(R.string.canvas_order),
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            },
+            icon = painterResource(R.drawable.sparks),
+            iconShape = CircleShape,
+            isVisible = canvasEnabled,
+            isSubOption = true,
+        ),
+        SettingsItem(
+            title = { Text(stringResource(R.string.spotify_canvas)) },
             highlightKey = "Spotify canvas",
-            searchText = "Spotify canvas token sp_dc cookie",
-            descriptionText = if (spotifyToken.isBlank()) "Not connected" else "Connected",
+            searchText = stringResource(R.string.spotify_canvas),
+            descriptionText = stringResource(if (spotifyCanvas) R.string.spotify_canvas_row_on else R.string.spotify_canvas_row_off),
             icon = painterResource(R.drawable.sparks),
             iconShape = CircleShape,
             isVisible = canvasEnabled,

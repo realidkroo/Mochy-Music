@@ -1009,6 +1009,20 @@ val SwipeThumbnailKey = booleanPreferencesKey("swipeThumbnail")
 val RotatingThumbnailKey = booleanPreferencesKey("rotatingThumbnail")
 val CanvasThumbnailAnimationKey = booleanPreferencesKey("canvasThumbnailAnimation")
 val CanvasWifiOnlyKey = booleanPreferencesKey("canvasWifiOnly")
+// which canvas sources get asked first; spotify only joins once it's turned on and signed in on its own page
+val CanvasOrderKey = stringPreferencesKey("canvasOrder")
+val SpotifyCanvasKey = booleanPreferencesKey("spotifyCanvas")
+
+enum class CanvasSource { APPLE_MUSIC, TIDAL, SPOTIFY }
+
+enum class CanvasOrder(val sources: List<CanvasSource>) {
+    APPLE_TIDAL_SPOTIFY(listOf(CanvasSource.APPLE_MUSIC, CanvasSource.TIDAL, CanvasSource.SPOTIFY)),
+    APPLE_SPOTIFY_TIDAL(listOf(CanvasSource.APPLE_MUSIC, CanvasSource.SPOTIFY, CanvasSource.TIDAL)),
+    TIDAL_APPLE_SPOTIFY(listOf(CanvasSource.TIDAL, CanvasSource.APPLE_MUSIC, CanvasSource.SPOTIFY)),
+    TIDAL_SPOTIFY_APPLE(listOf(CanvasSource.TIDAL, CanvasSource.SPOTIFY, CanvasSource.APPLE_MUSIC)),
+    SPOTIFY_APPLE_TIDAL(listOf(CanvasSource.SPOTIFY, CanvasSource.APPLE_MUSIC, CanvasSource.TIDAL)),
+    SPOTIFY_TIDAL_APPLE(listOf(CanvasSource.SPOTIFY, CanvasSource.TIDAL, CanvasSource.APPLE_MUSIC)),
+}
 /** The player's format badge beside the title (OPUS, AAC, FLAC...) */
 val ShowFormatBadgeKey = booleanPreferencesKey("showFormatBadge")
 /** The badge also says the stream's sample rate */
@@ -1373,4 +1387,3 @@ val DonateOpenPromptAtKey = longPreferencesKey("donateOpenPromptAt")
 // one-off lyrics cache clears (App.kt). raise LyricsCacheWipeGeneration to clear it again in a later release
 val LyricsCacheWipeKey = intPreferencesKey("lyricsCacheWipe")
 const val LyricsCacheWipeGeneration = 1
-val SpotifyCanvasTokenKey = stringPreferencesKey("spotifyCanvasToken")

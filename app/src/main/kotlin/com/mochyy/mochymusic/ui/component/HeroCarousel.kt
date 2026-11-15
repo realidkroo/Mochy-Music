@@ -103,9 +103,7 @@ import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.mochyy.mochymusic.R
-import com.mochyy.mochymusic.applecanvas.AppleMusicCanvasProvider
 import com.mochyy.mochymusic.canvas.CanvasArtwork
-import com.mochyy.mochymusic.canvas.MonochromeApiCanvas
 import com.mochyy.mochymusic.constants.CanvasThumbnailAnimationKey
 import com.mochyy.mochymusic.constants.CanvasWifiOnlyKey
 import com.mochyy.mochymusic.constants.DisableBlurKey
@@ -946,12 +944,7 @@ private fun HeroMedia(
         if (song.isBlank() || artist.isBlank()) return@LaunchedEffect
 
         val storefront = Locale.getDefault().country.takeIf { it.length == 2 }?.lowercase(Locale.ROOT) ?: "us"
-        val fetched = withContext(Dispatchers.IO) {
-            MonochromeApiCanvas.getBySongArtist(song, artist, item.albumTitle)
-                ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-                ?: AppleMusicCanvasProvider.getBySongArtist(song, artist, item.albumTitle, storefront)
-                    ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-        }
+        val fetched = com.mochyy.mochymusic.ui.player.findCanvas(context, song, artist, item.albumTitle, storefront)
         if (fetched != null) {
             canvasArtwork = fetched
             CanvasArtworkPlaybackCache.put(id, fetched)

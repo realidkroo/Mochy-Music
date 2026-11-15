@@ -112,12 +112,8 @@ import com.mochyy.mochymusic.ui.player.flagship.AnimatedSkipGlyph
 import com.mochyy.mochymusic.ui.player.flagship.SkipCycleState
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import com.mochyy.mochymusic.canvas.CanvasArtwork
-import com.mochyy.mochymusic.canvas.MonochromeApiCanvas
-import com.mochyy.mochymusic.applecanvas.AppleMusicCanvasProvider
 import com.mochyy.mochymusic.LocalGlassState
 import com.mochyy.mochymusic.constants.CanvasThumbnailAnimationKey
 import com.mochyy.mochymusic.constants.CanvasWifiOnlyKey
@@ -2011,8 +2007,7 @@ private fun CoverCanvasLayer(
     var canvasArtwork by remember(trackInfo.mediaId) { mutableStateOf<CanvasArtwork?>(null) }
     val canvasEnabled = rememberPreference(CanvasThumbnailAnimationKey, defaultValue = true).value && !alternateStyle
     val canvasWifiOnly by rememberPreference(CanvasWifiOnlyKey, defaultValue = true)
-    val spotifyToken by rememberPreference(com.mochyy.mochymusic.constants.SpotifyCanvasTokenKey, defaultValue = "")
-    LaunchedEffect(trackInfo.mediaId, trackInfo.title, trackInfo.artist, canvasEnabled, canvasWifiOnly, spotifyToken) {
+    LaunchedEffect(trackInfo.mediaId, trackInfo.title, trackInfo.artist, canvasEnabled, canvasWifiOnly) {
         val mediaId = trackInfo.mediaId
         val titleStr = trackInfo.title
         val artistStr = trackInfo.artist
@@ -2036,15 +2031,7 @@ private fun CoverCanvasLayer(
         val durationSec = playerConnection?.mediaMetadata?.value
             ?.takeIf { it.id == mediaId }?.duration?.takeIf { it > 0 }
 
-        val res = withContext(Dispatchers.IO) {
-            com.mochyy.mochymusic.spotify.SpotifyCanvasProvider.getBySongArtist(context, normTitle, normArtist, durationSec, spotifyToken)
-                ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-            ?:
-            MonochromeApiCanvas.getBySongArtist(normTitle, normArtist, null, durationSec)
-                ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-            ?: AppleMusicCanvasProvider.getBySongArtist(normTitle, normArtist, null, "us", durationSec)
-                ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-        }
+        val res = findCanvas(context, normTitle, normArtist, durationSec = durationSec)
         if (res != null) {
             CanvasArtworkPlaybackCache.put(mediaId, res)
             canvasArtwork = res
