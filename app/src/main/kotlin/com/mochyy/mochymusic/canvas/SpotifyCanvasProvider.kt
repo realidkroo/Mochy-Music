@@ -1,4 +1,6 @@
-package com.mochyy.mochymusic.spotify
+// SpotifyCanvasProvider.kt
+
+package com.mochyy.mochymusic.canvas
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -8,16 +10,16 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import com.mochyy.mochymusic.canvas.CanvasArtwork
-import com.mochyy.mochymusic.canvas.CanvasMatch
+import com.mochyy.mochymusic.utils.followAppProxy
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -39,27 +41,39 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
-// canvas from spotify using the user's own sp_dc cookie, nothing is stored outside the phone
+// canvas from spotify through the account signed in on the spotify canvas page, that sign-in only lives in this app's web views
 object SpotifyCanvasProvider {
+    const val PlayerOrigin = "https://open.spotify.com"
+    private const val SignedInCookie = "sp_dc"
     private const val UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     private const val APP_UA = "Spotify/9.0.34.593 iOS/18.4 (iPhone15,3)"
     private const val BRIDGE = "MochySpotifyBridge"
     // last hash that worked, used when we cant find a newer one
     private const val KNOWN_HASH = "575138ab27cd5c1b3e54da54d0a7cc8d85485402de26340c2145f0f6bb5e7a9f"
     private const val SEARCH_HASH = "bc1ca2fcd0ba1013a0fc88e6cc4f190af501851e3dafd3e1ef85840297694428"
+    // a sign-in that gave no token waits this long before the next try, so a dead one doesn't open a web view every song
+    private const val RetryAfterMs = 30 * 60_000L
+    // a song change is busy enough already, the hidden web view waits until the player has settled
+    private const val HarvestDelayMs = 3_000L
+    // fetched again this long before it runs out, so a long session never plays a song without one
+    private const val RefreshEarlyMs = 5 * 60_000L
 
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
     }
-    private val http = OkHttpClient()
-    // only one webview at a time, two songs changing fast would open two
-    private val mutex = Mutex()
+    private val http = OkHttpClient.Builder().followAppProxy().build()
+    private val main = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val hits = ConcurrentHashMap<String, CanvasArtwork>()
     // songs with no canvas, so we dont ask spotify again every time they play
     private val misses = ConcurrentHashMap.newKeySet<String>()
 
     private class Harvest(val token: String, val expiresAt: Long, val clientId: String?)
+
+    // only read and written on the main thread, so two song changes never open two web views
+    private var harvesting = false
+    @Volatile private var failedFor: String? = null
+    @Volatile private var failedAt = 0L
 
     @Volatile private var token: String? = null
     @Volatile private var tokenFor = ""
@@ -72,13 +86,45 @@ object SpotifyCanvasProvider {
     @Volatile private var hashValue: String? = null
     @Volatile private var hashAt = 0L
 
-    suspend fun getBySongArtist(context: Context, song: String, artist: String, durationSec: Int?, spDc: String): CanvasArtwork? {
-        if (spDc.isBlank()) return null
+    // the sign-in cookie spotify set in this app's web views, null while nobody is signed in
+    fun signedInCookie(): String? = runCatching {
+        CookieManager.getInstance().getCookie(PlayerOrigin).orEmpty().split(';')
+            .map { it.trim() }
+            .firstOrNull { it.substringBefore('=') == SignedInCookie }
+            ?.substringAfter('=')
+            ?.takeIf { it.isNotBlank() }
+    }.getOrNull()
+
+    // right after signing in, so the first song already finds a token waiting
+    fun warmUp(context: Context) {
+        val cookie = signedInCookie() ?: return
+        failedFor = null
+        refresh(context.applicationContext, cookie, delayMs = 0L)
+    }
+
+    // signing out drops the token and every miss, the next account may have other luck
+    fun forget() {
+        token = null
+        tokenFor = ""
+        tokenExp = 0L
+        cachedClientToken = null
+        failedFor = null
+        misses.clear()
+    }
+
+    // never waits for a token: without a fresh one this song skips spotify and one is fetched in the background
+    suspend fun getBySongArtist(context: Context, song: String, artist: String, durationSec: Int?): CanvasArtwork? {
+        val cookie = signedInCookie() ?: return null
         val key = "$song|$artist|${durationSec ?: 0}"
         hits[key]?.let { return it }
         if (key in misses) return null
+
+        val now = System.currentTimeMillis()
+        val t = token?.takeIf { tokenFor == cookie && now < tokenExp - 30_000 }
+        if (t == null || now > tokenExp - RefreshEarlyMs) refresh(context.applicationContext, cookie, HarvestDelayMs)
+        if (t == null) return null
+
         return try {
-            val t = accessToken(context.applicationContext, spDc) ?: return null
             val ct = clientToken()
             val url = searchTrack(t, ct, song, artist, durationSec)?.let { canvasUrl(it, t, ct) }
             if (url == null) {
@@ -95,39 +141,43 @@ object SpotifyCanvasProvider {
         }
     }
 
-    private suspend fun accessToken(context: Context, spDc: String): String? {
-        fun fresh() = token?.takeIf { tokenFor == spDc && System.currentTimeMillis() < tokenExp - 30_000 }
-        fresh()?.let { return it }
-        return mutex.withLock {
-            // someone else may have filled it while we waited for the lock
-            fresh()?.let { return@withLock it }
-            val h = withContext(Dispatchers.Main) { harvest(context, spDc) } ?: return@withLock null
-            token = h.token
-            tokenFor = spDc
-            tokenExp = h.expiresAt
-            h.clientId?.let { clientId = it }
-            cachedClientToken = null
-            h.token
+    private fun refresh(context: Context, cookie: String, delayMs: Long) {
+        if (failedFor == cookie && System.currentTimeMillis() - failedAt < RetryAfterMs) return
+        main.launch {
+            if (harvesting) return@launch
+            harvesting = true
+            try {
+                delay(delayMs)
+                val h = harvest(context)
+                if (h == null) {
+                    failedFor = cookie
+                    failedAt = System.currentTimeMillis()
+                    return@launch
+                }
+                token = h.token
+                tokenFor = cookie
+                tokenExp = h.expiresAt
+                h.clientId?.let { clientId = it }
+                cachedClientToken = null
+            } finally {
+                harvesting = false
+            }
         }
     }
 
     // plain requests with sp_dc get blocked, so we let the real web player ask for the token and just listen to it
     @SuppressLint("SetJavaScriptEnabled")
-    private suspend fun harvest(context: Context, spDc: String): Harvest? {
+    private suspend fun harvest(context: Context): Harvest? {
         val done = CompletableDeferred<Harvest?>()
-        val cookies = CookieManager.getInstance()
-        cookies.setAcceptCookie(true)
-        cookies.setCookie("https://open.spotify.com/", "sp_dc=$spDc; Domain=.spotify.com; Path=/; Secure")
-        cookies.setCookie("https://accounts.spotify.com/", "sp_dc=$spDc; Domain=.spotify.com; Path=/; Secure")
-        cookies.flush()
-        runCatching { WebStorage.getInstance().deleteAllData() }
+        // only spotify's own saved data goes, so the page asks for a new token instead of reusing one
+        runCatching { WebStorage.getInstance().deleteOrigin(PlayerOrigin) }
         var view: WebView? = null
         return try {
             view = WebView(context).apply {
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 settings.userAgentString = UA
-                cookies.setAcceptThirdPartyCookies(this, true)
+                CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                 addJavascriptInterface(Bridge(done), BRIDGE)
                 webViewClient = object : WebViewClient() {
                     override fun onPageStarted(v: WebView, url: String?, icon: Bitmap?) {
@@ -138,7 +188,7 @@ object SpotifyCanvasProvider {
                         v.evaluateJavascript(HOOK, null)
                     }
                 }
-                loadUrl("https://open.spotify.com/")
+                loadUrl("$PlayerOrigin/")
             }
             withTimeoutOrNull(20_000) { done.await() }
         } catch (e: CancellationException) {
@@ -206,7 +256,7 @@ object SpotifyCanvasProvider {
 
     // grabs the web player version and a device id, the client token request wants both
     private fun loadSession() {
-        val req = Request.Builder().url("https://open.spotify.com").header("User-Agent", UA).build()
+        val req = Request.Builder().url(PlayerOrigin).header("User-Agent", UA).build()
         runCatching {
             http.newCall(req).execute().use { r ->
                 val html = r.body?.string().orEmpty()
@@ -334,7 +384,7 @@ object SpotifyCanvasProvider {
 
     // digs the canvas query hash out of the web player's js bundles
     private fun lookUpHash(): String? {
-        val html = get("https://open.spotify.com/", mapOf("User-Agent" to UA)) ?: return null
+        val html = get("$PlayerOrigin/", mapOf("User-Agent" to UA)) ?: return null
         val declaration = Regex("[\"'](\\w+)[\"']\\s*,\\s*[\"']query[\"']\\s*,\\s*[\"']([0-9a-f]{64})[\"']")
         val scripts = Regex("https://open\\.spotifycdn\\.com/cdn/build/web-player/[A-Za-z0-9._~-]+\\.js")
             .findAll(html).map { it.value }.distinct().take(8)
