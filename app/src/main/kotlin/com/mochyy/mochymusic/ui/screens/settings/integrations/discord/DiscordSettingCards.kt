@@ -353,12 +353,44 @@ internal fun DiscordImageSourceCard(
     // the picture behind "your own picture", and a way to pick another
     customPicture: String = "",
     onPickCustom: () -> Unit = {},
+    // fps and pixels of the canvas gif, shown once a canvas or apple music animated cover is picked
+    canvasFps: Int = PresenceSettings.DefaultCanvasFps,
+    canvasSize: Int = PresenceSettings.DefaultCanvasSize,
+    onCanvasChange: (fps: Int, size: Int) -> Unit = { _, _ -> },
 ) {
     DiscordCard {
         DiscordCardTitle(title)
         Spacer(Modifier.height(10.dp))
         DiscordDropdown(selected = selected, options = options, label = { it.label }, onSelect = onSelect)
         if (selected == PresenceImage.CUSTOM) CustomPictureRow(customPicture, onPickCustom)
+        if (selected.isCanvas) {
+            FieldLabel("Smoothness")
+            DiscordStepSlider(
+                value = canvasFps,
+                values = PresenceSettings.CanvasFpsSteps,
+                label = { "$it fps" },
+                onValueChange = { onCanvasChange(it, canvasSize) },
+            )
+            FieldLabel("Picture size")
+            DiscordStepSlider(
+                value = canvasSize,
+                values = PresenceSettings.CanvasSizeSteps,
+                label = { "$it px" },
+                onValueChange = { onCanvasChange(canvasFps, it) },
+            )
+            // live progress of the gif for the song that is playing
+            CanvasGifProgressRow()
+            Text(
+                text = "Discord cant play video, so Mochy makes a looping GIF of it and puts it on a free file host " +
+                    "(uguu.se, which deletes it after three hours). Higher fps and bigger pictures make a bigger GIF " +
+                    "that takes longer to show up, the still artwork stands in meanwhile. A GIF over 4 MB loses every other frame. " +
+                    "If the song ends before its done the GIF keeps going in the background, so its ready the next time.",
+                color = DiscordColors.Secondary,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                modifier = Modifier.padding(start = 4.dp, top = 10.dp),
+            )
+        }
         if (selected.isRotating && spin != null) {
             FieldLabel("One full turn")
             DiscordStepSlider(

@@ -406,4 +406,10 @@
     <string name="error_stream_unavailable_title">Couldn\'t play this track</string>
     <string name="playback_error_channel_name">Playback errors</string>
     <string name="playing_music_video_audio">YouTube wouldn\'t play this song, so you\'re hearing its music video instead</string>
+    <string name="storage_clear_canvas_gifs">Clear Canvas GIFs</string>
+    <string name="storage_clear_canvas_gifs_title">Clear Canvas GIFs?</string>
+    <string name="storage_clear_canvas_gifs_message">The saved canvas GIFs for Discord and the videos they were made from are deleted. They get made again the next time a song plays.</string>
+    <string name="storage_clear_canvas_gifs_action">Clear</string>
+    <string name="storage_canvas_gifs_none">No GIFs saved</string>
+    <string name="storage_canvas_gifs_detail">%1$s · %2$d GIFs</string>
 </resources>

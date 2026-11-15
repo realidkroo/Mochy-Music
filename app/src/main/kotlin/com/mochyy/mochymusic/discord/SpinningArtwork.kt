@@ -133,7 +133,7 @@ internal class SpinningArtwork(
      * Up to 255 colours picked from the picture by median cut, and a quick lookup from any colour
      * to its nearest one. See-through pixels map to the GIF's see-through slot.
      */
-    private class Palette(val colors: IntArray) {
+    internal class Palette(val colors: IntArray) {
         // nearest colour for each 5-bit-per-channel colour, worked out the first time it's asked
         private val nearest = IntArray(1 shl 15) { -1 }
 

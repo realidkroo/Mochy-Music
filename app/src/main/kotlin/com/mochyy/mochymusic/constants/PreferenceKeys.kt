@@ -1375,3 +1375,5 @@ val DonateOpenPromptAtKey = longPreferencesKey("donateOpenPromptAt")
 val LyricsCacheWipeKey = intPreferencesKey("lyricsCacheWipe")
 const val LyricsCacheWipeGeneration = 1
 val SpotifyCanvasTokenKey = stringPreferencesKey("spotifyCanvasToken")
+val DiscordCanvasFpsKey = intPreferencesKey("discordPresenceCanvasFps")
+val DiscordCanvasSizeKey = intPreferencesKey("discordPresenceCanvasSize")

@@ -128,6 +128,7 @@ class StorageViewModel @Inject constructor(
     /** Songs kept from streaming and every cover picture. Downloads and the library stay. */
     fun clearCaches() = runBusy {
         cachedSongs.clear().join()
+        withContext(Dispatchers.IO) { com.mochyy.mochymusic.discord.CanvasGifStore.clear(context) }
         SingletonImageLoader.get(context).let { loader ->
             loader.memoryCache?.clear()
             withContext(Dispatchers.IO) { loader.diskCache?.clear() }

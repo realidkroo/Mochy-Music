@@ -319,6 +319,9 @@ private fun CustomizeSection(
         onSpinChange = { spin -> edit { copy(spinSeconds = spin.secondsPerTurn, spinFps = spin.fps) } },
         customPicture = settings.smallCustomImage,
         onPickCustom = { pickSmall.launch(imagesOnly) },
+        canvasFps = settings.canvasFps,
+        canvasSize = settings.canvasSize,
+        onCanvasChange = { fps, size -> edit { copy(canvasFps = fps, canvasSize = size) } },
     )
     Spacer(gap)
     DiscordImageSourceCard(
@@ -331,6 +334,9 @@ private fun CustomizeSection(
         },
         customPicture = settings.largeCustomImage,
         onPickCustom = { pickLarge.launch(imagesOnly) },
+        canvasFps = settings.canvasFps,
+        canvasSize = settings.canvasSize,
+        onCanvasChange = { fps, size -> edit { copy(canvasFps = fps, canvasSize = size) } },
     )
 
     DiscordSectionTitle("Buttons")
