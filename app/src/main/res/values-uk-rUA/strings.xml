@@ -21,6 +21,7 @@
     </plurals>
     <!-- Home -->
     <string name="history">History</string>
+    <string name="queue_next_in_queue">Next in Queue</string>
     <string name="stats">Stats</string>
     <string name="mood_and_genres">Mood and Genres</string>
     <string name="account">Account</string>
@@ -232,6 +233,33 @@
         <item quantity="many">%d minutes</item>
         <item quantity="other">%d minutes</item>
     </plurals>
+    <string name="sleep_timer_ready">Ready</string>
+    <string name="sleep_timer_running">Running</string>
+    <string name="sleep_timer_paused">Paused</string>
+    <string name="sleep_timer_until_song_ends">Stops when this song ends</string>
+    <string name="sleep_timer_start">Start</string>
+    <string name="sleep_timer_pause">Pause</string>
+    <string name="sleep_timer_resume">Resume</string>
+    <string name="sleep_timer_minus_minute">−1 min</string>
+    <string name="sleep_timer_plus_minute">+1 min</string>
+    <string name="sleep_timer_quick_set">Quick set</string>
+    <plurals name="sleep_timer_preset_minutes">
+        <item quantity="one">%d min</item>
+        <item quantity="few">%d min</item>
+        <item quantity="many">%d min</item>
+        <item quantity="other">%d min</item>
+    </plurals>
+    <string name="sleep_timer_preset_hour">1 hr</string>
+    <string name="sleep_timer_custom">Custom time</string>
+    <string name="sleep_timer_custom_desc">Type your own hours, minutes and seconds</string>
+    <string name="sleep_timer_hours">Hours</string>
+    <string name="sleep_timer_minutes">Minutes</string>
+    <string name="sleep_timer_seconds">Seconds</string>
+    <string name="sleep_timer_enter_time">Enter a time</string>
+    <string name="sleep_timer_set_custom">Set %1$s</string>
+    <string name="sleep_timer_end_after_song">End after this song</string>
+    <string name="sleep_timer_cancel">CANCEL TIMER</string>
+    <string name="sleep_timer_paused_left">paused, %1$s left</string>
     <string name="error_no_stream">No stream available</string>
     <string name="error_no_internet">No network connection</string>
     <string name="no_internet_next_on_phone">No internet, so here\'s the next song saved on your phone</string>
