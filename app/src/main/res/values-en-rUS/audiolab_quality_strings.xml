@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="aq_title_first">Audio</string>
+    <string name="aq_title_second">Quality</string>
+    <string name="aq_nothing_on">Nothing is on</string>
+    <string name="aq_turn_provider_on">Turn a provider on</string>
+    <string name="aq_youtube_tier">YouTube · %1$s</string>
+    <string name="aq_section_streaming">Streaming</string>
+    <string name="aq_section_download">Download</string>
+    <string name="aq_section_provider">Provider</string>
+    <string name="aq_youtube_status_on">Plays what the others don\'t have</string>
+    <string name="aq_youtube_status_off_none">Off, and nothing else is on, so songs won\'t play</string>
+    <string name="aq_youtube_status_off">Off: songs the others don\'t have are skipped</string>
+    <string name="aq_quality_auto">Auto</string>
+    <string name="aq_quality_high">High</string>
+    <string name="aq_quality_medium">Medium</string>
+    <string name="aq_quality_low">Low</string>
+    <string name="aq_quality_lossless">Lossless</string>
+    <string name="aq_desc_auto">High on Wi-Fi, Medium on mobile data</string>
+    <string name="aq_desc_high">The best the streamer has: less compression, more data</string>
+    <string name="aq_desc_medium">Around 128 kbps, easy on data</string>
+    <string name="aq_desc_low">The smallest streams, for slow connections</string>
+    <string name="aq_fmt_adaptive">Adaptive</string>
+    <string name="aq_fmt_high">~160 kbps · Opus</string>
+    <string name="aq_fmt_medium">~128 kbps · AAC</string>
+    <string name="aq_fmt_low">~50–70 kbps · Opus</string>
+    <string name="aq_desc_monochrome_lossless">FLAC, as Monochrome has it: CD quality or better</string>
+    <string name="aq_module_settings">%1$s settings</string>
+    <string name="aq_dl_desc_high">The best YouTube has: ~160 kbps Opus</string>
+    <string name="aq_dl_desc_medium">Around 128 kbps, half the space</string>
+    <string name="aq_dl_desc_low">The smallest files, ~50–70 kbps</string>
+    <string name="aq_status_sign_in">Sign in to play from it</string>
+    <string name="aq_status_sign_in_again">Sign in again</string>
+    <string name="aq_status_on">On</string>
+    <string name="aq_status_off_tap">Off, tap to turn on</string>
+    <string name="aq_status_not_installed">Not installed</string>
+</resources>
