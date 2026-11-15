@@ -394,15 +394,17 @@ fun PopupSheetHost(
 @Immutable
 private data class StackMetrics(
     val isTablet: Boolean,
-    // on its side: a card floating a little above the bottom, like the video mode's sheets
+    // on its side: a card floating in the middle of the room below the status bar
     val floating: Boolean,
     val parentHeightPx: Float,
     val peekPx: Float,
     val floatingMarginPx: Float,
+    // a floating card's gap at the top: its margin, or the status bar when that's taller
+    val floatingTopPx: Float,
 ) {
-    /** Where an open sheet of this height sits: bottom-anchored on phones, centered on tablets, floating just off the bottom on its side. */
+    /** Where an open sheet of this height sits: bottom-anchored on phones, centered on tablets, floating centred below the status bar on its side. */
     fun layoutTop(sheetHeightPx: Float): Float = when {
-        floating -> parentHeightPx - floatingMarginPx - sheetHeightPx
+        floating -> floatingTopPx + ((parentHeightPx - floatingTopPx - floatingMarginPx - sheetHeightPx) / 2f).coerceAtLeast(0f)
         isTablet -> (parentHeightPx - sheetHeightPx) / 2f
         else -> parentHeightPx - sheetHeightPx
     }
@@ -420,6 +422,9 @@ private fun PopupSheetStack(state: PopupSheetState) {
             parentHeightPx = constraints.maxHeight.toFloat(),
             peekPx = with(LocalDensity.current) { PeekHeight.toPx() },
             floatingMarginPx = with(LocalDensity.current) { FloatingMargin.toPx() },
+            floatingTopPx = with(LocalDensity.current) {
+                maxOf(WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding(), FloatingMargin).toPx()
+            },
         )
 
         // One keyed slot per frame, all at this one call site: pushing or popping a frame never
@@ -632,7 +637,7 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
 
     Box(
         modifier = Modifier
-            .align(if (centred) Alignment.Center else Alignment.BottomCenter)
+            .align(if (centred || metrics.floating) Alignment.Center else Alignment.BottomCenter)
             .then(sheetSizeModifier(centred, metrics.floating))
             // Lifts the sheet clear of the keyboard (and shrinks its room by the same amount), for
             // the sheets with a text field. After the size cap and before the measurement below,
@@ -715,8 +720,9 @@ private fun BoxWithConstraintsScope.sheetSizeModifier(isTablet: Boolean, floatin
         // as tall as what's in it, up to the status bar less a margin and a peek strip, never the full width
         val statusBar = WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding()
         val room = maxHeight - maxOf(statusBar, FloatingMargin) - FloatingMargin * 2 - PeekHeight
+        // centred between the status bar and the bottom margin, matching layoutTop
         Modifier
-            .padding(bottom = FloatingMargin)
+            .padding(top = maxOf(statusBar, FloatingMargin), bottom = FloatingMargin)
             .widthIn(max = FloatingMaxWidth)
             .fillMaxWidth()
             .heightIn(max = room.coerceAtLeast(0.dp))

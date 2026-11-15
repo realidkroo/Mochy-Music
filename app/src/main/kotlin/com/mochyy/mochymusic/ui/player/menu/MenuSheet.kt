@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -281,8 +282,12 @@ fun MenuSheetSurface(
         } else {
             maxSheetPx
         }
-        // how far down the sheet goes to be fully out of sight, its bottom gap included
-        val closedOffsetPx = fullHeightPx + floatingMarginPx
+        // a floating card rests in the middle of the room below the status bar instead of just off the bottom
+        fun centerLiftPx(sheetPx: Float): Float =
+            if (floating) ((parentHeightPx - safeTopPx - floatingMarginPx - sheetPx) / 2f).coerceAtLeast(0f) else 0f
+        val liftPx = centerLiftPx(fullHeightPx)
+        // how far down the sheet goes to be fully out of sight, its bottom gap and its lift included
+        val closedOffsetPx = fullHeightPx + floatingMarginPx + liftPx
 
         val restingOffsetPx = if (wraps) {
             0f
@@ -325,7 +330,8 @@ fun MenuSheetSurface(
             snapshotFlow { measuredHeightPx.floatValue }.first { it > 0f }
             withFrameNanos { }
 
-            val start = (if (wraps) measuredHeightPx.floatValue else maxSheetPx) + floatingMarginPx
+            val startHeightPx = if (wraps) measuredHeightPx.floatValue else maxSheetPx
+            val start = startHeightPx + floatingMarginPx + centerLiftPx(startHeightPx)
             val target = if (wraps) 0f else restingOffsetPx
             setOffset(start)
             animate(
@@ -447,6 +453,7 @@ fun MenuSheetSurface(
                     if (floating) {
                         Modifier
                             .padding(bottom = FloatingMargin)
+                            .offset { androidx.compose.ui.unit.IntOffset(0, -liftPx.toInt()) }
                             .widthIn(max = FloatingMaxWidth)
                     } else Modifier
                 )
