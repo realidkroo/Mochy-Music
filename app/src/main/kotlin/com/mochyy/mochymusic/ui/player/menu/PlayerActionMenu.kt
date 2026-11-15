@@ -358,6 +358,8 @@ fun PlayerActionMenu(
                 Spacer(modifier = Modifier.height(8.dp))
                 KeepScreenOnRow()
                 Spacer(modifier = Modifier.height(8.dp))
+                FloatingLyricsRow()
+                Spacer(modifier = Modifier.height(8.dp))
                 MenuRow(
                     icon = R.drawable.speed,
                     title = "Playback speed and tempo",
@@ -528,6 +530,18 @@ private fun KeepScreenOnRow() {
         title = "Keep screen on",
         onClick = { setKeepScreenOn(!keepScreenOn) },
         trailing = { AppSwitch(checked = keepScreenOn, onCheckedChange = setKeepScreenOn) },
+    )
+}
+
+// the line being sung floating over other apps once mochy is out of sight
+@Composable
+private fun FloatingLyricsRow() {
+    val (floating, setFloating) = com.mochyy.mochymusic.floating.rememberFloatingLyricsSwitch()
+    MenuRow(
+        icon = R.drawable.lyrics,
+        title = androidx.compose.ui.res.stringResource(R.string.settings_floating_lyrics),
+        onClick = { setFloating(!floating) },
+        trailing = { AppSwitch(checked = floating, onCheckedChange = setFloating) },
     )
 }
 

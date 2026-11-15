@@ -37,7 +37,8 @@ internal object ShareEncoders {
             MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.any { info ->
                 info.isEncoder && info.supportedTypes.any { it.equals(MimeTypes.VIDEO_H264, ignoreCase = true) } &&
                     runCatching {
-                        val video = info.getCapabilitiesForType(MimeTypes.VIDEO_H264).videoCapabilities
+                        // an audio-only or odd codec has no video capabilities; it just can't encode this
+                        val video = info.getCapabilitiesForType(MimeTypes.VIDEO_H264).videoCapabilities ?: return@runCatching false
                         video.areSizeAndRateSupported(quality.height, quality.width, fps.toDouble()) ||
                             video.areSizeAndRateSupported(quality.width, quality.height, fps.toDouble())
                     }.getOrDefault(false)

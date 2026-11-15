@@ -20,15 +20,15 @@ plugins {
 
 extensions.configure<ApplicationExtension> {
     namespace = "com.mochyy.mochymusic"
-    compileSdk = 36
+    compileSdk = 37
     ndkVersion = "27.0.12077973"
 
     defaultConfig {
         applicationId = "com.mochyy.mochymusic"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 73
-        versionName = "8.3.2 build#1243"
+        versionName = "8.4.1 build#1256"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -458,6 +458,8 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.json)
+    // finds song streams first, with mochy's own client walk as the backup (YTPlayerUtils)
+    implementation(libs.innertubex)
 
     // Protobuf for message serialization (lite version for Android)
     implementation(libs.protobuf.javalite)

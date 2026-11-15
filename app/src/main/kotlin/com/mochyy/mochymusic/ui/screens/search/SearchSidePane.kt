@@ -50,7 +50,6 @@ import com.music.innertube.models.WatchEndpoint
 import com.music.innertube.utils.YouTubeUrlParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.net.URLEncoder
 
 // the search pages on its side: the field and its history at the left, the categories or the results beside it
 fun showsSearchPane(currentRoute: String?): Boolean =
@@ -101,7 +100,7 @@ fun SearchSidePane(
                         playerConnection?.playQueue(YouTubeQueue(WatchEndpoint(videoId = parsed.id)))
                     is YouTubeUrlParser.ParsedUrl.Artist ->
                         navController.navigate("artist/${parsed.id}")
-                    null -> navController.navigate("search/${URLEncoder.encode(text, "UTF-8")}") {
+                    null -> navController.navigate(searchRoute(text)) {
                         popUpTo(Screens.Search.route)
                         launchSingleTop = true
                     }

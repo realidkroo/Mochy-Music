@@ -42,6 +42,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -116,6 +117,9 @@ class PhoneLinkHost @Inject constructor(
     private var watchingLibrary = false
     @Volatile private var mark: Pair<Long, String>? = null
 
+    // the library sum each tv was last told "in step" about, so the notice only shows when it got something new
+    private val toldLibrary = ConcurrentHashMap<String, String>()
+
     private val library = PhoneLibraryRoutes(context, database, internalDatabase, downloadUtil)
     private val verifier = LinkAuth.Verifier()
     private val control = LinkControlRoutes(context)
@@ -154,6 +158,18 @@ class PhoneLinkHost @Inject constructor(
                 LinkWire.AttrKind to DeviceKind.of(context).wire,
             ),
         )
+    }
+
+    // the advert made before android 17 let us on the wi-fi never went out, so it's made again
+    fun advertiseAgain() {
+        scope.launch(Dispatchers.IO) {
+            synchronized(this@PhoneLinkHost) {
+                advert?.close()
+                advert = null
+                advertPort = -1
+                refresh()
+            }
+        }
     }
 
     @Synchronized
@@ -337,11 +353,12 @@ class PhoneLinkHost @Inject constructor(
             request.path == "/avatar" -> avatar()
             request.path == "/library" -> {
                 if (!device.mirrorLibrary) return LinkResponse.status(403, "library sharing is off")
+                val sent = libraryMark()
                 val snapshot = library.snapshot()
                 // told once the whole library has gone over, not when the tv only asked for it
                 LinkResponse.stream(snapshot.contentType) { out ->
                     snapshot.writer(out)
-                    synced(device)
+                    synced(device, sent)
                 }
             }
             request.path == "/files" -> LinkResponse.json(if (device.streamLocal) library.files().toString() else "[]")
@@ -433,8 +450,10 @@ class PhoneLinkHost @Inject constructor(
         )
     }
 
-    private fun synced(device: PairedDevice) {
+    private fun synced(device: PairedDevice, library: String) {
         update(device.id) { it.copy(lastSyncAt = System.currentTimeMillis()) }
+        // a refresh for plays or a retry sends the same library, and the notice used to come back after every one of them
+        if (toldLibrary.put(device.id, library) == library) return
         if (notifySync) PhoneLinkNotices.synced(context, device.name)
     }
 

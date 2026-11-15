@@ -45,6 +45,7 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -91,18 +92,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
@@ -313,10 +322,20 @@ private const val DragCloseThreshold = 0.35f
 fun PopupSheetHost(
     states: List<PopupSheetState>,
     modifier: Modifier = Modifier,
+    // where a tv remote goes back to once the last sheet has left; the sheets hold it until then
+    focusReturn: FocusRequester? = null,
     content: @Composable () -> Unit,
 ) {
     val active = states.firstOrNull { it.isVisible }
     val playerSheet = LocalPlayerBottomSheetState.current
+
+    if (focusReturn != null) {
+        var sheetWasUp by remember { mutableStateOf(false) }
+        LaunchedEffect(active != null) {
+            if (active == null && sheetWasUp) runCatching { focusReturn.requestFocus() }
+            sheetWasUp = active != null
+        }
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         Box(
@@ -483,6 +502,7 @@ private class FrameMotion(
  * is its own `offset` plus the recede derived from the frames in front of it ([restingTopOf]),
  * all applied in one graphicsLayer, so nothing here recomposes while things move.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun BoxWithConstraintsScope.PopupSheetFrame(
     state: PopupSheetState,
@@ -498,6 +518,13 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
     val interactive = isFront && !frame.locked
     val currentInteractive by rememberUpdatedState(interactive)
     val currentMetrics by rememberUpdatedState(metrics)
+
+    // a tv remote: the sheet in front holds it, or its presses land on the page behind and the sheet seems to pop in and out
+    val remote = LocalInputModeManager.current.inputMode == InputMode.Keyboard
+    val currentRemote by rememberUpdatedState(remote)
+    val currentIsFront by rememberUpdatedState(isFront)
+    val sheetFocus = remember(frame) { FocusRequester() }
+    var holdsFocus by remember(frame) { mutableStateOf(false) }
 
     fun travelPx(): Float = currentMetrics.travel(frame.heightPx).coerceAtLeast(1f)
 
@@ -523,6 +550,8 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
         // laying out the content is the expensive frame, and it shouldn't be the animation's first.
         snapshotFlow { frame.heightPx }.first { it > 0f }
         withFrameNanos { }
+        // the remote goes to the sheet's first button, unless the content already picked one
+        if (currentRemote && !frame.closing && !holdsFocus) runCatching { sheetFocus.requestFocus() }
         if (!frame.closing) motion.animateTo(0f)
     }
 
@@ -535,6 +564,10 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
     // Covered mid-drag: settle back open behind the new sheet instead of staying half-dragged.
     LaunchedEffect(isFront) {
         if (!isFront && !frame.closing && frame.offset > 0f && !motion.isRunning) motion.animateTo(0f)
+        // back in front after the sheet over it left: the remote returns to the button that opened that sheet
+        if (isFront && remote && !holdsFocus && frame.heightPx > 0f) {
+            runCatching { if (!sheetFocus.restoreFocusedChild()) sheetFocus.requestFocus() }
+        }
     }
 
     // A locked front sheet still swallows back, so back can't navigate the app away underneath it.
@@ -634,6 +667,15 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
             // through to the backdrop or the sheet behind and closed something.
             .pointerInput(Unit) {}
             .then(if (isFront) Modifier else Modifier.clearAndSetSemantics {})
+            .onFocusChanged { holdsFocus = it.hasFocus }
+            .focusRequester(sheetFocus)
+            .focusProperties {
+                onExit = {
+                    // in front, the remote stays inside; covered, it remembers which button it left from
+                    if (currentIsFront && currentRemote) cancelFocusChange() else sheetFocus.saveFocusedChild()
+                }
+            }
+            .focusGroup()
     ) {
         SheetBody(
             frame = frame,

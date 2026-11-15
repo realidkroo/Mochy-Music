@@ -7,6 +7,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mochyy.mochymusic.link.LinkRows
+import timber.log.Timber
 import java.io.File
 
 // turns the tv profile's library into the phone's: every table the phone sent replaces the tv's copy, in one go
@@ -32,6 +33,8 @@ internal object LibraryMirror {
                 live.execSQL("PRAGMA defer_foreign_keys = ON")
                 ordered.asReversed().forEach { live.execSQL("DELETE FROM `$it`") }
                 ordered.forEach { copyTable(phone, live, it) }
+                // a library restored from a backup can hold plays or playlist rows whose song is gone, and one of them failed the whole commit
+                dropDangling(live)
                 // the phone's own song files only open on the phone; a copy that came over to the tv takes their place
                 live.execSQL("UPDATE song SET localUri = NULL WHERE localUri IS NOT NULL")
                 copiedToTv.forEach { (id, path) ->
@@ -50,6 +53,16 @@ internal object LibraryMirror {
                 live.endTransaction()
             }
         }
+    }
+
+    // rows that point at a song, album or playlist that isn't there, as sqlite itself finds them, are left out
+    private fun dropDangling(live: SupportSQLiteDatabase) {
+        val dangling = live.query("PRAGMA foreign_key_check").use { cursor ->
+            buildSet { while (cursor.moveToNext()) if (!cursor.isNull(1)) add(cursor.getString(0) to cursor.getLong(1)) }
+        }
+        if (dangling.isEmpty()) return
+        Timber.tag("Link").i("left out ${dangling.size} rows from the phone that point at nothing")
+        dangling.forEach { (table, rowId) -> live.execSQL("DELETE FROM `$table` WHERE rowid = ?", arrayOf<Any?>(rowId)) }
     }
 
     private fun copyTable(phone: SQLiteDatabase, live: SupportSQLiteDatabase, table: String) {

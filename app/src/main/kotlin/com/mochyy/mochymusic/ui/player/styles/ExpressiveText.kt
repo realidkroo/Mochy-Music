@@ -850,7 +850,7 @@ fun ExpressiveLyrics(
 
         gap?.let { interlude ->
             androidx.compose.runtime.key(interlude.startMs) {
-                InterludeRow(interlude, position, color, baseSize)
+                InterludeRow(interlude, position, baseSize)
             }
         }
 
@@ -914,7 +914,7 @@ fun ExpressiveLyrics(
  * side of the voice that sings next and sized up to sit with the big type.
  */
 @Composable
-private fun InterludeRow(gap: Interlude, position: LivePosition, color: Color, baseSize: TextUnit) {
+private fun InterludeRow(gap: Interlude, position: LivePosition, baseSize: TextUnit) {
     val visible by remember(gap, position) {
         derivedStateOf {
             val t = position.positionMs()
@@ -932,7 +932,6 @@ private fun InterludeRow(gap: Interlude, position: LivePosition, color: Color, b
         startMs = gap.startMs,
         endMs = gap.endMs,
         positionProvider = provider,
-        accentColor = color,
         visible = visible,
         alignment = when (gap.side) {
             LineSide.LEFT -> com.mochyy.mochymusic.ui.player.LyricsAlignment.START

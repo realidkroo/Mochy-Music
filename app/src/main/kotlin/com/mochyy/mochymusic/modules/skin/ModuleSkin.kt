@@ -54,7 +54,7 @@ class ModuleSkin(
         player?.let { p ->
             background(p.background)
             p.layers.forEach { background(it.background) }
-            blocks(p.blocks)
+            blocks(p.header + p.blocks)
         }
         found
     }
@@ -98,10 +98,21 @@ data class SkinText(
     val lines: Int,
     val upper: Boolean,
     val align: SkinAlign?,
+    /** hug the words in a row instead of sharing its width, so a label and its value sit side by side */
+    val wrap: Boolean = false,
+    /** extra room between letters, in em */
+    val spacing: Float = 0f,
 )
 
+/** [wholeApp] puts the font on every screen; without it only the module's player uses it */
 @Immutable
-data class SkinFont(val regular: String, val bold: String?)
+data class SkinFont(val regular: String, val bold: String?, val wholeApp: Boolean = false)
+
+/** where mochy's chevron sits and how it's dressed: [side] start or end, or hidden when the module brings its own menu button */
+@Immutable
+data class SkinMenuButton(val side: MenuSide, val color: SkinColor?, val fill: SkinColor?)
+
+enum class MenuSide { Start, End, Hidden }
 
 // ---- the player -------------------------------------------------------------------------------
 
@@ -119,12 +130,17 @@ data class SkinPlayer(
     val customise: SkinCustomise? = null,
     /** the module's own items in the player's chevron menu, above mochy's other menu and edit player */
     val menu: List<SkinMenuItem> = emptyList(),
+    val menuButton: SkinMenuButton = DefaultMenuButton,
+    /** blocks in a row level with the chevron, at the very top, taking no room from the rest */
+    val header: List<SkinBlock> = emptyList(),
+    /** the blocks scroll when they're taller than the screen, and grow spaces stop growing */
+    val scroll: Boolean = false,
 ) {
     /** whether anything in it moves with the music or a loop, so the shared clock only runs when something reads it */
-    val moves: Boolean get() = layers.any { it.motion != null } || background is SkinBackground.Shader || blocks.any(SkinBlock::moves)
+    val moves: Boolean get() = layers.any { it.motion != null } || background is SkinBackground.Shader || blocks.any(SkinBlock::moves) || header.any(SkinBlock::moves)
 
-    // every block, styled wrappers and groups opened up, worked out once since the layout never changes
-    private val all: List<SkinBlock> by lazy { blocks.flatMap { it.walk() } }
+    // every block, the header's too, styled wrappers and groups opened up, worked out once since the layout never changes
+    val all: List<SkinBlock> by lazy { (header + blocks).flatMap { it.walk() } }
 
     /** the built-in conditions the layout reads, so the player only follows the ones it uses */
     val flags: Set<SkinFlag> by lazy {
@@ -141,7 +157,18 @@ data class SkinPlayer(
 
     /** a box asks for frosted glass, so the backdrop has to be captured for it */
     val frosted: Boolean by lazy { all.any { it is SkinBlock.Box && it.glass != null } }
+
+    /** some words name the stream or the phone ({codec}, {kbps}, {device}...), so mochy only gathers them for players that show them */
+    val audio: Boolean by lazy { all.any { it is SkinBlock.Label && SkinAudioField.containsMatchIn(it.value) } }
+
+    /** lyrics show somewhere, so the player fetches and parses them */
+    val lyrics: Boolean by lazy { SkinFlag.Lyrics in flags || all.any { it is SkinBlock.Lyrics } }
 }
+
+val DefaultMenuButton = SkinMenuButton(MenuSide.End, color = null, fill = null)
+
+/** the stream and phone placeholders a text block fills in; android's regex engine needs the closing brace escaped */
+val SkinAudioField = Regex("""\{(codec|khz|kbps|bits|size|quality|device|volume|cpu)\}""", RegexOption.IGNORE_CASE)
 
 @Immutable
 data class SkinCustomise(val title: String?, val keys: List<String>)
@@ -223,7 +250,16 @@ sealed interface SkinBlock {
     data class Picture(val image: String, val width: Dp?, val height: Dp, val corner: Dp, val fit: Boolean = false, val tint: SkinColor? = null) : SkinBlock
     data class Progress(val style: ProgressStyle, val color: SkinColor, val track: SkinColor, val times: Boolean, val seek: Boolean) : SkinBlock
     data class Controls(val size: Dp, val plain: Boolean, val color: SkinColor?, val icon: SkinColor?) : SkinBlock
-    data class Lyrics(val height: Dp, val size: TextUnit, val color: SkinColor) : SkinBlock
+    /** [flow] swaps the big sung-through lyrics for a few small lines rolling up, the current one in [active] after [prefix] */
+    data class Lyrics(
+        val height: Dp,
+        val size: TextUnit,
+        val color: SkinColor,
+        val flow: Boolean = false,
+        val active: SkinColor? = null,
+        val prefix: String = "",
+        val align: SkinAlign? = null,
+    ) : SkinBlock
     data class Space(val size: Dp, val grow: Boolean) : SkinBlock
     data class Row(val blocks: List<SkinBlock>, val gap: Dp) : SkinBlock
     data class Column(val blocks: List<SkinBlock>, val gap: Dp) : SkinBlock

@@ -50,7 +50,10 @@ internal object SkinParser {
         uniforms = shaderUniforms(o["uniforms"], MochyUniforms),
     )
 
-    private fun font(o: JsonObject): SkinFont? = o.string("regular")?.let { SkinFont(regular = it, bold = o.string("bold")) }
+    // "scope": "app" puts the font everywhere; left out, it stays on the module's player
+    private fun font(o: JsonObject): SkinFont? = o.string("regular")?.let {
+        SkinFont(regular = it, bold = o.string("bold"), wholeApp = o.string("scope")?.lowercase() == "app")
+    }
 
     // ---- pages --------------------------------------------------------------------------------
 

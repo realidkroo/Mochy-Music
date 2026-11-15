@@ -62,8 +62,8 @@ class CarLyricsSource(
         }
     }
 
-    // offline finds nothing because nothing was asked, so that isn't saved as "no lyrics" and the next try asks again
-    private suspend fun fetch(metadata: MediaMetadata): String? {
+    // offline finds nothing because nothing was asked, so that isn't saved as "no lyrics" and the next try asks again; the floating lyrics fetch through here too
+    suspend fun fetch(metadata: MediaMetadata): String? {
         val found = runCatching { lyricsHelper.getLyrics(metadata) }.getOrNull() ?: return null
         if (found.provider == LyricsHelper.NoConnectionProvider) return null
         database.query { upsert(LyricsEntity(id = metadata.id, lyrics = found.lyrics, provider = found.provider)) }

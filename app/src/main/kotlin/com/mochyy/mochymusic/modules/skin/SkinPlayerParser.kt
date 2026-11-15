@@ -40,7 +40,22 @@ internal object SkinPlayerParser {
             },
             customise = customise(o["customise"]),
             menu = (o["menu"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonObject)?.let(::menuItem) }.take(MaxMenu),
+            menuButton = menuButton(o["menuButton"]),
+            header = reader.blocks(o["header"], depth = 1).take(MaxHeader),
+            scroll = o.bool("scroll") ?: false,
         )
+    }
+
+    // "menuButton": "start", "hidden", false, or { "side": "start", "color": "cover", "fill": "#00000000" }
+    private fun menuButton(element: JsonElement?): SkinMenuButton {
+        val o = element as? JsonObject
+        val raw = (element as? JsonPrimitive)?.contentOrNull ?: o?.string("side")
+        val side = when (raw?.trim()?.lowercase()) {
+            "start", "left" -> MenuSide.Start
+            "hidden", "none", "false", "off" -> MenuSide.Hidden
+            else -> MenuSide.End
+        }
+        return SkinMenuButton(side, color = skinColor(o?.string("color")), fill = skinColor(o?.string("fill")))
     }
 
     // { "title": "Wallpapers", "icon": "images/w.png", "page": "walls" } or { "title": "Like", "action": "like" }
@@ -212,11 +227,19 @@ internal object SkinPlayerParser {
                 color = skinColor(o.string("color")),
                 icon = skinColor(o.string("icon")),
             )
-            "lyrics" -> SkinBlock.Lyrics(
-                height = (o.float("height") ?: 160f).coerceIn(60f, 600f).dp,
-                size = (o.float("size") ?: 28f).coerceIn(14f, 60f).sp,
-                color = skinColor(o.string("color")) ?: SkinColor.Ink,
-            )
+            "lyrics" -> {
+                // a flowing list is small words, the sung-through kind needs room for its big ones
+                val flow = o.string("style")?.lowercase() == "flow"
+                SkinBlock.Lyrics(
+                    height = (o.float("height") ?: if (flow) 72f else 160f).coerceIn(if (flow) 16f else 60f, 600f).dp,
+                    size = (o.float("size") ?: if (flow) 14f else 28f).coerceIn(if (flow) 8f else 14f, 60f).sp,
+                    color = skinColor(o.string("color")) ?: SkinColor.Ink,
+                    flow = flow,
+                    active = skinColor(o.string("active")),
+                    prefix = o.string("prefix")?.take(8).orEmpty(),
+                    align = skinAlign(o.string("align")),
+                )
+            }
             "space" -> SkinBlock.Space(size = (o.float("size") ?: 16f).coerceIn(0f, 300f).dp, grow = o.bool("grow") ?: false)
             "row" -> group(o, depth) { blocks, gap -> SkinBlock.Row(blocks, gap) }
             "column" -> group(o, depth) { blocks, gap -> SkinBlock.Column(blocks, gap) }
@@ -357,6 +380,8 @@ internal object SkinPlayerParser {
         lines = (o.float("lines")?.toInt() ?: 1).coerceIn(1, 4),
         upper = o.bool("upper") ?: false,
         align = skinAlign(o.string("align")),
+        wrap = o.bool("wrap") ?: false,
+        spacing = (o.float("spacing") ?: 0f).coerceIn(-0.1f, 1f),
     )
 
     private fun colors(element: JsonElement?): List<SkinColor>? =
@@ -439,6 +464,7 @@ internal object SkinPlayerParser {
     private const val MaxCustomise = 12
     private const val MaxStyles = 40
     private const val MaxMenu = 4
+    private const val MaxHeader = 8
     // what mochy hands every player shader itself
     val PlayerUniforms = setOf("size", "time", "progress", "level", "bass", "mid", "treble", "playing", "density", "played", "remaining", "cover", "accent")
 }

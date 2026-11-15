@@ -474,6 +474,30 @@ private fun PlayerSheet(
     var styleCovered by remember { mutableStateOf(false) }
     var styleQueueCovered by remember { mutableStateOf(false) }
     val styleCoveredNow = remember { { styleCovered || styleQueueCovered } }
+    // the rotate button on the styles' menus, each style remembering its own; never on a tv, which doesn't turn
+    val styleCanTurn = playerStyle.turnable && !onTv
+    val (styleTurnedSaved, setStyleTurned) = rememberPreference(
+        com.mochyy.mochymusic.constants.playerStyleRotatedKey(playerStyle),
+        defaultValue = playerStyle.startsSideways,
+    )
+    val styleTurned = styleCanTurn && styleTurnedSaved
+    val styleTurnedNow by androidx.compose.runtime.rememberUpdatedState(styleTurned)
+    val setStyleTurnedNow by androidx.compose.runtime.rememberUpdatedState(setStyleTurned)
+    val styleTurn = remember {
+        com.mochyy.mochymusic.ui.player.styles.StyleTurn(isTurned = { styleTurnedNow }, toggle = { setStyleTurnedNow(!styleTurnedNow) })
+    }
+    // the window turns once the player is all the way open and stays turned until it's back down to the mini player, like the full video mode
+    var playerFullyOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(state) {
+        snapshotFlow { state.isExpanded to (state.isCollapsed || state.isDismissed) }.collect { (open, closed) ->
+            if (open) playerFullyOpen = true else if (closed) playerFullyOpen = false
+        }
+    }
+    com.mochyy.mochymusic.ui.utils.HoldOrientation(
+        orientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
+        active = styleTurned && playerFullyOpen,
+    )
+
     val styleActions = remember(openStudio) {
         com.mochyy.mochymusic.ui.player.styles.StyleActions(
             onOtherMenu = {
@@ -499,6 +523,7 @@ private fun PlayerSheet(
             },
             onClose = { state.collapseSoft() },
             onQueue = { styleQueueOpen = true },
+            turn = if (onTv) null else styleTurn,
         )
     }
 
@@ -853,6 +878,7 @@ private fun PlayerSheet(
             com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.SEE_VIDEO -> seeVideo
             com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.REPEAT -> transportState.repeatMode != Player.REPEAT_MODE_OFF
             com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.SHUFFLE -> transportState.shuffleModeEnabled
+            com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.ROTATE -> styleTurned
             else -> menuExtras.isActive(action)
         }
         val onMenuAction: (com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction) -> Unit = { action ->
@@ -875,6 +901,7 @@ private fun PlayerSheet(
                 com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.EQUALIZER -> openEqualizer()
                 com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.OUTPUT -> showDeviceOutput = true
                 com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.FULL_VIDEO -> enterVideoMode()
+                com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.ROTATE -> styleTurn.toggle()
                 else -> menuExtras.run(action)
             }
         }
@@ -1709,7 +1736,9 @@ private fun PlayerSheet(
                 }
                 // with a youtube video on the cover, the full video mode goes on top unless it's already one of the four
                 val fullVideo = com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.FULL_VIDEO
-                if (videoShowing && fullVideo !in set) listOf(fullVideo) + set else set
+                val withVideo = if (videoShowing && fullVideo !in set) listOf(fullVideo) + set else set
+                // the turntable's rotate button sits last, the way the other styles keep theirs at the end
+                if (isTurntable && styleCanTurn) withVideo + com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.ROTATE else withVideo
             },
             isActive = ::menuActionActive,
             onAction = onMenuAction,
@@ -1721,11 +1750,10 @@ private fun PlayerSheet(
             controlsDrawShift = controlsDrawShift,
         )
 
-        // Pulling down at the top of the queue list stretches the list instead of closing the
-        // player. (Lyrics keep the pull-to-close.)
+        // pulling past the top of the queue or lyrics only stretches the list, scrolling back to the song's start kept closing the player
         // the full video mode's pane is a side panel turned sideways: past its top it only stretches, the player stays open
-        androidx.compose.runtime.DisposableEffect(state, showQueue, playerStyle) {
-            state.collapseOnNestedOverscroll = !showQueue && playerStyle != PlayerStyle.VIDEO
+        androidx.compose.runtime.DisposableEffect(state, showQueue, showLyrics, playerStyle) {
+            state.collapseOnNestedOverscroll = !showQueue && !showLyrics && playerStyle != PlayerStyle.VIDEO
             onDispose { state.collapseOnNestedOverscroll = true }
         }
 

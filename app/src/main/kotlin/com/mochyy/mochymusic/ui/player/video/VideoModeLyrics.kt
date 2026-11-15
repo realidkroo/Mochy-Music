@@ -77,6 +77,7 @@ import com.mochyy.mochymusic.lyrics.LyricsUtils
 import com.mochyy.mochymusic.ui.player.LyricRow
 import com.mochyy.mochymusic.ui.player.LyricsAlignment
 import com.mochyy.mochymusic.ui.player.LyricsGlowLine
+import com.mochyy.mochymusic.ui.player.rememberShownLyric
 import com.mochyy.mochymusic.ui.player.LyricsInterludeDots
 import com.mochyy.mochymusic.ui.player.LyricsLineState
 import com.mochyy.mochymusic.ui.player.LyricsLoadingDots
@@ -211,22 +212,20 @@ internal fun VideoLyricRow(
     modifier: Modifier = Modifier,
     suppressEffects: Boolean = false,
 ) {
-    val romanized by entry.romanizedTextFlow.collectAsState()
-    val ruby by entry.rubyFlow.collectAsState()
-    val translated by entry.translatedTextFlow.collectAsState()
+    val shown = rememberShownLyric(entry)
     LyricsGlowLine(
-        entry = entry,
+        entry = shown.entry,
         state = state,
         blurStage = blurStage,
         positionProvider = positionProvider,
         accentColor = Color.White,
         onClick = onClick,
         modifier = modifier,
-        subLine = romanized,
-        ruby = ruby,
+        subLine = shown.subLine,
+        ruby = shown.ruby,
         rubyPlacement = RubyPlacement.BELOW,
-        translation = translated,
-        translationLoading = look.translating && translated.isNullOrBlank(),
+        translation = shown.translation,
+        translationLoading = look.translating && shown.translation == null,
         translationAbove = true,
         alignment = alignment,
         waveEnabled = look.motion.shaded && !suppressEffects,
@@ -430,7 +429,8 @@ private fun BoxScope.RegularSlot(
                 startMs = startMs,
                 endMs = endMs,
                 positionProvider = positionProvider,
-                accentColor = Color.White,
+                bloom = look.motion.shaded,
+                highBloom = look.highBloom,
                 alignment = alignment,
                 modifier = Modifier.regularPlace(alignment, frame),
             )
@@ -672,7 +672,8 @@ internal fun FollowingLyrics(
                             startMs = row.startMs,
                             endMs = row.endMs,
                             positionProvider = positionProvider,
-                            accentColor = Color.White,
+                            bloom = look.motion.shaded && !userScrolling,
+                            highBloom = look.highBloom,
                             visible = activeInterlude == row.afterIndex,
                             collapseEasing = recenterEasingFor(look.motion),
                             alignment = lines.getOrNull(row.afterIndex + 1)?.let { alignmentFor(it, useAgents) }

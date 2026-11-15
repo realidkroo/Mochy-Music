@@ -5,6 +5,7 @@ package com.mochyy.mochymusic.car.screens
 import androidx.car.app.model.Action
 import androidx.car.app.model.CarIcon
 import androidx.car.app.model.GridItem
+import androidx.car.app.model.GridSection
 import androidx.car.app.model.Row
 import androidx.media3.common.util.UnstableApi
 import com.mochyy.mochymusic.car.CarApp
@@ -48,6 +49,9 @@ internal fun collectionTile(title: String, subtitle: String?, cover: CarIcon, on
         .setImage(cover, GridItem.IMAGE_TYPE_LARGE)
         .setOnClickListener(onClick)
         .build()
+
+// every cover grid in big tiles, the car's default small ones left covers the size of a thumbnail
+internal fun coverGrid(): GridSection.Builder = GridSection.Builder().setItemSize(GridSection.ITEM_SIZE_LARGE)
 
 // the round button every browse screen keeps, so the player is always one tap away
 @UnstableApi

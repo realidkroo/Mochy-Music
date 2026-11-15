@@ -77,7 +77,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrainHeight
@@ -577,6 +579,8 @@ fun LyricsScreen(
         Box(
             modifier = Modifier
                 .weight(1f)
+                // without it the box shrinks to the no-lyrics text and parks it on the left edge
+                .fillMaxWidth()
                 // Ends at the top of the seek bar (contentBottomInset). It used to reach 28dp past
                 // its bottom, so lines scrolled behind the bar and the timestamps.
                 // Read in layout, so the immersive toggle doesn't recompose the whole page.
@@ -598,10 +602,13 @@ fun LyricsScreen(
                     LyricsLoadingDots(modifier = Modifier.align(Alignment.Center))
                 } else {
                     Text(
-                        text = "No lyrics found",
+                        text = stringResource(R.string.lyrics_not_found),
                         style = MaterialTheme.typography.bodyLarge,
                         color = Color.White.copy(alpha = 0.5f),
-                        modifier = Modifier.align(Alignment.Center)
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = LyricsHeaderArtX)
                     )
                 }
             } else {
@@ -680,7 +687,8 @@ fun LyricsScreen(
                                     // A provider, not the position itself: passing the value would
                                     // recompose this row on every playback tick.
                                     positionProvider = positionProvider,
-                                    accentColor = accent,
+                                    bloom = lyricsWaveAnimation,
+                                    highBloom = lyricsHighBloom,
                                     visible = activeInterlude == row.afterIndex,
                                     collapseEasing = recenterEasingFor(motionStyle),
                                     // The gap belongs to whoever sings next, so it waits on that
@@ -704,9 +712,7 @@ fun LyricsScreen(
                                 val state = look.state
                                 val blurStage = if (suppressEffects || !lineBlurAllowed) 0 else look.blurStage
 
-                                val romanized by entry.romanizedTextFlow.collectAsState()
-                                val ruby by entry.rubyFlow.collectAsState()
-                                val translated by entry.translatedTextFlow.collectAsState()
+                                val shown = rememberShownLyric(entry)
                                 val rowIndex = rowOfLine[index]
                                 val lineAlignment = alignmentFor(entry, useAgentAlignment, mirrored)
                                 // any alignment grows from the card: a centred or right-aligned line measures where its words start
@@ -758,14 +764,14 @@ fun LyricsScreen(
                                             shareSession?.let { alpha *= it.lyricsLineAlpha(index) }
                                         }
                                         .onPlaced { lineCoords[index] = it },
-                                    entry = entry,
+                                    entry = shown.entry,
                                     state = state,
                                     blurStage = blurStage,
                                     suppressEffects = suppressEffects,
                                     positionProvider = positionProvider,
                                     accentColor = accent,
-                                    subLine = romanized,
-                                    ruby = ruby,
+                                    subLine = shown.subLine,
+                                    ruby = shown.ruby,
                                     // Readings sit under the line normally. With a translation on
                                     // screen they move above it, so the line keeps one thing on
                                     // each side instead of two stacked underneath.
@@ -773,13 +779,13 @@ fun LyricsScreen(
                                     // Keyed on "translation requested", not "translation arrived",
                                     // so the layout settles once when you press the button rather
                                     // than shifting a second time when the text lands.
-                                    rubyPlacement = if (isTranslating || !translated.isNullOrBlank()) {
+                                    rubyPlacement = if (isTranslating || shown.translation != null) {
                                         RubyPlacement.ABOVE
                                     } else {
                                         RubyPlacement.BELOW
                                     },
-                                    translationLoading = isTranslating && translated.isNullOrBlank(),
-                                    translation = translated,
+                                    translationLoading = isTranslating && shown.translation == null,
+                                    translation = shown.translation,
                                     alignment = lineAlignment,
                                     waveEnabled = lyricsWaveAnimation && !suppressEffects,
                                     motionStyle = motionStyle,

@@ -109,7 +109,7 @@ class CarLyricsScreen(private val app: CarApp) : Screen(app.carContext) {
             .build()
     }
 
-    // lyrics as the player's title and cover while driving, on unless turned off here
+    // the sung line under the player's title while driving, on unless turned off here
     private fun onPlayerToggle(): Action =
         Action.Builder()
             .setIcon(app.images.icon(R.drawable.lyrics))

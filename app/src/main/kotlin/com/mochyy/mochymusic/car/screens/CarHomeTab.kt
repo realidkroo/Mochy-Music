@@ -3,7 +3,6 @@
 package com.mochyy.mochymusic.car.screens
 
 import androidx.car.app.model.CarIcon
-import androidx.car.app.model.GridSection
 import androidx.car.app.model.RowSection
 import androidx.car.app.model.SectionedItemTemplate
 import androidx.car.app.model.Template
@@ -40,13 +39,13 @@ internal class CarHomeTab(app: CarApp) : CarDataTab<CarHomeTab.Data>(app, "home"
         val template = SectionedItemTemplate.Builder()
         if (data.picks.isNotEmpty()) {
             val tiles = data.picks.mapIndexed { index, song -> songTile(song, data.pickCovers[index]) { app.play(app.catalog.radio(song)) } }
-            template.addSection(GridSection.Builder().setTitle(app.string(R.string.car_quick_picks)).setItems(tiles).build())
+            template.addSection(coverGrid().setTitle(app.string(R.string.car_quick_picks)).setItems(tiles).build())
         }
         if (data.shelves.isNotEmpty()) {
             val tiles = data.shelves.mapIndexed { index, shelf ->
                 collectionTile(shelf.title, null, data.shelfCovers[index]) { app.push(CarShelfScreen(app, shelf)) }
             }
-            template.addSection(GridSection.Builder().setTitle(app.string(R.string.car_categories)).setItems(tiles).build())
+            template.addSection(coverGrid().setTitle(app.string(R.string.car_categories)).setItems(tiles).build())
         }
         if (data.picks.isEmpty() && data.shelves.isEmpty()) {
             template.addSection(RowSection.Builder().setNoItemsMessage(app.string(R.string.car_home_empty)).build())

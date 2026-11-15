@@ -91,6 +91,8 @@ private fun ColumnScope.DeviceIntegrationContent(link: DevicesLink) {
     val notify by link.host.notifyShown.collectAsState()
     val menuShown by link.host.menuShown.collectAsState()
     var stays by remember { mutableStateOf(link.host.staysReachable) }
+    // pairing and finding devices both need the wi-fi, which android 17 asks about first
+    com.mochyy.mochymusic.link.AskForLocalNetwork(onGranted = { link.host.advertiseAgain() })
     // a device drops to "not around" on its own, so the list looks at the clock now and then
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {

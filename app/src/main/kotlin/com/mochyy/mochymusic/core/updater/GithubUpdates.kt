@@ -302,13 +302,15 @@ fun canInstallPackages(context: Context): Boolean =
         context.packageManager.canRequestPackageInstalls()
 
 fun requestInstallPermission(context: Context) {
-    runCatching {
-        context.startActivity(
-            Intent(
-                android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                android.net.Uri.parse("package:" + context.packageName),
-            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        )
+    // many tv boxes have no page for one app, so it falls back to the whole list, then security, then settings
+    val pages = listOf(
+        Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, android.net.Uri.parse("package:" + context.packageName)),
+        Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES),
+        Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS),
+        Intent(android.provider.Settings.ACTION_SETTINGS),
+    )
+    pages.firstOrNull { page ->
+        runCatching { context.startActivity(page.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess
     }
 }
 

@@ -53,13 +53,19 @@ internal fun TvLinkToast(modifier: Modifier = Modifier) {
     LaunchedEffect(state.phase) {
         val before = previous
         previous = state.phase
-        news = when {
+        val talking = state.phase == PhoneSyncState.Phase.Syncing || state.phase == PhoneSyncState.Phase.Synced
+        when {
             // looking or away and now talking: the phone is back
-            (before == PhoneSyncState.Phase.Looking || before == PhoneSyncState.Phase.Away) &&
-                (state.phase == PhoneSyncState.Phase.Syncing || state.phase == PhoneSyncState.Phase.Synced) -> TvLinkNews.Connected
-            before == PhoneSyncState.Phase.Syncing && state.phase == PhoneSyncState.Phase.Synced -> TvLinkNews.Synced
-            else -> return@LaunchedEffect
+            (before == PhoneSyncState.Phase.Looking || before == PhoneSyncState.Phase.Away) && talking -> news = TvLinkNews.Connected
+            before == PhoneSyncState.Phase.Syncing && state.phase == PhoneSyncState.Phase.Synced && !state.quiet -> news = TvLinkNews.Synced
+            // a failed sync or a phone that walked off takes the card down, "syncing your library now" would be untrue
+            !talking -> news = null
         }
+    }
+
+    // its own timer, so a phase change while the card is up can't cancel the hiding and leave it on screen for good
+    LaunchedEffect(news) {
+        if (news == null) return@LaunchedEffect
         delay(ShownMs)
         news = null
     }

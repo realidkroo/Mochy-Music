@@ -50,7 +50,7 @@ class CarCollectionsScreen(
         val empty = app.string(if (data.failed) R.string.car_couldnt_load else R.string.car_list_empty)
         val open = { list: CarCollection -> app.push(CarSongsScreen(app, list.title, list.songs)) }
         val section = if (grid && data.lists.isNotEmpty()) {
-            GridSection.Builder()
+            coverGrid()
                 .setItems(data.lists.mapIndexed { index, list -> collectionTile(list.title, list.subtitle, data.covers[index]) { open(list) } })
                 .apply { if (data.lists.all { it.round }) setItemImageShape(GridSection.ITEM_IMAGE_SHAPE_CIRCLE) }
                 .setNoItemsMessage(empty)

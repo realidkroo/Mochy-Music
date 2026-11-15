@@ -3,6 +3,7 @@
 package com.mochyy.mochymusic.lyrics
 
 import com.mochyy.mochymusic.constants.PreferredLyricsProvider
+import com.music.directlyrics.LrcRed
 
 object LyricsProviderRegistry {
     private val providerMap = mapOf(
@@ -15,6 +16,7 @@ object LyricsProviderRegistry {
         "NetEase"         to NetEaseLyricsProvider,
         "QQMusic"         to QQMusicLyricsProvider,
         "Deezer"          to DeezerLyricsProvider,
+        "LrcRed"          to LrcRedLyricsProvider,
         "YouTubeSubtitle" to YouTubeSubtitleLyricsProvider,
         "YouTubeMusic"    to YouTubeLyricsProvider,
         "YouTubeCaptions" to YouTubeCaptionsLyricsProvider,
@@ -51,6 +53,7 @@ object LyricsProviderRegistry {
         "BetterLyrics",
         "YouLyPlus",
         "Paxsenix",
+        "LrcRed",
         "SimpMusic",
         "LrcLib",
         "Deezer",
@@ -84,6 +87,7 @@ object LyricsProviderRegistry {
         "NetEase"         -> "NetEase"
         "QQMusic"         -> "QQ Music"
         "Deezer"          -> "Deezer"
+        "LrcRed"          -> "lrc.red"
         "YouTubeSubtitle" -> "YouTube Subtitle"
         "YouTubeMusic"    -> "YouTube Music"
         "YouTubeCaptions" -> "YouTube Auto Captions"
@@ -102,6 +106,12 @@ object LyricsProviderRegistry {
         "LrcLib"       -> LyricsProject("LRCLIB", "https://github.com/tranxuanthang/lrclib")
         "SimpMusic"    -> LyricsProject("SimpMusic", "https://github.com/maxrave-dev/SimpMusic")
         else           -> null
+    }
+
+    // lrc.red lets anyone use its lyrics as long as the app links back to it wherever they show
+    fun getWebsite(name: String): String? = when (name) {
+        "LrcRed" -> LrcRed.BaseUrl
+        else     -> null
     }
 }
 

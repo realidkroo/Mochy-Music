@@ -637,9 +637,8 @@ private fun rememberRubyOverlay(
 
             val line = layout.getLineForOffset(start)
             val left = layout.getHorizontalPosition(start, true)
-            // A token can straddle a wrap. Clamp it to the line its first character is on rather
-            // than measuring to a coordinate that belongs to the line below.
-            val right = if (layout.getLineForOffset(end - 1) != line) {
+            // a word that reaches the wrap ends at its line's edge, since the offset after it already sits at the start of the next line and the reading got skipped
+            val right = if (end >= layout.getLineEnd(line)) {
                 layout.getLineRight(line)
             } else {
                 layout.getHorizontalPosition(end, true)
@@ -731,7 +730,7 @@ private const val LegacyWaveZoom = 0.09f
 // (which the old pixel-shifting shader did: the faint line under a rising word).
 
 /** How far an unsung letter waits below its place. It rises into place as it's sung. */
-private val WordWaitDrop = 3.dp
+internal val WordWaitDrop = 3.dp
 
 /**
  * A held word (a long note) lifts this much more and swells by [HeldZoom], in step with its glow.
@@ -799,7 +798,7 @@ private const val MergeEpsilonPx = 0.1f
  */
 private const val NoLigatures = "liga 0, clig 0"
 
-private fun androidx.compose.ui.text.TextStyle.withLetterMotionFeatures(letterMotion: Boolean) =
+internal fun androidx.compose.ui.text.TextStyle.withLetterMotionFeatures(letterMotion: Boolean) =
     if (letterMotion) copy(fontFeatureSettings = NoLigatures) else this
 
 /**
@@ -1555,6 +1554,64 @@ private fun rememberBloomModifier(
     }
 }
 
+// where a sweep's head is, in the layer's own pixels, for the bloom around it; glow is how strongly it shines, 0 to 1
+internal class SweepHeadGeometry(
+    val headX: Float,
+    val lineTop: Float,
+    val lineBottom: Float,
+    val lineStart: Float,
+    val charWidth: Float,
+    val glow: Float,
+)
+
+// the same bloom centred on a point instead of trailing a head, fading out spanPx either side, for things that aren't letters like the gap dots
+internal fun glowAround(centreX: Float, spanPx: Float, top: Float, bottom: Float, glow: Float) = SweepHeadGeometry(
+    headX = centreX + spanPx * BloomLagChars / BloomSpanChars,
+    lineTop = top,
+    lineBottom = bottom,
+    lineStart = 0f,
+    charWidth = spanPx / BloomSpanChars,
+    glow = glow,
+)
+
+// the page's bloom around a sweep head on any text that can say where its head is (the share's cinematic words); android 13+, nothing at all before that
+@Suppress("NewApi")
+@Composable
+internal fun Modifier.sweepBloom(highBloom: Boolean, head: androidx.compose.ui.unit.Density.() -> SweepHeadGeometry?): Modifier {
+    val shader = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            sharedBloomShader ?: createAgslShader(BloomAgsl).also { sharedBloomShader = it }
+        } else {
+            null
+        }
+    } ?: return this
+    val cache = remember { WaveEffectCache() }
+    return graphicsLayer {
+        val at = head()
+        val bloom = if (at == null) 0f else BloomStrength * at.glow.coerceIn(0f, 1f)
+        if (at == null || bloom <= BloomCutoff) {
+            renderEffect = null
+            return@graphicsLayer
+        }
+        shader.setAgslUniform("layerSize", size.width, size.height)
+        shader.setAgslUniform("headX", at.headX)
+        shader.setAgslUniform("lineTop", at.lineTop)
+        shader.setAgslUniform("lineBottom", at.lineBottom)
+        shader.setAgslUniform("lineStart", at.lineStart)
+        shader.setAgslUniform("flowDir", 1f)
+        shader.setAgslUniform("bloom", bloom)
+        shader.setAgslUniform("bloomR", BloomRadiusPx)
+        shader.setAgslUniform("bloomLag", at.charWidth * BloomLagChars)
+        shader.setAgslUniform("bloomSpan", at.charWidth * BloomSpanChars)
+        shader.setAgslUniform("highQuality", if (highBloom) 1f else 0f)
+        shader.setAgslUniform("hasPrev", 0f)
+        shader.setAgslUniform("prevTop", 0f)
+        shader.setAgslUniform("prevBottom", 0f)
+        shader.setAgslUniform("prevEnd", 0f)
+        renderEffect = cache.effectFor(shader, at.headX, 1f, at.glow, 0, size.width, size.height)
+    }
+}
+
 /** Style 2: the original wave - a lift-and-zoom bell that follows the head across the letters. */
 @Suppress("NewApi")
 @Composable
@@ -1879,7 +1936,7 @@ private const val SyllableGlyphWeight = 3
 private const val GlowAttackFraction = 0.35f
 private const val GlowReleaseFraction = 0.3f
 
-private class TimedRange(
+internal class TimedRange(
     val start: Int,
     val end: Int,
     val startTime: Double,
@@ -1960,149 +2017,170 @@ private fun rememberKaraokeHead(
     /** Style 1: sweep through spaces smoothly and drive the per-word rise/swell springs. */
     wordMotion: Boolean = false,
 ): KaraokeHead {
-
-    val timed = remember(text, words) {
-        var searchFrom = 0
-        words.mapNotNull { word ->
-            val trimmed = word.text.trim()
-            val start = if (trimmed.isEmpty()) -1 else text.indexOf(trimmed, searchFrom)
-            if (start < 0) return@mapNotNull null
-            searchFrom = start + trimmed.length
-            TimedRange(start, searchFrom, word.startTime, word.endTime, sungLength(text, start, searchFrom))
-        }
-    }
-
-    val head = remember(text, words) {
-        val (starts, ends) = visualWords(text)
-        KaraokeHead(starts, ends, motionCells(text, starts, ends))
-    }
+    val timed = remember(text, words) { karaokeTimedRanges(text, words) }
+    val head = remember(text, words) { karaokeHeadFor(text) }
 
     LaunchedEffect(text, timed, positionProvider, wordMotion) {
-
         var lastFrameNanos = -1L
         while (true) {
             withFrameNanos { frameNanos ->
+                val dt = if (lastFrameNanos < 0L) 0.016f else ((frameNanos - lastFrameNanos) / 1_000_000_000f).coerceIn(0f, 0.064f)
                 // the provider is a playback clock that already moves on the frame's own time, so no guessing between polls
-                val positionSec = positionProvider() / 1000.0
-
-                var next = 0f
-                var nextGlow = 0f
-                var nextSwell = 0f
-                for (index in timed.indices) {
-                    val word = timed[index]
-                    if (positionSec < word.startTime) break
-
-                    if (positionSec >= word.endTime) {
-                        next = word.end.toFloat()
-
-                        val following = timed.getOrNull(index + 1) ?: continue
-                        val gap = following.startTime - word.endTime
-                        if (gap > 0.0 && positionSec < following.startTime) {
-                            val through = ((positionSec - word.endTime) / gap).coerceIn(0.0, 1.0)
-                            next = word.end +
-                                (following.start - word.end) * smoothstep(through.toFloat())
-                        }
-                        continue
-                    }
-
-                    val span = word.endTime - word.startTime
-                    if (span <= 0.0) break
-                    val within = ((positionSec - word.startTime) / span).coerceIn(0.0, 1.0)
-                    val length = (word.end - word.start).coerceAtLeast(1)
-
-                    // When the next word starts the instant this one ends, the space between them
-                    // has no time of its own, and the head used to jump it in one frame - the
-                    // abrupt cut at every word boundary. Style 1 gives the space a small share of
-                    // this word's time instead, so the sweep glides across it.
-                    val following = timed.getOrNull(index + 1)
-                    val tail = if (
-                        wordMotion && following != null &&
-                        following.startTime - word.endTime <= NoGapSec &&
-                        following.start > word.end
-                    ) {
-                        following.start - word.end
-                    } else {
-                        0
-                    }
-                    next = if (tail > 0) {
-                        val letters = length.toFloat()
-                        val letterShare = letters / (letters + tail * SpaceTimeWeight)
-                        val w = within.toFloat()
-                        if (w <= letterShare) {
-                            word.start + letters * (w / letterShare)
-                        } else {
-                            word.end + tail * ((w - letterShare) / (1f - letterShare))
-                        }
-                    } else {
-                        word.start + (length * within).toFloat()
-                    }
-
-                    val secPerChar = (span / word.sungLength).toFloat()
-                    val hold = smoothstep(
-                        (secPerChar - FastSecPerChar) / (SlowSecPerChar - FastSecPerChar)
-                    )
-                    val w = within.toFloat()
-                    nextGlow = hold *
-                        smoothstep(w / GlowAttackFraction) *
-                        smoothstep((1f - w) / GlowReleaseFraction)
-                    // The swell has its own, squarer envelope: it fills the letters one by one as
-                    // they're sung, so it has to still be there when the sweep reaches the last
-                    // letter. The glow's longer release had it gone by then.
-                    nextSwell = hold *
-                        smoothstep(w / SwellAttackFraction) *
-                        smoothstep((1f - w) / SwellReleaseFraction)
-                    break
-                }
-
-                if (next != head.offset.floatValue) head.offset.floatValue = next
-
-                val glowNow = head.glow.floatValue
-                val glowNext =
-                    if (nextGlow >= glowNow) nextGlow else glowNow + (nextGlow - glowNow) * 0.12f
-                if (glowNext != glowNow) head.glow.floatValue = glowNext
-
-                if (wordMotion && head.cellCount > 0) {
-                    val dt = if (lastFrameNanos < 0L) 0.016f else ((frameNanos - lastFrameNanos) / 1_000_000_000f).coerceIn(0f, 0.064f)
-                    val cells = head.cells
-                    var changed = false
-                    for (c in 0 until head.cellCount) {
-                        val w = cells.word[c]
-                        val wordStart = head.wordStarts[w]
-                        val wordEnd = head.wordEnds[w]
-                        val letterStart = cells.starts[c]
-
-                        // The word lifts as a whole as the sweep goes through it...
-                        val through = (next - wordStart) / (wordEnd - wordStart).coerceAtLeast(1)
-                        val wordRise = smoothstep(through / RiseCompleteAt)
-                        // ...and each letter lifts further as the sweep reaches it. Once the word
-                        // is over every letter is up, so the last word of a line (where the sweep
-                        // stops) doesn't leave its final letters hanging part-way.
-                        val letterRise = if (next >= wordEnd) {
-                            1f
-                        } else {
-                            smoothstep((next - letterStart + LetterRiseLeadChars) / LetterRiseSpanChars)
-                        }
-                        val riseTarget = wordRise + (letterRise - wordRise) * LetterRiseShare
-
-                        // A held note swells the word the sweep is in, letter by letter as each
-                        // is reached, then the whole word settles together once the sweep leaves.
-                        val swellTarget = if (next >= wordStart && next <= wordEnd) {
-                            nextSwell *
-                                smoothstep((next - letterStart + LetterSwellLeadChars) / LetterSwellSpanChars)
-                        } else {
-                            0f
-                        }
-                        changed = dampedStep(head.rise, head.riseVelocity, c, riseTarget, RiseFollowSec, dt) or changed
-                        changed = dampedStep(head.swell, head.swellVelocity, c, swellTarget, SwellFollowSec, dt) or changed
-                    }
-                    if (changed) head.motionTick.intValue++
-                }
+                head.advance(timed, positionProvider() / 1000.0, dt, wordMotion)
                 lastFrameNanos = frameNanos
             }
         }
     }
 
     return head
+}
+
+// each timed word found in the line's own text, so the sweep knows which letters it covers
+internal fun karaokeTimedRanges(
+    text: String,
+    words: List<com.mochyy.mochymusic.lyrics.WordTimestamp>,
+): List<TimedRange> {
+    var searchFrom = 0
+    return words.mapNotNull { word ->
+        val trimmed = word.text.trim()
+        val start = if (trimmed.isEmpty()) -1 else text.indexOf(trimmed, searchFrom)
+        if (start < 0) return@mapNotNull null
+        searchFrom = start + trimmed.length
+        TimedRange(start, searchFrom, word.startTime, word.endTime, sungLength(text, start, searchFrom))
+    }
+}
+
+// a fresh sweep for one line, with the words and letters it moves as
+internal fun karaokeHeadFor(text: String): KaraokeHead {
+    val (starts, ends) = visualWords(text)
+    return KaraokeHead(starts, ends, motionCells(text, starts, ends))
+}
+
+// moves the sweep and every letter's rise and swell on to positionSec, true while the sweep or a letter still moved
+internal fun KaraokeHead.advance(
+    timed: List<TimedRange>,
+    positionSec: Double,
+    dt: Float,
+    wordMotion: Boolean,
+): Boolean {
+    var next = 0f
+    var nextGlow = 0f
+    var nextSwell = 0f
+    for (index in timed.indices) {
+        val word = timed[index]
+        if (positionSec < word.startTime) break
+
+        if (positionSec >= word.endTime) {
+            next = word.end.toFloat()
+
+            val following = timed.getOrNull(index + 1) ?: continue
+            val gap = following.startTime - word.endTime
+            if (gap > 0.0 && positionSec < following.startTime) {
+                val through = ((positionSec - word.endTime) / gap).coerceIn(0.0, 1.0)
+                next = word.end +
+                    (following.start - word.end) * smoothstep(through.toFloat())
+            }
+            continue
+        }
+
+        val span = word.endTime - word.startTime
+        if (span <= 0.0) break
+        val within = ((positionSec - word.startTime) / span).coerceIn(0.0, 1.0)
+        val length = (word.end - word.start).coerceAtLeast(1)
+
+        // When the next word starts the instant this one ends, the space between them
+        // has no time of its own, and the head used to jump it in one frame - the
+        // abrupt cut at every word boundary. Style 1 gives the space a small share of
+        // this word's time instead, so the sweep glides across it.
+        val following = timed.getOrNull(index + 1)
+        val tail = if (
+            wordMotion && following != null &&
+            following.startTime - word.endTime <= NoGapSec &&
+            following.start > word.end
+        ) {
+            following.start - word.end
+        } else {
+            0
+        }
+        next = if (tail > 0) {
+            val letters = length.toFloat()
+            val letterShare = letters / (letters + tail * SpaceTimeWeight)
+            val w = within.toFloat()
+            if (w <= letterShare) {
+                word.start + letters * (w / letterShare)
+            } else {
+                word.end + tail * ((w - letterShare) / (1f - letterShare))
+            }
+        } else {
+            word.start + (length * within).toFloat()
+        }
+
+        val secPerChar = (span / word.sungLength).toFloat()
+        val hold = smoothstep(
+            (secPerChar - FastSecPerChar) / (SlowSecPerChar - FastSecPerChar)
+        )
+        val w = within.toFloat()
+        nextGlow = hold *
+            smoothstep(w / GlowAttackFraction) *
+            smoothstep((1f - w) / GlowReleaseFraction)
+        // The swell has its own, squarer envelope: it fills the letters one by one as
+        // they're sung, so it has to still be there when the sweep reaches the last
+        // letter. The glow's longer release had it gone by then.
+        nextSwell = hold *
+            smoothstep(w / SwellAttackFraction) *
+            smoothstep((1f - w) / SwellReleaseFraction)
+        break
+    }
+
+    var moved = false
+    if (next != offset.floatValue) {
+        offset.floatValue = next
+        moved = true
+    }
+
+    val glowNow = glow.floatValue
+    val glowNext =
+        if (nextGlow >= glowNow) nextGlow else glowNow + (nextGlow - glowNow) * 0.12f
+    if (glowNext != glowNow) glow.floatValue = glowNext
+
+    if (wordMotion && cellCount > 0) {
+        var changed = false
+        for (c in 0 until cellCount) {
+            val w = cells.word[c]
+            val wordStart = wordStarts[w]
+            val wordEnd = wordEnds[w]
+            val letterStart = cells.starts[c]
+
+            // The word lifts as a whole as the sweep goes through it...
+            val through = (next - wordStart) / (wordEnd - wordStart).coerceAtLeast(1)
+            val wordRise = smoothstep(through / RiseCompleteAt)
+            // ...and each letter lifts further as the sweep reaches it. Once the word
+            // is over every letter is up, so the last word of a line (where the sweep
+            // stops) doesn't leave its final letters hanging part-way.
+            val letterRise = if (next >= wordEnd) {
+                1f
+            } else {
+                smoothstep((next - letterStart + LetterRiseLeadChars) / LetterRiseSpanChars)
+            }
+            val riseTarget = wordRise + (letterRise - wordRise) * LetterRiseShare
+
+            // A held note swells the word the sweep is in, letter by letter as each
+            // is reached, then the whole word settles together once the sweep leaves.
+            val swellTarget = if (next >= wordStart && next <= wordEnd) {
+                nextSwell *
+                    smoothstep((next - letterStart + LetterSwellLeadChars) / LetterSwellSpanChars)
+            } else {
+                0f
+            }
+            changed = dampedStep(rise, riseVelocity, c, riseTarget, RiseFollowSec, dt) or changed
+            changed = dampedStep(swell, swellVelocity, c, swellTarget, SwellFollowSec, dt) or changed
+        }
+        if (changed) {
+            motionTick.intValue++
+            moved = true
+        }
+    }
+    return moved
 }
 
 /**
@@ -2272,7 +2350,7 @@ private fun settledSwell(swell: Float): Float = if (swell < 0.002f) 0f else swel
  * draw, so the cost is a handful of draws around the sweep, not one per letter.
  */
 @Composable
-private fun rememberWordMotionModifier(
+internal fun rememberWordMotionModifier(
     layoutHolder: Array<TextLayoutResult?>,
     head: KaraokeHead,
     riseAmplitudeProvider: () -> Float,

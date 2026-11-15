@@ -108,11 +108,13 @@ private fun SongShareDialog(
                     started.pick = pick
                     started.lyrics = Fetched.Found(heldLyrics)
                 }
+                started.readingChoice = startingReadingChoice(context)
             }
         }
         val sheets = remember { PopupSheetState() }
 
         ReadLyricsLook(session)
+        ShareLyricReadings(session)
 
         LaunchedEffect(Unit) {
             if (pick != null) {

@@ -39,6 +39,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -81,10 +82,15 @@ internal fun LyricsSourceFooter(
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val project = remember(provider) { LyricsProviderRegistry.getProject(provider) }
+    val website = remember(provider) { LyricsProviderRegistry.getWebsite(provider) }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            LabeledText(label = "Source", value = sourceName(provider))
+            LabeledText(
+                label = "Source",
+                value = sourceName(provider),
+                onValueClick = website?.let { url -> { uriHandler.safeOpenUri(context, url) } },
+            )
             if (onSwitchSource != null) {
                 Spacer(modifier = Modifier.width(10.dp))
                 SwitchSourceButton(onClick = onSwitchSource)
@@ -108,14 +114,22 @@ private fun sourceName(provider: String): String = when (provider) {
 }
 
 @Composable
-private fun LabeledText(label: String, value: String?) {
+private fun LabeledText(label: String, value: String?, onValueClick: (() -> Unit)? = null) {
     Text(
         text = buildAnnotatedString {
             withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = LabelColor)) { append(label) }
-            if (value != null) append(" $value")
+            if (value == null) return@buildAnnotatedString
+            append(" ")
+            // an underline tells people the source name opens its website
+            if (onValueClick != null) {
+                withStyle(SpanStyle(textDecoration = TextDecoration.Underline)) { append(value) }
+            } else {
+                append(value)
+            }
         },
         style = FooterTextStyle,
         maxLines = 1,
+        modifier = if (onValueClick != null) Modifier.clickable(onClick = onValueClick) else Modifier,
     )
 }
 

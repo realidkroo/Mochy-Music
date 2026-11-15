@@ -37,6 +37,18 @@ internal class LinkPairingDoor(
         val name = LinkIdentity.name(context)
         val port = server.start(LinkWire.PairPort)
         newCode()
+        advertise(name, port)
+    }
+
+    // the advert made before android 17 let us on the wi-fi never went out, so it's made again with the same code
+    @Synchronized
+    fun advertiseAgain() {
+        if (!server.isRunning) return
+        advert?.close()
+        advertise(LinkIdentity.name(context), server.port)
+    }
+
+    private fun advertise(name: String, port: Int) {
         advert = LinkAdvert(
             context,
             LinkWire.PairServiceType,

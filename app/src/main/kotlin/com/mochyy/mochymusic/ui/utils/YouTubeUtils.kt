@@ -26,9 +26,8 @@ fun String.resize(
     }
 
     if (this.contains("yt3.ggpht.com")) {
-
-        val baseUrl = this.split("=")[0].split("-s")[0]
-        return "$baseUrl=s${width ?: height}"
+        // only the size after "=" is swapped: cutting at "-s" too broke every picture whose own id has "-s" in it
+        return "${this.substringBefore("=")}=s${width ?: height}"
     }
 
     GoogleUserContentRegex.matchEntire(this)?.let {

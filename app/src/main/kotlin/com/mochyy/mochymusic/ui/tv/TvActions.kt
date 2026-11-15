@@ -2,6 +2,7 @@
 
 package com.mochyy.mochymusic.ui.tv
 
+import android.net.Uri
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.media3.common.MediaItem
@@ -24,7 +25,6 @@ import com.mochyy.mochymusic.models.toMediaMetadata
 import com.mochyy.mochymusic.playback.PlayerConnection
 import com.mochyy.mochymusic.playback.queues.ListQueue
 import com.mochyy.mochymusic.playback.queues.YouTubeQueue
-import java.net.URLEncoder
 
 // a song as the tv's menu needs it, whether it came from the library or from youtube
 @Immutable
@@ -116,7 +116,7 @@ internal class TvActions(
 
     fun search(query: String) {
         if (query.isBlank()) return
-        navController.navigate("${TvRoutes.Search}?q=${URLEncoder.encode(query, "UTF-8")}") { launchSingleTop = true }
+        navController.navigate("${TvRoutes.Search}?q=${Uri.encode(query)}") { launchSingleTop = true }
     }
 }
 

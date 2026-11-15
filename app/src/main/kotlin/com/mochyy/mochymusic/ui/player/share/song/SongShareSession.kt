@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.luminance
 import com.mochyy.mochymusic.constants.LyricsMotionStyle
 import com.mochyy.mochymusic.lyrics.LyricsEntry
 import com.mochyy.mochymusic.models.MediaMetadata
+import com.mochyy.mochymusic.ui.player.LineReading
 import com.mochyy.mochymusic.ui.player.share.LyricsShareSession
 import com.mochyy.mochymusic.ui.player.share.ShareBackground
 import com.mochyy.mochymusic.ui.player.share.ShareSong
@@ -156,6 +157,17 @@ internal class SongShareSession(val song: MediaMetadata) {
     var cardBounds by mutableStateOf<Rect?>(null)
 
     var lyrics by mutableStateOf<Fetched<List<LyricsEntry>>>(Fetched.Looking)
+
+    // what the lines carry on the picture; set from the app's settings when the share opens, then only by the style page's switches
+    var readingChoice by mutableStateOf(ShareReadingChoice())
+
+    // a switch was touched, so the song's language turning up late never flips the romanisation back
+    var readingChoiceTouched = false
+
+    // each line's romanisation and translation, worked out for the share alone so the lyrics page keeps its own
+    var lineReadings by mutableStateOf<Map<LyricsEntry, LineReading>>(emptyMap())
+    var lineTranslations by mutableStateOf<Map<LyricsEntry, String>>(emptyMap())
+
     var lyricsOffsetMs by mutableLongStateOf(0L)
     var lyricsLook by mutableStateOf(ShareLyricsLook())
     var musicVideo by mutableStateOf<Fetched<ShareMusicVideo>>(Fetched.Looking)

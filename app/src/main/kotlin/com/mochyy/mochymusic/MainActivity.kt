@@ -200,6 +200,7 @@ import com.mochyy.mochymusic.ui.menu.YouTubeSongMenu
 import com.mochyy.mochymusic.ui.player.BottomSheetPlayer
 import com.mochyy.mochymusic.ui.screens.Screens
 import com.mochyy.mochymusic.ui.screens.search.requestSearchFocus
+import com.mochyy.mochymusic.ui.screens.search.searchRoute
 import com.mochyy.mochymusic.ui.screens.navigationBuilder
 import com.mochyy.mochymusic.ui.screens.DarkMode
 import com.mochyy.mochymusic.ui.screens.NavigationTab
@@ -235,8 +236,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.net.URLDecoder
-import java.net.URLEncoder
 import javax.inject.Inject
 
 private const val BackgroundZoomOnExpand = true
@@ -682,7 +681,7 @@ class MainActivity : ComponentActivity() {
                 val onSearch: (String) -> Unit = remember {
                     { searchQuery ->
                         if (searchQuery.isNotEmpty()) {
-                            navController.navigate("search/${URLEncoder.encode(searchQuery, "UTF-8")}")
+                            navController.navigate(searchRoute(searchQuery))
 
                             if (dataStore[PauseSearchHistoryKey] != true) {
                                 lifecycleScope.launch(Dispatchers.IO) {
@@ -799,18 +798,8 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(navBackStackEntry) {
                     if (inSearchScreen) {
-                        val searchQuery = withContext(Dispatchers.IO) {
-                            val rawQuery = navBackStackEntry?.arguments?.getString("query")
-                            if (!rawQuery.isNullOrEmpty()) {
-                                try {
-                                    URLDecoder.decode(rawQuery, "UTF-8")
-                                } catch (e: IllegalArgumentException) {
-                                    rawQuery
-                                }
-                            } else {
-                                ""
-                            }
-                        }
+                        // navigation already decoded it, see searchRoute
+                        val searchQuery = navBackStackEntry?.arguments?.getString("query").orEmpty()
                         onQueryChange(
                             TextFieldValue(
                                 searchQuery,
@@ -964,6 +953,9 @@ class MainActivity : ComponentActivity() {
                         ),
                     ) {
                     com.mochyy.mochymusic.ui.screens.devices.DeviceIntegrationOpener(requests = openDevicesRequests)
+                    // a phone paired before android 17 can't reach its devices until it's allowed on the wi-fi again
+                    val linkPaired = remember { !isTelevision() && com.mochyy.mochymusic.link.phone.PhoneLinkHost.hasPairedDevices(this@MainActivity) }
+                    com.mochyy.mochymusic.link.AskForLocalNetwork(wanted = linkPaired, onGranted = { phoneLink.get().advertiseAgain() })
                     com.mochyy.mochymusic.ui.screens.update.UpdateNotificationOpener(
                         requests = openUpdateRequests,
                         onOpenDevSpace = { personIndex ->
@@ -1613,7 +1605,7 @@ class MainActivity : ComponentActivity() {
 
             "search" -> {
                 uri.getQueryParameter("q")?.let {
-                    navController.navigate("search/${URLEncoder.encode(it, "UTF-8")}")
+                    navController.navigate(searchRoute(it))
                 }
             }
 

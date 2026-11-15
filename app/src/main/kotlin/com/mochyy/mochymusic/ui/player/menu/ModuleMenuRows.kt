@@ -36,6 +36,7 @@ import com.mochyy.mochymusic.modules.skin.ActiveSkin
 import com.mochyy.mochymusic.modules.skin.ModuleMenu
 import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.SheetIcon
+import com.mochyy.mochymusic.ui.screens.search.searchRoute
 import com.mochyy.mochymusic.ui.screens.settings.devspace.openDevUrl
 import com.mochyy.mochymusic.ui.screens.settings.modules.modulePageRoute
 import java.net.URLEncoder
@@ -69,7 +70,7 @@ internal fun openModuleTarget(context: Context, target: ActionTarget, song: Medi
     when (target) {
         is ActionTarget.Link -> context.openDevUrl(fill(target.template, song, encode = true))
         is ActionTarget.Page -> openRoute(modulePageRoute(moduleId, target.id))
-        is ActionTarget.Search -> openRoute("search/" + URLEncoder.encode(fill(target.template, song, encode = false), "UTF-8"))
+        is ActionTarget.Search -> openRoute(searchRoute(fill(target.template, song, encode = false)))
     }
 }
 
