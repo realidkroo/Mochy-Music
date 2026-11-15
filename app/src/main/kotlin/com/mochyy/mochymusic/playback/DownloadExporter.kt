@@ -205,6 +205,13 @@ class DownloadExporter @Inject constructor(
                 temp.delete()
             }
         }
+        // lossless sources often send flac inside an mp4, which goes out as a real .flac instead of an .m4a
+        if (audio.extension == "m4a") {
+            Mp4FlacRemux.flacHeader(audio.spans)?.let { header ->
+                documents.write(folder, "$base.flac") { out -> Mp4FlacRemux.write(audio.spans, header, out) }
+                return
+            }
+        }
         documents.write(folder, "$base.${audio.extension}") { out -> audio.copyTo(out) }
     }
 
