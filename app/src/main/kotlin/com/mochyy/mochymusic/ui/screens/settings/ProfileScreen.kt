@@ -53,6 +53,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -460,13 +461,15 @@ fun ProfileScreen(navController: NavController) {
             val viewportH = constraints.maxHeight.toFloat()
             val inset = with(density) { HomeContentInset.toPx() }
             // on its side the header is the left pane, the card as big as fits between the logo and the bottom bar
+            // ponytail: clamp profile card to 380dp on foldables/tablets in portrait; landscape uses paneW
+            val maxCardW = with(density) { 380.dp.toPx() }
             val paneW = if (landscape) constraints.maxWidth * LandscapePaneShare else constraints.maxWidth.toFloat()
             val landscapeTop = topPx + with(density) { LandscapeCardTop.toPx() }
             val landscapeBottom = viewportH - with(density) { (bottomBarInset + LandscapeHintRoom).toPx() }
             val cardW = if (landscape) {
                 minOf(paneW - 2 * inset, (landscapeBottom - landscapeTop).coerceAtLeast(1f) * IdCardAspect)
             } else {
-                constraints.maxWidth - 2 * inset
+                minOf(constraints.maxWidth - 2 * inset, maxCardW)
             }
             val cardH = cardW / IdCardAspect
             val collapsedH = if (landscape) viewportH else collapsedHeaderPx(topPx, cardH, density.density)
@@ -597,8 +600,10 @@ fun ProfileScreen(navController: NavController) {
                                             .width(with(density) { cardW.toDp() })
                                     } else {
                                         Modifier
-                                            .padding(horizontal = HomeContentInset)
+                                            .align(Alignment.TopCenter)
+                                            .widthIn(max = 380.dp + HomeContentInset * 2)
                                             .fillMaxWidth()
+                                            .padding(horizontal = HomeContentInset)
                                     }
                                 )
                                 .aspectRatio(IdCardAspect)

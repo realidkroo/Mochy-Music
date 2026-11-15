@@ -803,7 +803,8 @@ private fun HeroPager(
     val wipeCurve by animateFloatAsState(if (userSwipe) 1f else 0f, tween(260), label = "heroWipeCurve")
 
     // an upright tablet: cards side by side, the next one peeking in on the right; on its side each card fills the screen and wipes like the phone's
-    val peek = isWideLayout() && !isLandscapeWindow()
+    // ponytail: single hero item needs full width; add partial peek only when another card exists to peek
+    val peek = isWideLayout() && !isLandscapeWindow() && !isSingleItem
 
     // the hero animates nearly all the time (video, gacha drift, the switch); bounded, that only
     // ever repaints the hero instead of the whole screen and every glass surface sampling it
