@@ -2005,7 +2005,8 @@ private fun CoverCanvasLayer(
     var canvasArtwork by remember(trackInfo.mediaId) { mutableStateOf<CanvasArtwork?>(null) }
     val canvasEnabled = rememberPreference(CanvasThumbnailAnimationKey, defaultValue = true).value && !alternateStyle
     val canvasWifiOnly by rememberPreference(CanvasWifiOnlyKey, defaultValue = true)
-    LaunchedEffect(trackInfo.mediaId, trackInfo.title, trackInfo.artist, canvasEnabled, canvasWifiOnly) {
+    val spotifyToken by rememberPreference(com.mochyy.mochymusic.constants.SpotifyCanvasTokenKey, defaultValue = "")
+    LaunchedEffect(trackInfo.mediaId, trackInfo.title, trackInfo.artist, canvasEnabled, canvasWifiOnly, spotifyToken) {
         val mediaId = trackInfo.mediaId
         val titleStr = trackInfo.title
         val artistStr = trackInfo.artist
@@ -2030,6 +2031,9 @@ private fun CoverCanvasLayer(
             ?.takeIf { it.id == mediaId }?.duration?.takeIf { it > 0 }
 
         val res = withContext(Dispatchers.IO) {
+            com.mochyy.mochymusic.spotify.SpotifyCanvasProvider.getBySongArtist(context, normTitle, normArtist, durationSec, spotifyToken)
+                ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
+            ?:
             MonochromeApiCanvas.getBySongArtist(normTitle, normArtist, null, durationSec)
                 ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
             ?: AppleMusicCanvasProvider.getBySongArtist(normTitle, normArtist, null, "us", durationSec)

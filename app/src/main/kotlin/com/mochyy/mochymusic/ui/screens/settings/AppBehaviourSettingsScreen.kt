@@ -107,7 +107,7 @@ fun AppBehaviourSettingsScreen(navController: NavController) {
         Section(stringResource(R.string.general_app_settings), generalItems(navController).matching(query))
         Section(stringResource(R.string.settings_local_section), localItems().matching(query))
         Section(stringResource(R.string.settings_player_behaviour), playerBehaviourItems().matching(query))
-        Section(stringResource(R.string.settings_on_the_player), playerLookItems().matching(query))
+        Section(stringResource(R.string.settings_on_the_player), playerLookItems(navController).matching(query))
         Section(stringResource(R.string.settings_other), otherItems().matching(query))
         Section(stringResource(R.string.settings_related), relatedItems(navController).matching(query))
         Spacer(Modifier.height(140.dp))
@@ -471,13 +471,14 @@ private fun playerBehaviourItems(): List<SettingsItem> {
 }
 
 @Composable
-private fun playerLookItems(): List<SettingsItem> {
+private fun playerLookItems(navController: NavController): List<SettingsItem> {
     val (formatBadge, onFormatBadgeChange) = rememberPreference(ShowFormatBadgeKey, defaultValue = true)
     val (formatSampleRate, onFormatSampleRateChange) = rememberPreference(ShowFormatSampleRateKey, defaultValue = false)
     val (playVideoBackground, onPlayVideoBackgroundChange) = rememberPreference(PlayVideoBackgroundKey, defaultValue = false)
     val (lyricsSync, onLyricsSyncChange) = rememberPreference(YtVideoBackgroundLyricsSyncKey, defaultValue = true)
     val (canvasEnabled, onCanvasEnabledChange) = rememberPreference(CanvasThumbnailAnimationKey, defaultValue = true)
     val (canvasWifiOnly, onCanvasWifiOnlyChange) = rememberPreference(CanvasWifiOnlyKey, defaultValue = true)
+    val (spotifyToken) = rememberPreference(com.mochyy.mochymusic.constants.SpotifyCanvasTokenKey, defaultValue = "")
     val (highBloom, onHighBloomChange) = rememberPreference(LyricsHighBloomKey, defaultValue = true)
     val (lyricsStyle) = rememberEnumPreference(LyricsMotionStyleKey, defaultValue = LyricsMotionStyle.MOTION)
     val (romanizeAsMain, onRomanizeAsMainChange) = rememberPreference(com.mochyy.mochymusic.constants.LyricsRomanizeAsMainKey, defaultValue = false)
@@ -525,6 +526,25 @@ private fun playerLookItems(): List<SettingsItem> {
             icon = painterResource(R.drawable.sparks),
             checked = canvasEnabled,
             onCheckedChange = onCanvasEnabledChange,
+        ),
+        SettingsItem(
+            title = { Text("Spotify Canvas") },
+            highlightKey = "Spotify canvas",
+            searchText = "Spotify canvas token sp_dc cookie",
+            descriptionText = if (spotifyToken.isBlank()) "Not connected" else "Connected",
+            icon = painterResource(R.drawable.sparks),
+            iconShape = CircleShape,
+            isVisible = canvasEnabled,
+            isSubOption = true,
+            onClick = { navController.navigate(com.mochyy.mochymusic.ui.screens.settings.integrations.spotify.SpotifyRoute) },
+            trailingContent = {
+                Icon(
+                    painter = painterResource(R.drawable.navigate_next),
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.5f),
+                    modifier = Modifier.size(20.dp),
+                )
+            },
         ),
         switchItem(
             key = "Canvas on Wi-Fi only",
