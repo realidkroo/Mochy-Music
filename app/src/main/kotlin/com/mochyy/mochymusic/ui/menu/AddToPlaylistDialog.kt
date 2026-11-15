@@ -108,6 +108,25 @@ internal fun announceAddedToPlaylist(
     }
 }
 
+// a playlist that mirrors youtube keeps what's added here on top through its syncs, and youtube gets the songs too
+internal suspend fun addToPlaylistKeepingSync(
+    context: android.content.Context,
+    database: com.mochyy.mochymusic.db.MusicDatabase,
+    playlist: Playlist,
+    ids: List<String>,
+) {
+    if (ids.isEmpty()) return
+    val browseId = playlist.playlist.browseId
+    if (browseId != null) {
+        com.mochyy.mochymusic.importer.PlaylistAddedHere.add(context, playlist.id, ids)
+        database.addSongsToPlaylistTop(playlist, ids)
+    } else {
+        database.addSongToPlaylist(playlist, ids)
+    }
+    announceAddedToPlaylist(database, playlist, ids, context)
+    browseId?.let { ids.forEach { id -> YouTube.addToPlaylist(it, id) } }
+}
+
 @Composable
 fun AddToPlaylistDialog(
     isVisible: Boolean,
@@ -151,18 +170,7 @@ fun AddToPlaylistDialog(
             } else {
                 sheet[0]?.dismiss()
                 currentOnDismiss()
-                val browseId = playlist.playlist.browseId
-                if (browseId != null) {
-                    // a playlist that mirrors youtube keeps what's added here through its syncs, on top
-                    com.mochyy.mochymusic.importer.PlaylistAddedHere
-                        .add(context, playlist.id, ids)
-                    database.addSongsToPlaylistTop(playlist, ids)
-                } else {
-                    database.addSongToPlaylist(playlist, ids)
-                }
-                announceAddedToPlaylist(database, playlist, ids, context)
-
-                browseId?.let { ids.forEach { id -> YouTube.addToPlaylist(it, id) } }
+                addToPlaylistKeepingSync(context, database, playlist, ids)
             }
         }
     }
@@ -213,10 +221,8 @@ fun AddToPlaylistDialog(
                         sheet[0]?.dismiss()
                         currentOnDismiss()
                         val keep = songIds!!.filter { !duplicates.contains(it) }
-                        database.transaction {
-                            addSongToPlaylist(selectedPlaylist!!, keep)
-                        }
-                        announceAddedToPlaylist(database, selectedPlaylist!!, keep, context)
+                        val playlist = selectedPlaylist!!
+                        scope.launch(Dispatchers.IO) { addToPlaylistKeepingSync(context, database, playlist, keep) }
                     },
                 ) {
                     Text(stringResource(R.string.skip_duplicates))
@@ -227,10 +233,9 @@ fun AddToPlaylistDialog(
                         showDuplicate = false
                         sheet[0]?.dismiss()
                         currentOnDismiss()
-                        database.transaction {
-                            addSongToPlaylist(selectedPlaylist!!, songIds!!)
-                        }
-                        announceAddedToPlaylist(database, selectedPlaylist!!, songIds!!, context)
+                        val ids = songIds!!
+                        val playlist = selectedPlaylist!!
+                        scope.launch(Dispatchers.IO) { addToPlaylistKeepingSync(context, database, playlist, ids) }
                     },
                 ) {
                     Text(stringResource(R.string.add_anyway))
