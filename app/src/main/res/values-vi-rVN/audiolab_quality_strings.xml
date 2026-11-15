@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="aq_title_first">Chất lượng</string>
+    <string name="aq_title_second">âm thanh</string>
+    <string name="aq_nothing_on">Chưa bật nguồn nào</string>
+    <string name="aq_turn_provider_on">Hãy bật một nguồn phát</string>
+    <string name="aq_youtube_tier">YouTube · %1$s</string>
+    <string name="aq_section_streaming">Phát trực tuyến</string>
+    <string name="aq_section_download">Tải xuống</string>
+    <string name="aq_section_provider">Nguồn phát</string>
+    <string name="aq_youtube_status_on">Phát những bài các nguồn khác không có</string>
+    <string name="aq_youtube_status_off_none">Đang tắt và không có nguồn nào khác bật, nên sẽ không phát được bài</string>
+    <string name="aq_youtube_status_off">Đang tắt: bài các nguồn khác không có sẽ bị bỏ qua</string>
+    <string name="aq_quality_auto">Tự động</string>
+    <string name="aq_quality_high">Cao</string>
+    <string name="aq_quality_medium">Trung bình</string>
+    <string name="aq_quality_low">Thấp</string>
+    <string name="aq_quality_lossless">Lossless</string>
+    <string name="aq_desc_auto">Cao khi dùng Wi-Fi, trung bình khi dùng dữ liệu di động</string>
+    <string name="aq_desc_high">Tốt nhất nguồn phát có: nén ít hơn, tốn dữ liệu hơn</string>
+    <string name="aq_desc_medium">Khoảng 128 kbps, tiết kiệm dữ liệu</string>
+    <string name="aq_desc_low">Luồng nhỏ nhất, cho kết nối chậm</string>
+    <string name="aq_fmt_adaptive">Thích ứng</string>
+    <string name="aq_fmt_high">~160 kbps · Opus</string>
+    <string name="aq_fmt_medium">~128 kbps · AAC</string>
+    <string name="aq_fmt_low">~50–70 kbps · Opus</string>
+    <string name="aq_desc_monochrome_lossless">FLAC như Monochrome cung cấp: chất lượng CD trở lên</string>
+    <string name="aq_module_settings">Cài đặt %1$s</string>
+    <string name="aq_dl_desc_high">Tốt nhất YouTube có: ~160 kbps Opus</string>
+    <string name="aq_dl_desc_medium">Khoảng 128 kbps, tiết kiệm một nửa dung lượng</string>
+    <string name="aq_dl_desc_low">Tệp nhỏ nhất, ~50–70 kbps</string>
+    <string name="aq_status_sign_in">Đăng nhập để phát từ nguồn này</string>
+    <string name="aq_status_sign_in_again">Đăng nhập lại</string>
+    <string name="aq_status_on">Đang bật</string>
+    <string name="aq_status_off_tap">Đang tắt, chạm để bật</string>
+    <string name="aq_status_not_installed">Chưa cài đặt</string>
+</resources>

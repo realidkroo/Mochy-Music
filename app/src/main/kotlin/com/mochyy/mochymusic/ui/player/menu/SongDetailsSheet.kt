@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -105,7 +106,7 @@ fun SongDetailsSheet(
                         val artistId = artist.id!!
                         val avatar by rememberArtistAvatar(artistId)
                         DetailRow(
-                            title = "View ${artist.name}",
+                            title = stringResource(R.string.ps_details_view, artist.name),
                             onClick = { onOpenArtist(artistId) },
                         ) {
                             DetailImage(
@@ -117,7 +118,7 @@ fun SongDetailsSheet(
                     }
                     song.album?.let { album ->
                         DetailRow(
-                            title = "View ${album.title}",
+                            title = stringResource(R.string.ps_details_view, album.title),
                             onClick = { onOpenAlbum(album.id) },
                         ) {
                             DetailImage(
@@ -128,13 +129,13 @@ fun SongDetailsSheet(
                         }
                     }
                     DetailRow(
-                        title = "About song",
+                        title = stringResource(R.string.ps_details_about_song),
                         onClick = { showAbout = true },
                     ) {
                         DetailGlyph(R.drawable.info)
                     }
                     DetailRow(
-                        title = "Stream info",
+                        title = stringResource(R.string.ps_details_stream_info),
                         enabled = streaming,
                         onClick = { showStream = true },
                     ) {
@@ -317,7 +318,7 @@ private fun DoneButton(onClick: () -> Unit) {
                 onClick = onClick,
             ),
     ) {
-        Text(text = "done", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(text = stringResource(R.string.ps_offset_done), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
     }
 }
 

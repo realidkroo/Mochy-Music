@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Import & Sync Screen -->
+    <string name="import_sync_title">Nhập &amp; đồng bộ</string>
+    <string name="import_sync_progress_resyncing">Đang đồng bộ lại \"%1$s\"…</string>
+    <string name="import_sync_progress_importing_count">Đang nhập… %1$d / %2$d</string>
+    <string name="import_sync_progress_stopped">Đã dừng nhập</string>
+    <string name="import_sync_progress_resynced_single">Đã đồng bộ lại \"%1$s\": %2$s</string>
+    <string name="import_sync_progress_resynced_multiple">Đã đồng bộ lại %1$d danh sách phát: %2$s</string>
+    <string name="import_sync_progress_new_songs_single">1 bài hát mới</string>
+    <string name="import_sync_progress_new_songs_multiple">%1$d bài hát mới</string>
+    <string name="import_sync_progress_failed">Nhập thất bại</string>
+    <string name="import_sync_progress_finished_count">Đã nhập xong: %1$d / %2$d bài hát</string>
+    <string name="import_sync_see_progress">Xem tiến trình</string>
+    <string name="import_sync_see_results">Xem kết quả</string>
+    <string name="import_sync_import_title">Nhập</string>
+    <string name="import_sync_import_desc">Đăng nhập và chọn danh sách phát</string>
+    <string name="import_sync_import_detail">Đăng nhập vào Spotify, Apple Music, YouTube Music hoặc Tidal và chọn danh sách phát</string>
+    <string name="import_sync_sync_title">Đồng bộ</string>
+    <string name="import_sync_sync_desc_connected">Đã kết nối tài khoản YouTube: danh sách phát, lượt thích và lịch sử</string>
+    <string name="import_sync_sync_desc_disconnected">Kết nối tài khoản YouTube để đồng bộ danh sách phát, lượt thích và lịch sử</string>
+    <string name="import_sync_tunemymusic_title">CSV TuneMyMusic</string>
+    <string name="import_sync_tunemymusic_desc">Amazon Music, SoundCloud, Deezer và hơn thế nữa</string>
+    <string name="import_sync_tunemymusic_detail">Bất kỳ dịch vụ nào khác, chẳng hạn như thư viện Amazon Music, SoundCloud hoặc Deezer</string>
+    <string name="import_sync_backup_title">Sao lưu</string>
+    <string name="import_sync_export_csv_title">Xuất ra Mochy CSV</string>
+    <string name="import_sync_export_csv_desc">Bài hát đã thích và danh sách phát</string>
+    <string name="import_sync_export_csv_detail">Bài hát đã thích và danh sách phát, nhập lại từ Nhập → Bản sao lưu Mochy</string>
+    <string name="import_sync_exporting">Đang xuất…</string>
+    <string name="import_sync_btn_ok">OK</string>
+
+    <!-- YouTube Sync Screen -->
+    <string name="yt_sync_account_header">Tài khoản YouTube</string>
+    <string name="yt_sync_signed_in">Đã đăng nhập</string>
+    <string name="yt_sync_sign_out">Đăng xuất</string>
+    <string name="yt_sync_sign_in_title">Đăng nhập YouTube</string>
+    <string name="yt_sync_sign_in_desc">Cần thiết để đồng bộ. Đăng nhập được bảo mật trên điện thoại này</string>
+    <string name="yt_sync_keep_in_sync_header">Duy trì đồng bộ</string>
+    <string name="yt_sync_auto_sync_title">Đồng bộ thư viện khi mở ứng dụng</string>
+    <string name="yt_sync_auto_sync_desc">Lượt thích, thư viện, nghệ sĩ và danh sách phát đã lưu từ YouTube</string>
+    <string name="yt_sync_new_playlists_title">Gửi danh sách phát mới lên YouTube</string>
+    <string name="yt_sync_new_playlists_desc">Danh sách phát bạn tạo tại đây cũng sẽ được tạo trên YouTube</string>
+    <string name="yt_sync_report_plays_title">Gửi lượt nghe vào lịch sử YouTube</string>
+    <string name="yt_sync_report_plays_desc">Bài hát bạn nghe tại đây sẽ xuất hiện trong lịch sử YouTube của bạn</string>
+    <string name="yt_sync_pull_history_title">Sao chép lịch sử YouTube vào đây</string>
+    <string name="yt_sync_pull_history_desc">Lượt nghe từ các thiết bị khác sẽ được thêm vào lịch sử Mochy mỗi lần đồng bộ</string>
+    <string name="yt_sync_other_apps_header">Ứng dụng khác</string>
+    <string name="yt_sync_now_header">Thao tác ngay</string>
+    <string name="yt_sync_now_title">Đồng bộ ngay</string>
+    <string name="yt_sync_now_desc_history">Thư viện, danh sách phát và lịch sử</string>
+    <string name="yt_sync_now_desc_no_history">Thư viện và danh sách phát</string>
+    <string name="yt_sync_pull_history_now_title">Sao chép lịch sử YouTube ngay</string>
+    <string name="yt_sync_pull_history_now_desc">Chỉ thêm những lượt nghe mà Mochy chưa có</string>
+    <string name="yt_sync_upload_playlists_title">Đưa danh sách phát cục bộ lên YouTube</string>
+    <string name="yt_sync_upload_playlists_desc">Sao chép danh sách phát cục bộ lên YouTube</string>
+    <string name="yt_sync_upload_playlists_detail">Tạo bản sao YouTube cho mỗi danh sách phát chỉ tồn tại trên thiết bị này</string>
+    <string name="yt_sync_no_account_hint">Nhập từ liên kết danh sách phát YouTube không cần tài khoản. Sử dụng Nhập → YouTube Music.</string>
+    <string name="yt_sync_dialog_sign_out_title">Đăng xuất khỏi YouTube?</string>
+    <string name="yt_sync_dialog_sign_out_body">Mọi bài hát trong thư viện sẽ được giữ nguyên. Quá trình đồng bộ tạm dừng cho đến khi bạn đăng nhập lại.</string>
+    <string name="yt_sync_dialog_upload_title">Đưa danh sách phát cục bộ lên YouTube?</string>
+    <string name="yt_sync_dialog_upload_create">Tạo</string>
+    <string name="yt_sync_dialog_upload_body">Mỗi danh sách phát chỉ có trong Mochy sẽ có một bản sao riêng tư trên tài khoản YouTube của bạn. Sau đó, mọi thay đổi sẽ áp dụng cho cả hai.</string>
+    <string name="yt_sync_cancel">Hủy</string>
+
+    <!-- YouTube Login Screen -->
+    <string name="yt_login_title">Đăng nhập YouTube</string>
+    <string name="yt_login_subtitle">Trang đăng nhập chính thức của Google. Mochy không bao giờ nhìn thấy mật khẩu của bạn.</string>
+    <string name="yt_login_signed_in_as">Đã đăng nhập với tên %1$s</string>
+    <string name="yt_login_signed_in_general">Đã đăng nhập vào YouTube</string>
+    <string name="yt_login_failed">Không thể hoàn tất đăng nhập. Vui lòng thử lại.</string>
+    <string name="yt_login_back">Quay lại</string>
+
+    <!-- TuneMyMusic Import Screen -->
+    <string name="tunemymusic_info_intro">Hoạt động với bất kỳ dịch vụ nào mà TuneMyMusic hỗ trợ, bao gồm cả danh sách phát riêng tư và bài hát đã thích.</string>
+    <string name="tunemymusic_step_1">Mở TuneMyMusic và chọn dịch vụ nguồn bạn đang dùng (Spotify, Apple Music, Tidal, Amazon Music…).</string>
+    <string name="tunemymusic_step_2">Đăng nhập tại đó và chọn các danh sách phát cùng bài hát đã thích cần chuyển.</string>
+    <string name="tunemymusic_step_3">Tại phần đích đến, chọn \"Export to file\", sau đó chọn CSV.</string>
+    <string name="tunemymusic_step_4">Quay lại đây và chọn tệp .csv vừa tải về.</string>
+    <string name="tunemymusic_open_site">Mở TuneMyMusic</string>
+    <string name="tunemymusic_open_site_desc">tunemymusic.com trong trình duyệt của bạn</string>
+    <string name="tunemymusic_no_browser">Không tìm thấy trình duyệt</string>
+    <string name="tunemymusic_choose_file">Chọn tệp CSV</string>
+    <string name="tunemymusic_choose_file_desc">Hỗ trợ cả Exportify và các tệp CSV danh sách phát khác</string>
+
+    <!-- Import Providers Screen -->
+    <string name="import_providers_signin_header">Đăng nhập và chọn</string>
+    <string name="import_provider_spotify_desc">Bài hát đã thích và danh sách phát của bạn</string>
+    <string name="import_provider_apple_music_desc">Danh sách phát trong thư viện, Bài hát yêu thích và toàn bộ thư viện</string>
+    <string name="import_provider_ytm_desc">Nhạc đã thích và danh sách phát, khớp chính xác bài hát · hỗ trợ cả đồng bộ</string>
+    <string name="import_provider_tidal_desc">My Tracks và danh sách phát của bạn</string>
+    <string name="import_providers_link_header">Hoặc dán liên kết công khai</string>
+    <string name="import_link_spotify_desc">Danh sách phát công khai (100 bài hát đầu) và album</string>
+    <string name="import_link_apple_music_desc">Danh sách phát công khai và album</string>
+    <string name="import_link_deezer_desc">Danh sách phát công khai và album, độ dài bất kỳ</string>
+    <string name="import_link_youtube_desc">Danh sách phát và album, khớp chính xác bài hát, không cần tìm kiếm</string>
+    <string name="import_providers_file_header">Từ tệp</string>
+    <string name="import_mochy_backup_title">Bản sao lưu Mochy</string>
+    <string name="import_mochy_backup_desc">Tệp CSV từ Xuất ra Mochy CSV. Khôi phục chính xác các bài hát</string>
+    <string name="import_tunemymusic_csv_desc">Danh sách phát riêng tư, bài hát đã thích và tất cả dịch vụ khác</string>
+    <string name="import_providers_other_header">Dịch vụ khác</string>
+    <string name="import_other_services_title">Amazon Music, SoundCloud, Pandora…</string>
+    <string name="import_other_services_desc">Thông qua TuneMyMusic</string>
+    <string name="import_other_services_detail">Các dịch vụ này được nhập qua TuneMyMusic, nơi có thể thay bạn đăng nhập</string>
+
+    <!-- Account Import Screen -->
+    <string name="account_resync_looking">Đang tìm bài hát mới trên %1$s…</string>
+    <string name="account_resync_missing"> Không tìm thấy %1$s ở đó.</string>
+    <string name="account_import_signin_title">Đăng nhập vào %1$s</string>
+    <string name="account_import_resync_subtitle">Trên trang chính thức của %1$s. Mochy chỉ đọc danh sách phát bạn đang đồng bộ lại</string>
+    <string name="account_import_signin_subtitle">Trên trang chính thức của %1$s. Mochy chỉ đọc danh sách phát của bạn</string>
+    <string name="account_import_ytm_needs_signin">Nhập từ YouTube Music sử dụng tài khoản YouTube của ứng dụng. Hãy đăng nhập, sau đó chọn danh sách phát.</string>
+    <string name="account_import_reading_count">(%1$d / %2$d)</string>
+    <string name="account_import_stop">Dừng</string>
+    <string name="account_import_try_again">Thử lại</string>
+    <string name="account_import_signin_again">Đăng nhập lại</string>
+    <string name="account_import_pick_resync_prompt">Không tìm thấy \"%1$s\" theo tên trong thư viện %2$s của bạn. Đó là danh sách nào?</string>
+    <string name="account_import_not_in_account">Không có trong tài khoản này</string>
+    <string name="account_import_paste_link_instead">Dán liên kết danh sách phát thay thế</string>
+    <string name="account_import_in_library_count">%1$d trong thư viện của bạn</string>
+    <string name="account_import_song_single">1 bài hát</string>
+    <string name="account_import_songs_multiple">%1$d bài hát</string>
+    <string name="account_import_signed_in_service">Đã đăng nhập vào %1$s</string>
+    <string name="account_import_manage_on_sync">Quản lý trên trang Đồng bộ</string>
+    <string name="account_import_use_different">Sử dụng tài khoản khác</string>
+    <string name="account_import_choose_what">Chọn nội dung cần nhập</string>
+    <string name="account_import_btn_single">Nhập 1 mục đã chọn</string>
+    <string name="account_import_btn_multiple">Nhập %1$d mục đã chọn</string>
+    <string name="account_import_tick_below">Đánh dấu chọn danh sách phát bên dưới</string>
+    <string name="account_import_next_add_yt">Tiếp theo bạn cũng có thể thêm vào YouTube</string>
+    <string name="account_import_select_all">Chọn tất cả</string>
+    <string name="account_import_select_none">Bỏ chọn tất cả</string>
+    <string name="account_import_ytm_sync_on_notice">Đồng bộ thư viện đang bật nên các danh sách phát YouTube đã lưu đã có trong thư viện. Nhập sẽ tạo các bản sao cục bộ riêng biệt.</string>
+    <string name="account_import_no_playlists">Không có danh sách phát nào trong tài khoản này.</string>
+
+    <!-- Import Progress Screen -->
+    <string name="import_progress_title_resync">Đồng bộ lại</string>
+    <string name="import_progress_title_importing">Đang nhập</string>
+    <string name="import_progress_songs_count">%1$d / %2$d bài hát</string>
+    <string name="import_progress_status_stopped">Đã dừng</string>
+    <string name="import_progress_status_resync_failed">Đồng bộ lại thất bại</string>
+    <string name="import_progress_status_done">Hoàn tất</string>
+    <string name="import_progress_status_no_import">Không có tiến trình nhập nào đang chạy</string>
+    <string name="import_progress_starting">Đang bắt đầu…</string>
+    <string name="import_progress_background_hint">Bạn có thể rời trang này; tiến trình nhập vẫn tiếp tục và sẽ thông báo khi hoàn tất.</string>
+    <string name="import_progress_found_ytm">Tìm thấy trên YouTube Music</string>
+    <string name="import_progress_fraction">%1$d / %2$d</string>
+    <string name="import_progress_added_to">Đã thêm vào \"%1$s\"</string>
+    <string name="import_progress_new_playlists">Danh sách phát mới</string>
+    <string name="import_progress_songs_liked">Bài hát đã thích</string>
+    <string name="import_progress_not_found">Không tìm thấy</string>
+    <string name="import_progress_youtube_failures">Đã nhập vào đây nhưng chưa hoàn toàn trên YouTube: %1$s</string>
+    <string name="import_progress_stop_import">Dừng nhập</string>
+    <string name="import_progress_stop_import_desc">Các bài hát và danh sách phát đã nhập đến giờ vẫn được giữ lại</string>
+    <string name="import_progress_done_btn">Xong</string>
+    <string name="import_progress_copy_not_found">Sao chép bài hát không tìm thấy</string>
+    <string name="import_progress_copy_not_found_desc">Để tìm kiếm thủ công</string>
+    <string name="import_progress_copied_toast">Đã sao chép %1$d bài hát</string>
+    <string name="import_progress_liked_songs_fallback">Bài hát đã thích</string>
+    <string name="import_progress_unmatched_more">và %1$d bài khác. Sao chép danh sách để xem tất cả.</string>
+
+    <!-- Import Sync Components -->
+    <string name="import_component_from_source">Nhập từ %1$s</string>
+    <string name="import_component_paste">Dán</string>
+    <string name="import_component_continue">Tiếp tục</string>
+    <string name="import_component_link_prompt">Dán liên kết đến danh sách phát hoặc album công khai. Chia sẻ từ %1$s bằng \"Sao chép liên kết\".</string>
+    <string name="import_component_failed_title">Không thể nhập</string>
+    <string name="import_component_already_running">Một tiến trình nhập khác đang chạy</string>
+    <string name="import_component_liked_songs_count">%1$d bài hát đã thích</string>
+    <string name="import_component_playlists_summary_single">1 danh sách phát · %1$d bài hát</string>
+    <string name="import_component_playlists_summary_multiple">%1$d danh sách phát · %2$d bài hát</string>
+    <string name="import_component_and_more"> và %1$d danh sách khác</string>
+    <string name="import_component_search_notice">Mỗi bài hát sẽ được tìm kiếm trên YouTube Music. Thư viện lớn có thể mất vài phút; bạn có thể rời trang này trong khi tiến trình chạy.</string>
+    <string name="import_component_mirror_yt_title">Đồng thời tạo trên YouTube</string>
+    <string name="import_component_mirror_yt_desc">Danh sách phát và lượt thích cũng sẽ được thêm vào tài khoản YouTube của bạn.</string>
+    <string name="import_component_mirror_yt_sync_likes">Đồng bộ YouTube giữ lượt thích đồng nhất giữa hai bên, vì vậy các lượt thích này vẫn sẽ được thêm vào YouTube trong lần đồng bộ tiếp theo.</string>
+</resources>

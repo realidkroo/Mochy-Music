@@ -50,6 +50,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
@@ -75,7 +76,6 @@ import com.mochyy.mochymusic.ui.screens.audiolab.rememberOnScreen
 import com.mochyy.mochymusic.ui.screens.audiolab.rememberPicturesHeld
 import com.mochyy.mochymusic.ui.screens.audiolab.trackOnScreen
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
-import com.mochyy.mochymusic.viewmodels.filterTypeLabel
 import com.mochyy.mochymusic.viewmodels.frequencyLabel
 import com.mochyy.mochymusic.viewmodels.gainLabel
 import kotlin.math.abs
@@ -100,6 +100,14 @@ internal class Plot(val left: Float, val top: Float, val right: Float, val botto
     fun gainAt(y: Float): Double = rangeDb - ((y - top) / (bottom - top)).coerceIn(0f, 1f) * 2 * rangeDb
 }
 
+private fun filterTypeRes(type: FilterType): Int = when (type) {
+    FilterType.PK -> R.string.eqx_filter_peak
+    FilterType.LSC -> R.string.eqx_filter_low_shelf
+    FilterType.HSC -> R.string.eqx_filter_high_shelf
+    FilterType.LPQ -> R.string.eqx_filter_low_pass
+    FilterType.HPQ -> R.string.eqx_filter_high_pass
+}
+
 /** the pass filters have no gain, so their node rides the 0 dB line */
 private fun ParametricEQBand.nodeGain(): Double = when (filterType) {
     FilterType.LPQ, FilterType.HPQ -> 0.0
@@ -118,12 +126,12 @@ fun EqGraphSection(
     canAdd: Boolean,
 ) {
     val index = selected.coerceIn(0, (nodes.size - 1).coerceAtLeast(0))
-    LabSectionLabel("Graph editor")
+    LabSectionLabel(stringResource(R.string.eqx_graph_editor))
     LabCard(padding = 12.dp) {
         val node = nodes.getOrNull(index)
         Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "FREQUENCY RESPONSE",
+                stringResource(R.string.eqx_freq_response),
                 fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.2.sp,
                 color = LabColors.Secondary, modifier = Modifier.weight(1f),
             )
@@ -139,7 +147,7 @@ fun EqGraphSection(
         EqGraph(nodes = nodes, selected = index, onSelect = onSelect, onMove = onMove, onAdd = onAdd)
         Spacer(Modifier.height(10.dp))
         Text(
-            "Drag a node to shape the sound · double-tap to add one",
+            stringResource(R.string.eqx_graph_hint),
             fontFamily = InterFontFamily, fontSize = 12.sp, color = LabColors.Faint,
             modifier = Modifier.padding(horizontal = 6.dp),
         )
@@ -162,7 +170,7 @@ fun EqGraphSection(
                         .clickable { onAdd(freeFrequency(nodes), 0.0) },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(painterResource(R.drawable.add), "Add a band", tint = Color.White, modifier = Modifier.size(18.dp))
+                    Icon(painterResource(R.drawable.add), stringResource(R.string.eqx_add_band), tint = Color.White, modifier = Modifier.size(18.dp))
                 }
             }
         },
@@ -430,11 +438,11 @@ private fun NodeDetail(
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    "${frequencyLabel(node.frequency)} node",
+                    stringResource(R.string.eqx_node_title, frequencyLabel(node.frequency)),
                     fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White,
                 )
                 Text(
-                    "${filterTypeLabel(node.filterType).lowercase()} · Q ${String.format("%.1f", node.q)}" +
+                    "${stringResource(filterTypeRes(node.filterType)).lowercase()} · Q ${String.format("%.1f", node.q)}" +
                         if (node.filterType == FilterType.LPQ || node.filterType == FilterType.HPQ) "" else " · ${gainLabel(node.gain)}",
                     fontFamily = InterFontFamily, fontSize = 13.sp, color = LabColors.Secondary,
                 )
@@ -443,7 +451,7 @@ private fun NodeDetail(
         }
         Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            listOf(FilterType.LSC to "Low shelf", FilterType.PK to "Peak", FilterType.HSC to "High shelf").forEach { (type, label) ->
+            listOf(FilterType.LSC, FilterType.PK, FilterType.HSC).forEach { type ->
                 val picked = node.filterType == type
                 val bg by animateColorAsState(if (picked) Color(0xFFD1D1D6) else Color.Black, tween(160), label = "type")
                 val fg by animateColorAsState(if (picked) Color.Black else Color.White, tween(160), label = "typeText")
@@ -464,13 +472,13 @@ private fun NodeDetail(
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(label, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = fg)
+                    Text(stringResource(filterTypeRes(type)), fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = fg)
                 }
             }
         }
         Spacer(Modifier.height(18.dp))
         LabSlider(
-            label = "GAIN",
+            label = stringResource(R.string.eqx_gain),
             valueText = gainLabel(node.gain),
             value = node.gain.toFloat(),
             onValueChange = { v -> onUpdate { it.copy(gain = snap(v.toDouble())) } },
@@ -478,7 +486,7 @@ private fun NodeDetail(
         )
         Spacer(Modifier.height(10.dp))
         LabSlider(
-            label = "FREQUENCY",
+            label = stringResource(R.string.eqx_frequency),
             valueText = if (node.frequency >= 1000) String.format("%.2f kHz", node.frequency / 1000) else "${node.frequency.roundToInt()} Hz",
             value = log10(node.frequency).toFloat(),
             onValueChange = { v -> onUpdate { it.copy(frequency = 10.0.pow(v.toDouble()).roundToInt().toDouble()) } },
@@ -503,7 +511,7 @@ private fun NodeDetail(
                     .clickable(onClick = onRemove),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("Remove node", fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                Text(stringResource(R.string.eqx_remove_node), fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
                     color = Color(0xFFFF8A80))
             }
         }

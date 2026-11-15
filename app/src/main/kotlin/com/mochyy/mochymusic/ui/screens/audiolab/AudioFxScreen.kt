@@ -7,6 +7,7 @@ import android.media.AudioManager
 import android.media.MediaCodecList
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -72,7 +73,7 @@ fun AudioFxScreen(
     val effects = activeEffects(reverb, loudness, spatial, playback, volume)
 
     AudioLabPage(
-        title = LabTitle("Audio", "FX", firstSize = 40.sp, secondSize = 84.sp, firstDim = true),
+        title = LabTitle(stringResource(R.string.fx_title_audio), "FX", firstSize = 40.sp, secondSize = 84.sp, firstDim = true),
         onBack = { navController.navigateUp() },
         art = { hidden -> FxCardStack(effects, hidden) },
     ) {
@@ -124,13 +125,18 @@ private fun LoudnessCard(viewModel: AudioLabViewModel) {
     EffectCard(
         picture = { LoudnessPicture(loudness, viewModel.fx) },
         header = {
-            LabToggleRow("Loudness", "Louder and fuller, never clipping", loudness.enabled,
+            LabToggleRow(stringResource(R.string.fx_loudness_title), stringResource(R.string.fx_loudness_sub), loudness.enabled,
                 { on -> viewModel.updateLoudness { it.copy(enabled = on) } })
         },
         expanded = loudness.enabled,
         options = {
             LabChips(
-                chips = listOf(LabChip("gentle", "Gentle"), LabChip("punchy", "Punchy"), LabChip("night", "Night mode"), LabChip("max", "Max")),
+                chips = listOf(
+                    LabChip("gentle", stringResource(R.string.fx_loudness_gentle)),
+                    LabChip("punchy", stringResource(R.string.fx_loudness_punchy)),
+                    LabChip("night", stringResource(R.string.fx_loudness_night)),
+                    LabChip("max", stringResource(R.string.fx_loudness_max)),
+                ),
                 selectedKey = when {
                     loudness.boostDb == 2f && loudness.compression == 0.15f -> "gentle"
                     loudness.boostDb == 4f && loudness.compression == 0.3f -> "punchy"
@@ -150,12 +156,12 @@ private fun LoudnessCard(viewModel: AudioLabViewModel) {
             )
             Spacer(Modifier.height(10.dp))
             LabPanel {
-                LabSlider("Boost", "+${String.format("%.1f", loudness.boostDb)} dB", loudness.boostDb,
+                LabSlider(stringResource(R.string.fx_boost), "+${String.format("%.1f", loudness.boostDb)} dB", loudness.boostDb,
                     { v -> viewModel.updateLoudness { it.copy(boostDb = (v * 2).roundToInt() / 2f) } }, 0f..12f)
-                LabSlider("Compression", pct(loudness.compression), loudness.compression,
+                LabSlider(stringResource(R.string.fx_compression), pct(loudness.compression), loudness.compression,
                     { v -> viewModel.updateLoudness { it.copy(compression = (v * 100).roundToInt() / 100f) } }, 0f..1f)
                 Text(
-                    "Compression lifts the quiet parts up toward the loud ones. Night mode keeps whispers and explosions close.",
+                    stringResource(R.string.fx_compression_note),
                     fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 16.sp, color = LabColors.Secondary,
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -163,18 +169,18 @@ private fun LoudnessCard(viewModel: AudioLabViewModel) {
         },
         footer = {
             Spacer(Modifier.height(6.dp))
-            LabToggleRow("Even out songs", "Plays every song at the same loudness", normalize, onNormalize)
+            LabToggleRow(stringResource(R.string.fx_even_out), stringResource(R.string.fx_even_out_sub), normalize, onNormalize)
             val rg by viewModel.normalize.collectAsState()
             LabCollapsible(normalize) {
                 Spacer(Modifier.height(4.dp))
                 LabPanel {
                     Text(
-                        "REPLAYGAIN",
+                        stringResource(R.string.fx_replaygain),
                         fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, letterSpacing = 1.3.sp,
                         color = LabColors.Secondary,
                     )
                     LabChips(
-                        chips = listOf(LabChip("track", "Track"), LabChip("album", "Album")),
+                        chips = listOf(LabChip("track", stringResource(R.string.fx_rg_track)), LabChip("album", stringResource(R.string.fx_rg_album))),
                         selectedKey = if (rg.replayGainMode == com.mochyy.mochymusic.eq.audio.ReplayGainMode.Album) "album" else "track",
                         onSelect = { key ->
                             viewModel.updateNormalize {
@@ -182,10 +188,10 @@ private fun LoudnessCard(viewModel: AudioLabViewModel) {
                             }
                         },
                     )
-                    LabSlider("Preamp", (if (rg.preampDb > 0) "+" else "") + String.format("%.1f dB", rg.preampDb), rg.preampDb,
+                    LabSlider(stringResource(R.string.fx_preamp), (if (rg.preampDb > 0) "+" else "") + String.format("%.1f dB", rg.preampDb), rg.preampDb,
                         { v -> viewModel.updateNormalize { it.copy(preampDb = (v * 2).roundToInt() / 2f) } }, -6f..6f)
                     Text(
-                        "Songs that carry ReplayGain (Monochrome's FLACs, many of your own files) even out by it: Track keeps every song level, Album keeps an album's quiet and loud songs as mastered. YouTube songs use YouTube's loudness.",
+                        stringResource(R.string.fx_replaygain_note),
                         fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 16.sp, color = LabColors.Secondary,
                         modifier = Modifier.padding(top = 4.dp),
                     )
@@ -197,12 +203,12 @@ private fun LoudnessCard(viewModel: AudioLabViewModel) {
 
 // ---- spatial -------------------------------------------------------------------------------
 
-private class CrossfeedLevel(val key: String, val label: String, val cutoff: Float, val feed: Float)
+private class CrossfeedLevel(val key: String, @StringRes val label: Int, val cutoff: Float, val feed: Float)
 
 private val CrossfeedLevels = listOf(
-    CrossfeedLevel("light", "Light", 700f, 4.5f),
-    CrossfeedLevel("natural", "Natural", 700f, 6f),
-    CrossfeedLevel("strong", "Strong", 650f, 9.5f),
+    CrossfeedLevel("light", R.string.fx_xf_light, 700f, 4.5f),
+    CrossfeedLevel("natural", R.string.fx_xf_natural, 700f, 6f),
+    CrossfeedLevel("strong", R.string.fx_xf_strong, 650f, 9.5f),
 )
 
 @Composable
@@ -211,13 +217,13 @@ private fun SpatialCard(viewModel: AudioLabViewModel) {
     EffectCard(
         picture = { SpatialPicture(spatial) },
         header = {
-            LabToggleRow("Spatial audio", "Takes stereo out of your head and puts it in front of you", spatial.enabled,
+            LabToggleRow(stringResource(R.string.fx_spatial_title), stringResource(R.string.fx_spatial_sub), spatial.enabled,
                 { on -> viewModel.updateSpatial { it.copy(enabled = on) } })
         },
         expanded = spatial.enabled,
         options = {
             LabSegmented(
-                options = listOf("Crossfeed", "Speakers"),
+                options = listOf(stringResource(R.string.fx_mode_crossfeed), stringResource(R.string.fx_mode_speakers)),
                 selectedIndex = if (spatial.mode == SpatialMode.Crossfeed) 0 else 1,
                 onSelect = { i -> viewModel.updateSpatial { it.copy(mode = if (i == 0) SpatialMode.Crossfeed else SpatialMode.Speakers) } },
                 height = 42.dp,
@@ -225,7 +231,7 @@ private fun SpatialCard(viewModel: AudioLabViewModel) {
             Spacer(Modifier.height(10.dp))
             if (spatial.mode == SpatialMode.Crossfeed) {
                 LabChips(
-                    chips = CrossfeedLevels.map { LabChip(it.key, it.label) },
+                    chips = CrossfeedLevels.map { LabChip(it.key, stringResource(it.label)) },
                     selectedKey = CrossfeedLevels.firstOrNull { it.cutoff == spatial.cutoffHz && it.feed == spatial.feedDb }?.key,
                     onSelect = { key ->
                         CrossfeedLevels.firstOrNull { it.key == key }?.let { l ->
@@ -235,21 +241,21 @@ private fun SpatialCard(viewModel: AudioLabViewModel) {
                 )
                 Spacer(Modifier.height(10.dp))
                 LabPanel {
-                    LabSlider("Head shadow", "${spatial.cutoffHz.roundToInt()} Hz", spatial.cutoffHz,
+                    LabSlider(stringResource(R.string.fx_head_shadow), "${spatial.cutoffHz.roundToInt()} Hz", spatial.cutoffHz,
                         { v -> viewModel.updateSpatial { it.copy(cutoffHz = (v / 10).roundToInt() * 10f) } }, 300f..1500f)
-                    LabSlider("Crossfeed", "−${String.format("%.1f", spatial.feedDb)} dB", 16f - spatial.feedDb,
+                    LabSlider(stringResource(R.string.fx_mode_crossfeed), "−${String.format("%.1f", spatial.feedDb)} dB", 16f - spatial.feedDb,
                         { v -> viewModel.updateSpatial { it.copy(feedDb = ((16f - v) * 2).roundToInt() / 2f) } }, 1f..15f)
-                    LabSlider("Amount", pct(spatial.amount), spatial.amount,
+                    LabSlider(stringResource(R.string.fx_amount), pct(spatial.amount), spatial.amount,
                         { v -> viewModel.updateSpatial { it.copy(amount = v) } }, 0f..1f)
                 }
             } else {
                 LabPanel {
-                    LabSlider("Speaker angle", "±${spatial.speakerAngle.roundToInt()}°", spatial.speakerAngle,
+                    LabSlider(stringResource(R.string.fx_speaker_angle), "±${spatial.speakerAngle.roundToInt()}°", spatial.speakerAngle,
                         { v -> viewModel.updateSpatial { it.copy(speakerAngle = v.roundToInt().toFloat()) } }, 10f..90f)
-                    LabSlider("Amount", pct(spatial.amount), spatial.amount,
+                    LabSlider(stringResource(R.string.fx_amount), pct(spatial.amount), spatial.amount,
                         { v -> viewModel.updateSpatial { it.copy(amount = v) } }, 0f..1f)
                     Text(
-                        "Two virtual speakers in front of a modelled head: the far ear hears each one a little later and darker, as in a room. 30° is a studio pair.",
+                        stringResource(R.string.fx_speakers_note),
                         fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 16.sp, color = LabColors.Secondary,
                         modifier = Modifier.padding(top = 4.dp),
                     )
@@ -266,8 +272,8 @@ private fun MonoCard(viewModel: AudioLabViewModel) {
     val spatial by viewModel.spatial.collectAsState()
     LabCard(padding = 10.dp) {
         LabToggleRow(
-            title = "Mono audio",
-            subtitle = "Both ears hear the whole mix: for one earbud, or hearing in one ear",
+            title = stringResource(R.string.fx_mono_title),
+            subtitle = stringResource(R.string.fx_mono_sub),
             checked = spatial.mono,
             onCheckedChange = { on -> viewModel.updateSpatial { it.copy(mono = on) } },
             leadingDot = true,
@@ -288,8 +294,8 @@ private fun AtmosCard(viewModel: AudioLabViewModel) {
         picture = { AtmosPicture(enabled = spatial.surround, renderOnHeadphones = spatial.surround) },
         header = {
             LabToggleRow(
-                title = "Dolby Atmos & surround",
-                subtitle = "Plays 5.1, 7.1 and Atmos beds as 3D sound on any headphones, with Mochy's head model, instead of folding them to stereo. From the next song.",
+                title = stringResource(R.string.fx_atmos_title),
+                subtitle = stringResource(R.string.fx_atmos_sub),
                 checked = spatial.surround,
                 onCheckedChange = { on -> viewModel.updateSpatial { it.copy(surround = on) } },
             )
@@ -305,15 +311,15 @@ private fun AtmosCard(viewModel: AudioLabViewModel) {
             device?.let { support ->
                 Spacer(Modifier.height(10.dp))
                 Row(Modifier.padding(horizontal = 6.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    SupportPill("Atmos decoder", support.decoder)
-                    SupportPill("Android spatializer", support.spatializer)
+                    SupportPill(stringResource(R.string.fx_atmos_decoder), stringResource(support.decoder))
+                    SupportPill(stringResource(R.string.fx_atmos_spatializer), stringResource(support.spatializer))
                 }
             }
         },
     )
 }
 
-private class AtmosSupport(val decoder: String, val spatializer: String)
+private class AtmosSupport(@StringRes val decoder: Int, @StringRes val spatializer: Int)
 
 /** what this phone can do with an atmos stream: decode it, and spatialise it itself */
 private fun atmosSupport(context: Context): AtmosSupport {
@@ -322,20 +328,21 @@ private fun atmosSupport(context: Context): AtmosSupport {
             !info.isEncoder && info.supportedTypes.any { it.equals("audio/eac3-joc", ignoreCase = true) }
         }
     }.getOrDefault(false)
-    val spatializer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2) spatializerState(context) else "Android 12L+"
-    return AtmosSupport(if (decoder) "Yes" else "Not on this phone", spatializer)
+    val spatializer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2) spatializerState(context) else R.string.fx_atmos_needs_android
+    return AtmosSupport(if (decoder) R.string.fx_atmos_yes else R.string.fx_atmos_not_on_phone, spatializer)
 }
 
 @RequiresApi(Build.VERSION_CODES.S_V2)
-private fun spatializerState(context: Context): String = runCatching {
+@StringRes
+private fun spatializerState(context: Context): Int = runCatching {
     val manager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     val spatializer = manager.spatializer
     when {
-        !spatializer.isAvailable -> "Not available"
-        spatializer.isEnabled -> "On"
-        else -> "Off"
+        !spatializer.isAvailable -> R.string.fx_state_not_available
+        spatializer.isEnabled -> R.string.fx_state_on
+        else -> R.string.fx_state_off
     }
-}.getOrDefault("Unknown")
+}.getOrDefault(R.string.fx_state_unknown)
 
 @Composable
 private fun SupportPill(label: String, value: String) {
@@ -348,17 +355,17 @@ private fun SupportPill(label: String, value: String) {
 
 // ---- speed & pitch -------------------------------------------------------------------------
 
-private class SpeedPreset(val key: String, val label: String, val speed: Float, val preservePitch: Boolean, val withReverb: Boolean = false)
+private class SpeedPreset(val key: String, @StringRes val labelRes: Int?, val rawLabel: String?, val speed: Float, val preservePitch: Boolean, val withReverb: Boolean = false)
 
 private val SpeedPresets = listOf(
-    SpeedPreset("normal", "Normal", 1f, true),
-    SpeedPreset("slowed", "Slowed", 0.85f, false),
-    SpeedPreset("slowed_reverb", "Slowed + reverb", 0.85f, false, withReverb = true),
-    SpeedPreset("nightcore", "Nightcore", 1.25f, false),
-    SpeedPreset("0.75", "0.75×", 0.75f, true),
-    SpeedPreset("1.25", "1.25×", 1.25f, true),
-    SpeedPreset("1.5", "1.5×", 1.5f, true),
-    SpeedPreset("2", "2×", 2f, true),
+    SpeedPreset("normal", R.string.fx_speed_normal, null, 1f, true),
+    SpeedPreset("slowed", R.string.fx_speed_slowed, null, 0.85f, false),
+    SpeedPreset("slowed_reverb", R.string.fx_speed_slowed_reverb, null, 0.85f, false, withReverb = true),
+    SpeedPreset("nightcore", R.string.fx_speed_nightcore, null, 1.25f, false),
+    SpeedPreset("0.75", null, "0.75×", 0.75f, true),
+    SpeedPreset("1.25", null, "1.25×", 1.25f, true),
+    SpeedPreset("1.5", null, "1.5×", 1.5f, true),
+    SpeedPreset("2", null, "2×", 2f, true),
 )
 
 @Composable
@@ -370,9 +377,9 @@ private fun SpeedCard(viewModel: AudioLabViewModel) {
         header = {
             Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Playback speed", fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color.White)
+                    Text(stringResource(R.string.fx_speed_title), fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color.White)
                     Text(
-                        if (playback.preservePitch) "Pitch stays where it is" else "Pitch follows the speed, like a record",
+                        stringResource(if (playback.preservePitch) R.string.fx_pitch_stays else R.string.fx_pitch_follows),
                         fontFamily = InterFontFamily, fontSize = 12.sp, color = LabColors.Secondary,
                     )
                 }
@@ -388,7 +395,7 @@ private fun SpeedCard(viewModel: AudioLabViewModel) {
         expanded = true,
         options = {
             LabChips(
-                chips = SpeedPresets.map { LabChip(it.key, it.label) },
+                chips = SpeedPresets.map { LabChip(it.key, it.labelRes?.let { id -> stringResource(id) } ?: it.rawLabel.orEmpty()) },
                 selectedKey = if (playback.speed == 0.85f && !playback.preservePitch) {
                     if (reverb.enabled) "slowed_reverb" else "slowed"
                 } else {
@@ -413,16 +420,16 @@ private fun SpeedCard(viewModel: AudioLabViewModel) {
             Spacer(Modifier.height(10.dp))
             LabPanel {
                 LabSlider(
-                    "Speed", String.format("%.2f×", playback.speed), log10(playback.speed),
+                    stringResource(R.string.fx_speed), String.format("%.2f×", playback.speed), log10(playback.speed),
                     { v -> viewModel.updatePlayback { it.copy(speed = (10f.pow(v) * 100).roundToInt() / 100f) } },
                     log10(MinSpeed)..log10(MaxSpeed),
                 )
-                LabToggleRow("Preserve pitch", "Keep the original key when changing speed", playback.preservePitch,
+                LabToggleRow(stringResource(R.string.fx_preserve_pitch), stringResource(R.string.fx_preserve_pitch_sub), playback.preservePitch,
                     { on -> viewModel.updatePlayback { it.copy(preservePitch = on) } })
                 LabCollapsible(playback.preservePitch) {
                     LabSlider(
-                        "Pitch",
-                        (if (playback.pitchSemitones > 0) "+" else "") + "${playback.pitchSemitones.roundToInt()} semitones",
+                        stringResource(R.string.fx_pitch),
+                        stringResource(R.string.fx_semitones, (if (playback.pitchSemitones > 0) "+" else "") + playback.pitchSemitones.roundToInt()),
                         playback.pitchSemitones,
                         { v -> viewModel.updatePlayback { it.copy(pitchSemitones = v.roundToInt().toFloat()) } },
                         -12f..12f,
@@ -431,7 +438,7 @@ private fun SpeedCard(viewModel: AudioLabViewModel) {
             }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                LabTextAction("Reset", R.drawable.refresh, enabled = !playback.isNormal) {
+                LabTextAction(stringResource(R.string.fx_reset), R.drawable.refresh, enabled = !playback.isNormal) {
                     viewModel.updatePlayback { com.mochyy.mochymusic.eq.PlaybackSettings() }
                 }
             }
@@ -451,12 +458,12 @@ private fun StepButton(label: String, onClick: () -> Unit) {
 
 // ---- volume curve --------------------------------------------------------------------------
 
-private class CurveShape(val key: String, val label: String, val exponent: Float)
+private class CurveShape(val key: String, @StringRes val label: Int, val exponent: Float)
 
 private val CurveShapes = listOf(
-    CurveShape("gentle", "Gentle", 1.6f),
-    CurveShape("exponential", "Exponential", 2.2f),
-    CurveShape("steep", "Steep", 3.2f),
+    CurveShape("gentle", R.string.fx_curve_gentle, 1.6f),
+    CurveShape("exponential", R.string.fx_curve_exponential, 2.2f),
+    CurveShape("steep", R.string.fx_curve_steep, 3.2f),
 )
 
 @Composable
@@ -466,24 +473,24 @@ private fun VolumeCard(viewModel: AudioLabViewModel) {
     EffectCard(
         picture = { VolumeCurvePicture(volume, playerVolume?.value ?: 0.6f) },
         header = {
-            LabToggleRow("Exponential volume", "A logarithmic curve, for finer control at low volume", volume.enabled,
+            LabToggleRow(stringResource(R.string.fx_volume_title), stringResource(R.string.fx_volume_sub), volume.enabled,
                 { on -> viewModel.updateVolume { it.copy(enabled = on) } })
         },
         expanded = volume.enabled,
         options = {
             LabChips(
-                chips = CurveShapes.map { LabChip(it.key, it.label) },
+                chips = CurveShapes.map { LabChip(it.key, stringResource(it.label)) },
                 selectedKey = CurveShapes.firstOrNull { it.exponent == volume.exponent }?.key,
                 onSelect = { key -> CurveShapes.firstOrNull { it.key == key }?.let { s -> viewModel.updateVolume { it.copy(exponent = s.exponent) } } },
             )
             Spacer(Modifier.height(10.dp))
             LabPanel {
-                LabSlider("Curve", String.format("x^%.1f", volume.exponent), volume.exponent,
+                LabSlider(stringResource(R.string.fx_curve), String.format("x^%.1f", volume.exponent), volume.exponent,
                     { v -> viewModel.updateVolume { it.copy(exponent = (v * 10).roundToInt() / 10f) } }, 1f..4f)
-                LabSlider("Volume limit", pct(volume.limit), volume.limit,
+                LabSlider(stringResource(R.string.fx_volume_limit), pct(volume.limit), volume.limit,
                     { v -> viewModel.updateVolume { it.copy(limit = (v * 100).roundToInt() / 100f) } }, 0.2f..1f)
                 Text(
-                    "Shapes Mochy's own volume (the player's slider, fades and ducking). The limit caps how loud the app ever plays.",
+                    stringResource(R.string.fx_volume_note),
                     fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 16.sp, color = LabColors.Secondary,
                     modifier = Modifier.padding(top = 4.dp),
                 )

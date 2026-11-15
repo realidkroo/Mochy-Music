@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Import & Sync Screen -->
+    <string name="import_sync_title">Import &amp; sync</string>
+    <string name="import_sync_progress_resyncing">Re-syncing \"%1$s\"…</string>
+    <string name="import_sync_progress_importing_count">Importing… %1$d of %2$d</string>
+    <string name="import_sync_progress_stopped">Import stopped</string>
+    <string name="import_sync_progress_resynced_single">Re-synced \"%1$s\": %2$s</string>
+    <string name="import_sync_progress_resynced_multiple">Re-synced %1$d playlists: %2$s</string>
+    <string name="import_sync_progress_new_songs_single">1 new song</string>
+    <string name="import_sync_progress_new_songs_multiple">%1$d new songs</string>
+    <string name="import_sync_progress_failed">Import failed</string>
+    <string name="import_sync_progress_finished_count">Import finished: %1$d of %2$d songs</string>
+    <string name="import_sync_see_progress">See progress</string>
+    <string name="import_sync_see_results">See results</string>
+    <string name="import_sync_import_title">Import</string>
+    <string name="import_sync_import_desc">Sign in and pick playlists</string>
+    <string name="import_sync_import_detail">Sign in to Spotify, Apple Music, YouTube Music or Tidal and pick playlists</string>
+    <string name="import_sync_sync_title">Sync</string>
+    <string name="import_sync_sync_desc_connected">YouTube account connected: playlists, likes and history</string>
+    <string name="import_sync_sync_desc_disconnected">Connect your YouTube account to keep playlists, likes and history in step</string>
+    <string name="import_sync_tunemymusic_title">TuneMyMusic CSV</string>
+    <string name="import_sync_tunemymusic_desc">Amazon Music, SoundCloud, Deezer and more</string>
+    <string name="import_sync_tunemymusic_detail">Any other service, such as Amazon Music, SoundCloud or Deezer libraries</string>
+    <string name="import_sync_backup_title">Backup</string>
+    <string name="import_sync_export_csv_title">Export to Mochy CSV</string>
+    <string name="import_sync_export_csv_desc">Liked songs and playlists</string>
+    <string name="import_sync_export_csv_detail">Liked songs and playlists, import it back from Import → Mochy backup</string>
+    <string name="import_sync_exporting">Exporting…</string>
+    <string name="import_sync_btn_ok">OK</string>
+
+    <!-- YouTube Sync Screen -->
+    <string name="yt_sync_account_header">YouTube account</string>
+    <string name="yt_sync_signed_in">Signed in</string>
+    <string name="yt_sync_sign_out">Sign out</string>
+    <string name="yt_sync_sign_in_title">Sign in to YouTube</string>
+    <string name="yt_sync_sign_in_desc">Needed for sync. Your login stays on this phone</string>
+    <string name="yt_sync_keep_in_sync_header">Keep in sync</string>
+    <string name="yt_sync_auto_sync_title">Sync library on launch</string>
+    <string name="yt_sync_auto_sync_desc">Likes, library, artists and saved playlists from YouTube</string>
+    <string name="yt_sync_new_playlists_title">New playlists go to YouTube</string>
+    <string name="yt_sync_new_playlists_desc">Playlists you create here are created on YouTube too</string>
+    <string name="yt_sync_report_plays_title">Send plays to YouTube history</string>
+    <string name="yt_sync_report_plays_desc">Songs you play here show up in your YouTube history</string>
+    <string name="yt_sync_pull_history_title">Copy YouTube history here</string>
+    <string name="yt_sync_pull_history_desc">Plays from your other devices join Mochy\'s history on each sync</string>
+    <string name="yt_sync_other_apps_header">Other apps</string>
+    <string name="yt_sync_now_header">Now</string>
+    <string name="yt_sync_now_title">Sync now</string>
+    <string name="yt_sync_now_desc_history">Library, playlists and history</string>
+    <string name="yt_sync_now_desc_no_history">Library and playlists</string>
+    <string name="yt_sync_pull_history_now_title">Copy YouTube history now</string>
+    <string name="yt_sync_pull_history_now_desc">Only adds plays Mochy doesn\'t have yet</string>
+    <string name="yt_sync_upload_playlists_title">Put local playlists on YouTube</string>
+    <string name="yt_sync_upload_playlists_desc">Copy local playlists to YouTube</string>
+    <string name="yt_sync_upload_playlists_detail">Creates a YouTube copy of every playlist that only exists here</string>
+    <string name="yt_sync_no_account_hint">Import from a YouTube playlist link doesn\'t need an account. Use Import → YouTube Music.</string>
+    <string name="yt_sync_dialog_sign_out_title">Sign out of YouTube?</string>
+    <string name="yt_sync_dialog_sign_out_body">Everything already in your library stays. Sync stops until you sign in again.</string>
+    <string name="yt_sync_dialog_upload_title">Put local playlists on YouTube?</string>
+    <string name="yt_sync_dialog_upload_create">Create</string>
+    <string name="yt_sync_dialog_upload_body">Each playlist that only exists in Mochy gets a private copy on your YouTube account. After that, changes go to both.</string>
+    <string name="yt_sync_cancel">Cancel</string>
+
+    <!-- YouTube Login Screen -->
+    <string name="yt_login_title">Sign in to YouTube</string>
+    <string name="yt_login_subtitle">Google\'s own sign-in page. Mochy never sees your password.</string>
+    <string name="yt_login_signed_in_as">Signed in as %1$s</string>
+    <string name="yt_login_signed_in_general">Signed in to YouTube</string>
+    <string name="yt_login_failed">Couldn\'t finish signing in. Try again.</string>
+    <string name="yt_login_back">Back</string>
+
+    <!-- TuneMyMusic Import Screen -->
+    <string name="tunemymusic_info_intro">Works with any service TuneMyMusic supports, including private playlists and liked songs.</string>
+    <string name="tunemymusic_step_1">Open TuneMyMusic and pick the service you\'re coming from (Spotify, Apple Music, Tidal, Amazon Music…).</string>
+    <string name="tunemymusic_step_2">Sign in there and choose the playlists and liked songs to move.</string>
+    <string name="tunemymusic_step_3">For the destination, choose \"Export to file\", then CSV.</string>
+    <string name="tunemymusic_step_4">Come back here and choose the downloaded .csv file.</string>
+    <string name="tunemymusic_open_site">Open TuneMyMusic</string>
+    <string name="tunemymusic_open_site_desc">tunemymusic.com in your browser</string>
+    <string name="tunemymusic_no_browser">No browser found</string>
+    <string name="tunemymusic_choose_file">Choose CSV file</string>
+    <string name="tunemymusic_choose_file_desc">Exportify and other playlist CSVs work too</string>
+
+    <!-- Import Providers Screen -->
+    <string name="import_providers_signin_header">Sign in and choose</string>
+    <string name="import_provider_spotify_desc">Liked Songs and your playlists</string>
+    <string name="import_provider_apple_music_desc">Library playlists, Favorite Songs and your whole library</string>
+    <string name="import_provider_ytm_desc">Liked music and your playlists, exact songs · also supports sync</string>
+    <string name="import_provider_tidal_desc">My Tracks and your playlists</string>
+    <string name="import_providers_link_header">Or paste a public link</string>
+    <string name="import_link_spotify_desc">Public playlists (first 100 songs) and albums</string>
+    <string name="import_link_apple_music_desc">Public playlists and albums</string>
+    <string name="import_link_deezer_desc">Public playlists and albums, any length</string>
+    <string name="import_link_youtube_desc">Playlists and albums, exact songs, no searching</string>
+    <string name="import_providers_file_header">From a file</string>
+    <string name="import_mochy_backup_title">Mochy backup</string>
+    <string name="import_mochy_backup_desc">A CSV from Export to Mochy CSV. Restores exact songs</string>
+    <string name="import_tunemymusic_csv_desc">Private playlists, liked songs, and every other service</string>
+    <string name="import_providers_other_header">Other services</string>
+    <string name="import_other_services_title">Amazon Music, SoundCloud, Pandora…</string>
+    <string name="import_other_services_desc">Goes through TuneMyMusic</string>
+    <string name="import_other_services_detail">These go through TuneMyMusic, which can sign in to them for you</string>
+
+    <!-- Account Import Screen -->
+    <string name="account_resync_looking">Looking for new songs on %1$s…</string>
+    <string name="account_resync_missing"> Couldn\'t find %1$s there.</string>
+    <string name="account_import_signin_title">Sign in to %1$s</string>
+    <string name="account_import_resync_subtitle">On %1$s\'s own page. Mochy only reads the playlist you\'re re-syncing</string>
+    <string name="account_import_signin_subtitle">On %1$s\'s own page. Mochy only reads your playlists</string>
+    <string name="account_import_ytm_needs_signin">YouTube Music import uses the app\'s YouTube account. Sign in, then choose playlists.</string>
+    <string name="account_import_reading_count">(%1$d of %2$d)</string>
+    <string name="account_import_stop">Stop</string>
+    <string name="account_import_try_again">Try again</string>
+    <string name="account_import_signin_again">Sign in again</string>
+    <string name="account_import_pick_resync_prompt">Couldn\'t find \"%1$s\" in your %2$s library by its name. Which one is it?</string>
+    <string name="account_import_not_in_account">It\'s not in this account</string>
+    <string name="account_import_paste_link_instead">Paste the playlist\'s link instead</string>
+    <string name="account_import_in_library_count">%1$d in your library</string>
+    <string name="account_import_song_single">1 song</string>
+    <string name="account_import_songs_multiple">%1$d songs</string>
+    <string name="account_import_signed_in_service">Signed in to %1$s</string>
+    <string name="account_import_manage_on_sync">Manage on the Sync page</string>
+    <string name="account_import_use_different">Use a different account</string>
+    <string name="account_import_choose_what">Choose what to import</string>
+    <string name="account_import_btn_single">Import 1 selected</string>
+    <string name="account_import_btn_multiple">Import %1$d selected</string>
+    <string name="account_import_tick_below">Tick playlists below</string>
+    <string name="account_import_next_add_yt">Next you can also add them to YouTube</string>
+    <string name="account_import_select_all">Select all</string>
+    <string name="account_import_select_none">Select none</string>
+    <string name="account_import_ytm_sync_on_notice">Library sync is on, so saved YouTube playlists are already in your library. Importing makes separate local copies.</string>
+    <string name="account_import_no_playlists">No playlists in this account.</string>
+
+    <!-- Import Progress Screen -->
+    <string name="import_progress_title_resync">Re-sync</string>
+    <string name="import_progress_title_importing">Importing</string>
+    <string name="import_progress_songs_count">%1$d of %2$d songs</string>
+    <string name="import_progress_status_stopped">Stopped</string>
+    <string name="import_progress_status_resync_failed">Re-sync failed</string>
+    <string name="import_progress_status_done">Done</string>
+    <string name="import_progress_status_no_import">No import running</string>
+    <string name="import_progress_starting">Starting…</string>
+    <string name="import_progress_background_hint">You can leave this page; the import keeps going and sends a notification when it\'s done.</string>
+    <string name="import_progress_found_ytm">Found on YouTube Music</string>
+    <string name="import_progress_fraction">%1$d of %2$d</string>
+    <string name="import_progress_added_to">Added to \"%1$s\"</string>
+    <string name="import_progress_new_playlists">New playlists</string>
+    <string name="import_progress_songs_liked">Songs liked</string>
+    <string name="import_progress_not_found">Not found</string>
+    <string name="import_progress_youtube_failures">Imported here but not fully on YouTube: %1$s</string>
+    <string name="import_progress_stop_import">Stop import</string>
+    <string name="import_progress_stop_import_desc">Songs and playlists imported so far are kept</string>
+    <string name="import_progress_done_btn">Done</string>
+    <string name="import_progress_copy_not_found">Copy songs not found</string>
+    <string name="import_progress_copy_not_found_desc">To look them up by hand</string>
+    <string name="import_progress_copied_toast">Copied %1$d songs</string>
+    <string name="import_progress_liked_songs_fallback">Liked songs</string>
+    <string name="import_progress_unmatched_more">and %1$d more. Copy the list to see them all.</string>
+
+    <!-- Import Sync Components -->
+    <string name="import_component_from_source">Import from %1$s</string>
+    <string name="import_component_paste">Paste</string>
+    <string name="import_component_continue">Continue</string>
+    <string name="import_component_link_prompt">Paste a link to a public playlist or album. Share it from %1$s with \"Copy link\".</string>
+    <string name="import_component_failed_title">Couldn\'t import</string>
+    <string name="import_component_already_running">An import is already running</string>
+    <string name="import_component_liked_songs_count">%1$d liked songs</string>
+    <string name="import_component_playlists_summary_single">1 playlist · %1$d songs</string>
+    <string name="import_component_playlists_summary_multiple">%1$d playlists · %2$d songs</string>
+    <string name="import_component_and_more"> and %1$d more</string>
+    <string name="import_component_search_notice">Each song is searched on YouTube Music. Large libraries take a few minutes; you can leave this page while it runs.</string>
+    <string name="import_component_mirror_yt_title">Also create on YouTube</string>
+    <string name="import_component_mirror_yt_desc">Playlists and likes are added to your YouTube account too.</string>
+    <string name="import_component_mirror_yt_sync_likes">YouTube sync keeps likes the same on both sides, so these likes will still be added to YouTube the next time it syncs.</string>
+</resources>

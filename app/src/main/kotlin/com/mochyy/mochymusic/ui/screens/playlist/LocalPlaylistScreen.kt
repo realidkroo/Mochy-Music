@@ -645,7 +645,11 @@ fun LocalPlaylistScreen(
                     deleteFromPlaylist()
                     val browseId = playlist?.playlist?.browseId
                     com.mochyy.mochymusic.ui.component.TopToaster.show(
-                        text = "Removed ${removed.song.song.title} from ${playlist?.playlist?.name ?: "playlist"}",
+                        text = context.getString(
+                            R.string.playlist_removed_song_from,
+                            removed.song.song.title,
+                            playlist?.playlist?.name ?: context.getString(R.string.playlist_fallback_name),
+                        ),
                         thumbnail = removed.song.song.thumbnailUrl,
                         iconRes = R.drawable.playlist_add,
                         actionLabel = context.getString(R.string.undo),
@@ -721,7 +725,7 @@ fun LocalPlaylistScreen(
                                     ) {
                                         Icon(
                                             painter = painterResource(R.drawable.drag_handle),
-                                            contentDescription = "Drag to move",
+                                            contentDescription = stringResource(R.string.playlist_drag_to_move),
                                             tint = Color.White.copy(alpha = 0.78f),
                                         )
                                     }
@@ -819,7 +823,7 @@ fun LocalPlaylistScreen(
                             .fillMaxWidth()
                             .padding(top = 28.dp)
                     ) {
-                        PlaylistSectionTitle(title = "Related Playlists")
+                        PlaylistSectionTitle(title = stringResource(R.string.playlist_related))
                         Spacer(Modifier.height(9.dp))
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 36.dp),
@@ -894,7 +898,7 @@ fun LocalPlaylistScreen(
     if (showSortDialog) {
         AlertDialog(
             onDismissRequest = { showSortDialog = false },
-            title = { Text("Sort order") },
+            title = { Text(stringResource(R.string.playlist_sort_order)) },
             text = {
                 Column {
                     PlaylistSongSortType.entries.forEach { type ->
@@ -918,7 +922,9 @@ fun LocalPlaylistScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = stringResource(playlistSortLabel(type)) +
-                                    if (sortType == type) (if (sortDescending) " (Desc)" else " (Asc)") else "",
+                                    if (sortType == type) (if (sortDescending) stringResource(
+                                                        R.string.playlist_sort_desc,
+                                                    ) else stringResource(R.string.playlist_sort_asc)) else "",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Playback logs -->
+    <string name="playback_logs_clip_label">Playback logs</string>
+
+    <!-- Manage downloads sheet -->
+    <string name="storage_manage_sort_by">Sort by - </string>
+    <string name="storage_manage_sort_size">size</string>
+    <string name="storage_manage_sort_name">name</string>
+    <string name="storage_manage_sort_recent">recently downloaded</string>
+    <string name="storage_manage_sort_most_played">most played</string>
+    <string name="storage_manage_sort_least_played">least played</string>
+    <string name="storage_manage_done">Done</string>
+    <string name="storage_manage_remove_one">Remove 1 song · %1$s</string>
+    <string name="storage_manage_remove_many">Remove %1$d songs · %2$s</string>
+    <string name="storage_manage_confirm_remove_one">Remove this download?</string>
+    <string name="storage_manage_confirm_remove_many">Remove %1$d downloads?</string>
+    <string name="storage_manage_confirm_message">They\'re deleted from this phone but stay in your library, and stream again when you play them.</string>
+    <string name="storage_manage_confirm_action">Remove</string>
+    <string name="storage_manage_search_placeholder">Search your downloads</string>
+    <string name="storage_manage_song_single">song</string>
+    <string name="storage_manage_song_plural">songs</string>
+    <string name="storage_manage_empty_note">Nothing downloaded yet. Songs you download show up here.</string>
+    <string name="storage_manage_no_match">No downloads match \"%1$s\".</string>
+    <string name="storage_manage_shelf_biggest">Biggest</string>
+    <string name="storage_manage_shelf_less_listened">Less listened</string>
+    <string name="storage_manage_shelf_less_listened_sub">Downloaded a while ago and hardly played</string>
+    <string name="storage_manage_all">All</string>
+    <string name="storage_manage_unpick">Unpick</string>
+    <string name="storage_manage_pick_all">Pick all</string>
+
+    <!-- Playlist menu & sheets -->
+    <string name="sheet_label_recents">recents</string>
+    <string name="sheet_label_results">results</string>
+    <string name="sheet_label_all">all</string>
+
+    <!-- Device output -->
+    <string name="ps_device_usb_audio">USB audio</string>
+    <string name="ps_device_usb_dac">USB DAC</string>
+</resources>

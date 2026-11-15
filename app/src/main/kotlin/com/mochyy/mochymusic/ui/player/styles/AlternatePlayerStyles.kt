@@ -32,6 +32,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import com.mochyy.mochymusic.R
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -310,18 +312,21 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
         },
     ) { landscape, menuOpen, setMenuOpen ->
         val insets = styleInsets(landscape)
+        // tablets and open foldables are close to square, there the circle shrinks to leave the words room; phones keep it as it is
+        val tablet = androidx.compose.ui.platform.LocalConfiguration.current.smallestScreenWidthDp >= 600
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val w = maxWidth
             val h = maxHeight
             if (!landscape) {
                 // circle from the top-left: through the right edge at 0.8 W, the left edge at 1.19 W
+                val posterW = if (tablet) minOf(w, h * 0.48f) else w
                 CircleCover(
                     carousel = carousel,
                     url = track.artwork,
                     center = Offset(0.13f, 0.06f),
                     radius = 1.14f,
-                    unit = w,
-                    modifier = Modifier.fillMaxWidth().height(w * 1.22f),
+                    unit = posterW,
+                    modifier = Modifier.fillMaxWidth().height(posterW * 1.22f),
                 )
                 val bottom = insets.bottom + 36.dp
                 Box(
@@ -329,7 +334,7 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                         .fillMaxSize()
                         .padding(
                             // the visualizer's bars stand where the words would start
-                            top = (w * 1.24f).coerceAtMost(h * 0.6f) + (if (visualizer) VisualizerRoom else 0.dp),
+                            top = (posterW * 1.24f).coerceAtMost(h * 0.6f) + (if (visualizer) VisualizerRoom else 0.dp),
                             start = 28.dp,
                             end = 22.dp + pillsWidth + 16.dp,
                             bottom = bottom,
@@ -346,7 +351,7 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                     }
                 }
                 // the seek bar on the cover's rim and the visualizer round it
-                val wPx = with(density) { w.toPx() }
+                val wPx = with(density) { posterW.toPx() }
                 CoverRing(
                     state = ring,
                     circle = RingCircle(Offset(0.13f * wPx, 0.06f * wPx), 1.14f * wPx),
@@ -370,19 +375,20 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                 )
             } else {
                 // circle from the left edge, the words to its right
+                val posterH = if (tablet) minOf(h, w * 0.45f) else h
                 CircleCover(
                     carousel = carousel,
                     url = track.artwork,
                     center = Offset(0.04f, 0.30f),
                     radius = 0.953f,
-                    unit = h,
-                    modifier = Modifier.fillMaxHeight().width(h * 1.0f),
+                    unit = posterH,
+                    modifier = Modifier.fillMaxHeight().width(posterH * 1.0f),
                 )
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
                         .padding(
-                            start = maxOf(h * 1.08f, w * 0.5f) + (if (visualizer) VisualizerRoomSideways else 0.dp),
+                            start = maxOf(posterH * 1.08f, w * (if (tablet) 0.48f else 0.5f)) + (if (visualizer) VisualizerRoomSideways else 0.dp),
                             end = 24.dp + insets.end,
                             top = 18.dp + maxOf(PosterChevron, PillsHeight) + 18.dp,
                             bottom = 20.dp,
@@ -398,7 +404,7 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                         }
                     }
                 }
-                val hPx = with(density) { h.toPx() }
+                val hPx = with(density) { posterH.toPx() }
                 CoverRing(
                     state = ring,
                     circle = RingCircle(Offset(0.04f * hPx, 0.30f * hPx), 0.953f * hPx),
@@ -790,7 +796,7 @@ private fun LyricsPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                                 Column {
                                     ExpressiveTitle(text = song.track.title, baseSize = r.sp(0.112f, 32f, 56f), color = tones.ink.copy(alpha = 0.55f))
                                     Spacer(Modifier.height(10.dp))
-                                    Text("No synced lyrics for this song", color = tones.inkSoft, fontSize = r.sp(0.034f, 12f, 15f), fontWeight = FontWeight.Medium)
+                                    Text(androidx.compose.ui.res.stringResource(R.string.ps_style_no_synced_lyrics), color = tones.inkSoft, fontSize = r.sp(0.034f, 12f, 15f), fontWeight = FontWeight.Medium)
                                 }
                             } else {
                                 ExpressiveLyrics(

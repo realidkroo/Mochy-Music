@@ -4,7 +4,16 @@ package com.mochyy.mochymusic.ui.player.customize
 
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import com.mochyy.mochymusic.ui.utils.stableStatusBars
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,6 +35,16 @@ import com.mochyy.mochymusic.ui.player.CarouselSong
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
+
+// on a tablet or an open foldable the turntable gets a narrower stage, so the record stays centred and clear of the status bar
+internal fun turntableStageWidth(maxWidth: Float, maxHeight: Float, isWide: Boolean): Float =
+    if (isWide) minOf(maxWidth * 0.58f, maxHeight * 0.70f) else minOf(maxWidth, maxHeight * 0.75f)
+
+internal fun turntableLeftOffset(maxWidth: Float, stageWidth: Float, isWide: Boolean): Float =
+    if (isWide) (maxWidth / 2f) - (0.162f * stageWidth) else (maxWidth - stageWidth) / 2f
+
+internal fun turntableTopPadding(statusBarTop: Float, isWide: Boolean): Float =
+    if (isWide) maxOf(statusBarTop + 16f, 36f) else maxOf(statusBarTop, 16f)
 
 private const val SpinDegreesPerSecond = 26f
 
@@ -92,9 +111,6 @@ fun DiscCoverStack(
         derivedStateOf { carousel == null || carousel.position == carousel.step.toFloat() }
     }
     val shownBefore = remember { HashSet<Int>() }
-    val slots = candidates.filter { isCurrent(it) || it.uid in shownBefore || resting }
-    shownBefore.clear()
-    slots.forEach { shownBefore += it.uid }
 
     val angle = remember { mutableFloatStateOf(0f) }
     val lastFrameNanos = remember { mutableLongStateOf(0L) }
@@ -118,51 +134,74 @@ fun DiscCoverStack(
 
     val measurer = rememberTextMeasurer(cacheSize = 96)
 
-    Box(modifier = modifier) {
-        // the Turntable's arm stands on a slab the record sits over
-        if (style == PlayerCoverStyle.TURNTABLE) TurntableBase(Modifier.fillMaxSize())
+    BoxWithConstraints(modifier = modifier) {
+        val wideTurntable = style == PlayerCoverStyle.TURNTABLE && maxWidth >= 500.dp
+        // the wide stage only has room for the playing record, phones keep the row sliding in either side
+        val slots = if (wideTurntable) {
+            candidates.filter { isCurrent(it) }
+        } else {
+            candidates.filter { isCurrent(it) || it.uid in shownBefore || resting }
+        }
+        shownBefore.clear()
+        slots.forEach { shownBefore += it.uid }
 
-        for (slot in slots) {
-            key(slot.uid) {
-                // a record keeps the picture it came in with, so it never reloads as it takes the middle
-                val art = remember { arrayOfNulls<String>(1) }
-                if (art[0] == null) art[0] = slot.artworkUrl
-                val shownArt = art[0] ?: slot.artworkUrl
-                // the album card wants the album's cover, which isn't always the song's own picture
-                val albumArtwork = if (style.hasAlbumCard) rememberAlbumArtwork(slot.mediaId, shownArt) else shownArt
-                DiscCover(
-                    style = style,
-                    artworkUrl = shownArt,
-                    discName = nameFor(slot),
-                    albumArtworkUrl = albumArtwork,
-                    realistic = realistic,
-                    editMode = editMode && isCurrent(slot),
-                    rotationProvider = { angle.floatValue },
-                    textMeasurer = measurer,
-                    saturationProvider = saturationProvider,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .then(
-                            if (carousel == null) Modifier else Modifier.graphicsLayer {
-                                translationX = carousel.offsetOf(slot) * discSpacingPx(style, size)
-                            }
-                        ),
+        val stageModifier = if (wideTurntable) {
+            val statusBarTop = WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding()
+            val stageWidth = turntableStageWidth(maxWidth.value, maxHeight.value, isWide = true).dp
+            Modifier
+                .offset(x = turntableLeftOffset(maxWidth.value, stageWidth.value, isWide = true).dp)
+                .padding(top = turntableTopPadding(statusBarTop.value, isWide = true).dp)
+                .width(stageWidth)
+                .fillMaxHeight()
+        } else {
+            Modifier.fillMaxSize()
+        }
+        Box(modifier = stageModifier) {
+            // the Turntable's arm stands on a slab the record sits over
+            if (style == PlayerCoverStyle.TURNTABLE) TurntableBase(Modifier.fillMaxSize())
+
+            for (slot in slots) {
+                key(slot.uid) {
+                    // a record keeps the picture it came in with, so it never reloads as it takes the middle
+                    val art = remember { arrayOfNulls<String>(1) }
+                    if (art[0] == null) art[0] = slot.artworkUrl
+                    val shownArt = art[0] ?: slot.artworkUrl
+                    // the album card wants the album's cover, which isn't always the song's own picture
+                    val albumArtwork = if (style.hasAlbumCard) rememberAlbumArtwork(slot.mediaId, shownArt) else shownArt
+                    DiscCover(
+                        style = style,
+                        artworkUrl = shownArt,
+                        discName = nameFor(slot),
+                        albumArtworkUrl = albumArtwork,
+                        realistic = realistic,
+                        editMode = editMode && isCurrent(slot),
+                        rotationProvider = { angle.floatValue },
+                        textMeasurer = measurer,
+                        saturationProvider = saturationProvider,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(
+                                if (carousel == null || wideTurntable) Modifier else Modifier.graphicsLayer {
+                                    translationX = carousel.offsetOf(slot) * discSpacingPx(style, size)
+                                }
+                            ),
+                    )
+                }
+            }
+
+            if (style == PlayerCoverStyle.TURNTABLE) {
+                TurntableArm(
+                    active = spinActive,
+                    interactive = !editMode,
+                    awayProvider = { carousel?.away ?: 0f },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else if (style.hasTonearm) {
+                DiscTonearm(
+                    liftProvider = { ((carousel?.away ?: 0f) * 3f).coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
-        }
-
-        if (style == PlayerCoverStyle.TURNTABLE) {
-            TurntableArm(
-                active = spinActive,
-                interactive = !editMode,
-                awayProvider = { carousel?.away ?: 0f },
-                modifier = Modifier.fillMaxSize(),
-            )
-        } else if (style.hasTonearm) {
-            DiscTonearm(
-                liftProvider = { ((carousel?.away ?: 0f) * 3f).coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxSize(),
-            )
         }
     }
 }

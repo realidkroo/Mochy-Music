@@ -22,9 +22,11 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.eq.ReverbPresets
 import com.mochyy.mochymusic.eq.ReverbSettings
 import com.mochyy.mochymusic.eq.audio.AudioTap
@@ -43,28 +45,28 @@ internal fun ReverbCard(viewModel: AudioLabViewModel) {
     EffectCard(
         picture = { ReverbPicture(reverb) },
         header = {
-            LabToggleRow("Reverb", "Reverb the music", reverb.enabled, { on -> viewModel.updateReverb { it.copy(enabled = on) } })
+            LabToggleRow(stringResource(R.string.fx_reverb_title), stringResource(R.string.fx_reverb_sub), reverb.enabled, { on -> viewModel.updateReverb { it.copy(enabled = on) } })
         },
         expanded = reverb.enabled,
         options = {
             LabChips(
-                chips = ReverbPresets.All.map { LabChip(it.id, it.name) } +
-                    (if (reverb.presetId == null) listOf(LabChip("custom", "Custom")) else emptyList()),
+                chips = ReverbPresets.All.map { LabChip(it.id, reverbPresetName(it)) } +
+                    (if (reverb.presetId == null) listOf(LabChip("custom", stringResource(R.string.fx_reverb_custom))) else emptyList()),
                 selectedKey = reverb.presetId ?: "custom",
                 onSelect = { id -> ReverbPresets.All.firstOrNull { it.id == id }?.let { p -> viewModel.updateReverb { it.withPreset(p) } } },
             )
             Spacer(Modifier.height(10.dp))
             LabPanel {
-                LabSlider("Mix", pct(reverb.mix), reverb.mix, { v -> viewModel.updateReverb { it.copy(mix = v, presetId = null) } }, 0f..1f)
-                LabSlider("Room size", pct(reverb.roomSize), reverb.roomSize, { v -> viewModel.updateReverb { it.copy(roomSize = v, presetId = null) } }, 0f..1f)
-                LabSlider("Damping", pct(reverb.damping), reverb.damping, { v -> viewModel.updateReverb { it.copy(damping = v, presetId = null) } }, 0f..1f)
-                LabSlider("Wet", pct(reverb.wet), reverb.wet, { v -> viewModel.updateReverb { it.copy(wet = v, presetId = null) } }, 0f..1f)
+                LabSlider(stringResource(R.string.fx_mix), pct(reverb.mix), reverb.mix, { v -> viewModel.updateReverb { it.copy(mix = v, presetId = null) } }, 0f..1f)
+                LabSlider(stringResource(R.string.fx_room_size), pct(reverb.roomSize), reverb.roomSize, { v -> viewModel.updateReverb { it.copy(roomSize = v, presetId = null) } }, 0f..1f)
+                LabSlider(stringResource(R.string.fx_damping), pct(reverb.damping), reverb.damping, { v -> viewModel.updateReverb { it.copy(damping = v, presetId = null) } }, 0f..1f)
+                LabSlider(stringResource(R.string.fx_wet), pct(reverb.wet), reverb.wet, { v -> viewModel.updateReverb { it.copy(wet = v, presetId = null) } }, 0f..1f)
                 FineTuneLabel()
-                LabSlider("Dry", pct(reverb.dry), reverb.dry, { v -> viewModel.updateReverb { it.copy(dry = v, presetId = null) } }, 0f..1f)
-                LabSlider("Width", pct(reverb.width), reverb.width, { v -> viewModel.updateReverb { it.copy(width = v, presetId = null) } }, 0f..1f)
-                LabSlider("Pre-delay", "${reverb.preDelayMs.roundToInt()} ms", reverb.preDelayMs,
+                LabSlider(stringResource(R.string.fx_dry), pct(reverb.dry), reverb.dry, { v -> viewModel.updateReverb { it.copy(dry = v, presetId = null) } }, 0f..1f)
+                LabSlider(stringResource(R.string.fx_width), pct(reverb.width), reverb.width, { v -> viewModel.updateReverb { it.copy(width = v, presetId = null) } }, 0f..1f)
+                LabSlider(stringResource(R.string.fx_pre_delay), "${reverb.preDelayMs.roundToInt()} ms", reverb.preDelayMs,
                     { v -> viewModel.updateReverb { it.copy(preDelayMs = v.roundToInt().toFloat(), presetId = null) } }, 0f..120f)
-                LabSlider("Low cut", "${reverb.lowCutHz.roundToInt()} Hz", log10(reverb.lowCutHz),
+                LabSlider(stringResource(R.string.fx_low_cut), "${reverb.lowCutHz.roundToInt()} Hz", log10(reverb.lowCutHz),
                     { v -> viewModel.updateReverb { it.copy(lowCutHz = 10f.pow(v).roundToInt().toFloat(), presetId = null) } },
                     log10(20f)..log10(1000f))
             }
@@ -73,9 +75,22 @@ internal fun ReverbCard(viewModel: AudioLabViewModel) {
 }
 
 @Composable
+private fun reverbPresetName(preset: ReverbPresets.Preset): String = when (preset.id) {
+    "room" -> stringResource(R.string.fx_reverb_room)
+    "studio" -> stringResource(R.string.fx_reverb_studio)
+    "bathroom" -> stringResource(R.string.fx_reverb_bathroom)
+    "plate" -> stringResource(R.string.fx_reverb_plate)
+    "hall" -> stringResource(R.string.fx_reverb_hall)
+    "cathedral" -> stringResource(R.string.fx_reverb_cathedral)
+    "stadium" -> stringResource(R.string.fx_reverb_stadium)
+    "dream" -> stringResource(R.string.fx_reverb_dream)
+    else -> preset.name
+}
+
+@Composable
 private fun FineTuneLabel() {
     Text(
-        "FINE TUNE",
+        stringResource(R.string.fx_fine_tune),
         fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, letterSpacing = 1.3.sp,
         color = LabColors.Secondary, modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
     )

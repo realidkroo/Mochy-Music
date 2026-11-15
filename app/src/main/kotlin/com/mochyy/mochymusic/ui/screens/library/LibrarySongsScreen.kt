@@ -6,9 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.LocalPlayerConnection
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.extensions.toMediaItem
 import com.mochyy.mochymusic.playback.queues.ListQueue
 import com.mochyy.mochymusic.ui.component.LocalMenuState
@@ -28,11 +30,12 @@ fun LibrarySongsScreen(
     val songs by viewModel.songs.collectAsState()
     val playerConnection = LocalPlayerConnection.current ?: return
     val menuState = LocalMenuState.current
+    val songsTitle = stringResource(R.string.songs)
 
     LibraryEntityListScreen(
-        title = "Songs",
-        subtitle = "All songs on your library listed here.",
-        searchPlaceholder = "Find a song by its title or artist",
+        title = songsTitle,
+        subtitle = stringResource(R.string.lib_songs_subtitle),
+        searchPlaceholder = stringResource(R.string.lib_songs_search),
         items = songs,
         idOf = { it.id },
         nameOf = { it.song.title },
@@ -46,7 +49,7 @@ fun LibrarySongsScreen(
             val ordered = sortForLibraryIndex(songs) { it.song.title }
             playerConnection.playQueue(
                 ListQueue(
-                    title = "Songs",
+                    title = songsTitle,
                     items = ordered.map { it.toMediaItem() },
                     startIndex = ordered.indexOf(song).coerceAtLeast(0),
                 ),

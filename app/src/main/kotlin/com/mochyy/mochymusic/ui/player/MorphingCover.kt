@@ -112,12 +112,8 @@ import com.mochyy.mochymusic.ui.player.flagship.AnimatedSkipGlyph
 import com.mochyy.mochymusic.ui.player.flagship.SkipCycleState
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import com.mochyy.mochymusic.canvas.CanvasArtwork
-import com.mochyy.mochymusic.canvas.MonochromeApiCanvas
-import com.mochyy.mochymusic.applecanvas.AppleMusicCanvasProvider
 import com.mochyy.mochymusic.LocalGlassState
 import com.mochyy.mochymusic.constants.CanvasThumbnailAnimationKey
 import com.mochyy.mochymusic.constants.CanvasWifiOnlyKey
@@ -417,6 +413,9 @@ fun MorphingCover(
     /** Double tap on the full-size cover, with where it landed in root coordinates (the like heart starts there). */
     onDoubleTapCover: ((androidx.compose.ui.geometry.Offset) -> Unit)? = null,
 
+    // a single tap on the full-size cover: the same sheet a tap on the song's title opens
+    onTapCover: (() -> Unit)? = null,
+
     onArtBoundsChanged: ((androidx.compose.ui.geometry.Rect) -> Unit)? = null,
 
     /** The player studio's hold on the art: where it's measured, and the layer that moves it into the editor. */
@@ -604,6 +603,7 @@ fun MorphingCover(
     // the second tap of a double tap.
     val currentOnLongPress by androidx.compose.runtime.rememberUpdatedState(onLongPressCover)
     val currentOnDoubleTap by androidx.compose.runtime.rememberUpdatedState(onDoubleTapCover)
+    val currentOnTap by androidx.compose.runtime.rememberUpdatedState(onTapCover)
     val artCoordinates = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
 
     val discSpinActive by remember(editMode) {
@@ -871,7 +871,7 @@ fun MorphingCover(
                     }
                     .then(
 
-                        if (longPressEnabled && (onLongPressCover != null || onDoubleTapCover != null)) {
+                        if (longPressEnabled && (onLongPressCover != null || onDoubleTapCover != null || onTapCover != null)) {
                             Modifier
                                 .pointerInput(isDiscStyle) {
                                     val likeAt: (Offset) -> Unit = { position ->
@@ -891,6 +891,8 @@ fun MorphingCover(
                                         )
                                     } else {
                                         detectTapGestures(
+                                            // the cover opens the song's details, like its title does
+                                            onTap = { currentOnTap?.invoke() },
                                             onLongPress = { currentOnLongPress?.invoke() },
                                             onDoubleTap = likeAt,
                                         )
@@ -2029,12 +2031,7 @@ private fun CoverCanvasLayer(
         val durationSec = playerConnection?.mediaMetadata?.value
             ?.takeIf { it.id == mediaId }?.duration?.takeIf { it > 0 }
 
-        val res = withContext(Dispatchers.IO) {
-            MonochromeApiCanvas.getBySongArtist(normTitle, normArtist, null, durationSec)
-                ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-            ?: AppleMusicCanvasProvider.getBySongArtist(normTitle, normArtist, null, "us", durationSec)
-                ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-        }
+        val res = findCanvas(context, normTitle, normArtist, durationSec = durationSec)
         if (res != null) {
             CanvasArtworkPlaybackCache.put(mediaId, res)
             canvasArtwork = res

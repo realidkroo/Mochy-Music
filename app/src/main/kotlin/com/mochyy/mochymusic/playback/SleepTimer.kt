@@ -12,7 +12,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.minutes
 
 class SleepTimer(
     private val scope: CoroutineScope,
@@ -21,27 +20,112 @@ class SleepTimer(
     private var sleepTimerJob: Job? = null
     var triggerTime by mutableLongStateOf(-1L)
         private set
+    var totalDurationMillis by mutableLongStateOf(0L)
+        private set
+    var isPaused by mutableStateOf(false)
+        private set
+    var remainingMillisWhenPaused by mutableLongStateOf(0L)
+        private set
     var pauseWhenSongEnd by mutableStateOf(false)
         private set
+
+    // a paused timer still counts as set, so the menu row and the cancel button keep showing it
     val isActive: Boolean
-        get() = triggerTime != -1L || pauseWhenSongEnd
+        get() = triggerTime != -1L || isPaused || pauseWhenSongEnd
+
+    val isRunning: Boolean
+        get() = triggerTime != -1L && !isPaused
 
     fun start(minute: Int) {
-        sleepTimerJob?.cancel()
-        sleepTimerJob = null
         if (minute == -1) {
+            cancelJob()
             pauseWhenSongEnd = true
             triggerTime = -1L
+            isPaused = false
+            totalDurationMillis = 0L
+            remainingMillisWhenPaused = 0L
         } else {
-            pauseWhenSongEnd = false
-            triggerTime = System.currentTimeMillis() + minute.minutes.inWholeMilliseconds
-            sleepTimerJob =
-                scope.launch {
-                    delay(minute.minutes)
-                    player.pause()
-                    triggerTime = -1L
-                }
+            startSeconds(minute * 60L)
         }
+    }
+
+    fun startSeconds(seconds: Long) {
+        cancelJob()
+        if (seconds <= 0L) {
+            clear()
+            return
+        }
+        pauseWhenSongEnd = false
+        isPaused = false
+        val millis = seconds * 1000L
+        totalDurationMillis = millis
+        triggerTime = System.currentTimeMillis() + millis
+        scheduleJob(millis)
+    }
+
+    fun pause() {
+        if (triggerTime > 0L && !isPaused) {
+            val left = (triggerTime - System.currentTimeMillis()).coerceAtLeast(0L)
+            cancelJob()
+            remainingMillisWhenPaused = left
+            isPaused = true
+            triggerTime = -1L
+        }
+    }
+
+    fun resume() {
+        if (isPaused && remainingMillisWhenPaused > 0L) {
+            isPaused = false
+            val millis = remainingMillisWhenPaused
+            triggerTime = System.currentTimeMillis() + millis
+            scheduleJob(millis)
+        }
+    }
+
+    // the -1 / +1 min buttons; going below zero ends the timer right away, like it ran out
+    fun adjust(deltaSeconds: Long) {
+        val deltaMillis = deltaSeconds * 1000L
+        if (isPaused) {
+            val newRemaining = (remainingMillisWhenPaused + deltaMillis).coerceAtLeast(0L)
+            remainingMillisWhenPaused = newRemaining
+            totalDurationMillis = maxOf(totalDurationMillis, newRemaining)
+            if (newRemaining == 0L) {
+                clear()
+            }
+        } else if (triggerTime > 0L) {
+            val left = (triggerTime - System.currentTimeMillis()) + deltaMillis
+            if (left <= 0L) {
+                clear()
+                player.pause()
+            } else {
+                cancelJob()
+                totalDurationMillis = maxOf(totalDurationMillis, left)
+                triggerTime = System.currentTimeMillis() + left
+                scheduleJob(left)
+            }
+        }
+    }
+
+    fun clear() {
+        cancelJob()
+        pauseWhenSongEnd = false
+        isPaused = false
+        triggerTime = -1L
+        totalDurationMillis = 0L
+        remainingMillisWhenPaused = 0L
+    }
+
+    private fun scheduleJob(millis: Long) {
+        sleepTimerJob = scope.launch {
+            delay(millis)
+            player.pause()
+            clear()
+        }
+    }
+
+    private fun cancelJob() {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
     }
 
     fun notifySongTransition() {
@@ -49,13 +133,6 @@ class SleepTimer(
             pauseWhenSongEnd = false
             player.pause()
         }
-    }
-
-    fun clear() {
-        sleepTimerJob?.cancel()
-        sleepTimerJob = null
-        pauseWhenSongEnd = false
-        triggerTime = -1L
     }
 
     override fun onMediaItemTransition(
