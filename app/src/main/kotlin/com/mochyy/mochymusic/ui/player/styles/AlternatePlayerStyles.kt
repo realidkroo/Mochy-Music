@@ -310,13 +310,14 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
         },
     ) { landscape, menuOpen, setMenuOpen ->
         val insets = styleInsets(landscape)
+        // tablets and open foldables are close to square, there the circle shrinks to leave the words room; phones keep it as it is
+        val tablet = androidx.compose.ui.platform.LocalConfiguration.current.smallestScreenWidthDp >= 600
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val w = maxWidth
             val h = maxHeight
             if (!landscape) {
                 // circle from the top-left: through the right edge at 0.8 W, the left edge at 1.19 W
-                // ponytail: clamp circle size on squarish viewports (foldable portrait) so it leaves room for text
-                val posterW = minOf(w, h * 0.48f)
+                val posterW = if (tablet) minOf(w, h * 0.48f) else w
                 CircleCover(
                     carousel = carousel,
                     url = track.artwork,
@@ -372,8 +373,7 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                 )
             } else {
                 // circle from the left edge, the words to its right
-                // ponytail: clamp circle height in landscape on wide/tablet viewports so text isn't crushed
-                val posterH = minOf(h, w * 0.45f)
+                val posterH = if (tablet) minOf(h, w * 0.45f) else h
                 CircleCover(
                     carousel = carousel,
                     url = track.artwork,
@@ -386,7 +386,7 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                     modifier = Modifier
                         .fillMaxHeight()
                         .padding(
-                            start = maxOf(posterH * 1.08f, w * 0.48f) + (if (visualizer) VisualizerRoomSideways else 0.dp),
+                            start = maxOf(posterH * 1.08f, w * (if (tablet) 0.48f else 0.5f)) + (if (visualizer) VisualizerRoomSideways else 0.dp),
                             end = 24.dp + insets.end,
                             top = 18.dp + maxOf(PosterChevron, PillsHeight) + 18.dp,
                             bottom = 20.dp,
