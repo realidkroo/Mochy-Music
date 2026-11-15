@@ -6,6 +6,8 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -493,8 +495,9 @@ private fun PlayerSheet(
             if (open) playerFullyOpen = true else if (closed) playerFullyOpen = false
         }
     }
+    // user landscape keeps to the phone's rotation lock; the sensor one ignored it and flipped the player whenever the phone tilted
     com.mochyy.mochymusic.ui.utils.HoldOrientation(
-        orientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
+        orientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE,
         active = styleTurned && playerFullyOpen,
     )
 
@@ -2130,6 +2133,14 @@ private fun ExpandMenuOverlay(
                                 .align(Alignment.BottomEnd)
                                 .padding(end = chevronEndDp, bottom = menuBottomDp)
                         }
+                    )
+                    // only a list too tall for the room above the chevron scrolls, from its end; a scroll would clip the rows sliding in
+                    .then(
+                        if ((34.dp + MenuItemBlurRoom * 2 + 16.dp) * menuItems.size > screenHeight - menuBottomDp) {
+                            Modifier.verticalScroll(rememberScrollState(), reverseScrolling = true)
+                        } else {
+                            Modifier
+                        }
                     ),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = if (fromLeft) Alignment.Start else Alignment.End
@@ -2166,11 +2177,13 @@ private fun ExpandMenuOverlay(
                         ) {
                             val action = slots[index]
                             val isToggled = isActive(action)
-                            // a downloaded song's button deletes it, so the words say that instead of download
-                            val labelText = if (action == com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.DOWNLOAD && isToggled) {
-                                stringResource(R.string.player_menu_delete_download)
-                            } else {
-                                item.first
+                            // a downloaded song's button deletes it, and a turned turntable's turns it back, so the words say that
+                            val labelText = when {
+                                action == com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.DOWNLOAD && isToggled ->
+                                    stringResource(R.string.player_menu_delete_download)
+                                action == com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction.ROTATE && isToggled ->
+                                    stringResource(R.string.player_turn_upright)
+                                else -> item.first
                             }
                             val label: @Composable () -> Unit = {
                             androidx.compose.material3.Text(

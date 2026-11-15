@@ -5,6 +5,8 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -584,7 +586,7 @@ fun BoxScope.StyleMenu(
         val lyricsLabel = androidx.compose.ui.res.stringResource(R.string.lyrics)
         val otherMenuLabel = androidx.compose.ui.res.stringResource(R.string.ps_action_other_menu)
         val editPlayerLabel = androidx.compose.ui.res.stringResource(R.string.menu_edit_player)
-        val rows = listOfNotNull(
+        val menu = listOfNotNull(
             actions.onLyrics?.let { open -> MenuItem(lyricsLabel, R.drawable.lyrics) { onOpenChange(false); open() } },
             actions.onQueue?.takeIf { queue }?.let { open -> MenuItem(queueLabel, R.drawable.queue_music) { onOpenChange(false); open() } },
         ) + shuffleAndRepeat + extras.map { extra ->
@@ -594,12 +596,17 @@ fun BoxScope.StyleMenu(
             }
         } + listOf(
             MenuItem(otherMenuLabel, R.drawable.more_horiz) { onOpenChange(false); actions.onOtherMenu() },
-        ) + listOfNotNull(
-            actions.turn?.let { turn -> MenuItem(turnLabel, R.drawable.screen_rotation) { onOpenChange(false); turn.toggle() } },
-        ) + listOf(
-            MenuItem(editPlayerLabel, R.drawable.tune) { onOpenChange(false); actions.onEditPlayer() },
         )
+        val turnItem = actions.turn?.let { turn -> MenuItem(turnLabel, R.drawable.screen_rotation) { onOpenChange(false); turn.toggle() } }
+        val editItem = MenuItem(editPlayerLabel, R.drawable.tune) { onOpenChange(false); actions.onEditPlayer() }
+        // turned sideways the screen is short, so the way back upright sits right by the button instead of at the far end of the list
+        val rows = when {
+            turnItem == null -> menu + editItem
+            actions.turn?.isTurned?.invoke() == true -> if (atBottom) menu + editItem + turnItem else listOf(turnItem) + menu + editItem
+            else -> menu + turnItem + editItem
+        }
         val itemGap = 10.dp
+        val roomForRows = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp - edge - buttonSize - itemGap
         Column(
             modifier = Modifier
                 .align(corner)
@@ -608,7 +615,9 @@ fun BoxScope.StyleMenu(
                     end = if (atStart) 0.dp else end - 3.dp,
                     top = if (atBottom) 0.dp else edge + buttonSize + itemGap,
                     bottom = if (atBottom) edge + buttonSize + itemGap else 0.dp,
-                ),
+                )
+                // only a list too tall for the screen scrolls, from the button's end; a scroll would clip the rows sliding in
+                .then(if ((buttonSize + 6.dp + itemGap) * rows.size > roomForRows) Modifier.verticalScroll(rememberScrollState(), reverseScrolling = atBottom) else Modifier),
             horizontalAlignment = if (atStart) Alignment.Start else Alignment.End,
             verticalArrangement = Arrangement.spacedBy(itemGap),
         ) {
