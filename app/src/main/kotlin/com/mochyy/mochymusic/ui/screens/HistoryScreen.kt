@@ -155,12 +155,12 @@ fun HistoryScreen(
                         onLongClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             menuState.show {
-                                SongMenu(originalSong = song, navController = navController, onDismiss = menuState::dismiss)
+                                SongMenu(originalSong = song, event = eventWithSong.event, navController = navController, onDismiss = menuState::dismiss)
                             }
                         },
                         onMenuClick = {
                             menuState.show {
-                                SongMenu(originalSong = song, navController = navController, onDismiss = menuState::dismiss)
+                                SongMenu(originalSong = song, event = eventWithSong.event, navController = navController, onDismiss = menuState::dismiss)
                             }
                         },
                     )
