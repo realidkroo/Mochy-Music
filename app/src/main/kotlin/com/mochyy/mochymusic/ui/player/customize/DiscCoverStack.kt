@@ -7,7 +7,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import com.mochyy.mochymusic.ui.utils.stableStatusBars
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +36,16 @@ import com.mochyy.mochymusic.ui.player.CarouselSong
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
+
+// ponytail: constrain turntable width and center vinyl on wide/foldable displays; mobile keeps full-width layout
+internal fun turntableStageWidth(maxWidth: Float, maxHeight: Float, isWide: Boolean): Float =
+    if (isWide) minOf(maxWidth * 0.58f, maxHeight * 0.70f) else minOf(maxWidth, maxHeight * 0.75f)
+
+internal fun turntableLeftOffset(maxWidth: Float, stageWidth: Float, isWide: Boolean): Float =
+    if (isWide) (maxWidth / 2f) - (0.162f * stageWidth) else (maxWidth - stageWidth) / 2f
+
+internal fun turntableTopPadding(statusBarTop: Float, isWide: Boolean): Float =
+    if (isWide) maxOf(statusBarTop + 16f, 36f) else maxOf(statusBarTop, 16f)
 
 private const val SpinDegreesPerSecond = 26f
 
@@ -96,7 +112,11 @@ fun DiscCoverStack(
         derivedStateOf { carousel == null || carousel.position == carousel.step.toFloat() }
     }
     val shownBefore = remember { HashSet<Int>() }
-    val slots = candidates.filter { isCurrent(it) || it.uid in shownBefore || resting }
+    val slots = if (style == PlayerCoverStyle.TURNTABLE) {
+        candidates.filter { isCurrent(it) }
+    } else {
+        candidates.filter { isCurrent(it) || it.uid in shownBefore || resting }
+    }
     shownBefore.clear()
     slots.forEach { shownBefore += it.uid }
 
@@ -123,14 +143,38 @@ fun DiscCoverStack(
     val measurer = rememberTextMeasurer(cacheSize = 96)
 
     BoxWithConstraints(modifier = modifier) {
-        // ponytail: constrain turntable width to fit available height on wide/square viewports
-        val turntableWidth = if (style == PlayerCoverStyle.TURNTABLE) minOf(maxWidth, maxHeight * 0.75f) else maxWidth
-        Box(
-            modifier = Modifier
+        val isWide = maxWidth >= 500.dp
+        val statusBarTop = WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding()
+        val topPadding = if (style == PlayerCoverStyle.TURNTABLE) {
+            turntableTopPadding(statusBarTop.value, isWide).dp
+        } else {
+            0.dp
+        }
+        val turntableWidth = if (style == PlayerCoverStyle.TURNTABLE) {
+            turntableStageWidth(maxWidth.value, maxHeight.value, isWide).dp
+        } else {
+            maxWidth
+        }
+        val turntableModifier = if (style == PlayerCoverStyle.TURNTABLE && isWide) {
+            val leftOffset = turntableLeftOffset(maxWidth.value, turntableWidth.value, isWide = true).dp
+            Modifier
+                .offset(x = leftOffset)
+                .padding(top = topPadding)
                 .width(turntableWidth)
                 .fillMaxHeight()
-                .align(Alignment.Center),
-        ) {
+        } else if (style == PlayerCoverStyle.TURNTABLE) {
+            Modifier
+                .padding(top = topPadding)
+                .width(turntableWidth)
+                .fillMaxHeight()
+                .align(Alignment.Center)
+        } else {
+            Modifier
+                .width(turntableWidth)
+                .fillMaxHeight()
+                .align(Alignment.Center)
+        }
+        Box(modifier = turntableModifier) {
             // the Turntable's arm stands on a slab the record sits over
             if (style == PlayerCoverStyle.TURNTABLE) TurntableBase(Modifier.fillMaxSize())
 
@@ -155,7 +199,7 @@ fun DiscCoverStack(
                     modifier = Modifier
                         .fillMaxSize()
                         .then(
-                            if (carousel == null) Modifier else Modifier.graphicsLayer {
+                            if (carousel == null || style == PlayerCoverStyle.TURNTABLE) Modifier else Modifier.graphicsLayer {
                                 translationX = carousel.offsetOf(slot) * discSpacingPx(style, size)
                             }
                         ),
