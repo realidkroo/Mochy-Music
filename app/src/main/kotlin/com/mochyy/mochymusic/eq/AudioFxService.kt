@@ -1,5 +1,6 @@
 package com.mochyy.mochymusic.eq
 
+import com.mochyy.mochymusic.eq.audio.EightDParams
 import com.mochyy.mochymusic.eq.audio.LoudnessParams
 import com.mochyy.mochymusic.eq.audio.ReplayGainParams
 import com.mochyy.mochymusic.eq.audio.ReverbParams
@@ -11,6 +12,9 @@ import javax.inject.Singleton
 /** the audio fx settings every player's effects read at the start of each buffer */
 @Singleton
 class AudioFxService @Inject constructor() {
+    @Volatile
+    var eightD: EightDParams = EightDParams()
+
     @Volatile
     var reverb: ReverbParams = ReverbParams()
 

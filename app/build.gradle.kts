@@ -127,7 +127,7 @@ extensions.configure<ApplicationExtension> {
 
     sourceSets {
         getByName("fdroid") {
-            java.directories.add("src/foss/kotlin")
+            kotlin.srcDir("src/foss/kotlin")
             res.directories.add("src/foss/res")
         }
     }
@@ -142,12 +142,6 @@ extensions.configure<ApplicationExtension> {
         file("keystore/release.keystore").exists()
 
     signingConfigs {
-        create("persistentDebug") {
-            storeFile = file("persistent-debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-        }
         if (hasReleaseSigning) {
             create("release") {
                 storeFile = file("keystore/release.keystore")
@@ -155,12 +149,6 @@ extensions.configure<ApplicationExtension> {
                 keyAlias = System.getenv("KEY_ALIAS")
                 keyPassword = System.getenv("KEY_PASSWORD")
             }
-        }
-        getByName("debug") {
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-            storePassword = "android"
-            storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
         }
     }
 

@@ -18,6 +18,7 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.audiofx.AudioEffect
 import android.media.audiofx.LoudnessEnhancer
+import android.media.audiofx.PresetReverb
 import android.net.ConnectivityManager
 import android.os.Binder
 import android.os.Build
@@ -184,6 +185,7 @@ import com.mochyy.mochymusic.eq.EqualizerService
 import com.mochyy.mochymusic.eq.audio.CustomEqualizerAudioProcessor
 import com.mochyy.mochymusic.eq.audio.LoudnessAudioProcessor
 import com.mochyy.mochymusic.eq.audio.ReverbAudioProcessor
+import com.mochyy.mochymusic.eq.audio.EightDAudioProcessor
 import com.mochyy.mochymusic.eq.audio.SpatialAudioProcessor
 import com.mochyy.mochymusic.extensions.SilentHandler
 import com.mochyy.mochymusic.extensions.collect
@@ -700,6 +702,8 @@ class MusicService :
 
     private var isAudioEffectSessionOpened = false
     private var loudnessEnhancer: LoudnessEnhancer? = null
+    private var eightDReverb: PresetReverb? = null
+    private var eightDReverbSessionId = C.AUDIO_SESSION_ID_UNSET
     private lateinit var hapticAudioProcessor: HapticAudioProcessor
 
     /** When a play counts for Last.fm and Libre.fm; the scrobbler skips services that aren't signed in. */
@@ -816,6 +820,9 @@ class MusicService :
         audioPass.start()
         player = createExoPlayer()
         player.addListener(this@MusicService)
+        scope.launch {
+            audioLab.eightD.collect(::updateEightDReverb)
+        }
         observeOutputSettings()
         sleepTimer = SleepTimer(scope, player)
         player.addListener(sleepTimer)
@@ -1341,6 +1348,7 @@ class MusicService :
             SpatialAudioProcessor(audioFx),
             ReverbAudioProcessor(audioFx),
             LoudnessAudioProcessor(audioFx),
+            EightDAudioProcessor(audioFx),
         )
 
         val silenceProcessor = SilenceDetectorAudioProcessor { handleLongSilenceDetected() }
@@ -1440,6 +1448,7 @@ class MusicService :
                 } else if (mediaId != null && format != null && tracks.isTypeSupported(C.TRACK_TYPE_AUDIO, true)) {
                     announceDecoderNotice(mediaId)
                 }
+                if (player === this@MusicService.player) updateEightDReverb(audioLab.eightD.value)
             }
         })
         playerReplayGain[player] = replayGain
@@ -2860,10 +2869,52 @@ class MusicService :
         }
     }
 
+    private fun updateEightDReverb(settings: com.mochyy.mochymusic.eq.EightDSettings) {
+        val level = settings.reverbLevel.coerceIn(0f, 1f)
+        val sessionId = player.audioSessionId
+        if (!settings.enabled || level <= 0f || player.playbackState == Player.STATE_IDLE ||
+            player.playbackState == Player.STATE_ENDED || sessionId <= 0 || sessionId == C.AUDIO_SESSION_ID_UNSET
+        ) {
+            releaseEightDReverb()
+            return
+        }
+
+        try {
+            if (eightDReverb != null && eightDReverbSessionId != sessionId) releaseEightDReverb()
+            val effect = eightDReverb ?: PresetReverb(0, sessionId).also {
+                eightDReverb = it
+                eightDReverbSessionId = sessionId
+            }
+            effect.preset = when {
+                level < 0.4f -> PresetReverb.PRESET_SMALLROOM
+                level < 0.75f -> PresetReverb.PRESET_MEDIUMROOM
+                else -> PresetReverb.PRESET_LARGEHALL
+            }.toShort()
+            effect.enabled = true
+        } catch (e: Exception) {
+            reportException(e)
+            Timber.tag(TAG).e(e, "Failed to configure 8D room reverb")
+            releaseEightDReverb()
+        }
+    }
+
+    private fun releaseEightDReverb() {
+        try {
+            eightDReverb?.release()
+        } catch (e: Exception) {
+            reportException(e)
+            Timber.tag(TAG).e(e, "Failed to release 8D room reverb")
+        } finally {
+            eightDReverb = null
+            eightDReverbSessionId = C.AUDIO_SESSION_ID_UNSET
+        }
+    }
+
     private fun openAudioEffectSession() {
         if (isAudioEffectSessionOpened) return
         isAudioEffectSessionOpened = true
         setupLoudnessEnhancer()
+        updateEightDReverb(audioLab.eightD.value)
         sendBroadcast(
             Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION).apply {
                 putExtra(AudioEffect.EXTRA_AUDIO_SESSION, player.audioSessionId)
@@ -2918,6 +2969,7 @@ class MusicService :
         mediaItem?.mediaId?.let { announceMusicVideoAudio(it) }
 
         setupLoudnessEnhancer()
+        updateEightDReverb(audioLab.eightD.value)
 
         scrobbleTimer.onSongStop()
         playReporter.onSongStop()
@@ -2952,6 +3004,8 @@ class MusicService :
     override fun onPlaybackStateChanged(
         @Player.State playbackState: Int,
     ) {
+        updateEightDReverb(audioLab.eightD.value)
+
         // IDLE is where a failed stream sits; anything else means it's loading or playing again
         if (playbackState != Player.STATE_IDLE) clearStreamFailure()
 
@@ -4318,6 +4372,7 @@ class MusicService :
         callWatcher.stop()
         abandonAudioFocus()
         releaseLoudnessEnhancer()
+        releaseEightDReverb()
         crossmixDirector.release()
         fadingLoudnessEnhancer?.runCatching { release() }
         fadingLoudnessEnhancer = null

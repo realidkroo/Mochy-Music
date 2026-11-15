@@ -406,4 +406,17 @@
     <string name="error_stream_unavailable_title">Couldn\'t play this track</string>
     <string name="playback_error_channel_name">Playback errors</string>
     <string name="playing_music_video_audio">YouTube wouldn\'t play this song, so you\'re hearing its music video instead</string>
+    <string name="eight_d_title">8D Audio</string>
+    <string name="eight_d_description">Rotating spatial sound that moves around you</string>
+    <string name="eight_d_reset">Reset 8D Audio settings</string>
+    <string name="eight_d_rotation_speed">Rotation speed</string>
+    <string name="eight_d_rotation_value">%1$.2f Hz (~%2$.1fs/round)</string>
+    <string name="eight_d_spatial_depth">Spatial depth</string>
+    <string name="eight_d_room_reverb">Room reverb</string>
+    <string name="eight_d_room_small">Small</string>
+    <string name="eight_d_room_medium">Medium</string>
+    <string name="eight_d_room_large">Large</string>
+    <string name="eight_d_preset_chill">Chill</string>
+    <string name="eight_d_preset_balanced">Balanced</string>
+    <string name="eight_d_preset_extreme">Extreme</string>
 </resources>

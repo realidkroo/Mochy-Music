@@ -270,4 +270,17 @@
     <string name="use_login_for_browse">Đăng nhập để xem nội dung</string>
     <string name="use_login_for_browse_desc">Điều này có thể ảnh hưởng đến nội dung bạn nhìn thấy, ví dụ như hiện những album dành riêng cho premium nếu bạn đăng nhập với tài khoản Premium</string>
     <string name="action_login">Đăng nhập</string>
+    <string name="eight_d_title">Âm thanh 8D</string>
+    <string name="eight_d_description">Âm thanh không gian xoay quanh bạn</string>
+    <string name="eight_d_reset">Đặt lại cài đặt âm thanh 8D</string>
+    <string name="eight_d_rotation_speed">Tốc độ xoay</string>
+    <string name="eight_d_rotation_value">%1$.2f Hz (~%2$.1f giây/vòng)</string>
+    <string name="eight_d_spatial_depth">Độ sâu không gian</string>
+    <string name="eight_d_room_reverb">Độ vang phòng</string>
+    <string name="eight_d_room_small">Nhỏ</string>
+    <string name="eight_d_room_medium">Vừa</string>
+    <string name="eight_d_room_large">Lớn</string>
+    <string name="eight_d_preset_chill">Nhẹ nhàng</string>
+    <string name="eight_d_preset_balanced">Tiêu chuẩn</string>
+    <string name="eight_d_preset_extreme">Xoay cực đại</string>
 </resources>

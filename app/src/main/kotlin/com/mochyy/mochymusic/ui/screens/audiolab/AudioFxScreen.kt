@@ -67,9 +67,10 @@ fun AudioFxScreen(
     val reverb by viewModel.reverb.collectAsState()
     val loudness by viewModel.loudness.collectAsState()
     val spatial by viewModel.spatial.collectAsState()
+    val eightD by viewModel.eightD.collectAsState()
     val playback by viewModel.playback.collectAsState()
     val volume by viewModel.volume.collectAsState()
-    val effects = activeEffects(reverb, loudness, spatial, playback, volume)
+    val effects = activeEffects(reverb, loudness, spatial, eightD, playback, volume)
 
     AudioLabPage(
         title = LabTitle("Audio", "FX", firstSize = 40.sp, secondSize = 84.sp, firstDim = true),
@@ -77,6 +78,8 @@ fun AudioFxScreen(
         art = { hidden -> FxCardStack(effects, hidden) },
     ) {
         ReverbCard(viewModel)
+        Spacer(Modifier.height(14.dp))
+        EightDAudioCard(viewModel)
         Spacer(Modifier.height(14.dp))
         LoudnessCard(viewModel)
         Spacer(Modifier.height(14.dp))
