@@ -461,7 +461,7 @@ fun ProfileScreen(navController: NavController) {
             val viewportH = constraints.maxHeight.toFloat()
             val inset = with(density) { HomeContentInset.toPx() }
             // on its side the header is the left pane, the card as big as fits between the logo and the bottom bar
-            // ponytail: clamp profile card to 380dp on foldables/tablets in portrait; landscape uses paneW
+            // upright on a tablet the id card stops at 380dp instead of stretching across the screen
             val maxCardW = with(density) { 380.dp.toPx() }
             val paneW = if (landscape) constraints.maxWidth * LandscapePaneShare else constraints.maxWidth.toFloat()
             val landscapeTop = topPx + with(density) { LandscapeCardTop.toPx() }

@@ -48,7 +48,7 @@ fun coverArtBoxF(
     if (!boxed) return CoverBoxF(0f, 0f, width, region)
 
     val top = statusTop + 16f * unit
-    // ponytail: cap side to available height inside region; upgrade with two-pane layout when width allows
+    // never bigger than the room above the controls, or a squarish screen pushes the cover into them
     val maxSide = (region - top - 8f * unit).coerceAtLeast(0f)
     val usualSide = (width - StageInsetDp * unit * 2f).coerceIn(0f, maxSide)
     var side = (usualSide * region / usualRegion).coerceAtMost(maxSide)

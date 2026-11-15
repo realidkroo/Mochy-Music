@@ -245,7 +245,7 @@ fun OnlineSearchResult(
                 // recorded while scrolling too, so the bar's blur never drops out mid-scroll
                 .glassRoot(glassState, isActive = { progressProvider() > 0.01f })
         ) {
-            // ponytail: chunk search results into 2 columns on wide layout; upgrade to dynamic adaptive column grid when 3+ column tablet layout designed
+            // wide screens show the results two to a row, so the rows aren't mostly empty space
             val columns = if (maxWidth >= 600.dp) 2 else 1
             LazyColumn(
                 state = listState,

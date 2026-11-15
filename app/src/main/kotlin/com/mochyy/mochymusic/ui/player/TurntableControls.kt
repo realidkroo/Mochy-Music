@@ -67,7 +67,7 @@ private val PillFill = Color.White.copy(alpha = 0.08f)
 /** between the stack and the title row, on top of the stack's own gap */
 private val TitleGap = 4.dp
 
-// ponytail: wide or foldable displays place playback controls inline with title row; mobile keeps original layout
+// upright tablets and open foldables put the pills beside the title, phones keep them above it
 internal fun isTurntableWideLayout(screenWidthDp: Int): Boolean = screenWidthDp >= 500
 
 @Composable
