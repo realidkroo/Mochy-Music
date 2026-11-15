@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="xmix_title">Crossfade</string>
+    <string name="xmix_back">Audio Lab</string>
+    <string name="xmix_off">Off</string>
+    <string name="xmix_off_desc">Boring boring boring</string>
+    <string name="xmix_auto">Auto Crossfade</string>
+    <string name="xmix_auto_desc">A smooth %1$d-second blend from every song into the next</string>
+    <string name="xmix_manual">Manual Crossfade</string>
+    <string name="xmix_manual_desc">Set custom crossfade</string>
+    <string name="xmix_length">Length</string>
+    <string name="xmix_crossmix">CrossMix</string>
+    <string name="xmix_crossmix_desc">DJ-style: reads each song\'s tempo, beats, key, energy and where its voice is, then picks the one of 27 transitions that fits, so two voices never sing over each other</string>
+    <string name="xmix_crossmix_desc_unavailable">Still being tuned, so it can\'t be turned on yet. DJ-style mixes that read each song\'s tempo, beats, key and voice</string>
+    <string name="xmix_gapless">Keep gapless albums intact</string>
+    <string name="xmix_gapless_desc">Album tracks that run straight into each other play through unmixed</string>
+    <string name="xmix_in_progress">In progress</string>
+    <string name="xmix_transport_title">Pause, play, forward and backward transition</string>
+    <string name="xmix_fade_enable">Enable fade</string>
+    <string name="xmix_fade_enable_desc">Eases the music out when you pause or skip, and back in when you play</string>
+    <string name="xmix_layered_effect">Layered effect</string>
+    <string name="xmix_layered_effect_desc">A CrossMix effect over the fade, like an echo trail or the record spinning back</string>
+    <string name="xmix_choose_effect">Choose an effect</string>
+    <string name="xmix_effect_none">None</string>
+    <string name="xmix_effect_echo">Echo</string>
+    <string name="xmix_effect_rewind">Rewind</string>
+    <string name="xmix_effect_tape_stop">Tape stop</string>
+    <string name="xmix_effect_far_away">Fade to far</string>
+    <string name="xmix_effect_reverb">Reverb wash</string>
+    <string name="xmix_effect_filter">Filter sweep</string>
+    <string name="xmix_status_title">Crossmix status</string>
+    <string name="xmix_status_empty">Nothing yet. Play a song with another queued after it</string>
+    <string name="xmix_test_title">Test on this song</string>
+    <string name="xmix_test_desc">Mixes into the next song</string>
+    <string name="xmix_test_detail">Plans the mix into the next song, then jumps to a few seconds before it</string>
+</resources>
