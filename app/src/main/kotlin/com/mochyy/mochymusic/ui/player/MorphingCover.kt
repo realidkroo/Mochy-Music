@@ -491,26 +491,28 @@ fun MorphingCover(
     }
     val currentOnVideoShowing by androidx.compose.runtime.rememberUpdatedState(onVideoShowingChange)
     LaunchedEffect(isVideoActive) { currentOnVideoShowing(isVideoActive) }
-    val targetMiniArtWidth = if (isVideoActive) (48.dp * 16f / 9f) else 48.dp
+    // where the pill sits across the screen: the phone's full width, or the wide bar's left part
+    val pillFrame = com.mochyy.mochymusic.ui.component.LocalMiniPillFrame.current
+    // the wide bar's pill shrinks on a short screen, and the mini player's cover and buttons with it
+    val miniScale = pillFrame.height / com.mochyy.mochymusic.constants.MiniPlayerHeight
+    val targetMiniArtWidth = if (isVideoActive) (48.dp * miniScale * 16f / 9f) else 48.dp * miniScale
     val animatedMiniArtWidth by animateDpAsState(
         targetValue = targetMiniArtWidth,
         animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
         label = "miniArtWidth"
     )
 
-    // where the pill sits across the screen: the phone's full width, or the wide bar's left part
-    val pillFrame = com.mochyy.mochymusic.ui.component.LocalMiniPillFrame.current
     val endpoints = remember(maxWidth, maxHeight, statusBarTop, coverStyle, animatedMiniArtWidth, pillFrame) {
-        val miniHeight = 64.dp
+        val miniHeight = pillFrame.height
         val miniArtWidth = animatedMiniArtWidth
-        val miniArtHeight = 48.dp
+        val miniArtHeight = 48.dp * miniScale
         // 8dp in from the pill's edge, as from its top and bottom, so the cover lines up with the
         // nav bar's first tab highlight right under it
         val miniArtX = pillFrame.start + 8.dp
         val miniArtY = (miniHeight - miniArtHeight) / 2
 
-        val miniPlaySize = 36.dp
-        val miniSkipSize = 36.dp
+        val miniPlaySize = 36.dp * miniScale
+        val miniSkipSize = 36.dp * miniScale
         val miniSkipX = maxWidth - pillFrame.end - 12.dp - miniSkipSize
         val miniSkipY = (miniHeight - miniSkipSize) / 2
         val miniPlayX = miniSkipX - 8.dp - miniPlaySize
@@ -593,7 +595,7 @@ fun MorphingCover(
         }
     }
 
-    val miniPlaySize = 36.dp
+    val miniPlaySize = 36.dp * miniScale
 
     val longPressEnabled by remember {
         derivedStateOf { progressProvider() > 0.9f && lyricsProgressProvider() < 0.1f }
