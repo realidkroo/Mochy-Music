@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Playback logs -->
+    <string name="playback_logs_clip_label">Oynatma kayıtları</string>
+
+    <!-- Manage downloads sheet -->
+    <string name="storage_manage_sort_by">Sırala -</string>
+    <string name="storage_manage_sort_size">boyut</string>
+    <string name="storage_manage_sort_name">ad</string>
+    <string name="storage_manage_sort_recent">en son indirilen</string>
+    <string name="storage_manage_sort_most_played">en çok çalınan</string>
+    <string name="storage_manage_sort_least_played">en az çalınan</string>
+    <string name="storage_manage_done">Bitti</string>
+    <string name="storage_manage_remove_one">1 şarkıyı kaldır · %1$s</string>
+    <string name="storage_manage_remove_many">%1$d şarkıyı kaldır · %2$s</string>
+    <string name="storage_manage_confirm_remove_one">Bu indirme kaldırılsın mı?</string>
+    <string name="storage_manage_confirm_remove_many">%1$d indirme kaldırılsın mı?</string>
+    <string name="storage_manage_confirm_message">Bu telefondan silinir ama kütüphanende kalır, çaldığında yeniden akışa geçer.</string>
+    <string name="storage_manage_confirm_action">Kaldır</string>
+    <string name="storage_manage_search_placeholder">İndirilenlerinde ara</string>
+    <string name="storage_manage_song_single">şarkı</string>
+    <string name="storage_manage_song_plural">şarkı</string>
+    <string name="storage_manage_empty_note">Henüz bir şey indirilmedi. İndirdiğin şarkılar burada görünür.</string>
+    <string name="storage_manage_no_match">İndirilenler arasında \"%1$s\" ile eşleşen yok.</string>
+    <string name="storage_manage_shelf_biggest">En büyük</string>
+    <string name="storage_manage_shelf_less_listened">Az dinlenen</string>
+    <string name="storage_manage_shelf_less_listened_sub">Bir süre önce indirilmiş ve pek çalınmamış</string>
+    <string name="storage_manage_all">Tümü</string>
+    <string name="storage_manage_unpick">Seçimi kaldır</string>
+    <string name="storage_manage_pick_all">Tümünü seç</string>
+
+    <!-- Playlist menu & sheets -->
+    <string name="sheet_label_recents">son çalınanlar</string>
+    <string name="sheet_label_results">sonuçlar</string>
+    <string name="sheet_label_all">tümü</string>
+
+    <!-- Device output -->
+    <string name="ps_device_usb_audio">USB ses</string>
+    <string name="ps_device_usb_dac">USB DAC</string>
+</resources>

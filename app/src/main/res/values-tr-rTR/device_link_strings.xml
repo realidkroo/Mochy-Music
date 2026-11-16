@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- device integration: the sheet that lists paired devices -->
+    <string name="devices_title">Cihaz entegrasyonu</string>
+    <string name="devices_row_detail">Aynı Wi-Fi\'daki TV\'ni, başka bir telefonu veya tableti bağla</string>
+    <string name="devices_hero">Wi-Fi\'ında 10 cihaza kadar bağlan: diğer telefonun, tabletin, TV\'n, araç ünitesi ve daha fazlası.</string>
+    <string name="devices_mine">Cihazlarım</string>
+    <string name="devices_add_more">Buraya daha fazla cihaz ekle</string>
+    <string name="devices_full">Bu 10 cihaz, bir telefonun tutabildiği en fazla sayı. Başka eklemek için birinin bağlantısını kaldır.</string>
+    <string name="devices_options">Seçenekler</string>
+    <string name="devices_control">Kontrol</string>
+    <string name="devices_controlling_button">Kontrol ediliyor</string>
+    <string name="devices_device_settings">Cihaz ayarları</string>
+    <string name="devices_status_controlling">Buradan kontrol ediliyor</string>
+    <string name="devices_status_connected_detail">Birbirinizi kontrol edebilirsiniz</string>
+    <string name="devices_stay_reachable">Arka planda ulaşılabilir kal</string>
+    <string name="devices_stay_reachable_detail">Mochy kapalıyken bile cihazların senkronize olabilir, akış yapabilir ve kontrol edebilir. Sessiz bir bildirim gösterir.</string>
+    <string name="devices_in_player_menu">Cihazlarımı oynatıcı menüsünde göster</string>
+    <string name="devices_in_player_menu_detail">Onlarda çal, şarkıları orada sıraya koy veya oynatıcının menüsünden kontrol et</string>
+    <string name="devices_notification_title">Cihazların bu telefona ulaşabilir</string>
+    <string name="devices_notification_text">%1$s buradan senkronize olabilir, akış yapabilir ve kontrol edebilir</string>
+    <string name="devices_kind_phone">Telefon</string>
+    <string name="devices_kind_tablet">Tablet</string>
+    <string name="devices_kind_tv">TV</string>
+    <string name="devices_kind_car">Araç</string>
+
+    <!-- one device's own sheet -->
+    <string name="devices_ok">Tamam</string>
+    <string name="devices_remote_control">Uzaktan kumandayı etkinleştir</string>
+    <string name="devices_remote_control_tv_detail">Bu telefondan çal, atla ve ayarlarını değiştir</string>
+    <string name="devices_remote_control_phone_detail">Her iki telefondan birbirinizde çal, atla ve ayarları değiştir</string>
+    <string name="devices_auto_control">Bağlandığında kontrolü al</string>
+    <string name="devices_auto_control_detail">Üzerinde Mochy açılır açılmaz bu telefon onun kumandası olur</string>
+    <string name="devices_stream_local">Yerel müziği bu cihazdan akıt</string>
+    <string name="devices_stream_local_detail">İndirdiklerin ve şarkı dosyaların doğrudan bu telefondan onun üzerinde çalar</string>
+    <string name="devices_override_library">Cihazın kütüphanesini geçersiz kıl</string>
+    <string name="devices_override_library_detail">Onun kütüphanesi bu telefonunkiyle değiştirilir ve aynı adımda tutulur</string>
+    <string name="devices_sync_now">Şimdi senkronize et</string>
+    <string name="devices_sync_asked">%1$s en son kütüphaneni alıyor</string>
+    <string name="devices_unlink_question">%1$s bağlantısı kaldırılsın mı? Zaten sahip olduklarını korur.</string>
+
+    <!-- adding a device -->
+    <string name="devices_add_title">Cihaz ekle</string>
+    <string name="devices_pairing_code">Eşleştirme modu kodu</string>
+    <string name="devices_detected">Algılandı</string>
+    <string name="devices_looking">Cihazlar aranıyor…</string>
+    <string name="devices_looking_detail">Diğer telefonunda Cihaz ekle\'yi veya TV\'ndeki Mochy\'de telefon sayfasını aç</string>
+    <string name="devices_connect">Bağlan</string>
+    <string name="devices_or">Veya</string>
+    <string name="devices_enter_code">Kod gir</string>
+    <string name="devices_enter_code_none">Bu Wi-Fi\'da henüz eşleştirme modunda olan yok. Önce diğer cihazda aç.</string>
+    <string name="devices_pair_detail">%1$s cihazının gösterdiği kodu yaz</string>
+    <string name="devices_paired_with">%1$s ile eşleştirildi</string>
+    <string name="devices_wrong_code">Kod eşleşmedi. Diğer ekranı kontrol edip tekrar dene.</string>
+    <string name="devices_pair_full">Birinizde zaten 10 cihaz var. Önce birinin bağlantısını kaldır.</string>
+    <string name="devices_pair_failed">Ona ulaşılamadı. İkisinin de aynı Wi-Fi\'da olduğundan emin ol.</string>
+    <string name="devices_pair_outdated">O cihaz daha eski bir Mochy çalıştırıyor. Güncelle, sonra kodu tekrar dene</string>
+
+    <!-- remote control mode -->
+    <string name="remote_controlling">%1$s kontrol ediliyor</string>
+    <string name="remote_stop">Kontrolü durdur</string>
+    <string name="remote_playing">Çalıyor</string>
+    <string name="remote_paused">Duraklatıldı</string>
+    <string name="remote_connecting">Ne çaldığı soruluyor…</string>
+    <string name="remote_unreachable">Şu an ona ulaşılamıyor. Üzerinde Mochy açık mı?</string>
+    <string name="remote_up_next">Sırada</string>
+    <string name="remote_hand_over">Bu telefonun kuyruğunu %1$s üzerinde çal</string>
+    <string name="remote_queued_on">%1$s üzerindeki kuyruğa eklendi</string>
+    <string name="remote_like">Beğen</string>
+    <string name="remote_add_to_playlist">Çalma listesine ekle</string>
+    <string name="remote_previous">Önceki</string>
+    <string name="remote_play_pause">Çal veya duraklat</string>
+    <string name="remote_next">Sonraki</string>
+    <string name="remote_remove_from_queue">Kuyruktan kaldır</string>
+    <string name="remote_settings_on">%1$s üzerindeki ayarlar</string>
+    <string name="remote_settings_loading">Ayarı alınıyor…</string>
+    <string name="remote_settings_failed">Ayarları alınamadı. Orada Mochy\'nin açık olduğundan ve bu telefonun kontrol etmesine izin verdiğinden emin ol.</string>
+    <string name="remote_settings_retry">Tekrar dene</string>
+    <string name="remote_setting_failed">Bu, %1$s üzerinde değiştirilemedi</string>
+    <string name="remote_seconds">%1$d sn</string>
+
+    <!-- the settings a controlling phone sees, sent by the device that has them -->
+    <string name="link_section_playback">Oynatma</string>
+    <string name="link_section_audio_lab">Ses Laboratuvarı</string>
+    <string name="link_section_youtube">YouTube</string>
+    <string name="link_section_player">Oynatıcı</string>
+    <string name="link_setting_transition">Şarkı geçişleri</string>
+    <string name="link_transition_off">Kapalı</string>
+    <string name="link_transition_auto">Otomatik crossfade</string>
+    <string name="link_transition_manual">Crossfade</string>
+    <string name="link_transition_crossmix">Crossmix</string>
+    <string name="link_setting_crossfade_length">Crossfade uzunluğu</string>
+    <string name="link_setting_transport_fade">Çalma, duraklatma ve atlamada solma</string>
+    <string name="link_setting_skip_silence">Sessizliği atla</string>
+    <string name="link_setting_normalize">Şarkı sesini eşitle</string>
+    <string name="link_setting_autoplay">Benzer şarkıları çalmaya devam et</string>
+    <string name="link_setting_eq">Ekolayzer</string>
+    <string name="link_setting_eq_preset">Ekolayzer eğrisi</string>
+    <string name="link_setting_loudness">Ses yüksekliği artışı</string>
+    <string name="link_setting_reverb">Yankı</string>
+    <string name="link_setting_spatial">Uzamsal ses</string>
+    <string name="link_setting_speed">Hız</string>
+    <string name="link_speed_times">%1$s×</string>
+    <string name="link_setting_audio_quality">Ses kalitesi</string>
+    <string name="link_quality_auto">Otomatik</string>
+    <string name="link_quality_high">Yüksek</string>
+    <string name="link_quality_medium">Orta</string>
+    <string name="link_quality_low">Düşük</string>
+    <string name="link_setting_video_quality">Video kalitesi</string>
+    <string name="link_video_lines">%1$dp</string>
+    <string name="link_setting_studio_for_videos">Müzik videolarının stüdyo sürümünü çal</string>
+    <string name="link_setting_data_saver">Veri tasarrufu</string>
+    <string name="link_setting_player_style">Oynatıcı görünümü</string>
+</resources>

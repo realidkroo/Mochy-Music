@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- android auto -->
+    <string name="car_tab_home">Ana sayfa</string>
+    <string name="car_tab_remote">Uzak</string>
+    <string name="car_tab_recent">Son</string>
+    <string name="car_tab_library">Kütüphane</string>
+
+    <string name="car_quick_picks">Hızlı seçimler</string>
+    <string name="car_categories">Kategoriler</string>
+    <string name="car_home_empty">Telefonunda birkaç şarkı çal, seçimlerin burada görünsün!</string>
+
+    <string name="car_recent_songs">Şarkılar</string>
+    <string name="car_recent_lists">Albümler ve çalma listeleri</string>
+    <string name="car_recent_empty">Çaldığın şarkılar burada görünür.</string>
+
+    <string name="car_liked">Beğenilen şarkılar</string>
+    <string name="car_downloaded">İndirilenler</string>
+    <string name="car_playlists">Çalma listeleri</string>
+    <string name="car_albums">Albümler</string>
+    <string name="car_artists">Sanatçılar</string>
+    <string name="car_list_empty">Burada henüz bir şey yok.</string>
+    <string name="car_couldnt_load">Bu yüklenemedi. Bağlantını kontrol edip tekrar dene.</string>
+    <string name="car_shuffle">Karıştır</string>
+
+    <string name="car_lyrics">Şarkı sözleri</string>
+    <string name="car_lyrics_on_player">Oynatıcıda</string>
+    <string name="car_lyrics_none">Bu şarkının şarkı sözü yok.</string>
+    <string name="car_lyrics_player_on">araç kullanırken şarkı sözleri artık oynatıcıda görünebilir, hey, bu beta!</string>
+    <string name="car_lyrics_player_off">Oynatıcıdaki şarkı sözleri kapalı.</string>
+
+    <string name="car_pair_code">Eşleştirme kodu</string>
+    <string name="car_pair_status">Durum</string>
+    <string name="car_pair_how">Nasıl eşleştirilir</string>
+    <string name="car_pair_steps">Diğer telefonda Mochy\'yi açıp Ayarlar › Cihaz entegrasyonu › Cihaz ekle bölümüne git, sonra bu kodu yaz. İki telefon da aynı Wi-Fi\'da olmalı.</string>
+    <string name="car_pair_waiting">Bağlı değil. Eşleşecek bir telefon bekleniyor.</string>
+    <string name="car_pair_connected">%1$s cihazına bağlandı</string>
+    <plurals name="car_pair_connected_more">
+        <item quantity="one">%1$s ve %2$d diğer telefona bağlandı</item>
+        <item quantity="other">%1$s ve %2$d diğer telefona bağlandı</item>
+    </plurals>
+    <string name="car_pair_getting_code">Kod hazırlanıyor…</string>
+</resources>

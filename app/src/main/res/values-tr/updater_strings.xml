@@ -49,6 +49,8 @@
     <string name="auto_update_check_subtitle">Güncelleme ekranını açtığınızda otomatik olarak güncellemeleri kontrol et</string>
     <string name="update_notifications">Güncelleme bildirimleri</string>
     <string name="update_notifications_subtitle">Yeni bir güncelleme bulunduğunda bir bildirim göster</string>
+    <string name="settings_check_updates_title">Güncellemeleri denetle</string>
+    <string name="later">Sonra</string>
 
 
     <string name="mochy_music_title">mochy MUSIC</string>
@@ -72,4 +74,25 @@
     <string name="support_development">Geliştirmeyi Destekle</string>
     <string name="beta_updates">Beta Güncellemeleri</string>
     <string name="beta_updates_subtitle">Beta güncellemeleri almak istiyorsanız bunu etkinleştirin (örn. b5.0.1)</string>
+    <string name="on_latest_version">En son sürümdesin</string>
+    <string name="current_version_v">Geçerli sürüm: %1$s</string>
+    <string name="update_to_v">Güncelleme mevcut %1$s</string>
+    <string name="new_update">Yeni güncelleme</string>
+    <string name="release_date_v">Yayınlanma: %1$s</string>
+    <string name="update_size_v">Boyut: %1$s MB</string>
+
+    <!-- update channels: release, or the nightly prereleases -->
+    <string name="channel_switch_to_nightly">Gece sürümüne geç</string>
+    <string name="channel_switch_to_release">Kararlı sürüme geç</string>
+    <string name="channel_release_waits">Daha yeni bir sürüm gerekir</string>
+    <string name="channel_nightly_title">Yol\nDeğişikliği</string>
+    <string name="channel_nightly_tagline">eyvah, şu yeni göz alıcı özelliklere bak! umarım… şey… umarım iyi gider.</string>
+    <string name="channel_nightly_question">Emin misin?</string>
+    <string name="channel_nightly_warning">Gece sürümleri kararsız olabilir ve günde 5 güncellemeye kadar alabilirsin, gerçi ihtimal oldukça düşük. Ama durum bu. Eski bir kararlı sürüme dönmek de verilerini bozabilir.</string>
+    <string name="channel_release_title">Kararlı\nsürüme dön</string>
+    <string name="channel_release_tagline">gece sürümünden daha yeni bir sürüm çıktı, yani geri dönebilirsin.</string>
+    <string name="channel_release_warning">Bir sonraki sürümü güncelleme olarak alırsın ve gece sürümleri görünmez olur.</string>
+    <string name="channel_yes">Evet</string>
+    <string name="channel_no">Hayır</string>
+    <string name="update_allow_unknown_apps">Ayarlar\'da Mochy\'nin bilinmeyen uygulamaları yüklemesine izin ver, sonra geri gel ve buradaki Yükle\'ye tekrar bas.</string>
 </resources>
