@@ -1438,6 +1438,8 @@ private fun PlayerBackdropCrossfade(
     warpShader: Any?,
     warpTimeState: androidx.compose.runtime.MutableFloatState,
     lyricsProgressProvider: () -> Float = { 0f },
+    // false while the sheet is collapsed: the backdrop is invisible then, but its blurs still re-rendered on every video frame
+    sheetShown: () -> Boolean = { true },
     modifier: Modifier = Modifier,
 ) {
     // The video's backdrop is a blurred reflection of it. Without blur there's nothing to draw it
@@ -1454,10 +1456,11 @@ private fun PlayerBackdropCrossfade(
     // closing, and read in composition it recomposed the whole backdrop on each of them
     val currentLyricsProgress = androidx.compose.runtime.rememberUpdatedState(lyricsProgressProvider)
     val effectiveVideoAlpha = { (videoAlpha.value * (1f - currentLyricsProgress.value())).coerceIn(0f, 1f) }
-    val videoShown by remember { derivedStateOf { effectiveVideoAlpha() > 0.005f } }
+    val currentSheetShown = androidx.compose.runtime.rememberUpdatedState(sheetShown)
+    val videoShown by remember { derivedStateOf { effectiveVideoAlpha() > 0.005f && currentSheetShown.value() } }
     val currentCanvasAlpha = androidx.compose.runtime.rememberUpdatedState(canvasMirrorAlpha)
     val effectiveCanvasAlpha = { (currentCanvasAlpha.value() * (1f - currentLyricsProgress.value())).coerceIn(0f, 1f) }
-    val canvasShown by remember { derivedStateOf { effectiveCanvasAlpha() > 0.005f } }
+    val canvasShown by remember { derivedStateOf { effectiveCanvasAlpha() > 0.005f && currentSheetShown.value() } }
 
     Box(modifier = modifier) {
         Box(
@@ -1948,6 +1951,8 @@ private fun SheetBackdrop(
                 warpShader = warpShader,
                 warpTimeState = warpTimeState,
                 lyricsProgressProvider = lyricsProgressProvider,
+                // the collapsed mini player keeps playing the video, and this full-screen blur of it sat at alpha 0 re-blurring every frame
+                sheetShown = { progressProvider() > 0f },
                 modifier = Modifier.fillMaxSize()
             )
             // the Turntable sits in a dim room: the cover's colours only as a glow

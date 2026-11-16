@@ -27,18 +27,13 @@ object LyricsFileReader {
     private val BeginAttr = Regex("\\bbegin=\"([^\"]+)\"")
     private val AgentAttr = Regex("ttm:agent=\"([^\"]+)\"")
     private val BackgroundRole = Regex("ttm:role=\"x-bg\"")
-    private val SrtTime = Regex("(\\d+):(\\d+):(\\d+)[,.](\\d+)\\s*-->")
+    // srt writes 00:00:01,000 and vtt 00:01.000, both then an arrow
+    private val SubtitleTime = Regex("(?:(\\d+):)?(\\d{1,2}):(\\d{2})[,.](\\d{1,3})\\s*-->")
 
-    // lrc and plain text stay as they are, ttml and srt become lrc lines; null when nothing in it reads as lyrics
+    // lrc and plain text stay as they are, every other kind becomes lrc lines; null when nothing in it reads as lyrics
     suspend fun read(context: Context, uri: Uri): PickedLyrics? = withContext(Dispatchers.IO) {
         try {
-            val raw = readText(context, uri) ?: return@withContext null
-            val lyrics = when {
-                raw.contains("<tt", ignoreCase = true) -> fromTtml(raw)
-                SrtTime.containsMatchIn(raw) -> fromSrt(raw)
-                else -> raw.trim()
-            }
-            if (LyricsUtils.syncKind(lyrics) == LyricsUtils.SyncKind.NONE) return@withContext null
+            val lyrics = readBytes(context, uri)?.let(::parse) ?: return@withContext null
             PickedLyrics(fileName(context, uri), lyrics, LyricsUtils.parseLyrics(lyrics).size)
         } catch (e: CancellationException) {
             throw e
@@ -47,7 +42,18 @@ object LyricsFileReader {
         }
     }
 
-    private fun readText(context: Context, uri: Uri): String? {
+    // a lyrics file's bytes as the text the lyrics table keeps, whichever app or player wrote it
+    fun parse(bytes: ByteArray): String? {
+        val raw = LyricsFileFormats.decodeKrc(bytes) ?: LyricsFileFormats.decodeText(bytes)
+        val lyrics = when {
+            raw.contains("<tt", ignoreCase = true) -> fromTtml(raw)
+            SubtitleTime.containsMatchIn(raw) -> fromSrt(raw)
+            else -> LyricsFileFormats.convert(raw)
+        }.trim()
+        return lyrics.takeIf { LyricsUtils.syncKind(it) != LyricsUtils.SyncKind.NONE }
+    }
+
+    private fun readBytes(context: Context, uri: Uri): ByteArray? {
         val input = context.contentResolver.openInputStream(uri) ?: return null
         val out = ByteArrayOutputStream()
         input.use {
@@ -59,7 +65,7 @@ object LyricsFileReader {
                 out.write(buffer, 0, read)
             }
         }
-        return out.toString(Charsets.UTF_8.name()).removePrefix("﻿")
+        return out.toByteArray()
     }
 
     private fun fileName(context: Context, uri: Uri): String =
@@ -131,7 +137,7 @@ object LyricsFileReader {
         return words
     }
 
-    private fun wordTime(ms: Long): String =
+    internal fun wordTime(ms: Long): String =
         String.format(Locale.US, "%02d:%02d.%03d", ms / 60_000, (ms / 1000) % 60, ms % 1000)
 
     // ttml writes time as 1:02:03.5, 02:03.5, 123.5s or 123500ms
@@ -149,14 +155,14 @@ object LyricsFileReader {
 
     private fun fromSrt(raw: String): String = raw.replace("\r", "").split(Regex("\n\\s*\n")).mapNotNull { block ->
         val lines = block.lines().filter { it.isNotBlank() }
-        val timeIndex = lines.indexOfFirst { SrtTime.containsMatchIn(it) }
+        val timeIndex = lines.indexOfFirst { SubtitleTime.containsMatchIn(it) }
         if (timeIndex < 0) return@mapNotNull null
-        val (h, m, s, frac) = SrtTime.find(lines[timeIndex])!!.destructured
-        val ms = ((h.toLong() * 60 + m.toLong()) * 60 + s.toLong()) * 1000 + frac.padEnd(3, '0').take(3).toLong()
+        val (h, m, s, frac) = SubtitleTime.find(lines[timeIndex])!!.destructured
+        val ms = (((h.toLongOrNull() ?: 0L) * 60 + m.toLong()) * 60 + s.toLong()) * 1000 + frac.padEnd(3, '0').take(3).toLong()
         val text = lines.drop(timeIndex + 1).joinToString(" ").replace(Tag, "").trim()
         if (text.isEmpty()) null else "${lrcTime(ms)}$text"
     }.joinToString("\n")
 
-    private fun lrcTime(ms: Long): String =
+    internal fun lrcTime(ms: Long): String =
         String.format(Locale.US, "[%02d:%02d.%02d]", ms / 60_000, (ms / 1000) % 60, (ms % 1000) / 10)
 }

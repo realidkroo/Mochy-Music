@@ -40,6 +40,9 @@ private class GlassEffectCache {
     var low = false
     var chrome = 0
     var accent = 0
+    var pillRect: androidx.compose.ui.geometry.Rect? = null
+    var pillShown = 0f
+    var pillLift = 0f
     var effect: RenderEffect? = null
 }
 
@@ -52,6 +55,7 @@ internal fun ModuleChromeGlass(
     accentWash: (() -> Color)?,
     surface: ChromeSurface,
     modifier: Modifier = Modifier,
+    pill: ((Size) -> ChromePill?)? = null,
 ) {
     val density = LocalDensity.current
     val accent = androidx.compose.material3.MaterialTheme.colorScheme.primary.toArgb()
@@ -74,10 +78,16 @@ internal fun ModuleChromeGlass(
                 .fillMaxSize()
                 .graphicsLayer {
                     clip = true
+                    // read here, so the pill's slide and lift only rebuild the effect while they move and never recompose
+                    val lit = if (glass.drawsPill) pill?.invoke(Size(size.width - margin * 2f, size.height - margin * 2f)) else null
                     if (cache.effect == null || cache.glass !== glass || cache.width != size.width || cache.height != size.height ||
-                        cache.margin != margin || cache.low != low || cache.chrome != chrome || cache.accent != accent
+                        cache.margin != margin || cache.low != low || cache.chrome != chrome || cache.accent != accent ||
+                        cache.pillRect != lit?.rect || cache.pillShown != (lit?.shown ?: 0f) || cache.pillLift != (lit?.lift ?: 0f)
                     ) {
-                        cache.effect = glassEffect(glass, size, margin.toFloat(), density.density, low, chrome, accent, surface.kind, blurPx)
+                        cache.effect = glassEffect(glass, size, margin.toFloat(), density.density, low, chrome, accent, surface.kind, blurPx, lit)
+                        cache.pillRect = lit?.rect
+                        cache.pillShown = lit?.shown ?: 0f
+                        cache.pillLift = lit?.lift ?: 0f
                         cache.glass = glass
                         cache.width = size.width
                         cache.height = size.height
@@ -113,6 +123,7 @@ private fun glassEffect(
     accent: Int,
     kind: Float,
     blur: Float,
+    pill: ChromePill?,
 ): RenderEffect {
     val shader = glass.shader
     fun set(block: () -> Unit) = runCatching(block)
@@ -124,6 +135,11 @@ private fun glassEffect(
     set { shader.setAgslColorUniform("chrome", chrome) }
     set { shader.setAgslColorUniform("accent", accent) }
     set { shader.setAgslUniform("kind", kind) }
+    // the lit tab's pill in the picture's pixels, all zero on a bar without one so another bar's pill never shows through the shared shader
+    val rect = pill?.rect?.translate(margin, margin)
+    set { shader.setAgslUniform("pill", rect?.left ?: 0f, rect?.top ?: 0f, rect?.right ?: 0f, rect?.bottom ?: 0f) }
+    set { shader.setAgslUniform("pillShown", pill?.shown ?: 0f) }
+    set { shader.setAgslUniform("pillLift", pill?.lift ?: 0f) }
     glass.uniforms.forEach { (name, value) -> set { shader.setAgslUniform(name, value) } }
     val lens = agslRenderEffect(shader, "content")
     // the blur goes first, then the shader works on the blurred picture

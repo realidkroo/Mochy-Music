@@ -81,13 +81,12 @@ fun FrostedChromeGlass(
     modifier: Modifier = Modifier,
     // which bar this is, so a look's glass shader can draw each one its own way
     surface: ChromeSurface = ChromeSurface.NavBar,
+    // the lit tab's pill for a glass that draws it, given the bar's size; read while drawing
+    pill: ((Size) -> ChromePill?)? = null,
 ) {
-    // a look module can swap the frost for a glass shader of its own; android 13+ runs it, older phones and blur switched off keep the frost
-    val (style) = rememberEnumPreference(ChromeGlassStyleKey, defaultValue = ChromeGlassStyle.FROSTED)
-    val (blurOff) = rememberPreference(DisableBlurKey, defaultValue = false)
-    val moduleGlass = com.mochyy.mochymusic.modules.skin.ActiveSkin.glass
-    if (style == ChromeGlassStyle.MODULE && moduleGlass != null && !blurOff && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-        ModuleChromeGlass(state, moduleGlass, pureBlack, accentWash, surface, modifier)
+    val moduleGlass = rememberChromeModuleGlass()
+    if (moduleGlass != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        ModuleChromeGlass(state, moduleGlass, pureBlack, accentWash, surface, modifier, pill)
         return
     }
     val color = if (pureBlack) Color.Black else GlassChromeColor
@@ -111,6 +110,16 @@ fun FrostedChromeGlass(
             modifier = Modifier.fillMaxSize(),
         )
     }
+}
+
+/** the look's glass while the bars draw it, so a bar can leave out the hairline, shadow or pill the glass draws itself; null while they keep mochy's frost */
+@Composable
+internal fun rememberChromeModuleGlass(): com.mochyy.mochymusic.modules.skin.ActiveGlass? {
+    // a look module can swap the frost for a glass shader of its own; android 13+ runs it, older phones and blur switched off keep the frost
+    val (style) = rememberEnumPreference(ChromeGlassStyleKey, defaultValue = ChromeGlassStyle.FROSTED)
+    val (blurOff) = rememberPreference(DisableBlurKey, defaultValue = false)
+    val glass = com.mochyy.mochymusic.modules.skin.ActiveSkin.glass
+    return glass.takeIf { style == ChromeGlassStyle.MODULE && !blurOff && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU }
 }
 
 /** the bars that share the chrome glass; [kind] is the number a look's glass shader gets for each */

@@ -327,6 +327,8 @@ fun BottomSheet(
 
             // where the mini player sits across the screen, and whether the wide bar's glass already lies under it
             val pillFrame = LocalMiniPillFrame.current
+            // a look's glass that draws its own edge leaves mochy's hairline and shadow off the mini player
+            val moduleGlass = rememberChromeModuleGlass()
             val currentPillFrame by androidx.compose.runtime.rememberUpdatedState(pillFrame)
             // in the wide bar the pill is a stadium like the bar round it, so it lifts out of it cleanly
             val pillCorner = if (pillFrame.merged) pillFrame.height / 2 else PillCornerRadius
@@ -372,7 +374,7 @@ fun BottomSheet(
                 // The mini player's faint shadow. The sheet's clip would cut it off, so it's a
                 // layer of its own placed and tilted exactly like the sheet, and it fades with the
                 // hairline. It stays the pill's size: the opening sheet grows over it.
-                if (!pillFrame.merged) PillShadow(state, pillPress, pillFrame)
+                if (!pillFrame.merged && moduleGlass?.shadow != false) PillShadow(state, pillPress, pillFrame)
 
                 Box(
                     modifier = Modifier
@@ -395,7 +397,7 @@ fun BottomSheet(
                             val p = state.progress.coerceIn(0f, 1f)
                             // the pill's hairline fades out as it opens (it used to drop in one frame at 5%); the wide bar draws its own round both halves
                             val edge = 1f - p / PillEdgeFadeEnd
-                            if (edge > 0f && !pillFrame.merged) {
+                            if (edge > 0f && !pillFrame.merged && moduleGlass?.outline != false) {
                                 val left = androidx.compose.ui.unit.lerp(pillFrame.start, 0.dp, p).toPx()
                                 val right = androidx.compose.ui.unit.lerp(pillFrame.end, 0.dp, p).toPx()
                                 drawChromeOutline(

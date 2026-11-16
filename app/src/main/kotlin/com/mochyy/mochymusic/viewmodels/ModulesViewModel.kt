@@ -126,6 +126,12 @@ class ModulesViewModel @Inject constructor(
 
     fun setEnabled(id: String, on: Boolean) = modules.setEnabled(id, on)
 
+    /** puts a look above the others that are on, so what it brings wins where they meet */
+    fun raise(id: String) {
+        registry.raise(id)
+        modules.refresh()
+    }
+
     fun setPick(id: String, choiceId: String, optionId: String) = modules.setPick(id, choiceId, optionId)
 
     /** one of the module's own settings; a look that's on changes with it */

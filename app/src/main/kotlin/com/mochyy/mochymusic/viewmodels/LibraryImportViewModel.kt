@@ -13,8 +13,10 @@ import com.mochyy.mochymusic.importer.DeviceSong
 import com.mochyy.mochymusic.importer.ImportHistory
 import com.mochyy.mochymusic.importer.ImportSource
 import com.mochyy.mochymusic.importer.LocalArtwork
+import com.mochyy.mochymusic.importer.LocalFile
 import com.mochyy.mochymusic.importer.LocalFolders
 import com.mochyy.mochymusic.importer.LocalImportService
+import com.mochyy.mochymusic.importer.LocalSongRepair
 import androidx.media3.exoplayer.offline.DownloadService
 import com.mochyy.mochymusic.models.TransferBatch
 import com.mochyy.mochymusic.models.TransferState
@@ -92,38 +94,47 @@ class LibraryImportViewModel @Inject constructor(
      * the library yet are imported now. Returns false when there was nothing to start.
      */
     suspend fun addFolder(tree: Uri): Boolean {
-        val files = withContext(Dispatchers.IO) {
+        val scanned = withContext(Dispatchers.IO) {
             runCatching { LocalFolders.add(context, tree) }.getOrNull() ?: return@withContext null
-            LocalFolders.newAudioFiles(context, tree, knownLocalUris(withMediaStore = false))
+            LocalFolders.scan(context, tree)
         }
-        if (files == null) {
+        if (scanned == null) {
             TopToaster.show("Couldn't keep access to that folder. Try picking it again.", iconRes = R.drawable.library_music)
             return false
         }
+        // picking a folder again also brings the lyrics and covers beside its songs to the ones already in
+        reportRepaired(LocalSongRepair.repair(context, database, scanned))
+        val files = withContext(Dispatchers.IO) { LocalFolders.onlyNew(context, scanned, knownLocalUris(withMediaStore = false)) }
         return startFolderImport(files, emptyMessage = "Every song in that folder is already in your library")
     }
 
     /**
-     * Re-scan: brings back covers that went missing, then reads the saved music folders again
-     * for new files. Returns true when an import started.
+     * Re-scan: brings back covers that went missing, gives songs in the saved music folders the
+     * lyrics and covers sitting beside them, then imports new files. Returns true when an import started.
      */
     suspend fun refreshLocal(): Boolean {
-        val (fixedCovers, files) = withContext(Dispatchers.IO) {
+        val (fixedCovers, scanned) = withContext(Dispatchers.IO) {
             val fixed = LocalArtwork.repair(context, database, includeMissing = true)
-            val known = knownLocalUris(withMediaStore = false)
-            fixed to LocalFolders.read(context).flatMap { LocalFolders.newAudioFiles(context, it, known) }.distinct()
+            fixed to LocalFolders.scanSaved(context)
         }
         if (fixedCovers > 0) {
             TopToaster.show(if (fixedCovers == 1) "Brought back 1 cover" else "Brought back $fixedCovers covers", iconRes = R.drawable.library_music)
         }
+        reportRepaired(LocalSongRepair.repair(context, database, scanned))
+        val files = withContext(Dispatchers.IO) { LocalFolders.onlyNew(context, scanned, knownLocalUris(withMediaStore = false)) }
         if (files.isEmpty()) return false
         return startFolderImport(files, emptyMessage = null)
+    }
+
+    private fun reportRepaired(count: Int) {
+        if (count == 0) return
+        TopToaster.show(context.resources.getQuantityString(R.plurals.lib_local_repaired, count, count), iconRes = R.drawable.library_music)
     }
 
     /** True if Mochy has music folders the user picked. */
     fun hasFolders(): Boolean = LocalFolders.read(context).isNotEmpty()
 
-    private fun startFolderImport(files: List<Uri>, emptyMessage: String?): Boolean {
+    private fun startFolderImport(files: List<LocalFile>, emptyMessage: String?): Boolean {
         if (files.isEmpty()) {
             emptyMessage?.let { TopToaster.show(it, iconRes = R.drawable.library_music) }
             return false

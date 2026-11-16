@@ -7,6 +7,7 @@ import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
 import android.os.SystemClock
+import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import com.mochyy.mochymusic.constants.AudioPassMode
@@ -33,7 +34,7 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
     data class DacVolume(val minDb: Double, val maxDb: Double, val currentDb: Double)
 
     /** why a song went the normal way while audio pass was on, so the stats sheet can say it instead of leaving people guessing */
-    enum class Skip { Busy, Format, Lossy, FellBefore, NoDac, NoUsbAccess, DacCantPlay }
+    enum class Skip { Busy, Format, Lossy, Decoded16, FellBefore, NoDac, NoUsbAccess, DacCantPlay }
 
     private val audio = context.getSystemService(AudioManager::class.java)
     internal val usb = UsbDacAccess(context) { bump() }
@@ -125,6 +126,8 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
         if (format.pcmEncoding !in PassPcm.Encodings) return Skip.Format
         if (!takesLossy && !isLossless(source)) return Skip.Lossy
         val bits = PassPcm.sourceBits(format.pcmEncoding, source?.pcmEncoding)
+        // the decoder started before passthrough was on and already cut the song to 16 bits; sent on, the page would call that bit-perfect (issue 235)
+        if (format.pcmEncoding == C.ENCODING_PCM_16BIT && bits > 16) return Skip.Decoded16
         if (key(format.sampleRate, format.channelCount, bits) in failed) return Skip.FellBefore
         val rate = format.sampleRate
         val channels = format.channelCount

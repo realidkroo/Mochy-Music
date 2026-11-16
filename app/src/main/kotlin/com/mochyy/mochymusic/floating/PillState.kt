@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.media3.common.C
 import androidx.media3.common.Player
 import com.mochyy.mochymusic.models.MediaMetadata
@@ -20,6 +21,9 @@ internal class PillState(private val player: () -> Player?) {
     // null while the song's lyrics are still being looked up, the bubble shows its title meanwhile
     var script by mutableStateOf<PillScript?>(null)
 
+    // the cover's accent, which the bubble takes on; null keeps the plain light bubble
+    var accent by mutableStateOf<Color?>(null)
+
     var playing by mutableStateOf(false)
 
     // bumped on a seek or a speed change, so everything timed works out again where the song is
@@ -27,6 +31,15 @@ internal class PillState(private val player: () -> Player?) {
 
     // the play and pause button is out
     var expanded by mutableStateOf(false)
+
+    // docked on the right edge: the cover sits on the right and the bubble opens to its left
+    var dockEnd by mutableStateOf(false)
+
+    // the bubble is tucked into the cover, while it's dragged and until it lands at an edge
+    var tucked by mutableStateOf(false)
+
+    // a finger is carrying the cover around
+    var lifted by mutableStateOf(false)
 
     // bumped on every touch while expanded, so the button only tucks away once it's left alone
     var touchTick by mutableIntStateOf(0)

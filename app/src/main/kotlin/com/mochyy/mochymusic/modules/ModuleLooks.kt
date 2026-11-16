@@ -1,4 +1,4 @@
-// puts a look module's values on mochy's look settings, and gives the user's own back when it goes off
+// puts the values of every look module that's on onto mochy's look settings, and gives the user's own back once no look sets them
 
 package com.mochyy.mochymusic.modules
 
@@ -37,43 +37,79 @@ import com.mochyy.mochymusic.constants.ThumbnailCornerRadiusKey
 import com.mochyy.mochymusic.module.LookSetting
 import com.mochyy.mochymusic.modules.skin.parseHexColor
 import com.mochyy.mochymusic.utils.dataStore
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONObject
 
 internal class ModuleLooks(private val context: Context) {
 
-    // what each module replaced, kept apart from the settings so it outlives the app closing
+    // for each setting the looks hold, the user's own value from before and what the looks last wanted, kept apart from the settings so it outlives the app closing
     private val backups = context.getSharedPreferences("module_looks", Context.MODE_PRIVATE)
 
-    fun isApplied(id: String): Boolean = backups.contains(id)
+    // two syncs at once would each read the other's half-written holds
+    private val lock = Mutex()
 
-    suspend fun apply(id: String, look: Map<String, String>) {
-        if (isApplied(id)) return
-        val replaced = JSONObject()
+    /** puts the looks that are on onto mochy's settings, the first in [looks] winning where two set the same one, and gives back the user's own where none does anymore */
+    suspend fun sync(looks: List<Map<String, String>>) = lock.withLock {
+        val wanted = LinkedHashMap<String, String>()
+        looks.forEach { look ->
+            look.forEach { (name, raw) -> if (name !in wanted && Settings[name]?.normalise(raw) != null) wanted[name] = raw }
+        }
+        val held = readHolds()
         context.dataStore.edit { prefs ->
-            look.forEach { (name, raw) ->
+            migrateOldBackups(prefs, held)
+            (held.keys - wanted.keys).forEach { name ->
+                val hold = held.remove(name) ?: return@forEach
                 val setting = Settings[name] ?: return@forEach
-                val previous = setting.read(prefs)
-                if (setting.write(prefs, raw)) replaced.put(name, previous ?: JSONObject.NULL)
+                // changed by hand since a look set it: that's the user's choice now, it stays
+                if (setting.read(prefs) != hold.wanted) return@forEach
+                if (hold.own == null) setting.clear(prefs) else setting.restore(prefs, hold.own)
+            }
+            wanted.forEach { (name, raw) ->
+                val setting = Settings.getValue(name)
+                val value = setting.normalise(raw) ?: return@forEach
+                val hold = held[name]
+                // the same as last time and the user has changed it by hand since: theirs stays until a look asks for something new
+                if (hold != null && hold.wanted == value) return@forEach
+                held[name] = Hold(own = if (hold != null) hold.own else setting.read(prefs), wanted = value)
+                setting.write(prefs, raw)
             }
         }
-        backups.edit { putString(id, replaced.toString()) }
+        writeHolds(held)
     }
 
-    suspend fun restore(id: String, look: Map<String, String>) {
-        val replaced = backups.getString(id, null)?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return
-        context.dataStore.edit { prefs ->
+    private class Hold(val own: String?, val wanted: String)
+
+    private fun readHolds(): MutableMap<String, Hold> {
+        val saved = backups.getString(HoldsKey, null)?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return mutableMapOf()
+        return saved.keys().asSequence().mapNotNull { name ->
+            val hold = saved.optJSONObject(name) ?: return@mapNotNull null
+            name to Hold(own = hold.optString("own").takeUnless { hold.isNull("own") }, wanted = hold.optString("wanted"))
+        }.toMap(mutableMapOf())
+    }
+
+    private fun writeHolds(held: Map<String, Hold>) {
+        val json = JSONObject()
+        held.forEach { (name, hold) -> json.put(name, JSONObject().put("own", hold.own ?: JSONObject.NULL).put("wanted", hold.wanted)) }
+        backups.edit {
+            clear()
+            putString(HoldsKey, json.toString())
+        }
+    }
+
+    // before several looks could be on, each kept its own backup under its id; those turn into holds once, assuming the look's values are still in place
+    private fun migrateOldBackups(prefs: Preferences, held: MutableMap<String, Hold>) {
+        backups.all.keys.filter { it != HoldsKey }.forEach { id ->
+            val replaced = backups.getString(id, null)?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return@forEach
             replaced.keys().forEach { name ->
-                val setting = Settings[name] ?: return@forEach
-                // changed by hand since the look went on: that's the user's choice now, it stays
-                if (setting.read(prefs) != setting.normalise(look[name])) return@forEach
-                if (replaced.isNull(name)) setting.clear(prefs) else setting.write(prefs, replaced.getString(name))
+                val now = Settings[name]?.read(prefs) ?: return@forEach
+                if (name !in held) held[name] = Hold(own = replaced.optString(name).takeUnless { replaced.isNull(name) }, wanted = now)
             }
         }
-        backups.edit { remove(id) }
     }
 
-    /** one look setting, the module's text turned into the setting's own type, anything out of range turned away */
-    private class Setting<T : Any>(val key: Preferences.Key<T>, val parse: (String) -> T?) {
+    /** one look setting, the module's text turned into the setting's own type, anything out of range turned away; [saved] reads back what [read] gave */
+    private class Setting<T : Any>(val key: Preferences.Key<T>, val saved: ((String) -> T?)? = null, val parse: (String) -> T?) {
         fun read(prefs: Preferences): String? = prefs[key]?.toString()
         fun normalise(raw: String?): String? = raw?.let(parse)?.toString()
         fun clear(prefs: MutablePreferences) {
@@ -84,9 +120,14 @@ internal class ModuleLooks(private val context: Context) {
             prefs[key] = value
             return true
         }
+        fun restore(prefs: MutablePreferences, own: String) {
+            (saved ?: parse)(own)?.let { prefs[key] = it }
+        }
     }
 
     private companion object {
+        const val HoldsKey = "held"
+
         inline fun <reified E : Enum<E>> enumName(raw: String): String? =
             raw.trim().uppercase().takeIf { name -> enumValues<E>().any { it.name == name } }
 
@@ -105,7 +146,8 @@ internal class ModuleLooks(private val context: Context) {
             LookSetting.PROGRESSIVE_BLUR to Setting(EnableProgressiveBlurKey) { bool(it) },
             LookSetting.ELEMENT_BLUR to Setting(ElementBlurKey) { bool(it) },
             LookSetting.PURE_BLACK to Setting(PureBlackKey) { bool(it) },
-            LookSetting.ACCENT_COLOR to Setting(SelectedThemeColorKey) { parseHexColor(it)?.toArgb() },
+            // the user's own accent is kept as a number, not as #RRGGBB, so it reads back as one
+            LookSetting.ACCENT_COLOR to Setting(SelectedThemeColorKey, saved = String::toIntOrNull) { parseHexColor(it)?.toArgb() },
             LookSetting.DYNAMIC_THEME to Setting(DynamicThemeKey) { bool(it) },
             LookSetting.PLAYER_BACKGROUND to Setting(PlayerBackgroundStyleKey) { enumName<PlayerBackgroundStyle>(it) },
             LookSetting.FLAGSHIP_BACKGROUND to Setting(FlagshipBackgroundStyleKey) { enumName<PlayerBackgroundStyle>(it) },

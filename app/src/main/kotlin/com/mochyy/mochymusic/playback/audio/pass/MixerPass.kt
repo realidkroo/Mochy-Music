@@ -129,11 +129,12 @@ internal class MixerPass private constructor(
                 val frameBytes = channels * bits / 8
                 val minimum = AudioTrack.getMinBufferSize(rate, attr.format.channelMask, attr.format.encoding)
                 if (minimum <= 0) throw PassFailure("no track at $rate Hz ${bits}-bit")
+                // half a second queued: the player sleeps up to half of it, so a fifth of a second ran dry when a background wake-up came late
                 track = AudioTrack.Builder()
                     .setAudioAttributes(AudioOutputs.MediaAttributes)
                     .setAudioFormat(attr.format)
                     .setTransferMode(AudioTrack.MODE_STREAM)
-                    .setBufferSizeInBytes(maxOf(minimum * 2, rate / 5 * frameBytes))
+                    .setBufferSizeInBytes(maxOf(minimum * 2, rate / 2 * frameBytes))
                     .build()
                 if (track.state != AudioTrack.STATE_INITIALIZED || !track.setPreferredDevice(device) ||
                     track.sampleRate != rate || track.audioFormat != attr.format.encoding || track.channelCount != channels

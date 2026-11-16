@@ -194,8 +194,8 @@ Java_com_mochyy_mochymusic_playback_audio_pass_PassNative_exclusiveOpen(JNIEnv *
         throwState(env, "android didn't grant the output exactly as asked");
         return 0;
     }
-    // about 200 ms waits here, like a normal track
-    e->ring.resize(std::max<size_t>(static_cast<size_t>(rate) / 5, 4096) * e->frameBytes);
+    // a second waits here, so the player can sleep through a slow background wake-up; pause and flush don't wait on it
+    e->ring.resize(std::max<size_t>(static_cast<size_t>(rate), 4096) * e->frameBytes);
     if (a.start(e->stream) != AAUDIO_OK) {
         a.close(e->stream);
         delete e;

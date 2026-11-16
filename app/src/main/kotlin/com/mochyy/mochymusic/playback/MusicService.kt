@@ -5267,9 +5267,10 @@ class MusicService :
 
         override fun targetVolume(): Float = this@MusicService.targetVolume()
 
-        // not while casting, mid-crossmix or mid-crossfade, which all drive the volume themselves
+        // not while casting or mid-crossmix, which drive the volume themselves, nor into an untouched dac, where a pause played on at full volume through the fade (issue 191)
         override fun canFade(): Boolean =
-            castConnectionHandler?.isCasting?.value != true && !crossmixDirector.isTransitioning && fadingPlayer == null
+            castConnectionHandler?.isCasting?.value != true && !crossmixDirector.isTransitioning && fadingPlayer == null &&
+                audioPass.status.value !is AudioPass.Status.Playing
 
         override fun beatMsFor(mediaId: String?): Double? =
             mediaId?.let { crossmixAnalysisRepository.cached(it)?.bpm }?.takeIf { it in 40f..240f }?.let { 60_000.0 / it }

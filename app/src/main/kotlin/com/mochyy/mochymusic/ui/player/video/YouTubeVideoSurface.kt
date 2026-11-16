@@ -1,6 +1,5 @@
 package com.mochyy.mochymusic.ui.player.video
 
-import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.os.SystemClock
 import android.view.TextureView
@@ -167,7 +166,7 @@ fun YouTubeVideoSurface(
 
     LaunchedEffect(session) {
         snapshotFlow { session.hasFrame }.first { it }
-        val sample = Bitmap.createBitmap(SampleSize, SampleSize, Bitmap.Config.ARGB_8888)
+        val sampler = VideoFrameSampler(SampleSize)
         val pixels = IntArray(SampleSize * SampleSize)
         val vertical = LetterboxStabilizer()
         val horizontal = LetterboxStabilizer()
@@ -177,8 +176,8 @@ fun YouTubeVideoSurface(
             delay(SampleIntervalMs)
             // a paused frame never changes, so it's read once and then left alone
             if ((read && !playing) || !textureView.isAvailable) continue
-            if (runCatching { textureView.getBitmap(sample) }.isFailure) continue
-            sample.getPixels(pixels, 0, SampleSize, 0, 0, SampleSize, SampleSize)
+            if (!sampler.read(session.frameSurface, textureView)) continue
+            sampler.bitmap.getPixels(pixels, 0, SampleSize, 0, 0, SampleSize, SampleSize)
             read = true
 
             val reading = VideoLetterbox.analyze(pixels, SampleSize, SampleSize)

@@ -121,6 +121,8 @@ private val LocalizedSettingsTitles = mapOf(
     "Modules" to R.string.settings_modules_category,
     "Storage" to R.string.storage,
     "App behaviour" to R.string.settings_app_behaviour,
+    "Playback" to R.string.settings_playback_category,
+    "Now playing" to R.string.settings_now_playing,
     "Disable description on settings" to R.string.settings_hide_descriptions,
     "Cover rounding" to R.string.customise_cover_rounding,
     "Playlist styles" to R.string.customise_playlist_styles,
@@ -137,6 +139,8 @@ private val LocalizedSettingsTitles = mapOf(
 )
 private val LocalizedSettingsPages = mapOf(
     "App behaviour" to R.string.settings_app_behaviour,
+    "Playback" to R.string.settings_playback_category,
+    "Now playing" to R.string.settings_now_playing,
     "Customisation" to R.string.settings_customisation_category,
     "Storage" to R.string.storage,
     "Audio Lab" to R.string.settings_audio_lab_category,
@@ -167,33 +171,47 @@ private val SettingsIndex = listOf(
     SettingsEntry("Open with your finger", "Customisation", "customisation_settings", "player open swipe up mini player follow finger speed velocity gesture"),
 
     // App behaviour
-    SettingsEntry("App behaviour", "App behaviour", "general_settings", "general playback player behaviour"),
+    SettingsEntry("App behaviour", "App behaviour", "general_settings", "general app language updates network data library privacy"),
     SettingsEntry("Larp mode", "App behaviour", "general_settings", "larp 67 flac 768 khz wadax atlantis dac hi-res lossless bit-perfect flex"),
     SettingsEntry("App language", "App behaviour", "general_settings", "language bahasa locale device system indonesia english translate", R.string.app_language),
     SettingsEntry("Disable App Updates notice", "App behaviour", "general_settings", "update popup notification updater"),
+    SettingsEntry("Disable description on settings", "App behaviour", "general_settings", "hide subtitle text rows titles only"),
     SettingsEntry("Offline mode", "App behaviour", "general_settings", "play downloaded cache offline"),
     SettingsEntry("Data saver", "App behaviour", "general_settings", "data saver mobile metered cellular bandwidth lower quality canvas video"),
     SettingsEntry("Proxy", "App behaviour", ProxySettingsRoute, "proxy socks http server vpn network region country blocked bot sign in"),
     SettingsEntry("Albums from liked songs", "App behaviour", "general_settings", "albums library liked songs old way apple music"),
-    SettingsEntry("Keep playing even when closed", "App behaviour", "general_settings", "background close stop playback"),
-    SettingsEntry("Play alongside other apps", "App behaviour", "general_settings", "audio focus mix pause other app video game sound together"),
-    SettingsEntry("Pause when muted", "App behaviour", "general_settings", "pause mute volume silent zero off automatic"),
-    SettingsEntry("Save Player's last state", "App behaviour", "general_settings", "persistent queue restore track state"),
     SettingsEntry("Local song auto metadata", "App behaviour", "general_settings", "match tags id3 covers lyrics"),
-    SettingsEntry("Keep shuffle on", "App behaviour", "general_settings", "shuffle persistent spotify random keep new playlist"),
-    SettingsEntry("Disable auto-playing YouTube video", "App behaviour", "general_settings", "music video live autoplay cover"),
-    SettingsEntry("Studio version for music videos", "App behaviour", "general_settings", "music video mv omv audio studio album version skit sound effects official"),
-    SettingsEntry("Translations from YouTube", "App behaviour", "general_settings", "captions translate lyrics language"),
-    SettingsEntry("Sync lyrics to music videos", "App behaviour", "general_settings", "lyrics video timing intro skit"),
-    SettingsEntry("Don't skip on failure", "App behaviour", "general_settings", "fail stream error stay skip"),
-    SettingsEntry("Skip timeout failure", "App behaviour", "general_settings", "skip timeout seconds failed stream"),
-    SettingsEntry("Skip Silence", "App behaviour", "general_settings", "silence trim gap interval"),
-    SettingsEntry("Audio format badge", "App behaviour", "general_settings", "format codec opus aac flac badge title quality"),
-    SettingsEntry("Show sample rate", "App behaviour", "general_settings", "sample rate khz hz format badge quality"),
-    SettingsEntry("Always enable Youtube background", "App behaviour", "general_settings", "youtube video background canvas"),
-    SettingsEntry("Enable animated canvas", "App behaviour", "general_settings", "canvas animation spotify looping visual"),
-    SettingsEntry("High quality bloom", "App behaviour", "general_settings", "lyrics bloom quality extra soft pass glow"),
-    SettingsEntry("Disable description on settings", "App behaviour", "general_settings", "hide subtitle text rows titles only"),
+    SettingsEntry("Pause search history", "App behaviour", "general_settings", "search history pause private incognito privacy", R.string.pause_search_history),
+    SettingsEntry("Count plays on YouTube views", "App behaviour", "general_settings", "youtube history plays views report count privacy", R.string.settings_youtube_plays),
+
+    // Playback
+    SettingsEntry("Playback", "Playback", PlaybackSettingsRoute, "background bluetooth shuffle skip silence mute queue failure"),
+    SettingsEntry("Keep playing even when closed", "Playback", PlaybackSettingsRoute, "background close stop playback"),
+    SettingsEntry("Play alongside other apps", "Playback", PlaybackSettingsRoute, "audio focus mix pause other app video game sound together"),
+    SettingsEntry("Resume on Bluetooth connection", "Playback", PlaybackSettingsRoute, "bluetooth headphones earbuds car connect resume auto play start", R.string.playback_resume_bluetooth),
+    SettingsEntry("Pause when muted", "Playback", PlaybackSettingsRoute, "pause mute volume silent zero off automatic", R.string.pause_music_when_media_is_muted),
+    SettingsEntry("Save Player's last state", "Playback", PlaybackSettingsRoute, "persistent queue restore track state"),
+    SettingsEntry("Keep shuffle on", "Playback", PlaybackSettingsRoute, "shuffle persistent spotify random keep new playlist"),
+    SettingsEntry("Skip Silence", "Playback", PlaybackSettingsRoute, "silence trim gap interval"),
+    SettingsEntry("Don't skip on failure", "Playback", PlaybackSettingsRoute, "fail stream error stay skip"),
+    SettingsEntry("Skip timeout failure", "Playback", PlaybackSettingsRoute, "skip timeout seconds failed stream"),
+
+    // Now playing
+    SettingsEntry("Now playing", "Now playing", NowPlayingSettingsRoute, "player lyrics video canvas badge format"),
+    SettingsEntry("Audio format badge", "Now playing", NowPlayingSettingsRoute, "format codec opus aac flac badge title quality"),
+    SettingsEntry("Show sample rate", "Now playing", NowPlayingSettingsRoute, "sample rate khz hz format badge quality"),
+    SettingsEntry("Translations from YouTube", "Now playing", NowPlayingSettingsRoute, "captions translate lyrics language"),
+    SettingsEntry("Sync lyrics to music videos", "Now playing", NowPlayingSettingsRoute, "lyrics video timing intro skit"),
+    SettingsEntry("Romanisation as the main line", "Now playing", NowPlayingSettingsRoute, "romaji romanization pinyin latin lyrics japanese korean chinese", R.string.settings_romanize_as_main),
+    SettingsEntry("High quality bloom", "Now playing", NowPlayingSettingsRoute, "lyrics bloom quality extra soft pass glow"),
+    SettingsEntry("Floating lyrics overlay bubble", "Now playing", NowPlayingSettingsRoute, "floating lyrics overlay bubble pill other apps draw over", R.string.settings_floating_lyrics),
+    SettingsEntry("Always enable Youtube background", "Now playing", NowPlayingSettingsRoute, "youtube video background canvas"),
+    SettingsEntry("Video quality", "Now playing", NowPlayingSettingsRoute, "video quality resolution 1080p 720p 480p sharp", R.string.video_quality),
+    SettingsEntry("Disable auto-playing YouTube video", "Now playing", NowPlayingSettingsRoute, "music video live autoplay cover"),
+    SettingsEntry("Studio version for music videos", "Now playing", NowPlayingSettingsRoute, "music video mv omv audio studio album version skit sound effects official", R.string.settings_studio_for_videos),
+    SettingsEntry("Enable animated canvas", "Now playing", NowPlayingSettingsRoute, "canvas animation spotify looping visual"),
+    SettingsEntry("Canvas order", "Now playing", NowPlayingSettingsRoute, "canvas order apple music tidal spotify source priority", R.string.canvas_order),
+    SettingsEntry("Canvas on Wi-Fi only", "Now playing", NowPlayingSettingsRoute, "canvas wifi mobile data", R.string.appearance_canvas_wifi),
 
     // Audio Lab
     SettingsEntry("Audio Lab", "Audio Lab", "audio_lab", "sound effects equalizer fx quality"),
@@ -246,49 +264,13 @@ private val SettingsIndex = listOf(
     SettingsEntry("Force playback", "Experimental", "experimental_settings", "fallback skip error stream failed youtube"),
 )
 
-private data class RecommendedSetting(
-    val titleRes: Int,
-    val breadcrumbRes: Int,
-    val iconRes: Int,
-    // opens a page, the list's own way: over it on a phone, beside it on a wide screen
-    val onClick: (open: (String) -> Unit) -> Unit,
-)
-
-private val RecommendedOptions = listOf(
-    RecommendedSetting(
-        titleRes = R.string.settings_rec_blur,
-        breadcrumbRes = R.string.settings_crumb_customisation,
-        iconRes = R.drawable.contrast,
-        onClick = { open ->
-            SettingsHighlight.pending = "Blur"
-            open("customisation_settings")
-        }
-    ),
-    RecommendedSetting(
-        titleRes = R.string.settings_rec_crossfade,
-        breadcrumbRes = R.string.settings_crumb_audio_lab,
-        iconRes = R.drawable.linear_scale,
-        onClick = { open ->
-            open("crossmix_settings")
-        }
-    ),
-    RecommendedSetting(
-        titleRes = R.string.settings_rec_equalizer,
-        breadcrumbRes = R.string.settings_crumb_audio_lab,
-        iconRes = R.drawable.equalizer,
-        onClick = { open ->
-            open("equalizer")
-        }
-    )
-)
-
-private val BubbleColor = Color(0xFF1C1C1E)
+internal val BubbleColor = Color(0xFF1C1C1E)
 private val SelectedBubbleColor = Color(0xFF3A3A3E)
 
 // the header holds the mochy mark with the big "Settings" under it, taller than search's title-only header
 private val SettingsTitleBlockHeight = 88.dp
 private val SettingsMarkSize = 32.dp
-private val IconBgColor = Color(0xFF333338)
+internal val IconBgColor = Color(0xFF333338)
 
 @Composable
 fun MochySettingsScreen(navController: NavController, pane: SettingsPane? = null) {
@@ -320,9 +302,9 @@ fun MochySettingsScreen(navController: NavController, pane: SettingsPane? = null
         focusManager.clearFocus()
     }
 
-    val recommendedItem = remember { RecommendedOptions.random() }
-
     val context = LocalContext.current
+    // picked again each time the list opens, so a tip that was just followed stops showing
+    val recommendations = remember(context) { pickRecommendations(context) }
     val results = remember(query.text, context) {
         val q = query.text.trim()
         if (q.isBlank()) {
@@ -447,66 +429,7 @@ fun MochySettingsScreen(navController: NavController, pane: SettingsPane? = null
                         .fillMaxWidth()
                         .graphicsLayer { alpha = contentAlpha }
                 ) {
-                    // Recommended Item Card
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(BubbleColor)
-                            .clickable { recommendedItem.onClick(open) }
-                            .padding(18.dp)
-                    ) {
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_recommended_item),
-                                fontFamily = InterFontFamily,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 13.sp,
-                                color = Color.White.copy(alpha = 0.55f)
-                            )
-
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .clip(CircleShape)
-                                        .background(IconBgColor),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        painter = painterResource(recommendedItem.iconRes),
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(
-                                        text = stringResource(recommendedItem.titleRes),
-                                        fontFamily = InterFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp,
-                                        color = Color.White
-                                    )
-                                    Text(
-                                        text = stringResource(recommendedItem.breadcrumbRes),
-                                        fontFamily = InterFontFamily,
-                                        fontSize = 13.sp,
-                                        color = Color.White.copy(alpha = 0.55f)
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    RecommendedCard(recommendations = recommendations, open = open)
 
                     Spacer(modifier = Modifier.height(18.dp))
 
@@ -534,6 +457,20 @@ fun MochySettingsScreen(navController: NavController, pane: SettingsPane? = null
                             iconRes = R.drawable.equalizer,
                             selected = selected == "audio_lab",
                             onClick = { open("audio_lab") }
+                        )
+
+                        CategoryBubble(
+                            title = stringResource(R.string.settings_playback_category),
+                            iconRes = R.drawable.play,
+                            selected = selected == PlaybackSettingsRoute,
+                            onClick = { open(PlaybackSettingsRoute) }
+                        )
+
+                        CategoryBubble(
+                            title = stringResource(R.string.settings_now_playing),
+                            iconRes = R.drawable.lyrics,
+                            selected = selected == NowPlayingSettingsRoute,
+                            onClick = { open(NowPlayingSettingsRoute) }
                         )
 
                         CategoryBubble(

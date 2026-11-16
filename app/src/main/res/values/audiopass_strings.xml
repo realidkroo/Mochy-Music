@@ -118,6 +118,7 @@
     <string name="audiopass_stat_skip_busy">The other song in a crossfade has the DAC right now</string>
     <string name="audiopass_stat_skip_format">This song\'s format can\'t go straight to the DAC</string>
     <string name="audiopass_stat_skip_lossy">Lossy songs play the normal way in this mode</string>
+    <string name="audiopass_stat_skip_decoded_16">This song started before passthrough was on, so it was already cut to 16-bit. The next one goes straight to the DAC</string>
     <string name="audiopass_stat_skip_fell">This rate and bit depth couldn\'t open the DAC earlier, so it plays the normal way</string>
     <string name="audiopass_stat_skip_no_dac">No DAC found for this mode. Plug it in or pick another mode</string>
     <string name="audiopass_stat_skip_no_access">Mochy can\'t use the DAC yet. Tap Allow USB access on the Audio Pass page</string>

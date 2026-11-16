@@ -31,7 +31,7 @@ import com.mochyy.mochymusic.ui.component.TopToaster
 import com.mochyy.mochymusic.viewmodels.LibraryImportViewModel
 import kotlinx.coroutines.launch
 
-/** Audio types the picker offers: every audio type, plus the common ones named outright. */
+// every audio type plus lyrics files and pictures, which go to the song with the same name; .lrc and .krc often come without a proper type, so plain binary files show too
 private val LocalAudioMimeTypes = arrayOf(
     "audio/*",
     "audio/mpeg",
@@ -41,6 +41,12 @@ private val LocalAudioMimeTypes = arrayOf(
     "audio/wav",
     "audio/x-wav",
     "audio/aac",
+    "text/*",
+    "application/octet-stream",
+    "application/xml",
+    "application/ttml+xml",
+    "application/x-subrip",
+    "image/*",
 )
 
 /** The Local tab's ways in, as one handle. */

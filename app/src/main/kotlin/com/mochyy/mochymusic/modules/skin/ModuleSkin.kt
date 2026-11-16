@@ -62,9 +62,16 @@ class ModuleSkin(
 
 // ---- the bottom bar's glass -------------------------------------------------------------------
 
-/** a glass of the module's own for the nav bar and mini player: its agsl file, the blur it reads through, how far past the bar it may read, and its own uniforms */
+/** a glass of the module's own for the nav bar and mini player: its agsl file, the blur it reads through, how far past the bar it may read, its own uniforms, and whether mochy still draws its hairline and shadow round the bars */
 @Immutable
-data class SkinGlass(val shader: String, val blurDp: Float, val marginDp: Float, val uniforms: Map<String, Float>) {
+data class SkinGlass(
+    val shader: String,
+    val blurDp: Float,
+    val marginDp: Float,
+    val uniforms: Map<String, Float>,
+    val outline: Boolean = true,
+    val shadow: Boolean = true,
+) {
     fun with(change: GlassChange): SkinGlass =
         copy(blurDp = change.blurDp ?: blurDp, marginDp = change.marginDp ?: marginDp, uniforms = uniforms + change.uniforms)
 }

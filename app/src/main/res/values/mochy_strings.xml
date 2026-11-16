@@ -1247,7 +1247,9 @@
     <string name="recent_search_artist">Artist</string>
     <string name="recent_search_remove">Remove from recent searches</string>
     <string name="floating_lyrics_open">Open Mochy</string>
-    <string name="floating_lyrics_hide">Hide floating lyrics</string>
+    <string name="floating_lyrics_close">Close</string>
+    <string name="floating_lyrics_never">Don\'t show again</string>
+    <string name="floating_lyrics_turned_off">Floating lyrics are off. You can turn them back on in Settings.</string>
     <string name="floating_lyrics_permission">Let Mochy show over other apps so the lyrics can float</string>
     <string name="swipe_action_library">Add or remove from library</string>
     <string name="swipe_action_details">View details</string>

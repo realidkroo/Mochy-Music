@@ -5,6 +5,7 @@ package com.mochyy.mochymusic.viewmodels
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.AlbumSortType
 import com.mochyy.mochymusic.constants.AlbumsFromLikedSongsKey
 import com.mochyy.mochymusic.constants.ArtistSortType
@@ -17,8 +18,10 @@ import com.mochyy.mochymusic.db.entities.SpeedDialItem
 import com.mochyy.mochymusic.importer.ImportProgress
 import com.mochyy.mochymusic.importer.ImportSource
 import com.mochyy.mochymusic.importer.MusicImportService
+import com.mochyy.mochymusic.importer.LocalSongRepair
 import com.mochyy.mochymusic.importer.groupLocalAlbums
 import com.mochyy.mochymusic.playback.CachedSongs
+import com.mochyy.mochymusic.ui.component.TopToaster
 import com.mochyy.mochymusic.utils.ArtistImageResolver
 import com.mochyy.mochymusic.utils.dataStore
 import com.music.innertube.YouTube
@@ -185,6 +188,12 @@ constructor(
 
         // files imported before local albums existed get theirs here, after that it finds nothing to do
         viewModelScope.launch(Dispatchers.IO) {
+            // songs titled by their link ("1234") get their real name first, and once after an update the covers and lyrics beside them
+            runCatching { LocalSongRepair.repairOnOpen(context, database) }
+                .onSuccess { fixed ->
+                    if (fixed > 0) TopToaster.show(context.resources.getQuantityString(R.plurals.lib_local_repaired, fixed, fixed), iconRes = R.drawable.library_music)
+                }
+                .onFailure { timber.log.Timber.w(it, "Repairing local song names failed") }
             runCatching { groupLocalAlbums(context, database) }
                 .onFailure { timber.log.Timber.w(it, "Grouping local albums failed") }
         }

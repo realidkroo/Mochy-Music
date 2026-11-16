@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.R
-import com.mochyy.mochymusic.core.updater.DiscordUrl
 import com.mochyy.mochymusic.modules.ModuleEntry
 import com.mochyy.mochymusic.ui.component.ActionPromptDialog
 import com.mochyy.mochymusic.ui.component.BetaBadge
@@ -88,8 +87,8 @@ fun ModulesScreen(navController: NavController, viewModel: ModulesViewModel = hi
     ) {
         ThirdPartyCard { context.openDevUrl(ModuleDocsUrl) }
         Spacer(Modifier.height(14.dp))
-        // mochy's bar is where people share modules, so it sits right up top
-        ModulesBarBanner { context.openDevUrl(DiscordUrl) }
+        // mochy's bar is where people share modules, so its browser sits right up top
+        ModulesBarBanner { navController.navigate(ModuleBrowserRoute) }
         Spacer(Modifier.height(22.dp))
         Box(Modifier.fillMaxWidth().padding(horizontal = 2.dp).height(1.dp).background(Color.White.copy(alpha = 0.28f)))
         Spacer(Modifier.height(28.dp))

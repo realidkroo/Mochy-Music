@@ -6,7 +6,6 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.net.toUri
 import com.mochyy.mochymusic.db.MusicDatabase
-import com.mochyy.mochymusic.ui.screens.extractAudioMetadata
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first

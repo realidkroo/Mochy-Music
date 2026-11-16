@@ -1045,6 +1045,25 @@
             </intent-filter>
         </activity>
 
+        <!-- the module feed's discord sign-in sends the browser back here with a session -->
+        <activity
+            android:name=".modules.browser.ModuleBrowserLoginActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="mochy-modules" android:host="signed-in" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
             android:exported="false"

@@ -2,23 +2,21 @@
 
 package com.mochyy.mochymusic.floating
 
-import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.graphics.Point
-import android.graphics.drawable.GradientDrawable
+import android.graphics.PointF
 import android.os.Build
 import android.view.Gravity
-import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
+import android.view.VelocityTracker
 import android.view.ViewConfiguration
-import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowManager
+import android.view.animation.AccelerateInterpolator
 import android.widget.FrameLayout
-import android.widget.ImageView
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -31,22 +29,41 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.mochyy.mochymusic.R
+import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
-// a drop this close to the cross hides the pill
-private val CloseReach = 72.dp
-private val CloseSize = 56.dp
-private val CloseFromBottom = 56.dp
+// the cover rests this far from the side of the screen, and keeps this clear of the status and navigation bars
+private val EdgeGap = 8.dp
+private val BarGap = 6.dp
 
-// how long the pill takes to make room when the open controls would run off the screen
-private const val MakeRoomMs = 180L
+// how far past its resting spot a landing cover may swing before it bumps off the edge
+private val EdgeGive = 5.dp
+
+// a drop waits this long at most for the bubble to finish tucking in before it flies anyway
+private const val TuckWaitMs = 350L
+
+// a fling carries the drop on by this much of a second, so a flick throws the pill to the far side
+private const val FlingCarrySec = 0.14f
+private const val MaxFlingDpPerSec = 1_800f
+
+private val LandSpring = FlightSpring(stiffness = 420f, dampingRatio = 0.74f)
+private val RoomSpring = FlightSpring(stiffness = 700f, dampingRatio = 1f)
+private val MagnetSpring = FlightSpring(stiffness = 900f, dampingRatio = 0.72f)
+private val CatchUpSpring = FlightSpring(stiffness = 1_400f, dampingRatio = 1f)
+private val VanishSpring = FlightSpring(stiffness = 1_100f, dampingRatio = 1f)
+private const val VanishMs = 220L
 
 // what the window tells the service about
 internal interface PillWindowListener {
+    // end is true when the cover now sits on the right edge
+    fun onDocked(end: Boolean)
+    fun onDragStarted()
+
+    // the cover reached its edge after a drop: the bubble pops back out
+    fun onSettling()
     fun onMoved(x: Int, y: Int)
-    fun onDismissed()
+    fun onDropped(drop: PillDrop)
     fun onTouched()
     fun onTouchedOutside()
 }
@@ -63,15 +80,45 @@ internal class PillWindow(
     private val owner = OverlayOwner()
     private val root = DragFrame()
     private val compose = ComposeView(context)
-    private var expandedWindow = false
-    private var makingRoom: ValueAnimator? = null
-    private var closeTarget: CloseTarget? = null
+    private val flight = PillFlight { x, y -> moveCover(x, y) }
 
     val metrics = PillMetrics.forScreen((screenSize().x / density).dp)
+    private val margin = px(PillMetrics.Margin)
+    private val cover = px(PillMetrics.Cover)
+
+    // built once with the window, so picking the pill up never has to load a font or open a second window
+    private val targets = PillDropTargets(context, cover)
+
+    // the cover's top left in window coordinates; the window is always placed around it, whatever size it is
+    private var coverX = 0f
+    private var coverY = 0f
+    private var dockEnd = true
+    private var frameWidth = px(metrics.width(PillShape.PILL))
+    private var frameHeight = px(metrics.height(PillShape.PILL, BaseSlots))
+    private var slots = BaseSlots
+
+    // the controls are open, so the bar under them takes slides for seeking
+    private var open = false
+
+    // a drop that came before the bubble finished tucking in; it flies once the window is just the cover
+    private var pendingSettle: PointF? = null
+    private val settleAnyway = Runnable {
+        val waiting = pendingSettle ?: return@Runnable
+        pendingSettle = null
+        resize(px(metrics.width(PillShape.COVER)), px(metrics.height(PillShape.COVER, slots)))
+        settle(waiting.x, waiting.y)
+    }
+
+    // the cover is flying home after a drop and the bubble is still tucked in, waiting for it to land
+    private var landing = false
+
+    // while it's carried or flying the window covers the whole screen and the pill moves inside it by drawing;
+    // moving the window itself every frame went through the window manager each time and stuttered
+    private var roaming = false
 
     private val params = WindowManager.LayoutParams(
-        px(metrics.collapsedWidth),
-        px(metrics.collapsedHeight),
+        frameWidth,
+        frameHeight,
         overlayType(),
         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
@@ -82,21 +129,30 @@ internal class PillWindow(
         PixelFormat.TRANSLUCENT,
     ).apply {
         gravity = Gravity.TOP or Gravity.START
-        // first time: the upper right of the screen, below the status bar
-        val screen = screenSize()
-        x = savedX ?: (screen.x - width + px(PillMetrics.Margin) - px(8.dp))
-        y = savedY ?: (screen.y / 6)
+        // window coordinates are the screen's, navigation bar included, so the full-screen window lines up with the resting one
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) fitInsetsTypes = 0
         title = "Floating lyrics"
+    }
+
+    init {
+        val screen = screenSize()
+        // first time: the upper right of the screen, below the status bar
+        dockEnd = savedX?.let { it + frameWidth / 2 > screen.x / 2 } ?: true
+        coverX = restX(dockEnd)
+        coverY = clampY((savedY ?: (screen.y / 6)) + margin.toFloat(), frameHeight)
+        place(apply = false)
     }
 
     // false when the system refused the window, the permission was taken back most likely
     fun show(content: @Composable () -> Unit): Boolean {
-        clampInto(params)
+        listener.onDocked(dockEnd)
         root.setViewTreeLifecycleOwner(owner)
         root.setViewTreeSavedStateRegistryOwner(owner)
         compose.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
         compose.setContent(content)
-        root.addView(compose, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        // the pills sit under the pill, so a cover dropped onto one shrinks away on top of it
+        root.addView(targets.view, targets.layoutParams(0))
+        root.addView(compose, FrameLayout.LayoutParams(frameWidth, frameHeight, Gravity.TOP or Gravity.START))
         owner.start()
         return runCatching { windowManager.addView(root, params) }
             .onFailure { owner.destroy() }
@@ -104,55 +160,192 @@ internal class PillWindow(
     }
 
     fun remove() {
-        makingRoom?.cancel()
-        closeTarget?.remove()
-        closeTarget = null
+        landing = false
+        root.removeCallbacks(settleAnyway)
+        flight.stop()
+        targets.hideNow()
+        root.release()
+        compose.animate().cancel()
         owner.destroy()
         runCatching { windowManager.removeView(root) }
     }
 
-    // the open controls need a bigger window; it only grows right and down, and slides back in when that would leave the screen
-    fun setExpanded(expanded: Boolean) {
-        if (expanded == expandedWindow || !root.isAttachedToWindow) return
-        expandedWindow = expanded
-        params.width = px(if (expanded) metrics.expandedWidth else metrics.collapsedWidth)
-        params.height = px(if (expanded) metrics.expandedHeight else metrics.collapsedHeight)
-        val fromX = params.x
-        val fromY = params.y
-        clampInto(params)
-        val toX = params.x
-        val toY = params.y
-        if (toX == fromX && toY == fromY) {
-            update()
-            return
-        }
-        params.x = fromX
-        params.y = fromY
-        update()
-        makingRoom?.cancel()
-        makingRoom = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = MakeRoomMs
-            addUpdateListener {
-                val f = it.animatedValue as Float
-                params.x = (fromX + (toX - fromX) * f).roundToInt()
-                params.y = (fromY + (toY - fromY) * f).roundToInt()
-                update()
-            }
-            start()
+    // grows the window to hold both what's on screen and what's coming, away from the cover so nothing moves
+    fun reserveFrame(shape: PillShape, slots: Int) {
+        this.slots = slots
+        open = shape == PillShape.OPEN
+        resize(maxOf(frameWidth, px(metrics.width(shape))), maxOf(frameHeight, px(metrics.height(shape, slots))))
+        if (!root.dragging && !flight.running) makeRoom()
+    }
+
+    // fits the window to what's on screen once it has settled
+    fun fitFrame(shape: PillShape, slots: Int) {
+        this.slots = slots
+        open = shape == PillShape.OPEN
+        resize(px(metrics.width(shape)), px(metrics.height(shape, slots)))
+        if (shape == PillShape.COVER) pendingSettle?.let {
+            pendingSettle = null
+            root.removeCallbacks(settleAnyway)
+            settle(it.x, it.y)
         }
     }
 
-    private fun update() {
+    private fun resize(width: Int, height: Int) {
+        if (width == frameWidth && height == frameHeight) return
+        frameWidth = width
+        frameHeight = height
+        place()
+    }
+
+    private fun moveCover(x: Float, y: Float) {
+        coverX = x
+        coverY = y
+        place()
+    }
+
+    // the pill's frame around the cover: it hangs to the right of it when docked left, to the left when docked right
+    private fun place(apply: Boolean = true) {
+        val left = if (dockEnd) coverX + cover + margin - frameWidth else coverX - margin
+        val top = coverY - margin
+        val lp = compose.layoutParams
+        if (lp != null && (lp.width != frameWidth || lp.height != frameHeight)) {
+            lp.width = frameWidth
+            lp.height = frameHeight
+            compose.layoutParams = lp
+        }
+        if (roaming) {
+            // inside the full-screen window only the drawing moves, which never waits on the window manager
+            compose.translationX = left
+            compose.translationY = top
+            return
+        }
+        compose.translationX = 0f
+        compose.translationY = 0f
+        params.width = frameWidth
+        params.height = frameHeight
+        params.x = left.roundToInt()
+        params.y = top.roundToInt()
+        if (apply && root.isAttachedToWindow) runCatching { windowManager.updateViewLayout(root, params) }
+    }
+
+    // the window spreads over the whole screen with the pill drawn where it was, so nothing on screen moves as it does
+    private fun roam() {
+        if (roaming) return
+        roaming = true
+        val screen = screenSize()
+        params.x = 0
+        params.y = 0
+        params.width = screen.x
+        params.height = screen.y
+        place()
         if (root.isAttachedToWindow) runCatching { windowManager.updateViewLayout(root, params) }
     }
 
-    // keeps the pill itself on screen and clear of the status bar; its see-through margin may hang off the edge
-    private fun clampInto(lp: WindowManager.LayoutParams) {
-        val screen = screenSize()
-        val margin = px(PillMetrics.Margin)
-        val top = topInset()
-        lp.x = lp.x.coerceIn(-margin, (screen.x - lp.width + margin).coerceAtLeast(-margin))
-        lp.y = lp.y.coerceIn(top - margin, (screen.y - lp.height + margin).coerceAtLeast(top - margin))
+    // back to a window just around the pill, once it has come to rest
+    private fun land() {
+        if (!roaming) return
+        roaming = false
+        targets.hideNow()
+        place()
+    }
+
+    // the window only grows away from the cover; when that would run off the bottom the cover slides up first
+    private fun makeRoom() {
+        val toY = clampY(coverY, frameHeight)
+        if (toY == coverY) return
+        roam()
+        flight.flyTo(coverX, coverY, coverX, toY, RoomSpring) {
+            land()
+            save()
+        }
+    }
+
+    // a touch this close to the open bar is a seek, never a drag of the whole pill
+    private fun onSeekBar(y: Float): Boolean =
+        open && abs(y - compose.translationY - px(PillMetrics.barY(slots.toFloat()))) <= px(PillMetrics.SeekReach)
+
+    // while the window covers the screen, only a touch on the pill itself counts
+    private fun onPill(x: Float, y: Float): Boolean {
+        val left = compose.translationX
+        val top = compose.translationY
+        return x >= left && x <= left + frameWidth && y >= top && y <= top + frameHeight
+    }
+
+    private fun isJustCover(): Boolean =
+        frameWidth == px(metrics.width(PillShape.COVER)) && frameHeight == px(metrics.height(PillShape.COVER, slots))
+
+    // let go: the side the cover was headed for wins, it flies there alone carrying the fling's speed, bumps the edge, and the bubble pops out
+    private fun settle(velocityX: Float, velocityY: Float) {
+        if (!isJustCover()) {
+            pendingSettle = PointF(velocityX, velocityY)
+            root.removeCallbacks(settleAnyway)
+            root.postDelayed(settleAnyway, TuckWaitMs)
+            return
+        }
+        val end = coverX + cover / 2f + velocityX * FlingCarrySec > screenSize().x / 2f
+        if (end != dockEnd) {
+            dockEnd = end
+            listener.onDocked(end)
+            // the window is just the cover now, so turning sides moves nothing on screen
+            place()
+        }
+        val goalY = clampY(coverY + velocityY * FlingCarrySec, px(metrics.height(PillShape.PILL, slots)))
+        val goalX = restX(end)
+        landing = true
+        flight.flyTo(
+            coverX, coverY, goalX, goalY, LandSpring, velocityX, velocityY,
+            wallX = goalX + if (end) px(EdgeGive) else -px(EdgeGive),
+            onHit = ::popOut,
+            onLanded = {
+                popOut()
+                save()
+                land()
+            },
+        )
+    }
+
+    private fun popOut() {
+        if (!landing) return
+        landing = false
+        listener.onSettling()
+    }
+
+    // dropped on a pill: the cover is pulled into it and shrinks away before the service takes the window down
+    private fun vanish(drop: PillDrop) {
+        targets.swallow(drop)
+        targets.centerOf(drop)?.let { center ->
+            flight.flyTo(coverX, coverY, center.x - cover / 2f, center.y - cover / 2f, VanishSpring)
+        }
+        compose.pivotX = if (dockEnd) frameWidth - margin - cover / 2f else margin + cover / 2f
+        compose.pivotY = margin + cover / 2f
+        compose.animate()
+            .scaleX(0.2f)
+            .scaleY(0.2f)
+            .alpha(0f)
+            .setDuration(VanishMs)
+            .setInterpolator(AccelerateInterpolator())
+            .withEndAction {
+                targets.hide()
+                listener.onDropped(drop)
+            }
+            .start()
+    }
+
+    // the position is kept as where the resting pill's window sat, so an older saved spot still picks the right side
+    private fun save() {
+        val x = if (dockEnd) coverX + cover + margin - px(metrics.pillWidth) else coverX - margin
+        listener.onMoved(x.roundToInt(), (coverY - margin).roundToInt())
+    }
+
+    private fun restX(end: Boolean): Float =
+        if (end) (screenSize().x - px(EdgeGap) - cover).toFloat() else px(EdgeGap).toFloat()
+
+    // keeps everything below the cover's top, the bubble and the bar included, between the status bar and the navigation bar
+    private fun clampY(y: Float, height: Int): Float {
+        val bars = systemBars()
+        val top = (bars.top + px(BarGap)).toFloat()
+        val bottom = (screenSize().y - bars.bottom - px(BarGap) - (height - margin * 2)).toFloat()
+        return if (bottom < top) top else y.coerceIn(top, bottom)
     }
 
     private fun screenSize(): Point = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -165,16 +358,23 @@ internal class PillWindow(
         }
     }
 
-    // the status bar's height; an overlay sits under it, so the pill is kept below it
+    private class Bars(val top: Int, val bottom: Int)
+
+    // the status bar and navigation bar heights; an overlay can sit under both, so the pill is kept between them
     @SuppressLint("DiscouragedApi", "InternalInsetResource")
-    private fun topInset(): Int {
+    private fun systemBars(): Bars {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val insets = windowManager.currentWindowMetrics.windowInsets
-                .getInsetsIgnoringVisibility(WindowInsets.Type.statusBars() or WindowInsets.Type.displayCutout())
-            return insets.top
+                .getInsetsIgnoringVisibility(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+            return Bars(insets.top, insets.bottom)
         }
-        val id = context.resources.getIdentifier("status_bar_height", "dimen", "android")
-        return if (id > 0) context.resources.getDimensionPixelSize(id) else px(24.dp)
+        val resources = context.resources
+        val status = resources.getIdentifier("status_bar_height", "dimen", "android")
+        val navigation = resources.getIdentifier("navigation_bar_height", "dimen", "android")
+        return Bars(
+            top = if (status > 0) resources.getDimensionPixelSize(status) else px(24.dp),
+            bottom = if (navigation > 0) resources.getDimensionPixelSize(navigation) else 0,
+        )
     }
 
     private fun px(value: Dp): Int = (value.value * density).roundToInt()
@@ -182,11 +382,22 @@ internal class PillWindow(
     // takes a drag before compose sees it, from the raw screen position, so moving the window under the finger doesn't feed back into the drag
     private inner class DragFrame : FrameLayout(context) {
         private val slop = ViewConfiguration.get(context).scaledTouchSlop
+        private val maxFling = MaxFlingDpPerSec * density
+        private var tracker: VelocityTracker? = null
         private var downX = 0f
         private var downY = 0f
-        private var fromX = 0
-        private var fromY = 0
-        private var dragging = false
+        private var fromX = 0f
+        private var fromY = 0f
+        private var magnet: PillDrop? = null
+        private var seeking = false
+
+        var dragging = false
+            private set
+
+        // the lifted cover's soft shadow reaches past the pill's frame while it's carried, so it isn't cut at the frame's edge
+        init {
+            clipChildren = false
+        }
 
         override fun dispatchTouchEvent(event: MotionEvent): Boolean {
             when (event.actionMasked) {
@@ -195,110 +406,116 @@ internal class PillWindow(
                     return false
                 }
                 MotionEvent.ACTION_DOWN -> {
+                    // a tap beside the pill while it's still flying home just falls through
+                    if (roaming && !dragging && !onPill(event.x, event.y)) return false
                     downX = event.rawX
                     downY = event.rawY
-                    fromX = params.x
-                    fromY = params.y
+                    seeking = onSeekBar(event.y)
                     dragging = false
-                    makingRoom?.cancel()
+                    magnet = null
+                    tracker?.recycle()
+                    tracker = VelocityTracker.obtain()
                     listener.onTouched()
                 }
-                MotionEvent.ACTION_MOVE -> if (!dragging && hypot(event.rawX - downX, event.rawY - downY) > slop) {
-                    dragging = true
-                    // the cover's tap and hold are called off once it's a drag
-                    val cancel = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
-                    super.dispatchTouchEvent(cancel)
-                    cancel.recycle()
-                    closeTarget = CloseTarget().also { it.show() }
-                }
+                MotionEvent.ACTION_MOVE -> if (!dragging && !seeking && hypot(event.rawX - downX, event.rawY - downY) > slop) startDrag(event)
             }
+            track(event)
             if (!dragging) return super.dispatchTouchEvent(event)
             when (event.actionMasked) {
-                MotionEvent.ACTION_MOVE -> {
-                    params.x = fromX + (event.rawX - downX).roundToInt()
-                    params.y = fromY + (event.rawY - downY).roundToInt()
-                    update()
-                    closeTarget?.hover(event.rawX, event.rawY)
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    dragging = false
-                    val dropped = event.actionMasked == MotionEvent.ACTION_UP && closeTarget?.hovering == true
-                    closeTarget?.remove()
-                    closeTarget = null
-                    if (dropped) {
-                        listener.onDismissed()
-                    } else {
-                        clampInto(params)
-                        update()
-                        listener.onMoved(params.x, params.y)
-                    }
-                }
+                MotionEvent.ACTION_MOVE -> drag(fromX + event.rawX - downX, fromY + event.rawY - downY)
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> drop(event.actionMasked == MotionEvent.ACTION_UP)
             }
             return true
         }
 
-        // a turned phone has a different screen, so the pill is brought back onto it
+        // the window moves under the finger, so the speed is measured on the screen instead
+        private fun track(event: MotionEvent) {
+            val onScreen = MotionEvent.obtain(event)
+            onScreen.setLocation(event.rawX, event.rawY)
+            tracker?.addMovement(onScreen)
+            onScreen.recycle()
+        }
+
+        private fun startDrag(event: MotionEvent) {
+            dragging = true
+            // caught mid-flight it's held right where it is, and a plain tap lets it land
+            flight.stop()
+            fromX = coverX
+            fromY = coverY
+            downX = event.rawX
+            downY = event.rawY
+            // the cover's tap and hold are called off once it's a drag
+            val cancel = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
+            super.dispatchTouchEvent(cancel)
+            cancel.recycle()
+            // picked up again before it landed: it stays tucked for the new drag
+            pendingSettle = null
+            landing = false
+            root.removeCallbacks(settleAnyway)
+            listener.onDragStarted()
+            roam()
+            targets.show(systemBars().bottom)
+        }
+
+        // the cover follows the finger, except near a pill where it's pulled onto it, and it catches back up after leaving one
+        private fun drag(freeX: Float, freeY: Float) {
+            val over = targets.hover(freeX + cover / 2f, freeY + cover / 2f)
+            when {
+                over != null -> if (over != magnet) {
+                    magnet = over
+                    targets.restSpot(over)?.let { spot ->
+                        flight.flyTo(coverX, coverY, spot.x, spot.y, MagnetSpring)
+                    }
+                }
+                magnet != null -> {
+                    magnet = null
+                    flight.flyTo(coverX, coverY, freeX, freeY, CatchUpSpring)
+                }
+                flight.running -> flight.retarget(freeX, freeY)
+                else -> moveCover(freeX, freeY)
+            }
+        }
+
+        private fun drop(released: Boolean) {
+            dragging = false
+            val speed = tracker?.let {
+                it.computeCurrentVelocity(1_000, maxFling)
+                PointF(it.xVelocity, it.yVelocity)
+            } ?: PointF()
+            tracker?.recycle()
+            tracker = null
+            val drop = magnet.takeIf { released }
+            magnet = null
+            flight.stop()
+            if (drop != null) {
+                vanish(drop)
+                return
+            }
+            targets.hide()
+            settle(speed.x, speed.y)
+        }
+
+        fun release() {
+            tracker?.recycle()
+            tracker = null
+        }
+
+        // a turned phone has a different screen, so the pill goes back to its edge on it
         override fun onConfigurationChanged(newConfig: Configuration?) {
             super.onConfigurationChanged(newConfig)
-            clampInto(params)
-            update()
-        }
-    }
-
-    // the cross at the bottom of the screen that a dragged pill can be dropped on to hide it
-    private inner class CloseTarget {
-        private val size = px(CloseSize)
-        private val view = ImageView(context).apply {
-            setImageResource(R.drawable.close)
-            setColorFilter(android.graphics.Color.WHITE)
-            scaleType = ImageView.ScaleType.CENTER
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(0xE6202124.toInt())
-            }
-            alpha = 0f
-            contentDescription = context.getString(R.string.floating_lyrics_hide)
-        }
-        private val lp = WindowManager.LayoutParams(
-            size,
-            size,
-            overlayType(),
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
-            PixelFormat.TRANSLUCENT,
-        ).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            y = px(CloseFromBottom)
-        }
-        var hovering = false
-            private set
-
-        fun show() {
-            if (runCatching { windowManager.addView(view, lp) }.isFailure) return
-            view.animate().alpha(1f).setDuration(150L).start()
-        }
-
-        fun hover(rawX: Float, rawY: Float) {
-            if (!view.isAttachedToWindow) return
-            val at = IntArray(2)
-            view.getLocationOnScreen(at)
-            val near = hypot(rawX - (at[0] + size / 2f), rawY - (at[1] + size / 2f)) < px(CloseReach)
-            if (near == hovering) return
-            hovering = near
-            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-            val scale = if (near) 1.2f else 1f
-            view.animate().scaleX(scale).scaleY(scale).setDuration(120L).start()
-        }
-
-        fun remove() {
-            if (!view.isAttachedToWindow) return
-            view.animate().cancel()
-            runCatching { windowManager.removeView(view) }
+            if (dragging) return
+            flight.stop()
+            popOut()
+            land()
+            coverX = restX(dockEnd)
+            coverY = clampY(coverY, frameHeight)
+            place()
         }
     }
 }
 
 // overlays have their own window type from android 8; before that the phone type stood in for it
-private fun overlayType(): Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+internal fun overlayType(): Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
     WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
 } else {
     @Suppress("DEPRECATION")
@@ -325,4 +542,3 @@ private class OverlayOwner : SavedStateRegistryOwner {
         registry.currentState = Lifecycle.State.DESTROYED
     }
 }
-

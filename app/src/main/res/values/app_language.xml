@@ -36,7 +36,7 @@
     <string name="settings_customisation_category">Customisation</string>
     <string name="settings_audio_lab_category">Audio Lab</string>
     <string name="settings_modules_category">Modules</string>
-    <string name="settings_recommended_item">Recommended item</string>
+    <string name="settings_recommended_item">Recommended for you</string>
     <string name="settings_nothing_matches">Nothing matches “%1$s”.</string>
     <string name="settings_pane_hint">Pick a setting on the left to open it here.</string>
     <string name="settings_search_placeholder">Search settings</string>

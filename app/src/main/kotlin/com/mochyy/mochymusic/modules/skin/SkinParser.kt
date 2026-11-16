@@ -40,7 +40,8 @@ internal object SkinParser {
     private fun glass(o: JsonObject): SkinGlass? {
         val shader = o.string("shader")?.takeIf { name -> ShaderKinds.any { name.endsWith(it, ignoreCase = true) } } ?: return null
         val change = glassChange(o)
-        return SkinGlass(shader, change.blurDp ?: 6f, change.marginDp ?: 16f, change.uniforms)
+        // a glass that draws its own edge can turn off mochy's hairline and shadow, or the bars get two edges
+        return SkinGlass(shader, change.blurDp ?: 6f, change.marginDp ?: 16f, change.uniforms, outline = o.bool("outline") ?: true, shadow = o.bool("shadow") ?: true)
     }
 
     /** a blur, a margin and uniforms, as the glass and a setting's option both write them; mochy's own uniforms can't be set this way */
@@ -171,5 +172,5 @@ internal object SkinParser {
     // what mochy hands every page shader itself
     val PageUniforms = setOf("size", "time", "density", "touch", "pressed", "accent")
     // what mochy hands every glass shader itself
-    val MochyUniforms = setOf("content", "size", "margin", "radius", "density", "quality", "chrome", "accent", "kind")
+    val MochyUniforms = setOf("content", "size", "margin", "radius", "density", "quality", "chrome", "accent", "kind", "pill", "pillShown", "pillLift")
 }

@@ -172,6 +172,8 @@ fun WideBarBackground(
 ) {
     val glassState = LocalGlassState.current ?: remember { GlassState() }
     val accentWash = rememberChromeAccentWash()
+    // a look's glass that draws its own edge leaves mochy's hairline and shadow out
+    val moduleGlass = rememberChromeModuleGlass()
     Box(modifier = modifier) {
         Box(
             modifier = Modifier
@@ -183,11 +185,11 @@ fun WideBarBackground(
                     val placeable = measurable.measure(Constraints.fixed(width, height))
                     layout(width, height) { placeable.place(0, 0) }
                 }
-                .dropShadow(NavBarShape, ChromeShadow)
+                .then(if (moduleGlass?.shadow == false) Modifier else Modifier.dropShadow(NavBarShape, ChromeShadow))
                 .clip(NavBarShape)
                 .drawWithContent {
                     drawContent()
-                    drawChromeOutline(Offset.Zero, size, cornerRadius = size.height / 2f)
+                    if (moduleGlass?.outline != false) drawChromeOutline(Offset.Zero, size, cornerRadius = size.height / 2f)
                 },
         ) {
             FrostedChromeGlass(
@@ -215,6 +217,7 @@ fun WideBarTabs(
     onSearchDoubleTap: (() -> Unit)? = null,
 ) {
     val selectedIndex = navigationItems.indexOfFirst { it.route == selectedTabRoute }
+    val pill = rememberNavPill(selectedIndex)
     Box(modifier = modifier) {
         Row(
             modifier = Modifier
@@ -222,7 +225,11 @@ fun WideBarTabs(
                 .width(bar.tabsWidth)
                 .height(bar.height)
                 .padding(horizontal = NavRowPadding)
-                .navHighlight(selectedIndex, navigationItems.size),
+                // the wide bar's tabs sit apart from its glass, so mochy draws this pill even when the look's glass draws the nav bar's
+                .navHighlight(pill, navigationItems.size)
+                .navPillDrag(pill, navigationItems.size, selectedIndex) { index ->
+                    navigationItems.getOrNull(index)?.let { onItemClick(it, index == selectedIndex) }
+                },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             navigationItems.forEach { screen ->

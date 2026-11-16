@@ -64,6 +64,10 @@
     <!-- Local import -->
     <string name="lib_local_no_access">Mochy can\'t see your music without access</string>
     <string name="lib_local_no_new_songs">No new songs in your music folders</string>
+    <plurals name="lib_local_repaired">
+        <item quantity="one">Fixed the name, lyrics or cover of %1$d song</item>
+        <item quantity="other">Fixed the names, lyrics or covers of %1$d songs</item>
+    </plurals>
 
     <!-- Transfer progress -->
     <string name="lib_transfer_download_title">Download progress</string>
