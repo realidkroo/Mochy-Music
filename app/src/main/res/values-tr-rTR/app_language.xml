@@ -1,8 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!-- en: since there werent exact equivalents for some english words i replaced them with words that fit the meaning but thats okay. i hope so  -->
 <!-- tr: hacı kardeşlerim Türkçe de ingilizcedeki her kelimenin karşılığı yok ua hop in e atla yazdım başka bir şey yok yani içine dal desem falan alakasız olurdu -->
-
-
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_language_search">Dil ara</string>
     <string name="app_language_follow_device">Sistem dilini kullan</string>
