@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- usage at the top of the page -->
+    <string name="storage_overall">Genel</string>
+    <string name="storage_legend_mochy">Mochy</string>
+    <string name="storage_legend_yours">Depolaman</string>
+    <string name="storage_free">%1$s boş</string>
+    <string name="storage_measuring">Mochy\'nin ne kadar yer kapladığı hesaplanıyor…</string>
+    <string name="storage_uses">Mochy depolamanın %1$s kadarını (%2$s) kullanıyor, bu da şöyle bölünüyor:</string>
+    <string name="storage_uses_drives">Mochy %2$d sürücüde toplam %1$s kullanıyor, bu da şöyle bölünüyor:</string>
+    <string name="storage_breakdown_title">Mochy uygulama verisi kullanımı</string>
+    <string name="storage_legend_cache">Önbellek</string>
+    <string name="storage_legend_downloads">İndirilen müzik ve yerel</string>
+    <string name="storage_legend_database">Veritabanı</string>
+    <string name="storage_legend_app_data">Uygulama verisi</string>
+
+    <!-- cutting the junk -->
+    <string name="storage_junk_title">İşte çöpü azaltmak için yapabileceklerinin listesi</string>
+    <string name="storage_hint_full">Telefonun neredeyse dolu.</string>
+    <string name="storage_hint_cache">Önbellek en kolayı. Temizlemek %1$s boşaltır ve şarkılar yeniden akışa geçer.</string>
+    <string name="storage_hint_downloads">En çok yeri indirmeler alıyor. İndirmeleri yönet, en büyükleri ve pek çalmadıklarını gösterir.</string>
+    <string name="storage_cache_limit">Müzik önbelleği sınırını ayarla</string>
+    <string name="storage_cache_none">Önbellek yok</string>
+    <string name="storage_cache_unlimited">Sınırsız</string>
+    <string name="storage_cache_off">Kapalı</string>
+    <string name="storage_cache_mb">%1$d MB</string>
+    <string name="storage_cache_gb">%1$d GB</string>
+    <string name="storage_cache_applies_later">Yeni sınır bir dahaki sefer Mochy\'yi açtığında başlar.</string>
+    <string name="storage_remove_downloads">Tüm indirmeleri kaldır</string>
+    <string name="storage_remove_downloads_title">Tüm indirmeler kaldırılsın mı?</string>
+    <string name="storage_remove_downloads_message">İndirilen her şarkı bu telefondan silinir. Kütüphanende kalırlar ve çaldığında yeniden akışa geçerler, yani bir bağlantı gerekecek.</string>
+    <string name="storage_clear_cache">Tüm müzik ve kapak önbelleğini kaldır</string>
+    <string name="storage_clear_cache_title">Önbellek temizlensin mi?</string>
+    <string name="storage_clear_cache_message">Akıştan saklanan şarkılar ve kaydedilen kapak resimleri silinir. Çaldıkça ve gezdikçe geri gelirler. Kütüphanen ve indirmelerin olduğu gibi kalır.</string>
+    <string name="storage_clear_cache_action">Önbelleği temizle</string>
+    <string name="storage_manage_downloads">İndirmeleri yönet</string>
+
+    <!-- where things are saved, and exporting songs -->
+    <string name="storage_or">Veya</string>
+    <string name="storage_downloads_place">İndirmelerin kaydedileceği yeri seç</string>
+    <string name="storage_cache_place">Önbelleğin kaydedileceği yeri seç</string>
+    <string name="storage_export_downloads">İndirilen şarkıları klasör olarak dışa aktar</string>
+    <string name="storage_moving">Taşınıyor… %1$d%%</string>
+    <string name="storage_move_failed">Her şey taşınamadı, bu yüzden hiçbir şey değiştirilmedi. Tekrar dene.</string>
+    <string name="storage_place_phone">Bu telefon</string>
+    <string name="storage_place_card">Hafıza kartı</string>
+    <string name="storage_place_sheet_downloads">İndirmelerin kaydedildiği yer</string>
+    <string name="storage_place_sheet_cache">Önbelleğin kaydedildiği yer</string>
+    <string name="storage_place_note_downloads">İndirilen her şarkı taşınır, şarkı sözleri de onunla kalır. Mochy bitirmek için bir kez yeniden başlar.</string>
+    <string name="storage_place_note_cache">Önbellek yeni yerde sıfırdan başlar. Mochy bitirmek için bir kez yeniden başlar.</string>
+    <string name="storage_place_card_note">Hafıza kartında Mochy kendi klasörüne kaydeder; Mochy kaldırılırsa Android bu klasörü temizler.</string>
+    <string name="storage_place_choose_folder">Bir klasör seç</string>
+    <string name="storage_place_folder_note">Mochy seçtiğin klasörün içindeki bir Mochy klasörüne kaydeder, böylece oradaki başka hiçbir şeye dokunulmaz.</string>
+    <string name="storage_place_access_needed">%1$s konumuna kaydetmek için Mochy\'nin Tüm dosyalara erişim iznine ihtiyacı var. Android bunu Ayarlar\'da ister.</string>
+    <string name="storage_place_allow_access">Erişime izin ver</string>
+    <string name="storage_place_no_access">Mochy erişim alamadı, bu yüzden oraya kaydedemiyor. İzin ver veya başka bir klasör seç.</string>
+    <string name="storage_place_folder_unsupported">O klasör kullanılamıyor. Bu telefonda veya bir hafıza kartında bir klasör seç.</string>
+    <string name="storage_place_free">%2$s içinden %1$s boş</string>
+    <string name="storage_place_here_now">Şimdi buraya kaydediliyor</string>
+    <string name="storage_place_no_room">Yeterli yer yok</string>
+    <string name="storage_place_move">Buraya taşı</string>
+    <string name="storage_place_move_downloads_title">İndirmeler %1$s konumuna taşınsın mı?</string>
+    <string name="storage_place_move_cache_title">Önbellek %1$s konumuna taşınsın mı?</string>
+    <string name="storage_place_move_downloads_message">%1$s konumuna kopyalanırken indirmeler duraklar. Bitince Mochy yeniden başlar ve eski kopya temizlenir.</string>
+    <string name="storage_place_move_cache_message">Şu anki önbelleğin temizlenir ve Mochy yeniden başlar, sonra çaldığın şarkılar yeni yerde tutulur.</string>
+    <string name="storage_place_move_action">Taşı ve yeniden başlat</string>
+
+    <string name="storage_export_sheet_title">İndirilen şarkıları dışa aktar</string>
+    <string name="storage_export_note">Seçtiğin yerin içindeki bir mochy-preserve klasörüne kopyalanırlar. İndirmelerin olduğu yerde kalır.</string>
+    <string name="storage_export_layout_playlists">Müzik ve çalma listeleri</string>
+    <string name="storage_export_layout_playlists_detail">Her çalma listesi ve beğenilen şarkıların için bir klasör, gerisi Müzik\'e gider</string>
+    <string name="storage_export_layout_albums">Albümler</string>
+    <string name="storage_export_layout_albums_detail">Her albüm için bir klasör, albümsüz şarkılar Müzik\'e gider</string>
+    <string name="storage_export_covers">Kapak resimleri</string>
+    <string name="storage_export_lyrics">Şarkı sözleri</string>
+    <string name="storage_export_pick">Bir klasör seç</string>
+    <string name="storage_export_progress">Dışa aktarılıyor… %2$d içinden %1$d</string>
+    <string name="storage_export_starting">Şarkılar hazırlanıyor…</string>
+    <string name="storage_export_failed">Dışa aktarma yarıda durdu. Seçtiğin klasörü kontrol edip tekrar dene.</string>
+    <plurals name="storage_export_done">
+        <item quantity="one">%d şarkı dışa aktarıldı</item>
+        <item quantity="other">%d şarkı dışa aktarıldı</item>
+    </plurals>
+    <plurals name="storage_export_skipped">
+        <item quantity="one">%d şarkı tamamen indirilmemişti, bu yüzden atlandı</item>
+        <item quantity="other">%d şarkı tamamen indirilmemişti, bu yüzden atlandı</item>
+    </plurals>
+    <string name="storage_export_folder_music" translatable="false">Music</string>
+    <string name="storage_export_folder_playlists" translatable="false">Playlist</string>
+    <string name="storage_export_folder_albums" translatable="false">Albums</string>
+    <string name="storage_export_folder_liked" translatable="false">Liked songs</string>
+
+    <!-- moving to a new phone -->
+    <string name="storage_transfer_title">Yeni telefona mı geçiyorsun? Her şeyi yanında götür</string>
+    <string name="storage_export_user_data">Kullanıcı verilerini dışa aktar</string>
+    <string name="storage_import_user_data">Kullanıcı verilerini içe aktar</string>
+    <string name="storage_transfer_exporting">Dışa aktarılıyor…</string>
+    <string name="storage_transfer_exporting_percent">Dışa aktarılıyor… %1$d%%</string>
+    <string name="storage_transfer_exported">Dışa aktarıldı! .zip dosyasını diğer telefondaki Mochy\'e aktar</string>
+    <string name="storage_transfer_importing">İçe aktarılıyor…</string>
+    <string name="storage_transfer_importing_percent">İçe aktarılıyor… %1$d%%, bitince Mochy yeniden başlar</string>
+    <string name="storage_transfer_restarting">Bitti, yeniden başlatılıyor…</string>
+    <string name="storage_import_title">Kütüphanen değiştirilsin mi?</string>
+    <string name="storage_import_message">Şu an Mochy\'deki her şey dışa aktarımın içindekilerle değiştirilir; kütüphanen, geçmişin, indirmelerin ve ayarların dahil. Girişlerin olduğu gibi kalır. Mochy bitirmek için bir kez yeniden başlar.</string>
+    <string name="storage_import_action">.zip dosyasını seç</string>
+</resources>

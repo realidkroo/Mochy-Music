@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="larp_mode">Larp modu</string>
+    <string name="larp_mode_desc">67 dopaminini doldur</string>
+    <string name="larp_mode_detail">Oynatıcının hava atmasını sağlar: sahip olmadığın DAC\'lara kadar 768 kHz\'e varan FLAC. Ne kadar sert larp yapacağını seç. Gerçek seste hiçbir şey değişmez.</string>
+
+    <string name="larp_sheet_image">Larpın sınırı yok</string>
+    <string name="larp_sheet_title">Bu, oynatıcıdaki bazı bilgileri değiştirecek. LARP\'a hazır mısın?</string>
+    <string name="larp_sheet_body">Kapatmayı unutma :)</string>
+    <string name="larp_sheet_button">67</string>
+
+    <string name="larp_sheet_levels">Seviyeni seç</string>
+    <string name="larp_level_summary">Seviye %1$d · %2$s · %3$s</string>
+
+    <string name="larp_quality">FLAC · %1$d-bit · %2$d kHz</string>
+    <string name="larp_dac_detail">%1$s · %2$d kHz · %3$d-bit · %4$s</string>
+
+    <string name="larp_card_format">.Flac</string>
+    <string name="larp_bit_depth">Bit derinliği</string>
+    <string name="larp_bit_depth_value">%1$d-bit</string>
+    <string name="larp_sample_rate">Örnekleme oranı</string>
+    <string name="larp_sample_rate_value">%1$d kHz</string>
+    <string name="larp_bitrate">Bit hızı</string>
+    <string name="larp_bitrate_value">%1$s kbps</string>
+    <string name="larp_channels">Kanal türü</string>
+    <string name="larp_source">Kaynak</string>
+
+    <string name="larp_card_decoder">Kod çözücü</string>
+    <string name="larp_decoder_name">Kod çözücü adı</string>
+    <string name="larp_runs_on">Şunun üzerinde çalışır:</string>
+
+    <string name="larp_card_dsp">DSP</string>
+    <string name="larp_effects">Efektler</string>
+    <string name="larp_hi_res">Hi-res yolu</string>
+
+    <string name="larp_card_output">Çıkış</string>
+    <string name="larp_device">Cihaz</string>
+    <string name="larp_route">Ses yolu</string>
+    <string name="larp_dac_mixer">DAC miksleyici</string>
+    <string name="larp_dac_mixer_value">Bit-perfect, %1$d kHz · %2$d-bit</string>
+    <string name="larp_power">Güç</string>
+    <string name="larp_jitter">Jitter</string>
+    <string name="larp_buffer">Tampon</string>
+
+    <string name="larp_skibidi_title">Skibidi larper</string>
+    <string name="larp_skibidi_dac">FiiO KA17</string>
+    <string name="larp_skibidi_lead">USB DAC, bit-perfect</string>
+    <string name="larp_skibidi_power">650 mW</string>
+    <string name="larp_skibidi_channels">Stereo</string>
+    <string name="larp_skibidi_source">Hi-res stüdyo ana kaydı</string>
+    <string name="larp_skibidi_decoder">libFLAC</string>
+    <string name="larp_skibidi_runs">Telefonunun kendi CPU\'su</string>
+    <string name="larp_skibidi_effects">Yok</string>
+    <string name="larp_skibidi_hires">24-bit, dokunulmamış</string>
+    <string name="larp_skibidi_route">Telefondan USB DAC\'a, bit-perfect</string>
+    <string name="larp_skibidi_jitter">100 ps altında</string>
+    <string name="larp_skibidi_buffer">40 ms</string>
+
+    <string name="larp_sixty_seven_title">67 larper</string>
+    <string name="larp_sixty_seven_dac">Chord Mojo 2</string>
+    <string name="larp_sixty_seven_lead">Taşınabilir DAC, doğrudan Mochy\'den</string>
+    <string name="larp_sixty_seven_power">600 mW</string>
+    <string name="larp_sixty_seven_channels">Stereo, faz eşleşmeli</string>
+    <string name="larp_sixty_seven_source">Şirketin kendi hi-res ana kaydı</string>
+    <string name="larp_sixty_seven_decoder">libFLAC, elle ayarlanmış</string>
+    <string name="larp_sixty_seven_runs">Yedek bir ses çekirdeği</string>
+    <string name="larp_sixty_seven_effects">Yok, solma bile yok</string>
+    <string name="larp_sixty_seven_hires">32-bit float, doğrudan geçiş</string>
+    <string name="larp_sixty_seven_route">Mochy\'den DAC\'a asenkron USB üzerinden</string>
+    <string name="larp_sixty_seven_jitter">12 ps</string>
+    <string name="larp_sixty_seven_buffer">10 ms</string>
+
+    <string name="larp_brainrot_title">Brainrot larper</string>
+    <string name="larp_brainrot_dac">Chord Hugo TT2</string>
+    <string name="larp_brainrot_lead">Masaüstü DAC, elle beslenmiş</string>
+    <string name="larp_brainrot_power">18 W</string>
+    <string name="larp_brainrot_channels">Stereo, kulağa göre ayarlanmış</string>
+    <string name="larp_brainrot_source">Miks masası, canlı</string>
+    <string name="larp_brainrot_decoder">Yok, Mochy FLAC\'ı akıcı okuyor</string>
+    <string name="larp_brainrot_runs">Brainrot</string>
+    <string name="larp_brainrot_effects">Yok, sanatçı her biti onayladı</string>
+    <string name="larp_brainrot_hires">64-bit float, altın kaplama</string>
+    <string name="larp_brainrot_route">Mochy\'den DAC\'a gümüş kabloyla</string>
+    <string name="larp_brainrot_jitter">1 ps</string>
+    <string name="larp_brainrot_buffer">1 ms</string>
+
+    <string name="larp_maxxing_title">Maxxing larper</string>
+    <string name="larp_maxxing_dac">Wadax Atlantis Reference</string>
+    <string name="larp_maxxing_lead">Doğrudan Mochy\'den, kod çözücüsüz</string>
+    <string name="larp_maxxing_power">1.000.000 W</string>
+    <string name="larp_maxxing_channels">Stereo, elle ayarlanmış</string>
+    <string name="larp_maxxing_source">Stüdyonun kendi ana bandı</string>
+    <string name="larp_maxxing_decoder">Yok, Mochy ham akıtıyor</string>
+    <string name="larp_maxxing_runs">Saf dopamin</string>
+    <string name="larp_maxxing_effects">Yok, her bit sanatçının hayal ettiği gibi yerine oturuyor</string>
+    <string name="larp_maxxing_hires">64-bit float, doğrudan geçiş</string>
+    <string name="larp_maxxing_route">Mochy\'den DAC\'a, arada kod çözücü yok</string>
+    <string name="larp_maxxing_jitter">0 ps</string>
+    <string name="larp_maxxing_buffer">0 ms, sen basmadan önce çalıyor</string>
+</resources>

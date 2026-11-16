@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Stats screen -->
+    <string name="rc_stats_done">Bitti</string>
+    <string name="rc_stats_title">İstatistikler</string>
+    <string name="rc_stats_year_recap_link">\"%1$d Özeti &gt;\"</string>
+    <string name="rc_stats_year_recap">%1$d Özeti</string>
+    <string name="rc_stats_collapse_all">Tümünü daralt</string>
+    <string name="rc_stats_expand_all">Tümünü genişlet</string>
+    <string name="rc_stats_empty_title">%1$s içinde henüz bir şey çalınmadı.</string>
+    <string name="rc_stats_empty_hint">Birkaç şarkı çal, bu kendiliğinden dolar.</string>
+    <string name="rc_stats_often">Bakalım müziği ne sıklıkla dinlemeyi seviyorsun</string>
+    <string name="rc_stats_privacy">Buradaki her şey bu uygulamadaki kullanımınla toplanır ve rastgele bir sunucuya ASLA GÖNDERİLMEZ! (Türler yalnızca sanatçı adına göre aranır.)</string>
+    <string name="rc_stats_cd_profile">Profil</string>
+    <string name="rc_stats_cd_collapse">Daralt</string>
+    <string name="rc_stats_cd_expand">Genişlet</string>
+
+    <string name="rc_stats_total_month">Bu ay şu kadar dinledin:</string>
+    <string name="rc_stats_total_year">Bu yıl şu kadar dinledin:</string>
+    <string name="rc_stats_every_day">%1$s ayının her günü</string>
+    <string name="rc_stats_every_month">%1$d yılının her ayı</string>
+    <plurals name="rc_stats_fact_songs">
+        <item quantity="one">%1$d Şarkı</item>
+        <item quantity="other">%1$d Şarkı</item>
+    </plurals>
+    <plurals name="rc_stats_fact_artists">
+        <item quantity="one">%1$d Sanatçı</item>
+        <item quantity="other">%1$d Sanatçı</item>
+    </plurals>
+    <plurals name="rc_stats_fact_albums">
+        <item quantity="one">%1$d Albüm</item>
+        <item quantity="other">%1$d Albüm</item>
+    </plurals>
+    <plurals name="rc_stats_fact_plays">
+        <item quantity="one">%1$d çalma</item>
+        <item quantity="other">%1$d çalma</item>
+    </plurals>
+
+    <string name="rc_stats_dominant_genre">Baskın tür</string>
+    <string name="rc_stats_genre_loading">Türlerin sıralanıyor…</string>
+    <string name="rc_stats_genre_unavailable">Türlerini şu an adlandıramadık - bunun için ilk seferinde bağlantı gerekir.</string>
+
+    <string name="rc_stats_artist_love">Bu sanatçıyı dinlemeyi gerçekten seviyorsun</string>
+    <plurals name="rc_stats_artist_row">
+        <item quantity="one">%1$s · %2$d çalma</item>
+        <item quantity="other">%1$s · %2$d çalma</item>
+    </plurals>
+    <plurals name="rc_stats_artist_summary">
+        <item quantity="one">%3$s sanatçısından %1$s dinleme süresi ve %2$d çalma</item>
+        <item quantity="other">%3$s sanatçısından %1$s dinleme süresi ve %2$d çalma</item>
+    </plurals>
+
+    <string name="rc_stats_song_number_one">Ve fark etmeden, bu şarkı senin 1 numaran</string>
+    <plurals name="rc_stats_song_row">
+        <item quantity="one">%1$s · %2$d çalma · %3$s</item>
+        <item quantity="other">%1$s · %2$d çalma · %3$s</item>
+    </plurals>
+    <string name="rc_stats_song_from">%2$s sanatçısından %1$s</string>
+    <plurals name="rc_stats_song_summary">
+        <item quantity="one">%1$s dinleme süresi ve %2$d çalma</item>
+        <item quantity="other">%1$s dinleme süresi ve %2$d çalma</item>
+    </plurals>
+
+    <string name="rc_stats_weekday_month">Bu ay, müziği her şu günde dinlemeyi seviyorsun:</string>
+    <string name="rc_stats_weekday_year">Bu yıl, müziği her şu günde dinlemeyi seviyorsun:</string>
+    <string name="rc_stats_totaling_hours">toplam %1$s saat</string>
+    <string name="rc_stats_hour_morning">Sabahları tam olarak şu saatlerde dinlemeyi seviyorsun:</string>
+    <string name="rc_stats_hour_afternoon">Öğleden sonraları tam olarak şu saatlerde dinlemeyi seviyorsun:</string>
+    <string name="rc_stats_hour_evening">Akşamları tam olarak şu saatlerde dinlemeyi seviyorsun:</string>
+    <string name="rc_stats_hour_night">Geceleri tam olarak şu saatlerde dinlemeyi seviyorsun:</string>
+    <string name="rc_stats_totaling_hours_time">bu saatlerde toplam %1$s saat!</string>
+
+    <string name="rc_stats_show_by">Göster:</string>
+    <string name="rc_stats_kind_month">Ay</string>
+    <string name="rc_stats_kind_year">Yıl</string>
+    <string name="rc_stats_selected">Seçili</string>
+    <string name="rc_stats_what_year">Hangi yıl?</string>
+    <string name="rc_stats_what_month">Hangi ay?</string>
+    <string name="rc_stats_this_month_tag">(bu ay)</string>
+
+    <!-- Recap availability (why the recap is locked) -->
+
+    <!-- Recap story -->
+    <string name="rc_story_hey">selam, %1$s!</string>
+    <string name="rc_story_journey_started">Mochy\'deki yolculuğuna %1$s tarihinde başladın</string>
+    <string name="rc_story_journey_listening">ve toplam şu kadar süre müzik dinledin:</string>
+    <string name="rc_story_journey_bye">hoşça kal, yoldaşlar!</string>
+    <string name="rc_story_tap">DOKUN!</string>
+    <string name="rc_story_month_is">%1$s şu:</string>
+    <string name="rc_story_out_of_100" formatted="false">%100\'ün içinden</string>
+    <string name="rc_story_weekday_at_this_time">ve bu saatte,</string>
+    <string name="rc_story_weekday_favourite">müzik dinlemek için favori günün</string>
+    <plurals name="rc_story_hours">
+        <item quantity="one">saat</item>
+        <item quantity="other">saat</item>
+    </plurals>
+    <plurals name="rc_story_minutes">
+        <item quantity="one">dakika</item>
+        <item quantity="other">dakika</item>
+    </plurals>
+    <string name="rc_story_more_than_second">2. sırandan daha fazla!</string>
+    <string name="rc_story_nothing_close">hiçbir şey yaklaşamıyor bile!</string>
+    <string name="rc_story_again">Tekrar\nve\ntekrar</string>
+    <string name="rc_story_this_artist">bu\nsanatçı..</string>
+    <string name="rc_story_recognize_artist">Bu\nsanatçıyı\ntanıyor musun?</string>
+    <string name="rc_story_favorite_artist">bu ay senin favorin!</string>
+    <plurals name="rc_story_plays">
+        <item quantity="one">%1$d çalma</item>
+        <item quantity="other">%1$d çalma</item>
+    </plurals>
+    <string name="rc_story_x_plays">Çalma sayısı</string>
+    <string name="rc_story_plays_bang">Çalma!</string>
+    <string name="rc_story_might_recognize">Bunu\ntanıyabilirsin!</string>
+    <string name="rc_story_which_one">hmm, hangisi...</string>
+    <string name="rc_story_hear_melody">Melodiyi\nduymak için..</string>
+    <string name="rc_story_title_by">%1$s\n%2$s tarafından</string>
+    <string name="rc_story_favourite_song">Bu ayın favori\nşarkısın!!!</string>
+    <string name="rc_story_bill">Hesabını görelim</string>
+    <string name="rc_story_receipt_recap">%1$s özeti</string>
+    <string name="rc_story_receipt_printed">%1$s/%2$s tarihinde yazdırıldı</string>
+    <string name="rc_story_receipt_top_artist">En iyi sanatçı</string>
+    <string name="rc_story_receipt_top_music">En iyi müzik</string>
+    <string name="rc_story_receipt_total">Toplam: %1$s dinleme süresi</string>
+    <string name="rc_story_receipt_counts">%1$d çalma · %2$d şarkı · %3$d sanatçı</string>
+    <string name="rc_story_receipt_end">SATIR SONU</string>
+    <string name="rc_story_there_you_go">İşte oldu</string>
+    <string name="rc_story_thats_your">Bu senin\n%1$s özetin!</string>
+    <string name="rc_story_tap_finish">BİTİRMEK İÇİN DOKUN</string>
+
+    <!-- Recap ID card back -->
+</resources>

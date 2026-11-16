@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- common -->
+    <string name="onb_next">İleri</string>
+    <string name="onb_next_lower">ileri</string>
+    <string name="onb_done">Bitti</string>
+    <string name="onb_close">Kapat</string>
+    <string name="onb_go_back">yok yani, geri dön</string>
+    <string name="onb_yes">Evet!</string>
+    <string name="onb_skip">Atla</string>
+    <string name="onb_stop">Durdur</string>
+    <string name="onb_selected">Seçili</string>
+
+    <!-- welcome -->
+    <string name="onb_welcome_title">mochy\'ye\nhoş geldin!</string>
+    <string name="onb_welcome_subtitle">Müziğini dinlemenin ve sahiplenmenin\nbaşka bir yolu.</string>
+
+    <!-- photo cropper -->
+    <string name="onb_adjust_photo">Profil fotoğrafını ayarla</string>
+    <string name="onb_select_new_image">Yeni görsel seç</string>
+
+    <!-- import -->
+    <string name="onb_import_title">Müzik içe aktarma</string>
+    <string name="onb_import_ask_subtitle">Spotify, Apple Music, Tidal veya SoundCloud gibi platformlardan müzik içe aktarmak ya da verilerini YouTube Music ile senkronize etmek ister misin?</string>
+    <string name="onb_import_mode_subtitle">ne istiyorsun?</string>
+    <string name="onb_import_previous_title">Önceki verileri içe aktar</string>
+    <string name="onb_import_previous_desc">eski uygulamandan dışa aktardığın .zip dosyası; kütüphanen, geçmişin, indirmelerin ve ayarlarınla birlikte</string>
+    <string name="onb_import">İçe aktar</string>
+    <string name="onb_import_desc">Apple Music, Spotify, Tidal ve YouTube Music gibi desteklenen sağlayıcılardan müzik, çalma listesi ve albüm içe aktar</string>
+    <string name="onb_import_backup_title">Yedekten içe aktar</string>
+    <string name="onb_import_backup_desc">herhangi bir nedenle bir Mochy yedeğin varsa</string>
+
+    <!-- restoring previous data -->
+    <string name="onb_all_set">Her şey hazır!</string>
+    <string name="onb_bringing_over">Müziğin getiriliyor</string>
+    <string name="onb_restart_once">Mochy bitirmek için bir kez yeniden başlar. Bir saniye içinde görüşürüz!</string>
+    <string name="onb_restore_counts">Eski uygulamandan %1$s, %2$s ve %3$s.</string>
+    <string name="onb_reading_export">Dışa aktarımın okunuyor…</string>
+    <string name="onb_restarting">Yeniden başlatılıyor…</string>
+    <string name="onb_restore_progress">%1$d%% · Mochy\'yi açık tut, bitince kendiliğinden yeniden başlar</string>
+    <plurals name="onb_songs">
+        <item quantity="one">%1$,d şarkı</item>
+        <item quantity="other">%1$,d şarkı</item>
+    </plurals>
+    <plurals name="onb_playlists">
+        <item quantity="one">%1$,d çalma listesi</item>
+        <item quantity="other">%1$,d çalma listesi</item>
+    </plurals>
+    <plurals name="onb_plays">
+        <item quantity="one">%1$,d çalma</item>
+        <item quantity="other">%1$,d çalma</item>
+    </plurals>
+
+    <!-- provider -->
+    <string name="onb_select_provider">Sağlayıcı seç</string>
+    <string name="onb_provider_spotify_desc">Beğenilen şarkılar ve çalma listeleri</string>
+    <string name="onb_provider_apple_desc">Kütüphane çalma listeleri ve favori şarkılar</string>
+    <string name="onb_provider_youtube_desc">Beğenilen müzik ve çalma listeleri · senkronu da destekler</string>
+    <string name="onb_provider_tidal_desc">Parçalarım ve çalma listelerin</string>
+    <string name="onb_provider_setup_title">%1$s kurulumu</string>
+    <string name="onb_provider_setup_subtitle">Hesabına giriş yapacaksın. Şifreni asla görmeyiz. Bir web sayfası açılacak.</string>
+    <string name="onb_sign_in_again">Tekrar giriş yap</string>
+    <string name="onb_try_again">Tekrar dene</string>
+    <string name="onb_open_sign_in">Girişi aç</string>
+    <string name="onb_provider_setup_body">%1$s\'nin kendi sayfasında giriş yap. Girdiğinde sayfa kapanır ve çalma listelerin burada görünür.</string>
+    <string name="onb_sign_in_to">%1$s hesabına giriş yap</string>
+
+    <!-- what to import -->
+    <string name="onb_what_to_import">Ne içe aktarılacak</string>
+    <string name="onb_signed_in_as">%1$s olarak giriş yapıldı</string>
+    <string name="onb_choose_what_to_import">Ne içe aktaracağını seç</string>
+    <string name="onb_import_count">%1$d tanesini içe aktar</string>
+    <string name="onb_reading_progress">%1$s (%3$d içinden %2$d)</string>
+    <string name="onb_select_none">Hiçbirini seçme</string>
+    <string name="onb_select_all">Tümünü seç</string>
+    <string name="onb_nothing_in_account">Bu hesapta henüz bir şey yok.</string>
+
+    <!-- sync options -->
+    <string name="onb_sync_title">Ayrıca senkronize edilsin mi?</string>
+    <string name="onb_sync_subtitle">YouTube Music Mochy ile aynı adımda kalabilir: çalma listelerin, beğenilerin ve geçmişin, iki yönlü.</string>
+    <string name="onb_import_and_sync">İçe aktar ve senkronize et</string>
+    <string name="onb_just_import">Sadece içe aktar</string>
+    <string name="onb_sync_launch_title">Açılışta kütüphaneyi senkronize et</string>
+    <string name="onb_sync_launch_desc">Beğeniler, kütüphane ve seçtiğin çalma listeleri, Mochy her açıldığında</string>
+    <string name="onb_sync_new_playlists_title">Yeni çalma listeleri YouTube\'a gider</string>
+    <string name="onb_sync_new_playlists_desc">Burada oluşturduğun çalma listeleri YouTube\'da da oluşturulur</string>
+    <string name="onb_sync_push_plays_title">Çalmaları YouTube geçmişine gönder</string>
+    <string name="onb_sync_push_plays_desc">Burada çaldıkların YouTube geçmişinde görünür</string>
+    <string name="onb_sync_bring_history_title">YouTube geçmişini buraya getir</string>
+    <string name="onb_sync_bring_history_desc">Diğer cihazlarındaki çalmalar Mochy\'nin geçmişine katılır</string>
+
+    <!-- profile -->
+    <string name="onb_profile_title">Profilini oluşturalım!</string>
+    <string name="onb_never_store">Mochy verilerini asla çevrimiçi saklamaz!</string>
+    <string name="onb_username_prompt">kullanıcı adın ne?</string>
+    <string name="onb_username_hint">kullanıcı adı</string>
+    <string name="onb_set_photo">Buraya bir profil fotoğrafı koy!</string>
+    <string name="onb_profile_picture">Profil fotoğrafı</string>
+    <string name="onb_add_profile_picture">Profil fotoğrafı ekle</string>
+    <string name="onb_card_profile_usr">PROFİL KUL#%1$s</string>
+    <string name="onb_card_id_of">KİMLİK KARTI</string>
+    <string name="onb_card_of_name">%1$s KARTI</string>
+
+    <!-- hello / done -->
+    <string name="onb_hello">Merhaba!</string>
+    <string name="onb_welcome_to_mochy">mochy\'ye hoş geldin!</string>
+    <string name="onb_all_good">Her şey hazır</string>
+
+    <!-- blur warning -->
+    <string name="onb_warning">Uyarı</string>
+    <string name="onb_blur_warning_body">Telefonun bulanıklıkları çalıştırmak için fazla zayıf olabilir. Bulanıklık kapatılsın mı? Bunu her zaman Ayarlar\'dan değiştirebilirsin.</string>
+    <string name="onb_disable_blur">Bulanıklığı kapat</string>
+    <string name="onb_measured">Ölçüldü: %1$s</string>
+    <string name="onb_continue">devam et</string>
+    <string name="onb_no_continue">hayır, devam et</string>
+    <string name="onb_blur_needs_android_12">Bulanıklık için Android 12 gerekir</string>
+    <string name="onb_blur_slow_frames">%2$d Hz\'de yavaş kare oranı %1$d%%</string>
+    <string name="onb_blur_low_memory">%1$s · düşük bellekli cihaz</string>
+
+    <!-- last one -->
+    <string name="onb_last_one">Son bir şey</string>
+    <string name="onb_last_one_subtitle">Sevmediğin ne varsa kapat</string>
+    <string name="onb_auto_crossfade_title">Otomatik Crossfade</string>
+    <string name="onb_auto_crossfade_desc">Otomatik geçiş yapar; mükemmel anı seçmek için perdeyi, tempoyu ve daha fazlasını inceler</string>
+    <string name="onb_ai_filter_title">AI sanatçı filtresi</string>
+    <string name="onb_ai_filter_desc">Bunu kapatmak AI çöpü önerilerle karşılaşmana yol açabilir</string>
+</resources>

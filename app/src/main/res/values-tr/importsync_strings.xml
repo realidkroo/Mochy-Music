@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Import & Sync Screen -->
+    <string name="import_sync_title">İçe aktar ve senkronize et</string>
+    <string name="import_sync_progress_resyncing">\"%1$s\" yeniden senkronize ediliyor…</string>
+    <string name="import_sync_progress_importing_count">İçe aktarılıyor… %2$d içinden %1$d</string>
+    <string name="import_sync_progress_stopped">İçe aktarma durdu</string>
+    <string name="import_sync_progress_resynced_single">\"%1$s\" yeniden senkronize edildi: %2$s</string>
+    <string name="import_sync_progress_resynced_multiple">%1$d çalma listesi yeniden senkronize edildi: %2$s</string>
+    <string name="import_sync_progress_new_songs_single">1 yeni şarkı</string>
+    <string name="import_sync_progress_new_songs_multiple">%1$d yeni şarkı</string>
+    <string name="import_sync_progress_failed">İçe aktarma başarısız</string>
+    <string name="import_sync_progress_finished_count">İçe aktarma bitti: %2$d şarkıdan %1$d tanesi</string>
+    <string name="import_sync_see_progress">İlerlemeyi gör</string>
+    <string name="import_sync_see_results">Sonuçları gör</string>
+    <string name="import_sync_import_title">İçe aktar</string>
+    <string name="import_sync_import_desc">Giriş yap ve çalma listelerini seç</string>
+    <string name="import_sync_import_detail">Spotify, Apple Music, YouTube Music veya Tidal\'a giriş yap ve çalma listelerini seç</string>
+    <string name="import_sync_sync_title">Senkronize et</string>
+    <string name="import_sync_sync_desc_connected">YouTube hesabı bağlı: çalma listeleri, beğeniler ve geçmiş</string>
+    <string name="import_sync_sync_desc_disconnected">Çalma listelerini, beğenileri ve geçmişi aynı adımda tutmak için YouTube hesabını bağla</string>
+    <string name="import_sync_tunemymusic_title">TuneMyMusic CSV</string>
+    <string name="import_sync_tunemymusic_desc">Amazon Music, SoundCloud, Deezer ve daha fazlası</string>
+    <string name="import_sync_tunemymusic_detail">Amazon Music, SoundCloud veya Deezer kütüphaneleri gibi diğer tüm servisler</string>
+    <string name="import_sync_backup_title">Yedek</string>
+    <string name="import_sync_export_csv_title">Mochy CSV\'sine aktar</string>
+    <string name="import_sync_export_csv_desc">Beğenilen şarkılar ve çalma listeleri</string>
+    <string name="import_sync_export_csv_detail">Beğenilen şarkılar ve çalma listeleri, İçe aktar → Mochy yedeği bölümünden geri yükle</string>
+    <string name="import_sync_exporting">Dışa aktarılıyor…</string>
+    <string name="import_sync_btn_ok">Tamam</string>
+
+    <!-- YouTube Sync Screen -->
+    <string name="yt_sync_account_header">YouTube hesabı</string>
+    <string name="yt_sync_signed_in">Giriş yapıldı</string>
+    <string name="yt_sync_sign_out">Çıkış yap</string>
+    <string name="yt_sync_sign_in_title">YouTube\'a giriş yap</string>
+    <string name="yt_sync_sign_in_desc">Senkron için gerekli. Girişin bu telefonda kalır</string>
+    <string name="yt_sync_keep_in_sync_header">Senkronize tut</string>
+    <string name="yt_sync_auto_sync_title">Açılışta kütüphaneyi senkronize et</string>
+    <string name="yt_sync_auto_sync_desc">YouTube\'dan beğeniler, kütüphane, sanatçılar ve kaydedilen çalma listeleri</string>
+    <string name="yt_sync_new_playlists_title">Yeni çalma listeleri YouTube\'a gider</string>
+    <string name="yt_sync_new_playlists_desc">Burada oluşturduğun çalma listeleri YouTube\'da da oluşturulur</string>
+    <string name="yt_sync_report_plays_title">Çalmaları YouTube geçmişine gönder</string>
+    <string name="yt_sync_report_plays_desc">Burada çaldığın şarkılar YouTube geçmişinde görünür</string>
+    <string name="yt_sync_pull_history_title">YouTube geçmişini buraya kopyala</string>
+    <string name="yt_sync_pull_history_desc">Diğer cihazlarındaki çalmalar her senkronda Mochy\'nin geçmişine katılır</string>
+    <string name="yt_sync_other_apps_header">Diğer uygulamalar</string>
+    <string name="yt_sync_now_header">Şimdi</string>
+    <string name="yt_sync_now_title">Şimdi senkronize et</string>
+    <string name="yt_sync_now_desc_history">Kütüphane, çalma listeleri ve geçmiş</string>
+    <string name="yt_sync_now_desc_no_history">Kütüphane ve çalma listeleri</string>
+    <string name="yt_sync_pull_history_now_title">YouTube geçmişini şimdi kopyala</string>
+    <string name="yt_sync_pull_history_now_desc">Sadece Mochy\'de olmayan çalmaları ekler</string>
+    <string name="yt_sync_upload_playlists_title">Yerel çalma listelerini YouTube\'a koy</string>
+    <string name="yt_sync_upload_playlists_desc">Yerel çalma listelerini YouTube\'a kopyala</string>
+    <string name="yt_sync_upload_playlists_detail">Yalnızca burada var olan her çalma listenin YouTube\'da bir kopyasını oluşturur</string>
+    <string name="yt_sync_no_account_hint">YouTube çalma listesi bağlantısından içe aktarma hesap gerektirmez. İçe aktar → YouTube Music bölümünü kullan.</string>
+    <string name="yt_sync_dialog_sign_out_title">YouTube\'dan çıkış yapılsın mı?</string>
+    <string name="yt_sync_dialog_sign_out_body">Kütüphanende zaten olan her şey kalır. Tekrar giriş yapana kadar senkron durur.</string>
+    <string name="yt_sync_dialog_upload_title">Yerel çalma listeleri YouTube\'a konulsun mu?</string>
+    <string name="yt_sync_dialog_upload_create">Oluştur</string>
+    <string name="yt_sync_dialog_upload_body">Yalnızca Mochy\'de var olan her çalma listesi YouTube hesabında özel bir kopya alır. Sonrasında değişiklikler ikisine de gider.</string>
+    <string name="yt_sync_cancel">İptal</string>
+
+    <!-- YouTube Login Screen -->
+    <string name="yt_login_title">YouTube\'a giriş yap</string>
+    <string name="yt_login_subtitle">Google\'ın kendi giriş sayfası. Mochy şifreni asla görmez.</string>
+    <string name="yt_login_signed_in_as">%1$s olarak giriş yapıldı</string>
+    <string name="yt_login_signed_in_general">YouTube\'a giriş yapıldı</string>
+    <string name="yt_login_failed">Giriş tamamlanamadı. Tekrar dene.</string>
+    <string name="yt_login_back">Geri</string>
+
+    <!-- TuneMyMusic Import Screen -->
+    <string name="tunemymusic_info_intro">TuneMyMusic\'in desteklediği her servisle çalışır, özel çalma listeleri ve beğenilen şarkılar dahil.</string>
+    <string name="tunemymusic_step_1">TuneMyMusic\'i aç ve geldiğin servisi seç (Spotify, Apple Music, Tidal, Amazon Music…).</string>
+    <string name="tunemymusic_step_2">Orada giriş yap ve taşımak istediğin çalma listelerini ve beğenilen şarkıları seç.</string>
+    <string name="tunemymusic_step_3">Hedef olarak \"Dosyaya aktar\"ı, sonra CSV\'yi seç.</string>
+    <string name="tunemymusic_step_4">Buraya geri dön ve indirilen .csv dosyasını seç.</string>
+    <string name="tunemymusic_open_site">TuneMyMusic\'i aç</string>
+    <string name="tunemymusic_open_site_desc">tarayıcında tunemymusic.com</string>
+    <string name="tunemymusic_no_browser">Tarayıcı bulunamadı</string>
+    <string name="tunemymusic_choose_file">CSV dosyası seç</string>
+    <string name="tunemymusic_choose_file_desc">Exportify ve diğer çalma listesi CSV\'leri de çalışır</string>
+
+    <!-- Import Providers Screen -->
+    <string name="import_providers_signin_header">Giriş yap ve seç</string>
+    <string name="import_provider_spotify_desc">Beğenilen şarkılar ve çalma listelerin</string>
+    <string name="import_provider_apple_music_desc">Kütüphane çalma listeleri, favori şarkılar ve tüm kütüphanen</string>
+    <string name="import_provider_ytm_desc">Beğenilen müzik ve çalma listelerin, tam şarkılar · senkronu da destekler</string>
+    <string name="import_provider_tidal_desc">Parçalarım ve çalma listelerin</string>
+    <string name="import_providers_link_header">Veya herkese açık bir bağlantı yapıştır</string>
+    <string name="import_link_spotify_desc">Herkese açık çalma listeleri (ilk 100 şarkı) ve albümler</string>
+    <string name="import_link_apple_music_desc">Herkese açık çalma listeleri ve albümler</string>
+    <string name="import_link_deezer_desc">Herkese açık çalma listeleri ve albümler, her uzunlukta</string>
+    <string name="import_link_youtube_desc">Çalma listeleri ve albümler, tam şarkılar, arama yok</string>
+    <string name="import_providers_file_header">Dosyadan</string>
+    <string name="import_mochy_backup_title">Mochy yedeği</string>
+    <string name="import_mochy_backup_desc">Mochy CSV\'sine aktar seçeneğinden gelen bir CSV. Tam şarkıları geri yükler</string>
+    <string name="import_tunemymusic_csv_desc">Özel çalma listeleri, beğenilen şarkılar ve diğer tüm servisler</string>
+    <string name="import_providers_other_header">Diğer servisler</string>
+    <string name="import_other_services_title">Amazon Music, SoundCloud, Pandora…</string>
+    <string name="import_other_services_desc">TuneMyMusic üzerinden gider</string>
+    <string name="import_other_services_detail">Bunlar, senin adına onlara giriş yapabilen TuneMyMusic üzerinden gider</string>
+
+    <!-- Account Import Screen -->
+    <string name="account_resync_looking">%1$s üzerinde yeni şarkılar aranıyor…</string>
+    <string name="account_resync_missing">Orada %1$s bulunamadı.</string>
+    <string name="account_import_signin_title">%1$s hesabına giriş yap</string>
+    <string name="account_import_resync_subtitle">%1$s\'nin kendi sayfasında. Mochy yalnızca yeniden senkronize ettiğin çalma listesini okur</string>
+    <string name="account_import_signin_subtitle">%1$s\'nin kendi sayfasında. Mochy yalnızca çalma listelerini okur</string>
+    <string name="account_import_ytm_needs_signin">YouTube Music içe aktarma uygulamanın YouTube hesabını kullanır. Giriş yap, sonra çalma listelerini seç.</string>
+    <string name="account_import_reading_count">(%2$d içinden %1$d)</string>
+    <string name="account_import_stop">Durdur</string>
+    <string name="account_import_try_again">Tekrar dene</string>
+    <string name="account_import_signin_again">Tekrar giriş yap</string>
+    <string name="account_import_pick_resync_prompt">\"%1$s\" adıyla %2$s kütüphanende bulunamadı. Hangisi?</string>
+    <string name="account_import_not_in_account">Bu hesapta yok</string>
+    <string name="account_import_paste_link_instead">Bunun yerine çalma listenin bağlantısını yapıştır</string>
+    <string name="account_import_in_library_count">%1$d tanesi kütüphanende</string>
+    <string name="account_import_song_single">1 şarkı</string>
+    <string name="account_import_songs_multiple">%1$d şarkı</string>
+    <string name="account_import_signed_in_service">%1$s hesabına giriş yapıldı</string>
+    <string name="account_import_manage_on_sync">Senkron sayfasından yönet</string>
+    <string name="account_import_use_different">Farklı bir hesap kullan</string>
+    <string name="account_import_choose_what">Ne içe aktaracağını seç</string>
+    <string name="account_import_btn_single">Seçili 1 tanesini içe aktar</string>
+    <string name="account_import_btn_multiple">Seçili %1$d tanesini içe aktar</string>
+    <string name="account_import_tick_below">Aşağıdaki çalma listelerini işaretle</string>
+    <string name="account_import_next_add_yt">Sonra bunları YouTube\'a da ekleyebilirsin</string>
+    <string name="account_import_select_all">Tümünü seç</string>
+    <string name="account_import_select_none">Hiçbirini seçme</string>
+    <string name="account_import_ytm_sync_on_notice">Kütüphane senkronu açık, yani kaydedilen YouTube çalma listeleri zaten kütüphanende. İçe aktarmak ayrı yerel kopyalar oluşturur.</string>
+    <string name="account_import_no_playlists">Bu hesapta çalma listesi yok.</string>
+
+    <!-- Import Progress Screen -->
+    <string name="import_progress_title_resync">Yeniden senkronize et</string>
+    <string name="import_progress_title_importing">İçe aktarılıyor</string>
+    <string name="import_progress_songs_count">%2$d şarkıdan %1$d tanesi</string>
+    <string name="import_progress_status_stopped">Durduruldu</string>
+    <string name="import_progress_status_resync_failed">Yeniden senkronizasyon başarısız</string>
+    <string name="import_progress_status_done">Bitti</string>
+    <string name="import_progress_status_no_import">Süren bir içe aktarma yok</string>
+    <string name="import_progress_starting">Başlıyor…</string>
+    <string name="import_progress_background_hint">Bu sayfadan ayrılabilirsin; içe aktarma devam eder ve bitince bir bildirim gönderir.</string>
+    <string name="import_progress_found_ytm">YouTube Music\'te bulundu</string>
+    <string name="import_progress_fraction">%2$d içinden %1$d</string>
+    <string name="import_progress_added_to">\"%1$s\" listesine eklendi</string>
+    <string name="import_progress_new_playlists">Yeni çalma listeleri</string>
+    <string name="import_progress_songs_liked">Beğenilen şarkılar</string>
+    <string name="import_progress_not_found">Bulunamadı</string>
+    <string name="import_progress_youtube_failures">Buraya aktarıldı ama YouTube\'da tam değil: %1$s</string>
+    <string name="import_progress_stop_import">İçe aktarmayı durdur</string>
+    <string name="import_progress_stop_import_desc">Şimdiye kadar aktarılan şarkılar ve çalma listeleri korunur</string>
+    <string name="import_progress_done_btn">Bitti</string>
+    <string name="import_progress_copy_not_found">Bulunamayan şarkıları kopyala</string>
+    <string name="import_progress_copy_not_found_desc">Elle aramak için</string>
+    <string name="import_progress_copied_toast">%1$d şarkı kopyalandı</string>
+    <string name="import_progress_liked_songs_fallback">Beğenilen şarkılar</string>
+    <string name="import_progress_unmatched_more">ve %1$d tane daha. Hepsini görmek için listeyi kopyala.</string>
+
+    <!-- Import Sync Components -->
+    <string name="import_component_from_source">%1$s üzerinden içe aktar</string>
+    <string name="import_component_paste">Yapıştır</string>
+    <string name="import_component_continue">Devam et</string>
+    <string name="import_component_link_prompt">Herkese açık bir çalma listesi veya albümün bağlantısını yapıştır. %1$s üzerinden \"Bağlantıyı kopyala\" ile paylaş.</string>
+    <string name="import_component_failed_title">İçe aktarılamadı</string>
+    <string name="import_component_already_running">Bir içe aktarma zaten sürüyor</string>
+    <string name="import_component_liked_songs_count">%1$d beğenilen şarkı</string>
+    <string name="import_component_playlists_summary_single">1 çalma listesi · %1$d şarkı</string>
+    <string name="import_component_playlists_summary_multiple">%1$d çalma listesi · %2$d şarkı</string>
+    <string name="import_component_and_more">ve %1$d tane daha</string>
+    <string name="import_component_search_notice">Her şarkı YouTube Music\'te aranır. Büyük kütüphaneler birkaç dakika sürer; çalışırken bu sayfadan ayrılabilirsin.</string>
+    <string name="import_component_mirror_yt_title">YouTube\'da da oluştur</string>
+    <string name="import_component_mirror_yt_desc">Çalma listeleri ve beğeniler YouTube hesabına da eklenir.</string>
+    <string name="import_component_mirror_yt_sync_likes">YouTube senkronu beğenileri iki tarafta aynı tutar, yani bu beğeniler bir sonraki senkronda yine de YouTube\'a eklenecek.</string>
+</resources>
