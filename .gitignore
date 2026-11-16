@@ -62,6 +62,8 @@ app/*.json
 
 # Keystores
 app/persistent-debug.keystore
+*.jks
+*.keystore
 
 # Native & C++ build outputs
 .externalNativeBuild

@@ -132,23 +132,19 @@ extensions.configure<ApplicationExtension> {
         }
     }
 
-    // Release signing only works when the CI secrets are present. Locally they are not, which
-    // used to make `assembleRelease` unbuildable and left debug as the only variant anyone ever
-    // ran — and a debug Compose build is several times slower per frame than release, so all
-    // local performance impressions were being formed against the wrong binary.
-    val hasReleaseSigning = System.getenv("STORE_PASSWORD") != null &&
-        System.getenv("KEY_ALIAS") != null &&
-        System.getenv("KEY_PASSWORD") != null &&
-        file("keystore/release.keystore").exists()
+    // Keep signing credentials outside the repository; local.properties is gitignored and CI
+    // can provide the same values through environment secrets.
+    val releaseStoreFile = rootProject.file("mochy-release.jks")
+    val releaseStorePassword = localProperties.getProperty("STORE_PASSWORD") ?: System.getenv("STORE_PASSWORD")
+    val releaseKeyAlias = localProperties.getProperty("KEY_ALIAS") ?: System.getenv("KEY_ALIAS")
+    val releaseKeyPassword = localProperties.getProperty("KEY_PASSWORD") ?: System.getenv("KEY_PASSWORD")
 
     signingConfigs {
-        if (hasReleaseSigning) {
-            create("release") {
-                storeFile = file("keystore/release.keystore")
-                storePassword = System.getenv("STORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
-            }
+        create("release") {
+            storeFile = releaseStoreFile
+            storePassword = releaseStorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
         }
     }
 
@@ -162,13 +158,7 @@ extensions.configure<ApplicationExtension> {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Fall back to the debug keystore locally so a release-quality build is always
-            // runnable on a dev machine. CI still signs with the real key when secrets exist.
-            signingConfig = if (hasReleaseSigning) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             applicationIdSuffix = ".debug"

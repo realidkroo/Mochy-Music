@@ -70,6 +70,38 @@
 # @Serializable and @Polymorphic are used at runtime for polymorphic serialization.
 -keepattributes RuntimeVisibleAnnotations,AnnotationDefault
 
+# Audio Lab settings and generated serializers are persisted and loaded in release builds.
+-keep,allowoptimization class com.mochyy.mochymusic.eq.AutoEqCorrection { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.EqPreset { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.EqSettings { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.LoudnessSettings { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.SpatialSettings { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.NormalizeSettings { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.PlaybackSettings { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.VolumeSettings { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.EightDSettings { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.data.ParametricEQBand { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.audio.VolumeCurve { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.**$$serializer { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.data.**$$serializer { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.audio.**$$serializer { *; }
+
+# Enum names are serialized as values in the saved Audio Lab settings.
+-keep,allowoptimization enum com.mochyy.mochymusic.eq.audio.SpatialMode { *; }
+-keep,allowoptimization enum com.mochyy.mochymusic.eq.audio.ReplayGainMode { *; }
+-keep,allowoptimization enum com.mochyy.mochymusic.eq.data.FilterType { *; }
+-keep,allowoptimization enum com.mochyy.mochymusic.eq.autoeq.HeadphoneForm { *; }
+
+# These processors are assembled by the playback renderer and read Audio FX state live.
+-keep,allowoptimization class com.mochyy.mochymusic.eq.audio.CustomEqualizerAudioProcessor { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.audio.SpatialAudioProcessor { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.audio.ReverbAudioProcessor { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.audio.LoudnessAudioProcessor { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.eq.audio.EightDAudioProcessor { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.playback.audio.CrossmixTransitionAudioProcessor { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.playback.audio.HapticAudioProcessor { *; }
+-keep,allowoptimization class com.mochyy.mochymusic.playback.audio.SilenceDetectorAudioProcessor { *; }
+
 -dontwarn javax.servlet.ServletContainerInitializer
 -dontwarn org.bouncycastle.jsse.BCSSLParameters
 -dontwarn org.bouncycastle.jsse.BCSSLSocket
