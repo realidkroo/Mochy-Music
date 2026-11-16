@@ -3903,6 +3903,16 @@ class MusicService :
                 error("No media id")
             }
 
+            // A DASH stream's init and media segments (a source module's Tidal stream) are keyed by
+            // their own URL, not the song's: Media3 drops the MediaItem's custom cache key for
+            // segment requests. That key is an address already resolved, so it's fetched as it is,
+            // keeping its per-segment key for the cache. Taking it for a song id sent the segment
+            // URL to YouTube as a video id, and the song failed as "unavailable".
+            if (isResolvedUrlCacheKey(mediaId)) {
+                if (com.mochyy.mochymusic.utils.OfflineMode.isOn) throw com.music.innertube.OfflineModeException()
+                return@Factory dataSpec
+            }
+
             // A source module's stream (Monochrome's FLAC file) goes out as the module gave it. It
             // used to carry the bare media id, so everything below took it for a YouTube song and
             // swapped in YouTube's stream - a cached YouTube url, or a fresh one - whenever the FLAC
