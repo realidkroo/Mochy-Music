@@ -50,7 +50,7 @@
     <string name="home_your_playlists">Danh sách phát của bạn</string>
     <string name="profile_label">Hồ sơ</string>
     <string name="library_tab_all">Tất cả</string>
-    <string name="library_tab_local">Trên máy</string>
+    <string name="library_tab_local">Trên máy &amp; đã tải xuống</string>
     <string name="library_tab_imported">Đã nhập</string>
     <string name="library_empty_import">Chưa có gì ở đây. Hãy nhập nhạc của bạn ở trên để lấp đầy thư viện.</string>
     <string name="library_pinned">Đã ghim</string>

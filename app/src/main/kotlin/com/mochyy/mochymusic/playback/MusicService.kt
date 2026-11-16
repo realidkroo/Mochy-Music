@@ -855,13 +855,19 @@ class MusicService :
         mediaLibrarySessionCallback.apply {
             service = this@MusicService
             toggleLike = ::toggleLike
+            setLiked = ::setLiked
             toggleStartRadio = ::toggleStartRadio
             toggleLibrary = ::toggleLibrary
         }
         val sessionPlayer = sessionPlayer(player)
+        // vivo's music card reads the heart and its loop button off the metadata (OriginCard.kt)
+        val cardPlayer = OriginCardPlayer(sessionPlayer) { id -> currentSong.value?.takeIf { it.id == id }?.song?.liked == true }
+        scope.launch {
+            currentSong.map { it?.id to (it?.song?.liked == true) }.distinctUntilChanged().collect { cardPlayer.refresh() }
+        }
         mediaSession =
             MediaLibrarySession
-                .Builder(this, sessionPlayer, mediaLibrarySessionCallback)
+                .Builder(this, cardPlayer, mediaLibrarySessionCallback)
                 .setSessionActivity(
                     PendingIntent.getActivity(
                         this,
@@ -2807,6 +2813,13 @@ class MusicService :
                 }
                 currentMediaMetadata.value = player.currentMetadata
             }
+        }
+    }
+
+    // a heart that says which way it wants the song (vivo's music card) only flips it when it isn't that way yet
+    fun setLiked(liked: Boolean) {
+        scope.launch {
+            if (currentSong.first()?.song?.let { it.liked != liked } == true) toggleLike()
         }
     }
 

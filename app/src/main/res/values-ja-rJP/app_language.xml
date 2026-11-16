@@ -44,7 +44,7 @@
     <string name="home_your_playlists">プレイリスト</string>
     <string name="profile_label">プロフィール</string>
     <string name="library_tab_all">すべて</string>
-    <string name="library_tab_local">ローカル</string>
+    <string name="library_tab_local">ローカル &amp; ダウンロード済み</string>
     <string name="library_tab_imported">インポート済み</string>
     <string name="library_empty_import">まだ何もありません。上から音楽をインポートしてライブラリを埋めましょう</string>
     <string name="library_pinned">ピン留め</string>

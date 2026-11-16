@@ -844,6 +844,8 @@ enum class FlagshipTransportLayout {
     THREE,
     // ten seconds back and forward on the outside, play in a white circle
     TEN_SECONDS,
+    // queue and repeat on the outside, play in a white circle
+    QUEUE_REPEAT,
 }
 
 val FlagshipTransportLayoutKey = stringPreferencesKey("flagshipTransportLayout")
@@ -1373,6 +1375,7 @@ val ForceYtBackdropBlur1500Key = booleanPreferencesKey("forceYtBackdropBlur1500"
 val OfflineModeKey = booleanPreferencesKey("offlineMode")
 val DisableAiFilterKey = booleanPreferencesKey("disableAiFilter")
 val SetupImportCompletedKey = booleanPreferencesKey("setupImportCompleted")
+val HideLibraryImportBannerKey = booleanPreferencesKey("hideLibraryImportBanner")
 
 val LastKnownVersionNameKey = stringPreferencesKey("lastKnownVersionName")
 val LastDonateShownTimeKey = longPreferencesKey("lastDonateShownTime")

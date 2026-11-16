@@ -1079,6 +1079,11 @@
                 <action android:name="androidx.media3.session.MediaLibraryService" />
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
+            <!-- vivo's music card on originos (lock screen, atomic island) looks for this before it offers the heart, the loop
+                 button, lyrics and its lists; it still connects with the browser action above (playback/OriginCard.kt) -->
+            <intent-filter>
+                <action android:name="com.vivo.musicwidgetmix.support.service" />
+            </intent-filter>
         </service>
 
         <!-- mochy's own android auto screens: tabs, lists, the player and lyrics, all from google's car templates -->

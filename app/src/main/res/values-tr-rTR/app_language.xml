@@ -46,7 +46,7 @@
     <string name="home_your_playlists">Oynatma listelerin</string>
     <string name="profile_label">Profil</string>
     <string name="library_tab_all">Hepsj</string>
-    <string name="library_tab_local">Yerel</string>
+    <string name="library_tab_local">Yerel ve indirilenler</string>
     <string name="library_tab_imported">İçe aktarılanlar</string>
     <string name="library_empty_import">Burda henüz bir şey yok. Müziklerini içeri aktararak burayı doldurabilirsin.</string>
     <string name="library_pinned">Sabitlenmiş</string>

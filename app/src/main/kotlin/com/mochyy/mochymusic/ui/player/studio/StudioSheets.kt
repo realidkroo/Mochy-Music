@@ -92,8 +92,20 @@ fun StudioSheets(
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             TransportLayoutPreview(layout)
                             TwoLines(
-                                stringResource(if (layout == FlagshipTransportLayout.THREE) R.string.flagship_layout_three else R.string.flagship_layout_ten),
-                                stringResource(if (layout == FlagshipTransportLayout.THREE) R.string.flagship_layout_three_caption else R.string.flagship_layout_ten_caption),
+                                stringResource(
+                                    when (layout) {
+                                        FlagshipTransportLayout.THREE -> R.string.flagship_layout_three
+                                        FlagshipTransportLayout.TEN_SECONDS -> R.string.flagship_layout_ten
+                                        FlagshipTransportLayout.QUEUE_REPEAT -> R.string.flagship_layout_queue_repeat
+                                    }
+                                ),
+                                stringResource(
+                                    when (layout) {
+                                        FlagshipTransportLayout.THREE -> R.string.flagship_layout_three_caption
+                                        FlagshipTransportLayout.TEN_SECONDS -> R.string.flagship_layout_ten_caption
+                                        FlagshipTransportLayout.QUEUE_REPEAT -> R.string.flagship_layout_queue_repeat_caption
+                                    }
+                                ),
                             )
                         }
                     }

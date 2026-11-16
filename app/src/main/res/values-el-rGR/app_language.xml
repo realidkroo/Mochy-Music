@@ -44,7 +44,7 @@
     <string name="home_your_playlists">Your playlists</string>
     <string name="profile_label">Profile</string>
     <string name="library_tab_all">All</string>
-    <string name="library_tab_local">Local</string>
+    <string name="library_tab_local">Local &amp; downloaded</string>
     <string name="library_tab_imported">Imported</string>
     <string name="library_empty_import">Nothing here yet. Import your music above to fill your library.</string>
     <string name="library_pinned">Pinned</string>

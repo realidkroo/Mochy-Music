@@ -1126,8 +1126,16 @@ private fun PlayerSheet(
                     onSongInfo = { if (!studioEngaged) showSongDetails = true },
                     onSwitchLyricsSource = { showLyricsSource = true },
                     transport = { transportModifier ->
-                        if (isFlagship) FlagshipTransportRow(layout = transportLayout, modifier = transportModifier)
-                        else PlayerTransportRow(modifier = transportModifier, flagshipGlyph = isTurntable)
+                        if (isFlagship) {
+                            FlagshipTransportRow(
+                                layout = transportLayout,
+                                queueOpen = showQueue,
+                                onQueue = { if (showQueue) transition.close() else transition.open(PlayerPage.QUEUE) },
+                                modifier = transportModifier,
+                            )
+                        } else {
+                            PlayerTransportRow(modifier = transportModifier, flagshipGlyph = isTurntable)
+                        }
                     },
                     bottom = { barModifier ->
                         when {
@@ -1680,7 +1688,12 @@ private fun PlayerSheet(
                     .studioTransportLayer(studioParts)
                     .studioPiece(studioPieces, StudioPieces.TRANSPORT)
                 if (isFlagship) {
-                    FlagshipTransportRow(layout = transportLayout, modifier = transportModifier)
+                    FlagshipTransportRow(
+                        layout = transportLayout,
+                        queueOpen = showQueue,
+                        onQueue = { if (showQueue) transition.close() else transition.open(PlayerPage.QUEUE) },
+                        modifier = transportModifier,
+                    )
                 } else {
                     PlayerTransportRow(modifier = transportModifier, flagshipGlyph = isTurntable)
                 }

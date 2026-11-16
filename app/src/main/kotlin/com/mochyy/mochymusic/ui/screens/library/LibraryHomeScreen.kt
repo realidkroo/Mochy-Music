@@ -36,6 +36,7 @@ import com.mochyy.mochymusic.ui.menu.rememberResyncAll
 import com.mochyy.mochymusic.LocalPlayerAwareWindowInsets
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.LocalPlayerConnection
+import com.mochyy.mochymusic.constants.HideLibraryImportBannerKey
 import com.mochyy.mochymusic.constants.ProfilePicUriKey
 import com.mochyy.mochymusic.db.entities.Song
 import com.mochyy.mochymusic.extensions.toMediaItem
@@ -90,6 +91,7 @@ fun LibraryHomeScreen(
     val isPlaying = playerConnection?.isEffectivelyPlaying?.collectAsState()
 
     val profilePicStr by rememberPreference(ProfilePicUriKey, defaultValue = "")
+    val (hideImportBanner, onHideImportBannerChange) = rememberPreference(HideLibraryImportBannerKey, defaultValue = false)
 
     var query by remember { mutableStateOf(TextFieldValue()) }
     val results = remember(query.text, songs, artists, albums, playlists, tab, shelfData) {
@@ -174,13 +176,18 @@ fun LibraryHomeScreen(
                         playlists = playlists.size,
                         playlistCovers = playlists.take(2).flatMap { it.thumbnails },
                         likedSongs = likedSongs,
-                        importBanner = {
-                            LibraryImportBanner(
-                                progress = importProgress,
-                                onOpenSheet = openImportSheet,
-                                onOpenProgress = openImportProgress,
-                                modifier = Modifier.padding(horizontal = SearchHorizontalPadding),
-                            )
+                        importBanner = if (!hideImportBanner || importProgress.isRunning) {
+                            {
+                                LibraryImportBanner(
+                                    progress = importProgress,
+                                    onOpenSheet = openImportSheet,
+                                    onOpenProgress = openImportProgress,
+                                    onDismiss = { onHideImportBannerChange(true) },
+                                    modifier = Modifier.padding(horizontal = SearchHorizontalPadding),
+                                )
+                            }
+                        } else {
+                            null
                         },
                         onOpen = { item -> openLibraryItem(item, navController, playerConnection, songs) },
                         onUnpin = viewModel::unpin,
@@ -276,16 +283,18 @@ private fun LazyListScope.libraryAllTab(
     playlists: Int,
     playlistCovers: List<String?>,
     likedSongs: List<Song>,
-    importBanner: @Composable () -> Unit,
+    importBanner: (@Composable () -> Unit)?,
     onOpen: (YTItem) -> Unit,
     onUnpin: (String) -> Unit,
     navController: NavController,
 ) {
     // Even in a library with nothing in it - that is when it matters most. Opens the import sheet,
     // and is the import's progress bar while one runs.
-    item(key = "import_banner") {
-        importBanner()
-        Spacer(modifier = Modifier.height(16.dp))
+    if (importBanner != null) {
+        item(key = "import_banner") {
+            importBanner()
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 
     // A completely empty library gets one honest message instead of four zero-count cards.

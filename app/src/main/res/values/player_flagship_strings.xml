@@ -17,6 +17,7 @@
     <string name="flagship_forward_ten">Forward 10 seconds</string>
     <string name="flagship_lyrics">Lyrics</string>
     <string name="flagship_queue">Queue</string>
+    <string name="flagship_repeat">Repeat</string>
     <string name="flagship_volume">Volume</string>
 
     <!-- the flagship's controls sheet in the player editor -->
@@ -24,4 +25,6 @@
     <string name="flagship_layout_three_caption">Three big buttons, nothing round them</string>
     <string name="flagship_layout_ten">With 10 second skips</string>
     <string name="flagship_layout_ten_caption">Jump 10 seconds either way, play in a circle</string>
+    <string name="flagship_layout_queue_repeat">With queue and repeat</string>
+    <string name="flagship_layout_queue_repeat_caption">Queue and repeat on the outside, play in a circle</string>
 </resources>

@@ -44,7 +44,7 @@
     <string name="home_your_playlists">Daftar putar Anda</string>
     <string name="profile_label">Profil</string>
     <string name="library_tab_all">Semua</string>
-    <string name="library_tab_local">Lokal</string>
+    <string name="library_tab_local">Lokal &amp; diunduh</string>
     <string name="library_tab_imported">Diimpor</string>
     <string name="library_empty_import">Belum ada apa pun di sini. Impor musik Anda di atas untuk mengisi pustaka.</string>
     <string name="library_pinned">Disematkan</string>
