@@ -9,9 +9,11 @@ import android.os.Bundle
 import androidx.annotation.DrawableRes
 import androidx.core.net.toUri
 import androidx.media3.common.C
+import androidx.media3.common.HeartRating
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.Rating
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.session.LibraryResult
@@ -33,6 +35,7 @@ import com.music.innertube.models.SongItem
 import com.music.innertube.models.filterExplicit
 import com.music.innertube.models.filterVideoSongs
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.car.CarLyricsSource
 import com.mochyy.mochymusic.constants.HideExplicitKey
 import com.mochyy.mochymusic.constants.HideVideoSongsKey
 import com.mochyy.mochymusic.constants.MediaSessionConstants
@@ -60,6 +63,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -74,14 +78,24 @@ constructor(
     lateinit var service: MusicService
     private val voice by lazy { VoicePicker(context, database) }
     var toggleLike: () -> Unit = {}
+    var setLiked: (Boolean) -> Unit = {}
     var toggleStartRadio: () -> Unit = {}
     var toggleLibrary: () -> Unit = {}
+
+    // vivo's music card while it's connected (OriginCard.kt). it connects as a browser and again as a controller, and media3 lets
+    // an idle controller go after a few minutes, so the link stays up until the last of them has gone
+    private var originCard: OriginCardLink? = null
+    private val originCardConnections = mutableSetOf<MediaSession.ControllerInfo>()
 
     override fun onConnect(
         session: MediaSession,
         controller: MediaSession.ControllerInfo,
     ): MediaSession.ConnectionResult {
         val connectionResult = super.onConnect(session, controller)
+        if (controller.packageName == OriginCard.Package) {
+            originCardConnections += controller
+            connectOriginCard(session as MediaLibrarySession)
+        }
         return MediaSession.ConnectionResult.accept(
             connectionResult.availableSessionCommands
                 .buildUpon()
@@ -90,6 +104,7 @@ constructor(
                 .add(MediaSessionConstants.CommandToggleLibrary)
                 .add(MediaSessionConstants.CommandToggleShuffle)
                 .add(MediaSessionConstants.CommandToggleRepeatMode)
+                .add(OriginCard.PlayModeCommand)
                 .build(),
             connectionResult.availablePlayerCommands,
         )
@@ -109,9 +124,54 @@ constructor(
                 !session.player.shuffleModeEnabled
 
             MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> session.player.toggleRepeatMode()
+            OriginCard.PlayModeCommand.customAction -> OriginCard.setLoopMode(session.player, OriginCard.loopModeAsked(args))
         }
         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
     }
+
+    // a heart from outside the app (vivo's music card) says which way it wants the song, so it's only flipped when it isn't that way yet
+    override fun onSetRating(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        mediaId: String,
+        rating: Rating,
+    ): ListenableFuture<SessionResult> {
+        if (rating !is HeartRating || !rating.isRated) {
+            return Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
+        }
+        setLiked(rating.isHeart)
+        return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+    }
+
+    override fun onDisconnected(session: MediaSession, controller: MediaSession.ControllerInfo) {
+        if (originCardConnections.remove(controller) && originCardConnections.isEmpty()) {
+            originCard?.stop()
+            originCard = null
+        }
+    }
+
+    // vivo's music card connected: from now on it's sent lyrics and told when its lists change
+    private fun connectOriginCard(session: MediaLibrarySession) {
+        if (originCard != null) return
+        originCard = OriginCardLink(
+            session,
+            database,
+            downloadUtil,
+            CarLyricsSource(database, service.lyricsHelper),
+            service.currentMediaMetadata,
+            scope,
+        ).also { it.start() }
+    }
+
+    // the card's lists aren't items of the browse tree, which media3 wants before it keeps a subscription (and so says when they change)
+    override fun onSubscribe(
+        session: MediaLibrarySession,
+        browser: MediaSession.ControllerInfo,
+        parentId: String,
+        params: MediaLibraryService.LibraryParams?,
+    ): ListenableFuture<LibraryResult<Void>> =
+        if (parentId in OriginCard.Lists) Futures.immediateFuture(LibraryResult.ofVoid())
+        else super.onSubscribe(session, browser, parentId, params)
 
     @Deprecated("Deprecated in MediaLibrarySession.Callback")
     override fun onPlaybackResumption(
@@ -145,6 +205,29 @@ constructor(
             val children =
                 when (parentId) {
                     MusicService.ROOT -> rootChildren()
+
+                    OriginCard.ListQueue -> OriginCard.onePage(
+                        withContext(Dispatchers.Main) { OriginCard.queue(session.player) },
+                        context.getString(R.string.origin_card_queue_empty),
+                        context.getString(R.string.origin_card_queue_empty_hint),
+                    )
+
+                    // played from the card through the liked and downloaded playlists, like the car plays them
+                    OriginCard.ListLiked -> OriginCard.onePage(
+                        database.likedSongs(SongSortType.CREATE_DATE, true).first()
+                            .take(OriginCard.MaxListSize)
+                            .map { it.toMediaItem("${MusicService.PLAYLIST}/${PlaylistEntity.LIKED_PLAYLIST_ID}") },
+                        context.getString(R.string.origin_card_liked_empty),
+                        context.getString(R.string.origin_card_liked_empty_hint),
+                    )
+
+                    OriginCard.ListLocal -> OriginCard.onePage(
+                        downloadedSongs()
+                            .take(OriginCard.MaxListSize)
+                            .map { it.toMediaItem("${MusicService.PLAYLIST}/${PlaylistEntity.DOWNLOADED_PLAYLIST_ID}") },
+                        context.getString(R.string.origin_card_local_empty),
+                        context.getString(R.string.origin_card_local_empty_hint),
+                    )
 
                     MusicService.SONG -> database.songsByCreateDateAsc().first()
                         .map { it.toMediaItem(parentId) }
@@ -393,6 +476,9 @@ constructor(
         startPositionMs: Long,
     ): ListenableFuture<MediaItemsWithStartPosition> {
         mediaItems.singleOrNull()?.takeIf(VoiceSearch::isRequest)?.let { return playVoice(mediaSession, controller, it) }
+        if (controller.packageName == OriginCard.Package) {
+            mediaItems.singleOrNull()?.let { playFromOriginCard(mediaSession, it.mediaId) }?.let { return it }
+        }
         return scope.future {
             val defaultResult = MediaItemsWithStartPosition(emptyList(), startIndex, startPositionMs)
             val path = mediaItems.firstOrNull()?.mediaId?.split("/")
@@ -581,6 +667,27 @@ constructor(
                 else -> defaultResult
             }
         }
+    }
+
+    // a song tapped in the card's queue plays where it already is in the queue instead of a new queue being built round it, and
+    // the card's "nothing here" entry does nothing; both answer cancelled so media3 leaves the player be. null for anything else
+    private fun playFromOriginCard(session: MediaSession, mediaId: String): ListenableFuture<MediaItemsWithStartPosition>? {
+        val player = session.player
+        if (mediaId != OriginCard.EmptyId) {
+            val index = (0 until player.mediaItemCount).firstOrNull { player.getMediaItemAt(it).mediaId == mediaId } ?: return null
+            if (player.playbackState == Player.STATE_IDLE) player.prepare()
+            player.seekToDefaultPosition(index)
+            player.play()
+        }
+        return Futures.immediateCancelledFuture()
+    }
+
+    // the downloads, oldest first, as the car's downloaded playlist lists them
+    private suspend fun downloadedSongs(): List<Song> {
+        val downloads = downloadUtil.downloads.value
+        return database.allSongs().first()
+            .filter { downloads[it.id]?.state == Download.STATE_COMPLETED }
+            .sortedBy { downloads[it.id]?.updateTimeMs ?: 0L }
     }
 
     // "hey google, play … on mochy" from the car or the phone: the service starts the queue itself, so the answer is cancelled and media3 leaves the player be

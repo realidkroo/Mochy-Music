@@ -61,6 +61,8 @@ class MiniPillFrame(
     val merged: Boolean,
     // the wide mini player has room for a previous button beside play and next
     val withPrevious: Boolean,
+    // how tall the pill is: the phone's 64dp, or the wide bar's, which shrinks on a short screen
+    val height: Dp = NavBarHeight,
 )
 
 // the phone's mini player: the full width less 24dp each side, in its own glass
@@ -85,6 +87,10 @@ private val WideBarMargin = 24.dp
 // the pill sits this far under the top of the bar's row, as on the phone, and the collapsed player lines up with it
 val WideBarPillGap = 8.dp
 
+// a screen shorter than this on its side gets a smaller bar, down to WideBarMinScale of it, so the pages keep their room
+private val WideBarFullHeightFrom = 480.dp
+private const val WideBarMinScale = 0.85f
+
 // the wide bar: one pill centred along the bottom, the mini player on its left, the tabs, then shuffle and repeat
 @Immutable
 class WideBar(
@@ -98,7 +104,13 @@ class WideBar(
     val tabsAloneStart: Dp,
     // where the mini player sits on its own, centred, on a page without tabs
     val miniAloneStart: Dp,
+    // the pill's height and its gap to the top of the row, both shrunk together on a short screen
+    val height: Dp,
+    val pillGap: Dp,
 ) {
+    // the whole row the bar takes along the bottom: the gap, the pill, and the same gap under it
+    val rowHeight: Dp get() = height + pillGap * 2
+
     val tabsStart: Dp get() = pillStart + miniWidth
     val extrasStart: Dp get() = tabsStart + tabsWidth
     val pillWidth: Dp get() = miniWidth + tabsWidth + extrasWidth
@@ -108,6 +120,7 @@ class WideBar(
         end = screenWidth - pillStart - miniWidth,
         merged = true,
         withPrevious = true,
+        height = height,
     )
 
     val miniAloneFrame = MiniPillFrame(
@@ -115,21 +128,23 @@ class WideBar(
         end = screenWidth - miniAloneStart - miniWidth,
         merged = false,
         withPrevious = true,
+        height = height,
     )
 }
 
 // the wide bar's places for a screen this wide, kept clear of the side bars and the camera cutout
 @Composable
-fun rememberWideBar(screenWidth: Dp, tabCount: Int): WideBar {
+fun rememberWideBar(screenWidth: Dp, screenHeight: Dp, tabCount: Int): WideBar {
     val density = LocalDensity.current
     val direction = LocalLayoutDirection.current
     val sides = WindowInsets.stableSystemBars.union(WindowInsets.displayCutout)
     val safeStart = with(density) { sides.getLeft(density, direction).toDp() }
     val safeEnd = with(density) { sides.getRight(density, direction).toDp() }
-    return remember(screenWidth, tabCount, safeStart, safeEnd) {
+    return remember(screenWidth, screenHeight, tabCount, safeStart, safeEnd) {
+        val scale = (screenHeight / WideBarFullHeightFrom).coerceIn(WideBarMinScale, 1f)
         val room = screenWidth - safeStart - safeEnd
-        val tabsWidth = WideTabWidth * tabCount + NavRowPadding * 2
-        val extrasWidth = WideExtraWidth * WideExtraCount + NavRowPadding
+        val tabsWidth = WideTabWidth * scale * tabCount + NavRowPadding * 2
+        val extrasWidth = WideExtraWidth * scale * WideExtraCount + NavRowPadding
         val miniWidth = WideMiniWidth
             .coerceAtMost(room - WideBarMargin * 2 - tabsWidth - extrasWidth)
             .coerceAtLeast(WideMiniMinWidth)
@@ -141,6 +156,8 @@ fun rememberWideBar(screenWidth: Dp, tabCount: Int): WideBar {
             screenWidth = screenWidth,
             tabsAloneStart = safeStart + (room - tabsWidth) / 2,
             miniAloneStart = safeStart + (room - miniWidth) / 2,
+            height = NavBarHeight * scale,
+            pillGap = WideBarPillGap * scale,
         )
     }
 }
@@ -155,22 +172,24 @@ fun WideBarBackground(
 ) {
     val glassState = LocalGlassState.current ?: remember { GlassState() }
     val accentWash = rememberChromeAccentWash()
+    // a look's glass that draws its own edge leaves mochy's hairline and shadow out
+    val moduleGlass = rememberChromeModuleGlass()
     Box(modifier = modifier) {
         Box(
             modifier = Modifier
-                .offset { IntOffset(lerp(bar.tabsAloneStart, bar.pillStart, withPlayer()).roundToPx(), WideBarPillGap.roundToPx()) }
+                .offset { IntOffset(lerp(bar.tabsAloneStart, bar.pillStart, withPlayer()).roundToPx(), bar.pillGap.roundToPx()) }
                 // the width is read while laying out, so the shrink onto the tabs never recomposes the bar
                 .layout { measurable, _ ->
                     val width = lerp(bar.tabsWidth, bar.pillWidth, withPlayer()).roundToPx()
-                    val height = NavBarHeight.roundToPx()
+                    val height = bar.height.roundToPx()
                     val placeable = measurable.measure(Constraints.fixed(width, height))
                     layout(width, height) { placeable.place(0, 0) }
                 }
-                .dropShadow(NavBarShape, ChromeShadow)
+                .then(if (moduleGlass?.shadow == false) Modifier else Modifier.dropShadow(NavBarShape, ChromeShadow))
                 .clip(NavBarShape)
                 .drawWithContent {
                     drawContent()
-                    drawChromeOutline(Offset.Zero, size, cornerRadius = size.height / 2f)
+                    if (moduleGlass?.outline != false) drawChromeOutline(Offset.Zero, size, cornerRadius = size.height / 2f)
                 },
         ) {
             FrostedChromeGlass(
@@ -198,14 +217,19 @@ fun WideBarTabs(
     onSearchDoubleTap: (() -> Unit)? = null,
 ) {
     val selectedIndex = navigationItems.indexOfFirst { it.route == selectedTabRoute }
+    val pill = rememberNavPill(selectedIndex)
     Box(modifier = modifier) {
         Row(
             modifier = Modifier
-                .offset { IntOffset(lerp(bar.tabsAloneStart, bar.tabsStart, withPlayer()).roundToPx(), WideBarPillGap.roundToPx()) }
+                .offset { IntOffset(lerp(bar.tabsAloneStart, bar.tabsStart, withPlayer()).roundToPx(), bar.pillGap.roundToPx()) }
                 .width(bar.tabsWidth)
-                .height(NavBarHeight)
+                .height(bar.height)
                 .padding(horizontal = NavRowPadding)
-                .navHighlight(selectedIndex, navigationItems.size),
+                // the wide bar's tabs sit apart from its glass, so mochy draws this pill even when the look's glass draws the nav bar's
+                .navHighlight(pill, navigationItems.size)
+                .navPillDrag(pill, navigationItems.size, selectedIndex) { index ->
+                    navigationItems.getOrNull(index)?.let { onItemClick(it, index == selectedIndex) }
+                },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             navigationItems.forEach { screen ->
@@ -237,9 +261,9 @@ fun WideBarExtras(
     Box(modifier = modifier) {
         Row(
             modifier = Modifier
-                .offset { IntOffset(lerp(bar.tabsAloneStart + bar.tabsWidth - bar.extrasWidth, bar.extrasStart, withPlayer()).roundToPx(), WideBarPillGap.roundToPx()) }
+                .offset { IntOffset(lerp(bar.tabsAloneStart + bar.tabsWidth - bar.extrasWidth, bar.extrasStart, withPlayer()).roundToPx(), bar.pillGap.roundToPx()) }
                 .width(bar.extrasWidth)
-                .height(NavBarHeight)
+                .height(bar.height)
                 .padding(end = NavRowPadding)
                 .graphicsLayer { alpha = ((withPlayer() - 0.4f) / 0.6f).coerceIn(0f, 1f) },
             verticalAlignment = Alignment.CenterVertically,

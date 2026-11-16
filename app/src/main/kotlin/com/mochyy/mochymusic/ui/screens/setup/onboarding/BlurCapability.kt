@@ -6,6 +6,7 @@ import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
 import android.view.WindowManager
+import com.mochyy.mochymusic.R
 import java.util.Locale
 
 object BlurCapability {
@@ -61,15 +62,15 @@ object BlurCapability {
     fun decide(context: Context, probe: Probe?): Result {
         // below Android 12 the app draws its glass without a blur at all, so there's nothing to turn off
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            return Result(Verdict.NotApplicable, "Blur needs Android 12")
+            return Result(Verdict.NotApplicable, context.getString(R.string.onb_blur_needs_android_12))
         }
         val soc = socName()
         val socLabel = displaySoc()
         val hz = probe?.refreshHz ?: refreshRate(context)
-        val timing = probe?.let { "${(it.slowRatio * 100).toInt()}% slow frames at ${hz.toInt()} Hz" } ?: "${hz.toInt()} Hz"
+        val timing = probe?.let { context.getString(R.string.onb_blur_slow_frames, (it.slowRatio * 100).toInt(), hz.toInt()) } ?: "${hz.toInt()} Hz"
 
         val lowRam = (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.isLowRamDevice == true
-        if (lowRam) return Result(Verdict.Laggy, "$socLabel · low-memory device")
+        if (lowRam) return Result(Verdict.Laggy, context.getString(R.string.onb_blur_low_memory, socLabel))
         if (knownLaggy.any { it in soc }) return Result(Verdict.Laggy, "$socLabel · $timing")
 
         val probeSaysLaggy = probe != null && probe.frames >= 20 && (

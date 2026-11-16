@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.utils.dataStore
 import com.mochyy.mochymusic.constants.SetupCompletedKey
 import com.mochyy.mochymusic.ui.launch.LaunchGate
+import com.mochyy.mochymusic.ui.utils.stableSystemBars
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import com.mochyy.mochymusic.ui.component.backdropClick
@@ -50,7 +50,8 @@ fun SetupWizardContainer(
     val overlayProgress = remember { Animatable(0f) }
     var dragOffsetY by remember { mutableStateOf(0f) }
     var isFirstLaunch by remember { mutableStateOf(true) }
-    val topInset = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
+    // the shown bar's height: this wraps the whole app, and the live one recomposed all of it each time the player hid the bars
+    val topInset = WindowInsets.stableSystemBars.asPaddingValues().calculateTopPadding()
 
     val smoothMotion = tween<Float>(durationMillis = 450, easing = FastOutSlowInEasing)
 

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bedside_close">Đóng trình phát</string>
+    <string name="bedside_unlock_to_close">Mở khóa để đóng trình phát</string>
+    <string name="bedside_more">Thêm</string>
+    <string name="bedside_like">Thích</string>
+    <string name="bedside_now_playing">Đang phát</string>
+    <string name="bedside_lock_ask_title">Giữ đồng hồ trên màn hình khóa?</string>
+    <string name="bedside_lock_ask_body">Điện thoại sẽ không cho ứng dụng hiện trên màn hình khóa nếu bạn chưa cho phép. Ở màn hình tiếp theo, hãy bật \"Hiện trên màn hình khóa\".</string>
+    <string name="bedside_lock_ask_allow">Cho phép</string>
+    <string name="bedside_lock_ask_later">Để sau</string>
+    <string name="bedside_sheet_title">Chế độ đầu giường</string>
+    <string name="bedside_rest_caption">Khi bạn không chạm vào</string>
+    <string name="bedside_tint_off">Giữ màu trắng</string>
+    <string name="bedside_tint_off_caption">Màu sắc không thay đổi</string>
+    <string name="bedside_tint_orange">Cam ấm</string>
+    <string name="bedside_tint_orange_caption">Mọi thứ chuyển sang cam dịu, dễ chịu cho mắt buồn ngủ</string>
+    <string name="bedside_tint_cover">Màu ảnh bìa</string>
+    <string name="bedside_tint_cover_caption">Mọi thứ lấy theo màu ảnh bìa của bài hát</string>
+    <string name="bedside_saver">Trình bảo vệ màn hình</string>
+    <string name="bedside_saver_caption">Tự giảm sáng và nhích nhẹ thỉnh thoảng để màn hình không bị burn-in</string>
+    <string name="bedside_keep_awake">Giữ màn hình luôn sáng</string>
+    <string name="bedside_keep_awake_caption">Điện thoại sẽ không tắt màn hình khi đang mở chế độ này</string>
+    <string name="bedside_lock_screen">Hiện trên màn hình khóa</string>
+    <string name="bedside_lock_screen_caption">Khóa máy khi đang mở chế độ này, màn hình sáng lên vẫn thấy nó ở đó</string>
+    <string name="bedside_lock_blocked">Điện thoại đang chặn tính năng này</string>
+    <string name="bedside_lock_blocked_caption">Chạm để bật \"Hiện trên màn hình khóa\" cho Mochy</string>
+    <string name="bedside_lock_blocked_tag">SỬA</string>
+</resources>

@@ -72,7 +72,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import com.mochyy.mochymusic.ui.component.WideBarPillGap
 import com.mochyy.mochymusic.ui.utils.isWideLayout
 import com.mochyy.mochymusic.link.isTelevision
 import com.mochyy.mochymusic.ui.utils.stableStatusBars
@@ -739,7 +738,7 @@ class MainActivity : ComponentActivity() {
 
                 // a phone on its side or a tablet: the mini player and the tabs share one pill along the bottom
                 val wideBar = if (isWideLayout()) {
-                    com.mochyy.mochymusic.ui.component.rememberWideBar(maxWidth, navigationItems.size)
+                    com.mochyy.mochymusic.ui.component.rememberWideBar(maxWidth, maxHeight, navigationItems.size)
                 } else null
                 val miniPill = when {
                     wideBar == null -> com.mochyy.mochymusic.ui.component.PhoneMiniPill
@@ -747,14 +746,16 @@ class MainActivity : ComponentActivity() {
                     else -> wideBar.miniAloneFrame
                 }
 
+                // the row the tabs take along the bottom: the wide bar's shrinks with a short screen
+                val navRowHeight = wideBar?.rowHeight ?: NavigationBarHeight
                 val navPadding = if (shouldShowNavigationBar) {
-                    if (slimNav && wideBar == null) SlimNavBarHeight else NavigationBarHeight
+                    if (slimNav && wideBar == null) SlimNavBarHeight else navRowHeight
                 } else {
                     0.dp
                 }
 
                 val navigationBarHeight by animateDpAsState(
-                    targetValue = if (shouldShowNavigationBar) NavigationBarHeight else 0.dp,
+                    targetValue = if (shouldShowNavigationBar) navRowHeight else 0.dp,
                     animationSpec = NavigationBarAnimationSpec,
                     label = "navBarHeight",
                 )
@@ -763,7 +764,7 @@ class MainActivity : ComponentActivity() {
                     dismissedBound = 0.dp,
                     collapsedBound = when {
                         // level with the tabs, in the same pill
-                        wideBar != null && shouldShowNavigationBar -> bottomInset + navPadding - WideBarPillGap
+                        wideBar != null && shouldShowNavigationBar -> bottomInset + navPadding - wideBar.pillGap
                         shouldShowNavigationBar -> bottomInset + navPadding + MiniPlayerHeight
                         else -> bottomInset + MiniPlayerHeight
                     },
@@ -775,13 +776,14 @@ class MainActivity : ComponentActivity() {
                 val sharedBarRow = wideBar != null && shouldShowNavigationBar
                 val playerAwareWindowInsets = remember(
                     bottomInset,
+                    navRowHeight,
                     shouldShowNavigationBar,
                     playerBottomSheetState.isDismissed,
                     sharedBarRow,
                 ) {
                     var bottom = bottomInset
                     if (shouldShowNavigationBar) {
-                        bottom += NavigationBarHeight
+                        bottom += navRowHeight
                     }
                     // in the wide bar the mini player shares the tabs' row, so it takes no room of its own
                     if (!playerBottomSheetState.isDismissed && !sharedBarRow) bottom += MiniPlayerHeight
@@ -1063,7 +1065,7 @@ class MainActivity : ComponentActivity() {
                                     { navController.requestSearchFocus() }
                                 }
 
-                                val navBarTotalHeight = bottomInset + NavigationBarHeight
+                                val navBarTotalHeight = bottomInset + navRowHeight
 
                                 if (currentRoute != "wrapped" && currentRoute != "update") {
 
@@ -1106,7 +1108,7 @@ class MainActivity : ComponentActivity() {
                                                     } else {
                                                         val progress = playerBottomSheetState.progress.coerceIn(0f, 1f)
                                                         val slideOffset = totalHeightPx * progress
-                                                        val hideOffset = totalHeightPx * (1 - navBarHeightPx / NavigationBarHeight.toPx())
+                                                        val hideOffset = totalHeightPx * (1 - navBarHeightPx / navRowHeight.toPx())
                                                         slideOffset + hideOffset
                                                     }
                                                 }
@@ -1130,7 +1132,7 @@ class MainActivity : ComponentActivity() {
                                                     totalHeightPx
                                                 } else {
                                                     val slideOffset = totalHeightPx * progress
-                                                    val hideOffset = totalHeightPx * (1 - navBarHeightPx / NavigationBarHeight.toPx())
+                                                    val hideOffset = totalHeightPx * (1 - navBarHeightPx / navRowHeight.toPx())
                                                     slideOffset + hideOffset
                                                 }
 
@@ -1471,9 +1473,9 @@ class MainActivity : ComponentActivity() {
                 controller.show(WindowInsetsCompat.Type.statusBars())
             }
         }
-        // set before the bar ever hides and left alone after, so hiding it never moves the window off the camera strip
+        // set before the bar ever hides and left alone after, so hiding it never moves the window off the camera strip; on its side the app always fills the strip, android left it a black bar
         LaunchedEffect(hideStatusBar, portrait) {
-            window.drawUnderCutout(hideStatusBar && portrait)
+            window.drawUnderCutout(!portrait || hideStatusBar)
         }
         // A bar a swipe brought back while the player stays open (Samsung's swipe-from-
         // bottom gestures) goes away again after a moment, as the transient one does.

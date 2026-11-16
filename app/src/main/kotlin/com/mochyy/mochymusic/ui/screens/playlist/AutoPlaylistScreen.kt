@@ -142,7 +142,7 @@ fun AutoPlaylistScreen(
         "liked" -> stringResource(R.string.liked)
         "uploaded" -> stringResource(R.string.uploaded_playlist)
         "downloaded" -> stringResource(R.string.offline)
-        "local" -> "Local"
+        "local" -> stringResource(R.string.library_tab_local)
         "local_liked" -> "Local liked songs"
         "cached" -> "Cached"
         "cached_liked" -> "Cached liked songs"

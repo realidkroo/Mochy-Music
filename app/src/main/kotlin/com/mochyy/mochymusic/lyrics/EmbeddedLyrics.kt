@@ -1,11 +1,12 @@
 // EmbeddedLyrics.kt
 //
 // Lyrics an audio file carries in its own tags: ID3 in MP3s (USLT, synced SYLT, or a TXXX
-// "LYRICS"), Vorbis comments in FLAC, and the ©lyr atom in M4A. Imported files carry their lyrics
+// "LYRICS"), Vorbis comments in FLAC, Opus and Ogg, and the ©lyr atom in M4A. Imported files carry their lyrics
 // this way often enough, and these are there offline. Only the tags are read, never the audio.
 
 package com.mochyy.mochymusic.lyrics
 
+import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 
 object EmbeddedLyrics {
@@ -30,6 +31,7 @@ object EmbeddedLyrics {
                 if (source.read(end, 4).startsWith("fLaC")) flac(source, end) else null
             }
             head.startsWith("fLaC") -> flac(source, 0)
+            head.startsWith("OggS") -> ogg(source)
             head.size >= 8 && String(head, 4, 4, Charsets.ISO_8859_1) == "ftyp" -> mp4(source)
             else -> null
         }
@@ -209,6 +211,49 @@ object EmbeddedLyrics {
         return pick(found)
     }
 
+    // ---- Ogg (Opus, Vorbis) -------------------------------------------------------------------
+
+    // an ogg stream's second packet holds the same vorbis comments flac uses, after "OpusTags" or "\u0003vorbis"
+    private fun ogg(source: Source): String? {
+        val packet = oggPacket(source, index = 1) ?: return null
+        val start = when {
+            packet.startsWith("OpusTags") -> 8
+            packet.size > 7 && packet[0].toInt() == 3 && String(packet, 1, 6, Charsets.ISO_8859_1) == "vorbis" -> 7
+            else -> return null
+        }
+        return vorbisComments(packet.copyOfRange(start, packet.size))
+    }
+
+    // one whole packet, read page by page, since a comment packet with a cover inside runs across many pages
+    private fun oggPacket(source: Source, index: Int): ByteArray? {
+        var pos = 0L
+        var packetIndex = 0
+        val packet = ByteArrayOutputStream()
+        repeat(MaxOggPages) {
+            val header = source.read(pos, 27)
+            if (header.size < 27 || !header.startsWith("OggS")) return null
+            val segments = header[26].toInt() and 0xFF
+            val lacing = source.read(pos + 27, segments)
+            if (lacing.size < segments) return null
+            var body = pos + 27 + segments
+            for (value in lacing) {
+                val length = value.toInt() and 0xFF
+                if (packetIndex == index) {
+                    if (packet.size() + length > MaxTagBytes) return null
+                    packet.write(source.read(body, length))
+                }
+                body += length
+                // a segment shorter than 255 bytes closes its packet
+                if (length < 255) {
+                    if (packetIndex == index) return packet.toByteArray()
+                    packetIndex++
+                }
+            }
+            pos = body
+        }
+        return null
+    }
+
     // ---- MP4 / M4A ----------------------------------------------------------------------------
 
     private fun mp4(source: Source): String? {
@@ -320,6 +365,9 @@ object EmbeddedLyrics {
     private val LrcTimestamp = Regex("""\[\d{1,2}:\d{2}([.:]\d{1,3})?\]""")
     private const val VorbisCommentBlock = 4
     private const val MaxFlacBlocks = 64
+
+    // a comment packet with a big cover spans a few hundred pages at most
+    private const val MaxOggPages = 1024
 
     /** Tags carry cover art too, which can run to megabytes; past this something's wrong. */
     private const val MaxTagBytes = 16 * 1024 * 1024

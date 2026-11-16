@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -46,6 +47,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -54,6 +56,7 @@ import androidx.media3.common.Player
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.FlagshipTransportLayout
+import com.mochyy.mochymusic.extensions.toggleRepeatMode
 import com.mochyy.mochymusic.ui.component.tapOrHold
 import com.mochyy.mochymusic.ui.player.HoldFastFactor
 import com.mochyy.mochymusic.ui.player.HoldSlowFactor
@@ -69,10 +72,13 @@ private const val DesignWidth = 1172f
 private val ThreeCentres = floatArrayOf(0.215f, 0.5f, 0.785f)
 private val TenCentres = floatArrayOf(0.1485f, 0.2981f, 0.5f, 0.7019f, 0.8507f)
 
-// the ten second row's white circle and its round arrows, in design units
+// the ten second row's white circle and its outer icons, in design units
 private const val TenCircle = 187f
 private const val TenIconWidth = 100f
 private const val TenIconHeight = 99f
+private const val QueueIconSize = 96f
+private const val RepeatIconWidth = 80f
+private const val RepeatIconHeight = 65f
 
 // how far a ten second skip goes
 private const val TenSecondsMs = 10_000L
@@ -85,10 +91,12 @@ private val TenSkipTouch = 58.dp
 fun FlagshipTransportRow(
     layout: FlagshipTransportLayout,
     modifier: Modifier = Modifier,
+    queueOpen: Boolean = false,
+    onQueue: () -> Unit = {},
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val transportState by playerConnection.uiState.transportState.collectAsState()
-    val shapes = rememberTransportShapes(small = layout == FlagshipTransportLayout.TEN_SECONDS)
+    val shapes = rememberTransportShapes(small = layout != FlagshipTransportLayout.THREE)
 
     val holdSpeed = remember(playerConnection) { HoldSpeed(playerConnection.player) }
     // a hold that outlives the row (the player closed under the finger) still lets go
@@ -134,19 +142,28 @@ fun FlagshipTransportRow(
                     )
                 }
             }
-            FlagshipTransportLayout.TEN_SECONDS -> {
+            FlagshipTransportLayout.TEN_SECONDS, FlagshipTransportLayout.QUEUE_REPEAT -> {
                 val skipUnit = unit
                 val circle = unit * TenCircle
                 SlotRow(TenCentres) {
-                    TenSecondsButton(
-                        forward = false,
-                        iconSize = DpSize(unit * TenIconWidth, unit * TenIconHeight),
-                        onClick = {
-                            val player = playerConnection.player
-                            playerConnection.seekTo((player.currentPosition - TenSecondsMs).coerceAtLeast(0L))
-                        },
-                        description = stringResource(R.string.flagship_back_ten),
-                    )
+                    if (layout == FlagshipTransportLayout.TEN_SECONDS) {
+                        TenSecondsButton(
+                            forward = false,
+                            iconSize = DpSize(unit * TenIconWidth, unit * TenIconHeight),
+                            onClick = {
+                                val player = playerConnection.player
+                                playerConnection.seekTo((player.currentPosition - TenSecondsMs).coerceAtLeast(0L))
+                            },
+                            description = stringResource(R.string.flagship_back_ten),
+                        )
+                    } else {
+                        QueueButton(
+                            active = queueOpen,
+                            iconSize = DpSize(unit * QueueIconSize, unit * QueueIconSize),
+                            onClick = onQueue,
+                            description = stringResource(R.string.flagship_queue),
+                        )
+                    }
                     SkipButton(
                         shapes = shapes, unit = skipUnit, backwards = true,
                         enabled = transportState.canSkipPrevious,
@@ -172,16 +189,25 @@ fun FlagshipTransportRow(
                         description = stringResource(R.string.flagship_next),
                         touch = TenSkipTouch,
                     )
-                    TenSecondsButton(
-                        forward = true,
-                        iconSize = DpSize(unit * TenIconWidth, unit * TenIconHeight),
-                        onClick = {
-                            val player = playerConnection.player
-                            val duration = player.duration.takeIf { it > 0L } ?: Long.MAX_VALUE
-                            playerConnection.seekTo((player.currentPosition + TenSecondsMs).coerceAtMost(duration))
-                        },
-                        description = stringResource(R.string.flagship_forward_ten),
-                    )
+                    if (layout == FlagshipTransportLayout.TEN_SECONDS) {
+                        TenSecondsButton(
+                            forward = true,
+                            iconSize = DpSize(unit * TenIconWidth, unit * TenIconHeight),
+                            onClick = {
+                                val player = playerConnection.player
+                                val duration = player.duration.takeIf { it > 0L } ?: Long.MAX_VALUE
+                                playerConnection.seekTo((player.currentPosition + TenSecondsMs).coerceAtMost(duration))
+                            },
+                            description = stringResource(R.string.flagship_forward_ten),
+                        )
+                    } else {
+                        RepeatButton(
+                            repeatMode = transportState.repeatMode,
+                            iconSize = DpSize(unit * RepeatIconWidth, unit * RepeatIconHeight),
+                            onClick = playerConnection.player::toggleRepeatMode,
+                            description = stringResource(R.string.flagship_repeat),
+                        )
+                    }
                 }
             }
         }
@@ -423,21 +449,172 @@ private fun TenSecondsIcon(size: DpSize, spin: () -> Float = { 0f }) {
     )
 }
 
+@Composable
+private fun QueueButton(
+    active: Boolean,
+    iconSize: DpSize,
+    onClick: () -> Unit,
+    description: String,
+) {
+    val source = remember { MutableInteractionSource() }
+    val press = pressScale(source)
+    val lit by animateFloatAsState(
+        targetValue = if (active) 1f else 0f,
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+        label = "flagshipQueueLit",
+    )
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(56.dp)
+            .graphicsLayer {
+                val s = press()
+                scaleX = s
+                scaleY = s
+            }
+            .clickable(interactionSource = source, indication = RemoteFocus, onClick = onClick)
+            .semantics {
+                contentDescription = description
+                role = Role.Button
+            },
+    ) {
+        QueueIcon(iconSize)
+        ActiveDot(lit = { lit }, offsetY = iconSize.height / 2 + 5.dp)
+    }
+}
+
+@Composable
+private fun RepeatButton(
+    repeatMode: Int,
+    iconSize: DpSize,
+    onClick: () -> Unit,
+    description: String,
+) {
+    val scope = rememberCoroutineScope()
+    val spin = remember { Animatable(0f) }
+    val source = remember { MutableInteractionSource() }
+    val press = pressScale(source)
+    val active = repeatMode != Player.REPEAT_MODE_OFF
+    val lit by animateFloatAsState(
+        targetValue = if (active) 1f else 0f,
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+        label = "flagshipRepeatLit",
+    )
+    val one by animateFloatAsState(
+        targetValue = if (repeatMode == Player.REPEAT_MODE_ONE) 1f else 0f,
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = 520f),
+        label = "flagshipRepeatOne",
+    )
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(56.dp)
+            .graphicsLayer {
+                val s = press()
+                scaleX = s
+                scaleY = s
+            }
+            .clickable(interactionSource = source, indication = RemoteFocus) {
+                onClick()
+                scope.launch {
+                    spin.animateTo(1f, tween(durationMillis = 120, easing = FastOutSlowInEasing))
+                    spin.animateTo(0f, spring(dampingRatio = 0.4f, stiffness = 260f))
+                }
+            }
+            .semantics {
+                contentDescription = description
+                role = Role.Button
+            },
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            RepeatIcon(iconSize, spin = { spin.value * 28f })
+            if (one > 0.01f) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 4.dp, y = 4.dp)
+                        .size(13.dp)
+                        .graphicsLayer {
+                            val s = one.coerceIn(0f, 1.2f)
+                            alpha = s.coerceIn(0f, 1f)
+                            scaleX = s
+                            scaleY = s
+                        }
+                        .clip(CircleShape)
+                        .background(Color.White),
+                ) {
+                    Text(
+                        text = "1",
+                        color = Color.Black,
+                        fontSize = 8.sp,
+                        lineHeight = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
+        ActiveDot(lit = { lit }, offsetY = iconSize.height / 2 + 6.dp)
+    }
+}
+
+@Composable
+private fun ActiveDot(lit: () -> Float, offsetY: Dp) {
+    Box(
+        modifier = Modifier
+            .offset(y = offsetY)
+            .size(4.dp)
+            .graphicsLayer {
+                val a = lit()
+                alpha = a
+                scaleX = a
+                scaleY = a
+            }
+            .background(Color.White, CircleShape),
+    )
+}
+
+@Composable
+private fun QueueIcon(size: DpSize) {
+    Image(
+        painter = painterResource(R.drawable.flagship_queue),
+        contentDescription = null,
+        modifier = Modifier.size(size),
+    )
+}
+
+@Composable
+private fun RepeatIcon(size: DpSize, spin: () -> Float = { 0f }) {
+    Image(
+        painter = painterResource(R.drawable.repeat),
+        contentDescription = null,
+        colorFilter = ColorFilter.tint(Color.White),
+        modifier = Modifier
+            .size(size)
+            .graphicsLayer { rotationZ = spin() },
+    )
+}
+
 // a layout drawn small and still, for the editor's controls sheet
 @Composable
 fun TransportLayoutPreview(layout: FlagshipTransportLayout, modifier: Modifier = Modifier) {
-    val ten = layout == FlagshipTransportLayout.TEN_SECONDS
-    val shapes = rememberTransportShapes(small = ten)
+    val five = layout != FlagshipTransportLayout.THREE
+    val shapes = rememberTransportShapes(small = five)
     val still = remember { PlayGlyphState(playing = false) }
     val unit = 0.2.dp
     Row(
-        horizontalArrangement = Arrangement.spacedBy(if (ten) 12.dp else 22.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (five) 12.dp else 22.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier,
     ) {
-        if (ten) TenSecondsIcon(DpSize(unit * TenIconWidth, unit * TenIconHeight))
+        when (layout) {
+            FlagshipTransportLayout.TEN_SECONDS -> TenSecondsIcon(DpSize(unit * TenIconWidth, unit * TenIconHeight))
+            FlagshipTransportLayout.QUEUE_REPEAT -> QueueIcon(DpSize(unit * QueueIconSize, unit * QueueIconSize))
+            FlagshipTransportLayout.THREE -> {}
+        }
         StillSkip(shapes, unit, backwards = true)
-        if (ten) {
+        if (five) {
             Box(
                 modifier = Modifier
                     .size(unit * TenCircle)
@@ -453,7 +630,11 @@ fun TransportLayoutPreview(layout: FlagshipTransportLayout, modifier: Modifier =
             )
         }
         StillSkip(shapes, unit, backwards = false)
-        if (ten) TenSecondsIcon(DpSize(unit * TenIconWidth, unit * TenIconHeight))
+        when (layout) {
+            FlagshipTransportLayout.TEN_SECONDS -> TenSecondsIcon(DpSize(unit * TenIconWidth, unit * TenIconHeight))
+            FlagshipTransportLayout.QUEUE_REPEAT -> RepeatIcon(DpSize(unit * RepeatIconWidth, unit * RepeatIconHeight))
+            FlagshipTransportLayout.THREE -> {}
+        }
     }
 }
 

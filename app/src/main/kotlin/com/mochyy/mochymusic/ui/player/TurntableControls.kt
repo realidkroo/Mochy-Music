@@ -67,6 +67,9 @@ private val PillFill = Color.White.copy(alpha = 0.08f)
 /** between the stack and the title row, on top of the stack's own gap */
 private val TitleGap = 4.dp
 
+// upright tablets and open foldables put the pills beside the title, phones keep them above it
+internal fun isTurntableWideLayout(screenWidthDp: Int): Boolean = screenWidthDp >= 500
+
 @Composable
 fun TurntableControls(
     isExpandMenuOpen: Boolean,
@@ -84,41 +87,70 @@ fun TurntableControls(
     val connection = LocalPlayerConnection.current ?: return
     val track by connection.uiState.trackInfo.collectAsState()
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(PillGap),
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(start = SideMargin, end = SideMargin),
-    ) {
-        TurntablePills(likeBurst = likeBurst, modifier = Modifier.align(Alignment.End))
-        Spacer(Modifier.height(TitleGap))
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isWide = isTurntableWideLayout(configuration.screenWidthDp)
+
+    val chevron = @Composable {
+        ChevronButton(
+            open = isExpandMenuOpen,
+            hidden = hideChevron,
+            onClick = onToggleExpandMenu,
+            modifier = Modifier.onGloballyPositioned { onChevronPositioned(it.boundsInRoot()) },
+        )
+    }
+    val title = @Composable { weightModifier: Modifier ->
+        TitleBlock(
+            title = track.title,
+            artist = track.artist,
+            mediaId = track.mediaId,
+            modifier = weightModifier
+                .onGloballyPositioned { onTitlePositioned(it.boundsInRoot()) }
+                .then(
+                    if (onSongInfoClick != null) Modifier.clickable(
+                        interactionSource = null,
+                        indication = RemoteFocus,
+                        onClick = onSongInfoClick,
+                    ) else Modifier
+                ),
+            onBadgeClick = onStreamInfoClick,
+        )
+    }
+
+    if (isWide) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(start = SideMargin, end = SideMargin),
         ) {
-            ChevronButton(
-                open = isExpandMenuOpen,
-                hidden = hideChevron,
-                onClick = onToggleExpandMenu,
-                modifier = Modifier.onGloballyPositioned { onChevronPositioned(it.boundsInRoot()) },
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f),
+            ) {
+                chevron()
+                Spacer(Modifier.width(14.dp))
+                title(Modifier.weight(1f))
+            }
             Spacer(Modifier.width(14.dp))
-            TitleBlock(
-                title = track.title,
-                artist = track.artist,
-                mediaId = track.mediaId,
-                modifier = Modifier
-                    .weight(1f)
-                    .onGloballyPositioned { onTitlePositioned(it.boundsInRoot()) }
-                    .then(
-                        if (onSongInfoClick != null) Modifier.clickable(
-                            interactionSource = null,
-                            indication = RemoteFocus,
-                            onClick = onSongInfoClick,
-                        ) else Modifier
-                    ),
-                onBadgeClick = onStreamInfoClick,
-            )
+            TurntablePills(likeBurst = likeBurst)
+        }
+    } else {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(PillGap),
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(start = SideMargin, end = SideMargin),
+        ) {
+            TurntablePills(likeBurst = likeBurst, modifier = Modifier.align(Alignment.End))
+            Spacer(Modifier.height(TitleGap))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                chevron()
+                Spacer(Modifier.width(14.dp))
+                title(Modifier.weight(1f))
+            }
         }
     }
 }

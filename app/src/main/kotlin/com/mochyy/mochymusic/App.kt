@@ -51,6 +51,9 @@ import com.mochyy.mochymusic.link.isTelevision
 // how long after the launch intro the PoToken WebView may boot (Home's reveal runs ~1s)
 private const val PoTokenAfterIntroMillis = 2_500L
 
+// one character from each system fallback font titles commonly reach for: japanese, chinese, korean, emoji
+private const val FallbackFontWarmup = "あ漢한😀"
+
 @HiltAndroidApp
 class App : Application(), SingletonImageLoader.Factory {
 
@@ -167,6 +170,12 @@ class App : Application(), SingletonImageLoader.Factory {
             com.mochyy.mochymusic.ui.launch.LaunchGate.awaitIntro()
             runCatching { com.mochyy.mochymusic.importer.LocalArtwork.repair(this@App, musicDatabase) }
                 .onFailure { Timber.w(it, "Repairing local covers failed") }
+        }
+
+        applicationScope.launch(Dispatchers.Default) {
+            // the first japanese, korean or emoji title loaded its system font inside a scroll frame (6 ms on the avd); here it loads once, off the main thread
+            com.mochyy.mochymusic.ui.launch.LaunchGate.awaitIntro()
+            runCatching { android.graphics.Paint().measureText(FallbackFontWarmup) }
         }
     }
 

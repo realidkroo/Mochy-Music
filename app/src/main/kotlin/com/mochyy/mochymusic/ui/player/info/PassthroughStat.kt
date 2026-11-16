@@ -49,6 +49,7 @@ private val AudioPass.Skip.message: Int
         AudioPass.Skip.Busy -> R.string.audiopass_stat_skip_busy
         AudioPass.Skip.Format -> R.string.audiopass_stat_skip_format
         AudioPass.Skip.Lossy -> R.string.audiopass_stat_skip_lossy
+        AudioPass.Skip.Decoded16 -> R.string.audiopass_stat_skip_decoded_16
         AudioPass.Skip.FellBefore -> R.string.audiopass_stat_skip_fell
         AudioPass.Skip.NoDac -> R.string.audiopass_stat_skip_no_dac
         AudioPass.Skip.NoUsbAccess -> R.string.audiopass_stat_skip_no_access

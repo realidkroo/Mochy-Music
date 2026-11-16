@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fx_title_audio">Âm thanh</string>
+
+    <string name="fx_loudness_title">Độ lớn âm</string>
+    <string name="fx_loudness_sub">To và đầy hơn, không bị méo tiếng</string>
+    <string name="fx_loudness_gentle">Nhẹ</string>
+    <string name="fx_loudness_punchy">Mạnh mẽ</string>
+    <string name="fx_loudness_night">Chế độ đêm</string>
+    <string name="fx_loudness_max">Tối đa</string>
+    <string name="fx_boost">Tăng</string>
+    <string name="fx_compression">Nén</string>
+    <string name="fx_compression_note">Nén kéo phần nhỏ tiếng lên gần phần to tiếng. Chế độ đêm giúp tiếng thì thầm và tiếng nổ không chênh lệch nhiều.</string>
+    <string name="fx_even_out">Cân bằng các bài hát</string>
+    <string name="fx_even_out_sub">Phát mọi bài ở cùng độ lớn âm</string>
+    <string name="fx_replaygain">REPLAYGAIN</string>
+    <string name="fx_rg_track">Bài hát</string>
+    <string name="fx_rg_album">Album</string>
+    <string name="fx_preamp">Tiền khuếch đại</string>
+    <string name="fx_replaygain_note">Các bài có ReplayGain (file FLAC của Monochrome, nhiều file của riêng bạn) sẽ được cân bằng theo đó: Bài hát giữ mọi bài ở cùng mức, Album giữ nguyên chỗ nhỏ và to tiếng của album như bản gốc. Bài YouTube dùng độ lớn âm của YouTube.</string>
+
+    <string name="fx_spatial_title">Âm thanh không gian</string>
+    <string name="fx_spatial_sub">Đưa âm thanh stereo ra khỏi đầu và đặt trước mặt bạn</string>
+    <string name="fx_mode_crossfeed">Crossfeed</string>
+    <string name="fx_mode_speakers">Loa</string>
+    <string name="fx_xf_light">Nhẹ</string>
+    <string name="fx_xf_natural">Tự nhiên</string>
+    <string name="fx_xf_strong">Mạnh</string>
+    <string name="fx_head_shadow">Bóng đầu</string>
+    <string name="fx_amount">Mức độ</string>
+    <string name="fx_speaker_angle">Góc loa</string>
+    <string name="fx_speakers_note">Hai loa ảo đặt trước một mô hình đầu người: tai xa nghe mỗi loa trễ hơn và tối hơn một chút, như trong phòng thật. 30° là cặp loa phòng thu.</string>
+
+    <string name="fx_mono_title">Âm thanh mono</string>
+    <string name="fx_mono_sub">Cả hai tai nghe toàn bộ bản phối: dùng cho một bên tai nghe hoặc khi chỉ nghe được một tai</string>
+
+    <string name="fx_atmos_title">Dolby Atmos &amp; âm thanh vòm</string>
+    <string name="fx_atmos_sub">Phát 5.1, 7.1 và Atmos thành âm thanh 3D trên mọi tai nghe, bằng mô hình đầu của Mochy, thay vì gộp về stereo. Áp dụng từ bài tiếp theo.</string>
+    <string name="fx_atmos_decoder">Bộ giải mã Atmos</string>
+    <string name="fx_atmos_spatializer">Spatializer của Android</string>
+    <string name="fx_atmos_yes">Có</string>
+    <string name="fx_atmos_not_on_phone">Điện thoại này không hỗ trợ</string>
+    <string name="fx_atmos_needs_android">Android 12L trở lên</string>
+    <string name="fx_state_not_available">Không khả dụng</string>
+    <string name="fx_state_on">Bật</string>
+    <string name="fx_state_off">Tắt</string>
+    <string name="fx_state_unknown">Không rõ</string>
+
+    <string name="fx_speed_normal">Bình thường</string>
+    <string name="fx_speed_slowed">Chậm lại</string>
+    <string name="fx_speed_slowed_reverb">Chậm + reverb</string>
+    <string name="fx_speed_nightcore">Nightcore</string>
+    <string name="fx_speed_title">Tốc độ phát</string>
+    <string name="fx_pitch_stays">Cao độ giữ nguyên</string>
+    <string name="fx_pitch_follows">Cao độ đổi theo tốc độ, như đĩa than</string>
+    <string name="fx_speed">Tốc độ</string>
+    <string name="fx_preserve_pitch">Giữ cao độ</string>
+    <string name="fx_preserve_pitch_sub">Giữ nguyên tông gốc khi đổi tốc độ</string>
+    <string name="fx_pitch">Cao độ</string>
+    <string name="fx_semitones">%1$s nửa cung</string>
+    <string name="fx_reset">Đặt lại</string>
+
+    <string name="fx_volume_title">Âm lượng hàm mũ</string>
+    <string name="fx_volume_sub">Đường cong logarit, chỉnh mịn hơn ở âm lượng thấp</string>
+    <string name="fx_curve_gentle">Nhẹ</string>
+    <string name="fx_curve_exponential">Hàm mũ</string>
+    <string name="fx_curve_steep">Dốc</string>
+    <string name="fx_curve">Đường cong</string>
+    <string name="fx_volume_limit">Giới hạn âm lượng</string>
+    <string name="fx_volume_note">Định hình âm lượng riêng của Mochy (thanh trượt của trình phát, hiệu ứng mờ dần và giảm âm). Giới hạn đặt mức to nhất mà ứng dụng sẽ phát.</string>
+
+    <string name="fx_reverb_title">Reverb</string>
+    <string name="fx_reverb_sub">Thêm vang cho nhạc</string>
+    <string name="fx_reverb_room">Phòng</string>
+    <string name="fx_reverb_studio">Phòng thu</string>
+    <string name="fx_reverb_bathroom">Phòng tắm</string>
+    <string name="fx_reverb_plate">Plate</string>
+    <string name="fx_reverb_hall">Hội trường</string>
+    <string name="fx_reverb_cathedral">Nhà thờ lớn</string>
+    <string name="fx_reverb_stadium">Sân vận động</string>
+    <string name="fx_reverb_dream">Mơ màng</string>
+    <string name="fx_reverb_custom">Tùy chỉnh</string>
+    <string name="fx_mix">Hòa trộn</string>
+    <string name="fx_room_size">Kích thước phòng</string>
+    <string name="fx_damping">Hấp thụ</string>
+    <string name="fx_wet">Âm vang</string>
+    <string name="fx_fine_tune">TINH CHỈNH</string>
+    <string name="fx_dry">Âm gốc</string>
+    <string name="fx_width">Độ rộng</string>
+    <string name="fx_pre_delay">Trễ trước</string>
+    <string name="fx_low_cut">Cắt trầm</string>
+</resources>

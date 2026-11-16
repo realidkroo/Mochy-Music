@@ -1045,6 +1045,25 @@
             </intent-filter>
         </activity>
 
+        <!-- the module feed's discord sign-in sends the browser back here with a session -->
+        <activity
+            android:name=".modules.browser.ModuleBrowserLoginActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="mochy-modules" android:host="signed-in" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
             android:exported="false"
@@ -1059,6 +1078,11 @@
                 <action android:name="androidx.media3.session.MediaSessionService" />
                 <action android:name="androidx.media3.session.MediaLibraryService" />
                 <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+            <!-- vivo's music card on originos (lock screen, atomic island) looks for this before it offers the heart, the loop
+                 button, lyrics and its lists; it still connects with the browser action above (playback/OriginCard.kt) -->
+            <intent-filter>
+                <action android:name="com.vivo.musicwidgetmix.support.service" />
             </intent-filter>
         </service>
 

@@ -4,8 +4,6 @@ package com.mochyy.mochymusic.ui.screens
 
 import android.app.Activity
 import android.content.Intent
-import android.media.MediaMetadataRetriever
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.mochyy.mochymusic.db.entities.FormatEntity
@@ -406,8 +404,20 @@ fun NavGraphBuilder.navigationBuilder(
         com.mochyy.mochymusic.ui.screens.settings.AppBehaviourSettingsScreen(navController = navController)
     }
 
+    composable(com.mochyy.mochymusic.ui.screens.settings.PlaybackSettingsRoute) {
+        com.mochyy.mochymusic.ui.screens.settings.PlaybackSettingsScreen(navController = navController)
+    }
+
+    composable(com.mochyy.mochymusic.ui.screens.settings.NowPlayingSettingsRoute) {
+        com.mochyy.mochymusic.ui.screens.settings.NowPlayingSettingsScreen(navController = navController)
+    }
+
     composable(com.mochyy.mochymusic.ui.screens.settings.integrations.IntegrationsRoute) {
         com.mochyy.mochymusic.ui.screens.settings.integrations.IntegrationsScreen(navController = navController)
+    }
+
+    composable(com.mochyy.mochymusic.ui.screens.settings.integrations.spotify.SpotifyRoute) {
+        com.mochyy.mochymusic.ui.screens.settings.integrations.spotify.SpotifyScreen(navController = navController)
     }
 
     composable(com.mochyy.mochymusic.ui.screens.settings.integrations.discord.DiscordRoute) {
@@ -529,6 +539,9 @@ fun NavGraphBuilder.navigationBuilder(
 
     composable(com.mochyy.mochymusic.ui.screens.settings.modules.ModulesRoute) {
         com.mochyy.mochymusic.ui.screens.settings.modules.ModulesScreen(navController = navController)
+    }
+    composable(com.mochyy.mochymusic.ui.screens.settings.modules.ModuleBrowserRoute) {
+        com.mochyy.mochymusic.ui.screens.settings.modules.ModuleBrowserScreen(navController = navController)
     }
 
     composable(
@@ -827,79 +840,5 @@ fun NavGraphBuilder.navigationBuilder(
 
     coverSourceComposable("library/artists") {
         com.mochyy.mochymusic.ui.screens.library.LibraryArtistsScreen(navController = navController)
-    }
-}
-
-internal data class LocalAudioMetadata(
-    val title: String,
-    val artist: String,
-    val album: String?,
-    val durationSeconds: Int,
-    val mimeType: String?,
-    val bitrate: Int?,
-    val sampleRate: Int?,
-    val embeddedArtwork: ByteArray?,
-    val albumArtist: String? = null,
-    val trackNumber: Int? = null,
-    val discNumber: Int? = null,
-    val year: Int? = null,
-)
-
-internal fun extractAudioMetadata(
-    context: android.content.Context,
-    uri: Uri,
-): LocalAudioMetadata {
-    val retriever = MediaMetadataRetriever()
-    return try {
-        retriever.setDataSource(context, uri)
-        val title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
-            ?: uri.lastPathSegment?.substringBeforeLast('.') ?: "Unknown"
-        val artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
-            ?: retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST)
-            ?: "Unknown Artist"
-        val album = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
-        val durationMs = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-            ?.toLongOrNull() ?: 0L
-        val mimeType = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
-            ?: context.contentResolver.getType(uri)
-        val bitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
-            ?.toIntOrNull()
-        val sampleRate = try {
-
-            if (android.os.Build.VERSION.SDK_INT >= 31) {
-                retriever.extractMetadata(38)?.toIntOrNull()
-            } else null
-        } catch (_: Exception) { null }
-        val embeddedArtwork = try { retriever.embeddedPicture } catch (_: Exception) { null }
-        // track and disc tags often read "3/12", the part before the slash is the number
-        fun number(key: Int) = retriever.extractMetadata(key)?.substringBefore('/')?.trim()?.toIntOrNull()
-        LocalAudioMetadata(
-            title = title,
-            artist = artist,
-            album = album,
-            durationSeconds = (durationMs / 1000).toInt(),
-            mimeType = mimeType,
-            bitrate = bitrate,
-            sampleRate = sampleRate,
-            embeddedArtwork = embeddedArtwork,
-            albumArtist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST),
-            trackNumber = number(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER),
-            discNumber = number(MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER),
-            year = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR)?.take(4)?.toIntOrNull(),
-        )
-    } catch (e: Exception) {
-
-        LocalAudioMetadata(
-            title = uri.lastPathSegment?.substringBeforeLast('.') ?: "Unknown",
-            artist = "Unknown Artist",
-            album = null,
-            durationSeconds = 0,
-            mimeType = context.contentResolver.getType(uri),
-            bitrate = null,
-            sampleRate = null,
-            embeddedArtwork = null,
-        )
-    } finally {
-        retriever.release()
     }
 }

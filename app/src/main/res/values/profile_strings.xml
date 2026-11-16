@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Greetings -->
+    <string name="profile_greeting_hello_again">Hello again</string>
+    <string name="profile_greeting_hey">Hey</string>
+    <string name="profile_greeting_welcome_back">Welcome back</string>
+    <string name="profile_greeting_good_to_see_you">Good to see you</string>
+    <string name="profile_greeting_fallback">there</string>
+    <string name="profile_greeting_format">%1$s, %2$s!</string>
+
+    <!-- Profile Header & ID Card -->
+    <string name="profile_joined_at">joined at %1$s</string>
+    <string name="profile_pull_down_cd">Pull down</string>
+    <string name="profile_swipe_down_hint">swipe down here!!</string>
+    <string name="profile_scratch_hint">scratch!</string>
+    <string name="profile_come_back_later">come back later</string>
+    <string name="profile_swipe_up_to_close">swipe up to close</string>
+
+    <!-- Listening Time Card & Stats -->
+    <string name="profile_total_listening_time">"Total Listening\ntime"</string>
+    <string name="profile_view_stats">"View Stats  &gt;"</string>
+    <string name="profile_unit_hour_short">h</string>
+    <string name="profile_unit_minute_short">m</string>
+
+    <!-- Version & About Card -->
+    <string name="profile_version_about_app">Version &amp; about app</string>
+    <string name="profile_capsule_about">About app</string>
+    <string name="profile_capsule_update">Update</string>
+
+    <!-- Community & Settings -->
+    <string name="profile_meet_dev_contributors">meet da dev and contributors :3</string>
+    <string name="profile_join_discord">Join mochy’s discord server!</string>
+    <string name="profile_discord_cd">Discord</string>
+    <string name="profile_settings_title">Settings</string>
+    <string name="profile_open_settings">Open settings</string>
+
+    <!-- Edit Profile Sheet -->
+    <string name="profile_edit_title">Edit profile</string>
+    <string name="profile_data_privacy_hint">Mochy will never store your data online!</string>
+    <string name="profile_done">Done</string>
+    <string name="profile_username_label">username</string>
+    <string name="profile_username_placeholder">username</string>
+    <string name="profile_picture_label">profile picture</string>
+    <string name="profile_picture_cd">Profile picture</string>
+    <string name="profile_picture_add_cd">Add a profile picture</string>
+
+    <!-- User Profile Page -->
+    <string name="profile_tag">PROFILE USR#%1$s</string>
+    <string name="profile_edit_button">Edit profile</string>
+    <string name="profile_total_listens">Total listens</string>
+    <plurals name="profile_unit_songs">
+        <item quantity="one">Song</item>
+        <item quantity="other">Songs</item>
+    </plurals>
+    <plurals name="profile_unit_minutes">
+        <item quantity="one">Min</item>
+        <item quantity="other">Mins</item>
+    </plurals>
+    <plurals name="profile_unit_hours">
+        <item quantity="one">Hour</item>
+        <item quantity="other">Hours</item>
+    </plurals>
+    <string name="profile_listening_to">Listening to</string>
+    <string name="profile_recent_empty">Songs you play will show up here.</string>
+    <string name="profile_your_playlists">Your playlists</string>
+    <string name="profile_top_artists">Top artists</string>
+    <string name="profile_top_artists_empty">The artists you play the most will show up here.</string>
+</resources>

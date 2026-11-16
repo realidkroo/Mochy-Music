@@ -107,7 +107,7 @@ fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesVie
                 Spacer(Modifier.height(20.dp))
                 EnableCard(entry) { viewModel.setEnabled(id, it) }
                 Spacer(Modifier.height(10.dp))
-                InfoCard(entry)
+                InfoCard(entry, onRaise = { viewModel.raise(id) })
                 UpdateCard(
                     entry = entry,
                     updating = viewModel.updating.collectAsState().value == id,

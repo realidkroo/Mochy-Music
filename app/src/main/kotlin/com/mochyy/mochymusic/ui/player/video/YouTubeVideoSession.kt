@@ -115,6 +115,10 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
     private val textures = ArrayList<SurfaceTexture>()
     private val surfaces = HashMap<SurfaceTexture, Surface>()
     private var owner: SurfaceTexture? = null
+
+    // the surface the picture goes to now, for reading its colours off the main thread
+    @Volatile var frameSurface: Surface? = null
+        private set
     private var streams: VideoStreams? = null
     private var quality = VideoQuality.AUTO
     private var autoCap = 1080
@@ -214,6 +218,7 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
             if (next != null) showOn(next) else {
                 surface?.let { player?.clearVideoSurface(it) }
                 owner = null
+                frameSurface = null
             }
         }
         surface?.release()
@@ -222,11 +227,13 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
 
     private fun showOn(texture: SurfaceTexture) {
         owner = texture
+        frameSurface = surfaces[texture]
         surfaces[texture]?.let { player?.setVideoSurface(it) }
     }
 
     internal fun release() = handler.post {
         released = true
+        frameSurface = null
         player?.removeListener(listener)
         player?.release()
         player = null

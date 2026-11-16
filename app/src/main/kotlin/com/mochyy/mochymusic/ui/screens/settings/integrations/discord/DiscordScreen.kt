@@ -2,6 +2,7 @@
 
 package com.mochyy.mochymusic.ui.screens.settings.integrations.discord
 
+import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -106,7 +107,7 @@ fun DiscordScreen(
                 context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             } catch (e: android.content.ActivityNotFoundException) {
                 viewModel.cancelWaiting()
-                Toast.makeText(context, "There's no browser to open Discord's login page in.", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.discord_no_browser_toast), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -120,14 +121,14 @@ fun DiscordScreen(
 
     Box(Modifier.fillMaxSize()) {
         SubSettingsScaffold(
-            title = "Discord",
+            title = stringResource(R.string.discord_settings_title),
             onBack = { navController.navigateUp() },
         ) {
-            IntegrationPageSubtitle("Rich presence on your profile")
+            IntegrationPageSubtitle(stringResource(R.string.discord_subtitle_rich_presence))
             DiscordToggleCard(
                 checked = settings.enabled,
                 onCheckedChange = { on -> viewModel.edit { copy(enabled = on) } },
-                status = statusLine(viewModel.isConfigured, signedIn, settings.enabled, connection, login),
+                status = statusLine(context, viewModel.isConfigured, signedIn, settings.enabled, connection, login),
                 enabled = signedIn,
             )
             Spacer(Modifier.height(12.dp))
@@ -173,20 +174,21 @@ fun DiscordScreen(
 }
 
 private fun statusLine(
+    context: Context,
     configured: Boolean,
     signedIn: Boolean,
     enabled: Boolean,
     connection: PresenceConnection,
     login: DiscordLogin,
 ): String = when {
-    !configured -> "Not set up in this build of Mochy"
-    login == DiscordLogin.Finishing -> "Signing in…"
-    !signedIn -> "Log in below to turn it on"
-    !enabled -> "Off, so your profile shows nothing from Mochy"
-    connection == PresenceConnection.Live -> "On your profile now"
-    connection == PresenceConnection.Connecting -> "Connecting to Discord…"
-    connection == PresenceConnection.Retrying -> "Can't reach Discord. Trying again…"
-    else -> "Shows up when you play something"
+    !configured -> context.getString(R.string.discord_status_not_configured)
+    login == DiscordLogin.Finishing -> context.getString(R.string.discord_status_signing_in)
+    !signedIn -> context.getString(R.string.discord_status_login_below)
+    !enabled -> context.getString(R.string.discord_status_off)
+    connection == PresenceConnection.Live -> context.getString(R.string.discord_status_live)
+    connection == PresenceConnection.Connecting -> context.getString(R.string.discord_status_connecting)
+    connection == PresenceConnection.Retrying -> context.getString(R.string.discord_status_retrying)
+    else -> context.getString(R.string.discord_status_idle_playing)
 }
 
 @Composable
@@ -198,11 +200,11 @@ private fun AccountButton(
     onLogOut: () -> Unit,
 ) {
     val (text, action) = when {
-        !configured -> "Discord isn't set up in this build" to null
-        signedIn -> "Log out from Discord" to onLogOut
-        login == DiscordLogin.Finishing -> "Signing in…" to null
-        login == DiscordLogin.InBrowser -> "Waiting for Discord… Tap to open it again" to onLogin
-        else -> "Log in with Discord" to onLogin
+        !configured -> stringResource(R.string.discord_btn_not_configured) to null
+        signedIn -> stringResource(R.string.discord_btn_logout) to onLogOut
+        login == DiscordLogin.Finishing -> stringResource(R.string.discord_status_signing_in) to null
+        login == DiscordLogin.InBrowser -> stringResource(R.string.discord_btn_waiting_browser) to onLogin
+        else -> stringResource(R.string.discord_btn_login) to onLogin
     }
     val inviting = configured && !signedIn
     Box(
@@ -248,6 +250,7 @@ private fun CustomizeSection(
     // a picture picked for the big (true) or small slot's "your own picture"
     onPickCustom: (large: Boolean, picked: android.net.Uri) -> Unit,
 ) {
+    val context = LocalContext.current
     val gap = Modifier.height(12.dp)
     val pickSmall = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { picked ->
         if (picked != null) onPickCustom(false, picked)
@@ -257,12 +260,12 @@ private fun CustomizeSection(
     }
     val imagesOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
 
-    DiscordSectionTitle("CUSTOMIZE")
+    DiscordSectionTitle(stringResource(R.string.discord_section_customize))
     DiscordPlaceholderCard()
 
-    DiscordSectionTitle("Options")
+    DiscordSectionTitle(stringResource(R.string.discord_section_options))
     DiscordCard {
-        DiscordCardTitle("Refresh interval")
+        DiscordCardTitle(stringResource(R.string.discord_refresh_interval))
         Spacer(Modifier.height(4.dp))
         DiscordStepSlider(
             value = settings.refreshSeconds,
@@ -280,34 +283,39 @@ private fun CustomizeSection(
         onCheckedChange = { on -> edit { copy(clearOnPause = on) } },
     )
 
-    DiscordSectionTitle("Activity")
+    DiscordSectionTitle(stringResource(R.string.discord_section_activity))
     DiscordCard {
-        DiscordCardTitle("Select the activity type")
+        DiscordCardTitle(stringResource(R.string.discord_select_activity_type))
         Spacer(Modifier.height(10.dp))
         DiscordSegmented(
             options = PresenceKind.entries,
             selected = settings.kind,
-            label = { it.label },
+            label = {
+                when (it) {
+                    PresenceKind.LISTENING -> context.getString(R.string.discord_kind_listening)
+                    PresenceKind.PLAYING -> context.getString(R.string.discord_kind_playing)
+                }
+            },
             onSelect = { kind -> edit { copy(kind = kind) } },
         )
     }
     Spacer(gap)
-    DiscordTextCard("Activity name", settings.name, { text -> edit { copy(name = text) } }, hint = "Mochy")
+    DiscordTextCard(stringResource(R.string.discord_activity_name_title), settings.name, { text -> edit { copy(name = text) } }, hint = "Mochy")
 
-    DiscordSectionTitle("Strings customisation")
-    DiscordNoticeCard("Empty a box to hide that line")
+    DiscordSectionTitle(stringResource(R.string.discord_section_strings))
+    DiscordNoticeCard(stringResource(R.string.discord_empty_to_hide))
     Spacer(gap)
-    DiscordTextCard("Details string", settings.details, { text -> edit { copy(details = text) } })
+    DiscordTextCard(stringResource(R.string.discord_details_string), settings.details, { text -> edit { copy(details = text) } })
     Spacer(gap)
-    DiscordTextCard("State string", settings.state, { text -> edit { copy(state = text) } })
+    DiscordTextCard(stringResource(R.string.discord_state_string), settings.state, { text -> edit { copy(state = text) } })
     Spacer(gap)
-    DiscordTextCard("Large image hover text", settings.largeText, { text -> edit { copy(largeText = text) } })
+    DiscordTextCard(stringResource(R.string.discord_large_image_hover), settings.largeText, { text -> edit { copy(largeText = text) } })
     Spacer(gap)
-    DiscordTextCard("Small image hover text", settings.smallText, { text -> edit { copy(smallText = text) } })
+    DiscordTextCard(stringResource(R.string.discord_small_image_hover), settings.smallText, { text -> edit { copy(smallText = text) } })
 
-    DiscordSectionTitle("Image customisation")
+    DiscordSectionTitle(stringResource(R.string.discord_section_image_customisation))
     DiscordImageSourceCard(
-        title = "Small image source",
+        title = stringResource(R.string.discord_small_image_source),
         selected = settings.smallImage,
         options = PresenceImage.ForSmall,
         // "your own picture" with none picked yet opens the picker first, and only switches once one is chosen
@@ -322,7 +330,7 @@ private fun CustomizeSection(
     )
     Spacer(gap)
     DiscordImageSourceCard(
-        title = "Big image source",
+        title = stringResource(R.string.discord_big_image_source),
         selected = settings.largeImage,
         options = PresenceImage.ForLarge,
         onSelect = { image ->
@@ -333,12 +341,12 @@ private fun CustomizeSection(
         onPickCustom = { pickLarge.launch(imagesOnly) },
     )
 
-    DiscordSectionTitle("Buttons")
-    DiscordButtonCard("1st button", settings.button1) { button -> edit { copy(button1 = button) } }
+    DiscordSectionTitle(stringResource(R.string.discord_section_buttons))
+    DiscordButtonCard(stringResource(R.string.discord_first_button), settings.button1) { button -> edit { copy(button1 = button) } }
     Spacer(gap)
-    DiscordButtonCard("2nd button", settings.button2) { button -> edit { copy(button2 = button) } }
+    DiscordButtonCard(stringResource(R.string.discord_second_button), settings.button2) { button -> edit { copy(button2 = button) } }
     Text(
-        text = "Discord only shows the buttons to other people, never on your own profile.",
+        text = stringResource(R.string.discord_buttons_note),
         color = DiscordColors.Secondary,
         fontSize = 12.sp,
         modifier = Modifier.padding(start = 4.dp, top = 10.dp),

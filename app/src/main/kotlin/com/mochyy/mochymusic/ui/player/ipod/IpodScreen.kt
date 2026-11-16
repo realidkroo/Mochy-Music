@@ -293,7 +293,7 @@ private fun IpodMenuRow(row: IpodRow, art: Boolean, selected: Boolean, height: D
         }
         Column(Modifier.weight(1f)) {
             Text(
-                text = row.title,
+                text = row.displayTitle(),
                 color = ink,
                 fontSize = scale.sp(if (art) 18f else 19f),
                 fontWeight = FontWeight.Bold,

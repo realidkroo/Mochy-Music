@@ -1,20 +1,12 @@
 package com.mochyy.mochymusic.ui.screens.settings
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DataSaverOn
-import androidx.compose.material.icons.rounded.GraphicEq
-import androidx.compose.material.icons.rounded.HighQuality
 import androidx.compose.material.icons.rounded.SignalCellularAlt
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,7 +14,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
@@ -30,69 +21,39 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.AlbumsFromLikedSongsKey
-import com.mochyy.mochymusic.constants.CanvasThumbnailAnimationKey
-import com.mochyy.mochymusic.constants.CanvasWifiOnlyKey
 import com.mochyy.mochymusic.constants.DataSaverKey
 import com.mochyy.mochymusic.constants.DataSaverMobileOnlyKey
-import com.mochyy.mochymusic.constants.DisableVideoAutoplayKey
-import com.mochyy.mochymusic.constants.DontSkipOnFailureKey
 import com.mochyy.mochymusic.constants.HideSettingsDescriptionsKey
 import com.mochyy.mochymusic.constants.HideUpdateNoticeKey
 import com.mochyy.mochymusic.constants.LarpLevelKey
 import com.mochyy.mochymusic.constants.LarpModeKey
 import com.mochyy.mochymusic.constants.LocalSongAutoMetadataKey
-import com.mochyy.mochymusic.constants.LyricsHighBloomKey
-import com.mochyy.mochymusic.constants.LyricsMotionStyle
-import com.mochyy.mochymusic.constants.LyricsMotionStyleKey
-import com.mochyy.mochymusic.constants.MixWithOtherAppsKey
 import com.mochyy.mochymusic.constants.OfflineModeKey
-import com.mochyy.mochymusic.constants.PauseOnMute
 import com.mochyy.mochymusic.constants.PauseSearchHistoryKey
-import com.mochyy.mochymusic.constants.PersistentQueueKey
-import com.mochyy.mochymusic.constants.PersistentShuffleAcrossQueuesKey
 import com.mochyy.mochymusic.constants.ProxyEnabledKey
 import com.mochyy.mochymusic.constants.ProxyUrlKey
-import com.mochyy.mochymusic.constants.PlayVideoBackgroundKey
 import com.mochyy.mochymusic.constants.SYSTEM_DEFAULT
-import com.mochyy.mochymusic.constants.ResumeOnBluetoothConnectKey
-import com.mochyy.mochymusic.constants.ShowFormatBadgeKey
-import com.mochyy.mochymusic.constants.ShowFormatSampleRateKey
-import com.mochyy.mochymusic.constants.SkipSilenceKey
-import com.mochyy.mochymusic.constants.StopPlaybackOnTaskRemovedKey
-import com.mochyy.mochymusic.constants.StreamFailureTimeoutKey
-import com.mochyy.mochymusic.constants.SyncLyricsToVideoKey
-import com.mochyy.mochymusic.constants.VideoQuality
-import com.mochyy.mochymusic.constants.VideoQualityKey
-import com.mochyy.mochymusic.constants.YouTubeCaptionTranslationKey
 import com.mochyy.mochymusic.constants.YtReportPlaysKey
-import com.mochyy.mochymusic.constants.YtVideoBackgroundLyricsSyncKey
 import com.mochyy.mochymusic.core.updater.saveUpdateNotificationsSetting
 import com.mochyy.mochymusic.i18n.AppLanguage
 import com.mochyy.mochymusic.i18n.activityOrNull
 import com.mochyy.mochymusic.ui.component.AppSwitch
-import com.mochyy.mochymusic.ui.player.LarpLevel
-import com.mochyy.mochymusic.ui.component.DefaultPlayerSeekBarSlider
 import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
-import com.mochyy.mochymusic.ui.component.SettingsGroup
-import com.mochyy.mochymusic.ui.component.SettingsGroupStyle
-import com.mochyy.mochymusic.ui.component.SettingsHighlight
 import com.mochyy.mochymusic.ui.component.SettingsItem
 import com.mochyy.mochymusic.ui.component.SubSettingsScaffold
 import com.mochyy.mochymusic.ui.component.SubSettingsSearchBar
-import com.mochyy.mochymusic.ui.theme.InterFontFamily
-import com.mochyy.mochymusic.utils.rememberEnumPreference
+import com.mochyy.mochymusic.ui.player.LarpLevel
 import com.mochyy.mochymusic.utils.AppProxy
+import com.mochyy.mochymusic.utils.rememberEnumPreference
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
-// settings > app behaviour: how the app and the player act, what used to be general, playback and most of appearance
+// settings > app behaviour: the app itself, its network and your library; playback and the player's looks have their own pages now
 @Composable
 fun AppBehaviourSettingsScreen(navController: NavController) {
     var query by remember { mutableStateOf("") }
@@ -103,42 +64,12 @@ fun AppBehaviourSettingsScreen(navController: NavController) {
         searchBar = { SubSettingsSearchBar(query = query, onQueryChange = { query = it }) },
     ) {
         // larpaspriority
-        Section(title = null, items = larpItems().matching(query))
-        Section(stringResource(R.string.general_app_settings), generalItems(navController).matching(query))
-        Section(stringResource(R.string.settings_local_section), localItems().matching(query))
-        Section(stringResource(R.string.settings_player_behaviour), playerBehaviourItems().matching(query))
-        Section(stringResource(R.string.settings_on_the_player), playerLookItems().matching(query))
-        Section(stringResource(R.string.settings_other), otherItems().matching(query))
-        Section(stringResource(R.string.settings_related), relatedItems(navController).matching(query))
+        SettingsSection(title = null, items = larpItems().matching(query))
+        SettingsSection(stringResource(R.string.general_app_settings), generalItems().matching(query))
+        SettingsSection(stringResource(R.string.settings_section_network), networkItems(navController).matching(query))
+        SettingsSection(stringResource(R.string.settings_section_library_privacy), libraryItems().matching(query))
+        SettingsSection(stringResource(R.string.settings_related), relatedItems(navController).matching(query))
         Spacer(Modifier.height(140.dp))
-    }
-}
-
-// a section's title (if it has one) and its grouped rows, left out whole when the search hides every row
-@Composable
-private fun Section(title: String?, items: List<SettingsItem>) {
-    if (items.isEmpty()) return
-    if (title != null) {
-        Text(
-            text = title,
-            fontFamily = InterFontFamily,
-            fontWeight = FontWeight.Bold,
-            fontSize = 15.sp,
-            color = Color.White,
-            modifier = Modifier.padding(bottom = 10.dp, start = 4.dp),
-        )
-    }
-    SettingsGroup(style = SettingsGroupStyle.Grouped, items = items)
-    Spacer(Modifier.height(18.dp))
-}
-
-private fun List<SettingsItem>.matching(query: String): List<SettingsItem> {
-    if (query.isBlank()) return this
-    return filter {
-        it.highlightKey?.contains(query, ignoreCase = true) == true ||
-            it.searchText?.contains(query, ignoreCase = true) == true ||
-            it.descriptionText?.contains(query, ignoreCase = true) == true ||
-            it.detail?.contains(query, ignoreCase = true) == true
     }
 }
 
@@ -176,21 +107,10 @@ private fun larpItems(): List<SettingsItem> {
 }
 
 @Composable
-private fun generalItems(navController: NavController): List<SettingsItem> {
+private fun generalItems(): List<SettingsItem> {
     val context = LocalContext.current
     val (noticeHidden, onNoticeHidden) = rememberPreference(HideUpdateNoticeKey, defaultValue = false)
-    val (offlineMode, onOfflineModeChange) = rememberPreference(OfflineModeKey, defaultValue = false)
-    val (dataSaver, onDataSaverChange) = rememberPreference(DataSaverKey, defaultValue = false)
-    val (dataSaverMobileOnly, onDataSaverMobileOnlyChange) = rememberPreference(DataSaverMobileOnlyKey, defaultValue = true)
-    val (stopOnTaskRemoved, onStopOnTaskRemoved) = rememberPreference(StopPlaybackOnTaskRemovedKey, defaultValue = false)
-    val (mixWithOtherApps, onMixWithOtherAppsChange) = rememberPreference(MixWithOtherAppsKey, defaultValue = false)
-    val (resumeOnBluetooth, onResumeOnBluetoothChange) = rememberPreference(ResumeOnBluetoothConnectKey, defaultValue = false)
-    val (pauseOnMute, onPauseOnMuteChange) = rememberPreference(PauseOnMute, defaultValue = false)
-    val (persistentQueue, onPersistentQueueChange) = rememberPreference(PersistentQueueKey, defaultValue = true)
-    val (albumsFromLikes, onAlbumsFromLikesChange) = rememberPreference(AlbumsFromLikedSongsKey, defaultValue = false)
-    val (pauseSearchHistory, onPauseSearchHistoryChange) = rememberPreference(PauseSearchHistoryKey, defaultValue = false)
-    val (proxyOn) = rememberPreference(ProxyEnabledKey, defaultValue = false)
-    val (proxyAddress) = rememberPreference(ProxyUrlKey, defaultValue = "")
+    val (hideDescriptions, onHideDescriptions) = rememberPreference(HideSettingsDescriptionsKey, defaultValue = true)
     // the launch check's notification reads its own switch, so it follows this one too
     val setNoticeHidden = { hidden: Boolean ->
         onNoticeHidden(hidden)
@@ -207,112 +127,12 @@ private fun generalItems(navController: NavController): List<SettingsItem> {
             onCheckedChange = setNoticeHidden,
         ),
         switchItem(
-            key = "Offline mode",
-            title = stringResource(R.string.settings_offline_mode),
-            description = stringResource(R.string.settings_offline_mode_desc),
-            icon = painterResource(R.drawable.download),
-            checked = offlineMode,
-            onCheckedChange = onOfflineModeChange,
-        ),
-        // lighter streams and still covers, for metered plans; the second switch decides whether wi-fi counts too
-        switchItem(
-            key = "Data saver",
-            title = stringResource(R.string.settings_data_saver),
-            description = stringResource(R.string.settings_data_saver_desc),
-            detail = stringResource(R.string.settings_data_saver_detail),
-            icon = rememberVectorPainter(Icons.Rounded.DataSaverOn),
-            checked = dataSaver,
-            onCheckedChange = onDataSaverChange,
-        ),
-        switchItem(
-            key = "Data saver only on mobile data",
-            title = stringResource(R.string.settings_data_saver_mobile),
-            description = stringResource(R.string.settings_data_saver_mobile_desc),
-            icon = rememberVectorPainter(Icons.Rounded.SignalCellularAlt),
-            checked = dataSaverMobileOnly,
-            onCheckedChange = onDataSaverMobileOnlyChange,
-            subOptionOf = dataSaver,
-        ),
-        SettingsItem(
-            title = { Text(stringResource(R.string.proxy)) },
-            highlightKey = "Proxy",
-            descriptionText = if (proxyOn && AppProxy.parseAddress(proxyAddress) != null) {
-                stringResource(R.string.proxy_status_on, proxyAddress)
-            } else {
-                stringResource(R.string.proxy_status_off)
-            },
-            searchText = stringResource(R.string.proxy),
-            icon = painterResource(R.drawable.wifi_proxy),
-            iconShape = CircleShape,
-            onClick = { navController.navigate(ProxySettingsRoute) },
-            trailingContent = {
-                Icon(
-                    painter = painterResource(R.drawable.navigate_next),
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.5f),
-                    modifier = Modifier.size(20.dp),
-                )
-            },
-        ),
-        switchItem(
-            key = "Keep playing even when closed",
-            title = stringResource(R.string.playback_keep_playing),
-            description = stringResource(R.string.playback_keep_playing_desc),
-            detail = stringResource(R.string.playback_keep_playing_detail),
-            icon = painterResource(R.drawable.clear_all),
-            checked = !stopOnTaskRemoved,
-            onCheckedChange = { onStopOnTaskRemoved(!it) },
-        ),
-        switchItem(
-            key = "Play alongside other apps",
-            title = stringResource(R.string.playback_mix_other_apps),
-            description = stringResource(R.string.playback_mix_other_apps_desc),
-            detail = stringResource(R.string.playback_mix_other_apps_detail),
-            icon = painterResource(R.drawable.volume_up),
-            checked = mixWithOtherApps,
-            onCheckedChange = onMixWithOtherAppsChange,
-        ),
-        switchItem(
-            key = "Resume on Bluetooth connection",
-            title = stringResource(R.string.playback_resume_bluetooth),
-            description = stringResource(R.string.playback_resume_bluetooth_desc),
-            icon = painterResource(R.drawable.bluetooth),
-            checked = resumeOnBluetooth,
-            onCheckedChange = onResumeOnBluetoothChange,
-        ),
-        switchItem(
-            key = "Pause when muted",
-            title = stringResource(R.string.pause_music_when_media_is_muted),
-            description = stringResource(R.string.pause_music_when_muted_desc),
-            icon = painterResource(R.drawable.volume_off),
-            checked = pauseOnMute,
-            onCheckedChange = onPauseOnMuteChange,
-        ),
-        switchItem(
-            key = "Save Player's last state",
-            title = stringResource(R.string.playback_save_state),
-            description = stringResource(R.string.playback_save_state_desc),
-            detail = stringResource(R.string.playback_save_state_detail),
-            icon = painterResource(R.drawable.cached),
-            checked = persistentQueue,
-            onCheckedChange = onPersistentQueueChange,
-        ),
-        switchItem(
-            key = "Albums from liked songs",
-            title = stringResource(R.string.settings_albums_from_likes),
-            description = stringResource(R.string.settings_albums_from_likes_desc),
-            detail = stringResource(R.string.settings_albums_from_likes_detail),
-            icon = painterResource(R.drawable.album),
-            checked = albumsFromLikes,
-            onCheckedChange = onAlbumsFromLikesChange,
-        ),
-        switchItem(
-            key = "Pause search history",
-            title = stringResource(R.string.pause_search_history),
-            description = stringResource(R.string.settings_pause_search_history_desc),
-            icon = painterResource(R.drawable.history),
-            checked = pauseSearchHistory,
-            onCheckedChange = onPauseSearchHistoryChange,
+            key = "Disable description on settings",
+            title = stringResource(R.string.settings_hide_descriptions),
+            description = stringResource(R.string.settings_hide_descriptions_desc),
+            icon = painterResource(R.drawable.info),
+            checked = hideDescriptions,
+            onCheckedChange = onHideDescriptions,
         ),
     )
 }
@@ -353,9 +173,70 @@ private fun languageItem(): SettingsItem {
 }
 
 @Composable
-private fun localItems(): List<SettingsItem> {
-    val (autoMetadata, onAutoMetadataChange) = rememberPreference(LocalSongAutoMetadataKey, defaultValue = true)
+private fun networkItems(navController: NavController): List<SettingsItem> {
+    val (offlineMode, onOfflineModeChange) = rememberPreference(OfflineModeKey, defaultValue = false)
+    val (dataSaver, onDataSaverChange) = rememberPreference(DataSaverKey, defaultValue = false)
+    val (dataSaverMobileOnly, onDataSaverMobileOnlyChange) = rememberPreference(DataSaverMobileOnlyKey, defaultValue = true)
+    val (proxyOn) = rememberPreference(ProxyEnabledKey, defaultValue = false)
+    val (proxyAddress) = rememberPreference(ProxyUrlKey, defaultValue = "")
     return listOf(
+        switchItem(
+            key = "Offline mode",
+            title = stringResource(R.string.settings_offline_mode),
+            description = stringResource(R.string.settings_offline_mode_desc),
+            icon = painterResource(R.drawable.download),
+            checked = offlineMode,
+            onCheckedChange = onOfflineModeChange,
+        ),
+        // lighter streams and still covers, for metered plans; the second switch decides whether wi-fi counts too
+        switchItem(
+            key = "Data saver",
+            title = stringResource(R.string.settings_data_saver),
+            description = stringResource(R.string.settings_data_saver_desc),
+            detail = stringResource(R.string.settings_data_saver_detail),
+            icon = rememberVectorPainter(Icons.Rounded.DataSaverOn),
+            checked = dataSaver,
+            onCheckedChange = onDataSaverChange,
+        ),
+        switchItem(
+            key = "Data saver only on mobile data",
+            title = stringResource(R.string.settings_data_saver_mobile),
+            description = stringResource(R.string.settings_data_saver_mobile_desc),
+            icon = rememberVectorPainter(Icons.Rounded.SignalCellularAlt),
+            checked = dataSaverMobileOnly,
+            onCheckedChange = onDataSaverMobileOnlyChange,
+            subOptionOf = dataSaver,
+        ),
+        linkItem(
+            key = "Proxy",
+            title = stringResource(R.string.proxy),
+            description = if (proxyOn && AppProxy.parseAddress(proxyAddress) != null) {
+                stringResource(R.string.proxy_status_on, proxyAddress)
+            } else {
+                stringResource(R.string.proxy_status_off)
+            },
+            icon = painterResource(R.drawable.wifi_proxy),
+            onClick = { navController.navigate(ProxySettingsRoute) },
+        ),
+    )
+}
+
+@Composable
+private fun libraryItems(): List<SettingsItem> {
+    val (albumsFromLikes, onAlbumsFromLikesChange) = rememberPreference(AlbumsFromLikedSongsKey, defaultValue = false)
+    val (autoMetadata, onAutoMetadataChange) = rememberPreference(LocalSongAutoMetadataKey, defaultValue = true)
+    val (pauseSearchHistory, onPauseSearchHistoryChange) = rememberPreference(PauseSearchHistoryKey, defaultValue = false)
+    val (reportPlays, onReportPlaysChange) = rememberPreference(YtReportPlaysKey, defaultValue = true)
+    return listOf(
+        switchItem(
+            key = "Albums from liked songs",
+            title = stringResource(R.string.settings_albums_from_likes),
+            description = stringResource(R.string.settings_albums_from_likes_desc),
+            detail = stringResource(R.string.settings_albums_from_likes_detail),
+            icon = painterResource(R.drawable.album),
+            checked = albumsFromLikes,
+            onCheckedChange = onAlbumsFromLikesChange,
+        ),
         switchItem(
             key = "Local song auto metadata",
             title = stringResource(R.string.settings_local_auto_metadata),
@@ -364,98 +245,13 @@ private fun localItems(): List<SettingsItem> {
             checked = autoMetadata,
             onCheckedChange = onAutoMetadataChange,
         ),
-    )
-}
-
-@Composable
-private fun playerBehaviourItems(): List<SettingsItem> {
-    val (disableVideoAutoplay, onDisableVideoAutoplayChange) = rememberPreference(DisableVideoAutoplayKey, defaultValue = false)
-    val (studioForVideos, onStudioForVideosChange) = rememberPreference(com.mochyy.mochymusic.constants.StudioForVideosKey, defaultValue = false)
-    val (youtubeTranslations, onYoutubeTranslationsChange) = rememberPreference(YouTubeCaptionTranslationKey, defaultValue = true)
-    val (syncLyricsToVideo, onSyncLyricsToVideoChange) = rememberPreference(SyncLyricsToVideoKey, defaultValue = true)
-    val (dontSkipOnFailure, onDontSkipOnFailureChange) = rememberPreference(DontSkipOnFailureKey, defaultValue = false)
-    val (failureTimeout, onFailureTimeoutChange) = rememberPreference(StreamFailureTimeoutKey, defaultValue = 6)
-    val (skipSilence, onSkipSilenceChange) = rememberPreference(SkipSilenceKey, defaultValue = false)
-    val (reportPlays, onReportPlaysChange) = rememberPreference(YtReportPlaysKey, defaultValue = true)
-    val (persistentShuffle, onPersistentShuffleChange) = rememberPreference(PersistentShuffleAcrossQueuesKey, defaultValue = true)
-    return listOf(
-        // shuffle stays on from one playlist to the next, like spotify, until it's turned off
         switchItem(
-            key = "Keep shuffle on",
-            title = stringResource(R.string.settings_persistent_shuffle),
-            description = stringResource(R.string.settings_persistent_shuffle_desc),
-            icon = painterResource(R.drawable.shuffle),
-            checked = persistentShuffle,
-            onCheckedChange = onPersistentShuffleChange,
-        ),
-        switchItem(
-            key = "Disable auto-playing YouTube video",
-            title = stringResource(R.string.settings_disable_video_autoplay),
-            description = stringResource(R.string.settings_disable_video_autoplay_desc),
-            icon = painterResource(R.drawable.slow_motion_video),
-            checked = disableVideoAutoplay,
-            onCheckedChange = onDisableVideoAutoplayChange,
-        ),
-        switchItem(
-            key = "Studio version for music videos",
-            title = stringResource(R.string.settings_studio_for_videos),
-            description = stringResource(R.string.settings_studio_for_videos_desc),
-            icon = painterResource(R.drawable.music_note),
-            checked = studioForVideos,
-            onCheckedChange = onStudioForVideosChange,
-        ),
-        switchItem(
-            key = "Translations from YouTube",
-            title = stringResource(R.string.settings_youtube_translations),
-            description = stringResource(R.string.settings_youtube_translations_desc),
-            detail = stringResource(R.string.settings_youtube_translations_detail),
-            icon = painterResource(R.drawable.translate),
-            checked = youtubeTranslations,
-            onCheckedChange = onYoutubeTranslationsChange,
-        ),
-        switchItem(
-            key = "Sync lyrics to music videos",
-            title = stringResource(R.string.settings_sync_lyrics_video),
-            description = stringResource(R.string.settings_sync_lyrics_video_desc),
-            detail = stringResource(R.string.settings_sync_lyrics_video_detail),
-            icon = painterResource(R.drawable.lyrics),
-            checked = syncLyricsToVideo,
-            onCheckedChange = onSyncLyricsToVideoChange,
-        ),
-        switchItem(
-            key = "Don't skip on failure",
-            title = stringResource(R.string.settings_dont_skip_failure),
-            description = stringResource(R.string.settings_dont_skip_failure_desc),
-            detail = stringResource(R.string.settings_dont_skip_failure_detail),
-            icon = painterResource(R.drawable.skip_next),
-            checked = dontSkipOnFailure,
-            onCheckedChange = onDontSkipOnFailureChange,
-        ),
-        SettingsItem(
-            title = { ValueTitle(stringResource(R.string.settings_skip_timeout), stringResource(R.string.settings_seconds_short, failureTimeout)) },
-            highlightKey = "Skip timeout failure",
-            searchText = stringResource(R.string.settings_skip_timeout),
-            description = {
-                DefaultPlayerSeekBarSlider(
-                    value = failureTimeout.toFloat(),
-                    onValueChange = { onFailureTimeoutChange(it.toInt()) },
-                    valueRange = 5f..20f,
-                    steps = 14,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            },
-            icon = painterResource(R.drawable.speed),
-            iconShape = CircleShape,
-            isVisible = !dontSkipOnFailure,
-            isSubOption = true,
-        ),
-        switchItem(
-            key = "Skip Silence",
-            title = stringResource(R.string.playback_skip_silence),
-            description = stringResource(R.string.playback_skip_silence_desc),
-            icon = painterResource(R.drawable.skip_next),
-            checked = skipSilence,
-            onCheckedChange = onSkipSilenceChange,
+            key = "Pause search history",
+            title = stringResource(R.string.pause_search_history),
+            description = stringResource(R.string.settings_pause_search_history_desc),
+            icon = painterResource(R.drawable.history),
+            checked = pauseSearchHistory,
+            onCheckedChange = onPauseSearchHistoryChange,
         ),
         // the same switch as sync's youtube history one, signed out it still counts the play
         switchItem(
@@ -470,244 +266,21 @@ private fun playerBehaviourItems(): List<SettingsItem> {
     )
 }
 
-@Composable
-private fun playerLookItems(): List<SettingsItem> {
-    val (formatBadge, onFormatBadgeChange) = rememberPreference(ShowFormatBadgeKey, defaultValue = true)
-    val (formatSampleRate, onFormatSampleRateChange) = rememberPreference(ShowFormatSampleRateKey, defaultValue = false)
-    val (playVideoBackground, onPlayVideoBackgroundChange) = rememberPreference(PlayVideoBackgroundKey, defaultValue = false)
-    val (lyricsSync, onLyricsSyncChange) = rememberPreference(YtVideoBackgroundLyricsSyncKey, defaultValue = true)
-    val (canvasEnabled, onCanvasEnabledChange) = rememberPreference(CanvasThumbnailAnimationKey, defaultValue = true)
-    val (canvasWifiOnly, onCanvasWifiOnlyChange) = rememberPreference(CanvasWifiOnlyKey, defaultValue = true)
-    val (highBloom, onHighBloomChange) = rememberPreference(LyricsHighBloomKey, defaultValue = true)
-    val (lyricsStyle) = rememberEnumPreference(LyricsMotionStyleKey, defaultValue = LyricsMotionStyle.MOTION)
-    val (romanizeAsMain, onRomanizeAsMainChange) = rememberPreference(com.mochyy.mochymusic.constants.LyricsRomanizeAsMainKey, defaultValue = false)
-    val (floatingLyrics, onFloatingLyricsChange) = com.mochyy.mochymusic.floating.rememberFloatingLyricsSwitch()
-    return listOf(
-        switchItem(
-            key = "Audio format badge",
-            title = stringResource(R.string.appearance_format_badge),
-            description = stringResource(R.string.appearance_format_badge_desc),
-            icon = painterResource(R.drawable.graphic_eq),
-            checked = formatBadge,
-            onCheckedChange = onFormatBadgeChange,
-        ),
-        switchItem(
-            key = "Show sample rate",
-            title = stringResource(R.string.appearance_sample_rate),
-            description = stringResource(R.string.appearance_sample_rate_desc),
-            icon = painterResource(R.drawable.speed),
-            checked = formatSampleRate,
-            onCheckedChange = onFormatSampleRateChange,
-            subOptionOf = formatBadge,
-        ),
-        switchItem(
-            key = "Always enable Youtube background",
-            title = stringResource(R.string.appearance_youtube_background),
-            description = stringResource(R.string.appearance_youtube_background_desc),
-            icon = painterResource(R.drawable.slow_motion_video),
-            checked = playVideoBackground,
-            onCheckedChange = onPlayVideoBackgroundChange,
-        ),
-        videoQualityItem(),
-        switchItem(
-            key = "Timestamp matching",
-            title = stringResource(R.string.appearance_timestamp_matching),
-            description = stringResource(R.string.appearance_timestamp_matching_desc),
-            icon = painterResource(R.drawable.lyrics),
-            checked = lyricsSync,
-            onCheckedChange = onLyricsSyncChange,
-            subOptionOf = playVideoBackground,
-        ),
-        switchItem(
-            key = "Enable animated canvas",
-            title = stringResource(R.string.appearance_canvas),
-            description = stringResource(R.string.appearance_canvas_desc),
-            icon = painterResource(R.drawable.sparks),
-            checked = canvasEnabled,
-            onCheckedChange = onCanvasEnabledChange,
-        ),
-        switchItem(
-            key = "Canvas on Wi-Fi only",
-            title = stringResource(R.string.appearance_canvas_wifi),
-            description = stringResource(R.string.appearance_canvas_wifi_desc),
-            icon = painterResource(R.drawable.wifi_proxy),
-            checked = canvasWifiOnly,
-            onCheckedChange = onCanvasWifiOnlyChange,
-            subOptionOf = canvasEnabled,
-        ),
-        // only the shaded lyric styles have a bloom to make softer
-        switchItem(
-            key = "High quality bloom",
-            title = stringResource(R.string.appearance_bloom),
-            description = stringResource(R.string.appearance_bloom_desc),
-            icon = painterResource(R.drawable.sparks),
-            checked = highBloom,
-            onCheckedChange = onHighBloomChange,
-            visible = lyricsStyle.shaded,
-        ),
-        switchItem(
-            key = "Romanisation as the main line",
-            title = stringResource(R.string.settings_romanize_as_main),
-            description = stringResource(R.string.settings_romanize_as_main_desc),
-            icon = painterResource(R.drawable.lyrics),
-            checked = romanizeAsMain,
-            onCheckedChange = onRomanizeAsMainChange,
-        ),
-        switchItem(
-            key = "Floating lyrics overlay bubble",
-            title = stringResource(R.string.settings_floating_lyrics),
-            description = stringResource(R.string.settings_floating_lyrics_desc),
-            detail = stringResource(R.string.settings_floating_lyrics_detail),
-            icon = painterResource(R.drawable.lyrics),
-            checked = floatingLyrics,
-            onCheckedChange = onFloatingLyricsChange,
-        ),
-    )
-}
-
-// how sharp youtube videos play, on the cover and in the full video mode
-@Composable
-private fun videoQualityItem(): SettingsItem {
-    val (quality, onQuality) = rememberEnumPreference(VideoQualityKey, defaultValue = VideoQuality.AUTO)
-    val overlay = LocalZoomOutOverlayState.current
-    val title = stringResource(R.string.video_quality)
-    return SettingsItem(
-        title = { Text(title) },
-        highlightKey = "Video quality",
-        descriptionText = videoQualityName(quality),
-        detail = stringResource(R.string.video_quality_settings_desc),
-        searchText = title,
-        icon = rememberVectorPainter(Icons.Rounded.HighQuality),
-        iconShape = CircleShape,
-        onClick = { overlay.showVideoQualitySheet(selected = quality, onSelect = onQuality) },
-    )
-}
-
-@Composable
-private fun otherItems(): List<SettingsItem> {
-    val (hideDescriptions, onHideDescriptions) = rememberPreference(HideSettingsDescriptionsKey, defaultValue = true)
-    return listOf(
-        switchItem(
-            key = "Disable description on settings",
-            title = stringResource(R.string.settings_hide_descriptions),
-            description = stringResource(R.string.settings_hide_descriptions_desc),
-            icon = painterResource(R.drawable.info),
-            checked = hideDescriptions,
-            onCheckedChange = onHideDescriptions,
-        ),
-    )
-}
-
-// settings that live on another page but people look for here
+// most of what used to sit here moved to its own page, these keep it a tap away for anyone who still looks here
 @Composable
 private fun relatedItems(navController: NavController): List<SettingsItem> = listOf(
-    SettingsItem(
-        title = { Text(stringResource(R.string.audiopass_hub_title)) },
-        highlightKey = "Audio Pass output usb dac",
-        descriptionText = stringResource(R.string.settings_audio_pass_desc),
-        searchText = stringResource(R.string.audiopass_hub_title),
-        icon = rememberVectorPainter(Icons.Rounded.GraphicEq),
-        iconShape = CircleShape,
-        onClick = { navController.navigate("audio_pass") },
-        trailingContent = {
-            Icon(
-                painter = painterResource(R.drawable.navigate_next),
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.5f),
-                modifier = Modifier.size(20.dp),
-            )
-        },
+    linkItem(
+        key = "Playback page",
+        title = stringResource(R.string.settings_playback_category),
+        description = stringResource(R.string.settings_playback_link_desc),
+        icon = painterResource(R.drawable.play),
+        onClick = { navController.navigate(PlaybackSettingsRoute) },
     ),
-    SettingsItem(
-        title = { Text(stringResource(R.string.settings_hide_top_bar)) },
-        highlightKey = "Hide Top Bar status bar player",
-        descriptionText = stringResource(R.string.settings_hide_top_bar_desc),
-        searchText = stringResource(R.string.settings_hide_top_bar),
-        icon = painterResource(R.drawable.tune),
-        iconShape = CircleShape,
-        onClick = {
-            SettingsHighlight.pending = TopBarHighlightKey
-            navController.navigate("customisation_settings")
-        },
-        trailingContent = {
-            Icon(
-                painter = painterResource(R.drawable.navigate_next),
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.5f),
-                modifier = Modifier.size(20.dp),
-            )
-        },
+    linkItem(
+        key = "Now playing page",
+        title = stringResource(R.string.settings_now_playing),
+        description = stringResource(R.string.settings_now_playing_link_desc),
+        icon = painterResource(R.drawable.lyrics),
+        onClick = { navController.navigate(NowPlayingSettingsRoute) },
     ),
-    SettingsItem(
-        title = { Text(stringResource(R.string.settings_hide_bottom_bar)) },
-        highlightKey = "Hide Bottom Bar navigation bar player",
-        descriptionText = stringResource(R.string.settings_hide_bottom_bar_desc),
-        searchText = stringResource(R.string.settings_hide_bottom_bar),
-        icon = painterResource(R.drawable.tune),
-        iconShape = CircleShape,
-        onClick = {
-            SettingsHighlight.pending = BottomBarHighlightKey
-            navController.navigate("customisation_settings")
-        },
-        trailingContent = {
-            Icon(
-                painter = painterResource(R.drawable.navigate_next),
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.5f),
-                modifier = Modifier.size(20.dp),
-            )
-        },
-    ),
-)
-
-// what customize answers to when a search or the related row asks for its top bar card
-const val TopBarHighlightKey = "Top Bar on player"
-
-// the same for its bottom bar card
-const val BottomBarHighlightKey = "Bottom Bar on player"
-
-// a row title with its value on the right, for the rows with a slider under them
-@Composable
-private fun ValueTitle(title: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(title)
-        Text(
-            text = value,
-            fontFamily = InterFontFamily,
-            fontWeight = FontWeight.Bold,
-            fontSize = 13.sp,
-            color = Color.White.copy(alpha = 0.70f),
-        )
-    }
-}
-
-// one switch row: key is the english name search results point at, subOptionOf tucks it under a parent that's on
-private fun switchItem(
-    key: String,
-    title: String,
-    description: String,
-    icon: androidx.compose.ui.graphics.painter.Painter,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    detail: String? = null,
-    subOptionOf: Boolean? = null,
-    visible: Boolean = true,
-) = SettingsItem(
-    title = { Text(title) },
-    highlightKey = key,
-    searchText = title,
-    descriptionText = description,
-    detail = detail,
-    icon = icon,
-    iconShape = CircleShape,
-    isVisible = visible && subOptionOf != false,
-    isSubOption = subOptionOf != null,
-    onClick = { onCheckedChange(!checked) },
-    trailingContent = {
-        AppSwitch(checked = checked, onCheckedChange = onCheckedChange, enabled = subOptionOf != false)
-    },
 )

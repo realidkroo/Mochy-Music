@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
  */
 enum class LibraryShelfKind(val key: String, val label: String) {
     /** Downloads and files imported from the phone. */
-    Local("local", "Local"),
+    Local("local", "Local & downloaded"),
 
     /** Songs the player kept whole in its cache while streaming them. */
     Cached("cached", "Cached"),

@@ -1,5 +1,6 @@
 package com.mochyy.mochymusic.ui.component
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -28,6 +29,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.onClick
@@ -51,12 +53,13 @@ import com.mochyy.mochymusic.R
  * take their colours from the caller so they can follow the artwork palette rather than the
  * device theme.
  */
-enum class ButtonStyle(val displayName: String) {
-    DEFAULT("Default"),
-    M3_EXPRESSIVE("Material 3 Expressive"),
-    M3_EXPRESSIVE_PLAIN("Material 3 Expressive - no label"),
-    M3_TONAL("Material 3 tonal"),
-    LEGACY("Android legacy"),
+/** [displayName] is the plain English name; the UI shows [labelRes], which follows the app language. */
+enum class ButtonStyle(val displayName: String, @StringRes val labelRes: Int) {
+    DEFAULT("Default", R.string.pc_style_default),
+    M3_EXPRESSIVE("Material 3 Expressive", R.string.pc_button_m3_expressive),
+    M3_EXPRESSIVE_PLAIN("Material 3 Expressive - no label", R.string.pc_button_m3_expressive_plain),
+    M3_TONAL("Material 3 tonal", R.string.pc_button_m3_tonal),
+    LEGACY("Android legacy", R.string.pc_button_legacy),
 }
 
 /**
@@ -241,14 +244,14 @@ private fun M3Transport(
         ) {
             Icon(
                 painter = painterResource(if (isPlaying) R.drawable.pause else R.drawable.play),
-                contentDescription = if (isPlaying) "Pause" else "Play",
+                contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
                 tint = if (tonal) colors.onContainer else colors.onAccent,
                 modifier = Modifier.size(22.dp),
             )
             if (showLabel) {
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = if (isPlaying) "Pause" else "Play",
+                    text = stringResource(if (isPlaying) R.string.pause else R.string.play),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Medium,
                     color = if (tonal) colors.onContainer else colors.onAccent,

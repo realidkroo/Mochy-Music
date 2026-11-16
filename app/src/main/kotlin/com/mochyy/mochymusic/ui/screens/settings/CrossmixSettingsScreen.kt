@@ -95,7 +95,7 @@ fun CrossmixSettingsScreen(navController: NavController) {
 
     SubSettingsScaffold(
         title = stringResource(R.string.transition_title),
-        backLabel = "Audio Lab",
+        backLabel = stringResource(R.string.xmix_back),
         onBack = { navController.navigateUp() },
     ) {
         TransitionHeading(stringResource(R.string.transition_music_heading))
@@ -159,8 +159,8 @@ fun CrossmixSettingsScreen(navController: NavController) {
         LabCollapsible(selectedMode != CrossmixMode.OFF) {
             LabCard(padding = 10.dp) {
                 LabToggleRow(
-                    title = "Keep gapless albums intact",
-                    subtitle = "Album tracks that run straight into each other play through unmixed",
+                    title = stringResource(R.string.xmix_gapless),
+                    subtitle = stringResource(R.string.xmix_gapless_desc),
                     checked = disableForGapless,
                     onCheckedChange = onDisableForGaplessChange,
                 )

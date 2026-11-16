@@ -36,7 +36,7 @@
     <string name="settings_customisation_category">Customisation</string>
     <string name="settings_audio_lab_category">Audio Lab</string>
     <string name="settings_modules_category">Modules</string>
-    <string name="settings_recommended_item">Recommended item</string>
+    <string name="settings_recommended_item">Recommended for you</string>
     <string name="settings_nothing_matches">Nothing matches “%1$s”.</string>
     <string name="settings_pane_hint">Pick a setting on the left to open it here.</string>
     <string name="settings_search_placeholder">Search settings</string>
@@ -50,7 +50,7 @@
     <string name="home_your_playlists">Your playlists</string>
     <string name="profile_label">Profile</string>
     <string name="library_tab_all">All</string>
-    <string name="library_tab_local">Local</string>
+    <string name="library_tab_local">Local &amp; downloaded</string>
     <string name="library_tab_imported">Imported</string>
     <string name="library_empty_import">Nothing here yet. Import your music above to fill your library.</string>
     <string name="library_pinned">Pinned</string>

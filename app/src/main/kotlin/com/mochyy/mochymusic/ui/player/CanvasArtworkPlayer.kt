@@ -244,13 +244,13 @@ fun CanvasArtworkPlayer(
     val sampling = onFrameColors != null
     LaunchedEffect(isVideoReady, sampling, shouldPlay) {
         if (!isVideoReady || !sampling) return@LaunchedEffect
-        val sample = android.graphics.Bitmap.createBitmap(CanvasSamplePx, CanvasSamplePx, android.graphics.Bitmap.Config.ARGB_8888)
+        val sampler = com.mochyy.mochymusic.ui.player.video.VideoFrameSampler(CanvasSamplePx)
         val pixels = IntArray(CanvasSamplePx * CanvasSamplePx)
         // a paused canvas never changes, so it's read once and left alone
         do {
             val view = aspectRatioFrameLayout.getChildAt(0) as? TextureView
-            if (view != null && view.isAvailable && runCatching { view.getBitmap(sample) }.isSuccess) {
-                sample.getPixels(pixels, 0, CanvasSamplePx, 0, 0, CanvasSamplePx, CanvasSamplePx)
+            if (sampler.read(session.frameSurface, view)) {
+                sampler.bitmap.getPixels(pixels, 0, CanvasSamplePx, 0, 0, CanvasSamplePx, CanvasSamplePx)
                 currentOnFrameColors?.invoke(
                     com.mochyy.mochymusic.ui.player.flagship.ambientTones(pixels, CanvasSamplePx, CanvasSamplePx)
                 )
@@ -309,7 +309,10 @@ internal class CanvasVideoSession(
 ) {
     private val handler = CanvasVideoThread.handler
     private var player: ExoPlayer? = null
-    private var surface: Surface? = null
+    @Volatile private var surface: Surface? = null
+
+    // what the decoder draws into, for reading its colours off the main thread
+    val frameSurface: Surface? get() = surface
 
     init {
         handler.post {

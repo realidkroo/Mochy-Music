@@ -47,6 +47,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -187,6 +188,14 @@ fun AlbumScreen(
         featuredArtistsOf(filteredSongs.flatMap { it.artists }, id = { it.id }, name = { it.name })
     }
     val mainArtistName = album?.artists?.firstOrNull()?.name
+    // the shelves are built outside composition, so their titles are read here first
+    val moreByArtistTitle = if (mainArtistName != null) {
+        stringResource(R.string.album_more_by_artist, mainArtistName)
+    } else {
+        stringResource(R.string.album_more_by_this_artist)
+    }
+    val otherVersionsTitle = stringResource(R.string.album_other_versions)
+    val releasesForYouTitle = stringResource(R.string.album_releases_for_you)
 
     fun play(startIndex: Int = 0, shuffled: Boolean = false) {
         val current = album ?: return
@@ -272,9 +281,10 @@ fun AlbumScreen(
                 description = description?.takeIf { it.isNotBlank() },
                 stats = albumStats(
                     year = album.album.year,
-                    songCount = filteredSongs.size,
+                    songCountText = pluralStringResource(R.plurals.n_song, filteredSongs.size, filteredSongs.size),
                     totalSeconds = totalSeconds,
                     explicit = album.album.explicit,
+                    explicitTag = stringResource(R.string.album_explicit_tag),
                     format = format?.let { f ->
                         val codec = f.codecs.substringBefore('.').uppercase().ifBlank { null }
                         listOfNotNull(codec, (f.bitrate / 1000).takeIf { it > 0 }?.let { "$it kbps" }).joinToString(" ")
@@ -384,7 +394,7 @@ fun AlbumScreen(
 
         albumShelf(
             key = "more_by_artist",
-            title = if (mainArtistName != null) "More by $mainArtistName" else "More by this artist",
+            title = moreByArtistTitle,
             albums = moreByArtist,
             onTitleClick = album.artists.firstOrNull()?.id?.let { id -> { navController.navigate("artist/$id") } },
             navController = navController,
@@ -397,7 +407,7 @@ fun AlbumScreen(
         )
         albumShelf(
             key = "other_versions",
-            title = "Other versions",
+            title = otherVersionsTitle,
             albums = otherVersions,
             navController = navController,
             onLongClick = { item ->
@@ -409,7 +419,7 @@ fun AlbumScreen(
         )
         albumShelf(
             key = "releases_for_you",
-            title = "Releases for you",
+            title = releasesForYouTitle,
             albums = releasesForYou,
             navController = navController,
             onLongClick = { item ->
@@ -427,14 +437,14 @@ fun AlbumScreen(
 }
 
 /** "2016 · 14 songs · 52m · Explicit · OPUS 160 kbps" */
-private fun albumStats(year: Int?, songCount: Int, totalSeconds: Int, explicit: Boolean, format: String?): String {
+private fun albumStats(year: Int?, songCountText: String, totalSeconds: Int, explicit: Boolean, explicitTag: String, format: String?): String {
     val hours = totalSeconds / 3600
     val minutes = (totalSeconds % 3600) / 60
     return listOfNotNull(
         year?.toString(),
-        "$songCount ${if (songCount == 1) "song" else "songs"}",
+        songCountText,
         (if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m").takeIf { totalSeconds > 0 },
-        "Explicit".takeIf { explicit },
+        explicitTag.takeIf { explicit },
         format?.ifBlank { null },
     ).joinToString(" · ")
 }
@@ -493,7 +503,7 @@ private fun AlbumRetry(onRetry: () -> Unit) {
             .padding(top = 24.dp)
     ) {
         Text(
-            text = "Couldn't load this album. Tap to try again",
+            text = stringResource(R.string.album_load_failed),
             style = PlaylistStatsStyle,
             color = Color.White.copy(alpha = 0.7f),
             modifier = Modifier

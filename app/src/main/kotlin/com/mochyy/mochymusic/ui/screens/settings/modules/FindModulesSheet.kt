@@ -74,6 +74,48 @@ fun PopupSheetState.showFindModulesSheet(viewModel: ModulesViewModel, onAdded: (
     }
 }
 
+/** a module that's already been fetched and checked, from the module browser: the same last yes a pasted link gets */
+fun PopupSheetState.showAddCheckedSheet(ready: LinkCheck.Ready, viewModel: ModulesViewModel, onAdded: (String) -> Unit) {
+    var sheet: PopupSheetHandle? = null
+    sheet = showWithHandle {
+        AddCheckedContent(
+            ready = ready,
+            viewModel = viewModel,
+            onAdded = { id ->
+                sheet?.dismiss()
+                onAdded(id)
+            },
+            onCancel = { sheet?.dismiss() },
+        )
+    }
+}
+
+@Composable
+private fun AddCheckedContent(ready: LinkCheck.Ready, viewModel: ModulesViewModel, onAdded: (String) -> Unit, onCancel: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var adding by remember { mutableStateOf(false) }
+    var problem by remember { mutableStateOf<String?>(null) }
+    Column(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+        ConfirmAdd(
+            ready = ready,
+            adding = adding,
+            onAdd = {
+                adding = true
+                scope.launch {
+                    val id = viewModel.install(ready)
+                    if (id != null) return@launch onAdded(id)
+                    // only a zip's own code can fail here
+                    adding = false
+                    problem = context.getString(R.string.modules_code_broken)
+                }
+            },
+            onCancel = onCancel,
+        )
+        problem?.let { ProblemText(it) }
+    }
+}
+
 @Composable
 private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) -> Unit) {
     val context = LocalContext.current

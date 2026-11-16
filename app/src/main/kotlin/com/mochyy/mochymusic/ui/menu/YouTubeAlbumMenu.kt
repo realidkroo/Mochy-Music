@@ -428,7 +428,7 @@ fun YouTubeAlbumMenu(
                     Material3MenuItemData(
                         title = {
                             Text(
-                                text = if (isPinned) "Unpin from library" else "Pin to library"
+                                text = stringResource(if (isPinned) R.string.unpin_from_speed_dial else R.string.pin_to_speed_dial)
                             )
                         },
                         icon = {

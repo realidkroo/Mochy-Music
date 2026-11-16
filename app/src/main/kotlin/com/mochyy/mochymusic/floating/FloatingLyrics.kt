@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import android.view.View
+import android.widget.Toast
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -13,12 +14,16 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import com.mochyy.mochymusic.MainActivity
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.car.CarLyricsSource
 import com.mochyy.mochymusic.constants.FloatingLyricsKey
 import com.mochyy.mochymusic.constants.FloatingLyricsXKey
 import com.mochyy.mochymusic.constants.FloatingLyricsYKey
 import com.mochyy.mochymusic.db.MusicDatabase
+import com.mochyy.mochymusic.db.entities.LyricsEntity
+import com.mochyy.mochymusic.lyrics.LyricsTranslationHelper
 import com.mochyy.mochymusic.models.MediaMetadata
+import com.mochyy.mochymusic.ui.player.LineReading
 import com.mochyy.mochymusic.utils.dataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +52,7 @@ class FloatingLyrics(
 ) {
     private val appVisible = MutableStateFlow(true)
 
-    // dropped on the cross: hidden until mochy is opened again
+    // dropped on close: hidden until mochy is opened again
     private val dismissed = MutableStateFlow(false)
     private val state = PillState { player.value }
     private var job: Job? = null
@@ -60,9 +65,16 @@ class FloatingLyrics(
         if (visible) dismissed.value = false
     }
 
+    // google's translation of the last song, so the pill coming back doesn't ask for it again
+    private var translationMemo: Pair<String, List<String?>>? = null
+
     private val host = object : PillHost {
-        override fun setWindowExpanded(expanded: Boolean) {
-            window?.setExpanded(expanded)
+        override fun reserveFrame(shape: PillShape, slots: Int) {
+            window?.reserveFrame(shape, slots)
+        }
+
+        override fun fitFrame(shape: PillShape, slots: Int) {
+            window?.fitFrame(shape, slots)
         }
 
         override fun openApp() {
@@ -77,9 +89,28 @@ class FloatingLyrics(
             val current = player.value ?: return
             if (current.isPlaying) current.pause() else current.play()
         }
+
+        override fun seekTo(positionMs: Long) {
+            player.value?.seekTo(positionMs)
+        }
     }
 
     private val windowListener = object : PillWindowListener {
+        override fun onDocked(end: Boolean) {
+            state.dockEnd = end
+        }
+
+        override fun onDragStarted() {
+            state.expanded = false
+            state.tucked = true
+            state.lifted = true
+        }
+
+        override fun onSettling() {
+            state.tucked = false
+            state.lifted = false
+        }
+
         override fun onMoved(x: Int, y: Int) {
             scope.launch {
                 context.dataStore.edit {
@@ -89,8 +120,11 @@ class FloatingLyrics(
             }
         }
 
-        override fun onDismissed() {
+        override fun onDropped(drop: PillDrop) {
             dismissed.value = true
+            if (drop != PillDrop.NEVER) return
+            scope.launch { context.dataStore.edit { it[FloatingLyricsKey] = false } }
+            Toast.makeText(context, R.string.floating_lyrics_turned_off, Toast.LENGTH_LONG).show()
         }
 
         override fun onTouched() {
@@ -137,6 +171,8 @@ class FloatingLyrics(
         window?.remove()
         window = null
         state.expanded = false
+        state.tucked = false
+        state.lifted = false
     }
 
     // keeps the pill's song, lyrics and play state current for as long as it's on screen; nothing runs while it's hidden
@@ -145,23 +181,59 @@ class FloatingLyrics(
         song.distinctUntilChangedBy { it?.id }.collectLatest { metadata ->
             state.song = metadata
             state.script = null
-            if (metadata == null) return@collectLatest
-            val artist = metadata.artists.joinToString { it.name }
-            val appRtl = context.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
-            val offset = database.song(metadata.id).map { it?.song?.lyricsOffset ?: 0 }
-            // follows the saved lyrics, so a fix or a new source in the app reaches the pill straight away
-            combine(database.lyrics(metadata.id), offset) { lyrics, shift -> lyrics?.lyrics to shift }
-                .distinctUntilChanged()
-                .collectLatest { (raw, shift) ->
-                    state.offsetMs = shift
-                    if (raw == null) {
-                        // nothing saved yet: fetched once and saved, and the saved copy comes back through here
-                        source.fetch(metadata)
-                        return@collectLatest
-                    }
-                    state.script = withContext(Dispatchers.Default) { PillScript.build(raw, metadata.title, artist, appRtl) }
-                }
+            if (metadata != null) followLyrics(metadata)
         }
+    }
+
+    // one song's cover colour and lyrics, both dropped the moment the song changes
+    private suspend fun followLyrics(metadata: MediaMetadata) = coroutineScope {
+        val artist = metadata.artists.joinToString { it.name }
+        val appRtl = context.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        // the bubble keeps the last song's colour until this one's is read
+        launch { state.accent = coverAccent(context, metadata.thumbnailUrl) ?: state.accent }
+        val offset = database.song(metadata.id).map { it?.song?.lyricsOffset ?: 0 }
+        // follows the saved lyrics, so a fix, a new source or a saved translation in the app reaches the pill straight away
+        combine(
+            database.lyrics(metadata.id),
+            offset,
+            readingSettings(context),
+            LyricsTranslationHelper.translationOn,
+        ) { saved, shift, settings, translate -> SongLyrics(saved, shift, settings, translate) }
+            .distinctUntilChanged()
+            .collectLatest { found ->
+                state.offsetMs = found.shift
+                val raw = found.saved?.lyrics
+                if (raw == null) {
+                    // nothing saved yet: fetched once and saved, and the saved copy comes back through here
+                    source.fetch(metadata)
+                    return@collectLatest
+                }
+                showLyrics(metadata.id, raw, metadata.title, artist, appRtl, found)
+            }
+    }
+
+    // the plain lines go up first; the romanisation and then the translation swap in as each is ready
+    private suspend fun showLyrics(songId: String, raw: String, title: String, artist: String, appRtl: Boolean, found: SongLyrics) {
+        val lines = withContext(Dispatchers.Default) { PillScript.lines(raw) }
+        val plain = withContext(Dispatchers.Default) { PillScript.build(lines, title, artist, appRtl) }
+        // after a song's first lines, its rows stay up until the new ones are ready, so a setting change doesn't shrink the bubble and grow it back
+        if (state.script == null || !plain.sung) state.script = plain
+        if (!plain.sung) return
+        val settings = found.settings
+        val withReadings: suspend (List<LineReading?>, List<String?>) -> PillScript = { romanized, translated ->
+            withContext(Dispatchers.Default) {
+                PillScript.build(lines, title, artist, appRtl, PillReadings(romanized, translated, settings.romanizedAsMain))
+            }
+        }
+        val romanized = romanizedLines(lines, settings)
+        val key = "$songId|${settings.language}|${settings.sourceLanguage}|${settings.mode}|${found.saved?.translatedLyrics.hashCode()}"
+        val remembered = translationMemo?.takeIf { found.translate && it.first == key }?.second
+        if (remembered == null) state.script = if (romanized == null) plain else withReadings(romanized, emptyList())
+        if (!found.translate) return
+        val translated = remembered
+            ?: translatedLines(lines, found.saved, settings)?.also { translationMemo = key to it }
+            ?: return
+        state.script = withReadings(romanized.orEmpty(), translated)
     }
 
     // a crossfade hands over to a new player, so the listener moves with it
@@ -193,3 +265,11 @@ class FloatingLyrics(
     }
 }
 
+
+// everything the pill's lyrics are built from; a change to any of it lays them out again
+private data class SongLyrics(
+    val saved: LyricsEntity?,
+    val shift: Int,
+    val settings: ReadingSettings,
+    val translate: Boolean,
+)

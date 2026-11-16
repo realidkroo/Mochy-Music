@@ -25,6 +25,7 @@ import com.mochyy.mochymusic.lyrics.VideoLyricsSync
 import com.mochyy.mochymusic.extensions.getCurrentQueueIndex
 import com.mochyy.mochymusic.extensions.getQueueWindows
 import com.mochyy.mochymusic.extensions.isAutoplay
+import com.mochyy.mochymusic.extensions.isManualQueued
 import com.mochyy.mochymusic.extensions.withAutoplay
 import com.mochyy.mochymusic.extensions.metadata
 import com.mochyy.mochymusic.models.MediaMetadata
@@ -249,6 +250,7 @@ class PlayerConnection(
             artworkUri = mediaItem.mediaMetadata.artworkUri,
             duration = window.durationMs,
             isAutoplay = mediaItem.isAutoplay,
+            isManual = mediaItem.isManualQueued,
         )
     }
 
