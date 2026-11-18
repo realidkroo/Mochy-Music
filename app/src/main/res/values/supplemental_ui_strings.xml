@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="supplemental_support_enjoying">Enjoying Mochy Music?</string>
+    <string name="supplemental_support_title">Support Mochy’s development!</string>
+    <string name="supplemental_support_body">thanks for trying it out! btw, Mochy Music will always be free, forever yours! &lt;3\n\nIt would be very useful for us if you support the developer, no matter how small it is!! &lt;3\ngiving a star to Mochy’s repo is already enough. and thanks again!</string>
+    <string name="supplemental_support_donate">Donate Us!</string>
+    <string name="supplemental_support_star">Star the repo!</string>
+    <string name="supplemental_support_dismiss">get these beggar outta here, No!</string>
+    <string name="supplemental_coming_soon">Coming Soon</string>
+    <string name="supplemental_coming_soon_detail">%1$s is still a work in progress.</string>
+    <string name="supplemental_adding">Adding…</string>
+    <string name="supplemental_search_all_songs">Search all songs</string>
+    <string name="supplemental_playlist_recommended">Recommended for this playlist</string>
+    <string name="supplemental_in_library">In library</string>
+    <string name="supplemental_online_search_failed">Couldn\'t search online. Check your connection and try again.</string>
+    <string name="supplemental_search_nothing">Nothing found for “%1$s”.</string>
+    <string name="supplemental_playlist_suggestions_empty">Add a few songs first and we\'ll suggest more that fit.</string>
+    <string name="supplemental_playlist_suggestions_failed">No suggestions right now. Check your connection, or search for a song above.</string>
+    <string name="supplemental_library_search_empty">Your library is empty. Search above to find any song.</string>
+    <string name="supplemental_add_songs_failed">Couldn\'t add those songs. Try again.</string>
+    <string name="supplemental_update_personal">Update available, %1$s!</string>
+    <string name="supplemental_update_changes">What changed on %1$s</string>
+    <string name="supplemental_update_install_target">To Be Installed -</string>
+    <string name="supplemental_update_downloading">Downloading… %1$d%%</string>
+    <string name="supplemental_update_no_apk">No APK in this release</string>
+    <string name="supplemental_install_here">Install here</string>
+    <string name="supplemental_update_open_web">Open the web</string>
+    <string name="supplemental_update_snooze">no thanks remind me in 24 hour</string>
+    <string name="supplemental_install_permission">Allow \"Install unknown apps\" for mochy, then tap Install here again.</string>
+    <string name="supplemental_featured_playlist">Featured Playlist</string>
+    <string name="supplemental_featured_songs">Featured songs</string>
+    <string name="supplemental_artist_new_releases">New from them</string>
+    <string name="supplemental_nothing_here">Nothing to show here yet</string>
+    <string name="supplemental_start_of_line">START OF THE LINE</string>
+    <plurals name="supplemental_add_song_count">
+        <item quantity="one">Add %1$d song</item>
+        <item quantity="other">Add %1$d songs</item>
+    </plurals>
+    <string name="supplemental_artist_top_songs">Top %1$s songs</string>
+    <string name="supplemental_artist_category">%1$s %2$s</string>
+    <string name="supplemental_kind_songs">songs</string>
+    <string name="supplemental_kind_albums">albums</string>
+    <string name="supplemental_kind_videos">videos</string>
+    <string name="supplemental_kind_playlists">playlists</string>
+    <string name="supplemental_kind_artists">artists</string>
+    <string name="supplemental_count_songs">%1$s songs</string>
+    <string name="supplemental_count_albums">%1$s albums</string>
+    <string name="supplemental_count_videos">%1$s videos</string>
+    <string name="supplemental_count_playlists">%1$s playlists</string>
+    <string name="supplemental_count_artists">%1$s artists</string>
+    <string name="supplemental_items_retry">Couldn\'t load this page. Tap to try again</string>
+    <plurals name="supplemental_song_count">
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
+    </plurals>
+</resources>

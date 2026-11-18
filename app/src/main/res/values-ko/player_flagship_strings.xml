@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="flagship_output_speaker">내장 스피커</string>
+    <string name="flagship_output_wired">유선 헤드폰</string>
+    <string name="flagship_output_usb">USB 오디오</string>
+    <string name="flagship_output_bluetooth">Bluetooth</string>
+    <string name="flagship_output_hdmi">HDMI</string>
+    <string name="flagship_output_change">음악 재생 기기 변경</string>
+    <string name="flagship_play">재생</string>
+    <string name="flagship_pause">일시 중지</string>
+    <string name="flagship_next">다음 곡</string>
+    <string name="flagship_previous">이전 곡</string>
+    <string name="flagship_back_ten">10초 뒤로</string>
+    <string name="flagship_forward_ten">10초 앞으로</string>
+    <string name="flagship_lyrics">가사</string>
+    <string name="flagship_queue">재생 대기열</string>
+    <string name="flagship_repeat">반복</string>
+    <string name="flagship_volume">볼륨</string>
+    <string name="flagship_layout_three">이전, 재생, 다음</string>
+    <string name="flagship_layout_three_caption">주변 장식 없이 큰 버튼 3개 표시</string>
+    <string name="flagship_layout_ten">10초 이동 버튼 추가</string>
+    <string name="flagship_layout_ten_caption">양방향 10초 이동 버튼과 원형 재생 버튼</string>
+    <string name="flagship_layout_queue_repeat">대기열 및 반복 버튼 추가</string>
+    <string name="flagship_layout_queue_repeat_caption">바깥쪽에 대기열과 반복 버튼, 가운데에 원형 재생 버튼</string>
+</resources>

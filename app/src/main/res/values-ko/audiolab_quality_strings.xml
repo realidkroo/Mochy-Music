@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="aq_title_first">오디오</string>
+    <string name="aq_title_second">음질</string>
+    <string name="aq_nothing_on">활성화된 제공처 없음</string>
+    <string name="aq_turn_provider_on">제공처를 켜세요</string>
+    <string name="aq_youtube_tier">YouTube · %1$s</string>
+    <string name="aq_section_streaming">스트리밍</string>
+    <string name="aq_section_download">다운로드</string>
+    <string name="aq_section_provider">제공처</string>
+    <string name="aq_youtube_status_on">다른 제공처에 없는 곡을 재생합니다</string>
+    <string name="aq_youtube_status_off_none">꺼짐 · 다른 제공처도 모두 꺼져 있어 곡을 재생할 수 없습니다</string>
+    <string name="aq_youtube_status_off">꺼짐 · 다른 제공처에 없는 곡은 건너뜁니다</string>
+    <string name="aq_quality_auto">자동</string>
+    <string name="aq_quality_high">높음</string>
+    <string name="aq_quality_medium">중간</string>
+    <string name="aq_quality_low">낮음</string>
+    <string name="aq_quality_lossless">무손실</string>
+    <string name="aq_desc_auto">Wi-Fi에서는 높음, 모바일 데이터에서는 중간</string>
+    <string name="aq_desc_high">제공처의 최고 음질로, 압축은 적고 데이터 사용량은 많습니다</string>
+    <string name="aq_desc_medium">약 128 kbps로 데이터를 절약합니다</string>
+    <string name="aq_desc_low">느린 연결용으로 가장 작은 스트림을 사용합니다</string>
+    <string name="aq_fmt_adaptive">적응형</string>
+    <string name="aq_fmt_high">~160 kbps · Opus</string>
+    <string name="aq_fmt_medium">~128 kbps · AAC</string>
+    <string name="aq_fmt_low">~50–70 kbps · Opus</string>
+    <string name="aq_desc_monochrome_lossless">Monochrome에서 제공하는 CD 음질 이상의 FLAC</string>
+    <string name="aq_module_settings">%1$s 설정</string>
+    <string name="aq_dl_desc_high">YouTube 최고 음질: ~160 kbps Opus</string>
+    <string name="aq_dl_desc_medium">약 128 kbps로 저장 공간을 절반만 사용합니다</string>
+    <string name="aq_dl_desc_low">가장 작은 파일: ~50–70 kbps</string>
+    <string name="aq_status_sign_in">로그인하여 재생하세요</string>
+    <string name="aq_status_sign_in_again">다시 로그인</string>
+    <string name="aq_status_on">켜짐</string>
+    <string name="aq_status_off_tap">꺼짐 · 눌러서 켜기</string>
+    <string name="aq_status_not_installed">설치되지 않음</string>
+</resources>

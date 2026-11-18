@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.mediarouter.media.MediaRouteSelector
 import androidx.mediarouter.media.MediaRouter
@@ -143,7 +144,7 @@ fun CastButton(
                     .clip(RoundedCornerShape(20.dp))
                     .clickable {
                     if (currentMetadata == null && !isCasting) {
-                        Toast.makeText(context, "Play a song first to cast", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.platform_cast_play_first), Toast.LENGTH_SHORT).show()
                         return@clickable
                     }
 
@@ -176,7 +177,7 @@ fun CastButton(
                     painter = painterResource(
                         if (isCasting) R.drawable.cast_connected else R.drawable.cast
                     ),
-                    contentDescription = if (isCasting) "Stop casting" else "Cast",
+                    contentDescription = stringResource(if (isCasting) R.string.platform_cast_stop else R.string.ps_device_cast),
                     colorFilter = ColorFilter.tint(
                         if (isCasting) MaterialTheme.colorScheme.primary else tintColor
                     ),

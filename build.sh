@@ -1,6 +1,15 @@
 #!/bin/bash
 set -e
 
+# BSD sed needs an empty backup suffix; GNU sed does not.
+sed_in_place() {
+    if [[ "$OSTYPE" == darwin* ]]; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
+}
+
 # build defaults
 BUILD_ATTEMPT_FILE=".build_number"
 if [ ! -f "$BUILD_ATTEMPT_FILE" ]; then
@@ -24,7 +33,7 @@ BETA_NOTICE_FILE="app/src/main/kotlin/com/mochyy/mochymusic/ui/screens/beta/Beta
 cleanup() {
     # a nightly's fourth number only lives for its own build
     if [ -n "$NIGHTLY_NUMBER" ] && [ -n "$BASE_VERSION" ] && [ -n "$BUILD_ATTEMPT" ]; then
-        sed -i '' "s/versionName = \".*\"/versionName = \"$BASE_VERSION build#$BUILD_ATTEMPT\"/g" app/build.gradle.kts
+        sed_in_place "s/versionName = \".*\"/versionName = \"$BASE_VERSION build#$BUILD_ATTEMPT\"/g" app/build.gradle.kts
     fi
     if [ "$IS_CUSTOM_BUILD" = true ]; then
         echo ""
@@ -152,7 +161,7 @@ if [ "$SKIP_BUILD" = false ]; then
 
     if [ -n "$CHANGE_VERSION" ]; then
         echo "Changing base app version to $CHANGE_VERSION..."
-        sed -i '' "s/versionName = \".*\"/versionName = \"$CHANGE_VERSION\"/g" app/build.gradle.kts
+        sed_in_place "s/versionName = \".*\"/versionName = \"$CHANGE_VERSION\"/g" app/build.gradle.kts
     fi
 
     # read base version
@@ -166,7 +175,7 @@ if [ "$SKIP_BUILD" = false ]; then
         GRADLE_FLAGS="-Pnightly=true"
         echo "Building nightly $VERSION_LABEL..."
     fi
-    sed -i '' "s/versionName = \".*\"/versionName = \"$VERSION_LABEL build#$BUILD_ATTEMPT\"/g" app/build.gradle.kts
+    sed_in_place "s/versionName = \".*\"/versionName = \"$VERSION_LABEL build#$BUILD_ATTEMPT\"/g" app/build.gradle.kts
 
     # update beta notice
     if [ -f "$BETA_NOTICE_FILE" ]; then
@@ -174,10 +183,10 @@ if [ "$SKIP_BUILD" = false ]; then
         if [ -n "$CUSTOM_DATE" ]; then
             NOTICE_TITLE="mochy build #$BUILD_ATTEMPT $VARIANT ($CUSTOM_DATE)"
         fi
-        sed -i '' -e "s/text = \"Mochy DEV PREV\"/text = \"$NOTICE_TITLE\"/g" "$BETA_NOTICE_FILE"
-        sed -i '' -e "s/text = \"mochy build #[0-9]* .*\"/text = \"$NOTICE_TITLE\"/g" "$BETA_NOTICE_FILE"
-        sed -i '' -e "s/text = \"[0-9]*\.[0-9]*\.[0-9]*DEV\"/text = \"$BASE_VERSION build#$BUILD_ATTEMPT\"/g" "$BETA_NOTICE_FILE"
-        sed -i '' -e "s/text = \"[0-9]*\.[0-9]*\.[0-9]* build#[0-9]*\"/text = \"$BASE_VERSION build#$BUILD_ATTEMPT\"/g" "$BETA_NOTICE_FILE"
+        sed_in_place -e "s/text = \"Mochy DEV PREV\"/text = \"$NOTICE_TITLE\"/g" "$BETA_NOTICE_FILE"
+        sed_in_place -e "s/text = \"mochy build #[0-9]* .*\"/text = \"$NOTICE_TITLE\"/g" "$BETA_NOTICE_FILE"
+        sed_in_place -e "s/text = \"[0-9]*\.[0-9]*\.[0-9]*DEV\"/text = \"$BASE_VERSION build#$BUILD_ATTEMPT\"/g" "$BETA_NOTICE_FILE"
+        sed_in_place -e "s/text = \"[0-9]*\.[0-9]*\.[0-9]* build#[0-9]*\"/text = \"$BASE_VERSION build#$BUILD_ATTEMPT\"/g" "$BETA_NOTICE_FILE"
     fi
 
     # select gradle task

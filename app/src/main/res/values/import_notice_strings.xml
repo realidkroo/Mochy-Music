@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="import_notice_channel">Music import</string>
+    <string name="import_notice_finished">Import finished</string>
+    <string name="import_notice_matched">Matched %1$d of %2$d songs</string>
+    <string name="import_notice_resync_failed">Couldn\'t re-sync “%1$s”. %2$s</string>
+    <plurals name="import_notice_added_missing">
+        <item quantity="one">Added %1$d new song to “%2$s”. %3$d more couldn\'t be found on YouTube Music</item>
+        <item quantity="other">Added %1$d new songs to “%2$s”. %3$d more couldn\'t be found on YouTube Music</item>
+    </plurals>
+    <plurals name="import_notice_added">
+        <item quantity="one">Added %1$d new song to “%2$s”</item>
+        <item quantity="other">Added %1$d new songs to “%2$s”</item>
+    </plurals>
+    <plurals name="import_notice_missing">
+        <item quantity="one">Couldn\'t find %1$d new song on YouTube Music</item>
+        <item quantity="other">Couldn\'t find %1$d new songs on YouTube Music</item>
+    </plurals>
+    <string name="import_notice_up_to_date">“%1$s” is up to date</string>
+    <string name="import_notice_many_added">New songs added: %1$d; playlists updated: %2$d</string>
+    <plurals name="import_notice_many_current">
+        <item quantity="one">Your %1$d imported playlist is up to date</item>
+        <item quantity="other">Your %1$d imported playlists are up to date</item>
+    </plurals>
+    <string name="import_notice_many_failed">Couldn\'t re-sync %1$s</string>
+    <string name="import_notice_preview_failed">Failed to preview CSV file</string>
+    <string name="media_info_copied">%1$s copied</string>
+    <string name="update_notice_available">Mochy %1$s is out</string>
+    <string name="update_notice_details">Tap to see what\'s new.</string>
+</resources>

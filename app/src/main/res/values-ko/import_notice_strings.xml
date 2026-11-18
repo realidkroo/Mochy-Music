@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="import_notice_channel">음악 가져오기</string>
+    <string name="import_notice_finished">가져오기 완료</string>
+    <string name="import_notice_matched">전체 %2$d곡 중 %1$d곡을 찾았습니다</string>
+    <string name="import_notice_resync_failed">“%1$s” 다시 동기화 실패. %2$s</string>
+    <plurals name="import_notice_added_missing">
+        <item quantity="other">“%2$s”에 새 곡 %1$d곡을 추가했습니다. 나머지 %3$d곡은 YouTube Music에서 찾지 못했습니다</item>
+    </plurals>
+    <plurals name="import_notice_added">
+        <item quantity="other">“%2$s”에 새 곡 %1$d곡을 추가했습니다</item>
+    </plurals>
+    <plurals name="import_notice_missing">
+        <item quantity="other">새 곡 %1$d곡을 YouTube Music에서 찾지 못했습니다</item>
+    </plurals>
+    <string name="import_notice_up_to_date">“%1$s” 재생목록은 최신 상태입니다</string>
+    <string name="import_notice_many_added">재생목록 %2$d개에 새 곡 %1$d곡을 추가했습니다</string>
+    <plurals name="import_notice_many_current">
+        <item quantity="other">가져온 재생목록 %1$d개가 최신 상태입니다</item>
+    </plurals>
+    <string name="import_notice_many_failed">다시 동기화하지 못했습니다: %1$s</string>
+    <string name="import_notice_preview_failed">CSV 파일을 미리 볼 수 없습니다</string>
+    <string name="media_info_copied">복사했습니다: %1$s</string>
+    <string name="update_notice_available">Mochy %1$s 업데이트가 있습니다</string>
+    <string name="update_notice_details">변경 사항을 확인하려면 누르세요.</string>
+</resources>

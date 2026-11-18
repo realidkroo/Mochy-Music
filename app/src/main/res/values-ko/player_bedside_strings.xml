@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="bedside_close">플레이어 닫기</string>
+    <string name="bedside_unlock_to_close">잠금을 해제하여 플레이어 닫기</string>
+    <string name="bedside_more">더보기</string>
+    <string name="bedside_like">좋아요</string>
+    <string name="bedside_now_playing">지금 재생 중</string>
+    <string name="bedside_lock_ask_title">잠금 화면에 시계를 표시할까요?</string>
+    <string name="bedside_lock_ask_body">이 휴대전화는 권한을 허용해야 잠금 화면에 앱을 표시할 수 있습니다. 다음 화면에서 \"잠금 화면에 표시\"를 켜세요.</string>
+    <string name="bedside_lock_ask_allow">허용</string>
+    <string name="bedside_lock_ask_later">나중에</string>
+    <string name="bedside_sheet_title">침대 옆 시계</string>
+    <string name="bedside_rest_caption">조작하지 않을 때</string>
+    <string name="bedside_tint_off">흰색 유지</string>
+    <string name="bedside_tint_off_caption">색상이 바뀌지 않습니다</string>
+    <string name="bedside_tint_orange">따뜻한 주황색</string>
+    <string name="bedside_tint_orange_caption">눈이 편안하도록 전체를 부드러운 주황색으로 표시합니다</string>
+    <string name="bedside_tint_cover">커버 색상</string>
+    <string name="bedside_tint_cover_caption">전체를 곡의 커버 색상으로 표시합니다</string>
+    <string name="bedside_saver">화면 보호기</string>
+    <string name="bedside_saver_caption">화면 번인을 방지하도록 밝기를 낮추고 가끔 조금씩 이동합니다</string>
+    <string name="bedside_keep_awake">화면 켜짐 유지</string>
+    <string name="bedside_keep_awake_caption">이 화면이 열려 있는 동안 휴대전화가 절전 모드로 전환되지 않습니다</string>
+    <string name="bedside_lock_screen">잠금 화면에 표시</string>
+    <string name="bedside_lock_screen_caption">이 화면이 열린 상태에서 휴대전화를 잠그면 화면을 다시 켤 때도 표시됩니다</string>
+    <string name="bedside_lock_blocked">휴대전화가 이 기능을 차단하고 있습니다</string>
+    <string name="bedside_lock_blocked_caption">탭하여 Mochy의 \"잠금 화면에 표시\"를 켜세요</string>
+    <string name="bedside_lock_blocked_tag">해결</string>
+</resources>

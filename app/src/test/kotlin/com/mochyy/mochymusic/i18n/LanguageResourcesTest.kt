@@ -26,6 +26,46 @@ class LanguageResourcesTest {
         .filter { it.tagName in setOf("string", "plurals") && it.getAttribute("translatable") != "false" }
         .associateBy { it.getAttribute("name") }
 
+    @Test fun `Korean covers every default resource`() {
+        assertEquals(values(File(resDir, "values")).keys, values(File(resDir, "values-ko")).keys)
+    }
+
+    @Test fun `regional resources cannot hide existing Korean with English`() {
+        val korean = values(File(resDir, "values-ko"))
+        values(File(resDir, "values-ko-rKR")).forEach { (key, regional) ->
+            if (korean[key]?.textContent?.contains(Regex("[가-힣]")) == true) {
+                assertTrue("Regional resource hides Korean: $key", regional.textContent.contains(Regex("[가-힣]")))
+            }
+        }
+    }
+
+    @Test fun `Korean preserves default format arguments in each quantity`() {
+        val english = values(File(resDir, "values"))
+        val korean = values(File(resDir, "values-ko"))
+        val argument = Regex("%(?:\\d+\\$)?[-#+ 0,(<]*\\d*(?:\\.\\d+)?[a-zA-Z%]")
+        fun signature(element: Element) = argument.findAll(element.textContent).map { it.value }.sorted().toList()
+        (english.keys intersect korean.keys).forEach { key ->
+            val source = english.getValue(key)
+            val translated = korean.getValue(key)
+            assertEquals("Type of $key", source.tagName, translated.tagName)
+            if (source.tagName == "plurals") {
+                fun items(element: Element): Map<String, Element> {
+                    val children = element.childNodes
+                    return (0 until children.length).mapNotNull { children.item(it) as? Element }
+                        .associateBy { it.getAttribute("quantity") }
+                }
+                val original = items(source)
+                val localized = items(translated)
+                assertTrue("Missing other in $key", "other" in localized)
+                localized.forEach { (quantity, item) ->
+                    assertEquals("Formatting in $key/$quantity", signature(original[quantity] ?: original.getValue("other")), signature(item))
+                }
+            } else {
+                assertEquals("Formatting in $key", signature(source), signature(translated))
+            }
+        }
+    }
+
     @Test fun `picker lists exactly the app translated resource locales`() {
         val array = children(File(resDir, "values/app_language_tags.xml"))
             .single { it.tagName == "string-array" && it.getAttribute("name") == "app_language_tags" }

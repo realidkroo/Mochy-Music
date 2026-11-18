@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="platform_generated_empty">Nothing here matches \"%1$s\"</string>
+    <string name="platform_duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="platform_duration_minutes">%1$dm</string>
+    <string name="platform_stats_pair">%1$s · %2$s</string>
+    <string name="platform_artist_subscribers">%1$s subscribers</string>
+    <string name="platform_artist_monthly_listeners">%1$s monthly listeners</string>
+    <string name="platform_artist_see_all">See all</string>
+    <string name="platform_stats_ruler_description">Showing %1$s. Drag to pick another.</string>
+    <string name="platform_volume_level">Volume level</string>
+    <string name="platform_audio_available">Available</string>
+    <string name="platform_device_connected">Connected</string>
+    <string name="platform_external_speaker">External speaker</string>
+    <string name="platform_audio_load_failed">Failed to load devices: %1$s</string>
+    <string name="platform_cast_play_first">Play a song first to cast</string>
+    <string name="platform_cast_stop">Stop casting</string>
+    <string name="platform_cast_active">Casting</string>
+    <string name="platform_cast_target">Cast to</string>
+    <string name="platform_cast_none">No Cast devices found</string>
+    <string name="platform_cast_same_wifi">Make sure your device is on the same Wi-Fi network</string>
+</resources>

@@ -4,6 +4,8 @@ package com.mochyy.mochymusic.ui.screens
 
 import com.mochyy.mochymusic.ui.utils.stableSystemBars
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.ReportDrawnWhen
+import com.mochyy.mochymusic.diagnostics.LoadingDiagnostics
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -688,6 +690,11 @@ fun HomeScreen(
     // before load() has flipped isLoading on
     // right after a launch Home shows its bones through the intro and reveals its content after
     val launchHold = rememberLaunchHold()
+    if (LoadingDiagnostics.enabled) {
+        val initialLocalReady by viewModel.initialLocalReady.collectAsState()
+        // Home is composed with a player connection here. Include the intro, but not remote rows/covers.
+        ReportDrawnWhen { initialLocalReady && !isLoading && !launchHold }
+    }
     ReportLaunchHomeComposed()
     val isFirstLoad = isLoading || keepListening == null || launchHold
     val revealSeen = rememberRevealSeenState()

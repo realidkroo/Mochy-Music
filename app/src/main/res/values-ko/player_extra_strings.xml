@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="playback_logs_clip_label">재생 로그</string>
+    <string name="storage_manage_sort_by">정렬 기준 - </string>
+    <string name="storage_manage_sort_size">크기</string>
+    <string name="storage_manage_sort_name">이름</string>
+    <string name="storage_manage_sort_recent">최근 다운로드순</string>
+    <string name="storage_manage_sort_most_played">많이 재생한 순</string>
+    <string name="storage_manage_sort_least_played">적게 재생한 순</string>
+    <string name="storage_manage_done">완료</string>
+    <string name="storage_manage_remove_one">1곡 삭제 · %1$s</string>
+    <string name="storage_manage_remove_many">%1$d곡 삭제 · %2$s</string>
+    <string name="storage_manage_confirm_remove_one">다운로드한 파일을 삭제할까요?</string>
+    <string name="storage_manage_confirm_remove_many">다운로드한 파일 %1$d개를 삭제할까요?</string>
+    <string name="storage_manage_confirm_message">이 휴대전화에서 삭제되지만 보관함에는 유지됩니다. 다시 재생하면 스트리밍합니다.</string>
+    <string name="storage_manage_confirm_action">삭제</string>
+    <string name="storage_manage_search_placeholder">다운로드한 곡 검색</string>
+    <string name="storage_manage_song_single">곡</string>
+    <string name="storage_manage_song_plural">곡</string>
+    <string name="storage_manage_empty_note">아직 다운로드한 곡이 없습니다. 다운로드한 곡은 여기에 표시됩니다.</string>
+    <string name="storage_manage_no_match">\"%1$s\"에 해당하는 다운로드한 곡이 없습니다.</string>
+    <string name="storage_manage_shelf_biggest">용량이 큰 곡</string>
+    <string name="storage_manage_shelf_less_listened">자주 듣지 않는 곡</string>
+    <string name="storage_manage_shelf_less_listened_sub">다운로드한 지 오래되었지만 거의 재생하지 않은 곡</string>
+    <string name="storage_manage_all">전체</string>
+    <string name="storage_manage_unpick">선택 해제</string>
+    <string name="storage_manage_pick_all">전체 선택</string>
+    <string name="sheet_label_recents">최근 항목</string>
+    <string name="sheet_label_results">결과</string>
+    <string name="sheet_label_all">전체</string>
+    <string name="ps_device_usb_audio">USB 오디오</string>
+    <string name="ps_device_usb_dac">USB DAC</string>
+</resources>

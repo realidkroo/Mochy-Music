@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="lab_back">뒤로</string>
+    <string name="lab_equalizer">이퀄라이저</string>
+    <string name="lab_audio_effect">오디오 효과</string>
+    <string name="lab_audio_quality">오디오 음질</string>
+    <string name="lab_transition">곡 전환</string>
+    <string name="lab_status_off">꺼짐</string>
+    <string name="lab_status_all_off">모두 꺼짐</string>
+    <string name="lab_status_custom">사용자 설정</string>
+    <string name="lab_transition_off">꺼짐</string>
+    <string name="lab_transition_auto">자동</string>
+    <string name="lab_transition_manual">수동</string>
+    <string name="lab_transition_crossmix">크로스믹스</string>
+    <string name="lab_quality_monochrome">Monochrome · 무손실</string>
+    <string name="lab_quality_apple_music">Apple Music · AAC</string>
+    <string name="lab_quality_youtube">YouTube · %1$s</string>
+    <string name="lab_quality_low">낮음</string>
+    <string name="lab_quality_medium">중간</string>
+    <string name="lab_quality_high">높음</string>
+    <string name="lab_quality_auto">자동</string>
+    <string name="lab_effects_and_more">%1$s 외 %2$d개</string>
+    <string name="lab_effect_reverb">리버브</string>
+    <string name="lab_effect_loudness">라우드니스</string>
+    <string name="lab_effect_spatial">공간 음향</string>
+    <string name="lab_effect_surround">서라운드</string>
+    <string name="lab_effect_mono">모노</string>
+    <string name="lab_effect_playback">재생</string>
+    <string name="lab_effect_volume">음량</string>
+    <string name="lab_fx_on">켜짐</string>
+    <string name="lab_fx_position">%2$d개 중 %1$d번째</string>
+    <string name="lab_fx_and_other">외 %1$d개</string>
+</resources>

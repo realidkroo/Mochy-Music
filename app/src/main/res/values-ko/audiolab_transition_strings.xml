@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="xmix_title">크로스페이드</string>
+    <string name="xmix_back">오디오 랩</string>
+    <string name="xmix_off">꺼짐</string>
+    <string name="xmix_off_desc">변화 없이 그대로 재생합니다</string>
+    <string name="xmix_auto">자동 크로스페이드</string>
+    <string name="xmix_auto_desc">모든 곡을 다음 곡과 %1$d초 동안 부드럽게 섞습니다</string>
+    <string name="xmix_manual">수동 크로스페이드</string>
+    <string name="xmix_manual_desc">크로스페이드를 직접 설정합니다</string>
+    <string name="xmix_length">길이</string>
+    <string name="xmix_crossmix">크로스믹스</string>
+    <string name="xmix_crossmix_desc">DJ처럼 각 곡의 템포, 박자, 조성, 에너지와 보컬 위치를 분석하고 27가지 전환 중 가장 적합한 방식을 선택하여 두 보컬이 겹치지 않게 합니다</string>
+    <string name="xmix_crossmix_desc_unavailable">아직 조정 중이므로 켤 수 없습니다. 각 곡의 템포, 박자, 조성과 보컬을 분석하는 DJ 스타일 믹스입니다</string>
+    <string name="xmix_gapless">갭리스 앨범 유지</string>
+    <string name="xmix_gapless_desc">끊김 없이 이어지는 앨범의 곡은 믹싱하지 않고 그대로 재생합니다</string>
+    <string name="xmix_in_progress">작업 중</string>
+    <string name="xmix_transport_title">일시정지, 재생, 다음 및 이전 곡 전환</string>
+    <string name="xmix_fade_enable">페이드 사용</string>
+    <string name="xmix_fade_enable_desc">일시정지하거나 건너뛰면 소리가 서서히 줄어들고, 재생하면 서서히 커집니다</string>
+    <string name="xmix_layered_effect">효과 겹치기</string>
+    <string name="xmix_layered_effect_desc">에코 잔향이나 레코드 역회전 같은 크로스믹스 효과를 페이드에 더합니다</string>
+    <string name="xmix_choose_effect">효과 선택</string>
+    <string name="xmix_effect_none">없음</string>
+    <string name="xmix_effect_echo">에코</string>
+    <string name="xmix_effect_rewind">되감기</string>
+    <string name="xmix_effect_tape_stop">테이프 정지</string>
+    <string name="xmix_effect_far_away">멀어지며 사라지기</string>
+    <string name="xmix_effect_reverb">풍성한 잔향</string>
+    <string name="xmix_effect_filter">필터 스윕</string>
+    <string name="xmix_status_title">크로스믹스 상태</string>
+    <string name="xmix_status_empty">아직 없습니다. 다음 곡을 재생 대기열에 넣고 곡을 재생하세요</string>
+    <string name="xmix_test_title">이 곡에서 테스트</string>
+    <string name="xmix_test_desc">다음 곡으로 믹싱합니다</string>
+    <string name="xmix_test_detail">다음 곡으로의 믹스를 계획한 뒤 믹스 시작 몇 초 전으로 이동합니다</string>
+</resources>

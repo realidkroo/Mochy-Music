@@ -6,6 +6,9 @@ import android.content.Context
 import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mochyy.mochymusic.diagnostics.LoadingDiagnostics
+import com.mochyy.mochymusic.diagnostics.LoadingOutcome
+import com.mochyy.mochymusic.diagnostics.LoadingPhase
 import com.music.innertube.YouTube
 import com.music.innertube.models.AlbumItem
 import com.music.innertube.models.Artist
@@ -106,6 +109,11 @@ class HomeViewModel @Inject constructor(
     musicImportService: com.mochyy.mochymusic.importer.MusicImportService,
 ) : ViewModel() {
     private val homeFeedCache = HomeFeedCache(context)
+    private val trace = LoadingDiagnostics.trace
+    private val initialLocalReadySpan = trace.start(LoadingPhase.HOME_INITIAL_LOCAL_READY)
+    private val _initialLocalReady = MutableStateFlow(false)
+    /** First successful local phase, including an empty library/offline; never a network/image gate. */
+    val initialLocalReady: StateFlow<Boolean> = _initialLocalReady
 
     val isRefreshing = MutableStateFlow(false)
     val isLoading = MutableStateFlow(false)
@@ -203,7 +211,9 @@ class HomeViewModel @Inject constructor(
 
     private suspend fun artistPage(id: String): ArtistPage? {
         val page = artistPages.computeIfAbsent(id) {
-            viewModelScope.async(Dispatchers.IO) { YouTube.artist(id).getOrNull() }
+            viewModelScope.async(Dispatchers.IO) {
+                trace.measureResult(LoadingPhase.HOME_ARTIST_REQUEST) { YouTube.artist(id) }.getOrNull()
+            }
         }.await()
         // a failed fetch shouldn't stick for the rest of the load
         if (page == null) artistPages.remove(id)
@@ -431,9 +441,9 @@ class HomeViewModel @Inject constructor(
         kotlinx.coroutines.coroutineScope {
             seeds.map { seed ->
                 launch(Dispatchers.IO) {
-                    val endpoint = YouTube.next(WatchEndpoint(videoId = seed.id)).getOrNull()?.relatedEndpoint
+                    val endpoint = trace.measureResult(LoadingPhase.HOME_DISCOVER_REQUEST) { YouTube.next(WatchEndpoint(videoId = seed.id)) }.getOrNull()?.relatedEndpoint
                     if (endpoint != null) {
-                        YouTube.related(endpoint).onSuccess { page ->
+                        trace.measureResult(LoadingPhase.HOME_DISCOVER_REQUEST) { YouTube.related(endpoint) }.onSuccess { page ->
                             val candidates = page.songs.filter { item ->
                                 item.id != seed.id && item.id !in hidden &&
                                     !(hideVideoSongs && item.isVideoSong) &&
@@ -460,10 +470,12 @@ class HomeViewModel @Inject constructor(
 
         // an empty result means the requests failed, not that there is nothing to show. one card
         // per artist, so a single act can't take over the hero.
-        val found = items.toList()
-            .distinctBy { it.recommendation.id }
-            .distinctBy { (it.recommendation as? SongItem)?.artists?.firstOrNull()?.name ?: it.recommendation.id }
-        if (found.isNotEmpty()) dailyDiscover.value = found.shuffled()
+        trace.measure(LoadingPhase.HOME_DISCOVER_PUBLISH) {
+            val found = items.toList()
+                .distinctBy { it.recommendation.id }
+                .distinctBy { (it.recommendation as? SongItem)?.artists?.firstOrNull()?.name ?: it.recommendation.id }
+            if (found.isNotEmpty()) dailyDiscover.value = found.shuffled()
+        }
     }
 
     private suspend fun getQuickPicks() {
@@ -522,9 +534,9 @@ class HomeViewModel @Inject constructor(
 
             songSeeds.map { seed ->
                 launch(Dispatchers.IO) {
-                    val endpoint = YouTube.next(WatchEndpoint(videoId = seed.id)).getOrNull()?.relatedEndpoint
+                    val endpoint = trace.measureResult(LoadingPhase.HOME_COMMUNITY_REQUEST) { YouTube.next(WatchEndpoint(videoId = seed.id)) }.getOrNull()?.relatedEndpoint
                     if (endpoint != null) {
-                        YouTube.related(endpoint).onSuccess { page ->
+                        trace.measureResult(LoadingPhase.HOME_COMMUNITY_REQUEST) { YouTube.related(endpoint) }.onSuccess { page ->
                             page.playlists.forEach { playlist ->
                                 if (playlist.author?.name != "YouTube Music" &&
                                     playlist.author?.name != "YouTube" &&
@@ -548,7 +560,7 @@ class HomeViewModel @Inject constructor(
         kotlinx.coroutines.coroutineScope {
             uniqueCandidates.map { playlist ->
                 launch(Dispatchers.IO) {
-                    YouTube.playlist(playlist.id).onSuccess { page ->
+                    trace.measureResult(LoadingPhase.HOME_COMMUNITY_REQUEST) { YouTube.playlist(playlist.id) }.onSuccess { page ->
                         val songs = page.songs.take(10)
                         if (songs.isNotEmpty()) {
 
@@ -563,15 +575,17 @@ class HomeViewModel @Inject constructor(
 
         // a failed fetch used to overwrite the cached section (and the cache itself) with nothing,
         // which is how "From the community" vanished until the next lucky refresh
-        val hideAi = hidesAi()
-        val kept = playlists.mapNotNull { item ->
-            if (hideAi && item.playlist.looksAiGenerated()) return@mapNotNull null
-            item.copy(songs = item.songs.filterAiGenerated(hideAi)).takeIf { it.songs.isNotEmpty() }
-        }
-        if (kept.isNotEmpty()) {
-            val fresh = kept.shuffled()
-            communityPlaylists.value = fresh
-            homeFeedCache.saveCommunityPlaylists(fresh)
+        trace.measure(LoadingPhase.HOME_COMMUNITY_PUBLISH) {
+            val hideAi = hidesAi()
+            val kept = playlists.mapNotNull { item ->
+                if (hideAi && item.playlist.looksAiGenerated()) return@mapNotNull null
+                item.copy(songs = item.songs.filterAiGenerated(hideAi)).takeIf { it.songs.isNotEmpty() }
+            }
+            if (kept.isNotEmpty()) {
+                val fresh = kept.shuffled()
+                communityPlaylists.value = fresh
+                homeFeedCache.saveCommunityPlaylists(fresh)
+            }
         }
     }
 
@@ -619,20 +633,24 @@ class HomeViewModel @Inject constructor(
 
     private suspend fun loadAllTimeHits() {
 
-        var page = YouTube.getChartsPage().onFailure { reportException(it) }.getOrNull()
+        var page = trace.measureResult(LoadingPhase.HOME_CHARTS_REQUEST) { YouTube.getChartsPage() }.onFailure { reportException(it) }.getOrNull()
         var section = page?.sections?.firstOrNull { it.chartType == ChartsPage.ChartType.TOP }
             ?: page?.sections?.firstOrNull { it.items.isNotEmpty() }
         if (section == null) {
             delay(1500)
-            page = YouTube.getChartsPage().onFailure { reportException(it) }.getOrNull()
+            page = trace.measureResult(LoadingPhase.HOME_CHARTS_REQUEST) { YouTube.getChartsPage() }.onFailure { reportException(it) }.getOrNull()
             section = page?.sections?.firstOrNull { it.chartType == ChartsPage.ChartType.TOP }
                 ?: page?.sections?.firstOrNull { it.items.isNotEmpty() }
         }
         // a chart is a list of songs here, even when YouTube ranks the videos
-        val hits = section?.items?.distinctBy { it.id }?.filterAiGenerated(hidesAi())?.take(20)?.let { SongVersions.preferSongs(it) }
-        if (!hits.isNullOrEmpty()) {
-            allTimeHits.value = hits
-            homeFeedCache.saveAllTimeHits(hits)
+        trace.measure(LoadingPhase.HOME_CHARTS_PUBLISH) {
+            val hits = section?.items?.distinctBy { it.id }?.filterAiGenerated(hidesAi())?.take(20)?.let {
+                trace.measure(LoadingPhase.HOME_SONG_VERSION_RESOLVE) { SongVersions.preferSongs(it) }
+            }
+            if (!hits.isNullOrEmpty()) {
+                allTimeHits.value = hits
+                homeFeedCache.saveAllTimeHits(hits)
+            }
         }
     }
 
@@ -669,21 +687,23 @@ class HomeViewModel @Inject constructor(
             }.awaitAll()
         }
 
-        val live = ArtistVideos.interleave(perArtist.map { it.first }, limit = 12).distinctBy { it.item.id }
-        val liveIds = live.mapTo(HashSet()) { it.item.id }
-        val official = ArtistVideos.interleave(
-            perArtist.map { (_, videos) -> videos.filterNot { it.item.id in liveIds } },
-            limit = 12,
-        ).distinctBy { it.item.id }
+        trace.measure(LoadingPhase.HOME_ARTIST_VIDEOS_PUBLISH) {
+            val live = ArtistVideos.interleave(perArtist.map { it.first }, limit = 12).distinctBy { it.item.id }
+            val liveIds = live.mapTo(HashSet()) { it.item.id }
+            val official = ArtistVideos.interleave(
+                perArtist.map { (_, videos) -> videos.filterNot { it.item.id in liveIds } },
+                limit = 12,
+            ).distinctBy { it.item.id }
 
-        // nothing back (offline mid-load, a hiccup) keeps what's already on screen
-        if (live.isNotEmpty()) {
-            liveShows.value = live
-            homeFeedCache.saveLiveShows(live)
-        }
-        if (official.isNotEmpty()) {
-            musicVideos.value = official
-            homeFeedCache.saveMusicVideos(official)
+            // nothing back (offline mid-load, a hiccup) keeps what's already on screen
+            if (live.isNotEmpty()) {
+                liveShows.value = live
+                homeFeedCache.saveLiveShows(live)
+            }
+            if (official.isNotEmpty()) {
+                musicVideos.value = official
+                homeFeedCache.saveMusicVideos(official)
+            }
         }
     }
 
@@ -723,14 +743,30 @@ class HomeViewModel @Inject constructor(
     // an empty result is a failed request, so the rows already on screen stay
     @Synchronized
     private fun publishCategories(kind: HomeCategory.Kind, found: List<HomeCategory>) {
-        val hideAi = hidesAi()
-        val rows = found.mapNotNull { row -> row.copy(items = row.items.filterAiGenerated(hideAi)).takeIf { it.items.isNotEmpty() } }
-        if (rows.isEmpty()) return
-        categoryParts[kind] = rows
-        homeCategories.value = HomeRecommender.arrange(categoryParts.toMap())
+        trace.measure(LoadingPhase.HOME_CATEGORIES_PUBLISH) {
+            val hideAi = hidesAi()
+            val rows = found.mapNotNull { row -> row.copy(items = row.items.filterAiGenerated(hideAi)).takeIf { it.items.isNotEmpty() } }
+            if (rows.isEmpty()) return
+            categoryParts[kind] = rows
+            homeCategories.value = HomeRecommender.arrange(categoryParts.toMap())
+        }
     }
 
     private suspend fun loadLocalDataPhase() {
+        try {
+            trace.measure(LoadingPhase.HOME_LOCAL_DATABASE) { loadLocalData() }
+            _initialLocalReady.value = true
+            initialLocalReadySpan.finish()
+        } catch (e: CancellationException) {
+            initialLocalReadySpan.finish(LoadingOutcome.CANCELLED)
+            throw e
+        } catch (e: Throwable) {
+            initialLocalReadySpan.finish(LoadingOutcome.ERROR)
+            throw e
+        }
+    }
+
+    private suspend fun loadLocalData() {
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
 
         getQuickPicks()
@@ -815,9 +851,9 @@ class HomeViewModel @Inject constructor(
                 .shuffled().take(3)
                 .map { song ->
                     async(Dispatchers.IO) {
-                        val endpoint = YouTube.next(WatchEndpoint(videoId = song.id)).getOrNull()?.relatedEndpoint
+                        val endpoint = trace.measureResult(LoadingPhase.HOME_SIMILAR_REQUEST) { YouTube.next(WatchEndpoint(videoId = song.id)) }.getOrNull()?.relatedEndpoint
                             ?: return@async null
-                        val page = YouTube.related(endpoint).getOrNull() ?: return@async null
+                        val page = trace.measureResult(LoadingPhase.HOME_SIMILAR_REQUEST) { YouTube.related(endpoint) }.getOrNull() ?: return@async null
                         SimilarRecommendation(
                             title = song,
                             items = (page.songs.shuffled().take(10) +
@@ -840,7 +876,7 @@ class HomeViewModel @Inject constructor(
                 .map { album ->
                     async(Dispatchers.IO) {
                         val items = mutableListOf<YTItem>()
-                        YouTube.album(album.id).onSuccess { page ->
+                        trace.measureResult(LoadingPhase.HOME_SIMILAR_REQUEST) { YouTube.album(album.id) }.onSuccess { page ->
                             page.otherVersions.let { items += it }
                         }
                         album.artists.firstOrNull()?.id?.let { artistId ->
@@ -863,61 +899,63 @@ class HomeViewModel @Inject constructor(
                 }
 
             val results = (artistDeferreds + songDeferreds + albumDeferreds).awaitAll()
-            val nonNullResults = results.filterNotNull()
-            // nothing came back: keep what the artist list already shows
-            if (nonNullResults.isEmpty()) return@coroutineScope
-            val hideAi = hidesAi()
-            similarRecommendations.value = nonNullResults
-                .mapNotNull { row -> row.copy(items = row.items.filterAiGenerated(hideAi)).takeIf { it.items.isNotEmpty() } }
-                .ifEmpty { return@coroutineScope }
-                .shuffled()
+            trace.measure(LoadingPhase.HOME_SIMILAR_PUBLISH) {
+                val nonNullResults = results.filterNotNull()
+                // nothing came back: keep what the artist list already shows
+                if (nonNullResults.isEmpty()) return@coroutineScope
+                val hideAi = hidesAi()
+                similarRecommendations.value = nonNullResults
+                    .mapNotNull { row -> row.copy(items = row.items.filterAiGenerated(hideAi)).takeIf { it.items.isNotEmpty() } }
+                    .ifEmpty { return@coroutineScope }
+                    .shuffled()
 
-            data class GroupAccumulator(
-                var artistId: String?,
-                var artistName: String,
-                var artistThumbnailUrl: String?,
-                val items: MutableList<YTItem> = mutableListOf(),
-            )
+                data class GroupAccumulator(
+                    var artistId: String?,
+                    var artistName: String,
+                    var artistThumbnailUrl: String?,
+                    val items: MutableList<YTItem> = mutableListOf(),
+                )
 
-            val groups = linkedMapOf<String, GroupAccumulator>()
-            fun addToGroup(key: String, name: String, thumbnailUrl: String?, id: String?, item: YTItem?) {
-                val group = groups.getOrPut(key) { GroupAccumulator(id, name, thumbnailUrl) }
-                if (thumbnailUrl != null && group.artistThumbnailUrl == null) group.artistThumbnailUrl = thumbnailUrl
-                if (item != null && group.items.none { it.id == item.id }) group.items.add(item)
-            }
+                val groups = linkedMapOf<String, GroupAccumulator>()
+                fun addToGroup(key: String, name: String, thumbnailUrl: String?, id: String?, item: YTItem?) {
+                    val group = groups.getOrPut(key) { GroupAccumulator(id, name, thumbnailUrl) }
+                    if (thumbnailUrl != null && group.artistThumbnailUrl == null) group.artistThumbnailUrl = thumbnailUrl
+                    if (item != null && group.items.none { it.id == item.id }) group.items.add(item)
+                }
 
-            nonNullResults.forEach { rec ->
-                val seed = rec.title
-                rec.items.forEach { item ->
-                    when {
-                        item is ArtistItem -> addToGroup(item.id ?: item.title, item.title, item.thumbnail, item.id, null)
-                        seed is com.mochyy.mochymusic.db.entities.Artist -> addToGroup(seed.id, seed.title, seed.thumbnailUrl, seed.id, item)
-                        else -> {
-                            val itemArtist = when (item) {
-                                is SongItem -> item.artists.firstOrNull()
-                                is AlbumItem -> item.artists?.firstOrNull()
-                                else -> null
-                            }
-                            if (itemArtist?.name != null) {
-                                addToGroup(itemArtist.id ?: itemArtist.name, itemArtist.name, null, itemArtist.id, item)
+                nonNullResults.forEach { rec ->
+                    val seed = rec.title
+                    rec.items.forEach { item ->
+                        when {
+                            item is ArtistItem -> addToGroup(item.id ?: item.title, item.title, item.thumbnail, item.id, null)
+                            seed is com.mochyy.mochymusic.db.entities.Artist -> addToGroup(seed.id, seed.title, seed.thumbnailUrl, seed.id, item)
+                            else -> {
+                                val itemArtist = when (item) {
+                                    is SongItem -> item.artists.firstOrNull()
+                                    is AlbumItem -> item.artists?.firstOrNull()
+                                    else -> null
+                                }
+                                if (itemArtist?.name != null) {
+                                    addToGroup(itemArtist.id ?: itemArtist.name, itemArtist.name, null, itemArtist.id, item)
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            artistListItems.value = groups.values
-                .filter { it.items.isNotEmpty() }
-                .map {
-                    ArtistGroup(
-                        artistName = it.artistName,
-                        artistId = it.artistId,
-                        artistThumbnailUrl = it.artistThumbnailUrl,
-                        items = it.items.take(5)
-                    )
-                }
-                .shuffled()
-                .take(15)
+                artistListItems.value = groups.values
+                    .filter { it.items.isNotEmpty() }
+                    .map {
+                        ArtistGroup(
+                            artistName = it.artistName,
+                            artistId = it.artistId,
+                            artistThumbnailUrl = it.artistThumbnailUrl,
+                            items = it.items.take(5)
+                        )
+                    }
+                    .shuffled()
+                    .take(15)
+            }
         }
     }
 
@@ -975,37 +1013,41 @@ class HomeViewModel @Inject constructor(
         // each source on its own: one failing request must not cancel the others (that took whole
         // sections down with it), and an unexpected throw shouldn't reach the crash handler
         supervisorScope {
-            launchSafely { loadStarterSongs() }
-            launchSafely { getDailyDiscover() }
-            launchSafely { getCommunityPlaylists() }
-            launchSafely { loadSimilarRecommendations() }
+            launchSafely(LoadingPhase.HOME_STARTER_SOURCE) { loadStarterSongs() }
+            launchSafely(LoadingPhase.HOME_DISCOVER_SOURCE) { getDailyDiscover() }
+            launchSafely(LoadingPhase.HOME_COMMUNITY_SOURCE) { getCommunityPlaylists() }
+            launchSafely(LoadingPhase.HOME_SIMILAR_SOURCE) { loadSimilarRecommendations() }
             launchSafely {
-                YouTube.home().onSuccess { page ->
-                    val filteredSections = page.sections.mapNotNull { section ->
-                        if (isCommunityOrTrendingSection(section.title)) return@mapNotNull null
-                        val filteredItems = section.items
-                            .filterExplicit(hideExplicit)
-                            .filterVideoSongs(hideVideoSongs)
-                            .filterYoutubeShorts(hideYoutubeShorts)
-                            .filterAiGenerated(hideAi).distinctBy { it.id }
-                            .filterNot { it.id in hidden }
-                        if (filteredItems.isEmpty()) null else section.copy(items = filteredItems)
+                trace.measureResult(LoadingPhase.HOME_FEED_REQUEST) { YouTube.home() }.onSuccess { page ->
+                    trace.measure(LoadingPhase.HOME_FEED_PUBLISH) {
+                        val filteredSections = page.sections.mapNotNull { section ->
+                            if (isCommunityOrTrendingSection(section.title)) return@mapNotNull null
+                            val filteredItems = section.items
+                                .filterExplicit(hideExplicit)
+                                .filterVideoSongs(hideVideoSongs)
+                                .filterYoutubeShorts(hideYoutubeShorts)
+                                .filterAiGenerated(hideAi).distinctBy { it.id }
+                                .filterNot { it.id in hidden }
+                            if (filteredItems.isEmpty()) null else section.copy(items = filteredItems)
+                        }
+                        homePage.value = page.copy(sections = songVersionsOf(filteredSections))
+                        homeFeedCache.saveHomePage(homePage.value!!)
                     }
-                    homePage.value = page.copy(sections = songVersionsOf(filteredSections))
-                    homeFeedCache.saveHomePage(homePage.value!!)
                 }.onFailure { reportException(it) }
             }
             launchSafely {
-                YouTube.explore().onSuccess { page ->
-                    explorePage.value = page.copy(
-                        newReleaseAlbums = page.newReleaseAlbums.filterExplicit(hideExplicit)
-                    )
-                    homeFeedCache.saveExplorePage(explorePage.value!!)
+                trace.measureResult(LoadingPhase.HOME_EXPLORE_REQUEST) { YouTube.explore() }.onSuccess { page ->
+                    trace.measure(LoadingPhase.HOME_EXPLORE_PUBLISH) {
+                        explorePage.value = page.copy(
+                            newReleaseAlbums = page.newReleaseAlbums.filterExplicit(hideExplicit)
+                        )
+                        homeFeedCache.saveExplorePage(explorePage.value!!)
+                    }
                 }.onFailure { reportException(it) }
             }
             launchSafely { loadAllTimeHits() }
-            launchSafely { loadArtistVideos() }
-            launchSafely { loadCategories() }
+            launchSafely(LoadingPhase.HOME_ARTIST_VIDEOS_SOURCE) { loadArtistVideos() }
+            launchSafely(LoadingPhase.HOME_CATEGORIES_SOURCE) { loadCategories() }
             if (YouTube.cookie != null) {
                 launchSafely { loadAccountPlaylists() }
             }
@@ -1015,9 +1057,9 @@ class HomeViewModel @Inject constructor(
                 homePage.value?.sections?.flatMap { it.items }.orEmpty()
     }
 
-    private fun CoroutineScope.launchSafely(block: suspend () -> Unit) = launch(Dispatchers.IO) {
+    private fun CoroutineScope.launchSafely(phase: LoadingPhase? = null, block: suspend () -> Unit) = launch(Dispatchers.IO) {
         try {
-            block()
+            if (phase == null) block() else trace.measure(phase) { block() }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -1144,7 +1186,9 @@ class HomeViewModel @Inject constructor(
                 if (ArtistVideos.feedShelfKind(section.title, section.items) != null) {
                     section
                 } else {
-                    section.copy(items = SongVersions.preferSongs(section.items))
+                    section.copy(items = trace.measure(LoadingPhase.HOME_SONG_VERSION_RESOLVE) {
+                        SongVersions.preferSongs(section.items)
+                    })
                 }
             }
         }.awaitAll()
@@ -1222,10 +1266,12 @@ class HomeViewModel @Inject constructor(
 
     private suspend fun loadAccountPlaylists() {
         val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, true)
-        YouTube.library("FEmusic_liked_playlists").completed().onSuccess {
-            accountPlaylists.value = it.items.filterIsInstance<PlaylistItem>().distinctBy { it.id }
-                .filterNot { it.id == "SE" }
-                .filterYoutubeShorts(hideYoutubeShorts).distinctBy { it.id }
+        trace.measureResult(LoadingPhase.HOME_ACCOUNT_REQUEST) { YouTube.library("FEmusic_liked_playlists").completed() }.onSuccess {
+            trace.measure(LoadingPhase.HOME_ACCOUNT_PUBLISH) {
+                accountPlaylists.value = it.items.filterIsInstance<PlaylistItem>().distinctBy { it.id }
+                    .filterNot { it.id == "SE" }
+                    .filterYoutubeShorts(hideYoutubeShorts).distinctBy { it.id }
+            }
         }.onFailure {
             reportException(it)
         }
@@ -1258,18 +1304,20 @@ class HomeViewModel @Inject constructor(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            homeFeedCache.loadHomePage()?.let { homePage.value = it }
-            homeFeedCache.loadCommunityPlaylists()?.let { communityPlaylists.value = it }
-            homeFeedCache.loadAllTimeHits()?.let { allTimeHits.value = it }
-            homeFeedCache.loadExplorePage()?.let { explorePage.value = it }
-            if (!context.dataStore.get(HideVideoSongsKey, false)) {
-                homeFeedCache.loadLiveShows()?.let { liveShows.value = it }
-                homeFeedCache.loadMusicVideos()?.let { musicVideos.value = it }
-            }
-            homeFeedCache.loadCategories()?.let { cached ->
-                // seeded per kind, so a fresh kind arriving doesn't wipe the cached others
-                cached.groupBy { it.kind }.forEach { (kind, rows) -> categoryParts.putIfAbsent(kind, rows) }
-                if (homeCategories.value == null) homeCategories.value = cached
+            trace.measure(LoadingPhase.HOME_CACHE_RESTORE) {
+                homeFeedCache.loadHomePage()?.let { homePage.value = it }
+                homeFeedCache.loadCommunityPlaylists()?.let { communityPlaylists.value = it }
+                homeFeedCache.loadAllTimeHits()?.let { allTimeHits.value = it }
+                homeFeedCache.loadExplorePage()?.let { explorePage.value = it }
+                if (!context.dataStore.get(HideVideoSongsKey, false)) {
+                    homeFeedCache.loadLiveShows()?.let { liveShows.value = it }
+                    homeFeedCache.loadMusicVideos()?.let { musicVideos.value = it }
+                }
+                homeFeedCache.loadCategories()?.let { cached ->
+                    // seeded per kind, so a fresh kind arriving doesn't wipe the cached others
+                    cached.groupBy { it.kind }.forEach { (kind, rows) -> categoryParts.putIfAbsent(kind, rows) }
+                    if (homeCategories.value == null) homeCategories.value = cached
+                }
             }
         }
 
@@ -1280,6 +1328,12 @@ class HomeViewModel @Inject constructor(
                 .first()
 
             load()
+        }.invokeOnCompletion { failure ->
+            if (failure != null) {
+                initialLocalReadySpan.finish(
+                    if (failure is CancellationException) LoadingOutcome.CANCELLED else LoadingOutcome.ERROR
+                )
+            }
         }
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -1302,7 +1356,7 @@ class HomeViewModel @Inject constructor(
                     if (!cookie.isNullOrEmpty()) {
                         YouTube.cookie = cookie
 
-                        YouTube.accountInfo().onSuccess { info ->
+                        trace.measureResult(LoadingPhase.HOME_ACCOUNT_INFO_REQUEST) { YouTube.accountInfo() }.onSuccess { info ->
                             accountName.value = info.name
                             accountImageUrl.value = info.thumbnailUrl
                         }.onFailure {
@@ -1328,6 +1382,11 @@ class HomeViewModel @Inject constructor(
                     }
                 }
         }
+    }
+
+    override fun onCleared() {
+        initialLocalReadySpan.finish(LoadingOutcome.CANCELLED)
+        super.onCleared()
     }
 
     // liked songs' cover as a picture, so home's cards, their colours and the see-all list show it like any playlist's

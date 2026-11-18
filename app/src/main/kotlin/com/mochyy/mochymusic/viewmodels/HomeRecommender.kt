@@ -2,6 +2,9 @@
 
 package com.mochyy.mochymusic.viewmodels
 
+import com.mochyy.mochymusic.diagnostics.LoadingDiagnostics
+import com.mochyy.mochymusic.diagnostics.LoadingPhase
+
 import android.content.Context
 import androidx.core.content.edit
 import com.mochyy.mochymusic.db.MusicDatabase
@@ -163,9 +166,9 @@ class HomeRecommender(
             seeds.map { seed ->
                 async(Dispatchers.IO) {
                     gate.withPermit {
-                        val endpoint = YouTube.next(WatchEndpoint(videoId = seed.id)).getOrNull()?.relatedEndpoint
+                        val endpoint = LoadingDiagnostics.trace.measureResult(LoadingPhase.HOME_CATEGORIES_REQUEST) { YouTube.next(WatchEndpoint(videoId = seed.id)) }.getOrNull()?.relatedEndpoint
                             ?: return@withPermit null
-                        val page = YouTube.related(endpoint).getOrNull() ?: return@withPermit null
+                        val page = LoadingDiagnostics.trace.measureResult(LoadingPhase.HOME_CATEGORIES_REQUEST) { YouTube.related(endpoint) }.getOrNull() ?: return@withPermit null
                         val songs = pick(page.songs.filter { it.id != seed.id }, profile, hideExplicit, limit = 10, perArtist = 2)
                         val playlists = page.playlists.filterExplicit(hideExplicit).take(3)
                         HomeCategory(
@@ -187,7 +190,7 @@ class HomeRecommender(
                 async(Dispatchers.IO) {
                     val page = artistPage(seed.id) ?: return@async null
                     val radio = page.artist.radioEndpoint ?: return@async null
-                    val queue = gate.withPermit { YouTube.next(radio).getOrNull()?.items }.orEmpty()
+                    val queue = gate.withPermit { LoadingDiagnostics.trace.measureResult(LoadingPhase.HOME_CATEGORIES_REQUEST) { YouTube.next(radio) }.getOrNull()?.items }.orEmpty()
                     val name = seed.artist.name
                     val others = queue.filter { song ->
                         song.artists.none { it.id == seed.id || it.name.equals(name, ignoreCase = true) }
@@ -216,7 +219,7 @@ class HomeRecommender(
      * YouTube doesn't), weighted by listening time, and the rest ones you don't play yet
      */
     suspend fun genres(profile: TasteProfile, hideExplicit: Boolean): List<HomeCategory> {
-        val genres = YouTube.moodAndGenres().getOrNull()
+        val genres = LoadingDiagnostics.trace.measureResult(LoadingPhase.HOME_CATEGORIES_REQUEST) { YouTube.moodAndGenres() }.getOrNull()
             // the grid whose titles read as genres; the other one is moods
             ?.maxByOrNull { section -> ListeningGenres.genreScore(section.items.map { it.title }) }
             ?.items
@@ -226,7 +229,7 @@ class HomeRecommender(
         val artistGenres = coroutineScope {
             profile.topArtists.take(12).map { artist ->
                 async(Dispatchers.IO) {
-                    artist to gate.withPermit { ListeningGenres.itunesGenre(artist.artist.name) }
+                    artist to gate.withPermit { LoadingDiagnostics.trace.measure(LoadingPhase.HOME_GENRE_LOOKUP) { ListeningGenres.itunesGenre(artist.artist.name) } }
                 }
             }.awaitAll()
         }
@@ -243,7 +246,7 @@ class HomeRecommender(
                 .map { (genre, kind) ->
                     async(Dispatchers.IO) {
                         val page = gate.withPermit {
-                            YouTube.browse(genre.endpoint.browseId, genre.endpoint.params).getOrNull()
+                            LoadingDiagnostics.trace.measureResult(LoadingPhase.HOME_CATEGORIES_REQUEST) { YouTube.browse(genre.endpoint.browseId, genre.endpoint.params) }.getOrNull()
                         } ?: return@async null
                         val shelves = page.items.map { it.items }
                         val songs = pick(

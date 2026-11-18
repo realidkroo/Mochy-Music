@@ -26,6 +26,9 @@ import com.music.kugou.KuGou
 import com.mochyy.mochymusic.constants.*
 import com.mochyy.mochymusic.di.ApplicationScope
 import com.mochyy.mochymusic.i18n.AppLanguage
+import com.mochyy.mochymusic.diagnostics.LoadingDiagnostics
+import com.mochyy.mochymusic.diagnostics.LoadingImageEventListener
+import com.mochyy.mochymusic.diagnostics.LoadingPhase
 import com.mochyy.mochymusic.extensions.toEnum
 import com.mochyy.mochymusic.utils.CrashHandler
 import com.mochyy.mochymusic.utils.PreferencesCache
@@ -69,6 +72,10 @@ class App : Application(), SingletonImageLoader.Factory {
     lateinit var phoneLink: dagger.Lazy<com.mochyy.mochymusic.link.phone.PhoneLinkHost>
 
     override fun onCreate() {
+        LoadingDiagnostics.trace.measure(LoadingPhase.APP_INITIALIZE) { initializeApplication() }
+    }
+
+    private fun initializeApplication() {
         // before super, because that's where hilt builds the database and the player caches
         com.mochyy.mochymusic.importer.transfer.TransferRestore.applyPending(this)
         // the folders a move to another drive left behind, cleared once nothing has them open
@@ -334,34 +341,39 @@ class App : Application(), SingletonImageLoader.Factory {
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
-        val cacheSize = runBlocking {
-            dataStore.data.map { it[MaxImageCacheSizeKey] ?: 512 }.first()
-        }
-        return ImageLoader.Builder(this).apply {
-            components {
-                add(SvgDecoder.Factory())
-                add(com.mochyy.mochymusic.utils.ImageRetry)
+        return LoadingDiagnostics.trace.measure(LoadingPhase.IMAGE_LOADER_INITIALIZE) {
+            val cacheSize = LoadingDiagnostics.trace.measure(LoadingPhase.IMAGE_CACHE_PREFERENCES) {
+                runBlocking { dataStore.data.map { it[MaxImageCacheSizeKey] ?: 512 }.first() }
             }
-            // covers ease in as they arrive; coil skips the fade for ones already in memory, so scrolling back never flickers
-            crossfade(300)
-            allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            ImageLoader.Builder(this).apply {
+                if (LoadingDiagnostics.enabled) {
+                    eventListenerFactory { LoadingImageEventListener(LoadingDiagnostics.trace) }
+                }
+                components {
+                    add(SvgDecoder.Factory())
+                    add(com.mochyy.mochymusic.utils.ImageRetry)
+                }
+                // covers ease in as they arrive; coil skips the fade for ones already in memory, so scrolling back never flickers
+                crossfade(300)
+                allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
 
-            memoryCache {
-                MemoryCache.Builder()
-                    .maxSizePercent(context, 0.30)
-                    .build()
-            }
-            if (cacheSize == 0) {
-                diskCachePolicy(CachePolicy.DISABLED)
-            } else {
-                diskCache(
-                    DiskCache.Builder()
-                        .directory(cacheDir.resolve("coil"))
-                        .maxSizeBytes(cacheSize * 1024 * 1024L)
+                memoryCache {
+                    MemoryCache.Builder()
+                        .maxSizePercent(context, 0.30)
                         .build()
-                )
-            }
-        }.build()
+                }
+                if (cacheSize == 0) {
+                    diskCachePolicy(CachePolicy.DISABLED)
+                } else {
+                    diskCache(
+                        DiskCache.Builder()
+                            .directory(cacheDir.resolve("coil"))
+                            .maxSizeBytes(cacheSize * 1024 * 1024L)
+                            .build()
+                    )
+                }
+            }.build()
+        }
     }
 
     companion object {

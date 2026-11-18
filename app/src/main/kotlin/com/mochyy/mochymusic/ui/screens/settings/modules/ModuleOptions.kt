@@ -65,7 +65,8 @@ internal fun ModuleOptions(
     val choices = if (titled) entry.module.choices.filter { it.options.isNotEmpty() } else emptyList()
     if (choices.isEmpty() && entry.fields.isEmpty()) return
     if (titled) PageSectionTitle(stringResource(R.string.module_options))
-    choices.forEach { choice ->
+    choices.forEach { originalChoice ->
+        val choice = builtInModuleChoice(entry, originalChoice)
         // a pick the module no longer offers reads as its first option
         val picked = entry.picks[choice.id]?.takeIf { p -> choice.options.any { it.id == p } } ?: choice.options.first().id
         FieldLabel(choice.label)
