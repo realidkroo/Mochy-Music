@@ -57,7 +57,7 @@ import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackBones
 import com.mochyy.mochymusic.ui.component.detail.PlaylistModeBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSelectTick
 import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackRow
-import com.mochyy.mochymusic.ui.component.detail.featuredArtistsOf
+import com.mochyy.mochymusic.ui.component.detail.rememberFeaturedArtists
 import com.mochyy.mochymusic.ui.component.librarySwipeAction
 import com.mochyy.mochymusic.ui.component.queueSwipeAction
 import com.mochyy.mochymusic.ui.component.rememberRevealSeenState
@@ -117,9 +117,7 @@ fun TopPlaylistScreen(
     }
 
     val totalSeconds = remember(all) { all.sumOf { it.song.duration } }
-    val featuredArtists = remember(all) {
-        featuredArtistsOf(all.flatMap { it.artists }, id = { it.id }, name = { it.name })
-    }
+    val featuredArtists = rememberFeaturedArtists(all, { all.flatMap { it.artists } }, id = { it.id }, name = { it.name })
     val downloadState = rememberSongsDownloadState(remember(all) { all.map { it.song.id } })
     var showRemoveDownloadDialog by remember { mutableStateOf(false) }
     val isThisQueue = queueTitle == name

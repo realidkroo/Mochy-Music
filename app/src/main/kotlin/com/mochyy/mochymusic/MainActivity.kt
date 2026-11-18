@@ -13,6 +13,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -392,6 +393,14 @@ class MainActivity : ComponentActivity() {
         playerConnection = null
         // closed for good while the music plays on: the covers decoded for this screen have nothing left to show on
         if (isFinishing) coil3.SingletonImageLoader.get(this).memoryCache?.clear()
+    }
+
+    // home can show the same playlist in two rows, so the card under the finger claims the page's grow animation before the tap lands
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            com.mochyy.mochymusic.ui.component.claimContainerTransformAt(androidx.compose.ui.geometry.Offset(ev.x, ev.y))
+        }
+        return super.dispatchTouchEvent(ev)
     }
 
     override fun onNewIntent(intent: Intent) {

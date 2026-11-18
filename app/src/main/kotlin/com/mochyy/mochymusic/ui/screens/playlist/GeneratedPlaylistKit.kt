@@ -243,6 +243,12 @@ fun generatedStats(songCount: Int, totalSeconds: Int): String {
     return "$count · ${if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"}"
 }
 
+private val OnTheirWay = setOf(
+    androidx.media3.exoplayer.offline.Download.STATE_QUEUED,
+    androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING,
+    androidx.media3.exoplayer.offline.Download.STATE_COMPLETED,
+)
+
 /** all downloaded, some on their way, or neither, for the ••• menu's download line */
 @Composable
 fun rememberSongsDownloadState(songIds: List<String>): Int {
@@ -250,18 +256,15 @@ fun rememberSongsDownloadState(songIds: List<String>): Int {
     var state by remember { mutableStateOf(androidx.media3.exoplayer.offline.Download.STATE_STOPPED) }
     androidx.compose.runtime.LaunchedEffect(songIds) {
         if (songIds.isEmpty()) return@LaunchedEffect
+        // walked off the main thread: liked songs can run to thousands and the map changes with every song that finishes
         downloadUtil.downloads.collect { downloads ->
-            state = when {
-                songIds.all { downloads[it]?.state == androidx.media3.exoplayer.offline.Download.STATE_COMPLETED } ->
-                    androidx.media3.exoplayer.offline.Download.STATE_COMPLETED
-                songIds.all {
-                    downloads[it]?.state in setOf(
-                        androidx.media3.exoplayer.offline.Download.STATE_QUEUED,
-                        androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING,
-                        androidx.media3.exoplayer.offline.Download.STATE_COMPLETED,
-                    )
-                } -> androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING
-                else -> androidx.media3.exoplayer.offline.Download.STATE_STOPPED
+            state = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                when {
+                    songIds.all { downloads[it]?.state == androidx.media3.exoplayer.offline.Download.STATE_COMPLETED } ->
+                        androidx.media3.exoplayer.offline.Download.STATE_COMPLETED
+                    songIds.all { downloads[it]?.state in OnTheirWay } -> androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING
+                    else -> androidx.media3.exoplayer.offline.Download.STATE_STOPPED
+                }
             }
         }
     }

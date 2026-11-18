@@ -529,6 +529,10 @@ fun NavGraphBuilder.navigationBuilder(
         com.mochyy.mochymusic.ui.screens.audiolab.AudioFxScreen(navController = navController)
     }
 
+    composable("audio_stage") {
+        com.mochyy.mochymusic.ui.screens.audiolab.stage.StageScreen(navController = navController)
+    }
+
     composable("audio_quality") {
         com.mochyy.mochymusic.ui.screens.audiolab.AudioQualityScreen(navController = navController)
     }

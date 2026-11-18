@@ -5,6 +5,7 @@ package com.mochyy.mochymusic.ui.tv
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,7 +66,8 @@ internal fun TvAlbumScreen(viewModel: AlbumViewModel = hiltViewModel(), transfor
     val album by viewModel.albumWithSongs.collectAsState()
     val player = LocalPlayerConnection.current
     val current = album
-    val tracks = remember(current) { current?.songs?.map { it.tvTrack() }.orEmpty() }
+    val built = rememberTvTracks(current?.songs.orEmpty()) { it.tvTrack() }
+    val tracks = built.orEmpty()
     val stats = current?.let {
         listOfNotNull(
             it.album.year?.toString(),
@@ -77,7 +79,7 @@ internal fun TvAlbumScreen(viewModel: AlbumViewModel = hiltViewModel(), transfor
         subtitle = listOfNotNull(current?.artists?.joinToString { it.name }, stats.ifBlank { null }).joinToString("  "),
         coverUrl = current?.album?.thumbnailUrl,
         tracks = tracks,
-        loading = current == null,
+        loading = current == null || built == null,
         transformKey = transformKey,
         onPlay = { index, shuffled ->
             val withSongs = current ?: return@TvTrackListPage
@@ -93,15 +95,16 @@ internal fun TvOnlinePlaylistScreen(viewModel: OnlinePlaylistViewModel = hiltVie
     val songs by viewModel.playlistSongs.collectAsState()
     val loading by viewModel.isLoading.collectAsState()
     val actions = LocalTvActions.current
-    val tracks = remember(songs) {
-        songs.map { TvTrack(it.id, it.title, it.artists.joinToString { a -> a.name }, it.thumbnail, it.duration ?: 0, it.tvRef()) }
+    val built = rememberTvTracks(songs) {
+        TvTrack(it.id, it.title, it.artists.joinToString { a -> a.name }, it.thumbnail, it.duration ?: 0, it.tvRef())
     }
+    val tracks = built.orEmpty()
     TvTrackListPage(
         title = playlist?.title.orEmpty(),
         subtitle = listOfNotNull(playlist?.author?.name, playlist?.songCountText).joinToString("  "),
         coverUrl = playlist?.thumbnail,
         tracks = tracks,
-        loading = loading,
+        loading = loading || built == null,
         transformKey = transformKey,
         onPlay = { index, shuffled -> actions.playItems(songs, index, playlist?.title, shuffled) },
     )
@@ -113,13 +116,14 @@ internal fun TvLocalPlaylistScreen(viewModel: LocalPlaylistViewModel = hiltViewM
     val entries by viewModel.playlistSongs.collectAsState()
     val actions = LocalTvActions.current
     val songs = remember(entries) { entries.map { it.song } }
-    val tracks = remember(songs) { songs.map { it.tvTrack() } }
+    val built = rememberTvTracks(songs) { it.tvTrack() }
+    val tracks = built.orEmpty()
     TvTrackListPage(
         title = playlist?.playlist?.name.orEmpty(),
         subtitle = pluralStringResource(R.plurals.tv_song_count, songs.size, songs.size),
         coverUrl = playlist?.thumbnails?.firstOrNull() ?: songs.firstOrNull()?.song?.thumbnailUrl,
         tracks = tracks,
-        loading = playlist == null,
+        loading = playlist == null || built == null,
         transformKey = transformKey,
         onPlay = { index, shuffled -> actions.playSongs(songs, index, playlist?.playlist?.name, shuffled) },
     )
@@ -176,17 +180,20 @@ internal fun TvSongsScreen(viewModel: TvSongsViewModel = hiltViewModel()) {
     val songs by viewModel.songs.collectAsState()
     val actions = LocalTvActions.current
     val list = songs.orEmpty()
-    val tracks = remember(list) { list.map { it.tvTrack() } }
+    val built = rememberTvTracks(list) { it.tvTrack() }
+    val tracks = built.orEmpty()
     val title = viewModel.importSource?.label ?: stringResource(viewModel.kind.title)
     TvTrackListPage(
         title = title,
         subtitle = pluralStringResource(R.plurals.tv_song_count, list.size, list.size),
         coverUrl = list.firstOrNull()?.song?.thumbnailUrl,
         tracks = tracks,
-        loading = songs == null,
+        loading = songs == null || built == null,
         onPlay = { index, shuffled -> actions.playSongs(list, index, title, shuffled) },
     )
 }
+
+private const val RevealCards = 18
 
 // albums, artists or playlists from the library as a wall of covers
 @OptIn(ExperimentalFoundationApi::class)
@@ -202,6 +209,7 @@ internal fun TvGridScreen(kind: String, viewModel: LibraryHomeViewModel = hiltVi
         else -> stringResource(R.string.albums) to albums
     }
     val first = remember { FocusRequester() }
+    val seen = remember { HashSet<Any>() }
     LaunchedEffect(items.isNotEmpty()) { if (items.isNotEmpty()) runCatching { first.requestFocus() } }
     Column(Modifier.fillMaxSize()) {
         Text(title, style = TvText.PageTitle, modifier = Modifier.padding(start = TvSpace.Start, top = TvSpace.Top))
@@ -213,15 +221,18 @@ internal fun TvGridScreen(kind: String, viewModel: LibraryHomeViewModel = hiltVi
                 verticalArrangement = Arrangement.spacedBy(18.dp),
             ) {
                 itemsIndexed(items, key = { index, item -> "${item.id}#$index" }, contentType = { _, _ -> kind }) { index, item: LocalItem ->
-                    TvItemCard(
-                        title = item.title,
-                        subtitle = item.tvSubtitle(),
-                        thumbnailUrl = item.thumbnailUrl,
-                        round = kind == "artists",
-                        transformKey = tvTransformKey(item),
-                        coverModifier = if (index == 0) Modifier.focusRequester(first) else Modifier,
-                        onClick = { actions.open(item) },
-                    )
+                    // the first screenful rises in card by card when the page opens, later cards just appear
+                    Box(if (index < RevealCards) Modifier.tvReveal(item.id to index, seen, delayMillis = 60 + index * 30) else Modifier) {
+                        TvItemCard(
+                            title = item.title,
+                            subtitle = item.tvSubtitle(),
+                            thumbnailUrl = item.thumbnailUrl,
+                            round = kind == "artists",
+                            transformKey = tvTransformKey(item),
+                            coverModifier = if (index == 0) Modifier.focusRequester(first) else Modifier,
+                            onClick = { actions.open(item) },
+                        )
+                    }
                 }
             }
         }

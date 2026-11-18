@@ -1059,6 +1059,8 @@ internal fun KaraokeSweepText(
     val layoutHolder = remember(text) { arrayOfNulls<TextLayoutResult>(1) }
 
     val sung = remember(text) { Path() }
+    // the sweep moves before composition each frame, so the lit copy joins on the very frame it starts; lines still to come skip its layout and layer, which made the lyrics page stall as it opened
+    val reached by remember(head) { derivedStateOf { head.offset.floatValue > 0f } }
 
     val effect: Modifier
     val motion: Modifier
@@ -1120,91 +1122,93 @@ internal fun KaraokeSweepText(
                 },
             )
 
-            Text(
-                text = text,
-                style = style,
-                color = highlightColor,
-                fontWeight = FontWeight.Bold,
-                textAlign = textAlign,
-                overflow = TextOverflow.Clip,
-                softWrap = !singleLine,
-                maxLines = if (singleLine) 1 else Int.MAX_VALUE,
-                modifier = Modifier
-                    // Room around the text, as for the effect layer: an offscreen layer keeps only
-                    // what's inside it, and glyph ink that reaches past the line's ends (a "y"
-                    // tail, an "f" hook) was lit on the dim copy but cut on the lit one.
-                    .layerBleed(MotionBleed)
-                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                    .padding(MotionBleed)
-                    .drawWithContent {
-                        val layout = layoutHolder[0] ?: return@drawWithContent
-                        val h = head.offset.floatValue
-                        if (h <= 0f) return@drawWithContent
-                        val len = text.length
-                        if (len == 0) return@drawWithContent
-                        val reach = MotionBleed.toPx()
-                        val lastLine = layout.lineCount - 1
-                        // The sung area reaches into the room around the text on the outside edges
-                        // only - between lines it stops exactly at the boundary, so it never lights
-                        // the top of the line below.
-                        fun topOf(line: Int) = layout.getLineTop(line) - if (line == 0) reach else 0f
-                        fun bottomOf(line: Int) =
-                            layout.getLineBottom(line) + if (line == lastLine) reach else 0f
+            if (reached) {
+                Text(
+                    text = text,
+                    style = style,
+                    color = highlightColor,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = textAlign,
+                    overflow = TextOverflow.Clip,
+                    softWrap = !singleLine,
+                    maxLines = if (singleLine) 1 else Int.MAX_VALUE,
+                    modifier = Modifier
+                        // Room around the text, as for the effect layer: an offscreen layer keeps only
+                        // what's inside it, and glyph ink that reaches past the line's ends (a "y"
+                        // tail, an "f" hook) was lit on the dim copy but cut on the lit one.
+                        .layerBleed(MotionBleed)
+                        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                        .padding(MotionBleed)
+                        .drawWithContent {
+                            val layout = layoutHolder[0] ?: return@drawWithContent
+                            val h = head.offset.floatValue
+                            if (h <= 0f) return@drawWithContent
+                            val len = text.length
+                            if (len == 0) return@drawWithContent
+                            val reach = MotionBleed.toPx()
+                            val lastLine = layout.lineCount - 1
+                            // The sung area reaches into the room around the text on the outside edges
+                            // only - between lines it stops exactly at the boundary, so it never lights
+                            // the top of the line below.
+                            fun topOf(line: Int) = layout.getLineTop(line) - if (line == 0) reach else 0f
+                            fun bottomOf(line: Int) =
+                                layout.getLineBottom(line) + if (line == lastLine) reach else 0f
 
-                        val headOffset = h.toInt().coerceIn(0, len)
-                        val headLine = layout.shownLineFor(headOffset.coerceAtMost(len - 1))
-                        val rtl = layout.isRtlLine(headLine)
-                        // the way the sweep travels on screen: right to left for arabic, hebrew...
-                        val flow = if (rtl) -1f else 1f
+                            val headOffset = h.toInt().coerceIn(0, len)
+                            val headLine = layout.shownLineFor(headOffset.coerceAtMost(len - 1))
+                            val rtl = layout.isRtlLine(headLine)
+                            // the way the sweep travels on screen: right to left for arabic, hebrew...
+                            val flow = if (rtl) -1f else 1f
 
-                        val headX = layout.sweepHeadX(h, headOffset, headLine, len, rtl)
-                        probe?.headX = headX
-                        val lineTop = topOf(headLine)
-                        val lineBottom = bottomOf(headLine)
+                            val headX = layout.sweepHeadX(h, headOffset, headLine, len, rtl)
+                            probe?.headX = headX
+                            val lineTop = topOf(headLine)
+                            val lineBottom = bottomOf(headLine)
 
-                        val softFrom = layout.getHorizontalPosition(
-                            (headOffset - EdgeSoftChars).coerceAtLeast(layout.getLineStart(headLine)),
-                            true,
-                        )
-                        // one character back, but no more than a latin letter: across a whole kanji the sung one and the one before it both sat half lit
-                        val softMax = fontPx(layout) * LatinLetterEm
-                        val fromX = if ((headX - softFrom) * flow > 0f) {
-                            headX - flow * minOf((headX - softFrom) * flow, softMax)
-                        } else {
-                            headX - EdgeSoftPx * flow
-                        }
-                        val toX = headX + EdgeLeadPx * flow
-
-                        sung.rewind()
-                        for (line in 0..headLine) {
-                            var left = layout.getLineLeft(line) - reach
-                            var right = layout.getLineRight(line) + reach
-                            // the head's own line is lit from where it starts up to the head
-                            if (line == headLine && headOffset < len) {
-                                if (rtl) left = maxOf(toX, left) else right = minOf(toX, right)
-                            }
-                            if (right > left) {
-                                sung.addRect(Rect(left, topOf(line), right, bottomOf(line)))
-                            }
-                        }
-
-                        clipPath(sung) { this@drawWithContent.drawContent() }
-
-                        if (headOffset < len) {
-                            drawRect(
-                                brush = Brush.horizontalGradient(
-                                    0f to Color.Black,
-                                    1f to Color.Transparent,
-                                    startX = fromX,
-                                    endX = toX,
-                                ),
-                                topLeft = Offset(minOf(fromX, toX), lineTop),
-                                size = Size(kotlin.math.abs(toX - fromX), lineBottom - lineTop),
-                                blendMode = BlendMode.DstIn,
+                            val softFrom = layout.getHorizontalPosition(
+                                (headOffset - EdgeSoftChars).coerceAtLeast(layout.getLineStart(headLine)),
+                                true,
                             )
-                        }
-                    },
-            )
+                            // one character back, but no more than a latin letter: across a whole kanji the sung one and the one before it both sat half lit
+                            val softMax = fontPx(layout) * LatinLetterEm
+                            val fromX = if ((headX - softFrom) * flow > 0f) {
+                                headX - flow * minOf((headX - softFrom) * flow, softMax)
+                            } else {
+                                headX - EdgeSoftPx * flow
+                            }
+                            val toX = headX + EdgeLeadPx * flow
+
+                            sung.rewind()
+                            for (line in 0..headLine) {
+                                var left = layout.getLineLeft(line) - reach
+                                var right = layout.getLineRight(line) + reach
+                                // the head's own line is lit from where it starts up to the head
+                                if (line == headLine && headOffset < len) {
+                                    if (rtl) left = maxOf(toX, left) else right = minOf(toX, right)
+                                }
+                                if (right > left) {
+                                    sung.addRect(Rect(left, topOf(line), right, bottomOf(line)))
+                                }
+                            }
+
+                            clipPath(sung) { this@drawWithContent.drawContent() }
+
+                            if (headOffset < len) {
+                                drawRect(
+                                    brush = Brush.horizontalGradient(
+                                        0f to Color.Black,
+                                        1f to Color.Transparent,
+                                        startX = fromX,
+                                        endX = toX,
+                                    ),
+                                    topLeft = Offset(minOf(fromX, toX), lineTop),
+                                    size = Size(kotlin.math.abs(toX - fromX), lineBottom - lineTop),
+                                    blendMode = BlendMode.DstIn,
+                                )
+                            }
+                        },
+                )
+            }
         }
 
         if (!subLine.isNullOrBlank()) {

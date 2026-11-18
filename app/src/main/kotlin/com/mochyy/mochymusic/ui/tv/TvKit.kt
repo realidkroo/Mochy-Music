@@ -2,6 +2,8 @@
 
 package com.mochyy.mochymusic.ui.tv
 
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -220,9 +222,16 @@ internal fun Modifier.tvDots(spacing: Dp = 16.dp, color: Color = TvColors.Dot): 
     onDrawBehind { drawPath(dots, color) }
 }
 
+// the glide a page makes to the next focused item: no bounce, softer than compose's own so a press reads as a slide across the room instead of a jump, and it carries its speed when the remote is held
+private val TvScrollGlide = spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = 380f)
+
 // vertical pages scroll so the focused row sits a third of the way down, never jammed against an edge
 @OptIn(ExperimentalFoundationApi::class)
 internal val TvColumnPivot = object : BringIntoViewSpec {
+    // marked deprecated, but compose 1.11 still drives the scroll with it
+    @Suppress("OVERRIDE_DEPRECATION")
+    override val scrollAnimationSpec: AnimationSpec<Float> = TvScrollGlide
+
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
         if (offset >= 0f && offset + size <= containerSize * 0.92f) return 0f
         val keyline = containerSize * 0.3f
@@ -234,6 +243,10 @@ internal val TvColumnPivot = object : BringIntoViewSpec {
 // rows keep the focused card near their start, so the next ones are always in sight
 @OptIn(ExperimentalFoundationApi::class)
 internal val TvRowPivot = object : BringIntoViewSpec {
+    // marked deprecated, but compose 1.11 still drives the scroll with it
+    @Suppress("OVERRIDE_DEPRECATION")
+    override val scrollAnimationSpec: AnimationSpec<Float> = TvScrollGlide
+
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
         val keyline = containerSize * 0.12f
         if (offset >= keyline && offset + size <= containerSize * 0.8f) return 0f

@@ -73,7 +73,6 @@ import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -475,15 +474,9 @@ fun MorphingCover(
         isVideoSong = if (miniVideo || forceVideoBackground) songIsVideo else trackIsVideo,
         enabled = playVideoBackground,
     )
-    // with the full video mode opening over it, the mini player's copy steps aside; collapsed into the pill or covered by lyrics it rests so it doesn't stream unseen video
-    val miniVideoShown by remember(alternateStyle, miniVideo) {
-        derivedStateOf {
-            when {
-                alternateStyle -> progressProvider() < MiniVideoUntil
-                miniVideo -> true
-                else -> progressProvider() > 0.02f && lyricsProgressProvider() < 0.99f
-            }
-        }
+    // with the full video mode opening over it, the mini player's copy steps aside so the mode takes the picture
+    val miniVideoShown by remember(alternateStyle) {
+        derivedStateOf { !alternateStyle || progressProvider() < MiniVideoUntil }
     }
 
     val isVideoActive = !isDiscStyle && playVideoBackground && videoInfo != null
@@ -990,7 +983,7 @@ fun MorphingCover(
                     }
                     .then(
                         if (onArtBoundsChanged != null) {
-                            Modifier.onGloballyPositioned { onArtBoundsChanged(it.boundsInParent()) }
+                            Modifier.onGloballyPositioned { onArtBoundsChanged(it.boundsInRoot()) }
                         } else Modifier
                     )
             ) {

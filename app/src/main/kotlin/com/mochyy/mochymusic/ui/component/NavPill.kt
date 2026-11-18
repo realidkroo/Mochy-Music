@@ -24,6 +24,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import com.mochyy.mochymusic.ui.utils.smoothFrames
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -76,7 +77,8 @@ internal class NavPillState(initial: Int) {
         return ChromePill(rect.translate(rowPadding, 0f), shown.value, lift.value)
     }
 
-    suspend fun moveTo(target: Float) = coroutineScope {
+    // the new tab's page is built on the frame the pill is moving, so its springs run on capped frames and glide through that instead of jumping
+    suspend fun moveTo(target: Float) = smoothFrames {
         val movingRight = target > (start.value + end.value) / 2f
         launch { start.animateTo(target, if (movingRight) NavHighlightTrail else NavHighlightLead) }
         end.animateTo(target, if (movingRight) NavHighlightLead else NavHighlightTrail)
@@ -89,7 +91,7 @@ internal fun rememberNavPill(selectedIndex: Int): NavPillState {
     val pill = remember { NavPillState(selectedIndex) }
     LaunchedEffect(selectedIndex) {
         if (selectedIndex < 0) {
-            pill.shown.animateTo(0f, tween(200))
+            smoothFrames { pill.shown.animateTo(0f, tween(200)) }
             return@LaunchedEffect
         }
         val target = selectedIndex.toFloat()
@@ -98,7 +100,7 @@ internal fun rememberNavPill(selectedIndex: Int): NavPillState {
             pill.start.snapTo(target)
             pill.end.snapTo(target)
         }
-        launch { pill.shown.animateTo(1f, tween(200)) }
+        launch { smoothFrames { pill.shown.animateTo(1f, tween(200)) } }
         pill.moveTo(target)
     }
     return pill
@@ -129,7 +131,7 @@ private fun Modifier.navPillGesture(pill: NavPillState, tabCount: Int, selectedI
                 val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
                 val slot = size.width.toFloat() / tabCount
                 fun tabAt(x: Float) = (x / slot - 0.5f).coerceIn(0f, tabCount - 1f)
-                launch { pill.lift.animateTo(1f, PillRise) }
+                launch { smoothFrames { pill.lift.animateTo(1f, PillRise) } }
                 launch { pill.moveTo(tabAt(down.position.x)) }
                 var dragging = false
                 var travel = 0f
@@ -147,7 +149,7 @@ private fun Modifier.navPillGesture(pill: NavPillState, tabCount: Int, selectedI
                         launch { pill.moveTo(tabAt(x)) }
                     }
                 }
-                launch { pill.lift.animateTo(0f, PillSettle) }
+                launch { smoothFrames { pill.lift.animateTo(0f, PillSettle) } }
                 val target = tabAt(x).roundToInt()
                 launch { pill.moveTo(target.toFloat()) }
                 if (dragging) {

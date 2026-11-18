@@ -55,7 +55,7 @@ import com.mochyy.mochymusic.ui.component.detail.PlaylistSortControl
 import com.mochyy.mochymusic.ui.component.detail.PlaylistModeBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSelectTick
 import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackRow
-import com.mochyy.mochymusic.ui.component.detail.featuredArtistsOf
+import com.mochyy.mochymusic.ui.component.detail.rememberFeaturedArtists
 import com.mochyy.mochymusic.ui.component.librarySwipeAction
 import com.mochyy.mochymusic.ui.component.queueSwipeAction
 import com.mochyy.mochymusic.ui.component.rememberRevealSeenState
@@ -131,9 +131,7 @@ fun CachePlaylistScreen(
     }
 
     val totalSeconds = remember(sortedSongs) { sortedSongs.sumOf { it.song.duration } }
-    val featuredArtists = remember(sortedSongs) {
-        featuredArtistsOf(sortedSongs.flatMap { it.artists }, id = { it.id }, name = { it.name })
-    }
+    val featuredArtists = rememberFeaturedArtists(sortedSongs, { sortedSongs.flatMap { it.artists } }, id = { it.id }, name = { it.name })
     val downloadState = rememberSongsDownloadState(remember(sortedSongs) { sortedSongs.map { it.song.id } })
     val isThisQueue = queueTitle == title
 

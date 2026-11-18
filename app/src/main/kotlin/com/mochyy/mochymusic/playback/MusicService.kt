@@ -1043,7 +1043,10 @@ class MusicService :
             audioLab.spatial,
             audioLab.playback,
             audioLab.volume,
-        ) { (eq, reverb, loudness), spatial, playback, volume -> LabSound(eq, reverb, loudness, spatial, playback, volume) }
+            audioLab.stage,
+        ) { (eq, reverb, loudness), spatial, playback, volume, stage ->
+            LabSound(eq, reverb, loudness, spatial, playback, volume, stage.enabled)
+        }
         combine(dataStore.data, labSound, playerVolume) { prefs, lab, volume -> passBlockersOf(prefs, lab, volume) }
             .distinctUntilChanged()
             .collect(scope) { _passBlockers.value = it }
@@ -1346,6 +1349,8 @@ class MusicService :
         // this player's song's ReplayGain, read from its file's tags when its tracks change
         val replayGain = com.mochyy.mochymusic.eq.audio.ReplayGainTags()
         val fxProcessors = arrayOf<androidx.media3.common.audio.AudioProcessor>(
+            // first, so a surround song reaches the room with its own channels
+            com.mochyy.mochymusic.eq.audio.StageAudioProcessor(audioFx),
             SpatialAudioProcessor(audioFx),
             ReverbAudioProcessor(audioFx),
             LoudnessAudioProcessor(audioFx),
@@ -1493,6 +1498,15 @@ class MusicService :
         combine(wantsFloat, audioLab.shapesSound, audioLab.playback) { wants, shapesSound, playback ->
             wants && !shapesSound && playback.speed == 1f && playback.pitch == 1f
         }.distinctUntilChanged().collect(scope) { audioOutputs.floatAllowed = it }
+
+        // 3d sims plays differently on headphones and on a speaker, so it follows wherever the music goes
+        audioOutputs.devices.collect(scope) {
+            audioLab.setStageOutput(com.mochyy.mochymusic.eq.stage.StageOutput.of(this, audioOutputs.activeDevice()))
+        }
+        // the room renders at 48 khz at most: at 192 khz it would cost sixteen times the work for nothing anyone hears
+        audioLab.stage.map { it.enabled }.distinctUntilChanged().collect(scope) { on ->
+            audioOutputs.effectRateCap = if (on) 48_000 else null
+        }
     }
 
     private fun setupAudioFocusRequest() {
@@ -4215,7 +4229,7 @@ class MusicService :
                 .setAudioProcessorChain(
                     DefaultAudioSink.DefaultAudioProcessorChain(
 
-                        // Audio Lab first (equalizer, then spatial, reverb, loudness), so Crossmix
+                        // Audio Lab first (equalizer, then 3d sims, spatial, reverb, loudness), so Crossmix
                         // blends the two songs as they're heard
                         arrayOf(
                             eqProcessor,

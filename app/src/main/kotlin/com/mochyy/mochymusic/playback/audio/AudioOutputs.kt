@@ -92,6 +92,10 @@ class AudioOutputs(private val context: Context) {
     var fixedOutputRate: Int? = null
         private set
 
+    /** the highest rate the effects take; songs above it are brought down to it first (3d sims renders at 48 khz at most) */
+    @Volatile
+    var effectRateCap: Int? = null
+
     private val systemMixerRate: Int? by lazy {
         runCatching { audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE)?.toIntOrNull() }.getOrNull()?.takeIf { it > 0 }
     }

@@ -70,13 +70,16 @@ fun AudioFxScreen(
     val spatial by viewModel.spatial.collectAsState()
     val playback by viewModel.playback.collectAsState()
     val volume by viewModel.volume.collectAsState()
-    val effects = activeEffects(reverb, loudness, spatial, playback, volume)
+    val stage by viewModel.stage.collectAsState()
+    val effects = activeEffects(reverb, loudness, spatial, playback, volume, stage)
 
     AudioLabPage(
         title = LabTitle(stringResource(R.string.fx_title_audio), "FX", firstSize = 40.sp, secondSize = 84.sp, firstDim = true),
         onBack = { navController.navigateUp() },
         art = { hidden -> FxCardStack(effects, hidden) },
     ) {
+        com.mochyy.mochymusic.ui.screens.audiolab.stage.StageCard(viewModel) { navController.navigate("audio_stage") }
+        Spacer(Modifier.height(14.dp))
         ReverbCard(viewModel)
         Spacer(Modifier.height(14.dp))
         LoudnessCard(viewModel)
@@ -214,6 +217,7 @@ private val CrossfeedLevels = listOf(
 @Composable
 private fun SpatialCard(viewModel: AudioLabViewModel) {
     val spatial by viewModel.spatial.collectAsState()
+    val stage by viewModel.stage.collectAsState()
     EffectCard(
         picture = { SpatialPicture(spatial) },
         header = {
@@ -262,6 +266,15 @@ private fun SpatialCard(viewModel: AudioLabViewModel) {
                 }
             }
         },
+        footer = if (stage.enabled && spatial.enabled) {
+            {
+                Text(
+                    stringResource(R.string.stage_spatial_note),
+                    fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 16.sp, color = LabColors.Secondary,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
+                )
+            }
+        } else null,
     )
 }
 

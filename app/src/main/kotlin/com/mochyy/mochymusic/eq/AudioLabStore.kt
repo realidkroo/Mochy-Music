@@ -17,6 +17,9 @@ import com.mochyy.mochymusic.eq.data.EQProfileRepository
 import com.mochyy.mochymusic.eq.data.FilterType
 import com.mochyy.mochymusic.eq.data.ParametricEQ
 import com.mochyy.mochymusic.eq.data.ParametricEQBand
+import com.mochyy.mochymusic.eq.stage.StageNative
+import com.mochyy.mochymusic.eq.stage.StageOutput
+import com.mochyy.mochymusic.eq.stage.StageSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -138,7 +141,7 @@ data class VolumeSettings(
 /** everything audio lab sets (equalizer and audio fx), each change goes to the players live and is saved a moment later, so a slider can be dragged freely */
 @Singleton
 class AudioLabStore @Inject constructor(
-    @ApplicationContext context: Context,
+    @ApplicationContext private val context: Context,
     private val equalizerService: EqualizerService,
     private val audioFx: AudioFxService,
     private val legacyProfiles: EQProfileRepository,
@@ -182,10 +185,23 @@ class AudioLabStore @Inject constructor(
     private val _normalize = MutableStateFlow(load("normalize") ?: NormalizeSettings())
     val normalize: StateFlow<NormalizeSettings> = _normalize.asStateFlow()
 
+    private val _stage = MutableStateFlow(load("stage") ?: StageSettings())
+    val stage: StateFlow<StageSettings> = _stage.asStateFlow()
+
+    /** where the music is playing right now, told by the service whenever the route changes */
+    private val _stageOutput = MutableStateFlow(StageOutput.PhoneSpeaker)
+    val stageOutput: StateFlow<StageOutput> = _stageOutput.asStateFlow()
+
+    @Volatile
+    private var hrtfRequested = false
+
     /** whether anything here changes the sound: offloaded playback skips every effect, so it has to stay off while this is true */
-    val shapesSound: Flow<Boolean> = combine(eq, reverb, loudness, spatial, songPreset) { eq, reverb, loudness, spatial, songPreset ->
-        eq.enabled || songPreset != null || reverb.enabled || loudness.enabled || spatial.enabled || spatial.mono
-    }.distinctUntilChanged()
+    val shapesSound: Flow<Boolean> = combine(
+        combine(eq, reverb, loudness, spatial, songPreset) { eq, reverb, loudness, spatial, songPreset ->
+            eq.enabled || songPreset != null || reverb.enabled || loudness.enabled || spatial.enabled || spatial.mono
+        },
+        stage,
+    ) { others, stage -> others || stage.enabled }.distinctUntilChanged()
 
     init {
         migrateLegacyEqualizer()
@@ -209,6 +225,18 @@ class AudioLabStore @Inject constructor(
         _spatial.update(transform)
         pushFx()
         scheduleSave()
+    }
+
+    fun updateStage(transform: (StageSettings) -> StageSettings) {
+        _stage.update(transform)
+        pushFx()
+        scheduleSave()
+    }
+
+    fun setStageOutput(output: StageOutput) {
+        if (_stageOutput.value == output) return
+        _stageOutput.value = output
+        pushFx()
     }
 
     fun updatePlayback(transform: (PlaybackSettings) -> PlaybackSettings) {
@@ -297,6 +325,9 @@ class AudioLabStore @Inject constructor(
         audioFx.reverb = _reverb.value.toParams()
         audioFx.loudness = _loudness.value.toParams()
         audioFx.spatial = _spatial.value.toParams()
+        val stage = _stage.value
+        audioFx.stage = stage.toParams(speaker = _stageOutput.value.isSpeaker(stage))
+        if (stage.enabled) loadHrtf()
         audioFx.replayGain = _normalize.value.toParams()
         val curve = _volume.value.toCurve()
         if (curve != audioFx.volumeCurve) audioFx.volumeCurve = curve
@@ -314,11 +345,24 @@ class AudioLabStore @Inject constructor(
                 putString("playback", json.encodeToString(PlaybackSettings.serializer(), _playback.value))
                 putString("volume", json.encodeToString(VolumeSettings.serializer(), _volume.value))
                 putString("normalize", json.encodeToString(NormalizeSettings.serializer(), _normalize.value))
+                putString("stage", json.encodeToString(StageSettings.serializer(), _stage.value))
                 putString(
                     "presets",
                     json.encodeToString(kotlinx.serialization.builtins.ListSerializer(EqPreset.serializer()), _presets.value),
                 )
             }
+        }
+    }
+
+    // the ear responses 3d sims places sounds with, read once the first time it's switched on
+    private fun loadHrtf() {
+        if (hrtfRequested) return
+        hrtfRequested = true
+        // tried once: without the library or the asset the room falls back to plain stereo placement
+        scope.launch {
+            runCatching {
+                StageNative.loaded && StageNative.loadHrtf(context.assets.open("stage_hrtf.bin").use { it.readBytes() })
+            }.onFailure { Timber.tag("AudioLab").w(it, "Couldn't load the 3D Sims ear responses") }
         }
     }
 

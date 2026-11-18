@@ -105,7 +105,8 @@ class SpatialAudioProcessor(private val service: AudioFxService) : AudioProcesso
             return
         }
 
-        val target = if (params.enabled) params.amount.coerceIn(0f, 1f) else 0f
+        // 3d sims already places the song for two ears; crossfeed on top would smear it
+        val target = if (params.enabled && !service.stage.enabled) params.amount.coerceIn(0f, 1f) else 0f
         val monoTarget = if (params.mono) 1f else 0f
         val out = replaceOutputBuffer(bytes)
         if (target == 0f && amount == 0f && monoTarget == 0f && monoAmount == 0f) {

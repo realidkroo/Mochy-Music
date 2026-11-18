@@ -38,8 +38,10 @@ import com.mochyy.mochymusic.lyrics.RubyToken
 import com.mochyy.mochymusic.lyrics.WordTimestamp
 import com.mochyy.mochymusic.lyrics.YouTubeCaptionTranslation
 import com.mochyy.mochymusic.utils.rememberPreference
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 /**
  * Fills [lines] with their readings and translations, the way the lyrics page shows them: the
@@ -240,24 +242,43 @@ suspend fun readSong(
         else -> null
     }
 
-    // one line after another, never a coroutine each: sixty kuromoji runs at once stalled the player opening a japanese song
-    lines.forEachIndexed { index, entry ->
-        if (entry.text.isBlank()) {
-            onLine(index, null)
+    suspend fun readLine(entry: LyricsEntry): LineReading {
+        // japanese and chinese get ruby over each word like furigana; alphabets only get a line underneath
+        val ruby = LyricsUtils.rubyFor(entry.text, script)
+        // the whole line's reading too, ruby or not: it's what the line says when the romanisation is shown as the line itself
+        val romanized = if (ruby != null) LyricsUtils.readingLine(entry.text, ruby) else romanizeOne(entry.text)
+        val reading = romanized?.takeIf { it.isNotBlank() && it != entry.text }
+        val pieces = entry.syllables ?: entry.words
+        val words = if (reading != null && !pieces.isNullOrEmpty()) {
+            LyricsUtils.romanizedWords(entry.text, pieces, ruby) { romanizeOne(it) }
         } else {
-            // japanese and chinese get ruby over each word like furigana; alphabets only get a line underneath
-            val ruby = LyricsUtils.rubyFor(entry.text, script)
-            // the whole line's reading too, ruby or not: it's what the line says when the romanisation is shown as the line itself
-            val romanized = if (ruby != null) LyricsUtils.readingLine(entry.text, ruby) else romanizeOne(entry.text)
-            val reading = romanized?.takeIf { it.isNotBlank() && it != entry.text }
-            val pieces = entry.syllables ?: entry.words
-            val words = if (reading != null && !pieces.isNullOrEmpty()) {
-                LyricsUtils.romanizedWords(entry.text, pieces, ruby) { romanizeOne(it) }
-            } else {
-                null
-            }
-            onLine(index, LineReading(reading, words, ruby))
+            null
         }
+        return LineReading(reading, words, ruby)
+    }
+
+    // one line after another, never a coroutine each: sixty kuromoji runs at once stalled the player opening a japanese song
+    var outOfMemory = false
+    lines.forEachIndexed { index, entry ->
+        if (entry.text.isBlank() || outOfMemory) {
+            onLine(index, null)
+            return@forEachIndexed
+        }
+        // a line the reader trips over just goes without its reading, it used to take the whole app down mid-song
+        val reading = try {
+            readLine(entry)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "No reading for a lyric line")
+            null
+        } catch (e: OutOfMemoryError) {
+            // the japanese dictionary alone is tens of megabytes; a phone short on memory skips the readings rather than crashing
+            Timber.w(e, "Out of memory reading lyrics")
+            outOfMemory = true
+            null
+        }
+        onLine(index, reading)
     }
 }
 

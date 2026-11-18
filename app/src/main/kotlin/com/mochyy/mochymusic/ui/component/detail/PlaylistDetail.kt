@@ -66,6 +66,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -253,6 +254,15 @@ fun <A> featuredArtistsOf(
         .sortedByDescending { it.value.size }
         .take(limit)
         .map { (artistId, names) -> FeaturedArtistUi(id = artistId, name = names.first()) }
+
+// the featured artists counted off the main thread, liked songs and the cache run to thousands and made the page hitch as it opened
+@Composable
+fun <A> rememberFeaturedArtists(key: Any?, artists: () -> List<A>, id: (A) -> String?, name: (A) -> String): List<FeaturedArtistUi> {
+    val featured by produceState(emptyList<FeaturedArtistUi>(), key) {
+        value = withContext(Dispatchers.Default) { featuredArtistsOf(artists(), id, name) }
+    }
+    return featured
+}
 
 // passes the scaffold's cover composable down to PlaylistHeader when classic or minimal style draws a framed cover
 internal val LocalPlaylistFramedCover = staticCompositionLocalOf<(@Composable (Modifier) -> Unit)?> { null }

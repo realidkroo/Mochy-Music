@@ -68,6 +68,8 @@ app/persistent-debug.keystore
 .cxx/
 *.so
 *.bin
+# the ear measurements 3d sims places sounds with, built by tools/stage/make_hrtf.py
+!app/src/main/assets/stage_hrtf.bin
 
 # Scratch files in the repo root (not part of the build)
 /test_*
@@ -84,6 +86,7 @@ app/persistent-debug.keystore
 # Misc
 *.py
 !scripts/*.py
+!tools/stage/*.py
 .env
 output-metadata.json
 vcs.xml

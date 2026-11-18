@@ -232,7 +232,8 @@ internal fun glassDownscale(effectiveRadius: Float, low: Boolean = false): Int =
     // low quality drops a step sooner: a little softer, a quarter of the pixels to draw and blur
     low && effectiveRadius >= 32f -> 4
     effectiveRadius >= 16f -> 2
-    low && effectiveRadius >= 8f -> 2
+    // the faint first steps of a low progressive bar are its biggest, and drawn at full size they cost the most for a blur you can hardly see
+    low && effectiveRadius >= 2f -> 2
     else -> 1
 }
 

@@ -27,6 +27,7 @@ class PrecisionSink(
     private var outputChannels: IntArray? = null
     private var configuredAllowed = false
     private var configuredTarget: Int? = null
+    private var configuredCap: Int? = null
     private var handedFormat: Format? = null
 
     /** true while buffers are reworked here instead of going straight down */
@@ -65,10 +66,12 @@ class PrecisionSink(
         val format = inputFormat ?: return
         configuredAllowed = outputs.floatAllowed
         configuredTarget = outputs.fixedOutputRate
+        configuredCap = outputs.effectRateCap
         val encoding = format.pcmEncoding
         val workable = MimeTypes.AUDIO_RAW == format.sampleMimeType && encoding in Workable && format.channelCount > 0
         val hiRes = workable && Util.isEncodingHighResolutionPcm(encoding)
-        val target = configuredTarget?.takeIf { workable && it != format.sampleRate }
+        val capped = configuredCap?.takeIf { format.sampleRate > it }
+        val target = listOfNotNull(configuredTarget, capped).minOrNull()?.takeIf { workable && it != format.sampleRate }
         val nextResampler = target?.let {
             resampler?.takeIf { r -> r.inRate == format.sampleRate && r.outRate == it }
                 ?: SincResampler.create(format.sampleRate, it, format.channelCount)
@@ -105,7 +108,7 @@ class PrecisionSink(
     override fun handleBuffer(buffer: ByteBuffer, presentationTimeUs: Long, encodedAccessUnitCount: Int): Boolean {
         // an effect or the output changed mid-song: the sink drains the old track and reopens, a moment's gap
         if (pending == null && inputFormat != null &&
-            (configuredAllowed != outputs.floatAllowed || configuredTarget != outputs.fixedOutputRate)
+            (configuredAllowed != outputs.floatAllowed || configuredTarget != outputs.fixedOutputRate || configuredCap != outputs.effectRateCap)
         ) {
             applyConfiguration()
         }

@@ -39,6 +39,11 @@ class ExoDownloadService : DownloadService(
         return super.onStartCommand(intent, flags, startId)
     }
 
+    // android 15 gives a download service six hours a day; when that runs out it has to stop at once or android ends the whole app with an error
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        stopSelf()
+    }
+
     override fun getDownloadManager() = downloadUtil.downloadManager
 
     override fun getScheduler(): Scheduler = PlatformScheduler(this, JOB_ID)
