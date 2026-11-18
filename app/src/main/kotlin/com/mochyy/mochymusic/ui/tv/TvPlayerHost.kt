@@ -196,6 +196,11 @@ private fun TvRemoteLayer(player: PlayerConnection, onOpen: (String) -> Unit) {
                 player = player,
                 firstFocus = barFocus,
                 onLeaveTop = hide,
+                onOpen = onOpen,
+                onSwitchLyricsSource = {
+                    bar = TvPlayerBar.None
+                    info = TvInfoStart.Lyrics
+                },
                 onInfo = { start ->
                     bar = TvPlayerBar.None
                     info = start
@@ -360,6 +365,8 @@ private fun TvControlStrip(
     player: PlayerConnection,
     firstFocus: FocusRequester,
     onLeaveTop: () -> Unit,
+    onOpen: (String) -> Unit,
+    onSwitchLyricsSource: () -> Unit,
     onInfo: (TvInfoStart) -> Unit,
 ) {
     var style by rememberEnumPreference(PlayerStyleKey, PlayerStyle.FLAGSHIP)
@@ -425,6 +432,10 @@ private fun TvControlStrip(
             TvTransportExtras(player)
             Spacer(Modifier.width(20.dp))
             TvPillButton(stringResource(R.string.tv_lyrics), onClick = { TvPlayerRemote.send(TvPlayerCommand.Lyrics) }, icon = R.drawable.lyrics)
+            Spacer(Modifier.width(8.dp))
+            TvPillButton(stringResource(R.string.tv_lyrics_provider), onClick = onSwitchLyricsSource, icon = R.drawable.lyrics)
+            Spacer(Modifier.width(8.dp))
+            TvPillButton(stringResource(R.string.playlists), onClick = { onOpen("${TvRoutes.Grid}/playlists") }, icon = R.drawable.queue_music)
             Spacer(Modifier.width(8.dp))
             TvPillButton(stringResource(R.string.tv_song_info), onClick = { onInfo(TvInfoStart.Song) }, icon = R.drawable.info)
             Spacer(Modifier.width(8.dp))

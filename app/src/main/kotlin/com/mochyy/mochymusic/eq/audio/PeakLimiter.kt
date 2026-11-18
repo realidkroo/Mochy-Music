@@ -139,7 +139,12 @@ class PeakLimiter {
     /** the resting case straight on 16-bit pcm: the samples only go through the delay, so they're copied in blocks, not one by one */
     fun delayPcm(input: ByteBuffer, out: ByteBuffer) {
         if (!inPcm) doublesToPcm()
-        val bytes = input.remaining()
+        val frameBytes = (2 * channels).coerceAtLeast(2)
+        val bytes = (input.remaining() / frameBytes) * frameBytes
+        if (bytes <= 0) {
+            input.position(input.limit())
+            return
+        }
         val held = pcmDelay.size
         if (bytes >= held) {
             out.put(pcmDelay)

@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.runtime.getValue
@@ -114,7 +114,7 @@ internal fun TvShelf(
                 contentPadding = contentPadding,
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                items(items, key = { it.id }, contentType = { it::class.simpleName }) { item ->
+                itemsIndexed(items, key = { index, item -> "${item.id}#$index" }, contentType = { _, item -> item::class.simpleName }) { _, item ->
                     TvItemCard(
                         title = item.title,
                         subtitle = item.tvSubtitle(),

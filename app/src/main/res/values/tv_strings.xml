@@ -59,6 +59,7 @@
     <string name="tv_similar_artists">similar artists</string>
 
     <string name="tv_lyrics">Lyrics</string>
+    <string name="tv_lyrics_provider">Lyrics provider</string>
     <string name="tv_song_info">Song info</string>
     <string name="tv_source">Source</string>
     <string name="tv_flagship_square">Flagship square</string>
@@ -66,6 +67,7 @@
     <string name="tv_unlike">Remove like</string>
     <string name="tv_go_to_album">Go to album</string>
     <string name="tv_go_to_artist">Go to %1$s</string>
+    <string name="tv_go_to_playlists">Go to playlists</string>
     <string name="tv_copy_to_tv">Copy from your phone to this TV</string>
 
     <string name="tv_sync_from_phone">Sync From Phone</string>

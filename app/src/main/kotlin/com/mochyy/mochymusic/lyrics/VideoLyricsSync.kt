@@ -42,10 +42,10 @@ object VideoLyricsSync {
         val lines = withContext(Dispatchers.Default) { LyricsUtils.parseLyrics(raw) }
         if (lines.size < 4 || LyricsUtils.isUnsynced(lines)) return
 
-        // the album version heard against the video is exact and works however long the intro is; captions only when there's no album version to hear
+        // captions line the video up first without downloading a second audio stream; listening only runs when captions have nothing
         val albumSongId = SongVersions.songVersionId(metadata.title, metadata.artists.joinToString { it.name })
-        val map = albumSongId?.let { matchAudio(it) }
-            ?: captionMap(entity.id, lines)
+        val map = captionMap(entity.id, lines)
+            ?: albumSongId?.let { matchAudio(it) }
         checked.put(key, true)
         android.util.Log.i("VideoLyricsSync", "${entity.id} against ${albumSongId ?: "its captions"}: ${map ?: "no match"}")
         if (map == null || !map.isShifted) return

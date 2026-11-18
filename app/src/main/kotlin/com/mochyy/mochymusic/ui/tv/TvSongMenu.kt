@@ -58,6 +58,7 @@ internal fun TvSongMenu(song: TvSongRef, onDismiss: () -> Unit) {
         song.artists.firstOrNull { it.second != null }?.let { (name, id) ->
             add(Triple(R.drawable.artist, stringResource(R.string.tv_go_to_artist, name)) { actions.navController.navigate("artist/$id") })
         }
+        add(Triple(R.drawable.queue_music, stringResource(R.string.tv_go_to_playlists)) { actions.navController.navigate("${TvRoutes.Grid}/playlists") })
         // a song the linked phone keeps can be copied here, so it plays even when the phone is away
         if (song.id in phoneFiles && song.id !in link.sync.onTv()) {
             add(Triple(R.drawable.download, stringResource(R.string.tv_copy_to_tv)) { link.sync.transfer(listOf(song.id)) })

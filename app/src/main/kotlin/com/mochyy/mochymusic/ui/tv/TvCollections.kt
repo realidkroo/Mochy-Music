@@ -212,7 +212,7 @@ internal fun TvGridScreen(kind: String, viewModel: LibraryHomeViewModel = hiltVi
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp),
             ) {
-                itemsIndexed(items, key = { _, item -> item.id }, contentType = { _, _ -> kind }) { index, item: LocalItem ->
+                itemsIndexed(items, key = { index, item -> "${item.id}#$index" }, contentType = { _, _ -> kind }) { index, item: LocalItem ->
                     TvItemCard(
                         title = item.title,
                         subtitle = item.tvSubtitle(),

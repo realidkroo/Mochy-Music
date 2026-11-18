@@ -26,6 +26,7 @@ class ScrobbleTimer(
     var maxWaitSeconds = DEFAULT_MAX_WAIT_SECONDS
 
     private var track: ScrobbleTrack? = null
+    private var trackId: String? = null
 
     /** When the song started, in seconds since 1970: what a scrobble is sent with. */
     private var startedAt = 0L
@@ -43,6 +44,7 @@ class ScrobbleTimer(
         val song = metadata?.toScrobbleTrack() ?: return
         val seconds = if (durationMs > 0) (durationMs / 1000).toInt() else metadata.duration
         track = song.copy(durationSeconds = seconds.takeIf { it > 0 })
+        trackId = metadata.id
         startedAt = System.currentTimeMillis() / 1000
         scrobbler.nowPlaying(track!!)
         if (seconds <= minSongSeconds) return
@@ -51,6 +53,10 @@ class ScrobbleTimer(
     }
 
     fun onPlayingChanged(isPlaying: Boolean, metadata: MediaMetadata?, durationMs: Long) {
+        // an external skip while crossfading can swap the song before the stop arrives, so restart for the new id
+        if (track != null && metadata?.id != null && metadata.id != trackId) {
+            onSongStop()
+        }
         when {
             !isPlaying -> pause()
             track == null -> onSongStart(metadata, durationMs)
@@ -62,6 +68,7 @@ class ScrobbleTimer(
         job?.cancel()
         job = null
         track = null
+        trackId = null
         remainingMs = 0
         runningSince = 0
     }

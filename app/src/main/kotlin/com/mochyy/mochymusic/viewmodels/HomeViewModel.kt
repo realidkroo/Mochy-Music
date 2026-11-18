@@ -600,7 +600,7 @@ class HomeViewModel @Inject constructor(
             merged.add(0, likedPlaylistEntity)
         }
 
-        recentlyPlayed.value = merged.take(15)
+        recentlyPlayed.value = merged.distinctBy { it.id }.take(15)
     }
 
     private suspend fun loadMostPlayedForHome() {
@@ -614,7 +614,7 @@ class HomeViewModel @Inject constructor(
     }
 
     private suspend fun loadRecentHistory() {
-        recentHistorySongs.value = database.recentEvents(15).first().map { it.song }
+        recentHistorySongs.value = database.recentEvents(15).first().map { it.song }.distinctBy { it.id }
     }
 
     private suspend fun loadAllTimeHits() {

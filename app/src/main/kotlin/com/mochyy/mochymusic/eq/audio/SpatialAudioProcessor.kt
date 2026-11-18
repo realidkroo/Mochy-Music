@@ -300,8 +300,12 @@ class SpatialAudioProcessor(private val service: AudioFxService) : AudioProcesso
                 for (ear in 0..1) {
                     val i = s * 2 + ear
                     if (az.isNaN()) {
-                        // lfe: no direction, straight to both ears
-                        b0[i] = 1f; b1[i] = 0f; a1[i] = 0f
+                        // lfe only carries deep bass; a 120 hz low-pass keeps dolby high-frequency residue out of both ears
+                        val wc = 2.0 * PI * 120.0
+                        val normLfe = wc + k
+                        b0[i] = (wc / normLfe).toFloat()
+                        b1[i] = (wc / normLfe).toFloat()
+                        a1[i] = ((wc - k) / normLfe).toFloat()
                         continue
                     }
                     val earAz = if (ear == 0) -90.0 else 90.0
@@ -361,7 +365,7 @@ class SpatialAudioProcessor(private val service: AudioFxService) : AudioProcesso
         }
 
         companion object {
-            private const val DelaySize = 64
+            private const val DelaySize = 256
             private const val HeadRadius = 0.0875
             private const val SpeedOfSound = 343.0
             private const val AlphaMin = 0.1
@@ -373,7 +377,7 @@ class SpatialAudioProcessor(private val service: AudioFxService) : AudioProcesso
         private val EMPTY_BUFFER: ByteBuffer = ByteBuffer.allocateDirect(0).order(ByteOrder.nativeOrder())
         private const val ToggleSeconds = 0.15f
         private const val SpeakerGain = 0.6f
-        private const val SurroundGain = 0.45f
+        private const val SurroundGain = 0.28f
         private const val Knee = 0.9f
 
         /** android's channel order: fl fr fc lfe bl br sl sr (fewer channels drop from the end) */

@@ -133,7 +133,9 @@ internal fun TvShell(
         // back on a tab's own page takes the remote to the rail first, since the rail sits at the far right
         val railFocus = remember { FocusRequester() }
         var railHasFocus by remember { mutableStateOf(false) }
-        val onTabRoot = currentRoute in TvTab.entries.map { it.route } || currentRoute?.startsWith("${TvRoutes.Search}?") == true
+        val onTabRoot = currentRoute in TvTab.entries.map { it.route } ||
+            currentRoute == "${TvRoutes.Grid}/{kind}" ||
+            currentRoute?.startsWith("${TvRoutes.Search}?") == true
 
         var playerWasOpen by remember { mutableStateOf(false) }
         LaunchedEffect(sheet.isDismissed) {
@@ -215,10 +217,11 @@ internal fun TvShell(
                             onPillPlaced = { if (sheet.isDismissed) pillBounds = it },
                             onSwitchProfile = onSwitchProfile,
                             onTab = { tab ->
+                                val sameTab = tabOf(currentRoute) == tab
                                 navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = !sameTab }
                                     launchSingleTop = true
-                                    restoreState = true
+                                    restoreState = !sameTab && tab != TvTab.Playlists
                                 }
                             },
                         )

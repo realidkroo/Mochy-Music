@@ -45,6 +45,7 @@ class CrossmixAnalysisRepository(
     suspend fun analyze(item: MediaItem, wholeTrack: Boolean): TrackAnalysis? {
         val uri = item.localConfiguration?.uri ?: return null
         val mediaId = item.mediaId.ifBlank { uri.toString() }
+        val cacheKey = item.localConfiguration?.customCacheKey?.takeIf { it.isNotBlank() } ?: mediaId
         usable(memory[mediaId], wholeTrack)?.let { return it }
 
         val key = "$mediaId|$wholeTrack"
@@ -56,7 +57,7 @@ class CrossmixAnalysisRepository(
                 try {
                     usable(read(mediaId), wholeTrack)?.also { memory[mediaId] = it; failures.remove(mediaId) }
                         ?: (
-                            withTimeoutOrNull(timeoutMs) { decodeAndAnalyze(uri, mediaId, wholeTrack, progress) }
+                            withTimeoutOrNull(timeoutMs) { decodeAndAnalyze(uri, cacheKey, wholeTrack, progress) }
                                 ?: null.also {
                                     failures[mediaId] = "timed out after ${timeoutMs / 1_000} s with " +
                                         "${progress.decodedUs / 1_000_000} s of audio decoded"

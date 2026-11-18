@@ -98,7 +98,12 @@ internal fun WelcomeGirl(
     screen: @Composable BoxScope.() -> Unit = { MochyPhoneScreen() },
 ) {
     BoxWithConstraints(modifier) {
-        val scale = constraints.maxWidth / GirlArt.FrameWidth
+        val rawScale = if (constraints.hasBoundedWidth && constraints.maxWidth > 0) {
+            constraints.maxWidth / GirlArt.FrameWidth
+        } else {
+            0.5f
+        }
+        val scale = rawScale.coerceAtLeast(0.05f)
         // decoded in 5% steps and never above the art's own size, so a tiny resize doesn't decode again
         val bitmapScale = (ceil(scale * 20f) / 20f).coerceIn(0.05f, 1f)
         val resources = LocalContext.current.resources

@@ -83,6 +83,8 @@ private object ContainerTransformRegistry {
     val sourceCovers = HashMap<String, String>()
     // which screens are showing a card for each key right now, so a page can tell where it was opened from
     val hosts = HashMap<String, MutableList<String>>()
+    // only one card per screen key may attach sharedBounds at a time or compose throws when two rows show the same playlist
+    val scopedOwners = HashMap<String, MutableList<Any>>()
     var targetWidth = 0f
 }
 
@@ -160,25 +162,41 @@ fun Modifier.containerTransformSource(
     val sharedScope = LocalSharedTransitionScope.current ?: return this
     val visibilityScope = LocalNavAnimatedContentScope.current ?: return this
     val screenId = currentScreenId()
-    DisposableEffect(key, screenId) {
+    val scoped = screenKey(key, screenId)
+    val owner = remember { Any() }
+    val isPrimaryOwner = remember(scoped, owner) {
+        val owners = ContainerTransformRegistry.scopedOwners.getOrPut(scoped) { mutableListOf() }
+        if (owners.isEmpty() || owners.first() === owner) {
+            if (owner !in owners) owners += owner
+            true
+        } else {
+            false
+        }
+    }
+    DisposableEffect(key, screenId, scoped, owner) {
         val hosts = ContainerTransformRegistry.hosts.getOrPut(key) { mutableListOf() }
         hosts += screenId
+        val owners = ContainerTransformRegistry.scopedOwners.getOrPut(scoped) { mutableListOf() }
+        if (owner !in owners) owners += owner
         onDispose {
             hosts.remove(screenId)
             if (hosts.isEmpty()) ContainerTransformRegistry.hosts.remove(key)
+            owners.remove(owner)
+            if (owners.isEmpty()) ContainerTransformRegistry.scopedOwners.remove(scoped)
         }
     }
-    val scoped = screenKey(key, screenId)
     val clip = rememberMorphingCornerClip(scoped, cornerRadius)
 
     return with(sharedScope) {
-        this@containerTransformSource
-            .onPlaced {
-                ContainerTransformRegistry.sourceWidths[scoped] = it.size.width.toFloat()
-                ContainerTransformRegistry.sourceRadii[scoped] = cornerRadius
-                if (coverUrl != null) ContainerTransformRegistry.sourceCovers[key] = coverUrl
-            }
-            .sharedBounds(
+        val placed = this@containerTransformSource.onPlaced {
+            ContainerTransformRegistry.sourceWidths[scoped] = it.size.width.toFloat()
+            ContainerTransformRegistry.sourceRadii[scoped] = cornerRadius
+            if (coverUrl != null) ContainerTransformRegistry.sourceCovers[key] = coverUrl
+        }
+        if (!isPrimaryOwner) {
+            placed
+        } else {
+            placed.sharedBounds(
                 sharedContentState = rememberSharedContentState(scoped),
                 animatedVisibilityScope = visibilityScope,
                 // the opened screen is drawn above the card, so the card only has to be gone
@@ -189,6 +207,7 @@ fun Modifier.containerTransformSource(
                 resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(ContentScale.FillWidth, Alignment.TopCenter),
                 clipInOverlayDuringTransition = clip,
             )
+        }
     }
 }
 

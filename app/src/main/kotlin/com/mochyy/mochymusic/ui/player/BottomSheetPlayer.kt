@@ -63,6 +63,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
+import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionInRoot
@@ -354,6 +355,7 @@ private fun PlayerSheet(
                     TvPlayerCommand.Lyrics -> if (currentStyle != PlayerStyle.VIDEO) {
                         if (transition.page == PlayerPage.LYRICS) transition.close() else transition.open(PlayerPage.LYRICS)
                     }
+                    TvPlayerCommand.LyricsSource -> showLyricsSource = true
                     TvPlayerCommand.ClosePage -> if (transition.page != PlayerPage.NONE) transition.close()
                 }
             }
@@ -1416,7 +1418,8 @@ private fun PlayerSheet(
                     .onGloballyPositioned { coords ->
                         if (coords.parentLayoutCoordinates == null) return@onGloballyPositioned
 
-                        val bounds = coords.boundsInRoot()
+                        // measured in the sheet's own box so a fast open animation never leaves a mid-slide root y behind
+                        val bounds = coords.boundsInParent()
                         rects.controls = androidx.compose.ui.geometry.Rect(
                             left = bounds.left,
                             top = bounds.top - with(density) { controlsDrawShift.toPx() },

@@ -43,6 +43,8 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -2358,6 +2360,7 @@ internal fun rememberWordMotionModifier(
     motionScale: Float = 1f,
 ): Modifier {
     val cache = remember(head) { MotionLayoutCache() }
+    val textLayer = rememberGraphicsLayer()
     return Modifier.drawWithContent {
         // Subscribes this draw to the per-letter springs.
         @Suppress("UNUSED_VARIABLE") val tick = head.motionTick.intValue
@@ -2428,6 +2431,11 @@ internal fun rememberWordMotionModifier(
             return@drawWithContent
         }
 
+        // record the line's dim and lit text once, then draw slices of that layer for each moving letter
+        textLayer.record {
+            this@drawWithContent.drawContent()
+        }
+
         var k = 0
         while (k < n) {
             // Neighbouring slots that move together are one slot (tiled slots meet edge to edge).
@@ -2438,7 +2446,7 @@ internal fun rememberWordMotionModifier(
                 ) e++
                 withTransform({ translate(0f, m.dy[k]) }) {
                     clipRect(m.clipLeft[k], m.clipTop[k], m.clipRight[e], m.clipBottom[k]) {
-                        this@drawWithContent.drawContent()
+                        drawLayer(textLayer)
                     }
                 }
                 k = e + 1
@@ -2453,7 +2461,7 @@ internal fun rememberWordMotionModifier(
                 }
             }) {
                 clipRect(m.clipLeft[k], m.clipTop[k], m.clipRight[k], m.clipBottom[k]) {
-                    this@drawWithContent.drawContent()
+                    drawLayer(textLayer)
                 }
             }
             k++

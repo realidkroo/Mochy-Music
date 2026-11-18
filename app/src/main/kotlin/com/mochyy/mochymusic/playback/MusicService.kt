@@ -1942,10 +1942,14 @@ class MusicService :
         )
     }
 
+    // each song only needs its duration and related tracks recovered once per session, not on every chunk read
+    private val recoveredSongs = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
     private suspend fun recoverSong(
         mediaId: String,
         playbackData: YTPlayerUtils.PlaybackData? = null
     ) {
+        if (!recoveredSongs.add(mediaId)) return
         val song = database.song(mediaId).first()
         val mediaMetadata = withContext(Dispatchers.Main) {
             player.findNextMediaItemById(mediaId)?.metadata
@@ -2038,12 +2042,13 @@ class MusicService :
         return status
     }
 
-    // a queue's songs, with the ones the listener hides already taken out
+    // a queue's songs, with the ones the listener hides already taken out unless that would leave the queue empty
     private suspend fun readQueue(queue: Queue): Queue.Status =
         withContext(Dispatchers.IO) {
-            queue.getInitialStatus()
+            val raw = queue.getInitialStatus()
                 .filterExplicit(dataStore.get(HideExplicitKey, false))
-                .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
+            val filtered = raw.filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
+            if (filtered.items.isEmpty() && raw.items.isNotEmpty()) raw else filtered
         }
 
     // [blend] means the old song is still playing: a queue with a first song has it crossing over already, one without crosses once it's read; [read] is the queue already read while the old song played
@@ -2392,19 +2397,19 @@ class MusicService :
 
         val queue = currentQueue
         if (dataStore.get(AutoLoadMoreKey, true) && queue.hasNextPage()) {
-            val page = runCatching { withContext(Dispatchers.IO) { queue.nextPage() } }
+            val rawPage = runCatching { withContext(Dispatchers.IO) { queue.nextPage() } }
                 .onFailure { Timber.tag(TAG).w(it, "Failed to load next queue page") }
                 .getOrDefault(emptyList())
                 .filterExplicit(hideExplicit)
-                .filterVideoSongs(hideVideos)
+            val page = rawPage.filterVideoSongs(hideVideos).ifEmpty { rawPage }
             if (page.isNotEmpty()) return page to false
         }
 
         if (!isInfiniteQueueEnabled() || player.repeatMode != REPEAT_MODE_OFF) return null
 
-        val infiniteItems = loadInfiniteQueueItems()
+        val rawInfinite = loadInfiniteQueueItems()
             .filterExplicit(hideExplicit)
-            .filterVideoSongs(hideVideos)
+        val infiniteItems = rawInfinite.filterVideoSongs(hideVideos).ifEmpty { rawInfinite }
         return infiniteItems.takeIf { it.isNotEmpty() }?.let { it to true }
     }
 
@@ -2868,7 +2873,9 @@ class MusicService :
                 // another master, and evens out by its own ReplayGain in the sink instead
                 val fromModule = currentMediaId != null &&
                     resolvedSourceIds[currentMediaId].let { it != null && it != com.mochyy.mochymusic.modules.SourceModules.YouTubeId }
-                if (normalizeAudio && currentMediaId != null && !fromModule) {
+                // android's loudness enhancer only handles stereo; on multichannel dolby tracks it distorts the surround channels
+                val multichannel = withContext(Dispatchers.Main) { (player.audioFormat?.channelCount ?: 2) > 2 }
+                if (normalizeAudio && currentMediaId != null && !fromModule && !multichannel) {
                     val format = withContext(Dispatchers.IO) {
                         database.format(currentMediaId).first()
                     }
@@ -2959,11 +2966,13 @@ class MusicService :
         clearStreamFailure()
         if (!promotingCrossmix) crossmixDirector.onItemChanged()
 
-        if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) {
-            // round again: a mute or a low volume left by a mix or a fade went round with it and the loop played silent until a seek
+        if (!promotingCrossmix && !isCrossfading) {
+            // a mute or a low volume left by an aborted mix or fade must not carry into the next song until a seek
             playerCrossmixProcessors[player]?.clear()
-            transport.cancel()
-            player.volume = targetVolume()
+            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT || reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+                transport.cancel()
+                player.volume = targetVolume()
+            }
         }
         // the songs either side of the new one get their first seconds fetched, for a blended skip
         prefetchNeighbours()
@@ -3121,7 +3130,7 @@ class MusicService :
             publishPresence()
         }
 
-        if (events.containsAny(Player.EVENT_IS_PLAYING_CHANGED)) {
+        if (events.containsAny(Player.EVENT_IS_PLAYING_CHANGED, Player.EVENT_PLAYBACK_STATE_CHANGED)) {
             scrobbleTimer.onPlayingChanged(player.isPlaying, player.currentMetadata, player.duration)
             playReporter.onPlayingChanged(player.isPlaying, player.currentMetadata, player.duration)
             // a pause is often the last thing before the app is closed, and the timed saves only
@@ -3948,8 +3957,10 @@ class MusicService :
 
                 songUrlCache[mediaId]?.takeIf { it.second > System.currentTimeMillis() }?.let { cached ->
                     scope.launch(Dispatchers.IO) { recoverSong(mediaId) }
+                    // keep each open capped to a chunk so seeks and background decoders never pull the whole file at once
                     return@Factory dataSpec
                         .withUri(cached.first.toUri())
+                        .subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
                         .withRequestHeaders(dataSpec.httpRequestHeaders + songStreamHeaders[mediaId].orEmpty())
                 }
             } else {
@@ -4876,6 +4887,9 @@ class MusicService :
         nextPlayer.addListener(sleepTimer)
 
         sleepTimer.player = player
+        // nextPlayer seeked to the new song before this listener attached, so tell the service and scrobbler now
+        currentMediaMetadata.value = player.currentMetadata
+        onMediaItemTransition(player.currentMediaItem, Player.MEDIA_ITEM_TRANSITION_REASON_SEEK)
 
         try {
             (mediaSession as MediaSession).player = sessionPlayer(player)

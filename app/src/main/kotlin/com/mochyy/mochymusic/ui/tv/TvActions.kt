@@ -71,7 +71,12 @@ internal class TvActions(
         when (item) {
             is SongItem -> player()?.playQueue(YouTubeQueue(WatchEndpoint(videoId = item.id), item.toMediaMetadata()))
             is AlbumItem -> navController.navigate("album/${item.browseId}")
-            is PlaylistItem -> navController.navigate("online_playlist/${item.id}")
+            // speed dial wraps local playlists into playlist items so both kinds sit in one row
+            is PlaylistItem -> when {
+                item.id == "liked" -> navController.navigate("${TvRoutes.Songs}/liked")
+                item.author?.name == "Local Playlist" -> navController.navigate("local_playlist/${item.id}")
+                else -> navController.navigate("online_playlist/${item.id}")
+            }
             is ArtistItem -> navController.navigate("artist/${item.id}")
         }
     }
@@ -81,7 +86,12 @@ internal class TvActions(
             is Song -> player()?.playQueue(YouTubeQueue(WatchEndpoint(videoId = item.id), item.toMediaMetadata()))
             is Album -> navController.navigate("album/${item.id}")
             is Artist -> navController.navigate("artist/${item.id}")
-            is Playlist -> navController.navigate("local_playlist/${item.id}")
+            // recently played makes a fake playlist row for liked songs, which lives under tv_songs on a tv
+            is Playlist -> if (item.id == "liked") {
+                navController.navigate("${TvRoutes.Songs}/liked")
+            } else {
+                navController.navigate("local_playlist/${item.id}")
+            }
         }
     }
 

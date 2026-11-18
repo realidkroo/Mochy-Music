@@ -177,17 +177,21 @@ fun YouTubeVideoSurface(
             // a paused frame never changes, so it's read once and then left alone
             if ((read && !playing) || !textureView.isAvailable) continue
             if (!sampler.read(session.frameSurface, textureView)) continue
-            sampler.bitmap.getPixels(pixels, 0, SampleSize, 0, 0, SampleSize, SampleSize)
             read = true
 
-            val reading = VideoLetterbox.analyze(pixels, SampleSize, SampleSize)
+            // analyse the frame off the main thread so scanning 20k pixels every 300ms never stalls a 120hz frame
+            val (reading, edges, tones) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                sampler.bitmap.getPixels(pixels, 0, SampleSize, 0, 0, SampleSize, SampleSize)
+                val r = VideoLetterbox.analyze(pixels, SampleSize, SampleSize)
+                val e = edgeColors(pixels, SampleSize, horizontal.inset, vertical.inset)
+                val t = com.mochyy.mochymusic.ui.player.flagship.ambientTones(pixels, SampleSize, SampleSize, horizontal.inset, vertical.inset)
+                Triple(r, e, t)
+            }
             val now = SystemClock.uptimeMillis()
             if (vertical.offer(reading.vertical, now)) launch { barInsetY.animateTo(vertical.inset, zoomSpec) }
             if (horizontal.offer(reading.horizontal, now)) launch { barInsetX.animateTo(horizontal.inset, zoomSpec) }
-            currentOnAmbient?.invoke(edgeColors(pixels, SampleSize, horizontal.inset, vertical.inset))
-            currentOnFrameColors?.invoke(
-                com.mochyy.mochymusic.ui.player.flagship.ambientTones(pixels, SampleSize, SampleSize, horizontal.inset, vertical.inset)
-            )
+            currentOnAmbient?.invoke(edges)
+            currentOnFrameColors?.invoke(tones)
         }
     }
 

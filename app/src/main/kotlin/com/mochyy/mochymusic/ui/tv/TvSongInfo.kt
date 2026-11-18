@@ -43,16 +43,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.mochyy.mochymusic.LocalDatabase
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.lyrics.LyricsProviderRegistry
+import com.mochyy.mochymusic.lyrics.LyricsUtils
 import com.mochyy.mochymusic.playback.PlayerConnection
 import com.mochyy.mochymusic.ui.player.info.AboutSource
 import com.mochyy.mochymusic.ui.player.info.SongAbout
 import com.mochyy.mochymusic.ui.player.info.SongAboutLoader
 import com.mochyy.mochymusic.ui.player.info.textFor
+import com.mochyy.mochymusic.viewmodels.LyricsMenuViewModel
 
 // which part of the panel the remote lands on first
-internal enum class TvInfoStart { Song, Source }
+internal enum class TvInfoStart { Song, Source, Lyrics }
 
 // the song's info on a tv: a drawer from the right where every line is a stop for the remote, artists and album open their pages
 @Composable
@@ -61,6 +65,7 @@ internal fun TvSongInfoPanel(
     start: TvInfoStart,
     onOpen: (route: String) -> Unit,
     onDismiss: () -> Unit,
+    lyricsViewModel: LyricsMenuViewModel = hiltViewModel(),
 ) {
     val song by player.mediaMetadata.collectAsState()
     val current = song ?: return
@@ -71,11 +76,38 @@ internal fun TvSongInfoPanel(
     val playingFrom by player.service.playingFrom.collectAsState()
     val facts by remember(current.id) { player.streamFacts(current.id) }.collectAsState(initial = null)
     val format by remember(player) { player.currentFormat }.collectAsState(initial = null)
+    val lyricsEntity by player.currentLyrics.collectAsState(initial = null)
+    val sources by lyricsViewModel.sources.collectAsState()
     val firstFocus = remember { FocusRequester() }
     val sourceFocus = remember { FocusRequester() }
+    val lyricsFocus = remember { FocusRequester() }
     var aboutOpen by remember { mutableStateOf(false) }
-    LaunchedEffect(start) { runCatching { (if (start == TvInfoStart.Source) sourceFocus else firstFocus).requestFocus() } }
+    LaunchedEffect(current.id) { lyricsViewModel.checkSources(current) }
+    LaunchedEffect(start) {
+        val target = when (start) {
+            TvInfoStart.Source -> sourceFocus
+            TvInfoStart.Lyrics -> lyricsFocus
+            TvInfoStart.Song -> firstFocus
+        }
+        runCatching { target.requestFocus() }
+    }
     BackHandler(onBack = onDismiss)
+
+    val providerNames = remember(sources) {
+        val rank = { state: LyricsMenuViewModel.SourceState? ->
+            when (state) {
+                is LyricsMenuViewModel.SourceState.Available -> 0
+                LyricsMenuViewModel.SourceState.Checking, null -> 1
+                LyricsMenuViewModel.SourceState.Unavailable -> 2
+                LyricsMenuViewModel.SourceState.Off -> 3
+            }
+        }
+        LyricsProviderRegistry.providerNames.sortedWith(
+            compareBy<String> { rank(sources[it]) }
+                .thenBy { (sources[it] as? LyricsMenuViewModel.SourceState.Available)?.candidate?.order ?: Int.MAX_VALUE }
+        )
+    }
+    val activeProvider = lyricsEntity?.provider
 
     val aboutText = AboutSource.entries.firstNotNullOfOrNull { textFor(about, it) }
     val from = playingFrom[current.id]
@@ -150,6 +182,12 @@ internal fun TvSongInfoPanel(
                     onClick = { onOpen("album/${album.id}") },
                 )
             }
+            TvInfoRow(
+                icon = R.drawable.queue_music,
+                text = stringResource(R.string.tv_go_to_playlists),
+                modifier = firstModifier(),
+                onClick = { onOpen("${TvRoutes.Grid}/playlists") },
+            )
             Spacer(Modifier.height(14.dp))
 
             // where the song is coming from right now and in what format, a stop of its own so the remote can rest on it
@@ -160,6 +198,38 @@ internal fun TvSongInfoPanel(
                 modifier = Modifier.focusRequester(sourceFocus).then(firstModifier()),
                 onClick = {},
             )
+            Spacer(Modifier.height(14.dp))
+
+            // lets the tv remote pick which lyrics source this song uses, since the touch sheet can't be reached here
+            TvInfoLabel(stringResource(R.string.ps_lyrics_provider_title))
+            providerNames.forEachIndexed { index, name ->
+                val state = sources[name]
+                val available = state as? LyricsMenuViewModel.SourceState.Available
+                val isActive = name == activeProvider
+                val status = when {
+                    isActive -> stringResource(R.string.ps_lyrics_in_use)
+                    available != null -> when (available.candidate.sync) {
+                        LyricsUtils.SyncKind.WORD -> stringResource(R.string.ps_lyrics_word_synced)
+                        LyricsUtils.SyncKind.LINE -> stringResource(R.string.ps_lyrics_line_synced)
+                        else -> stringResource(R.string.ps_lyrics_plain)
+                    } + if (available.candidate.hasDuet) " · " + stringResource(R.string.ps_lyrics_duet) else ""
+                    state == LyricsMenuViewModel.SourceState.Unavailable -> stringResource(R.string.ps_lyrics_not_found)
+                    state == LyricsMenuViewModel.SourceState.Off -> stringResource(R.string.ps_lyrics_off)
+                    else -> stringResource(R.string.ps_lyrics_checking)
+                }
+                val label = LyricsProviderRegistry.getDisplayName(name)
+                TvInfoRow(
+                    icon = if (isActive) R.drawable.check else R.drawable.lyrics,
+                    text = "$label · $status",
+                    modifier = if (index == 0) Modifier.focusRequester(lyricsFocus) else Modifier,
+                    onClick = {
+                        if (available != null && !isActive) {
+                            lyricsViewModel.useSource(current, available.candidate)
+                            onDismiss()
+                        }
+                    },
+                )
+            }
             Spacer(Modifier.height(20.dp))
             TvInfoRow(icon = R.drawable.close, text = stringResource(R.string.tv_info_close), onClick = onDismiss)
         }

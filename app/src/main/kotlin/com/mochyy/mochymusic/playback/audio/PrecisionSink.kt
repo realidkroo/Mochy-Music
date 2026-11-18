@@ -202,14 +202,20 @@ class PrecisionSink(
         }
     }
 
-    // tpdf dither: two random halves of a step added before rounding, so quiet detail fades into a faint even hiss instead of grit
+    // tpdf dither: two random halves of a step added before rounding, soft-clamped first so dolby float peaks above 1.0 never crackle
     private fun ditherTo16(sample: Float): Short {
         dither = dither xor (dither shl 13)
         dither = dither xor (dither ushr 17)
         dither = dither xor (dither shl 5)
         val a = (dither and 0xFFFF) / 65536f
         val b = ((dither ushr 16) and 0xFFFF) / 65536f
-        val value = (sample * 32768f + a - b).roundToInt()
+        val clamped = when {
+            !sample.isFinite() -> 0f
+            sample > 0.98f -> 0.98f + 0.02f * kotlin.math.tanh((sample - 0.98f) / 0.02f)
+            sample < -0.98f -> -0.98f + 0.02f * kotlin.math.tanh((sample + 0.98f) / 0.02f)
+            else -> sample
+        }
+        val value = (clamped * 32768f + a - b).roundToInt()
         return value.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
     }
 

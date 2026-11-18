@@ -1186,6 +1186,12 @@ object LyricsUtils {
             "naega", "neol", "neoreul", "nan", "nae", "neon", "geu", "nal", "naneun", "neoui",
             "uri", "saranghae", "jigeum", "modeun", "ije", "geurae", "eonjena",
         ),
+        "hi-Latn" to setOf(
+            "hai", "hain", "mein", "main", "tera", "teri", "tere", "mera", "meri", "mere",
+            "dil", "pyaar", "pyar", "ishq", "nahi", "nahin", "nhi", "bhi", "toh", "kya",
+            "koi", "hum", "tum", "tujhe", "tujhko", "mujhe", "mujhko", "aur", "tha", "thi",
+            "yeh", "woh", "kaise", "kyun", "kabhi", "apna", "apni", "apne", "saath", "zindagi",
+        ),
     )
 
     /** The script of the lyric text only, with timestamps and markup stripped. */
