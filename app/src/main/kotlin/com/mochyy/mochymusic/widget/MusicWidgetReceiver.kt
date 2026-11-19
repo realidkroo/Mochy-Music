@@ -76,5 +76,6 @@ class MusicWidgetReceiver : AppWidgetProvider() {
         const val ACTION_NEXT = "com.mochyy.mochymusic.widget.NEXT"
         const val ACTION_PREVIOUS = "com.mochyy.mochymusic.widget.PREVIOUS"
         const val ACTION_UPDATE_WIDGET = "com.mochyy.mochymusic.widget.UPDATE_WIDGET"
+        const val ACTION_REPEAT = "com.mochyy.mochymusic.widget.REPEAT"
     }
 }

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_np_2x2">Now playing 2×2</string>
+    <string name="widget_np_4x1">Now playing 4×1</string>
+    <string name="widget_np_4x2">Now playing 4×2</string>
+    <string name="widget_np_description">Now playing card with previous, play and next</string>
+    <string name="widget_np_pill_description">Slim now playing pill with like, playback and repeat controls</string>
+    <string name="widget_np_preview_title">Song title</string>
+    <string name="widget_np_preview_artist">Artist</string>
+    <string name="widget_np_preview_title_artist">Song title - Artist</string>
+    <string name="widget_np_previous">Previous</string>
+    <string name="widget_np_next">Next</string>
+    <string name="widget_np_repeat">Repeat</string>
+    <string name="widget_np_lyrics_unavailable">Lyrics not available</string>
+    <string name="widget_np_lyrics_loading">Finding lyrics…</string>
+    <string name="widget_np_lyrics_not_synced">Lyrics aren\'t synced for this song</string>
+    <string name="widget_np_time_zero">00:00</string>
+</resources>

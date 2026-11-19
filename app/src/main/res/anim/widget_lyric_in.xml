@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Incoming lines fade from 0 to 1. The outgoing animation uses the same curve in reverse, so the
+     two alpha values add up to 1 at every frame and the line never dims to a blank. The shared ease
+     makes the change read as one soft movement rather than a linear cut. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+    <alpha
+        android:duration="260"
+        android:fromAlpha="0.0"
+        android:interpolator="@android:interpolator/accelerate_decelerate"
+        android:toAlpha="1.0" />
+    <translate
+        android:duration="260"
+        android:fromYDelta="16%"
+        android:interpolator="@android:interpolator/accelerate_decelerate"
+        android:toYDelta="0%" />
+</set>
