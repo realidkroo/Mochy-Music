@@ -27,6 +27,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -201,13 +203,16 @@ internal fun OnbButton(
     }
 }
 
-/** round single-line field for the username on the profile pages */
+/** round single-line field, for the username on the profile pages and the import's playlist link */
 @Composable
 internal fun OnbTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    onDone: (() -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     BasicTextField(
         value = value,
@@ -215,18 +220,24 @@ internal fun OnbTextField(
         singleLine = true,
         textStyle = TextStyle(color = Color.White, fontFamily = InterFontFamily, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.03).em),
         cursorBrush = SolidColor(Color.White),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Done),
+        keyboardActions = if (onDone != null) KeyboardActions(onDone = { onDone() }) else KeyboardActions.Default,
         modifier = modifier,
         decorationBox = { inner ->
-            Box(
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(CircleShape)
                     .background(Onb.Field)
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                    .padding(start = 20.dp, end = if (trailing != null) 8.dp else 20.dp)
+                    .heightIn(min = 50.dp),
             ) {
-                if (value.isEmpty()) Text(placeholder, color = Onb.Faint, fontSize = 16.sp)
-                inner()
+                Box(modifier = Modifier.weight(1f).padding(vertical = 14.dp)) {
+                    if (value.isEmpty()) Text(placeholder, color = Onb.Faint, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    inner()
+                }
+                trailing?.invoke()
             }
         },
     )

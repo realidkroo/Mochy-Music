@@ -3,6 +3,7 @@
 package com.mochyy.mochymusic.importer
 
 import com.music.innertube.YouTube
+import com.music.innertube.models.Artist
 import com.music.innertube.utils.completed
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
@@ -23,6 +24,7 @@ enum class LinkSource(val label: String, val example: String) {
     APPLE_MUSIC("Apple Music", "https://music.apple.com/us/playlist/…"),
     DEEZER("Deezer", "https://www.deezer.com/playlist/…"),
     YOUTUBE("YouTube Music", "https://music.youtube.com/playlist?list=…"),
+    SOUNDCLOUD("SoundCloud", "https://soundcloud.com/…/sets/…"),
 }
 
 class LinkImportException(message: String) : Exception(message)
@@ -30,7 +32,7 @@ class LinkImportException(message: String) : Exception(message)
 /** reads a public playlist or album from a share link without logging in, private playlists aren't reachable so those go through tunemymusic */
 object LinkImporter {
 
-    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    internal val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     private val client by lazy {
         HttpClient(OkHttp) {
@@ -51,7 +53,7 @@ object LinkImporter {
     private val DEEZER_REGEX = Regex("deezer\\.com/(?:[a-z]{2}/)?(playlist|album)/(\\d+)")
     private val YT_LIST_REGEX = Regex("[?&]list=([A-Za-z0-9_-]+)")
     private val YT_BROWSE_REGEX = Regex("music\\.youtube\\.com/(?:browse|playlist)/((?:VL|MPREb_)?[A-Za-z0-9_-]+)")
-    private val SHORT_LINK_HOSTS = listOf("spotify.link", "spotify.app.link", "deezer.page.link", "link.deezer.com")
+    private val SHORT_LINK_HOSTS = listOf("spotify.link", "spotify.app.link", "deezer.page.link", "link.deezer.com", "on.soundcloud.com")
 
     /** works out which service a pasted link belongs to, or null if it isn't one we read */
     fun detect(link: String): LinkSource? {
@@ -60,6 +62,7 @@ object LinkImporter {
             text.contains("spotify") -> LinkSource.SPOTIFY
             text.contains("music.apple.com") -> LinkSource.APPLE_MUSIC
             text.contains("deezer") -> LinkSource.DEEZER
+            text.contains("soundcloud.com") -> LinkSource.SOUNDCLOUD
             text.contains("youtube.com") || text.contains("youtu.be") -> LinkSource.YOUTUBE
             else -> null
         }
@@ -73,7 +76,8 @@ object LinkImporter {
             LinkSource.APPLE_MUSIC -> fetchApple(resolved)
             LinkSource.DEEZER -> fetchDeezer(resolved)
             LinkSource.YOUTUBE -> fetchYouTube(resolved)
-            null -> throw LinkImportException("Paste a Spotify, Apple Music, Deezer or YouTube Music link.")
+            LinkSource.SOUNDCLOUD -> SoundCloudLink.fetch(resolved)
+            null -> throw LinkImportException("Paste a Spotify, Apple Music, Deezer, YouTube Music or SoundCloud link.")
         }
     }
 
@@ -94,7 +98,7 @@ object LinkImporter {
         return finalUrl
     }
 
-    private suspend fun get(url: String): HttpResponse = try {
+    internal suspend fun get(url: String): HttpResponse = try {
         client.get(url) {
             header("User-Agent", USER_AGENT)
             header("Accept-Language", "en-US,en;q=0.9")
@@ -105,7 +109,7 @@ object LinkImporter {
         throw LinkImportException("Couldn't reach the server — check your connection.")
     }
 
-    private suspend fun getOk(url: String, what: String): String {
+    internal suspend fun getOk(url: String, what: String): String {
         val response = get(url)
         when (response.status.value) {
             in 200..299 -> return response.bodyAsText()
@@ -121,8 +125,20 @@ object LinkImporter {
         val match = SPOTIFY_REGEX.find(url)
             ?: throw LinkImportException("Paste a Spotify playlist or album link.")
         val (type, id) = match.destructured
-        return parseSpotifyEmbed(getOk("https://open.spotify.com/embed/$type/$id", "Spotify"), type)
-            .from(PlaylistOrigin(remoteId = id, remoteUrl = "https://open.spotify.com/$type/$id"))
+        val parsed = parseSpotifyEmbed(getOk("https://open.spotify.com/embed/$type/$id", "Spotify"), type)
+        val named = parsed.playlistOrigins.values.firstOrNull()?.author
+        val profile = optional { spotifyProfile(type, id) }
+        val author = profile?.copy(name = named?.name ?: profile.name) ?: named
+        return parsed.from(PlaylistOrigin(remoteId = id, remoteUrl = "https://open.spotify.com/$type/$id", author = author))
+    }
+
+    /** the owner's page is only linked from the full playlist page (an album links its artist), and their picture sits on that page */
+    private suspend fun spotifyProfile(type: String, id: String): PlaylistAuthor? {
+        val page = getOk("https://open.spotify.com/$type/$id", "Spotify")
+        val profileUrl = metaContent(page, if (type == "album") "music:musician" else "music:creator") ?: return null
+        val profile = getOk(profileUrl, "Spotify")
+        val name = metaContent(profile, "og:title") ?: return null
+        return PlaylistAuthor(name = name, avatarUrl = metaContent(profile, "og:image"), profileUrl = profileUrl)
     }
 
     internal fun parseSpotifyEmbed(html: String, type: String): ParsedImport {
@@ -157,12 +173,15 @@ object LinkImporter {
             .mapNotNull { it as? JsonObject }
             .maxByOrNull { it.long("width") ?: 0 }
             ?.string("url")
+        // the embed names the owner (an album's artist) but has no link to them, fetchSpotify adds that
+        val owner = entity.string("subtitle")?.replace(' ', ' ')
         return ParsedImport(
             likedSongs = emptyList(),
             playlists = mapOf(name to tracks),
             warnings = warnings,
             provider = ImportSource.SPOTIFY,
             playlistCovers = coverFor(name, cover),
+            playlistOrigins = authorFor(name, owner?.let { PlaylistAuthor(it) }),
         )
     }
 
@@ -175,9 +194,16 @@ object LinkImporter {
             ?: throw LinkImportException("Paste an Apple Music playlist or album link.")
         val type = match.groupValues[1]
         val page = url.substringBefore('#')
-        return parseApplePage(getOk(page, "Apple Music"), type)
-            .from(PlaylistOrigin(remoteId = match.groupValues[2], remoteUrl = page))
+        val parsed = parseApplePage(getOk(page, "Apple Music"), type)
+        val named = parsed.playlistOrigins.values.firstOrNull()?.author
+        val author = named?.copy(avatarUrl = named.profileUrl?.let { optional { appleAvatar(it) } })
+        return parsed.from(PlaylistOrigin(remoteId = match.groupValues[2], remoteUrl = page, author = author))
     }
+
+    /** the curator's or artist's share picture is a wide 1200x630 card, and apple's image server cuts any size from it */
+    private suspend fun appleAvatar(profileUrl: String): String? =
+        metaContent(getOk(profileUrl, "Apple Music"), "og:image")
+            ?.replace(Regex("/\\d+x\\d+[a-z]*\\.(?:png|jpe?g|webp)$"), "/300x300cc.jpg")
 
     internal fun parseApplePage(html: String, type: String): ParsedImport {
         val data = Regex("<script[^>]*id=\"serialized-server-data\"[^>]*>(.*?)</script>", RegexOption.DOT_MATCHES_ALL)
@@ -192,7 +218,12 @@ object LinkImporter {
         val header = sections.firstOrNull { it.string("itemKind") == "containerDetailHeaderLockup" }
             ?.let { (it["items"] as? JsonArray)?.firstOrNull() as? JsonObject }
         val name = header?.string("title") ?: "Apple Music $type"
-        val albumArtist = header?.let { (it["subtitleLinks"] as? JsonArray)?.firstOrNull()?.path("title") as? JsonPrimitive }?.contentOrNull
+        // a playlist's curator or an album's artist, linked to their page
+        val ownerLink = (header?.get("subtitleLinks") as? JsonArray)?.firstOrNull().obj()
+        val owner = ownerLink?.string("title")?.let { title ->
+            PlaylistAuthor(name = title, profileUrl = ownerLink.path("segue", "destination", "contentDescriptor").obj()?.string("url"))
+        }
+        val albumArtist = owner?.name
         val declaredCount = header?.long("trackCount")?.toInt()
 
         val tracks = sections.filter { it.string("itemKind") == "trackLockup" }
@@ -226,6 +257,7 @@ object LinkImporter {
             warnings = warnings,
             provider = ImportSource.APPLE_MUSIC,
             playlistCovers = coverFor(name, cover),
+            playlistOrigins = authorFor(name, owner),
         )
     }
 
@@ -259,8 +291,23 @@ object LinkImporter {
         }
         if (tracks.isEmpty()) throw LinkImportException("That Deezer $type has no songs we can read.")
         val cover = info.string("picture_xl") ?: info.string("cover_xl")
+        val author = optional { deezerAuthor(type, info) }
         return ParsedImport(likedSongs = emptyList(), playlists = mapOf(name to tracks), provider = ImportSource.DEEZER, playlistCovers = coverFor(name, cover))
-            .from(PlaylistOrigin(remoteId = id, remoteUrl = "https://www.deezer.com/$type/$id"))
+            .from(PlaylistOrigin(remoteId = id, remoteUrl = "https://www.deezer.com/$type/$id", author = author))
+    }
+
+    /** an album carries its artist whole; a playlist only names its creator, whose picture is on their own profile */
+    private suspend fun deezerAuthor(type: String, info: JsonObject): PlaylistAuthor? {
+        if (type == "album") {
+            val artist = info["artist"].obj() ?: return null
+            val name = artist.string("name") ?: return null
+            return PlaylistAuthor(name, artist.string("picture_medium"), artist.idString("id")?.let { "https://www.deezer.com/artist/$it" })
+        }
+        val creator = info["creator"].obj() ?: return null
+        val name = creator.string("name") ?: return null
+        val id = creator.idString("id")
+        val avatar = id?.let { optional { deezerJson("https://api.deezer.com/user/$it").string("picture_medium") } }
+        return PlaylistAuthor(name, avatar, id?.let { "https://www.deezer.com/profile/$it" })
     }
 
     private suspend fun deezerJson(url: String): JsonObject {
@@ -293,12 +340,13 @@ object LinkImporter {
         }
         val tracks = page.songs.map { it.toImportedTrack() }
         if (tracks.isEmpty()) throw LinkImportException("That YouTube playlist is empty.")
+        val author = page.playlist.author?.let { youTubeAuthor(it) }
         return ParsedImport(
             likedSongs = emptyList(),
             playlists = mapOf(page.playlist.title to tracks),
             provider = ImportSource.YOUTUBE_MUSIC,
             playlistCovers = coverFor(page.playlist.title, page.playlist.thumbnail),
-        ).from(PlaylistOrigin(remoteId = playlistId, remoteUrl = "https://music.youtube.com/playlist?list=$playlistId"))
+        ).from(PlaylistOrigin(remoteId = playlistId, remoteUrl = "https://music.youtube.com/playlist?list=$playlistId", author = author))
     }
 
     private suspend fun fetchYouTubeAlbum(browseId: String): ParsedImport {
@@ -307,16 +355,46 @@ object LinkImporter {
         }
         val tracks = page.songs.map { it.toImportedTrack() }
         if (tracks.isEmpty()) throw LinkImportException("That album has no songs.")
+        val author = page.album.artists?.firstOrNull()?.let { youTubeAuthor(it) }
         return ParsedImport(
             likedSongs = emptyList(),
             playlists = mapOf(page.album.title to tracks),
             provider = ImportSource.YOUTUBE_MUSIC,
             playlistCovers = coverFor(page.album.title, page.album.thumbnail),
-        ).from(PlaylistOrigin(remoteId = browseId, remoteUrl = "https://music.youtube.com/browse/$browseId"))
+        ).from(PlaylistOrigin(remoteId = browseId, remoteUrl = "https://music.youtube.com/browse/$browseId", author = author))
+    }
+
+    /** the channel's picture comes from its own page; youtube's own lists have no channel id, so just a name */
+    private suspend fun youTubeAuthor(channel: Artist): PlaylistAuthor {
+        val id = channel.id
+        val avatar = id?.let { optional { YouTube.artist(it).getOrNull()?.artist?.thumbnail } }
+        return PlaylistAuthor(channel.name, avatar, id?.let { "https://music.youtube.com/channel/$it" })
     }
 
     private fun coverFor(name: String, cover: String?): Map<String, String> =
         if (cover.isNullOrBlank()) emptyMap() else mapOf(name to cover)
+
+    /** a parser only knows who made the playlist, the fetch around it adds where it lives */
+    private fun authorFor(name: String, author: PlaylistAuthor?): Map<String, PlaylistOrigin> =
+        if (author == null) emptyMap() else mapOf(name to PlaylistOrigin(author = author))
+
+    /** one meta tag's content from a page's head, by its name or property */
+    private fun metaContent(html: String, key: String): String? =
+        Regex("<meta[^>]+(?:name|property)=\"${Regex.escape(key)}\"[^>]+content=\"([^\"]+)\"")
+            .find(html)?.groupValues?.get(1)?.let(::decodeEntities)?.takeIf { it.isNotBlank() }
+
+    private fun decodeEntities(text: String): String = text
+        .replace("&quot;", "\"").replace("&#39;", "'").replace("&#x27;", "'")
+        .replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+
+    /** extras like who made a playlist are worth one try, never worth failing the import over */
+    private suspend fun <T> optional(block: suspend () -> T?): T? = try {
+        block()
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
+    }
 
     /** a link reads one playlist, so origin is where that one lives */
     private fun ParsedImport.from(origin: PlaylistOrigin) = copy(playlistOrigins = playlists.keys.associateWith { origin })

@@ -52,7 +52,7 @@ internal class WebModule(
     private val resources: Resources,
     // the pictures and fonts a zip brought, when it came as one
     files: File? = null,
-) : SourceModule, LyricsModule, LookModule, MetadataModule, ModuleArt, ModuleFields, SkinSource {
+) : SourceModule, LyricsModule, LookModule, MetadataModule, ModuleArt, ModuleFields, SkinSource, FieldRanges {
 
     private val siteName = runCatching { URI(base).host }.getOrNull().orEmpty()
 
@@ -64,7 +64,7 @@ internal class WebModule(
         author = manifest.author,
     )
 
-    override val skin: ModuleSkin? = SkinParser.parse(info.id, info.name, manifest.player, manifest.font, manifest.pages, files, base, manifest.actions, manifest.glass)
+    override val skin: ModuleSkin? = SkinParser.parse(info.id, info.name, manifest.player, manifest.font, manifest.pages, files, base, manifest.actions, manifest.glass, manifest.players, manifest.bar)
 
     override val icon: String? = resolveModuleArt(manifest.icon, files, base)
 
@@ -81,6 +81,8 @@ internal class WebModule(
     private val settings = ManifestSettings(manifest, skip = if (manifest.playsSongs) setOf(QualityKey, AtmosKey) else emptySet())
 
     override val fields: List<ModuleField> get() = settings.fields
+
+    override val ranges: Map<String, FieldRange> get() = settings.ranges
 
     override fun onFields(values: Map<String, String>) {
         settings.values = values

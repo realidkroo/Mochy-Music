@@ -280,15 +280,20 @@ private fun PlayerSheet(
     val (showPlayerBottomCard) = rememberPreference(ShowPlayerBottomCardKey, defaultValue = true)
 
     // the player studio: the selector the player shrinks into, and the flagship's in-place editor
-    // a look module with a player of its own puts that style first in the selector, for as long as it's on
+    // every player the looks that are on bring comes first in the selector, each in its own column with its sub-styles under it
     val onTv = com.mochyy.mochymusic.ui.utils.isTvLayout()
-    val hasModuleStyle = !onTv && com.mochyy.mochymusic.modules.skin.ActiveSkin.current?.player != null
-    // the selector's columns, as indexes into PlayerStyle.entries: the flagship with its older layouts under it
-    val selectorColumns = remember(hasModuleStyle, onTv) {
-        val columns = if (hasModuleStyle) listOf(listOf(PlayerStyle.MODULE)) + PlayerStyle.selectorColumns else PlayerStyle.selectorColumns
+    val moduleStyles = if (onTv) emptyList() else com.mochyy.mochymusic.modules.skin.ActiveSkin.styles
+    val hasModuleStyle = moduleStyles.isNotEmpty()
+    // mochy's own styles keep their places and the module ones follow, one card each
+    val ownStyles = remember { PlayerStyle.entries.filter { it != PlayerStyle.MODULE } }
+    val firstModuleStyle = ownStyles.size
+    // the selector's columns, as indexes into playerStyles: the flagship with its older layouts under it
+    val selectorColumns = remember(moduleStyles, onTv) {
+        val own = PlayerStyle.selectorColumns.map { column -> column.map { it.ordinal } }
         // a tv only offers the looks made for it
-        val shown = if (onTv) columns.map { column -> column.filter { it.availableOnTv } }.filter { it.isNotEmpty() } else columns
-        shown.map { column -> column.map { it.ordinal } }
+        val shown = if (onTv) PlayerStyle.selectorColumns.map { column -> column.filter { it.availableOnTv }.map { it.ordinal } }.filter { it.isNotEmpty() } else own
+        val modules = moduleStyles.withIndex().groupBy({ it.value.group }, { firstModuleStyle + it.index }).values.toList()
+        modules + shown
     }
     val studio = com.mochyy.mochymusic.ui.player.studio.rememberPlayerStudioState(selectorColumns)
     val studioAnchors = remember { com.mochyy.mochymusic.ui.player.studio.StudioAnchors() }
@@ -414,16 +419,27 @@ private fun PlayerSheet(
     LaunchedEffect(studioEngaged) {
         if (studioEngaged) transition.close()
     }
-    // the module style is last among the entries, so leaving it out keeps every other style's index
-    val playerStyles = remember(hasModuleStyle) { PlayerStyle.entries.filter { it != PlayerStyle.MODULE || hasModuleStyle } }
+    // the module style is last among the entries, so leaving it out keeps every other style's index; each module style is one more card after them
+    val playerStyles = remember(ownStyles, moduleStyles.size) { ownStyles + List(moduleStyles.size) { PlayerStyle.MODULE } }
     val currentPlayerStyleForStudio by androidx.compose.runtime.rememberUpdatedState(playerStyle)
+    val currentModuleStyles by androidx.compose.runtime.rememberUpdatedState(moduleStyles)
+    // where a style's card is: a module style's is the one picked among them
+    val styleIndex: (PlayerStyle) -> Int = { style ->
+        if (style == PlayerStyle.MODULE) {
+            firstModuleStyle + currentModuleStyles.indexOf(com.mochyy.mochymusic.modules.skin.ActiveSkin.style).coerceAtLeast(0)
+        } else {
+            ownStyles.indexOf(style).coerceAtLeast(0)
+        }
+    }
     val openStudio: () -> Unit = remember(studio) {
         {
             showActionMenu = false
             showExpandMenu = false
-            studio.open(playerStyles.indexOf(currentPlayerStyleForStudio).coerceAtLeast(0))
+            studio.open(styleIndex(currentPlayerStyleForStudio))
         }
     }
+    // a module player without an editor page of its own edits through its customise sheet, over the player
+    var moduleCustomiseOpen by remember { mutableStateOf(false) }
     // a hold opens it with a buzz rising from soft to strong, the selector arriving on the peak
     val studioContext = androidx.compose.ui.platform.LocalContext.current
     val studioScope = androidx.compose.runtime.rememberCoroutineScope()
@@ -1851,12 +1867,28 @@ private fun PlayerSheet(
             styles = playerStyles,
             onSet = { index, velocity ->
                 val style = playerStyles[index]
-                val restyled = style != playerStyle
-                if (restyled) onPlayerStyleChange(style)
+                // a module style is also a pick among them, which changes the player even when the style itself stays module
+                val moduleStyle = moduleStyles.getOrNull(index - firstModuleStyle)
+                val repicked = moduleStyle != null && moduleStyle != com.mochyy.mochymusic.modules.skin.ActiveSkin.style
+                moduleStyle?.let { com.mochyy.mochymusic.modules.skin.ActiveSkin.pick(it.key) }
+                val restyled = style != playerStyle || repicked
+                if (style != playerStyle) onPlayerStyleChange(style)
                 studio.settleOn(index, restyled, velocity = velocity)
             },
             onEdit = { focused ->
-                if (playerStyles.getOrNull(focused) == PlayerStyle.POSTER) {
+                val moduleStyle = moduleStyles.getOrNull(focused - firstModuleStyle)
+                if (moduleStyle != null) {
+                    // the module's own editor page, or its customise sheet over the player
+                    val repicked = moduleStyle != com.mochyy.mochymusic.modules.skin.ActiveSkin.style
+                    com.mochyy.mochymusic.modules.skin.ActiveSkin.pick(moduleStyle.key)
+                    if (playerStyle != PlayerStyle.MODULE) onPlayerStyleChange(PlayerStyle.MODULE)
+                    val editor = moduleStyle.player.editor
+                    if (editor != null) {
+                        styleActions.onOpenRoute(com.mochyy.mochymusic.ui.screens.settings.modules.modulePageRoute(moduleStyle.skin.moduleId, editor))
+                    } else {
+                        studio.settleOn(focused, repicked || playerStyle != PlayerStyle.MODULE) { moduleCustomiseOpen = true }
+                    }
+                } else if (playerStyles.getOrNull(focused) == PlayerStyle.POSTER) {
                     // its one edit is its visualizer: back to the player, with the poster's sheet
                     val restyled = playerStyle != PlayerStyle.POSTER
                     if (restyled) onPlayerStyleChange(PlayerStyle.POSTER)
@@ -1889,7 +1921,7 @@ private fun PlayerSheet(
                     // the full editor, on whichever flagship is in view
                     val style = playerStyles.getOrNull(focused)?.takeIf { it.hasFullEditor } ?: PlayerStyle.FLAGSHIP
                     if (playerStyle != style) onPlayerStyleChange(style)
-                    studio.livePage = playerStyles.indexOf(style)
+                    studio.livePage = styleIndex(style)
                     studio.go(StudioStage.EDIT)
                 }
             },
@@ -1898,6 +1930,7 @@ private fun PlayerSheet(
         if (playerStyle == PlayerStyle.POSTER || playerStyle == PlayerStyle.IPOD || playerStyle.isBedside) {
             com.mochyy.mochymusic.ui.player.studio.StyleSheets(studio)
         }
+        if (moduleCustomiseOpen) com.mochyy.mochymusic.ui.player.menu.SkinCustomiseSheet(onDismiss = { moduleCustomiseOpen = false })
         if (playerStyle.flagshipFamily) {
             val (showBigDiscStyles) = rememberPreference(com.mochyy.mochymusic.constants.ShowBigDiscStylesKey, defaultValue = false)
             val coverStyles = remember(showBigDiscStyles, coverStyle) {

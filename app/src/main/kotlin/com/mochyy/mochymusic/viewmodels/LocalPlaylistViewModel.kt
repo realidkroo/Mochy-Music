@@ -48,6 +48,12 @@ constructor(
         database
             .playlist(playlistId)
             .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    // where an imported playlist came from, for crediting whoever made it there
+    val imported =
+        database
+            .importedPlaylist(playlistId)
+            .stateIn(viewModelScope, SharingStarted.Lazily, null)
     val playlistSongs: StateFlow<List<PlaylistSong>> =
         combine(
             database.playlistSongs(playlistId),

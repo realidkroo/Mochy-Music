@@ -22,18 +22,19 @@ internal class BandedMesh(private val cols: Int, private val rows: Int) {
     private val texs = FloatArray(perRow * (rows + 1) * 2)
     private var texsFor: Bitmap? = null
 
-    // the same two triangles per cell, in the same order, that drawBitmapMesh builds, so the picture can't change
-    private val indices = ShortArray(bandRows * cols * 6).also { out ->
+    // each band is a strip, because skia glues back to back triangle draws into one big buffer again but never glues strips
+    private val indices = ShortArray(stripLength(bandRows)).also { out ->
         var at = 0
         for (row in 0 until bandRows) {
-            for (col in 0 until cols) {
-                val corner = row * perRow + col
-                out[at++] = corner.toShort()
-                out[at++] = (corner + perRow).toShort()
-                out[at++] = (corner + perRow + 1).toShort()
-                out[at++] = corner.toShort()
-                out[at++] = (corner + perRow + 1).toShort()
-                out[at++] = (corner + 1).toShort()
+            if (row > 0) {
+                // the last point again plus this row's first: the hop between rows makes flat triangles that draw nothing
+                out[at++] = (row * perRow - 1).toShort()
+                out[at++] = ((row + 1) * perRow).toShort()
+            }
+            // bottom then top of each column gives drawBitmapMesh's own two triangles per cell, in its order
+            for (col in 0..cols) {
+                out[at++] = ((row + 1) * perRow + col).toShort()
+                out[at++] = (row * perRow + col).toShort()
             }
         }
     }
@@ -51,12 +52,15 @@ internal class BandedMesh(private val cols: Int, private val rows: Int) {
             val count = min(bandRows, rows - row)
             val offset = row * perRow * 2
             canvas.drawVertices(
-                Canvas.VertexMode.TRIANGLES, (count + 1) * perRow * 2, verts, offset, texs, offset,
-                null, 0, indices, 0, count * cols * 6, paint,
+                Canvas.VertexMode.TRIANGLE_STRIP, (count + 1) * perRow * 2, verts, offset, texs, offset,
+                null, 0, indices, 0, stripLength(count), paint,
             )
             row += count
         }
     }
+
+    // two points per column for every row, plus two to hop from one row to the next
+    private fun stripLength(bandRows: Int) = bandRows * perRow * 2 + (bandRows - 1) * 2
 
     // where each grid point reads the bitmap, spread evenly over it like drawBitmapMesh does
     private fun useBitmap(bitmap: Bitmap) {

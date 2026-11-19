@@ -12,6 +12,9 @@ internal class ManifestSettings(manifest: WebModuleManifest, skip: Set<String> =
 
     val fields: List<ModuleField> = settings.map { it.toField() }
 
+    /** the settings drawn as sliders, by key */
+    val ranges: Map<String, FieldRange> = settings.mapNotNull { setting -> setting.range?.let { setting.key to it } }.toMap()
+
     @Volatile
     var values: Map<String, String> = emptyMap()
 
@@ -30,6 +33,14 @@ internal class ManifestSettings(manifest: WebModuleManifest, skip: Set<String> =
         val now = current()
         return settings.fold(base) { glass, setting -> setting.glassAt(now[setting.key])?.let(glass::with) ?: glass }
     }
+}
+
+/** a slider's ends and its notch, [step] null for a smooth one */
+data class FieldRange(val start: Float, val end: Float, val step: Float?)
+
+/** a module whose settings include sliders, which mochy draws from its manifest; the module api itself only knows text, lists and switches */
+internal interface FieldRanges {
+    val ranges: Map<String, FieldRange>
 }
 
 /** a picture or font a module names: a link as it is, a path from the module's zip, or a path next to a link module's manifest */

@@ -198,7 +198,11 @@ private fun NavGraphBuilder.composable(
     exitTransition = { motionExit { exitTransition?.invoke(this) } },
     popEnterTransition = { motionEnter { popEnterTransition?.invoke(this) } },
     popExitTransition = { motionExit { popExitTransition?.invoke(this) } },
-    content = content,
+    // a module's page can stand in for any page here, every route at once (ModuleTakeover)
+    content = { entry ->
+        val scope = this
+        com.mochyy.mochymusic.ui.screens.settings.modules.ModuleTakeover(route, entry) { scope.content(entry) }
+    },
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

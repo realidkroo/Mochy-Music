@@ -3,9 +3,10 @@
 // "Sync and add your music" from the Library: the onboarding's own import pages - pick a provider,
 // sign in on its page in a browser sheet inside this sheet, choose what to bring in, and for
 // YouTube Music whether to keep it in sync - in one sheet over the Library, instead of sending the
-// user off to the Experimental import screens. The pages themselves are the onboarding's, unchanged;
-// only the steps around them live here. The import runs in the background once started, and the
-// Library's banner turns into its progress bar.
+// user off to the Experimental import screens. Under the providers, a playlist link can be pasted
+// instead of signing in. The pages themselves are the onboarding's; only the steps around them live
+// here. The import runs in the background once started, and the Library's banner turns into its
+// progress bar.
 
 package com.mochyy.mochymusic.ui.screens.library
 
@@ -36,29 +37,35 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.importer.account.AccountImportState
 import com.mochyy.mochymusic.importer.account.AccountService
 import com.mochyy.mochymusic.ui.component.PopupSheetHandle
 import com.mochyy.mochymusic.ui.component.PopupSheetState
+import com.mochyy.mochymusic.ui.component.TopToaster
 import com.mochyy.mochymusic.ui.screens.settings.importsync.CaptureWebContent
 import com.mochyy.mochymusic.ui.screens.settings.importsync.YouTubeLoginWebContent
 import com.mochyy.mochymusic.ui.screens.settings.importsync.clearWebSession
 import com.mochyy.mochymusic.ui.screens.settings.importsync.onSignInTick
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.BehindScale
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.BrowserSpring
+import com.mochyy.mochymusic.ui.screens.setup.onboarding.LinkImportPage
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.Onb
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.OnboardingBrowserSheet
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.ProviderListPage
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.ProviderSetupPage
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.SyncOptionsPage
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.WhatToSyncPage
+import com.mochyy.mochymusic.viewmodels.ImportSyncViewModel
 import com.mochyy.mochymusic.viewmodels.OnboardingViewModel
+import com.mochyy.mochymusic.viewmodels.PendingImport
 import com.mochyy.mochymusic.viewmodels.YouTubeSyncChoices
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,7 +73,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import com.mochyy.mochymusic.ui.component.backdropClick
 
-private enum class ImportStep { Providers, ProviderSetup, WhatToSync, SyncOptions }
+private enum class ImportStep { Providers, ProviderSetup, WhatToSync, SyncOptions, Link }
 
 /**
  * The popup sheet's own handle row sits above the content. The onboarding pages leave room for a
@@ -104,6 +111,12 @@ private fun LibraryImportFlow(onClose: () -> Unit) {
     val readyFlow = remember(session) { session?.ready ?: MutableStateFlow(null) }
     val readyImport by readyFlow.collectAsState()
     var syncChoices by remember { mutableStateOf(YouTubeSyncChoices()) }
+
+    // a pasted playlist link reads through the same loader the settings' link import uses
+    val linkVm: ImportSyncViewModel = hiltViewModel()
+    val linkPending by linkVm.pending.collectAsState()
+    var link by remember { mutableStateOf("") }
+    val stillRunning = stringResource(R.string.lib_import_still_running)
 
     // ---- the browser sheet, inside this one ----
     val browserPresence = remember { Animatable(0f) }
@@ -143,11 +156,15 @@ private fun LibraryImportFlow(onClose: () -> Unit) {
             closeBrowser()
             vm.closeProvider()
         }
+        if (leaving == ImportStep.Link) linkVm.dismissPending()
     }
 
-    // the sheet going away, however it went, ends any sign-in it started
+    // the sheet going away, however it went, ends any sign-in it started and forgets a read link
     DisposableEffect(Unit) {
-        onDispose { vm.closeProvider() }
+        onDispose {
+            vm.closeProvider()
+            linkVm.dismissPending()
+        }
     }
 
     // the provider page opens its browser after a beat, once the user has read what's about to happen
@@ -227,6 +244,23 @@ private fun LibraryImportFlow(onClose: () -> Unit) {
                         onPick = { service ->
                             vm.startProvider(service)
                             go(ImportStep.ProviderSetup)
+                        },
+                        onBack = ::back,
+                        onPasteLink = { go(ImportStep.Link) },
+                    )
+
+                    ImportStep.Link -> LinkImportPage(
+                        link = link,
+                        onLinkChange = { changed ->
+                            link = changed
+                            // a new link makes the old preview stale
+                            if (linkPending !is PendingImport.Idle) linkVm.dismissPending()
+                        },
+                        pending = linkPending,
+                        onRead = { linkVm.loadLink(link.trim()) },
+                        onImport = { parsed ->
+                            if (!linkVm.startImport(parsed, mirrorToYouTube = false)) TopToaster.show(stillRunning, iconRes = R.drawable.library_music)
+                            finish()
                         },
                         onBack = ::back,
                     )

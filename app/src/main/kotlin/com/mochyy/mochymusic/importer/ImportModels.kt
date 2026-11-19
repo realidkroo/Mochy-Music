@@ -27,6 +27,7 @@ enum class ImportSource(val key: String, val label: String) {
     TIDAL("tidal", "Tidal"),
     YOUTUBE_MUSIC("youtube_music", "YouTube Music"),
     DEEZER("deezer", "Deezer"),
+    SOUNDCLOUD("soundcloud", "SoundCloud"),
 
     /** a file or a service with no name of its own (a tunemymusic csv, a mochy backup) */
     OTHER("other", "other sources");
@@ -63,6 +64,16 @@ data class PlaylistOrigin(
     val remoteId: String? = null,
     /** the share link it was read from */
     val remoteUrl: String? = null,
+    /** whoever made it there, so the playlist page can still credit them after the import */
+    val author: PlaylistAuthor? = null,
+)
+
+/** the person, curator or artist a playlist belongs to on its service */
+data class PlaylistAuthor(
+    val name: String,
+    val avatarUrl: String? = null,
+    /** their page on the service, opened when the name on the playlist page is tapped */
+    val profileUrl: String? = null,
 )
 
 /** one re-sync run: the playlist being read now, and what the run has done so far */

@@ -32,7 +32,7 @@ import com.mochyy.mochymusic.ui.component.setAgslUniform
 /** the shader filling [modifier]'s box, or [fallback] where shaders can't run or this one didn't compile */
 @Composable
 internal fun SkinShaderSurface(source: SkinShaderSource, context: SkinContext, modifier: Modifier, fallback: @Composable () -> Unit) {
-    val program = ActiveSkin.shaders[source.file]
+    val program = ActiveSkin.shader(context.skin.moduleId, source.file)
     if (program == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
         fallback()
         return
@@ -78,7 +78,21 @@ private fun DrawScope.setUniforms(program: SkinProgram, source: SkinShaderSource
     if ("remaining" in declared) shader.setAgslColorUniform("remaining", context.tones.remaining.toArgb())
     if ("cover" in declared) shader.setAgslColorUniform("cover", context.cover.toArgb())
     if ("accent" in declared) shader.setAgslColorUniform("accent", context.accent.toArgb())
+    setLyricUniforms(shader, declared, context)
     source.uniforms.forEach { (name, value) -> if (name in declared) shader.setAgslUniform(name, value) }
+}
+
+/** the lyrics, the position and the length, for any player shader that declares them; read while drawing, so they move without recomposing */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+internal fun setLyricUniforms(shader: Any, declared: Set<String>, context: SkinContext) {
+    val clock = context.lyricClock
+    if ("line" in declared) shader.setAgslUniform("line", clock.line().toFloat())
+    if ("lineCount" in declared) shader.setAgslUniform("lineCount", clock.lines.size.toFloat())
+    if ("lineProgress" in declared) shader.setAgslUniform("lineProgress", clock.lineProgress())
+    if ("wordProgress" in declared) shader.setAgslUniform("wordProgress", clock.wordProgress())
+    if ("singing" in declared) shader.setAgslUniform("singing", if (clock.singing()) 1f else 0f)
+    if ("position" in declared) shader.setAgslUniform("position", context.position.positionMs() / 1000f)
+    if ("duration" in declared) shader.setAgslUniform("duration", context.duration / 1000f)
 }
 
 /** a shader in a box among the blocks, its fallback colour where it can't run */

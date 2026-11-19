@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -63,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.PlayerStyle
 import com.mochyy.mochymusic.ui.player.styles.AlternatePlayerStyle
+import com.mochyy.mochymusic.ui.player.styles.LocalModuleStyle
 import com.mochyy.mochymusic.ui.player.styles.StyleActions
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -349,6 +351,10 @@ fun PlayerSelectorOverlay(
                             PlayerStyle.FLAGSHIP -> FlagshipPreview(flagship = true)
                             PlayerStyle.CLASSIC -> FlagshipPreview()
                             PlayerStyle.TURNTABLE -> FlagshipPreview(turntable = true)
+                            // each module card draws its own module style, the one at its place among them
+                            PlayerStyle.MODULE -> CompositionLocalProvider(LocalModuleStyle provides moduleStyleAt(styles, index)) {
+                                AlternatePlayerStyle(style = style, actions = previewActions, preview = true, modifier = Modifier.fillMaxSize())
+                            }
                             else -> AlternatePlayerStyle(style = style, actions = previewActions, preview = true, modifier = Modifier.fillMaxSize())
                         }
                     }
@@ -454,9 +460,9 @@ fun PlayerSelectorOverlay(
                 ) {
                     Text(stringResource(R.string.ps_studio_styles), color = Color.White, style = studioText(StudioType.Title, FontWeight.Bold))
                     AnimatedContent(
-                        // the module style goes by the name its look gives it
+                        // a module style goes by the name its look gives it, and its sub-style's
                         targetState = styles.getOrNull(focused)?.let { style ->
-                            if (style == PlayerStyle.MODULE) com.mochyy.mochymusic.modules.skin.ActiveSkin.current?.player?.name ?: style.selectorName
+                            if (style == PlayerStyle.MODULE) moduleStyleAt(styles, focused)?.title ?: style.selectorName
                             else style.selectorName
                         }.orEmpty(),
                         transitionSpec = {
@@ -512,7 +518,8 @@ fun PlayerSelectorOverlay(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     // edit stays in its place, only dimmed where there's nothing to edit, so set never moves under the finger
-                    val editable = style?.editable == true
+                    val editable = style?.editable == true ||
+                        (style == PlayerStyle.MODULE && moduleStyleAt(styles, focused)?.player?.let { it.editor != null || it.customise != null } == true)
                     CardButton(stringResource(R.string.ps_studio_edit), enabled = active && editable, dimmed = !editable, onClick = { onEdit(focused) }, modifier = Modifier.weight(1f))
                     CardButton(stringResource(R.string.ps_studio_set), enabled = active, onClick = { currentOnSet(focused, 0f) }, modifier = Modifier.weight(1f))
                 }
@@ -539,4 +546,10 @@ private fun CardButton(
     ) {
         Text(text = label, color = Color.White.copy(alpha = if (dimmed) 0.35f else 1f), style = studioText(StudioType.Button))
     }
+}
+
+// the module style a card stands for: module cards follow mochy's own, one for each module style in order
+private fun moduleStyleAt(styles: List<PlayerStyle>, index: Int): com.mochyy.mochymusic.modules.skin.ModuleStyle? {
+    val first = styles.indexOf(PlayerStyle.MODULE).takeIf { it >= 0 } ?: return null
+    return com.mochyy.mochymusic.modules.skin.ActiveSkin.styles.getOrNull(index - first)
 }

@@ -217,8 +217,31 @@ fun AppNavigationBar(
     pureBlack: Boolean = false,
     slimNav: Boolean = false,
     /** a second quick tap on Search: straight into typing */
-    onSearchDoubleTap: (() -> Unit)? = null
+    onSearchDoubleTap: (() -> Unit)? = null,
+    /** "module/page" while one of a module's pages is on screen, so a look's bar can light its tab */
+    currentPage: String? = null,
+    /** opens a look's own tab page */
+    onOpenRoute: (String) -> Unit = {},
+    /** the player is over the app, so a look's moving bar can rest */
+    obscured: () -> Boolean = { false },
 ) {
+    // a look with a nav bar of its own draws it in this one's place
+    val moduleBar = com.mochyy.mochymusic.modules.skin.ActiveSkin.bar
+    if (moduleBar != null) {
+        ModuleNavBar(
+            active = moduleBar,
+            navigationItems = navigationItems,
+            selectedTabRoute = selectedTabRoute,
+            currentPage = currentPage,
+            onItemClick = onItemClick,
+            onOpenRoute = onOpenRoute,
+            onSearchDoubleTap = onSearchDoubleTap,
+            pureBlack = pureBlack,
+            obscured = obscured,
+            modifier = modifier,
+        )
+        return
+    }
     val glassState = LocalGlassState.current ?: remember { GlassState() }
     val accentWash = rememberChromeAccentWash()
     val selectedIndex = navigationItems.indexOfFirst { it.route == selectedTabRoute }
@@ -284,7 +307,7 @@ fun AppNavigationBar(
  * A tab's tap, or with [onDoubleTap] a second tap close behind the first: the first still goes to
  * the tab at once, the second does [onDoubleTap] instead. [lastTap] holds the time of the one before.
  */
-private fun tabTapped(lastTap: LongArray, doubleTapTimeoutMillis: Long, onDoubleTap: (() -> Unit)?, onTap: () -> Unit) {
+internal fun tabTapped(lastTap: LongArray, doubleTapTimeoutMillis: Long, onDoubleTap: (() -> Unit)?, onTap: () -> Unit) {
     val now = android.os.SystemClock.uptimeMillis()
     if (onDoubleTap != null && now - lastTap[0] < doubleTapTimeoutMillis) {
         lastTap[0] = 0L

@@ -169,7 +169,8 @@ class PlaylistResync @Inject constructor(
             } else {
                 LinkImporter.fetchYouTubePlaylist(remoteId)
             }
-            return ResyncRead(parsed.playlists.values.firstOrNull().orEmpty(), PlaylistOrigin(remoteId = remoteId))
+            val author = parsed.playlistOrigins.values.firstOrNull()?.author
+            return ResyncRead(parsed.playlists.values.firstOrNull().orEmpty(), PlaylistOrigin(remoteId = remoteId, author = author))
         }
         if (!context.isUserLoggedIn()) throw LinkImportException("Sign in to YouTube first, then try again.")
         val library = YouTubeMusicLibrary(accountName = null)
@@ -190,6 +191,7 @@ class PlaylistResync @Inject constructor(
         LinkSource.APPLE_MUSIC -> ImportSource.APPLE_MUSIC
         LinkSource.DEEZER -> ImportSource.DEEZER
         LinkSource.YOUTUBE -> ImportSource.YOUTUBE_MUSIC
+        LinkSource.SOUNDCLOUD -> ImportSource.SOUNDCLOUD
     }
 
     private companion object {

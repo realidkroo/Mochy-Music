@@ -137,13 +137,13 @@ private fun CoveredNote(entry: ModuleEntry, onRaise: () -> Unit) {
     PillButton(text = stringResource(R.string.module_look_raise), filled = true, onClick = onRaise)
 }
 
-/** a look that brings its own glass or player shaders says when this phone can't run them, or when one didn't compile and why */
+/** a look that brings its own glass, player or bar shaders says when this phone can't run them, or when one didn't compile and why */
 @Composable
 private fun GlassNote(entry: ModuleEntry) {
     val skin = (entry.module as? SkinSource)?.skin ?: return
     if (skin.glass == null && skin.playerShaders.isEmpty()) return
     val glassProblem = ActiveSkin.glassProblem?.takeIf { it.first == entry.id }?.second
-    val shaderProblem = ActiveSkin.shaderProblem?.takeIf { it.first == entry.id }?.second
+    val shaderProblem = ActiveSkin.shaderProblems[entry.id]
     val text = when {
         glassProblem != null -> stringResource(R.string.module_glass_problem, glassProblem)
         shaderProblem != null -> stringResource(R.string.module_shader_problem, shaderProblem)

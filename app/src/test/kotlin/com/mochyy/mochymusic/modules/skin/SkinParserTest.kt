@@ -17,7 +17,7 @@ class SkinParserTest {
 
     private fun skin(text: String, files: File? = null, base: String? = null): ModuleSkin? {
         val m = manifest(text)
-        return SkinParser.parse("local.test", "Test", m.player, m.font, m.pages, files, base)
+        return SkinParser.parse("local.test", "Test", m.player, m.font, m.pages, files, base, m.actions, m.glass, m.players, m.bar)
     }
 
     private val vinyl = """
@@ -323,5 +323,103 @@ class SkinParserTest {
         assertEquals(Color(0x80000000), parseHexColor("80000000"))
         assertNull(parseHexColor("#12"))
         assertNull(parseHexColor("red"))
+    }
+
+    @Test
+    fun `several players, each with sub-styles laid over it`() {
+        val text = """
+            { "id": "p", "name": "P",
+              "player": { "name": "Neon", "styles": { "title": { "size": 30 } }, "blocks": [ { "type": "title" }, { "type": "cover" } ],
+                "variants": [
+                  { "id": "pink", "name": "Pink", "values": { "glow": "pink" }, "styles": { "artist": { "size": 12 } } },
+                  { "id": "bare", "name": "Bare", "blocks": [ { "type": "title" } ] },
+                  { "name": "no id is dropped" }
+                ] },
+              "players": [ { "id": "tape", "name": "Tape", "editor": "edit", "designWidth": 390, "scale": "${'$'}size", "blocks": [ { "type": "artist" } ] } ] }
+        """
+        val skin = skin(text)!!
+        assertEquals(listOf("main", "tape"), skin.players.map { it.id })
+        val neon = skin.players[0]
+        assertEquals(listOf("pink", "bare"), neon.variants.map { it.id })
+        // the sub-style keeps the base player's blocks and its title style, and only adds what it brings
+        val pink = neon.variants[0]
+        assertEquals(2, pink.player.blocks.size)
+        assertEquals(mapOf("glow" to "pink"), pink.values)
+        assertEquals("Neon", pink.player.name)
+        assertEquals(1, neon.variants[1].player.blocks.size)
+        val tape = skin.players[1]
+        assertEquals("edit", tape.editor)
+        assertEquals(SkinSize(390f, 1f, "size"), tape.size)
+        assertEquals(1.25f, tape.size.factor(487.5f, mapOf("size" to "1")), 0.001f)
+        assertEquals(0.5f, tape.size.factor(390f, mapOf("size" to "0.1")), 0.001f)
+    }
+
+    @Test
+    fun `a nav bar always keeps the settings tab`() {
+        val text = """
+            { "id": "p", "name": "P", "bar": { "tabs": ["home", { "page": "mine", "label": "Mine" }, "nope", "search"],
+              "height": 200, "indicator": { "type": "dot", "color": "accent" }, "labels": "selected", "shader": "bar.agsl" } }
+        """
+        val bar = skin(text, files = File("/data/m"))!!.bar!!
+        assertEquals(
+            listOf(BarTarget.Tab("home"), BarTarget.Page("mine"), BarTarget.Tab("search_input"), BarTarget.Tab("settings")),
+            bar.tabs.map { it.target },
+        )
+        assertEquals(72.dp, bar.height)
+        assertEquals(IndicatorKind.Dot, bar.indicator.kind)
+        assertEquals(BarLabels.Selected, bar.labels)
+        assertEquals("bar.agsl", bar.shader?.file)
+        // a shader only comes from a zip
+        assertNull(skin(text, base = "https://mod.dev")!!.bar!!.shader)
+    }
+
+    @Test
+    fun `a page takes mochy's pages over, with the subject's blocks`() {
+        val text = """
+            { "id": "p", "name": "P", "pages": [ { "id": "list", "title": "{title}", "replaces": ["playlist", "Album", "bad name!"], "when": "custom",
+              "header": false, "blocks": [ { "type": "cover", "shape": "circle" }, { "type": "play" }, { "type": "control", "action": "original" },
+              { "type": "songs", "limit": 9999, "numbers": true }, { "type": "player" }, { "type": "styles" } ] } ] }
+        """
+        val page = skin(text)!!.pages.single()
+        assertEquals(listOf("playlist", "album"), page.replaces)
+        assertEquals(SkinCondition("custom", null, negate = false), page.condition)
+        assertFalse(page.header)
+        assertTrue((page.blocks[0] as PageBlock.Cover).circle)
+        assertEquals(PageControl.Play, (page.blocks[1] as PageBlock.Control).kind)
+        assertEquals(PageControl.Original, (page.blocks[2] as PageBlock.Control).kind)
+        assertEquals(500, (page.blocks[3] as PageBlock.Songs).limit)
+        assertTrue(page.blocks[5] == PageBlock.Styles)
+        assertTrue(page.condition!!.holdsFor(mapOf("custom" to "true")))
+        assertFalse(page.condition!!.holdsFor(mapOf("custom" to "false")))
+    }
+
+    @Test
+    fun `custom lyrics with poses, an entrance and shaders from a zip`() {
+        val text = """
+            { "id": "p", "name": "P", "player": { "keyframes": { "pop": { "from": { "scale": 0.8 }, "to": { "scale": 1 } } },
+              "blocks": [ { "type": "lyrics", "style": "custom", "past": { "opacity": 0.2, "blur": 4 }, "lineEnter": { "keyframes": "pop", "duration": 300 }, "textScale": "${'$'}lyricSize",
+                "fill": "lyrics.agsl", "effect": { "shader": "bend.agsl", "uniforms": { "lineProgress": 3, "amount": 2 } } } ] } }
+        """
+        val lyrics = skin(text, files = File("/data/m"))!!.player!!.blocks.single() as SkinBlock.Lyrics
+        val style = lyrics.custom!!
+        assertEquals(mapOf(PoseProp.Opacity to 0.2f, PoseProp.Blur to 4f), style.past)
+        assertEquals(300, style.enter!!.durationMs)
+        assertEquals("lyricSize", style.scale.scaleKey)
+        assertEquals("lyrics.agsl", style.fill?.file)
+        // mochy fills the line's progress in itself
+        assertEquals(mapOf("amount" to 2f), style.effect?.uniforms)
+        assertTrue(lyrics.moves)
+        val fromLink = (skin(text, base = "https://mod.dev")!!.player!!.blocks.single() as SkinBlock.Lyrics).custom!!
+        assertNull(fromLink.fill)
+    }
+
+    @Test
+    fun `a slider setting keeps its ends`() {
+        val m = manifest("""{ "id": "p", "name": "P", "settings": [ { "key": "size", "type": "slider", "min": 0.8, "max": 1.4, "step": 0.1 }, { "key": "x", "type": "slider", "min": 3, "max": 1 } ] }""")
+        val size = m.setting("size")!!
+        assertEquals(com.mochyy.mochymusic.modules.web.FieldRange(0.8f, 1.4f, 0.1f), size.range)
+        assertEquals("0.8", size.toField().default)
+        // ends the wrong way round get a sensible top
+        assertEquals(4f, m.setting("x")!!.range!!.end)
     }
 }

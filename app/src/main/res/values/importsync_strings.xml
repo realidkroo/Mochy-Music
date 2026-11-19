@@ -93,6 +93,7 @@
     <string name="import_link_apple_music_desc">Public playlists and albums</string>
     <string name="import_link_deezer_desc">Public playlists and albums, any length</string>
     <string name="import_link_youtube_desc">Playlists and albums, exact songs, no searching</string>
+    <string name="import_link_soundcloud_desc">Public playlists and albums</string>
     <string name="import_providers_file_header">From a file</string>
     <string name="import_mochy_backup_title">Mochy backup</string>
     <string name="import_mochy_backup_desc">A CSV from Export to Mochy CSV. Restores exact songs</string>

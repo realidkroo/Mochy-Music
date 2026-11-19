@@ -49,6 +49,7 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -151,6 +152,8 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import java.time.LocalDateTime
 
+private val YouTubeChannelRegex = Regex("music\\.youtube\\.com/channel/([A-Za-z0-9_-]+)")
+
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -169,6 +172,7 @@ fun LocalPlaylistScreen(
     val queueTitle by playerConnection.queueTitle.collectAsState()
 
     val playlist by viewModel.playlist.collectAsState()
+    val imported by viewModel.imported.collectAsState()
     val songs by viewModel.playlistSongs.collectAsState()
     val mutableSongs = remember { mutableStateListOf<com.mochyy.mochymusic.db.entities.PlaylistSong>() }
     val playlistLength = remember(songs) { songs.fastSumBy { it.song.song.duration } }
@@ -372,6 +376,23 @@ fun LocalPlaylistScreen(
     }
     val featuredArtists = rememberFeaturedArtists(songs, { songs.flatMap { it.song.artists } }, id = { it.id }, name = { it.name })
     val creatorAvatar = profilePicUri.takeIf { it.isNotBlank() }?.let { if (it.contains("://")) it else "file://$it" }
+    val uriHandler = LocalUriHandler.current
+    // a playlist imported from a service credits whoever made it there, the rest are the user's own
+    val creators = remember(imported, accountName, creatorAvatar) {
+        val author = imported?.authorName
+        when {
+            author != null -> listOf(CreatorUi(name = author, avatarUrl = imported?.authorAvatarUrl))
+            accountName.isNotBlank() -> listOf(CreatorUi(name = accountName, avatarUrl = creatorAvatar))
+            else -> emptyList()
+        }
+    }
+    val onCreatorClick: ((CreatorUi) -> Unit)? = imported?.authorUrl?.let { url ->
+        { _: CreatorUi ->
+            // a youtube channel opens in the app, anything else on its own site
+            val channel = YouTubeChannelRegex.find(url)?.groupValues?.get(1)
+            if (channel != null) navController.navigate("artist/$channel") else runCatching { uriHandler.openUri(url) }
+        }
+    }
 
     fun play(items: List<com.mochyy.mochymusic.db.entities.PlaylistSong>, startIndex: Int = 0) {
         val current = playlist ?: return
@@ -563,7 +584,8 @@ fun LocalPlaylistScreen(
                 PlaylistHeader(
                     onSearchClick = { isSearching = true },
                     title = currentPlaylist.playlist.name,
-                    creators = if (accountName.isNotBlank()) listOf(CreatorUi(name = accountName, avatarUrl = creatorAvatar)) else emptyList(),
+                    creators = creators,
+                    onCreatorClick = onCreatorClick,
                     stats = playlistStats(
                         context.resources.getQuantityString(R.plurals.n_song, songs.size, songs.size),
                         playlistLength,

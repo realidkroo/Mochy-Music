@@ -1893,12 +1893,22 @@ interface DatabaseDao {
     @Query("SELECT * FROM imported_playlist WHERE source = :source AND remoteId = :remoteId ORDER BY importedAt DESC LIMIT 1")
     fun importedPlaylistByRemoteId(source: String, remoteId: String): ImportedPlaylist?
 
-    /** Remembers where the playlist lives (an unknown id or link keeps the one already saved). */
+    /** remembers where the playlist lives and who made it, anything unknown keeps what's already saved */
     @Query(
         "UPDATE imported_playlist SET remoteId = COALESCE(:remoteId, remoteId), " +
-            "remoteUrl = COALESCE(:remoteUrl, remoteUrl), lastSyncedAt = :syncedAt WHERE playlistId = :playlistId"
+            "remoteUrl = COALESCE(:remoteUrl, remoteUrl), lastSyncedAt = :syncedAt, " +
+            "authorName = COALESCE(:authorName, authorName), authorAvatarUrl = COALESCE(:authorAvatarUrl, authorAvatarUrl), " +
+            "authorUrl = COALESCE(:authorUrl, authorUrl) WHERE playlistId = :playlistId"
     )
-    fun updateImportedPlaylistOrigin(playlistId: String, remoteId: String?, remoteUrl: String?, syncedAt: LocalDateTime)
+    fun updateImportedPlaylistOrigin(
+        playlistId: String,
+        remoteId: String?,
+        remoteUrl: String?,
+        syncedAt: LocalDateTime,
+        authorName: String?,
+        authorAvatarUrl: String?,
+        authorUrl: String?,
+    )
 
     @Query("SELECT trackKey FROM imported_playlist_track WHERE playlistId = :playlistId")
     fun importedPlaylistTrackKeys(playlistId: String): List<String>

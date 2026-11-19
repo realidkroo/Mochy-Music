@@ -15,12 +15,14 @@ import com.mochyy.mochymusic.modules.skin.SkinGlass
 import com.mochyy.mochymusic.modules.skin.SkinParser
 import com.mochyy.mochymusic.modules.skin.SkinSource
 import com.mochyy.mochymusic.modules.skin.appliedLook
+import com.mochyy.mochymusic.modules.web.FieldRange
+import com.mochyy.mochymusic.modules.web.FieldRanges
 import com.mochyy.mochymusic.modules.web.ManifestSettings
 import com.mochyy.mochymusic.modules.web.WebModuleManifest
 import com.mochyy.mochymusic.modules.web.resolveModuleArt
 import java.io.File
 
-internal class LocalModule(private val manifest: WebModuleManifest, files: File?) : LookModule, ModuleArt, ModuleFields, SkinSource {
+internal class LocalModule(private val manifest: WebModuleManifest, files: File?) : LookModule, ModuleArt, ModuleFields, SkinSource, FieldRanges {
 
     override val info = ModuleInfo(
         id = idFor(manifest),
@@ -30,7 +32,7 @@ internal class LocalModule(private val manifest: WebModuleManifest, files: File?
         author = manifest.author,
     )
 
-    override val skin: ModuleSkin? = SkinParser.parse(info.id, info.name, manifest.player, manifest.font, manifest.pages, files, base = null, manifest.actions, manifest.glass)
+    override val skin: ModuleSkin? = SkinParser.parse(info.id, info.name, manifest.player, manifest.font, manifest.pages, files, base = null, manifest.actions, manifest.glass, manifest.players, manifest.bar)
 
     override val icon: String? = resolveModuleArt(manifest.icon, files, base = null)
 
@@ -39,6 +41,8 @@ internal class LocalModule(private val manifest: WebModuleManifest, files: File?
     private val settings = ManifestSettings(manifest)
 
     override val fields: List<ModuleField> get() = settings.fields
+
+    override val ranges: Map<String, FieldRange> get() = settings.ranges
 
     override fun onFields(values: Map<String, String>) {
         settings.values = values

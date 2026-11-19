@@ -57,6 +57,24 @@
     <string name="onb_provider_apple_desc">Library playlists and Favorite Songs</string>
     <string name="onb_provider_youtube_desc">Liked music and playlists · also supports sync</string>
     <string name="onb_provider_tidal_desc">My Tracks and your playlists</string>
+    <string name="onb_or">or</string>
+    <string name="onb_import_from_link">Import from a playlist link</string>
+    <string name="onb_import_from_link_desc">Spotify, Apple Music, YouTube, Deezer or SoundCloud. No sign-in needed.</string>
+    <string name="onb_link_title">Paste a link</string>
+    <string name="onb_link_subtitle">Any public playlist or album from Spotify, Apple Music, YouTube Music, Deezer or SoundCloud.</string>
+    <string name="onb_link_hint">Playlist or album link</string>
+    <string name="onb_link_paste">Paste</string>
+    <string name="onb_link_clear">Clear</string>
+    <string name="onb_link_read">Read playlist</string>
+    <string name="onb_link_reading">Reading…</string>
+    <string name="onb_link_reading_body">Reading the playlist…</string>
+    <string name="onb_link_unknown">That link isn\'t from a service we can read yet.</string>
+    <string name="onb_link_source_songs">%1$s · %2$s</string>
+    <string name="onb_link_by">by %1$s</string>
+    <plurals name="onb_link_import_songs">
+        <item quantity="one">Import %d song</item>
+        <item quantity="other">Import %d songs</item>
+    </plurals>
     <string name="onb_provider_setup_title">%1$s setup</string>
     <string name="onb_provider_setup_subtitle">You will log in to your account. We never see your password. A web page will open.</string>
     <string name="onb_sign_in_again">Sign in again</string>

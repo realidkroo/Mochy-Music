@@ -190,6 +190,7 @@ import com.mochyy.mochymusic.playback.MusicService.MusicBinder
 import com.mochyy.mochymusic.playback.PlayerConnection
 import com.mochyy.mochymusic.playback.queues.YouTubeQueue
 import com.mochyy.mochymusic.ui.component.AppNavigationBar
+import com.mochyy.mochymusic.ui.component.navigateToTab
 import com.mochyy.mochymusic.ui.component.onTabTapped
 import com.mochyy.mochymusic.ui.component.LocalBottomSheetPageState
 import com.mochyy.mochymusic.ui.component.LocalMenuState
@@ -728,7 +729,16 @@ class MainActivity : ComponentActivity() {
                     navigationItems.map { it.route }.toSet()
                 }
 
-                val shouldShowNavigationBar = remember(currentRoute, navigationItemRoutes) {
+                // "module/page" while one of a module's pages is open, so a look's own bar can keep it as a tab
+                val currentModulePage by remember {
+                    derivedStateOf {
+                        navBackStackEntry?.takeIf { it.destination.route == com.mochyy.mochymusic.ui.screens.settings.modules.ModulePageRoutePattern }
+                            ?.arguments?.let { "${it.getString("id")}/${it.getString("page")}" }
+                    }
+                }
+                val onModuleTab = com.mochyy.mochymusic.ui.component.isModuleBarTab(currentModulePage)
+
+                val shouldShowNavigationBar = onModuleTab || remember(currentRoute, navigationItemRoutes) {
                     currentRoute == null ||
                         navigationItemRoutes.contains(currentRoute) ||
                         currentRoute!!.startsWith("search/") ||
@@ -1198,6 +1208,12 @@ class MainActivity : ComponentActivity() {
                                                 pureBlack = pureBlack,
                                                 slimNav = slimNav,
                                                 onSearchDoubleTap = onSearchDoubleTap,
+                                                currentPage = currentModulePage,
+                                                onOpenRoute = { route ->
+                                                    if (playerBottomSheetState.isExpanded) playerBottomSheetState.collapseSoft()
+                                                    navController.navigateToTab(route)
+                                                },
+                                                obscured = { playerBottomSheetState.progress > 0.001f },
                                                 modifier = barMotion,
                                             )
                                         }
@@ -1252,6 +1268,8 @@ class MainActivity : ComponentActivity() {
                                     CompositionLocalProvider(
                                         LocalSharedTransitionScope provides this,
                                         LocalAppContentObscured provides appContentObscured,
+                                        // a module page standing in for one of mochy's opens things the way the page it replaces would
+                                        com.mochyy.mochymusic.ui.screens.settings.modules.LocalModuleNavController provides navController,
                                     ) {
                                     // the settings list stays at the left of a wide screen while its pages open beside it
                                     val settingsPane = isWideLayout() &&

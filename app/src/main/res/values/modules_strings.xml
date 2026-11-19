@@ -83,7 +83,7 @@
     <string name="module_info_author">Author</string>
     <string name="module_info_status">Status</string>
     <string name="module_info_built_in">Built into Mochy</string>
-    <string name="module_shader_problem">Its player shader didn\'t load, so the player shows its fallback: %1$s</string>
+    <string name="module_shader_problem">One of its shaders didn\'t load, so its player or bar shows the fallback there: %1$s</string>
     <string name="module_shader_needs_13">Its player shaders need Android 13, so this phone shows their fallbacks.</string>
     <string name="module_glass_problem">Its glass didn\'t load, so the bars keep Mochy\'s frost: %1$s</string>
     <string name="module_glass_needs_13">Its glass needs Android 13 or newer, so this phone keeps Mochy\'s frost.</string>
@@ -194,4 +194,11 @@
     <string name="module_browser_fetch_failed">Couldn\'t download %1$s. Try again in a bit.</string>
     <string name="module_browser_locked_note">%1$s is a paid module. Get it on Mochy\'s Bar, then come back and add it.</string>
     <string name="module_browser_sign_out">Sign out of the browser</string>
+    <!-- buttons and notes on a module's own pages, and on pages a module shows in place of Mochy's -->
+    <string name="module_page_play">Play</string>
+    <string name="module_page_shuffle">Shuffle</string>
+    <string name="module_page_original">Open Mochy\'s page</string>
+    <string name="module_page_use_player">Use this player</string>
+    <string name="module_page_more_songs">Show more</string>
+    <string name="module_page_no_player">Turn this module on to see its player here.</string>
 </resources>

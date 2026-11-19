@@ -46,22 +46,38 @@ data class HomePage(
         val thumbnail: String?,
         val endpoint: BrowseEndpoint?,
         val items: List<YTItem>,
+        val isSpeedDial: Boolean = false,
     ) {
         companion object {
             fun fromMusicCarouselShelfRenderer(renderer: MusicCarouselShelfRenderer): Section? {
+                val header = renderer.header?.musicCarouselShelfBasicHeaderRenderer ?: return null
+                val title = header.title.runs?.firstOrNull()?.text ?: return null
                 return Section(
-                    title = renderer.header?.musicCarouselShelfBasicHeaderRenderer?.title?.runs?.firstOrNull()?.text ?: return null,
-                    label = renderer.header.musicCarouselShelfBasicHeaderRenderer.strapline?.runs?.firstOrNull()?.text,
-                    thumbnail = renderer.header.musicCarouselShelfBasicHeaderRenderer.thumbnail?.musicThumbnailRenderer?.getThumbnailUrl(),
-                    endpoint = renderer.header.musicCarouselShelfBasicHeaderRenderer.moreContentButton?.buttonRenderer?.navigationEndpoint?.browseEndpoint,
+                    title = title,
+                    label = header.strapline?.runs?.firstOrNull()?.text,
+                    thumbnail = header.thumbnail?.musicThumbnailRenderer?.getThumbnailUrl(),
+                    endpoint = header.moreContentButton?.buttonRenderer?.navigationEndpoint?.browseEndpoint,
                     items = renderer.contents.mapNotNull {
                         it.musicTwoRowItemRenderer
                     }.mapNotNull {
                         fromMusicTwoRowItemRenderer(it)
                     }.ifEmpty {
                         return null
-                    }
+                    },
+                    isSpeedDial = isSpeedDialShelf(renderer, header, title),
                 )
+            }
+
+            // the title is translated, so a three-row grid of covers under your own avatar counts too
+            private fun isSpeedDialShelf(
+                renderer: MusicCarouselShelfRenderer,
+                header: MusicCarouselShelfRenderer.Header.MusicCarouselShelfBasicHeaderRenderer,
+                title: String,
+            ): Boolean {
+                if (title.equals("Speed dial", ignoreCase = true)) return true
+                return (renderer.numItemsPerColumn ?: 1) >= 3 &&
+                    header.thumbnail != null &&
+                    renderer.contents.all { it.musicTwoRowItemRenderer != null }
             }
 
             private fun fromMusicTwoRowItemRenderer(renderer: MusicTwoRowItemRenderer): YTItem? {

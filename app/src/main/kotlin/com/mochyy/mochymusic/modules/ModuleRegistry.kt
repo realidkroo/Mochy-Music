@@ -33,12 +33,15 @@ import com.mochyy.mochymusic.module.monochrome.MonochromeModule
 import com.mochyy.mochymusic.modules.code.CodeModules
 import com.mochyy.mochymusic.modules.local.LocalModule
 import com.mochyy.mochymusic.modules.skin.ActiveSkin
+import com.mochyy.mochymusic.modules.skin.LookValues
 import com.mochyy.mochymusic.modules.skin.ModuleMenu
 import com.mochyy.mochymusic.modules.skin.ModuleSkin
 import com.mochyy.mochymusic.modules.skin.SkinFiles
 import com.mochyy.mochymusic.modules.skin.SkinGlass
 import com.mochyy.mochymusic.modules.skin.SkinParts
 import com.mochyy.mochymusic.modules.skin.SkinSource
+import com.mochyy.mochymusic.modules.web.FieldRange
+import com.mochyy.mochymusic.modules.web.FieldRanges
 import com.mochyy.mochymusic.modules.web.WebModule
 import com.mochyy.mochymusic.modules.web.WebModuleManifest
 import com.mochyy.mochymusic.utils.dataStore
@@ -99,6 +102,8 @@ data class ModuleEntry(
     val checkedAt: Long? = null,
     /** the name of a look above this one that takes some of what it brings, null when nothing of it is covered */
     val coveredBy: String? = null,
+    /** the settings drawn as sliders, with their ends */
+    val ranges: Map<String, FieldRange> = emptyMap(),
 ) {
     val id: String get() = module.info.id
 
@@ -141,6 +146,9 @@ class ModuleRegistry @Inject constructor(
     val entries: StateFlow<List<ModuleEntry>> = _entries.asStateFlow()
 
     init {
+        // the module player picked last time, kept here beside the switches
+        ActiveSkin.restorePick(prefs.getString(PlayerPickKey, null).orEmpty())
+        ActiveSkin.onPick = { key -> prefs.edit { putString(PlayerPickKey, key) } }
         // lyrics modules have to be in the lyrics sources before the first song asks for lyrics
         scope.launch { refresh() }
     }
@@ -155,7 +163,8 @@ class ModuleRegistry @Inject constructor(
     fun setEnabled(id: String, on: Boolean) {
         val module = module(id)
         prefs.edit { putBoolean("enabled_$id", on) }
-        // a look turned on goes to the top of the looks, so what it brings shows over the others straight away
+        // a look turned on goes to the top of the looks, so what it brings shows over the others straight away, its first player included
+        if (on && module != null && (module as? SkinSource)?.skin?.players?.isNotEmpty() == true) ActiveSkin.pick("$id/")
         if (on && module != null && restyles(module)) raise(id) else refresh()
     }
 
@@ -226,20 +235,23 @@ class ModuleRegistry @Inject constructor(
                 source = updates.source(id),
                 update = updates.update(id),
                 checkedAt = updates.checkedAt(id),
+                ranges = (module as? FieldRanges)?.ranges.orEmpty(),
             )
         }.sortedBy { entry -> order.indexOf(entry.id).let { if (it < 0) Int.MAX_VALUE else it } }
         // the looks that are on, highest first: where two bring the same setting, player, font or glass, the higher one wins
         val looks = list.filter { it.active && restyles(it.module) }
         _entries.value = list.map { entry -> coveredBy(entry, looks)?.let { entry.copy(coveredBy = it) } ?: entry }
-        val player = looks.firstOrNull { it.skin?.player != null }
         val glass = looks.firstOrNull { it.glass != null }
         ActiveSkin.publish(
             SkinParts(
-                player = player?.skin,
-                playerValues = player?.values.orEmpty(),
+                // every look's players can be picked, so they never cover each other
+                players = looks.mapNotNull { entry -> entry.skin?.takeIf { it.players.isNotEmpty() }?.let { LookValues(it, entry.values) } },
                 font = looks.firstOrNull { it.skin?.font?.wholeApp == true }?.skin,
                 glassSkin = glass?.skin,
                 glass = glass?.glass,
+                bar = looks.firstOrNull { it.skin?.bar != null }?.let { entry -> entry.skin?.let { LookValues(it, entry.values) } },
+                // a page can take one of mochy's over from any module that's on, not only a look
+                pages = list.filter { it.active }.mapNotNull { entry -> entry.skin?.takeIf { it.takeovers.isNotEmpty() }?.let { LookValues(it, entry.values) } },
             ),
             scope,
         )
@@ -255,12 +267,12 @@ class ModuleRegistry @Inject constructor(
 
     private val ModuleEntry.glass: SkinGlass? get() = (module as? SkinSource)?.glass
 
-    // what a look brings that another could also bring: its settings by name, and its player, font and glass
+    // what a look brings that another could also bring: its settings by name, and its font, glass and nav bar; players all stay pickable, so they don't count
     private fun partsOf(entry: ModuleEntry): Set<String> = buildSet {
         (entry.module as? LookModule)?.look?.keys?.let(::addAll)
-        if (entry.skin?.player != null) add("player")
         if (entry.skin?.font?.wholeApp == true) add("font")
         if (entry.glass != null) add("glass")
+        if (entry.skin?.bar != null) add("bar")
     }
 
     // the first look above [entry] that takes something [entry] also brings, for its page to say so
@@ -655,6 +667,7 @@ class ModuleRegistry @Inject constructor(
         private const val LocalModulesKey = "local_modules"
         private const val CodeModulesKey = "code_modules"
         private const val ModuleOrderKey = "module_order"
+        private const val PlayerPickKey = "player_pick"
         // a zip is only searched this far for its manifest, and a manifest bigger than this isn't one
         private const val MaxZipEntries = 200
         private const val MaxManifestBytes = 256 * 1024

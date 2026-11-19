@@ -164,8 +164,9 @@ internal fun RestoringPage(step: TransferStep, manifest: TransferManifest?) {
 
 // ---- 3. provider ----
 
+/** onPasteLink adds the "or import from a playlist link" choice under the providers */
 @Composable
-internal fun ProviderListPage(onPick: (AccountService) -> Unit, onBack: () -> Unit) {
+internal fun ProviderListPage(onPick: (AccountService) -> Unit, onBack: () -> Unit, onPasteLink: (() -> Unit)? = null) {
     OnboardingPage(
         badge = { PageBadge(painterResource(R.drawable.library_music)) },
         title = stringResource(R.string.onb_select_provider),
@@ -192,7 +193,44 @@ internal fun ProviderListPage(onPick: (AccountService) -> Unit, onBack: () -> Un
                     }
                 }
             }
+            if (onPasteLink != null) {
+                OrDivider()
+                OnbCard(modifier = Modifier.fillMaxWidth(), onClick = onPasteLink, shape = RoundedCornerShape(20.dp)) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        PageBadge(painterResource(R.drawable.link))
+                        Spacer(Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.onb_import_from_link), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.onb_import_from_link_desc), color = Onb.Muted, fontSize = 12.sp, maxLines = 2)
+                        }
+                    }
+                }
+            }
         }
+    }
+}
+
+/** a thin line either side of "or", between signing in and pasting a link */
+@Composable
+private fun OrDivider() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+    ) {
+        Box(Modifier.weight(1f).height(1.dp).background(Onb.Card))
+        Text(
+            text = stringResource(R.string.onb_or),
+            color = Onb.Muted,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 14.dp),
+        )
+        Box(Modifier.weight(1f).height(1.dp).background(Onb.Card))
     }
 }
 

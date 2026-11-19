@@ -44,12 +44,16 @@ internal class PlaylistSourceRecord(private val database: MusicDatabase) {
         }
     }
 
-    /** saves where the playlist lives on source and every song it has there now */
+    /** saves where the playlist lives on source, who made it there, and every song it has there now */
     suspend fun remember(source: ImportSource, playlistId: String, tracks: List<ImportedTrack>, origin: PlaylistOrigin?) {
         // one made here, or from another service, that an import topped up by name: nothing to re-sync with
         if (database.getImportedPlaylist(playlistId)?.source != source.key) return
         database.withTransaction {
-            updateImportedPlaylistOrigin(playlistId, origin?.remoteId, origin?.remoteUrl, LocalDateTime.now())
+            val author = origin?.author
+            updateImportedPlaylistOrigin(
+                playlistId, origin?.remoteId, origin?.remoteUrl, LocalDateTime.now(),
+                author?.name, author?.avatarUrl, author?.profileUrl,
+            )
             insertImportedPlaylistTracks(tracks.map { ImportedPlaylistTrack(playlistId, it.trackKey()) }.distinct())
         }
     }

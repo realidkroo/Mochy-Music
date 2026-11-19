@@ -120,6 +120,8 @@ internal object SkinAnimationParser {
             "bass", "low" -> SkinClock.Bass
             "mid", "middle" -> SkinClock.Mid
             "treble", "high" -> SkinClock.Treble
+            "line", "lyric", "lyrics" -> SkinClock.Line
+            "word" -> SkinClock.Word
             else -> SkinClock.Time
         }
         return SkinTimeline(
@@ -128,7 +130,7 @@ internal object SkinAnimationParser {
             delayMs = (o.float("delay") ?: 0f).coerceIn(0f, 20_000f).toInt(),
             repeat = repeat(o["repeat"]) ?: repeat,
             clock = clock,
-            // music and the song's progress move it straight, the keyframes' own easings still apply
+            // music, the song's and the lyrics' progress move it straight, the keyframes' own easings still apply
             easing = easing(o.string("easing")) ?: if (clock == SkinClock.Time) FastOutSlowInEasing else LinearEasing,
             always = o.string("run")?.trim()?.lowercase() == "always" || o.bool("always") == true,
         )
@@ -195,6 +197,7 @@ internal object SkinAnimationParser {
         "unlike" -> SkinEvent.Unlike
         "open", "show" -> SkinEvent.Open
         "beat", "kick" -> SkinEvent.Beat
+        "line", "lyric" -> SkinEvent.Line
         else -> null
     }
 

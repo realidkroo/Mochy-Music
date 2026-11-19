@@ -1,4 +1,4 @@
-// a module's options, the mock's "Options": its choices and its own settings as lists to pick from, lines to type in and switches
+// a module's options, the mock's "Options": its choices and its own settings as lists to pick from, lines to type in, switches and sliders
 
 package com.mochyy.mochymusic.ui.screens.settings.modules
 
@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -46,11 +47,14 @@ import com.mochyy.mochymusic.module.FieldKind
 import com.mochyy.mochymusic.module.ModuleField
 import com.mochyy.mochymusic.module.StreamOption
 import com.mochyy.mochymusic.modules.ModuleEntry
+import com.mochyy.mochymusic.modules.web.FieldRange
 import com.mochyy.mochymusic.ui.component.AppSwitch
+import com.mochyy.mochymusic.ui.screens.audiolab.LabSlider
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
+import kotlin.math.roundToInt
 
 private val RowShape = RoundedCornerShape(50)
 
@@ -74,6 +78,15 @@ internal fun ModuleOptions(
     }
     entry.fields.forEach { field ->
         val value = entry.values[field.id] ?: field.default
+        val range = entry.ranges[field.id]
+        if (range != null) {
+            SliderField(field, value, range) { onField(field.id, it) }
+            if (field.description.isNotBlank()) {
+                Text(field.description, fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 17.sp, color = PageSoftText, modifier = Modifier.padding(top = 6.dp, start = 6.dp))
+            }
+            Spacer(Modifier.height(16.dp))
+            return@forEach
+        }
         when (field.kind) {
             FieldKind.Toggle -> ToggleField(field, value.equals("true", ignoreCase = true)) { onField(field.id, it.toString()) }
             FieldKind.Select -> {
@@ -143,6 +156,35 @@ private fun ToggleField(field: ModuleField, on: Boolean, onChange: (Boolean) -> 
             AppSwitch(checked = on, onCheckedChange = onChange)
         }
     }
+}
+
+/** a slider between the setting's ends, kept a moment after the finger stops so a drag isn't a save per pixel, while the player follows it */
+@OptIn(FlowPreview::class)
+@Composable
+private fun SliderField(field: ModuleField, saved: String, range: FieldRange, onSave: (String) -> Unit) {
+    var value by remember(field.id) { mutableFloatStateOf(saved.toFloatOrNull()?.coerceIn(range.start, range.end) ?: range.start) }
+    val save by rememberUpdatedState(onSave)
+    LaunchedEffect(field.id) {
+        snapshotFlow { value }.drop(1).debounce(120).collect { save(formatNumber(it)) }
+    }
+    // a notch every step, the slider's own steps counting the ones between the ends
+    val steps = range.step?.let { (((range.end - range.start) / it).roundToInt() - 1).coerceIn(0, 200) } ?: 0
+    PageCard(padding = 14) {
+        LabSlider(
+            label = field.label,
+            valueText = formatNumber(value),
+            value = value,
+            onValueChange = { value = it },
+            valueRange = range.start..range.end,
+            steps = steps,
+        )
+    }
+}
+
+// 1.25 stays 1.25, 2.0 reads as 2, so a setting's value looks the way someone would type it
+private fun formatNumber(value: Float): String {
+    val rounded = (value * 100f).roundToInt() / 100f
+    return if (rounded == rounded.toInt().toFloat()) rounded.toInt().toString() else rounded.toString()
 }
 
 /** a line to type in, kept a moment after typing stops and again when it loses focus, so every key isn't a save */

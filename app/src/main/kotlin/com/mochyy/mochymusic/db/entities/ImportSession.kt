@@ -73,6 +73,11 @@ data class ImportedPlaylist(
     /** The share link it was read from, when it came in by link. */
     val remoteUrl: String? = null,
     val lastSyncedAt: LocalDateTime? = null,
+    /** who made it on the service, so its page can credit them; imports from before version 45 have none */
+    val authorName: String? = null,
+    val authorAvatarUrl: String? = null,
+    /** the author's page on the service */
+    val authorUrl: String? = null,
 )
 
 /**

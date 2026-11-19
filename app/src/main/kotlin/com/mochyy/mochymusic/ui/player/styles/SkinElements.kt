@@ -32,6 +32,7 @@ import com.mochyy.mochymusic.modules.skin.SkinTarget
 import com.mochyy.mochymusic.modules.skin.TimeKind
 import com.mochyy.mochymusic.playback.PlayerConnection
 import com.mochyy.mochymusic.ui.player.menu.openModuleTarget
+import com.mochyy.mochymusic.ui.screens.settings.modules.modulePageRoute
 import com.mochyy.mochymusic.utils.makeTimeString
 import androidx.media3.common.Player
 
@@ -158,6 +159,8 @@ private fun runControl(kind: ButtonKind, connection: PlayerConnection, context: 
         ButtonKind.Menu -> context.openMenu()
         ButtonKind.Customise -> context.openCustomise()
         ButtonKind.Close -> context.actions.onClose()
+        // the player's own editor page, or its customise sheet when it has no page
+        ButtonKind.Editor -> context.style.player.editor?.let { context.actions.onOpenRoute(modulePageRoute(context.skin.moduleId, it)) } ?: context.openCustomise()
     }
 }
 
@@ -173,6 +176,7 @@ private fun iconFor(target: SkinTarget, on: Boolean): Int = when ((target as? Sk
     ButtonKind.Menu -> R.drawable.more_horiz
     ButtonKind.Customise -> R.drawable.tune
     ButtonKind.Close -> R.drawable.expand_more
+    ButtonKind.Editor -> R.drawable.edit
     null -> R.drawable.puzzle
 }
 

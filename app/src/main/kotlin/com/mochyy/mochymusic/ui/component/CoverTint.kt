@@ -45,7 +45,12 @@ private val readTints = LruCache<List<String>, List<Color>>(48)
 
 /** the dark gradient behind Home's big community and artist cards, tinted by their first covers once those are read */
 @Composable
-fun Modifier.coverTintBackground(thumbnails: List<String>, seed: String): Modifier {
+fun Modifier.coverTintBackground(
+    thumbnails: List<String>,
+    seed: String,
+    // how far each stop leans to black; something already dimmed on top can keep more colour
+    darkening: FloatArray = CardTintDarkening,
+): Modifier {
     val context = LocalContext.current
     var tint by remember(thumbnails) { mutableStateOf(readTints[thumbnails].orEmpty()) }
     LaunchedEffect(thumbnails) {
@@ -58,9 +63,9 @@ fun Modifier.coverTintBackground(thumbnails: List<String>, seed: String): Modifi
     }
 
     val fallback = CardFallbackGradients[(seed.hashCode() and 0x7FFFFFFF) % CardFallbackGradients.size]
-    val top = animateColorAsState(tintStop(tint, fallback, 0), tween(800), label = "cardTintTop")
-    val middle = animateColorAsState(tintStop(tint, fallback, 1), tween(800), label = "cardTintMiddle")
-    val bottom = animateColorAsState(tintStop(tint, fallback, 2), tween(800), label = "cardTintBottom")
+    val top = animateColorAsState(tintStop(tint, fallback, darkening, 0), tween(800), label = "cardTintTop")
+    val middle = animateColorAsState(tintStop(tint, fallback, darkening, 1), tween(800), label = "cardTintMiddle")
+    val bottom = animateColorAsState(tintStop(tint, fallback, darkening, 2), tween(800), label = "cardTintBottom")
 
     // read in draw only, so the tint fading in repaints the card instead of recomposing it every frame
     return drawBehind {
@@ -68,9 +73,9 @@ fun Modifier.coverTintBackground(thumbnails: List<String>, seed: String): Modifi
     }
 }
 
-private fun tintStop(tint: List<Color>, fallback: List<Color>, index: Int): Color =
+private fun tintStop(tint: List<Color>, fallback: List<Color>, darkening: FloatArray, index: Int): Color =
     tint.getOrNull(index)
-        ?.let { Color(ColorUtils.blendARGB(it.toArgb(), android.graphics.Color.BLACK, CardTintDarkening[index])) }
+        ?.let { Color(ColorUtils.blendARGB(it.toArgb(), android.graphics.Color.BLACK, darkening[index])) }
         ?: fallback[index]
 
 // up to two colours from each cover, read from a small software copy of it

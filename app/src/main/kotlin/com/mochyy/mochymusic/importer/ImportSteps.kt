@@ -173,6 +173,9 @@ internal class ImportSteps(
                     importedAt = LocalDateTime.now(),
                     remoteId = origin?.remoteId,
                     remoteUrl = origin?.remoteUrl,
+                    authorName = origin?.author?.name,
+                    authorAvatarUrl = origin?.author?.avatarUrl,
+                    authorUrl = origin?.author?.profileUrl,
                 ),
             )
             matched.distinctBy { it.id }.forEach { insert(it.toMediaMetadata()) }

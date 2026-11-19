@@ -1,4 +1,4 @@
-// turns a manifest's player, font, glass, pages and menu rows into a skin, every value checked and kept in range so a typo can't break anything
+// turns a manifest's players, font, glass, nav bar, pages and menu rows into a skin, every value checked and kept in range so a typo can't break anything
 
 package com.mochyy.mochymusic.modules.skin
 
@@ -8,6 +8,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import java.io.File
 
 internal object SkinParser {
@@ -23,16 +24,19 @@ internal object SkinParser {
         base: String?,
         actions: JsonElement? = null,
         glass: JsonElement? = null,
+        players: JsonElement? = null,
+        bar: JsonElement? = null,
     ): ModuleSkin? {
-        val parsedPlayer = (player as? JsonObject)?.let { SkinPlayerParser.player(it, moduleName, fromZip = files != null) }
+        val parsedPlayers = SkinPlayerParser.players(player, players, moduleName, fromZip = files != null)
         // a font has to be a file on the phone, so only a zip can bring one
         val parsedFont = (font as? JsonObject)?.let(::font)?.takeIf { files != null }
         val parsedPages = (pages as? JsonArray).orEmpty().mapNotNull { (it as? JsonObject)?.let { o -> page(o, fromZip = files != null) } }.distinctBy { it.id }.take(MaxPages)
         val parsedActions = (actions as? JsonArray).orEmpty().mapNotNull { (it as? JsonObject)?.let(::action) }.take(MaxActions)
         // a shader is code the gpu runs, so it only comes as a file in a zip, the same as a font
         val parsedGlass = (glass as? JsonObject)?.let(::glass)?.takeIf { files != null }
-        if (parsedPlayer == null && parsedFont == null && parsedPages.isEmpty() && parsedActions.isEmpty() && parsedGlass == null) return null
-        return ModuleSkin(moduleId, moduleName, parsedPlayer, parsedFont, parsedPages, files, base, parsedActions, parsedGlass)
+        val parsedBar = (bar as? JsonObject)?.let { SkinBarParser.bar(it, fromZip = files != null) }
+        if (parsedPlayers.isEmpty() && parsedFont == null && parsedPages.isEmpty() && parsedActions.isEmpty() && parsedGlass == null && parsedBar == null) return null
+        return ModuleSkin(moduleId, moduleName, parsedPlayers, parsedFont, parsedPages, files, base, parsedActions, parsedGlass, parsedBar)
     }
 
     // ---- the bottom bar's glass -----------------------------------------------------------------
@@ -70,7 +74,17 @@ internal object SkinParser {
             subtitle = o.string("subtitle")?.take(80),
             icon = o.string("icon"),
             background = (o["background"] as? JsonObject)?.let { pageBackground(it, fromZip) },
+            replaces = replaces(o["replaces"] ?: o["takeover"]),
+            condition = o.string("when")?.let(SkinAnimationParser::condition),
+            size = SkinSize.of(o),
+            header = o.bool("header") ?: true,
         )
+    }
+
+    // "album" or ["local_playlist", "online_playlist"]: the names of mochy's pages this one opens in place of
+    private fun replaces(element: JsonElement?): List<String> {
+        val list = (element as? JsonArray)?.toList() ?: listOfNotNull(element)
+        return list.mapNotNull { (it as? JsonPrimitive)?.contentOrNull?.trim()?.lowercase()?.takeIf { name -> PageName.matches(name) } }.distinct().take(MaxReplaces)
     }
 
     private fun pageBlocks(element: JsonElement?, fromZip: Boolean, nested: Boolean): List<PageBlock> =
@@ -103,7 +117,7 @@ internal object SkinParser {
         return SkinShaderSource(file, shaderUniforms(o["uniforms"], PageUniforms))
     }
 
-    private fun pageBlock(o: JsonObject, fromZip: Boolean, nested: Boolean): PageBlock? = when (o.string("type")?.lowercase()) {
+    private fun pageBlock(o: JsonObject, fromZip: Boolean, nested: Boolean): PageBlock? = when (val type = o.string("type")?.lowercase()) {
         "heading" -> o.string("text")?.take(120)?.let(PageBlock::Heading)
         "text" -> o.string("text")?.take(2000)?.let(PageBlock::Paragraph)
         "image" -> o.string("image")?.let {
@@ -146,7 +160,37 @@ internal object SkinParser {
                 fallback = skinColor(o.string("fallback")),
             )
         }
+        "cover" -> PageBlock.Cover(
+            height = (o.float("height") ?: 240f).coerceIn(40f, 600f).dp,
+            corner = (o.float("corner") ?: 20f).coerceIn(0f, 300f).dp,
+            circle = o.string("shape")?.lowercase() == "circle",
+        )
+        "songs", "tracks" -> PageBlock.Songs(
+            limit = (o.float("limit")?.toInt() ?: MaxSongs).coerceIn(1, MaxSongs),
+            numbers = o.bool("numbers") ?: false,
+            covers = o.bool("covers") ?: true,
+            corner = (o.float("corner") ?: 8f).coerceIn(0f, 30f).dp,
+        )
+        "play", "shuffle", "original", "use" -> control(o, type)
+        "control" -> o.string("action")?.lowercase()?.let { control(o, it) }
+        "player", "preview" -> PageBlock.Player(
+            height = (o.float("height") ?: 420f).coerceIn(160f, 720f).dp,
+            corner = (o.float("corner") ?: 28f).coerceIn(0f, 60f).dp,
+        )
+        "styles", "substyles" -> PageBlock.Styles
         else -> null
+    }
+
+    // a button that plays, shuffles, opens mochy's own page or sets the module's player, in the page's words or mochy's
+    private fun control(o: JsonObject, action: String): PageBlock? {
+        val kind = when (action) {
+            "play" -> PageControl.Play
+            "shuffle" -> PageControl.Shuffle
+            "original", "mochy" -> PageControl.Original
+            "use", "useplayer", "setplayer" -> PageControl.UsePlayer
+            else -> return null
+        }
+        return PageBlock.Control(o.string("text")?.take(40).orEmpty(), kind, filled = o.bool("filled") ?: (kind == PageControl.Play))
     }
 
     // ---- the player's menu ----------------------------------------------------------------------
@@ -164,6 +208,10 @@ internal object SkinParser {
             ?: o.string("search")?.take(120)?.let(ActionTarget::Search)
 
     private val PageId = Regex("[a-z0-9_-]{1,40}")
+    // a page's name as a route writes it, with no arguments: album, local_playlist, library/songs
+    private val PageName = Regex("[a-z0-9_/]{1,60}")
+    private const val MaxReplaces = 8
+    private const val MaxSongs = 500
     private const val MaxPages = 12
     private const val MaxPageBlocks = 80
     private const val MaxActions = 6

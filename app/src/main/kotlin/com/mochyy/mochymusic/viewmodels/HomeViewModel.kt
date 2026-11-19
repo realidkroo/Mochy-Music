@@ -84,7 +84,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.random.Random
 
 data class DailyDiscoverItem(
     val seed: Song,
@@ -109,7 +108,6 @@ class HomeViewModel @Inject constructor(
 
     val isRefreshing = MutableStateFlow(false)
     val isLoading = MutableStateFlow(false)
-    val isRandomizing = MutableStateFlow(false)
 
     private val quickPicksEnum = context.dataStore.data.map {
         it[QuickPicksKey].toEnum(QuickPicks.QUICK_PICKS)
@@ -221,14 +219,26 @@ class HomeViewModel @Inject constructor(
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
+    // what you pinned, the same pins Library shows; Home lists them in their own row
+    val pinnedItems: StateFlow<List<YTItem>> = database.speedDialDao.getAll()
+        .map { pinned -> pinned.map { it.toYTItem() } }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    // youtube's own speed dial shelf, pulled out of the feed so it can live behind the hero
+    private val youTubeSpeedDial = homePage
+        .map { page -> page?.sections?.firstOrNull { it.isSpeedDial }?.items.orEmpty() }
+        .distinctUntilChanged()
+
+    // your pins first, then youtube's speed dial; only a short one gets topped up from what you play
     val speedDialItems: StateFlow<List<YTItem>> =
         combine(
-            database.speedDialDao.getAll(),
+            pinnedItems,
+            youTubeSpeedDial,
             keepListening,
             quickPicks
-        ) { pinned, keepListening, quick ->
-            val pinnedItems = pinned.map { it.toYTItem() }
-            val filled = pinnedItems.toMutableList()
+        ) { pinned, fromYouTube, keepListening, quick ->
+            val filled = (pinned + fromYouTube).distinctBy { it.id }.toMutableList()
             val targetSize = 27
 
             if (filled.size < targetSize) {
@@ -303,79 +313,8 @@ class HomeViewModel @Inject constructor(
                 }
             }
 
-            filled.take(targetSize)
+            filled
         }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-
-    suspend fun getRandomItem(): YTItem? {
-        try {
-            isRandomizing.value = true
-
-            kotlinx.coroutines.delay(1000)
-
-            val userSongs = mutableListOf<YTItem>()
-            val otherSources = mutableListOf<YTItem>()
-
-            quickPicks.value?.let { items ->
-                items.forEach { item ->
-                    when (item) {
-                        is Song -> userSongs.add(SongItem(
-                            id = item.id,
-                            title = item.title,
-                            artists = item.artists.map { Artist(name = it.name, id = it.id) },
-                            thumbnail = item.thumbnailUrl ?: "",
-                            explicit = false
-                        ))
-                        is com.mochyy.mochymusic.db.entities.Playlist -> otherSources.add(com.music.innertube.models.PlaylistItem(
-                            id = item.id,
-                            title = item.title,
-                            author = Artist(name = "Local Playlist", id = null),
-                            songCountText = item.songCount.toString() + " songs",
-                            thumbnail = item.thumbnails.firstOrNull() ?: "",
-                            playEndpoint = null,
-                            shuffleEndpoint = null,
-                            radioEndpoint = null
-                        ))
-                        else -> {}
-                    }
-                }
-            }
-
-            keepListening.value?.let { items ->
-                items.forEach { item ->
-                    when (item) {
-                        is Song -> userSongs.add(SongItem(
-                            id = item.id,
-                            title = item.title,
-                            artists = item.artists.map { Artist(name = it.name, id = it.id) },
-                            thumbnail = item.thumbnailUrl ?: "",
-                            explicit = false
-                        ))
-                        is Album -> otherSources.add(AlbumItem(
-                            browseId = item.id,
-                            playlistId = item.album.playlistId ?: "",
-                            title = item.title,
-                            artists = item.artists.map { Artist(name = it.name, id = it.id) },
-                            year = item.album.year,
-                            thumbnail = item.thumbnailUrl ?: ""
-                        ))
-                        else -> {}
-                    }
-                }
-            }
-
-            otherSources.addAll(allYtItems.value)
-
-            val item = if (userSongs.isNotEmpty() && (otherSources.isEmpty() || Random.nextFloat() < 0.8f)) {
-                userSongs.distinctBy { it.id }.shuffled().firstOrNull()
-            } else {
-                otherSources.distinctBy { it.id }.shuffled().firstOrNull()
-            } ?: userSongs.firstOrNull() ?: otherSources.firstOrNull()
-
-            return item
-        } finally {
-            isRandomizing.value = false
-        }
-    }
 
     val accountName = MutableStateFlow("Guest")
     val accountImageUrl = MutableStateFlow<String?>(null)

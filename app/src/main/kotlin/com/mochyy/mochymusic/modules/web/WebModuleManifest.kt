@@ -41,6 +41,9 @@ internal data class WebModuleManifest(
     val pages: JsonElement? = null,
     val actions: JsonElement? = null,
     val glass: JsonElement? = null,
+    // more players than the one, each with sub-styles of its own, and a nav bar of the look's own
+    val players: JsonElement? = null,
+    val bar: JsonElement? = null,
 ) {
     @Serializable
     data class Setting(
@@ -57,16 +60,30 @@ internal data class WebModuleManifest(
         val look: Map<String, JsonPrimitive> = emptyMap(),
         // a toggle's change to the module's glass while it's on
         val glass: JsonElement? = null,
+        // a slider's ends and how far one notch moves it
+        val min: Float? = null,
+        val max: Float? = null,
+        val step: Float? = null,
     ) {
         val defaultValue: String? get() = default.queryValue()
 
         val values: List<String> get() = options.mapNotNull { optionValue(it) }
+
+        /** a slider's range, null for every other kind; its value is kept as text like a text field's */
+        val range: FieldRange?
+            get() {
+                if (type?.trim()?.lowercase() !in SliderNames) return null
+                val low = (min ?: 0f).takeIf { it.isFinite() } ?: 0f
+                val high = (max ?: 1f).takeIf { it.isFinite() && it > low } ?: (low + 1f)
+                return FieldRange(low, high, step?.takeIf { it.isFinite() && it > 0f && it < high - low })
+            }
 
         val kind: FieldKind
             get() = when (type?.trim()?.lowercase()) {
                 "select", "list", "choice" -> FieldKind.Select
                 "toggle", "switch", "bool", "boolean" -> FieldKind.Toggle
                 "text", "string", "input" -> FieldKind.Text
+                in SliderNames -> FieldKind.Text
                 else -> when {
                     options.isNotEmpty() -> FieldKind.Select
                     defaultValue?.lowercase() in setOf("true", "false") -> FieldKind.Toggle
@@ -84,7 +101,7 @@ internal data class WebModuleManifest(
                 val o = option as? JsonObject
                 StreamOption(value, o?.text("label") ?: value, o?.text("description").orEmpty())
             },
-            default = defaultValue ?: when (kind) {
+            default = defaultValue ?: range?.start?.toString() ?: when (kind) {
                 FieldKind.Select -> values.firstOrNull().orEmpty()
                 FieldKind.Toggle -> "false"
                 FieldKind.Text -> ""
@@ -124,9 +141,10 @@ internal data class WebModuleManifest(
             ((element as? JsonPrimitive) ?: ((element as? JsonObject)?.get("name") as? JsonPrimitive))?.contentOrNull?.lowercase()
         }.toSet()
 
-    // anything that changes how mochy looks or what it shows: settings, a player, a font, pages, menu rows
+    // anything that changes how mochy looks or what it shows: settings, players, a font, a glass, a nav bar, pages, menu rows
     val changesLook: Boolean
-        get() = look.isNotEmpty() || player != null || font != null || pages != null || actions != null || glass != null || settings.any { it.changesLook }
+        get() = look.isNotEmpty() || player != null || players != null || bar != null || font != null || pages != null || actions != null || glass != null ||
+            settings.any { it.changesLook }
 
     // a manifest that lists nothing is an audio source, that's what most services of this kind are
     val playsSongs: Boolean get() = (resourceNames.isEmpty() && !changesLook) || "search" in resourceNames
@@ -151,7 +169,7 @@ internal data class WebModuleManifest(
         }
 
         private val SiteKeys = listOf("start_url", "display", "short_name", "icons")
-        private val ModuleKeys = listOf("resources", "look", "player", "font", "pages", "actions", "glass")
+        private val ModuleKeys = listOf("resources", "look", "player", "players", "bar", "font", "pages", "actions", "glass")
 
         // people paste the manifest's own link as often as the service's, both end up as the service's base
         fun baseOf(link: String): String? {
@@ -171,6 +189,9 @@ internal data class WebModuleManifest(
         }
     }
 }
+
+// the type names a slider setting goes by
+private val SliderNames = setOf("slider", "range", "number")
 
 // a json value as it goes in a query string: 320 stays 320, never 320.0; null and objects have no such form
 private fun JsonElement?.queryValue(): String? =
