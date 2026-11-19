@@ -257,6 +257,8 @@
     <string name="ps_cover_disc_name">Disc name</string>
     <string name="ps_cover_disc_name_desc">Printed on the platter</string>
     <string name="ps_cover_disc_name_placeholder">Leave empty to hide</string>
+    <string name="ps_cover_zoom">Cover zoom</string>
+    <string name="ps_cover_zoom_desc">Slide left to see the whole cover</string>
     <string name="ps_ipod_title">The iPod</string>
     <string name="ps_ipod_body">Body</string>
     <string name="ps_ipod_click_wheel">Click wheel</string>
