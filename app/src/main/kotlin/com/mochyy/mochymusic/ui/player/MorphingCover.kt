@@ -43,6 +43,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.key
@@ -100,6 +101,7 @@ import com.mochyy.mochymusic.ui.player.models.TrackInfo
 import com.mochyy.mochymusic.ui.utils.resize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.mochyy.mochymusic.ui.component.BlurEffectCache
@@ -1107,6 +1109,7 @@ fun MorphingCover(
                                 onFrameColors = if (playing && feedsAmbient) ambient?.let { it::live } else null,
                                 onLiveEnd = if (playing && feedsAmbient) ambient?.let { it::endLive } else null,
                                 onShowingChange = if (playing) { shown -> liveCanvasShown = shown } else null,
+                                feedsMenu = playing,
                             )
 
                             if (playing && !isDiscStyle && playVideoBackground && videoInfo != null && miniVideoShown) {
@@ -2008,8 +2011,14 @@ private fun CoverCanvasLayer(
     onLiveEnd: (() -> Unit)? = null,
     // told when the canvas's picture is up over the cover, and when it's gone
     onShowingChange: ((Boolean) -> Unit)? = null,
+    // the playing song's canvas tells the player's menu what size it plays
+    feedsMenu: Boolean = false,
 ) {
     val context = LocalContext.current
+    val sizeOwner = remember { Any() }
+    var playingSide by remember { mutableIntStateOf(0) }
+    LaunchedEffect(feedsMenu, playingSide) { PlayerCanvasPlayback.report(sizeOwner, if (feedsMenu) playingSide else 0) }
+    DisposableEffect(Unit) { onDispose { PlayerCanvasPlayback.report(sizeOwner, 0) } }
     val playerConnection = LocalPlayerConnection.current
     var canvasArtwork by remember(trackInfo.mediaId) { mutableStateOf<CanvasArtwork?>(null) }
     val canvasEnabled = rememberPreference(CanvasThumbnailAnimationKey, defaultValue = true).value && !alternateStyle
@@ -2079,6 +2088,7 @@ private fun CoverCanvasLayer(
                 if (!ready) onLiveEnd?.invoke()
             },
             onFrameColors = onFrameColors,
+            onPlayingSize = { playingSide = it },
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { alpha = sheetFade(progressProvider()) }

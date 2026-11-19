@@ -63,11 +63,19 @@ import com.mochyy.mochymusic.LocalDatabase
 import com.mochyy.mochymusic.LocalDownloadUtil
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.constants.CanvasBestQualityKey
 import com.mochyy.mochymusic.constants.KeepScreenOn
 import com.mochyy.mochymusic.constants.PlayVideoBackgroundKey
+import com.mochyy.mochymusic.constants.VideoQuality
+import com.mochyy.mochymusic.constants.VideoQualityKey
 import com.mochyy.mochymusic.ui.menu.songedit.SongEditSheet
 import com.mochyy.mochymusic.ui.menu.songedit.VideoPickerSheet
+import com.mochyy.mochymusic.ui.player.PlayerCanvasPlayback
 import com.mochyy.mochymusic.ui.player.hasFoundVideo
+import com.mochyy.mochymusic.ui.player.video.TrailingValue
+import com.mochyy.mochymusic.ui.player.video.VideoQualitySheet
+import com.mochyy.mochymusic.ui.player.video.YouTubeVideoSessions
+import com.mochyy.mochymusic.ui.player.video.qualityLabel
 import com.mochyy.mochymusic.playback.ExoDownloadService
 import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.component.SheetActionCard
@@ -77,6 +85,7 @@ import com.mochyy.mochymusic.ui.component.SheetHeaderGap
 import com.mochyy.mochymusic.ui.component.SheetIcon
 import com.mochyy.mochymusic.ui.menu.AddToPlaylistDialog
 import com.mochyy.mochymusic.ui.utils.resize
+import com.mochyy.mochymusic.utils.rememberEnumPreference
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.flow.flowOf
 import com.mochyy.mochymusic.ui.component.RemoteFocus
@@ -129,6 +138,8 @@ fun PlayerActionMenu(
     var showLyricsTranslation by remember { mutableStateOf(false) }
     var showLyricsOffset by remember { mutableStateOf(false) }
     var showSkinCustomise by remember { mutableStateOf(false) }
+    var showVideoQuality by remember { mutableStateOf(false) }
+    var showCanvasQuality by remember { mutableStateOf(false) }
     // the song as it was when the row was tapped, so a skip doesn't swap the sheet's song under you
     var songToEdit by remember { mutableStateOf<com.mochyy.mochymusic.models.MediaMetadata?>(null) }
     var songForVideo by remember { mutableStateOf<com.mochyy.mochymusic.models.MediaMetadata?>(null) }
@@ -330,15 +341,40 @@ fun PlayerActionMenu(
                     )
                 }
 
+                var videoRowsShown = onFullVideo != null
                 // with videos on, the song's video can be put right: "wrong video?" once one was found, "find video" when none was
                 val videoSong = currentMetadata
                 if (videoSong != null && (videoBackgroundOn || videoSong.isVideoSong)) {
                     val found = remember(videoSong.id) { hasFoundVideo(videoSong.id, videoSong.isVideoSong) }
-                    Spacer(modifier = Modifier.height(if (onFullVideo != null) 8.dp else SectionGap))
+                    Spacer(modifier = Modifier.height(if (videoRowsShown) 8.dp else SectionGap))
                     MenuRow(
                         icon = R.drawable.slow_motion_video,
                         title = androidx.compose.ui.res.stringResource(if (found) R.string.video_wrong else R.string.video_find),
                         onClick = { songForVideo = videoSong },
+                    )
+                    videoRowsShown = true
+                }
+
+                // how sharp the cover plays, only while it really plays something: the youtube video over it, or else its animated cover
+                val coverVideo = YouTubeVideoSessions.showing?.takeIf { it.hasFrame }
+                val canvasSide = PlayerCanvasPlayback.playingSide
+                if (coverVideo != null) {
+                    val (videoQuality) = rememberEnumPreference(VideoQualityKey, VideoQuality.AUTO)
+                    Spacer(modifier = Modifier.height(if (videoRowsShown) 8.dp else SectionGap))
+                    MenuRow(
+                        icon = R.drawable.tune,
+                        title = stringResource(R.string.video_quality),
+                        onClick = { showVideoQuality = true },
+                        trailing = { TrailingValue(qualityLabel(videoQuality, coverVideo)) },
+                    )
+                } else if (canvasSide > 0) {
+                    val (canvasBest) = rememberPreference(CanvasBestQualityKey, defaultValue = true)
+                    Spacer(modifier = Modifier.height(if (videoRowsShown) 8.dp else SectionGap))
+                    MenuRow(
+                        icon = R.drawable.tune,
+                        title = stringResource(R.string.canvas_quality),
+                        onClick = { showCanvasQuality = true },
+                        trailing = { TrailingValue(canvasQualityLabel(canvasBest, canvasSide)) },
                     )
                 }
 
@@ -458,6 +494,12 @@ fun PlayerActionMenu(
     }
     if (showSkinCustomise) {
         SkinCustomiseSheet(onDismiss = { showSkinCustomise = false })
+    }
+    if (showVideoQuality) {
+        VideoQualitySheet(session = YouTubeVideoSessions.showing, onDismiss = { showVideoQuality = false })
+    }
+    if (showCanvasQuality) {
+        CanvasQualitySheet(onDismiss = { showCanvasQuality = false })
     }
     if (showLyricsOffset) {
         LyricsOffsetSheet(onDismiss = { showLyricsOffset = false })

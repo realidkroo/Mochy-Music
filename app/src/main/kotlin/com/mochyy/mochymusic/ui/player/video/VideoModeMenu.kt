@@ -253,8 +253,9 @@ internal fun VideoModeMenu(
     }
 }
 
+// the grey value at the end of a menu row, like the quality playing now
 @Composable
-private fun TrailingValue(text: String) {
+internal fun TrailingValue(text: String) {
     Text(
         text = text,
         color = Color(0xFF9A9A9A),
@@ -267,7 +268,7 @@ private fun TrailingValue(text: String) {
 @Composable
 internal fun qualityLabel(quality: VideoQuality, session: YouTubeVideoSession?): String {
     if (quality != VideoQuality.AUTO) return videoSizeName(quality.shortSide)
-    val playing = session?.playingShortSide ?: 0
+    val playing = session?.playingLines ?: 0
     return if (playing > 0) {
         stringResource(R.string.video_quality_auto_now, videoSizeName(playing))
     } else {
@@ -335,8 +336,9 @@ internal fun VideoQualitySheet(session: YouTubeVideoSession?, onDismiss: () -> U
     }
 }
 
+// one pick in a quality sheet, ticked when it's the one in use
 @Composable
-private fun QualityRow(title: String, description: String?, selected: Boolean, onClick: () -> Unit) {
+internal fun QualityRow(title: String, description: String?, selected: Boolean, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier

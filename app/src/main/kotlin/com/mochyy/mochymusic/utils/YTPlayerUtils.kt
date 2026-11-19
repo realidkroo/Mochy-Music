@@ -872,6 +872,7 @@ object YTPlayerUtils {
                 initRange = format.initRange?.toLongRange(),
                 indexRange = format.indexRange?.toLongRange(),
                 contentLength = format.contentLength,
+                lines = format.lines(),
             )
         }
         val tracks = pickVideoFamily(streaming.adaptiveFormats).mapNotNull { trackOf(it) }
@@ -889,7 +890,7 @@ object YTPlayerUtils {
         val durationMs = streaming.adaptiveFormats.firstNotNullOfOrNull { it.approxDurationMs?.toLongOrNull() }
             ?: response.videoDetails?.lengthSeconds?.toLongOrNull()?.times(1000L)
             ?: 0L
-        val sharpTracks = pickSharpFamily(streaming.adaptiveFormats, tracks.last().shortSide).mapNotNull { trackOf(it) }
+        val sharpTracks = pickSharpFamily(streaming.adaptiveFormats, tracks.last().lines).mapNotNull { trackOf(it) }
         return VideoStreams(
             videoId = videoId,
             tracks = tracks,

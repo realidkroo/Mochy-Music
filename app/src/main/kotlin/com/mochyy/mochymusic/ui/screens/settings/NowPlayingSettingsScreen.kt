@@ -19,6 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.constants.CanvasBestQualityKey
 import com.mochyy.mochymusic.constants.CanvasOrder
 import com.mochyy.mochymusic.constants.CanvasOrderKey
 import com.mochyy.mochymusic.constants.CanvasSource
@@ -226,6 +227,7 @@ private fun videoQualityItem(): SettingsItem {
 private fun canvasItems(navController: NavController): List<SettingsItem> {
     val (canvasEnabled, onCanvasEnabledChange) = rememberPreference(CanvasThumbnailAnimationKey, defaultValue = true)
     val (canvasWifiOnly, onCanvasWifiOnlyChange) = rememberPreference(CanvasWifiOnlyKey, defaultValue = true)
+    val (canvasBest, onCanvasBestChange) = rememberPreference(CanvasBestQualityKey, defaultValue = true)
     val (canvasOrder, onCanvasOrderChange) = rememberEnumPreference(CanvasOrderKey, defaultValue = CanvasOrder.APPLE_TIDAL_SPOTIFY)
     val (spotifyCanvas) = rememberPreference(SpotifyCanvasKey, defaultValue = false)
     val canvasSourceNames = mapOf(
@@ -276,6 +278,15 @@ private fun canvasItems(navController: NavController): List<SettingsItem> {
             icon = painterResource(R.drawable.wifi_proxy),
             checked = canvasWifiOnly,
             onCheckedChange = onCanvasWifiOnlyChange,
+            subOptionOf = canvasEnabled,
+        ),
+        switchItem(
+            key = "Sharpest animated covers",
+            title = stringResource(R.string.canvas_best_quality),
+            description = stringResource(R.string.canvas_best_quality_desc),
+            icon = rememberVectorPainter(Icons.Rounded.HighQuality),
+            checked = canvasBest,
+            onCheckedChange = onCanvasBestChange,
             subOptionOf = canvasEnabled,
         ),
     )

@@ -41,6 +41,7 @@ import com.mochyy.mochymusic.db.entities.ImportedPlaylist
 import com.mochyy.mochymusic.db.entities.ImportedPlaylistTrack
 import com.mochyy.mochymusic.db.entities.ImportedSong
 import com.mochyy.mochymusic.db.entities.ImportedAlbumRow
+import com.mochyy.mochymusic.db.entities.ImportedLike
 import com.mochyy.mochymusic.db.entities.ImportedSourceCount
 import com.mochyy.mochymusic.db.entities.PlaylistEvent
 import com.mochyy.mochymusic.db.entities.PlaylistSong
@@ -701,6 +702,10 @@ interface DatabaseDao {
     @Transaction
     @Query("SELECT * FROM song WHERE id IN (:songIds)")
     suspend fun getSongsByIds(songIds: List<String>): List<Song>
+
+    // just the rows, no artists or album, for checking thousands of likes at once
+    @Query("SELECT * FROM song WHERE id IN (:songIds) AND NOT liked")
+    fun unlikedSongEntities(songIds: List<String>): List<SongEntity>
 
     /** [getSongsByIds] that keeps up: a like or a new artist picture shows without asking again. */
     @Transaction
@@ -1809,6 +1814,13 @@ interface DatabaseDao {
 
     @Query("UPDATE import_session_song SET liked = 1 WHERE sessionId = :sessionId AND songId = :songId")
     fun markLikedByImport(sessionId: Long, songId: String)
+
+    @Query(
+        "SELECT import_session_song.songId AS songId, MAX(import_session.startedAt) AS importedAt FROM import_session_song " +
+            "JOIN import_session ON import_session.id = import_session_song.sessionId " +
+            "WHERE import_session_song.liked GROUP BY import_session_song.songId"
+    )
+    fun likesFromImports(): List<ImportedLike>
 
     @Query("SELECT * FROM import_session WHERE source = :source ORDER BY id DESC")
     fun importSessions(source: String): List<ImportSession>

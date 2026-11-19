@@ -4,6 +4,7 @@ import com.mochyy.mochymusic.ui.player.videoCropTransform
 import com.mochyy.mochymusic.utils.VideoStreams
 import com.mochyy.mochymusic.utils.VideoTrack
 import com.mochyy.mochymusic.utils.pickVideoFamily
+import com.mochyy.mochymusic.utils.videoLines
 import com.music.innertube.models.response.PlayerResponse
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -67,6 +68,15 @@ class VideoDashTest {
         )
         val picked = pickVideoFamily(formats)
         assertEquals(listOf(136, 137), picked.map { it.itag })
+    }
+
+    @Test
+    fun `sizes go by youtube's names whatever the picture's shape`() {
+        assertEquals(1080, videoLines(1920, 800))
+        assertEquals(1080, videoLines(1440, 1080))
+        assertEquals(1080, videoLines(1080, 1920))
+        assertEquals(240, videoLines(426, 240))
+        assertEquals(2160, videoLines(3840, 1600))
     }
 
     @Test

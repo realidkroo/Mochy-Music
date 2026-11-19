@@ -96,6 +96,14 @@ class YouTubeSyncManager @Inject constructor(
         }
     }
 
+    suspend fun lostLikesCount(): Int = LostLikes.count(context, database)
+
+    fun bringBackLikes() = launchTask(context.getString(R.string.yt_sync_lost_likes_running)) {
+        val back = LostLikes.bringBack(context, database)
+        if (back == 0) context.getString(R.string.yt_sync_lost_likes_none_body)
+        else context.resources.getQuantityString(R.plurals.yt_sync_lost_likes_done, back, back)
+    }
+
     fun uploadLocalPlaylists() = launchTask("Creating playlists on YouTube…") {
         requireSignedIn()
         val keepOffYouTube = context.dataStore.get(YtExcludeImportsKey, false)

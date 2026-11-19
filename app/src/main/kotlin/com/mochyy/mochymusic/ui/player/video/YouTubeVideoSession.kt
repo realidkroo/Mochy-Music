@@ -31,6 +31,7 @@ import com.mochyy.mochymusic.constants.VideoQuality
 import com.mochyy.mochymusic.utils.VideoStreams
 import com.mochyy.mochymusic.utils.VideoTrack
 import com.mochyy.mochymusic.utils.followAppProxy
+import com.mochyy.mochymusic.utils.videoLines
 import okhttp3.OkHttpClient
 import kotlin.math.abs
 
@@ -86,8 +87,8 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
     var isStalled by mutableStateOf(false)
         private set
 
-    // the short side of the picture playing right now, for "Auto (720p)"
-    var playingShortSide by mutableIntStateOf(0)
+    // the size playing right now by youtube's name for it, for "Auto · 720p"
+    var playingLines by mutableIntStateOf(0)
         private set
 
     var aspect by mutableFloatStateOf(0f)
@@ -97,7 +98,7 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
     var failures by mutableIntStateOf(0)
         private set
 
-    // the short sides this video comes in, biggest first
+    // the sizes this video comes in (1080 for 1080p), biggest first
     var sizes by mutableStateOf(emptyList<Int>())
         private set
 
@@ -123,7 +124,7 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
     private var quality = VideoQuality.AUTO
     private var autoCap = 1080
     // the size a whole-file video was loaded at; 0 when the player picks sizes itself
-    private var wholeFileSide = 0
+    private var wholeFileLines = 0
     // h264 or the vp9/av1 family past 1080p, whichever the loaded source was built from
     private var loadedFamily: List<VideoTrack>? = null
     private var seekStartedAt = 0L
@@ -151,10 +152,11 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
         override fun onVideoSizeChanged(videoSize: VideoSize) {
             if (videoSize.width <= 0 || videoSize.height <= 0) return
             val ratio = videoSize.width * videoSize.pixelWidthHeightRatio / videoSize.height
-            val side = minOf(videoSize.width, videoSize.height)
+            val lines = streams?.let { s -> (s.tracks + s.sharpTracks).firstOrNull { it.width == videoSize.width && it.height == videoSize.height } }
+                ?.lines ?: videoLines(videoSize.width, videoSize.height)
             main.post {
                 aspect = ratio
-                playingShortSide = side
+                playingLines = lines
             }
         }
 
@@ -188,8 +190,8 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
         applyQuality(p)
         val s = streams ?: return@post
         // a whole-file video can't change size by itself, nor can a manifest change codec: load the other one right where the picture is
-        val otherFamily = s.tracksFor(capShortSide()) !== loadedFamily
-        if (otherFamily || (wholeFileSide != 0 && s.trackFor(capShortSide())?.shortSide != wholeFileSide)) {
+        val otherFamily = s.tracksFor(capLines()) !== loadedFamily
+        if (otherFamily || (wholeFileLines != 0 && s.trackFor(capLines())?.lines != wholeFileLines)) {
             seekStartedAt = SystemClock.elapsedRealtime()
             p.setMediaSource(mediaSourceFor(s), p.currentPosition)
             p.prepare()
@@ -261,14 +263,16 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
                 addListener(listener)
             }
 
-    private fun capShortSide() = if (quality == VideoQuality.AUTO) autoCap else quality.shortSide
+    private fun capLines() = if (quality == VideoQuality.AUTO) autoCap else quality.shortSide
 
     private fun applyQuality(p: ExoPlayer) {
         val s = streams ?: return
-        val cap = capShortSide()
-        val landscape = s.tracks.lastOrNull()?.let { it.width >= it.height } ?: true
+        // the biggest track the pick allows is the cap, by its own width and height, since a wide 1080p is only 800 tall
+        val top = s.trackFor(capLines())
         p.trackSelectionParameters = p.trackSelectionParameters.buildUpon()
-            .setMaxVideoSize(if (landscape) Int.MAX_VALUE else cap, if (landscape) cap else Int.MAX_VALUE)
+            .setMaxVideoSize(top?.width ?: Int.MAX_VALUE, top?.height ?: Int.MAX_VALUE)
+            // exoplayer drops every size bigger than the screen by itself, so a 1080p phone never played 1440p or 4k
+            .clearViewportSizeConstraints()
             // a picked size stays put; auto is free to drop when the connection slows and climb back after
             .setForceHighestSupportedBitrate(quality != VideoQuality.AUTO)
             .build()
@@ -276,19 +280,19 @@ class YouTubeVideoSession internal constructor(context: Context, val videoId: St
 
     private fun mediaSourceFor(s: VideoStreams): MediaSource {
         val dataSource = OkHttpDataSource.Factory(YouTubeVideoHttp.client).setDefaultRequestProperties(s.headers)
-        val family = s.tracksFor(capShortSide())
+        val family = s.tracksFor(capLines())
         loadedFamily = family
         val manifest = VideoDash.manifest(family, s.durationMs)?.let { xml ->
             runCatching { DashManifestParser().parse(ManifestUri, xml.byteInputStream()) }.getOrNull()
         }
         if (manifest != null) {
-            wholeFileSide = 0
+            wholeFileLines = 0
             val item = MediaItem.Builder().setUri(ManifestUri).setMimeType(MimeTypes.APPLICATION_MPD).build()
             return DashMediaSource.Factory(dataSource).createMediaSource(manifest, item)
         }
         // youtube only serves this one whole: one size, picked by the quality setting
-        val track = s.trackFor(capShortSide()) ?: s.tracks.first()
-        wholeFileSide = track.shortSide
+        val track = s.trackFor(capLines()) ?: s.tracks.first()
+        wholeFileLines = track.lines
         return ProgressiveMediaSource.Factory(dataSource).createMediaSource(MediaItem.fromUri(track.url))
     }
 
@@ -349,6 +353,10 @@ object YouTubeVideoSessions {
     private val entries = HashMap<String, Entry>()
     private val main = Handler(Looper.getMainLooper())
 
+    // the video a view is showing right now, so the player's menu only offers its quality while one plays
+    var showing by mutableStateOf<YouTubeVideoSession?>(null)
+        private set
+
     fun acquire(context: Context, videoId: String): YouTubeVideoSession {
         // only one video plays at a time: one left waiting for a hand-over that didn't come goes as another starts
         entries.entries.removeAll { (id, other) ->
@@ -363,6 +371,7 @@ object YouTubeVideoSessions {
         entry.pendingRelease?.let(main::removeCallbacks)
         entry.pendingRelease = null
         entry.users += 1
+        showing = entry.session
         return entry.session
     }
 
@@ -370,6 +379,7 @@ object YouTubeVideoSessions {
         val entry = entries[session.videoId]?.takeIf { it.session === session } ?: return
         entry.users -= 1
         if (entry.users > 0) return
+        if (showing === session) showing = null
         val drop = Runnable {
             if (entry.users == 0 && entries[session.videoId] === entry) {
                 entries.remove(session.videoId)

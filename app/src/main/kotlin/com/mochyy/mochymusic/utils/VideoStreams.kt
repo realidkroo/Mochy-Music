@@ -19,17 +19,17 @@ data class VideoStreams(
     // a minute early, so a video that is just starting doesn't run into a dead link halfway
     val isExpired: Boolean get() = System.currentTimeMillis() > expiresAtMs - 60_000L
 
-    // every size there is, biggest first
-    val sizes: List<Int> get() = (tracks + sharpTracks).map { it.shortSide }.distinct().sortedDescending()
+    // every size there is by youtube's own names (1080 for 1080p), biggest first
+    val sizes: List<Int> get() = (tracks + sharpTracks).map { it.lines }.distinct().sortedDescending()
 
     // h264 for anything it has, the sharper family only once a size past it is picked
-    fun tracksFor(shortSide: Int): List<VideoTrack> =
-        if (sharpTracks.isNotEmpty() && shortSide > (tracks.lastOrNull()?.shortSide ?: 0)) sharpTracks else tracks
+    fun tracksFor(lines: Int): List<VideoTrack> =
+        if (sharpTracks.isNotEmpty() && lines > (tracks.lastOrNull()?.lines ?: 0)) sharpTracks else tracks
 
-    // the largest track whose short side fits in shortSide, or the smallest when none does
-    fun trackFor(shortSide: Int): VideoTrack? {
-        val family = tracksFor(shortSide)
-        return family.lastOrNull { it.shortSide <= shortSide } ?: family.firstOrNull()
+    // the largest track named at or under lines, or the smallest when none is
+    fun trackFor(lines: Int): VideoTrack? {
+        val family = tracksFor(lines)
+        return family.lastOrNull { it.lines <= lines } ?: family.firstOrNull()
     }
 }
 
@@ -48,14 +48,34 @@ data class VideoTrack(
     val initRange: LongRange?,
     val indexRange: LongRange?,
     val contentLength: Long?,
+    // the size youtube names this by (1080 for 1080p), so a wide 1920x800 video still lists as 1080p
+    val lines: Int = videoLines(width, height),
 ) {
-    // what "720p" means for a landscape and a portrait video alike
     val shortSide: Int get() = minOf(width, height)
 
     val chunked: Boolean get() = initRange != null && indexRange != null
 }
 
 private val CodecsPattern = Regex("codecs=\"([^\"]+)\"")
+
+private val LinesPattern = Regex("(\\d+)p")
+
+// the sizes youtube names its videos by
+private val LineSteps = intArrayOf(144, 240, 360, 480, 720, 1080, 1440, 2160, 4320)
+
+// a wide picture is named by its width (1920 wide is 1080p) and a narrow or upright one by its short side, snapped to youtube's steps
+internal fun videoLines(width: Int, height: Int): Int {
+    val shortSide = minOf(width, height)
+    if (shortSide <= 0) return 0
+    val fromLongSide = maxOf(width, height) * 9 / 16
+    val raw = maxOf(shortSide, fromLongSide)
+    return LineSteps.minBy { kotlin.math.abs(it - raw) }
+}
+
+// youtube's own label ("1080p60", "2160p HDR") when it sent one, worked out from the size otherwise
+internal fun PlayerResponse.StreamingData.Format.lines(): Int =
+    qualityLabel?.let { LinesPattern.find(it)?.groupValues?.get(1)?.toIntOrNull() }
+        ?: videoLines(width ?: 0, height ?: 0)
 
 internal fun PlayerResponse.StreamingData.Format.containerType(): String = mimeType.substringBefore(';').trim()
 
@@ -88,17 +108,17 @@ internal fun pickVideoFamily(formats: List<PlayerResponse.StreamingData.Format>)
     return emptyList()
 }
 
-// the same picture bigger than [aboveShortSide], in the first family this phone's hardware can decode at that size; a software decoder can't keep up with 4k
+// the same picture bigger than [aboveLines], in the first family this phone's hardware can decode at that size; a software decoder can't keep up with 4k
 internal fun pickSharpFamily(
     formats: List<PlayerResponse.StreamingData.Format>,
-    aboveShortSide: Int,
+    aboveLines: Int,
 ): List<PlayerResponse.StreamingData.Format> {
     val pictures = formats.pictures()
     for ((prefixes, decoderType) in SharpFamilies) {
         val inFamily = pictures.filter { format -> prefixes.any { format.codecs().startsWith(it) } }
             .onePerSize()
             .filter { HardwareDecoders.canPlay(decoderType, it.width!!, it.height!!, it.fps ?: 30) }
-        if (inFamily.any { minOf(it.width!!, it.height!!) > aboveShortSide }) return inFamily
+        if (inFamily.any { it.lines() > aboveLines }) return inFamily
     }
     return emptyList()
 }
@@ -107,9 +127,9 @@ private fun List<PlayerResponse.StreamingData.Format>.pictures() =
     filter { !it.isAudio && (it.width ?: 0) > 0 && (it.height ?: 0) > 0 && it.bitrate > 0 }
 
 private fun List<PlayerResponse.StreamingData.Format>.onePerSize() =
-    groupBy { minOf(it.width!!, it.height!!) }
+    groupBy { it.lines() }
         .map { (_, sameSize) -> sameSize.minWith(compareBy({ it.fps ?: 30 }, { it.bitrate })) }
-        .sortedBy { minOf(it.width!!, it.height!!) }
+        .sortedBy { it.lines() }
 
 // which picture sizes this phone decodes in hardware, read from the codec list once per type
 private object HardwareDecoders {

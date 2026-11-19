@@ -155,6 +155,8 @@ class ImportSyncViewModel @Inject constructor(
     fun pullHistoryNow() = youTubeSync.pullHistoryNow()
     fun uploadLocalPlaylists() = youTubeSync.uploadLocalPlaylists()
     fun undoLastSync(withYouTube: Boolean) = youTubeSync.undoLastSync(withYouTube)
+    suspend fun lostLikesCount() = youTubeSync.lostLikesCount()
+    fun bringBackLikes() = youTubeSync.bringBackLikes()
     fun clearYouTubeMessage() = youTubeSync.clearMessage()
 
     /** Signs out but keeps everything already synced in the library. */

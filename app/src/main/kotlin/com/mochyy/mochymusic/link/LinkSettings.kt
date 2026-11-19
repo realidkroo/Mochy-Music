@@ -171,7 +171,11 @@ internal class LinkSettings(context: Context) {
             title = R.string.link_setting_video_quality,
             options = { context, _ ->
                 VideoQualities.map { quality ->
-                    quality.name to if (quality == VideoQuality.AUTO) context.getString(R.string.link_quality_auto) else context.getString(R.string.link_video_lines, quality.shortSide)
+                    quality.name to when {
+                        quality == VideoQuality.AUTO -> context.getString(R.string.link_quality_auto)
+                        quality.shortSide >= 2160 -> context.getString(R.string.video_quality_4k)
+                        else -> context.getString(R.string.link_video_lines, quality.shortSide)
+                    }
                 }
             },
             read = { prefs, _ -> prefs[VideoQualityKey] ?: VideoQuality.AUTO.name },
@@ -199,7 +203,8 @@ internal class LinkSettings(context: Context) {
     companion object {
         private const val AutoCrossfadeSeconds = 5f
         private val Speeds = listOf(0.75f, 1f, 1.25f, 1.5f)
-        private val VideoQualities = listOf(VideoQuality.AUTO, VideoQuality.Q1080, VideoQuality.Q720, VideoQuality.Q480, VideoQuality.Q360)
+        // 4k and 1440p too, or a phone set to one showed no pick at all on the other screen
+        private val VideoQualities = listOf(VideoQuality.AUTO, VideoQuality.Q2160, VideoQuality.Q1440, VideoQuality.Q1080, VideoQuality.Q720, VideoQuality.Q480, VideoQuality.Q360)
 
         // the transition that really plays, read the way the player reads it
         private fun transitionOf(prefs: Preferences): CrossmixMode = transitionModeOf(prefs)

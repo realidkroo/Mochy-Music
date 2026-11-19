@@ -27,6 +27,7 @@ import com.mochyy.mochymusic.db.entities.ImportedPlaylist
 import com.mochyy.mochymusic.db.entities.ImportedSong
 import com.mochyy.mochymusic.db.entities.PlaylistEntity
 import com.mochyy.mochymusic.db.entities.PlaylistSongMap
+import com.mochyy.mochymusic.db.entities.Song
 import com.mochyy.mochymusic.db.entities.SongEntity
 import com.mochyy.mochymusic.extensions.collectLatest
 import com.mochyy.mochymusic.extensions.isInternetConnected
@@ -34,6 +35,7 @@ import com.mochyy.mochymusic.extensions.isSyncEnabled
 import com.mochyy.mochymusic.importer.ImportSource
 import com.mochyy.mochymusic.importer.PendingYouTubeLikes
 import com.mochyy.mochymusic.importer.SyncUndo
+import com.mochyy.mochymusic.importer.YouTubeLikesMemory
 import com.mochyy.mochymusic.models.toMediaMetadata
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -436,6 +438,10 @@ class SyncUtils @Inject constructor(
 
         updateState { copy(likedSongs = SyncStatus.Syncing, currentOperation = "Syncing liked songs") }
 
+        YouTubeLikesMemory.exclusive { pullLikedSongs() }
+    }
+
+    private suspend fun pullLikedSongs() {
         withRetry {
             YouTube.playlist("LM").completed()
         }.onSuccess { result ->
@@ -466,14 +472,7 @@ class SyncUtils @Inject constructor(
                         SyncUndo.recordPushedLikes(context, pushedLikes)
                     }
 
-                    localSongs.filterNot { it.id in remoteIds || it.id in pushedLikes || it.id in keptLikes }.forEach { song ->
-                        try {
-                            database.update(song.song.localToggleLike())
-                            delay(DB_OPERATION_DELAY_MS)
-                        } catch (e: Exception) {
-                            Timber.e(e, "Failed to update song: ${song.id}")
-                        }
-                    }
+                    unlikeDroppedOnYouTube(localSongs, remoteIds, wholeList = page.songsContinuation == null, keep = pushedLikes + keptLikes)
 
                     val now = LocalDateTime.now()
                     val tagAll = !sourcesTagged()
@@ -517,6 +516,28 @@ class SyncUtils @Inject constructor(
         }
     }
 
+    // the sync used to unlike every song missing from youtube's list, so one short list wiped hundreds of likes
+    private suspend fun unlikeDroppedOnYouTube(localSongs: List<Song>, remoteIds: Set<String>, wholeList: Boolean, keep: Set<String>) {
+        val seen = YouTubeLikesMemory.seen(context)
+        val droppedIds = YouTubeLikesMemory.droppedOnYouTube(localSongs.map { it.id }, seen, remoteIds, wholeList, keep)
+        if (droppedIds == null) {
+            Timber.w("Liked songs list can't be trusted (${remoteIds.size} songs, whole list: $wholeList), keeping every like")
+            YouTubeLikesMemory.rememberSeen(context, seen.orEmpty() + remoteIds)
+            return
+        }
+        val dropped = localSongs.filter { it.id in droppedIds }
+        YouTubeLikesMemory.recordRemoved(context, dropped.associate { it.id to it.song.likedDate })
+        dropped.forEach { song ->
+            try {
+                database.update(song.song.localToggleLike())
+                delay(DB_OPERATION_DELAY_MS)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to update song: ${song.id}")
+            }
+        }
+        YouTubeLikesMemory.rememberSeen(context, remoteIds)
+    }
+
     private suspend fun executeSyncLibrarySongs() = withContext(Dispatchers.IO) {
         if (!isLoggedIn()) {
             Timber.w("Skipping syncLibrarySongs - user not logged in")
@@ -542,8 +563,12 @@ class SyncUtils @Inject constructor(
                             database.importSessionSongIds()
                         ).toSet()
 
+                    // a short list from youtube would take every song past the cut out of the library, so that sync only adds
+                    val wholeList = page.continuation == null
+                    if (!wholeList) Timber.w("Library songs came back short (${remoteIds.size}), keeping every song")
                     // Files imported from the phone are never in the YouTube library either.
-                    localSongs.filterNot { it.song.isLocal || it.id in remoteIds || it.id in importedIds }.forEach { song ->
+                    val leaving = if (wholeList) localSongs.filterNot { it.song.isLocal || it.id in remoteIds || it.id in importedIds } else emptyList()
+                    leaving.forEach { song ->
                         try {
                             database.update(song.song.toggleLibrary())
                             delay(DB_OPERATION_DELAY_MS)
@@ -1011,6 +1036,11 @@ class SyncUtils @Inject constructor(
                 try {
                     val songs = page.songs.map(SongItem::toMediaMetadata)
                     Timber.d("syncPlaylist: Fetched ${songs.size} songs from remote")
+                    // a short list would cut every song past where paging stopped, so the playlist waits for a full read
+                    if (page.songsContinuation != null) {
+                        Timber.w("syncPlaylist: Remote list came back short, leaving the playlist as it is")
+                        return@onSuccess
+                    }
 
                     val remoteIds = songs.map { it.id }
                     val localIds = database.playlistSongs(playlistId).first()

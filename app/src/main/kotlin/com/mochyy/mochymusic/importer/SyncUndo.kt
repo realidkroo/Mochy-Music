@@ -56,6 +56,12 @@ object SyncUndo {
         synchronized(lock) { write(context, journal) }
     }
 
+    // the likes the phone had right before the last full sync, with their dates
+    fun likedBefore(context: Context): Map<String, LocalDateTime?> {
+        val journal = synchronized(lock) { read(context) } ?: return emptyMap()
+        return journal.likedSongs.mapValues { (_, date) -> date?.let { runCatching { LocalDateTime.parse(it) }.getOrNull() } }
+    }
+
     /** likes the sync sent up to YouTube, so an undo can take them off again */
     fun recordPushedLikes(context: Context, ids: Collection<String>) {
         if (ids.isEmpty()) return

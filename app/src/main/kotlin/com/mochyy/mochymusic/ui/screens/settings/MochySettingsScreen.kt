@@ -206,12 +206,13 @@ private val SettingsIndex = listOf(
     SettingsEntry("High quality bloom", "Now playing", NowPlayingSettingsRoute, "lyrics bloom quality extra soft pass glow"),
     SettingsEntry("Floating lyrics overlay bubble", "Now playing", NowPlayingSettingsRoute, "floating lyrics overlay bubble pill other apps draw over", R.string.settings_floating_lyrics),
     SettingsEntry("Always enable Youtube background", "Now playing", NowPlayingSettingsRoute, "youtube video background canvas"),
-    SettingsEntry("Video quality", "Now playing", NowPlayingSettingsRoute, "video quality resolution 1080p 720p 480p sharp", R.string.video_quality),
+    SettingsEntry("Video quality", "Now playing", NowPlayingSettingsRoute, "video quality resolution 4k 2160p 1440p 1080p 720p 480p sharp", R.string.video_quality),
     SettingsEntry("Disable auto-playing YouTube video", "Now playing", NowPlayingSettingsRoute, "music video live autoplay cover"),
     SettingsEntry("Studio version for music videos", "Now playing", NowPlayingSettingsRoute, "music video mv omv audio studio album version skit sound effects official", R.string.settings_studio_for_videos),
     SettingsEntry("Enable animated canvas", "Now playing", NowPlayingSettingsRoute, "canvas animation spotify looping visual"),
     SettingsEntry("Canvas order", "Now playing", NowPlayingSettingsRoute, "canvas order apple music tidal spotify source priority", R.string.canvas_order),
     SettingsEntry("Canvas on Wi-Fi only", "Now playing", NowPlayingSettingsRoute, "canvas wifi mobile data", R.string.appearance_canvas_wifi),
+    SettingsEntry("Sharpest animated covers", "Now playing", NowPlayingSettingsRoute, "canvas animated cover motion apple music quality hd 4k sharp resolution", R.string.canvas_best_quality),
 
     // Audio Lab
     SettingsEntry("Audio Lab", "Audio Lab", "audio_lab", "sound effects equalizer fx quality"),

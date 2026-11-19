@@ -213,19 +213,21 @@ private fun PhoneBody(motion: GirlMotion, seconds: FloatState, scale: Float, scr
 private class GirlPainter {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val rect = RectF()
+    private val baseMesh = BandedMesh(GirlPose.BaseCols, GirlPose.BaseRows)
+    private val hairMesh = BandedMesh(GirlPose.HairCols, GirlPose.HairRows)
 
     fun drawBody(canvas: Canvas, scale: Float, pose: GirlPose, bits: GirlBitmaps) {
         canvas.save()
         canvas.scale(scale, scale)
         canvas.translate(-GirlArt.FrameLeft, -GirlArt.FrameTop)
-        canvas.drawBitmapMesh(bits.base, GirlPose.BaseCols, GirlPose.BaseRows, pose.baseMesh, 0, null, 0, paint)
+        baseMesh.draw(canvas, bits.base, pose.baseMesh)
         // the face in the base mesh already turns this much, so everything on it turns along
         canvas.save()
         canvas.rotate(pose.headDeg, GirlArt.NeckX, GirlArt.NeckY)
         drawEye(canvas, bits.eyeLeft, GirlArt.EyeLeft, bits.eyeLeftShut, GirlArt.EyeLeftShut, GirlArt.EyeLeftLid, pose.eyesOpen)
         drawEye(canvas, bits.eyeRight, GirlArt.EyeRight, bits.eyeRightShut, GirlArt.EyeRightShut, GirlArt.EyeRightLid, pose.eyesOpen)
         drawMouth(canvas, bits.mouth, pose.mouthOpen)
-        canvas.drawBitmapMesh(bits.hair, GirlPose.HairCols, GirlPose.HairRows, pose.hairMesh, 0, null, 0, paint)
+        hairMesh.draw(canvas, bits.hair, pose.hairMesh)
         canvas.restore()
         canvas.restore()
     }

@@ -15,10 +15,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -39,6 +41,7 @@ import com.mochyy.mochymusic.ui.component.SettingsItem
 import com.mochyy.mochymusic.ui.component.SubSettingsScaffold
 import com.mochyy.mochymusic.utils.rememberPreference
 import com.mochyy.mochymusic.viewmodels.ImportSyncViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun YouTubeSyncScreen(
@@ -58,6 +61,9 @@ fun YouTubeSyncScreen(
     var confirmSignOut by remember { mutableStateOf(false) }
     var confirmUpload by remember { mutableStateOf(false) }
     var confirmUndo by remember { mutableStateOf(false) }
+    // how many lost likes the dialog offers to bring back, null while it's closed
+    var lostLikes by remember { mutableStateOf<Int?>(null) }
+    val scope = rememberCoroutineScope()
 
     SubSettingsScaffold(
         title = stringResource(R.string.import_sync_sync_title),
@@ -189,6 +195,14 @@ fun YouTubeSyncScreen(
                         onClick = { confirmUndo = true },
                     ),
                     SettingsItem(
+                        title = { Text(stringResource(R.string.yt_sync_lost_likes_title)) },
+                        descriptionText = stringResource(R.string.yt_sync_lost_likes_desc),
+                        icon = painterResource(R.drawable.restore),
+                        iconShape = CircleShape,
+                        enabled = !state.running,
+                        onClick = { scope.launch { lostLikes = viewModel.lostLikesCount() } },
+                    ),
+                    SettingsItem(
                         title = { Text(stringResource(R.string.yt_sync_upload_playlists_title)) },
                         descriptionText = stringResource(R.string.yt_sync_upload_playlists_desc),
                         detail = stringResource(R.string.yt_sync_upload_playlists_detail),
@@ -279,6 +293,17 @@ fun YouTubeSyncScreen(
         }
     }
 
+    lostLikes?.let { count ->
+        LostLikesDialog(
+            count = count,
+            onDismiss = { lostLikes = null },
+            onConfirm = {
+                lostLikes = null
+                viewModel.bringBackLikes()
+            },
+        )
+    }
+
     if (confirmUpload) {
         DefaultDialog(
             onDismiss = { confirmUpload = false },
@@ -318,3 +343,34 @@ private fun toggleItem(
     onClick = { onChange(!checked) },
     trailingContent = { AppSwitch(checked = checked, onCheckedChange = onChange, enabled = enabled) },
 )
+
+@Composable
+private fun LostLikesDialog(
+    count: Int,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    DefaultDialog(
+        onDismiss = onDismiss,
+        horizontalAlignment = Alignment.Start,
+        title = {
+            Text(
+                if (count == 0) stringResource(R.string.yt_sync_lost_likes_none_title)
+                else pluralStringResource(R.plurals.yt_sync_lost_likes_dialog_title, count, count),
+            )
+        },
+        buttons = {
+            if (count == 0) {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.import_sync_btn_ok)) }
+            } else {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.yt_sync_cancel)) }
+                TextButton(onClick = onConfirm) { Text(stringResource(R.string.yt_sync_lost_likes_confirm)) }
+            }
+        },
+    ) {
+        Text(
+            stringResource(if (count == 0) R.string.yt_sync_lost_likes_none_body else R.string.yt_sync_lost_likes_dialog_body),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}

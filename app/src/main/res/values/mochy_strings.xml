@@ -1036,6 +1036,14 @@
     <string name="video_quality_not_loaded">Sizes show up once the video loads</string>
     <string name="video_quality_4k">4K</string>
     <string name="video_quality_sharp_desc">If the video and your phone can, uses way more data</string>
+    <string name="canvas_quality">Animated cover quality</string>
+    <string name="canvas_quality_now">%1$s · %2$s</string>
+    <string name="canvas_quality_best">Best</string>
+    <string name="canvas_quality_best_desc">The sharpest version, up to 4K if your phone can play it. Uses more data</string>
+    <string name="canvas_quality_light">Lighter</string>
+    <string name="canvas_quality_light_desc">A smaller version that starts faster and saves data</string>
+    <string name="canvas_best_quality">Sharpest animated covers</string>
+    <string name="canvas_best_quality_desc">Plays the best version there is, up to 4K. Data saver turns it off</string>
     <string name="video_mode_song_info">Song info</string>
     <string name="recap_tap_hint">tap here for your recap!!</string>
     <string name="experimental_unlock_landscape">Unlock landscape</string>
@@ -1164,6 +1172,21 @@
     <plurals name="yt_sync_undo_failed">
         <item quantity="one">Undone, but 1 like couldn\'t come off YouTube. Try again later.</item>
         <item quantity="other">Undone, but %1$d likes couldn\'t come off YouTube. Try again later.</item>
+    </plurals>
+    <string name="yt_sync_lost_likes_title">Bring back lost likes</string>
+    <string name="yt_sync_lost_likes_desc">Puts back liked songs a sync took off by mistake</string>
+    <plurals name="yt_sync_lost_likes_dialog_title">
+        <item quantity="one">Bring back 1 like?</item>
+        <item quantity="other">Bring back %1$d likes?</item>
+    </plurals>
+    <string name="yt_sync_lost_likes_dialog_body">These are songs a sync unliked, songs your imports liked, and likes from before the last sync. A song you unliked yourself comes back too, so you may need to unlike a few again. Nothing changes on YouTube.</string>
+    <string name="yt_sync_lost_likes_none_title">No lost likes</string>
+    <string name="yt_sync_lost_likes_none_body">Every like the app has a record of is already in Liked songs. Likes that are still on YouTube come back on the next sync.</string>
+    <string name="yt_sync_lost_likes_confirm">Bring back</string>
+    <string name="yt_sync_lost_likes_running">Bringing back your likes…</string>
+    <plurals name="yt_sync_lost_likes_done">
+        <item quantity="one">1 like is back in Liked songs.</item>
+        <item quantity="other">%1$d likes are back in Liked songs.</item>
     </plurals>
     <string name="module_youtube_name">YouTube Music</string>
     <string name="module_youtube_desc">Sync likes, library, playlists and history</string>

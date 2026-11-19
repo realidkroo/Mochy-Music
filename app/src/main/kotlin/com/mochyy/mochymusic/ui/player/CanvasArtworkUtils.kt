@@ -3,6 +3,9 @@
 package com.mochyy.mochymusic.ui.player
 
 import android.content.Context
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import com.mochyy.mochymusic.applecanvas.AppleMusicCanvasProvider
 import com.mochyy.mochymusic.canvas.CanvasArtwork
 import com.mochyy.mochymusic.canvas.MonochromeApiCanvas
@@ -16,6 +19,25 @@ import com.mochyy.mochymusic.utils.dataStore
 import com.mochyy.mochymusic.utils.get
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+// the animated cover on the player right now, so the player's menu only offers its quality while one plays
+object PlayerCanvasPlayback {
+    // the short side of the picture playing, 0 when no animated cover is up
+    var playingSide by mutableIntStateOf(0)
+        private set
+    private var owner: Any? = null
+
+    // the cover that reported a picture last owns the value, so the song swiping away can't clear the new one's
+    fun report(owner: Any, side: Int) {
+        if (side > 0) {
+            this.owner = owner
+            playingSide = side
+        } else if (this.owner === owner) {
+            this.owner = null
+            playingSide = 0
+        }
+    }
+}
 
 object CanvasArtworkPlaybackCache {
     private const val defaultMaxSize = 256

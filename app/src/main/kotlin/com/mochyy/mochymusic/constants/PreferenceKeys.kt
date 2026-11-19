@@ -1011,6 +1011,8 @@ val SwipeThumbnailKey = booleanPreferencesKey("swipeThumbnail")
 val RotatingThumbnailKey = booleanPreferencesKey("rotatingThumbnail")
 val CanvasThumbnailAnimationKey = booleanPreferencesKey("canvasThumbnailAnimation")
 val CanvasWifiOnlyKey = booleanPreferencesKey("canvasWifiOnly")
+// animated covers play the sharpest version there is (apple's go up to 4k); off, or with data saver on, they play a lighter one
+val CanvasBestQualityKey = booleanPreferencesKey("canvasBestQuality")
 // which canvas sources get asked first; spotify only joins once it's turned on and signed in on its own page
 val CanvasOrderKey = stringPreferencesKey("canvasOrder")
 val SpotifyCanvasKey = booleanPreferencesKey("spotifyCanvas")
