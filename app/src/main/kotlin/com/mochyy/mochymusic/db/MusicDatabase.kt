@@ -107,7 +107,7 @@ class MusicDatabase(
 }
 
 // bump this with every schema change and add its migration to AllMigrations, the import checks old exports against it too
-const val MusicDatabaseVersion = 43
+const val MusicDatabaseVersion = 44
 
 @Database(
     entities = [
@@ -200,6 +200,7 @@ val AllMigrations: Array<Migration>
         MIGRATION_40_41,
         MIGRATION_41_42,
         MIGRATION_42_43,
+        MIGRATION_43_44,
     )
 
 val MIGRATION_1_2 =
@@ -881,5 +882,13 @@ val MIGRATION_42_43 =
                 "CREATE TABLE IF NOT EXISTS `song_edit` (`songId` TEXT NOT NULL, `title` TEXT, `artists` TEXT, `album` TEXT, " +
                     "`year` INTEGER, `cover` TEXT, `videoId` TEXT, `noVideo` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`songId`))",
             )
+        }
+    }
+
+val MIGRATION_43_44 =
+    object : Migration(43, 44) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // local songs' genre tags for the library's Genres tab, read again for files that came in before
+            db.execSQL("ALTER TABLE `song` ADD COLUMN `genre` TEXT")
         }
     }

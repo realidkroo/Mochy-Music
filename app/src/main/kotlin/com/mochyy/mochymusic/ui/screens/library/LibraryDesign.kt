@@ -361,7 +361,8 @@ fun LibraryCategoryCard(
 @Composable
 fun LibraryWideCard(
     title: String,
-    count: Int,
+    // null for a card whose title says it all, like All history
+    count: Int?,
     covers: List<String?>,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -398,7 +399,7 @@ fun LibraryWideCard(
                 .padding(start = 14.dp, bottom = 14.dp, end = 110.dp),
         ) {
             LibraryCardLabel(title)
-            LibraryCount(count)
+            if (count != null) LibraryCount(count)
         }
     }
 }

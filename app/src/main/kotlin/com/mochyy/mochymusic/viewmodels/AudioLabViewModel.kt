@@ -256,25 +256,26 @@ class AudioLabViewModel @Inject constructor(
         s.copy(listener = transform(s.listener), presetId = null)
     }
 
-    /** another copy of the sub, set a little to the side of the last one; null when all four are out */
-    fun addSub(): Int? {
+    /** another copy of a part, a little to the side of the last one; null when all four of that kind are in the room */
+    fun addStageObject(source: StageSource): Int? {
         var added: Int? = null
         store.updateStage { s ->
-            val subs = s.objects.filter { it.source == StageSource.Sub }
-            if (subs.size >= StageNative.SubSlots) return@updateStage s
-            val last = subs.lastOrNull()
+            val same = s.objects.filter { it.source == source }
+            if (same.size >= StageNative.Copies) return@updateStage s
+            val last = same.lastOrNull()
             val id = (s.objects.maxOfOrNull { it.id } ?: -1) + 1
             val x = last?.let { if (it.x > 0.5f) it.x - 0.4f else it.x + 0.4f } ?: 0f
             added = id
-            s.copy(objects = s.objects + StageObject(id, StageSource.Sub, x, last?.y ?: 0.05f, last?.z ?: 0.5f), presetId = null)
+            val copy = last?.copy(id = id, x = x, solo = false) ?: StageObject(id, source, x, if (source == StageSource.Sub) 0.05f else 0.4f, 0.5f)
+            s.copy(objects = s.objects + copy, presetId = null)
         }
         return added
     }
 
-    /** only extra subs can go; the rest of the song always has its place */
+    /** a copy can go; the last one of each part always keeps its place */
     fun removeStageObject(id: Int) = store.updateStage { s ->
-        val target = s.objects.firstOrNull { it.id == id }
-        if (target?.source != StageSource.Sub || s.objects.count { it.source == StageSource.Sub } <= 1) s
+        val target = s.objects.firstOrNull { it.id == id } ?: return@updateStage s
+        if (s.objects.count { it.source == target.source } <= 1) s
         else s.copy(objects = s.objects - target, presetId = null)
     }
 

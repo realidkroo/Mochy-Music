@@ -24,9 +24,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -38,10 +36,6 @@ constructor(
     val database: MusicDatabase,
 ) : ViewModel() {
     var historySource = MutableStateFlow(HistorySource.LOCAL)
-
-    private val today = LocalDate.now()
-    private val thisMonday = today.with(DayOfWeek.MONDAY)
-    private val lastMonday = thisMonday.minusDays(7)
 
     val historyPage = MutableStateFlow<HistoryPage?>(null)
 
@@ -55,31 +49,15 @@ constructor(
                     .map { events ->
                         events
                             .filter { !hideVideoSongs || !it.song.song.isVideo }
-                            .groupBy {
-                                val date = it.event.timestamp.toLocalDate()
-                                val daysAgo = ChronoUnit.DAYS.between(date, today).toInt()
-                                when {
-                                    daysAgo == 0 -> DateAgo.Today
-                                    daysAgo == 1 -> DateAgo.Yesterday
-                                    date >= thisMonday -> DateAgo.ThisWeek
-                                    date >= lastMonday -> DateAgo.LastWeek
-                                    else -> DateAgo.Other(date.withDayOfMonth(1))
-                                }
-                            }.toSortedMap(
-                                compareBy { dateAgo ->
-                                    when (dateAgo) {
-                                        DateAgo.Today -> 0L
-                                        DateAgo.Yesterday -> 1L
-                                        DateAgo.ThisWeek -> 2L
-                                        DateAgo.LastWeek -> 3L
-                                        is DateAgo.Other -> ChronoUnit.DAYS.between(dateAgo.date, today)
-                                    }
-                                },
-                            ).mapValues { entry ->
+                            // one group per day, newest first, each headed by its own date
+                            .groupBy { it.event.timestamp.toLocalDate() }
+                            .toSortedMap(compareByDescending { it })
+                            .mapValues { entry ->
                                 entry.value.distinctBy { it.song.id }
                             }
                     }
-            }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
+            // null until the first read, so a page can tell loading from never played
+            }.flowOn(Dispatchers.Default).stateIn<Map<LocalDate, List<com.mochyy.mochymusic.db.entities.EventWithSong>>?>(viewModelScope, SharingStarted.Lazily, null)
 
     init {
         fetchRemoteHistory()
@@ -93,26 +71,5 @@ constructor(
                 reportException(it)
             }
         }
-    }
-}
-
-sealed class DateAgo {
-    data object Today : DateAgo()
-
-    data object Yesterday : DateAgo()
-
-    data object ThisWeek : DateAgo()
-
-    data object LastWeek : DateAgo()
-
-    class Other(
-        val date: LocalDate,
-    ) : DateAgo() {
-        override fun equals(other: Any?): Boolean {
-            if (other is Other) return date == other.date
-            return super.equals(other)
-        }
-
-        override fun hashCode(): Int = date.hashCode()
     }
 }

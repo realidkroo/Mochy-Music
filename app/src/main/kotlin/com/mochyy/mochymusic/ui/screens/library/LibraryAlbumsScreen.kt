@@ -43,24 +43,7 @@ fun LibraryAlbumsScreen(
         return
     }
 
-    val viewModel: LibraryHomeViewModel = hiltViewModel()
-    val albums by viewModel.albums.collectAsState()
-    val entries = remember(albums) { albums.toGridEntries() }
-
-    LibraryGridScreen(
-        title = stringResource(R.string.albums),
-        subtitle = stringResource(R.string.library_albums_subtitle),
-        searchPlaceholder = stringResource(R.string.library_albums_search),
-        entries = entries,
-        onOpen = { navController.navigate("album/${it.id}") },
-        // Both buttons open the newest album rather than building a queue across every album:
-        // this screen only loads album metadata, so a real "play everything" would mean fetching
-        // every album's tracklist up front just to make one button work.
-        onPlay = { albums.firstOrNull()?.let { navController.navigate("album/${it.id}") } },
-        onShuffle = { albums.randomOrNull()?.let { navController.navigate("album/${it.id}") } },
-        modifier = modifier,
-        pureBlack = pureBlack,
-    )
+    LibraryAlbumsPage(navController)
 }
 
 @Composable

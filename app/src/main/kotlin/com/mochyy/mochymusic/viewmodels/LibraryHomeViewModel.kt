@@ -20,6 +20,7 @@ import com.mochyy.mochymusic.importer.ImportSource
 import com.mochyy.mochymusic.importer.MusicImportService
 import com.mochyy.mochymusic.importer.LocalSongRepair
 import com.mochyy.mochymusic.importer.groupLocalAlbums
+import com.mochyy.mochymusic.importer.readLocalGenres
 import com.mochyy.mochymusic.playback.CachedSongs
 import com.mochyy.mochymusic.ui.component.TopToaster
 import com.mochyy.mochymusic.utils.ArtistImageResolver
@@ -196,6 +197,8 @@ constructor(
                 .onFailure { timber.log.Timber.w(it, "Repairing local song names failed") }
             runCatching { groupLocalAlbums(context, database) }
                 .onFailure { timber.log.Timber.w(it, "Grouping local albums failed") }
+            runCatching { readLocalGenres(context, database) }
+                .onFailure { timber.log.Timber.w(it, "Reading local genres failed") }
         }
 
         // Local artists are included: a downloaded song that never went into the library has

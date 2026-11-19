@@ -26,8 +26,10 @@ internal object StageNative {
     const val Master = 12
     const val Objects = 13
     const val ObjectStride = 5
-    const val SubSlots = 4
-    const val ObjectCount = 5 + SubSlots
+    // each kind of sound (StageSource, in order) has this many slots; an object's slot is kind * Copies + copy
+    const val Copies = 4
+    const val Kinds = 6
+    const val ObjectCount = Kinds * Copies
     const val ParamCount = Objects + ObjectCount * ObjectStride
 
     const val ModeHeadphones = 0f

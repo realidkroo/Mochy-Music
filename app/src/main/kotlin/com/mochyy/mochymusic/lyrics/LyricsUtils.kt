@@ -433,12 +433,17 @@ object LyricsUtils {
         }
     }
 
-    // parse in the background as soon as a song's lyrics land, so opening the player finds them ready
+    // set by the lyrics page once it has laid lines out: works out where each of a song's lines wraps, off the main thread
+    @Volatile
+    var lineWarmer: ((List<LyricsEntry>) -> Unit)? = null
+
+    // parse in the background as soon as a song's lyrics land, so opening the player finds them ready, wraps and all
     fun warmParsedLyrics(lyrics: String?) {
         if (lyrics.isNullOrBlank() || lyrics == LyricsEntity.LYRICS_NOT_FOUND) return
-        if (synchronized(parsedCache) { parsedCache.containsKey(lyrics) }) return
-        val parsed = runCatching { parseLyrics(lyrics) }.getOrNull() ?: return
-        synchronized(parsedCache) { parsedCache[lyrics] = parsed }
+        val parsed = synchronized(parsedCache) { parsedCache[lyrics] }
+            ?: runCatching { parseLyrics(lyrics) }.getOrNull()?.also { synchronized(parsedCache) { parsedCache[lyrics] = it } }
+            ?: return
+        lineWarmer?.invoke(parsed)
     }
 
     /**

@@ -32,6 +32,10 @@ fun LibraryPlaylistsScreen(
     shelf: LibraryShelfKind? = null,
     source: ImportSource? = null,
 ) {
+    if (shelf == null && source == null) {
+        LibraryPlaylistsPage(navController)
+        return
+    }
     val viewModel: LibraryHomeViewModel = hiltViewModel()
     val all by (shelf?.let(viewModel::shelf)?.playlists ?: viewModel.playlists).collectAsStateWithLifecycle()
     val playlistSources by viewModel.playlistSources.collectAsState()

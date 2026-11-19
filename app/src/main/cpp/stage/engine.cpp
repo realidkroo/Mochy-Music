@@ -66,7 +66,7 @@ Engine::Engine(int sampleRate, int channels)
     if (!surround_) splitter_ = std::make_unique<Splitter>(sampleRate);
     else rolesFor(channels, role_);
     float fs = static_cast<float>(sampleRate);
-    for (auto& voice : voices_) voice.line.init(static_cast<int>(0.35f * fs));
+    for (auto& band : bands_) band.line.init(static_cast<int>(0.35f * fs));
     subLine_.init(static_cast<int>(0.01f * fs) + 64);
     for (auto& f : lfe_) f.lowpass(fs, 120.f);
     fadeStep_ = 1.f / (0.012f * fs);
@@ -183,10 +183,10 @@ void Engine::renderWet(const int16_t* in, int frames) {
         // the asset loads in the background, so the first blocks after a cold start can come before it
         hrtf_ = hrtfFor(fs_);
         if (hrtf_) {
-            for (auto& v : voices_) {
-                v.hist.assign(static_cast<size_t>(hrtf_->taps) * 2 + 2, 0.f);
-                v.histPos = 0;
-                v.dir = -1;
+            for (auto& band : bands_) {
+                band.hist.assign(static_cast<size_t>(hrtf_->taps) * 2 + 2, 0.f);
+                band.histPos = 0;
+                for (auto& v : band.copies) v.dir = -1;
             }
         }
     }
@@ -202,48 +202,50 @@ void Engine::renderWet(const int16_t* in, int frames) {
         float l = 0.f, r = 0.f, send = 0.f;
 
         for (int b = 0; b < BandCount; b++) {
-            Voice& v = voices_[b];
+            Band& band = bands_[b];
             float x = bands[b];
-            v.line.push(x);
+            band.line.push(x);
             if (headphones) {
-                v.hist[v.histPos] = x;
-                v.hist[v.histPos + taps] = x;
+                band.hist[band.histPos] = x;
+                band.hist[band.histPos + taps] = x;
             }
-            const float* history = headphones ? v.hist.data() + v.histPos + 1 : nullptr;
-            if (headphones) v.histPos = v.histPos + 1 == taps ? 0 : v.histPos + 1;
-            if (v.silent) continue;
-            v.peak = std::max(v.peak, std::fabs(x));
+            const float* history = headphones ? band.hist.data() + band.histPos + 1 : nullptr;
+            if (headphones) band.histPos = band.histPos + 1 == taps ? 0 : band.histPos + 1;
+            band.peak = std::max(band.peak, std::fabs(x));
 
-            float yl = x, yr = x;
-            if (headphones) {
-                dot2(set->leftOf(v.dir), set->rightOf(v.dir), history, taps, yl, yr);
-                if (v.fade < 1.f) {
-                    float ol, orr;
-                    dot2(set->leftOf(v.oldDir), set->rightOf(v.oldDir), history, taps, ol, orr);
-                    yl = ol + (yl - ol) * v.fade;
-                    yr = orr + (yr - orr) * v.fade;
-                    v.fade = std::min(1.f, v.fade + dirFadeStep_);
+            for (auto& v : band.copies) {
+                if (v.silent) continue;
+                float yl = x, yr = x;
+                if (headphones) {
+                    dot2(set->leftOf(v.dir), set->rightOf(v.dir), history, taps, yl, yr);
+                    if (v.fade < 1.f) {
+                        float ol, orr;
+                        dot2(set->leftOf(v.oldDir), set->rightOf(v.oldDir), history, taps, ol, orr);
+                        yl = ol + (yl - ol) * v.fade;
+                        yr = orr + (yr - orr) * v.fade;
+                        v.fade = std::min(1.f, v.fade + dirFadeStep_);
+                    }
                 }
-            }
-            v.gain[0] += v.gainStep[0];
-            v.gain[1] += v.gainStep[1];
-            v.airState[0] += (yl * v.gain[0] - v.airState[0]) * v.air;
-            v.airState[1] += (yr * v.gain[1] - v.airState[1]) * v.air;
-            l += v.airState[0];
-            r += v.airState[1];
+                v.gain[0] += v.gainStep[0];
+                v.gain[1] += v.gainStep[1];
+                v.airState[0] += (yl * v.gain[0] - v.airState[0]) * v.air;
+                v.airState[1] += (yr * v.gain[1] - v.airState[1]) * v.air;
+                l += v.airState[0];
+                r += v.airState[1];
 
-            for (auto& e : v.echoes) {
-                for (int ear = 0; ear < 2; ear++) {
-                    float s = v.line.read(e.delay[ear]) * e.gain[ear];
-                    e.state[ear] += (s - e.state[ear]) * e.coef[ear];
-                    e.delay[ear] += e.delayStep[ear];
-                    e.gain[ear] += e.gainStep[ear];
+                for (auto& e : v.echoes) {
+                    for (int ear = 0; ear < 2; ear++) {
+                        float s = band.line.read(e.delay[ear]) * e.gain[ear];
+                        e.state[ear] += (s - e.state[ear]) * e.coef[ear];
+                        e.delay[ear] += e.delayStep[ear];
+                        e.gain[ear] += e.gainStep[ear];
+                    }
+                    l += e.state[0];
+                    r += e.state[1];
                 }
-                l += e.state[0];
-                r += e.state[1];
+                v.send += v.sendStep;
+                send += x * v.send;
             }
-            v.send += v.sendStep;
-            send += x * v.send;
         }
 
         subLine_.push(sub);
@@ -303,31 +305,41 @@ void Engine::place(int frames) {
 
     bool headphones = mode_ == ModeHeadphones && hrtf_;
     for (int b = 0; b < BandCount; b++) {
-        int object = b <= BandRight ? b : ObjAmbience;
-        const float* o = p + ParamObjects + object * ObjectStride;
-        float target[3] = {o[0], o[1], o[2]};
-        if (b == BandAmbL || b == BandAmbR) {
-            // the ambience is a pair, spread sideways from its dot by its width
-            float spread = o[4] * std::min(3.f, room_[0] * 0.35f) * (b == BandAmbL ? -1.f : 1.f);
-            target[0] = std::min(room_[0] / 2, std::max(-room_[0] / 2, o[0] + spread));
+        int kind = b <= BandRight ? b : KindAmbience;
+        // a part that came from one channel (a side or half the ambience) now reaches both ears
+        bool oneSide = b != BandVocal && b != BandCenter;
+        for (int c = 0; c < Copies; c++) {
+            const float* o = p + ParamObjects + (kind * Copies + c) * ObjectStride;
+            float target[3] = {o[0], o[1], o[2]};
+            if (b == BandAmbL || b == BandAmbR) {
+                // the ambience is a pair, spread sideways from its dot by its width
+                float spread = o[4] * std::min(3.f, room_[0] * 0.35f) * (b == BandAmbL ? -1.f : 1.f);
+                target[0] = std::min(room_[0] / 2, std::max(-room_[0] / 2, o[0] + spread));
+            }
+            placeVoice(bands_[b].copies[c], bands_[b], oneSide, target, o[3], frames, headphones);
         }
-        placeVoice(voices_[b], target, o[3], frames, headphones);
     }
-    for (int s = 0; s < 4; s++) {
-        const float* o = p + ParamObjects + (ObjSub + s) * ObjectStride;
-        placeSub(subs_[s], o, o[3], frames, headphones);
+    for (int c = 0; c < Copies; c++) {
+        const float* o = p + ParamObjects + (KindSub * Copies + c) * ObjectStride;
+        placeSub(subs_[c], o, o[3], frames, headphones);
     }
-    for (auto& v : voices_) {
-        v.level = std::max(v.peak, v.level * 0.93f);
-        v.peak = 0.f;
+    for (auto& band : bands_) {
+        band.level = std::max(band.peak, band.level * 0.93f);
+        band.peak = 0.f;
     }
     subLevel_ = std::max(subPeak_, subLevel_ * 0.93f);
     subPeak_ = 0.f;
 }
 
-void Engine::placeVoice(Voice& v, const float* target, float userGain, int frames, bool headphones) {
+void Engine::placeVoice(Voice& v, const Band& band, bool fromOneSide, const float* target, float userGain, int frames, bool headphones) {
+    // a copy that isn't in the room costs nothing
+    if (userGain <= 0.f && !v.placed) {
+        v.silent = true;
+        return;
+    }
+    bool fresh = !v.placed;
     float k = 1.f - std::exp(-frames / (0.06f * fs_));
-    for (int i = 0; i < 3; i++) v.pos[i] = v.placed ? v.pos[i] + (target[i] - v.pos[i]) * k : target[i];
+    for (int i = 0; i < 3; i++) v.pos[i] = fresh ? target[i] : v.pos[i] + (target[i] - v.pos[i]) * k;
     float head[3], distance;
     toHead(v.pos, head, distance);
     float near = std::min(2.5f, std::max(0.06f, RefDistance / distance));
@@ -336,10 +348,10 @@ void Engine::placeVoice(Voice& v, const float* target, float userGain, int frame
     float direct[2];
     if (headphones) {
         // a part that came from one channel now reaches both ears; without the trim it doubles up and the mix turns boxy
-        float ears = &v == &voices_[BandVocal] || &v == &voices_[BandCenter] ? 1.f : OneSideTrim;
+        float ears = fromOneSide ? OneSideTrim : 1.f;
         direct[0] = direct[1] = userGain * near * ears;
         int dir = hrtf_->nearest(head[0], head[1], head[2]);
-        if (v.dir < 0 || !v.placed) {
+        if (v.dir < 0 || fresh) {
             v.dir = dir;
             v.fade = 1.f;
         } else if (dir != v.dir && v.fade >= 1.f) {
@@ -360,7 +372,7 @@ void Engine::placeVoice(Voice& v, const float* target, float userGain, int frame
     float absorb = target_[ParamAbsorb], damp = target_[ParamDamp], amount = target_[ParamRoomAmount];
     float reflect = std::sqrt(std::max(0.f, 1.f - absorb));
     float wallCut = 16000.f - 12500.f * damp;
-    float maxDelay = static_cast<float>(v.line.size() - 8);
+    float maxDelay = static_cast<float>(band.line.size() - 8);
     float w = room_[0], d = room_[1], h = room_[2];
     for (int wall = 0; wall < Walls; wall++) {
         // the source mirrored in one wall: its echo arrives from there, as far away as the mirror image
@@ -394,31 +406,30 @@ void Engine::placeVoice(Voice& v, const float* target, float userGain, int frame
         Echo& e = v.echoes[wall];
         for (int ear = 0; ear < 2; ear++) {
             e.coef[ear] = onePole(static_cast<float>(fs_), cuts[ear]);
-            if (!v.placed) {
+            // a copy coming in starts from nothing and rises over the block, so adding one never clicks
+            if (fresh) {
                 e.delay[ear] = delays[ear];
-                e.gain[ear] = gains[ear];
-                e.delayStep[ear] = e.gainStep[ear] = 0.f;
-            } else {
-                e.delayStep[ear] = (delays[ear] - e.delay[ear]) * inv;
-                e.gainStep[ear] = (gains[ear] - e.gain[ear]) * inv;
+                e.gain[ear] = 0.f;
             }
+            e.delayStep[ear] = (delays[ear] - e.delay[ear]) * inv;
+            e.gainStep[ear] = (gains[ear] - e.gain[ear]) * inv;
         }
     }
 
     float send = userGain * near * amount * SendLevel;
-    if (!v.placed) {
-        v.gain[0] = direct[0];
-        v.gain[1] = direct[1];
-        v.send = send;
+    if (fresh) {
+        v.gain[0] = v.gain[1] = 0.f;
+        v.send = 0.f;
         for (auto& e : v.echoes) e.state[0] = e.state[1] = 0.f;
         v.airState[0] = v.airState[1] = 0.f;
     }
     v.gainStep[0] = (direct[0] - v.gain[0]) * inv;
     v.gainStep[1] = (direct[1] - v.gain[1]) * inv;
     v.sendStep = (send - v.send) * inv;
-    // muted and already faded down: skipped until it's turned up again
-    v.silent = userGain <= 0.f && v.gain[0] <= 1e-5f && v.gain[1] <= 1e-5f;
     v.placed = true;
+    // muted or removed and already faded down: skipped, and placed afresh when it comes back
+    v.silent = userGain <= 0.f && v.gain[0] <= 1e-5f && v.gain[1] <= 1e-5f;
+    if (v.silent) v.placed = false;
 }
 
 void Engine::placeSub(SubOut& s, const float* target, float userGain, int frames, bool headphones) {
@@ -457,25 +468,27 @@ void Engine::placeSub(SubOut& s, const float* target, float userGain, int frames
 }
 
 void Engine::levels(float* out) const {
-    for (int b = 0; b <= BandRight; b++) out[b] = std::min(1.f, voices_[b].level);
-    out[ObjAmbience] = std::min(1.f, std::max(voices_[BandAmbL].level, voices_[BandAmbR].level));
-    for (int s = 0; s < 4; s++) out[ObjSub + s] = std::min(1.f, subLevel_);
+    for (int b = 0; b <= BandRight; b++) out[b] = std::min(1.f, bands_[b].level);
+    out[KindAmbience] = std::min(1.f, std::max(bands_[BandAmbL].level, bands_[BandAmbR].level));
+    out[KindSub] = std::min(1.f, subLevel_);
 }
 
 void Engine::resetWet() {
     if (splitter_) splitter_->clear();
     int taps = hrtf_ ? hrtf_->taps : 0;
-    for (auto& v : voices_) {
-        v.line.clear();
-        v.hist.assign(static_cast<size_t>(taps) * 2 + 2, 0.f);
-        v.histPos = 0;
-        v.dir = -1;
-        v.fade = 1.f;
-        v.placed = false;
-        v.silent = true;
-        v.gain[0] = v.gain[1] = 0.f;
-        v.airState[0] = v.airState[1] = 0.f;
-        for (auto& e : v.echoes) e.state[0] = e.state[1] = 0.f;
+    for (auto& band : bands_) {
+        band.line.clear();
+        band.hist.assign(static_cast<size_t>(taps) * 2 + 2, 0.f);
+        band.histPos = 0;
+        for (auto& v : band.copies) {
+            v.dir = -1;
+            v.fade = 1.f;
+            v.placed = false;
+            v.silent = true;
+            v.gain[0] = v.gain[1] = 0.f;
+            v.airState[0] = v.airState[1] = 0.f;
+            for (auto& e : v.echoes) e.state[0] = e.state[1] = 0.f;
+        }
     }
     for (auto& s : subs_) s.placed = false;
     subLine_.clear();

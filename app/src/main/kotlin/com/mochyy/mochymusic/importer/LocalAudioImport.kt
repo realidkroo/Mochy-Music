@@ -72,6 +72,7 @@ suspend fun importLocalAudio(
                     isLocal = true,
                     inLibrary = LocalDateTime.now(),
                     localUri = uri.toString(),
+                    genre = metadata.genre.orEmpty(),
                 ),
             )
 
@@ -149,6 +150,14 @@ suspend fun groupLocalAlbums(context: Context, database: MusicDatabase) {
         database.transaction {
             linkLocalAlbum(song.id, title, albumArtist, tags?.year, tags?.discNumber, tags?.trackNumber, song.song.thumbnailUrl)
         }
+    }
+}
+
+/** reads the genre of local files imported before genres were kept, once each; a file with none is marked so it isn't read again */
+suspend fun readLocalGenres(context: Context, database: MusicDatabase) {
+    database.localSongsWithoutGenre().forEach { song ->
+        val genre = withContext(Dispatchers.IO) { readGenreTag(context, Uri.parse(song.localUri)) } ?: return@forEach
+        withContext(Dispatchers.IO) { database.setSongGenre(song.id, genre) }
     }
 }
 

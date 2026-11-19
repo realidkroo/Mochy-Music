@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.eq.stage.StageBox
 import com.mochyy.mochymusic.eq.stage.StageListener
-import com.mochyy.mochymusic.eq.stage.StageNative
 import com.mochyy.mochymusic.eq.stage.StageObject
 import com.mochyy.mochymusic.eq.stage.StageSettings
 import com.mochyy.mochymusic.eq.stage.StageSource
@@ -66,7 +65,7 @@ internal fun StageControlsCard(
             onCheckedChange = { on -> viewModel.updateStage { it.copy(enabled = on) } },
         )
         Spacer(Modifier.height(10.dp))
-        SourceChips(viewModel, stage, selected, onSelect)
+        SourceChips(stage, selected, onSelect)
         Spacer(Modifier.height(10.dp))
         if (selected == ListenerKey) ListenerControls(viewModel, stage)
         else if (selected != null) ObjectControls(viewModel, stage, selected)
@@ -74,17 +73,12 @@ internal fun StageControlsCard(
 }
 
 @Composable
-private fun SourceChips(viewModel: AudioLabViewModel, stage: State<StageSettings>, selected: Int?, onSelect: (Int?) -> Unit) {
+private fun SourceChips(stage: State<StageSettings>, selected: Int?, onSelect: (Int?) -> Unit) {
     val objects by remember { derivedStateOf { stage.value.objects.map { it.id to it.source } } }
-    val numbered = stringResource(R.string.stage_source_sub_numbered)
-    var subs = 0
-    val chips = objects.map { (id, source) ->
-        val name = if (source == StageSource.Sub) {
-            subs++
-            if (subs == 1) stringResource(R.string.stage_source_sub) else String.format(numbered, subs)
-        } else stringResource(sourceName(source))
-        LabChip(id.toString(), name, sourceColor(source))
-    } + LabChip(YouKey, stringResource(R.string.stage_you), Color.White)
+    val names = StageSource.entries.associateWith { stringResource(sourceName(it)) }
+    val labels = labelsOf(objects, names, stringResource(R.string.stage_source_numbered))
+    val chips = objects.map { (id, source) -> LabChip(id.toString(), labels.getValue(id), sourceColor(source)) } +
+        LabChip(YouKey, stringResource(R.string.stage_you), Color.White)
     LabChips(
         chips = chips,
         selectedKey = when (selected) {
@@ -93,11 +87,6 @@ private fun SourceChips(viewModel: AudioLabViewModel, stage: State<StageSettings
             else -> selected.toString()
         },
         onSelect = { key -> onSelect(if (key == YouKey) ListenerKey else key.toIntOrNull()) },
-        trailing = {
-            if (subs < StageNative.SubSlots) {
-                LabTextAction(stringResource(R.string.stage_add_sub), R.drawable.add) { viewModel.addSub()?.let(onSelect) }
-            }
-        },
     )
 }
 
@@ -106,7 +95,7 @@ private fun ObjectControls(viewModel: AudioLabViewModel, stage: State<StageSetti
     val target by remember(id) { derivedStateOf { stage.value.objects.firstOrNull { it.id == id } } }
     val box by remember { derivedStateOf { stage.value.box } }
     val removable by remember(id) {
-        derivedStateOf { target?.source == StageSource.Sub && stage.value.objects.count { it.source == StageSource.Sub } > 1 }
+        derivedStateOf { target?.let { t -> stage.value.objects.count { it.source == t.source } > 1 } == true }
     }
     val o = target ?: return
     fun change(transform: (StageObject) -> StageObject) = viewModel.updateStageObject(id, transform)

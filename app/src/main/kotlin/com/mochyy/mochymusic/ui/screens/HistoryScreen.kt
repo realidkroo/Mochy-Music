@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
@@ -46,10 +47,18 @@ import com.mochyy.mochymusic.ui.screens.playlist.GeneratedPlaylistPage
 import com.mochyy.mochymusic.ui.screens.playlist.generatedStats
 import com.mochyy.mochymusic.ui.utils.backToMain
 import com.mochyy.mochymusic.utils.makeTimeString
-import com.mochyy.mochymusic.viewmodels.DateAgo
 import com.mochyy.mochymusic.viewmodels.HistoryViewModel
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Locale
+import java.time.format.FormatStyle
+
+// every day of history is headed by its own date in the app's language, "19 November 2026"
+@Composable
+internal fun historyDayHeading(day: LocalDate): String {
+    val locale = LocalConfiguration.current.locales[0]
+    val format = remember(locale) { DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale) }
+    return remember(day, format) { day.format(format) }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,7 +66,8 @@ fun HistoryScreen(
     navController: NavController,
     historyViewModel: HistoryViewModel = hiltViewModel()
 ) {
-    val eventsMap by historyViewModel.events.collectAsState()
+    val loadedEvents by historyViewModel.events.collectAsState()
+    val eventsMap = loadedEvents.orEmpty()
     val playerConnection = LocalPlayerConnection.current ?: return
     val menuState = LocalMenuState.current
     val haptic = LocalHapticFeedback.current
@@ -120,17 +130,9 @@ fun HistoryScreen(
             item(key = "no_results") { GeneratedNoResults(query.text) }
         }
 
-        groups.forEach { (dateAgo, events) ->
-            item(key = "header_${dateAgo.hashCode()}", contentType = "group_header") {
-                val headerText = when (dateAgo) {
-                    DateAgo.Today -> stringResource(R.string.today)
-                    DateAgo.Yesterday -> stringResource(R.string.yesterday)
-                    DateAgo.ThisWeek -> stringResource(R.string.this_week)
-                    DateAgo.LastWeek -> stringResource(R.string.last_week)
-                    // older plays are grouped by month, so the header names the month
-                    is DateAgo.Other -> dateAgo.date.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault()))
-                }
-                GeneratedGroupHeader(headerText, modifier = Modifier.animateItem())
+        groups.forEach { (day, events) ->
+            item(key = "header_$day", contentType = "group_header") {
+                GeneratedGroupHeader(historyDayHeading(day), modifier = Modifier.animateItem())
             }
 
             items(items = events, key = { it.event.id }, contentType = { "track" }) { eventWithSong ->

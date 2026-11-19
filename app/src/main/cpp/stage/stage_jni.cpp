@@ -51,10 +51,10 @@ Java_com_mochyy_mochymusic_eq_stage_StageNative_process(JNIEnv* env, jobject, jl
 JNIEXPORT void JNICALL
 Java_com_mochyy_mochymusic_eq_stage_StageNative_levels(JNIEnv* env, jobject, jlong handle, jfloatArray out) {
     Engine* engine = engineOf(handle);
-    if (engine == nullptr || env->GetArrayLength(out) < stage::ObjCount) return;
-    float values[stage::ObjCount];
+    if (engine == nullptr || env->GetArrayLength(out) < stage::KindCount) return;
+    float values[stage::KindCount];
     engine->levels(values);
-    env->SetFloatArrayRegion(out, 0, stage::ObjCount, values);
+    env->SetFloatArrayRegion(out, 0, stage::KindCount, values);
 }
 
 JNIEXPORT void JNICALL

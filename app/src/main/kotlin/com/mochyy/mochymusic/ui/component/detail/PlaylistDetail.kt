@@ -983,6 +983,8 @@ fun PlaylistHeader(
     below: (@Composable () -> Unit)? = null,
     // opens the list's own song search, from a round button beside shuffle
     onSearchClick: (() -> Unit)? = null,
+    // sits at the far end of the button row, like the library pages' grid and list switch
+    actionsEnd: (@Composable () -> Unit)? = null,
 ) {
     val playlistStyle by rememberEnumPreference(PlaylistStyleKey, defaultValue = PlaylistStyle.FLOW)
     val framedCover = LocalPlaylistFramedCover.current
@@ -1043,7 +1045,7 @@ fun PlaylistHeader(
                 )
             }
             Spacer(Modifier.height(16.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 PlayPill(isPlaying = isPlaying, onClick = onPlayClick)
                 Spacer(Modifier.width(9.dp))
                 CircleAction(
@@ -1067,6 +1069,10 @@ fun PlaylistHeader(
                         contentDescription = stringResource(if (isSaved) R.string.pc_in_library else R.string.add_to_library),
                         onClick = onSaveClick,
                     )
+                }
+                if (actionsEnd != null) {
+                    Spacer(Modifier.weight(1f))
+                    actionsEnd()
                 }
             }
             if (sortControl != null) {

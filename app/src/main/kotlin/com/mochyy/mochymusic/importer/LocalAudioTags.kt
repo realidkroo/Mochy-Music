@@ -24,6 +24,7 @@ internal data class LocalAudioMetadata(
     val trackNumber: Int? = null,
     val discNumber: Int? = null,
     val year: Int? = null,
+    val genre: String? = null,
 )
 
 // reads a file's tags; a file without them gets its title and artist from its file name, never from the link android gave us
@@ -62,6 +63,7 @@ internal fun extractAudioMetadata(context: Context, uri: Uri): LocalAudioMetadat
             discNumber = number(MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER),
             // opus and flac keep the year as DATE, which android reports under its own key
             year = (tag(MediaMetadataRetriever.METADATA_KEY_YEAR) ?: tag(MediaMetadataRetriever.METADATA_KEY_DATE))?.take(4)?.toIntOrNull(),
+            genre = cleanGenre(tag(MediaMetadataRetriever.METADATA_KEY_GENRE)),
         )
     } catch (_: Exception) {
         LocalAudioMetadata(
@@ -78,3 +80,31 @@ internal fun extractAudioMetadata(context: Context, uri: Uri): LocalAudioMetadat
         retriever.release()
     }
 }
+
+// only the genre tag, for files that came in before genres were kept; null when the file won't open, so it's tried again later
+internal fun readGenreTag(context: Context, uri: Uri): String? {
+    val retriever = MediaMetadataRetriever()
+    return try {
+        retriever.setDataSource(context, uri)
+        cleanGenre(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE)).orEmpty()
+    } catch (_: Exception) {
+        null
+    } finally {
+        retriever.release()
+    }
+}
+
+// "Rock; Pop" or null-separated tags become "Rock; Pop", and old id3 number codes like "(17)" are dropped since they'd show as numbers
+internal fun cleanGenre(raw: String?): String? {
+    val genres = raw.orEmpty()
+        .split(';', '\u0000')
+        .map { it.trim().replace(Id3GenreCode, "").trim() }
+        .filter { it.isNotEmpty() && it != "<unknown>" && !it.all(Char::isDigit) }
+        .distinctBy { it.lowercase() }
+    return genres.takeIf { it.isNotEmpty() }?.joinToString(GenreSeparator)
+}
+
+private val Id3GenreCode = Regex("^\\(\\d+\\)\\s*")
+
+// how several genres sit in one song's genre column
+internal const val GenreSeparator = "; "

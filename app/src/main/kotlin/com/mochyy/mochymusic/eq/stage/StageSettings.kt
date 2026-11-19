@@ -94,17 +94,12 @@ data class StageSettings(
             values[at + 3] = gain
             values[at + 4] = o.width
         }
-        MainSources.forEachIndexed { slot, source ->
-            objects.firstOrNull { it.source == source }?.let { put(slot, it, gainOf(it)) }
+        // every copy of a part plays the same sound, so together they stay as loud as one
+        StageSource.entries.forEach { source ->
+            val copies = objects.filter { it.source == source }.take(StageNative.Copies)
+            copies.forEachIndexed { i, o -> put(source.ordinal * StageNative.Copies + i, o, gainOf(o) / copies.size) }
         }
-        // every copy of the sub plays the same bass, so together they stay as loud as one
-        val subs = objects.filter { it.source == StageSource.Sub }.take(StageNative.SubSlots)
-        subs.forEachIndexed { i, sub -> put(MainSources.size + i, sub, gainOf(sub) / subs.size) }
         return StageParams(wet, values)
-    }
-
-    companion object {
-        val MainSources = listOf(StageSource.Vocal, StageSource.Center, StageSource.Left, StageSource.Right, StageSource.Ambience)
     }
 }
 

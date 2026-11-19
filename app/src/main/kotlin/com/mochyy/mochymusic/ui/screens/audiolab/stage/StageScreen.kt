@@ -31,6 +31,7 @@ import com.mochyy.mochymusic.eq.stage.StageSettings
 import com.mochyy.mochymusic.eq.stage.StageSpeakers
 import com.mochyy.mochymusic.eq.stage.StageWalls
 import com.mochyy.mochymusic.playback.audio.AudioOutputs
+import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 import com.mochyy.mochymusic.ui.screens.audiolab.AudioLabPage
 import com.mochyy.mochymusic.ui.screens.audiolab.LabCard
 import com.mochyy.mochymusic.ui.screens.audiolab.LabChip
@@ -54,6 +55,7 @@ fun StageScreen(
 ) {
     val stage = viewModel.stage.collectAsState()
     val playing = LocalPlayerConnection.current?.isPlaying?.collectAsState()
+    val sheets = LocalZoomOutOverlayState.current
     var selected by rememberSaveable { mutableStateOf<Int?>(stage.value.objects.firstOrNull()?.id) }
     // a removed sub can't stay picked; derived, so dragging a dot doesn't recompose the whole page
     val shownSelection by remember {
@@ -80,6 +82,7 @@ fun StageScreen(
             },
             levels = viewModel.fx.stageLevels,
             isPlaying = { playing?.value == true },
+            onAdd = { sheets.showStageAddSheet(stage) { source -> viewModel.addStageObject(source)?.let { selected = it } } },
         )
         Spacer(Modifier.height(14.dp))
         StageControlsCard(viewModel, stage, shownSelection) { selected = it }

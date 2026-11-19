@@ -16,9 +16,12 @@
     <string name="stage_source_right">Right</string>
     <string name="stage_source_ambience">Ambience</string>
     <string name="stage_source_sub">Sub</string>
-    <string name="stage_source_sub_numbered">Sub %1$d</string>
+    <string name="stage_source_numbered">%1$s %2$d</string>
     <string name="stage_you">You</string>
-    <string name="stage_add_sub">Add sub</string>
+    <string name="stage_add">Add a sound</string>
+    <string name="stage_add_title">Add to the room</string>
+    <string name="stage_add_count">%1$d of %2$d in the room</string>
+    <string name="stage_add_full">All %1$d are in the room</string>
     <string name="stage_remove">Remove</string>
     <string name="stage_mute">Mute</string>
     <string name="stage_solo">Solo</string>

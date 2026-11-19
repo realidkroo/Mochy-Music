@@ -26,8 +26,8 @@ class AudioFxService @Inject constructor() {
     @Volatile
     var stage: StageParams = StageParams.Off
 
-    /** how loud each of the room's objects is right now (0..1), written by the playback thread for the room's dots */
-    val stageLevels = FloatArray(StageNative.ObjectCount)
+    /** how loud each kind of sound in the room is right now (0..1, StageSource order), written by the playback thread for the room's dots */
+    val stageLevels = FloatArray(StageNative.Kinds)
 
     /** replaced, never mutated: the sink notices a new curve by identity */
     @Volatile

@@ -10,7 +10,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -74,6 +76,7 @@ internal fun StageRoom(
     onMove: (key: Int, spot: StageSpot) -> Unit,
     levels: FloatArray,
     isPlaying: () -> Boolean,
+    onAdd: () -> Unit,
     modifier: Modifier = Modifier,
     height: Dp = 380.dp,
 ) {
@@ -186,20 +189,15 @@ internal fun StageRoom(
             drawStage(view, marksOf(s, labels.value, levels, shown, s.enabled && isPlaying()), s.listener, selected, on)
         }
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(12.dp)
-                .size(34.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.08f))
-                .clickable {
-                    yaw = DefaultCameraYaw
-                    pitch = DefaultCameraPitch
-                },
-            contentAlignment = Alignment.Center,
+        Column(
+            modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(painterResource(R.drawable.refresh), stringResource(R.string.stage_reset_view), tint = Color.White, modifier = Modifier.size(17.dp))
+            RoomButton(R.drawable.refresh, stringResource(R.string.stage_reset_view)) {
+                yaw = DefaultCameraYaw
+                pitch = DefaultCameraPitch
+            }
+            RoomButton(R.drawable.add, stringResource(R.string.stage_add), onAdd)
         }
         Text(
             stringResource(R.string.stage_room_hint),
@@ -213,25 +211,40 @@ internal fun StageRoom(
     }
 }
 
+// a round button in the room's corner
+@Composable
+private fun RoomButton(icon: Int, description: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(34.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.08f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(painterResource(icon), description, tint = Color.White, modifier = Modifier.size(17.dp))
+    }
+}
+
+/** what each object is called: the first of a kind by its name, the copies numbered after it */
+internal fun labelsOf(objects: List<Pair<Int, StageSource>>, names: Map<StageSource, String>, numbered: String): Map<Int, String> {
+    val seen = IntArray(StageSource.entries.size)
+    return objects.associate { (id, source) ->
+        val n = ++seen[source.ordinal]
+        id to if (n == 1) names.getValue(source) else String.format(numbered, names.getValue(source), n)
+    }
+}
+
 /** each object's label, measured once and again only when the list of objects changes */
 @Composable
 private fun rememberStageLabels(stage: State<StageSettings>): State<Map<Int, TextLayoutResult>> {
     val names = StageSource.entries.associateWith { stringResource(sourceName(it)) }
-    val numbered = stringResource(R.string.stage_source_sub_numbered)
+    val numbered = stringResource(R.string.stage_source_numbered)
     val measurer = rememberTextMeasurer()
     val keys by remember { derivedStateOf { stage.value.objects.map { it.id to it.source } } }
     val style = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
     return remember(keys, names, numbered) {
-        derivedStateOf {
-            var subs = 0
-            keys.associate { (id, source) ->
-                val text = if (source == StageSource.Sub) {
-                    subs++
-                    if (subs == 1) names.getValue(source) else String.format(numbered, subs)
-                } else names.getValue(source)
-                id to measurer.measure(text, style)
-            }
-        }
+        derivedStateOf { labelsOf(keys, names, numbered).mapValues { (_, text) -> measurer.measure(text, style) } }
     }
 }
 
@@ -244,14 +257,6 @@ internal fun sourceName(source: StageSource): Int = when (source) {
     StageSource.Sub -> R.string.stage_source_sub
 }
 
-/** the slot in the native room's level array for each object: the main parts by kind, subs in order */
-internal fun levelIndexes(settings: StageSettings): Map<Int, Int> {
-    var subs = 0
-    return settings.objects.associate { o ->
-        o.id to if (o.source == StageSource.Sub) StageSettings.MainSources.size + subs++ else StageSettings.MainSources.indexOf(o.source)
-    }
-}
-
 internal fun marksOf(
     settings: StageSettings,
     labels: Map<Int, TextLayoutResult>,
@@ -260,14 +265,18 @@ internal fun marksOf(
     playing: Boolean,
 ): List<StageMark> {
     val soloing = settings.objects.any { it.solo && !it.muted }
-    val slots = levelIndexes(settings)
+    val stepped = BooleanArray(shown.size)
     val box = settings.box
     return settings.objects.map { o ->
-        val slot = slots[o.id]?.takeIf { it in levels.indices } ?: -1
+        // every copy of a part plays the same sound, so they share its level
+        val slot = o.source.ordinal.takeIf { it in levels.indices } ?: -1
         val level = if (slot >= 0) {
             // peaks sit low for most music, a square root lets quiet parts still breathe
-            val target = if (playing) sqrt(levels[slot].coerceIn(0f, 1f)) else 0f
-            shown[slot] += (target - shown[slot]) * if (target > shown[slot]) 0.45f else 0.12f
+            if (!stepped[slot]) {
+                val target = if (playing) sqrt(levels[slot].coerceIn(0f, 1f)) else 0f
+                shown[slot] += (target - shown[slot]) * if (target > shown[slot]) 0.45f else 0.12f
+                stepped[slot] = true
+            }
             shown[slot]
         } else 0f
         StageMark(

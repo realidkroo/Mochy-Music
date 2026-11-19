@@ -16,7 +16,10 @@ enum Param {
     ParamEnabled, ParamMode, ParamRoomW, ParamRoomD, ParamRoomH, ParamAbsorb, ParamDamp, ParamRoomAmount,
     ParamListenerX, ParamListenerY, ParamListenerZ, ParamYaw, ParamMaster, ParamObjects,
 };
-enum Object { ObjVocal, ObjCenter, ObjLeft, ObjRight, ObjAmbience, ObjSub, ObjCount = ObjSub + 4 };
+// every kind of sound can be in the room up to four times; an object's slot is kind * Copies + copy
+enum Kind { KindVocal, KindCenter, KindLeft, KindRight, KindAmbience, KindSub, KindCount };
+constexpr int Copies = 4;
+constexpr int ObjCount = KindCount * Copies;
 // x, y, z in metres, linear gain, width
 constexpr int ObjectStride = 5;
 constexpr int ParamCount = ParamObjects + ObjCount * ObjectStride;
@@ -31,7 +34,7 @@ public:
     // stereo out for every frame in; true while it's only passing the song through and could be skipped
     bool process(const int16_t* in, int16_t* out, int frames);
 
-    // how loud each object is right now, 0..1, for the room's dots
+    // how loud each kind of sound is right now, 0..1, for the room's dots (KindCount values)
     void levels(float* out) const;
 
     void clear();
@@ -45,10 +48,8 @@ private:
         float delayStep[2] = {}, gainStep[2] = {};
     };
 
+    // one placed copy of a band
     struct Voice {
-        Ring line;
-        std::vector<float> hist;
-        int histPos = 0;
         int dir = -1, oldDir = -1;
         float fade = 1.f;
         float gain[2] = {}, gainStep[2] = {};
@@ -57,8 +58,16 @@ private:
         float pos[3] = {};
         bool placed = false;
         bool silent = true;
-        float level = 0.f, peak = 0.f;
         Echo echoes[Walls];
+    };
+
+    // one part of the song: its past samples, shared by every copy placed in the room
+    struct Band {
+        Ring line;
+        std::vector<float> hist;
+        int histPos = 0;
+        float level = 0.f, peak = 0.f;
+        Voice copies[Copies];
     };
 
     struct SubOut {
@@ -72,7 +81,7 @@ private:
     void renderDry(const int16_t* in, int frames);
     void readFrame(const int16_t* frame, float* bands, float& sub);
     void place(int frames);
-    void placeVoice(Voice& voice, const float* target, float userGain, int frames, bool headphones);
+    void placeVoice(Voice& voice, const Band& band, bool fromOneSide, const float* target, float userGain, int frames, bool headphones);
     void placeSub(SubOut& out, const float* target, float userGain, int frames, bool headphones);
     void toHead(const float* world, float* head, float& distance) const;
     void resetWet();
@@ -82,8 +91,8 @@ private:
     std::unique_ptr<Splitter> splitter_;
     std::shared_ptr<const HrtfSet> hrtf_;
     Tail tail_;
-    Voice voices_[BandCount];
-    SubOut subs_[4];
+    Band bands_[BandCount];
+    SubOut subs_[Copies];
     Ring subLine_;
     float subLevel_ = 0.f, subPeak_ = 0.f;
     Biquad lfe_[2];
