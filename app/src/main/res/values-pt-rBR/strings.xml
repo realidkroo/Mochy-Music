@@ -1,23 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Upstream InnerTune strings -->
-<!-- Do not add new features here -->
-<!-- Try to re-use strings here, but be careful on its usage e.g. verb vs noun -->
-<!-- "InnerTune" is replaced with "mochy" -->
-<!-- Translators: Do not modify this file for translations, use InnerTune's Weblate instead. -->
 <resources>
-    <!-- Bottom navigation -->
     <string name="home">Início</string>
-    <string name="music">Music</string>
     <string name="songs">Músicas</string>
     <string name="artists">Artistas</string>
     <string name="albums">Álbuns</string>
     <string name="playlists">Listas</string>
-    <!-- Top bar -->
     <plurals name="n_selected">
         <item quantity="one">%d selecionado</item>
         <item quantity="other">%d selecionados</item>
     </plurals>
-    <!-- Home -->
     <string name="history">Histórico</string>
     <string name="stats">Estatísticas</string>
     <string name="mood_and_genres">Momentos e Gêneros</string>
@@ -29,16 +20,13 @@
     <string name="your_youtube_playlists">Suas listas do YouTube</string>
     <string name="similar_to">Parecido com</string>
     <string name="new_release_albums">Novos álbuns lançados</string>
-    <!-- History -->
     <string name="today">Hoje</string>
     <string name="yesterday">Ontem</string>
     <string name="this_week">Essa semana</string>
     <string name="last_week">Semana passada</string>
-    <!-- Stats -->
     <string name="most_played_songs">Músicas mais tocadas</string>
     <string name="most_played_artists">Artistas mais tocados</string>
     <string name="most_played_albums">Álbuns mais tocados</string>
-    <!-- Search -->
     <string name="search">Pesquisar</string>
     <string name="search_yt_music">Pesquisar no YouTube Music…</string>
     <string name="search_library">Pesquisar na biblioteca…</string>
@@ -55,63 +43,40 @@
     <string name="filter_featured_playlists">Listas em destaque</string>
     <string name="filter_bookmarked">Salvos</string>
     <string name="no_results_found">Nenhum resultado encontrado</string>
-    <!-- Library -->
     <string name="library_song_empty">Músicas na biblioteca aparecerão aqui</string>
     <string name="library_artist_empty">Artistas na biblioteca aparecerão aqui</string>
     <string name="library_album_empty">Álbuns na biblioteca aparecerão aqui</string>
     <string name="library_playlist_empty">Suas listas aparecerão aqui</string>
-    <!-- Artist screen -->
     <string name="from_your_library">Da sua biblioteca</string>
-    <!-- Album screen -->
     <string name="other_versions">Outras versões</string>
-    <string name="album_description_placeholder">This is a placeholder description for the album. Enjoy listening to the tracks below!</string>
-    <!-- Playlist -->
     <string name="liked_songs">Músicas favoritas</string>
     <string name="downloaded_songs">Músicas baixadas</string>
     <string name="playlist_is_empty">Esta lista está vazia</string>
     <string name="remove_download_playlist_confirm">Você tem certeza que deseja remover todas as músicas da lista \"%s\" do armazenamento de Músicas Baixadas?</string>
     <string name="delete_playlist_confirm">Você tem certeza que deseja apagar a lista \"%s\"?</string>
-    <string name="you_might_also_like">Related Playlist</string>
-    <!-- Button -->
     <string name="retry">Tentar novamente</string>
     <string name="radio">Rádio</string>
     <string name="shuffle">Aleatório</string>
-    <string name="shuffle_content_desc">Shuffle</string>
-    <string name="shuffle_label">Shuffle</string>
     <string name="reset">Redefinir</string>
-    <!-- Menu -->
     <string name="details">Detalhes</string>
-    <string name="view_details">View details</string>
     <string name="edit">Editar</string>
     <string name="start_radio">Iniciar rádio</string>
     <string name="play">Tocar</string>
-    <string name="pause">Pause</string>
     <string name="play_next">Tocar em seguida</string>
     <string name="add_to_queue">Adicionar à fila</string>
     <string name="add_to_library">Adicionar à biblioteca</string>
     <string name="add_all_to_library">Adicionar tudo à biblioteca</string>
     <string name="remove_from_library">Remover da biblioteca</string>
-    <string name="added_to_library">Added to library</string>
-    <string name="removed_from_library">Removed from library</string>
-    <string name="remove_from_import_and_library">Remove from import and library</string>
-    <string name="removed_from_import_and_library">Removed from your %1$s imports and your library</string>
     <string name="remove_all_from_library">Remover tudo da biblioteca</string>
     <string name="action_download">Baixar</string>
     <string name="downloading">Baixando</string>
-    <string name="saving">Saving</string>
-    <string name="saved">Saved</string>
     <string name="remove_download">Remover dos baixados</string>
     <string name="import_playlist">Importar lista</string>
     <string name="add_to_playlist">Adicionar à lista</string>
-    <string name="start_an_radio">Radio</string>
-    <string name="add_to_an_playlist">Add</string>
     <string name="view_artist">Ver artista</string>
     <string name="view_album">Ver álbum</string>
     <string name="refetch">Recarregar</string>
     <string name="share">Compartilhar</string>
-    <string name="more_options">More options</string>
-    <string name="more_label">More</string>
-    <string name="releases_for_you">Releases for you</string>
     <string name="delete">Apagar</string>
     <string name="remove_from_history">Remover do histórico</string>
     <string name="remove_from_playlist">Remover da lista</string>
@@ -120,7 +85,6 @@
     <string name="action_sync">Sincronizar</string>
     <string name="advanced">Avançado</string>
     <string name="tempo_and_pitch">Velocidade e Tonalidade</string>
-    <!-- Sort menu -->
     <string name="sort_by_create_date">Quando adicionado</string>
     <string name="sort_by_name">Nome</string>
     <string name="sort_by_artist">Artista</string>
@@ -129,23 +93,17 @@
     <string name="sort_by_length">Duração</string>
     <string name="sort_by_play_time">Tempo de reprodução</string>
     <string name="sort_by_custom">Ordem customizada</string>
-    <!-- Dialog -->
     <string name="media_id">ID da mídia</string>
     <string name="mime_type">Tipo do MIME</string>
     <string name="codecs">Codificações</string>
     <string name="bitrate">Taxa de bits</string>
     <string name="sample_rate">Taxa de amostragem</string>
     <string name="loudness">Volume</string>
-    <string name="volume">Volume</string>
     <string name="file_size">Tamanho do arquivo</string>
     <string name="unknown">Desconhecido</string>
     <string name="copied">Copiado para a área de transferência</string>
     <string name="edit_lyrics">Editar letra</string>
     <string name="search_lyrics">Pesquisar letra</string>
-    <string name="lyrics_swipe_to_change_song">Swipe to change song</string>
-    <string name="lyrics_swipe_to_change_song_desc">Swipe left or right in the artist and song name section in full-screen lyrics to change the song</string>
-    <string name="lyrics_thumbnail_play_pause">Show play/pause on thumbnail</string>
-    <string name="lyrics_thumbnail_play_pause_desc">Show a play/pause button overlay on the song thumbnail in full-screen lyrics</string>
     <string name="edit_song">Editar música</string>
     <string name="song_title">Nome da música</string>
     <string name="song_artists">Artistas da música</string>
@@ -165,7 +123,6 @@
     <string name="add_anyway">Adicionar mesmo assim</string>
     <string name="duplicates_description_single">Esta música já está na sua lista</string>
     <string name="duplicates_description_multiple">%d músicas já estão na sua lista</string>
-    <!-- Noun -->
     <plurals name="n_song">
         <item quantity="one">%d música</item>
         <item quantity="other">%d músicas</item>
@@ -194,16 +151,10 @@
         <item quantity="one">%d ano</item>
         <item quantity="other">%d anos</item>
     </plurals>
-    <plurals name="n_apk_found">
-        <item quantity="one">%d APK found</item>
-        <item quantity="other">%d APKs found</item>
-    </plurals>
-    <!-- Snackbar -->
     <string name="playlist_imported">A lista foi importada</string>
     <string name="removed_song_from_playlist">\"%s\" foi removido da lista</string>
     <string name="playlist_synced">A playlist foi sincronizada</string>
     <string name="undo">Desfazer</string>
-    <!-- Player -->
     <string name="lyrics_not_found">A letra não foi encontrada</string>
     <string name="sleep_timer">Timer para dormir</string>
     <string name="end_of_song">Fim da música</string>
@@ -215,7 +166,6 @@
     <string name="error_no_internet">Sem conexão à internet</string>
     <string name="error_timeout">Tempo esgotado</string>
     <string name="error_unknown">Erro desconhecido</string>
-    <!-- Player action -->
     <string name="action_like">Favoritar</string>
     <string name="action_like_all">Favoritar tudo</string>
     <string name="action_remove_like">Remover dos favoritos</string>
@@ -225,20 +175,12 @@
     <string name="repeat_mode_off">Modo de repetição desativado</string>
     <string name="repeat_mode_one">Repetir a música atual</string>
     <string name="repeat_mode_all">Repetir fila</string>
-    <!-- Queue Title -->
     <string name="queue_all_songs">Todas as músicas</string>
     <string name="queue_searched_songs">Músicas pesquisadas</string>
-    <!-- Notification name -->
     <string name="music_player">Tocador de música</string>
-    <!-- Settings -->
     <string name="settings">Configurações</string>
     <string name="appearance">Aparência</string>
     <string name="theme">Tema</string>
-    <string name="theme_desc">Customize your app theme</string>
-    <string name="theme_colors">Theme &amp; Colors</string>
-    <string name="theme_mode">Theme Mode</string>
-    <string name="color_palette">Color Palette</string>
-    <string name="use_system_colors">Use system colors</string>
     <string name="enable_dynamic_theme">Ativar tema dinâmico</string>
     <string name="dark_theme">Tema escuro</string>
     <string name="dark_theme_on">Ativado</string>
@@ -255,7 +197,6 @@
     <string name="right">Direita</string>
     <string name="player_slider_style">Estilo do controle deslizante do tocador</string>
     <string name="default_">Padrão</string>
-    <string name="apple_music">Apple Music</string>
     <string name="squiggly">Cobrinha</string>
     <string name="misc">Outros</string>
     <string name="default_open_tab">Aba padrão ao abrir o app</string>
@@ -266,7 +207,6 @@
     <string name="action_logout">Desconectar-se</string>
     <string name="action_login">Conectar-se</string>
     <string name="login">Conectar-se</string>
-    <string name="show_audio_quality_badge">Show audio quality badge</string>
     <string name="not_logged_in">Não está conectado à uma conta</string>
     <string name="login_failed">Ocorreu algum problema ao conectar-se</string>
     <string name="content_language">Idioma padrão do conteúdo</string>
@@ -278,14 +218,9 @@
     <string name="restart_to_take_effect">Reinicie para que tome efeito</string>
     <string name="player_and_audio">Tocador e áudio</string>
     <string name="audio_quality">Qualidade do áudio</string>
-    <string name="network_ip_version">Network IP Version</string>
-    <string name="ip_version_auto">Automatic</string>
-    <string name="ip_version_ipv4">Forced IPv4</string>
-    <string name="ip_version_ipv6">Forced IPv6</string>
     <string name="audio_quality_auto">Automática</string>
     <string name="audio_quality_high">Alta</string>
     <string name="audio_quality_low">Baixa</string>
-    <string name="audio_quality_medium">Medium</string>
     <string name="queue">Fila</string>
     <string name="persistent_queue">Fila persistente</string>
     <string name="persistent_queue_desc">Restaurar sua última fila ao iniciar o app</string>
@@ -298,7 +233,6 @@
     <string name="stop_music_on_task_clear">Parar música ao remover dos apps recentes</string>
     <string name="equalizer">Equalizador</string>
     <string name="storage">Armazenamento</string>
-    <string name="cache">Cache</string>
     <string name="image_cache">Cache de Imagens</string>
     <string name="song_cache">Cache de Músicas</string>
     <string name="max_cache_size">Tamanho máximo da cache</string>
@@ -309,8 +243,6 @@
     <string name="max_song_cache_size">Tamanho máximo da cache de músicas</string>
     <string name="clear_song_cache">Limpar a cache de músicas</string>
     <string name="size_used">%s usados</string>
-    <string name="clear_downloaded_updates">Clear downloaded updates</string>
-    <string name="clear_downloaded_updates_desc">Remove downloaded APK files to free up space</string>
     <string name="privacy">Privacidade</string>
     <string name="listen_history">Histórico de reprodução</string>
     <string name="pause_listen_history">Pausar o histórico de reprodução</string>
@@ -345,21 +277,4 @@
     <string name="new_version_available">Há uma nova versão disponível</string>
     <string name="translation_models">Modelos de Tradução</string>
     <string name="clear_translation_models">Limpar os modelos de tradução</string>
-    <string name="bluetooth_permission_required">Bluetooth permission is required to discover audio devices.</string>
-    <string name="streaming_to">Streaming to</string>
-    <string name="this_phone">This phone</string>
-    <string name="wired_headphones">Wired headphones</string>
-    <string name="hdmi">HDMI</string>
-    <string name="phone_speaker">Phone speaker</string>
-    <string name="audio_quality_title">Audio Quality</string>
-    <string name="battery_content_desc">Battery Level</string>
-    <string name="done">Done</string>
-    <string name="audio_devices">Audio devices</string>
-    <string name="bluetooth_headphones">Bluetooth headphones</string>
-    <string name="license">GNU General Public License v3.0</string>
-    <string name="standard_lyrics_blur">Standard lyrics blur</string>
-    <string name="listen_together_smart_resync">Smart Network Resync</string>
-    <string name="listen_together_smart_resync_desc">Automatically catch up with the host after a connection drop</string>
-    <string name="error_stream_unavailable_title">Couldn\'t play this track</string>
-    <string name="playback_error_channel_name">Playback errors</string>
 </resources>

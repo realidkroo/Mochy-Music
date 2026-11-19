@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="bedside_close">플레이어 닫기</string>
     <string name="bedside_unlock_to_close">잠금을 해제하여 플레이어 닫기</string>

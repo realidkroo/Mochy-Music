@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="devices_title">기기 연동</string>
     <string name="devices_row_detail">같은 Wi-Fi의 TV, 다른 휴대전화 또는 태블릿 연결</string>

@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- audio pass: audio lab's page for usb dacs, bluetooth codecs and bit-perfect output -->
     <string name="audiopass_hub_title">Audio Pass</string>
     <string name="audiopass_title_first">DAC</string>
     <string name="audiopass_title_second">ayarları</string>
     <string name="audiopass_joined">%1$s · %2$s</string>
-
     <string name="audiopass_status_label">durum</string>
     <string name="audiopass_status_connected">Bağlı</string>
     <string name="audiopass_status_driven">Mochy tarafından sürülüyor</string>
@@ -15,7 +13,6 @@
     <string name="audiopass_status_none_hint">Bir USB DAC tak / kulaklığını bağla.</string>
     <string name="audiopass_kind_usb">USB DAC</string>
     <string name="audiopass_kind_speaker">Telefon hoparlörü</string>
-
     <string name="audiopass_info_dac">DAC</string>
     <string name="audiopass_info_maker">Üretici</string>
     <string name="audiopass_info_usb">USB ses</string>
@@ -31,7 +28,6 @@
     <string name="audiopass_info_also">Ayrıca destekler</string>
     <string name="audiopass_info_output">Çıkış</string>
     <string name="audiopass_info_playing">Çalıyor</string>
-
     <string name="audiopass_value_uac">UAC %1$d</string>
     <string name="audiopass_value_uac_async">UAC %1$d · kendi saatinde çalışır</string>
     <string name="audiopass_value_any_rate">Herhangi bir oran</string>
@@ -48,7 +44,6 @@
     <string name="audiopass_value_jack">Kulaklık girişi</string>
     <string name="audiopass_value_le_audio">LE Audio</string>
     <string name="audiopass_value_unknown">Bu telefon henüz paylaşmıyor</string>
-
     <string name="audiopass_bt_reencoded">Bluetooth müziği her zaman yeniden kodlar, yani asla bit-perfect değildir. Daha iyi bir kodek sadece daha az kaybeder.</string>
     <string name="audiopass_bt_lossless">aptX Lossless, sinyal güçlüyken CD kalitesini korur.</string>
     <string name="audiopass_bt_better">Kulaklığın %1$s kullanabiliyor, ama şu an %2$s çalıyor. Geliştirici seçeneklerinden değiştirebilirsin.</string>
@@ -58,7 +53,6 @@
     <string name="audiopass_bt_permission">Kodeği göster</string>
     <string name="audiopass_bt_permission_hint">Kulaklığının hangi kodeği kullandığını görmek için Mochy\'nin Yakındaki cihazlar iznine ihtiyacı var.</string>
     <string name="audiopass_bt_unknown_hint">Bu telefon kodeği uygulamalara hemen söylemiyor. Değiştiği anda burada görünür.</string>
-
     <string name="audiopass_options">Seçenekler</string>
     <string name="audiopass_prefer_usb">Bağlıyken DAC\'ı kullan</string>
     <string name="audiopass_hires">Hi-res çıkış (32-bit)</string>
@@ -79,7 +73,6 @@
     <string name="audiopass_mode_exclusive_dac">Dahili DAC</string>
     <string name="audiopass_mode_exclusive_dac_desc">Kendi DAC\'ı olan müzik çalarlar için: kulaklık girişi yalnızca Mochy için açılır.</string>
     <string name="audiopass_mode_needs">Android %1$s gerekir</string>
-
     <string name="audiopass_blockers_title">Bit-perfect bunlar kapanana kadar bekler</string>
     <string name="audiopass_blockers_clear_title">Önünde hiçbir engel yok</string>
     <string name="audiopass_blockers_button">Bunları kapat</string>
@@ -108,8 +101,6 @@
     <string name="audiopass_blocker_lossy_direct">Kayıplı şarkılar da DAC\'a dokunulmadan gider. Sadece buraya gelmeden önce sıkıştırılmışlardı.</string>
     <string name="audiopass_blockers_restore">Bunları tekrar aç</string>
     <string name="audiopass_beta">BETA</string>
-
-    <!-- the stats sheet's line on whether this song went straight to the DAC, and why not -->
     <string name="audiopass_stat_label">Doğrudan geçiş</string>
     <string name="audiopass_stat_off">Kapalı, şarkılar Android\'in miksleyicisinden geçiyor</string>
     <string name="audiopass_stat_song_rate">Şarkının oranı: Android sesi hâlâ miksliyor</string>
@@ -124,8 +115,6 @@
     <string name="audiopass_stat_skip_no_access">Mochy DAC\'ı henüz kullanamıyor. Audio Pass sayfasında USB erişimine izin ver\'e dokun</string>
     <string name="audiopass_stat_skip_dac_cant">DAC\'ında bu şarkının oranı ve bit derinliği için bir ayar yok</string>
     <string name="audiopass_stat_unknown">Açık, ama bu şarkı normal şekilde çaldı</string>
-
-    <!-- asked when passthrough is switched on while something still changes the sound -->
     <string name="audiopass_offer_title">Birkaç şey önünde duruyor</string>
     <string name="audiopass_offer_body">Doğrudan geçiş, sesi değiştiren hiçbir şey olmadığında şarkıları alır. Şu an bunlar açık:</string>
     <string name="audiopass_offer_keep">Açık bırak</string>

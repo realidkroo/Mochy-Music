@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="explore">Arakatu</string>
+    <string name="local_history">Lokala</string>
+    <string name="remote_history">Urrutiko Historia</string>
     <string name="charts">Arrakasta Zerrendak</string>
     <string name="back_button_desc">Atzera</string>
     <string name="no_title">Izenbururik gabe</string>
@@ -26,15 +28,12 @@
     <string name="generating_image">Irudia sortzen</string>
     <string name="please_wait">Itxaron, mesedez</string>
     <string name="cancel">Utzi</string>
-    <string name="local_history">Lokala</string>
-    <string name="remote_history">Urrutiko Historia</string>
     <string name="share_lyrics">Letrak partekatu</string>
     <string name="share_as_text">Testu moduan partekatu</string>
     <string name="share_as_image">Irudi moduan partekatu</string>
     <string name="max_selection_limit">Gehienezko hautaketa</string>
     <string name="share_selected">Hautatuak partekatu</string>
     <string name="customize_colors">Koloreak aldatu</string>
-    <string name="more_options">Aukera gehiago</string>
     <string name="text_color">Testu kolorea</string>
     <string name="secondary_text_color">Bigarren testu kolorea</string>
     <string name="background_color">Atzealde kolorea</string>
@@ -44,6 +43,7 @@
     <string name="copy_link">Link-a kopiatu</string>
     <string name="select">Hautatu dena</string>
     <string name="like_all">Dena gustoko</string>
+    <string name="dislike_all">Ez gustoko denak</string>
     <string name="sort_by_last_updated">Eguneratze data</string>
     <string name="link_copied">Link-a arbelera kopiatuta</string>
     <string name="starting_radio">Irratia pizten</string>
@@ -72,7 +72,6 @@
     <string name="similar_content">Antzeko edukia</string>
     <string name="login_settings">Sartzeko aukerak</string>
     <string name="general_settings">Aukera orokorrak</string>
-    <string name="dislike_all">Ez gustoko denak</string>
     <string name="player_background_style">Erreproduzitzaile atzeko estiloa</string>
     <string name="follow_theme">Jarraitu gaia</string>
     <string name="gradient">Gradientea</string>
@@ -181,11 +180,11 @@
     <string name="lyrics_romanize_korean">Korear letrak erromanizatu</string>
     <string name="lyrics_romanize_russian">Errusiar letrak erromanizatu</string>
     <string name="lyrics_romanize_ukrainian">Ukraniar letrak erromanizatu</string>
+    <string name="lyrics_romanize_belarusian">Bielorrusiar letrak erromanizatu</string>
     <string name="lyrics_romanize_kyrgyz">Kyrgizar letrak erromanizatu</string>
     <string name="lyrics_romanize_serbian">Serbiar letrak erromanizatu</string>
-    <string name="line_by_line_option_title">EXPERIMENTALA: Lerroz-lerro hizkuntza detektatu</string>
-    <string name="lyrics_romanize_belarusian">Bielorrusiar letrak erromanizatu</string>
     <string name="lyrics_romanize_bulgarian">Bulgariar letrak erromanizatu</string>
+    <string name="line_by_line_option_title">EXPERIMENTALA: Lerroz-lerro hizkuntza detektatu</string>
     <string name="line_by_line_option_desc">Kiriliko hizkuntza lerroz-lerro detektatuko da, abesti osoaren ordez.</string>
     <string name="line_by_line_dialog_title">Ziur zaude?</string>
     <string name="line_by_line_dialog_desc">Ezaugarri esperimental hau ez da beti fidagarria.\n\nLehenetsita, hizkuntza abesti osoaren arabera zehazten da, baina aukera hau gaituta, lerroka zehaztuko da. Honek hizkuntza anitzeko abestien funtzionamendua ahalbidetuko du, BAINA hizkuntza ez da beti zuzena izango (adibidez, ukrainierazko lerro bat ez badu letra berezirik, errusieraz erromanizatua izan daiteke).\n\nArazoik ez baduzu, gomendagarria da aukera hau desgaituta uztea.</string>

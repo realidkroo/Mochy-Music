@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- the tv app -->
     <string name="tv_hii">merhaba!</string>
     <string name="tv_tap_anything">Devam etmek için herhangi bir tuşa bas</string>
     <string name="tv_welcome">Mochy Music\'e\nhoş geldin</string>
@@ -14,7 +13,6 @@
     <string name="tv_remove">Kaldır</string>
     <string name="tv_cancel">İptal</string>
     <string name="tv_done">Bitti</string>
-
     <string name="tv_your_phone">Telefonun</string>
     <string name="tv_library">Kütüphane</string>
     <string name="tv_playing">Çalıyor</string>
@@ -23,7 +21,6 @@
     <string name="tv_nothing_found">Bir şey çıkmadı. Başka kelimeler dene.</string>
     <string name="tv_nothing_here">Burada henüz bir şey yok.</string>
     <string name="tv_search_hint">Şarkılar, sanatçılar, albümler</string>
-
     <string name="tv_recap_headline">Bu ayın\nyer özetine bak!</string>
     <string name="tv_view">Görüntüle</string>
     <string name="tv_hello_again">Tekrar merhaba, %1$s</string>
@@ -31,7 +28,6 @@
     <string name="tv_regular_music">normal müzik ve albümler</string>
     <string name="tv_recap_title">%1$s</string>
     <string name="tv_recap_stats">%1$d dakika · %2$d çalma</string>
-
     <string name="tv_tab_all">Tümü</string>
     <string name="tv_cached">Önbellekteki</string>
     <string name="tv_local_and_downloaded">Yerel ve indirilen</string>
@@ -39,7 +35,6 @@
     <string name="tv_downloaded_here">Bu TV\'ye indirilenler</string>
     <string name="tv_local_files">Şarkı dosyaları</string>
     <string name="tv_on_your_phone">Telefonunda</string>
-
     <string name="tv_end_of_line">Satır sonu</string>
     <plurals name="tv_ledger_songs">
         <item quantity="one">%d şarkı</item>
@@ -53,11 +48,9 @@
         <item quantity="one">%d şarkı</item>
         <item quantity="other">%d şarkı</item>
     </plurals>
-
     <string name="tv_follow">Takip et</string>
     <string name="tv_following">Takipte</string>
     <string name="tv_similar_artists">benzer sanatçılar</string>
-
     <string name="tv_lyrics">Şarkı sözleri</string>
     <string name="tv_song_info">Şarkı bilgisi</string>
     <string name="tv_source">Kaynak</string>
@@ -67,7 +60,6 @@
     <string name="tv_go_to_album">Albüme git</string>
     <string name="tv_go_to_artist">%1$s sayfasına git</string>
     <string name="tv_copy_to_tv">Telefonundan bu TV\'ye kopyala</string>
-
     <string name="tv_sync_from_phone">Telefondan senkronize et</string>
     <string name="tv_same_wifi">Telefonunun bu TV ile aynı Wi-Fi\'da olduğundan emin ol</string>
     <string name="tv_pair_step_open">Telefonunda Mochy\'yi aç ve Ayarlar → Cihaz entegrasyonu → Cihaz ekle bölümüne git</string>
@@ -93,8 +85,6 @@
         <item quantity="one">Bu TV\'ye bir şarkı kopyalanıyor…</item>
         <item quantity="other">Bu TV\'ye %d şarkı kopyalanıyor…</item>
     </plurals>
-
-    <!-- the phone side of the tv link -->
     <string name="tv_link_title">TV\'nde Mochy</string>
     <string name="tv_link_tap_to_unlink">Bağlı. Bağlantıyı kaldırmak için dokun.</string>
     <string name="tv_link_found">Bu Wi-Fi\'daki TV\'ler</string>
@@ -103,8 +93,6 @@
     <string name="tv_link_pair">Bağla</string>
     <string name="tv_link_pairing">Bağlanıyor…</string>
     <string name="tv_link_channel">TV bağlantısı</string>
-
-    <!-- the tv's mochy page -->
     <string name="tv_mochy">Mochy</string>
     <string name="tv_mochy_version">Sürüm %1$s</string>
     <string name="tv_mochy_link_phone">Kütüphaneni getirmek için telefonunu bağla</string>
@@ -114,16 +102,12 @@
     <string name="tv_mochy_updates">Güncellemeler</string>
     <string name="tv_mochy_support">Mochy\'yi destekle</string>
     <string name="tv_mochy_support_detail">Devam etmesine yardım et</string>
-
-    <!-- playing next, up in the tv's player -->
     <string name="tv_playing_next">Sırada çalacak</string>
     <string name="tv_queue_empty">Bu şarkıdan sonra sırada bir şey yok</string>
     <string name="tv_queue_play_now">Şimdi çal</string>
     <string name="tv_queue_earlier">Öne al</string>
     <string name="tv_queue_later">Sona al</string>
     <string name="tv_queue_remove">Kuyruktan kaldır</string>
-
-    <!-- the phone's player menu and remote for a linked tv -->
     <string name="tv_menu_play_on">%1$s üzerinde çal</string>
     <string name="tv_menu_play_next_on">%1$s üzerinde sıradaki olarak çal</string>
     <string name="tv_menu_control">%1$s kontrol et</string>
@@ -134,8 +118,6 @@
     <string name="tv_link_open_now">Şu an açık. Bağlantıyı kaldırmak için dokun.</string>
     <string name="tv_link_control_title">Şimdi aç</string>
     <string name="tv_link_control_detail">Buradan çal, atla ve oynatıcısını değiştir</string>
-
-    <!-- the phone's tv page, its notices, the tv's banner and the tv's song panel -->
     <string name="tv_link_notify">TV senkronize olduğunda bana bildir</string>
     <string name="tv_link_notify_detail">TV\'n bağlandığında ve en son kütüphanene sahip olduğunda kısa bir not</string>
     <string name="tv_link_status_open">Şu an açık</string>
@@ -160,8 +142,6 @@
     <string name="tv_info_source">Şundan çalıyor:</string>
     <string name="tv_info_source_unknown">Nereden çalacağı hâlâ bulunuyor</string>
     <string name="tv_info_close">Kapat</string>
-
-    <!-- pairing by sheet and by address -->
     <string name="tv_pair_by_address">Veya telefonunda adresle bağla: %1$s</string>
     <string name="tv_pair_sheet_title">%1$s bağla</string>
     <string name="tv_pair_sheet_by_address">Adresle bağla</string>

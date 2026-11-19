@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="explore">Explorer</string>
-
     <string name="local_history">Locale</string>
     <string name="remote_history">Distant</string>
-
     <string name="charts">Classements</string>
     <string name="back_button_desc">Retour</string>
     <string name="no_title">Sans titre</string>
@@ -18,15 +16,13 @@
     <string name="top_result">Meilleur Résultat</string>
     <string name="other_results">Autre</string>
     <string name="album_text">Album</string>
-	<string name="by_text">Par </string>
-	<string name="artist">Artiste </string>
-	<string name="explicit">Explicite</string>
-	
+    <string name="by_text">Par </string>
+    <string name="artist">Artiste </string>
+    <string name="explicit">Explicite</string>
     <string name="weeks">Semaines</string>
     <string name="months">Mois</string>
     <string name="years">Années</string>
     <string name="continuous">Continu</string>
-
     <string name="liked">Favoris</string>
     <string name="offline">Hors-Ligne</string>
     <string name="my_top">Mon Top</string>
@@ -50,12 +46,10 @@
     <string name="text_color">Couleur du texte</string>
     <string name="secondary_text_color">Couleur du texte secondaire</string>
     <string name="background_color">Couleur d\'arrière-plan</string>
-
     <string name="added_to_play_next">Ajouté à la playlist</string>
     <string name="added_to_queue">Ajouté à la file d\'attente</string>
     <string name="remove_from_cache">Supprimer du cache</string>
     <string name="save_album">Enregistrer</string>
-    <!-- Artist about section -->
     <string name="about_artist">À propos</string>
     <string name="about_album">À propos</string>
     <string name="about_playlist">À propos</string>
@@ -67,10 +61,8 @@
     <string name="show_artist_monthly_listeners">Afficher les auditeurs mensuels</string>
     <string name="show_artist_video">Afficher la vidéo de l\'artiste sur toile</string>
     <string name="show_artist_video_desc">Afficher une vidéo en boucle à côté du nom de l\'artiste sur la page de l\'artiste</string>
-	<string name="show_artist_background_video">Afficher la vidéo de présentation de l\'artiste</string>
+    <string name="show_artist_background_video">Afficher la vidéo de présentation de l\'artiste</string>
     <string name="show_artist_background_video_desc">Afficher une vidéo d\'art en boucle derrière l\'image de l\'artiste</string>
-
-    <!-- Menu descriptions -->
     <string name="download_playlist_desc">Télécharger tous les titres pour les écouter hors ligne</string>
     <string name="remove_download_playlist_desc">Supprimer tous les titres téléchargés de cette playlist</string>
     <string name="download_in_progress_desc">Le téléchargement est en cours.</string>
@@ -85,7 +77,6 @@
     <string name="link_copied">Lien copié dans le presse-papiers</string>
     <string name="starting_radio">Démarrer la radio</string>
     <string name="now_playing">En cours de lecture</string>
-
     <string name="lyrics">Paroles</string>
     <string name="close">Fermer</string>
     <string name="minimum_volume">Volume minimum</string>
@@ -98,11 +89,9 @@
     <string name="crop_album_art_desc">Forcer un format carré en recadrant les miniatures vidéo</string>
     <string name="mochy_canvas">Toile</string>
     <string name="mochy_canvas_desc">Afficher les pochettes d\'album animées lorsqu\'elles sont disponibles</string>
-	<string name="show_album_canvas">Afficher l\'album toile</string>
+    <string name="show_album_canvas">Afficher l\'album toile</string>
     <string name="show_album_canvas_desc">Afficher une toile animée dans l\'album</string>
-
     <string name="already_in_playlist">Déjà dans la playlist :</string>
-
     <plurals name="n_element">
         <item quantity="one">%d élément</item>
         <item quantity="other">%d éléments</item>
@@ -111,23 +100,19 @@
         <item quantity="one">%d fois</item>
         <item quantity="other">%d fois</item>
     </plurals>
-
     <string name="seek_backward">5 secondes en arrière</string>
     <string name="seek_forward">5 secondes en avant</string>
     <string name="seek_forward_dynamic">+%1$d secondes en avant</string>
     <string name="seek_backward_dynamic">-%1$d secondes en arrière</string>
     <string name="seek_seconds_addup">Recherche progressive</string>
     <string name="seek_seconds_addup_description">Si cette option est activée, cela ajoute 5 secondes supplémentaires à chaque saut de recherche.</string>
-
     <string name="continue_playing_next_in_queue">Continuer la lecture suivant dans la file d\'attente</string>
     <string name="next_in_queue">Suivant dans la file d\'attente</string>
     <string name="upcoming_recommendations">Recommandations à venir</string>
     <string name="continue_playing">Continuer la lecture</string>
     <string name="similar_content">Contenu similaire</string>
-
     <string name="login_settings">Paramètres de connexion</string>
     <string name="general_settings">Paramètres généraux</string>
-
     <string name="player_background_style">Style d\'arrière-plan du lecteur</string>
     <string name="player_background_solid">Solide</string>
     <string name="follow_theme">Suivre le thème</string>
@@ -175,7 +160,6 @@
     <string name="skip_silence_desc">Avance rapide pendant les parties silencieuses des titres</string>
     <string name="skip_silence_instant">Ignorer instantanément les silences</string>
     <string name="skip_silence_instant_desc">Passez les moments silencieux au lieu d\'accélérer la lecture</string>
-
     <string name="google">Google</string>
     <string name="discord">Discord</string>
     <string name="advanced_login">Connexion avec jeton</string>
@@ -185,15 +169,11 @@
     <string name="ytm_sync">Synchronisation automatique avec votre compte YouTube Music</string>
     <string name="yt_sync">Synchronisation automatique avec le compte</string>
     <string name="more_content">Plus de contenu</string>
-    
-    <!-- Playlist cover edit -->
     <string name="edit_playlist_cover">Modifier la pochette de la playlist</string>
     <string name="edit_playlist_cover_note">Remarque : votre compte doit être associé à un numéro de téléphone et vérifié sur YouTube Music pour pouvoir modifier la pochette de la playlist.</string>
     <string name="edit_playlist_cover_note_wait">Après avoir sélectionné une image, veuillez patienter quelques instants jusqu\'à ce que la nouvelle pochette apparaisse dans votre playlist.</string>
     <string name="choose_from_library">Choisissez dans la bibliothèque</string>
     <string name="remove_custom_image">Supprimer l\'image personnalisée</string>
-
-    <!-- General -->
     <string name="general">Général</string>
     <string name="proxy">Proxy</string>
     <string name="default_lib_chips">Modifier la puce de bibliothèque par défaut</string>
@@ -212,7 +192,6 @@
     <string name="enable_authentication">Activer l\'authentification</string>
     <string name="discord_use_details">Utilisez les détails plutôt que l\'état</string>
     <string name="discord_use_details_description">Afficher le titre de la chanson bien en évidence plutôt que le nom de l\'artiste</string>
-
     <string name="audio_quality_max">Maximale</string>
     <string name="enable_similar_content">Activer le contenu similaire</string>
     <string name="similar_content_desc">Ajouter automatiquement d\'autres titres similaires lorsque la fin de la file d\'attente est atteinte</string>
@@ -224,32 +203,23 @@
     <string name="min_playback_duration_description">La durée minimale d\'un titre qui doit être lu avant qu\'il soit considéré comme « lu ».</string>
     <string name="percentage_format">%d%%</string>
     <string name="minimum_playback_duration">Durée minimale de lecture</string>
-
     <string name="import_online">Importer une playlist « m3u »</string>
     <string name="import_csv">Importer une playlist « csv »</string>
     <string name="playlist_add_local_to_synced_note">Remarque : l\'ajout de titres locaux à des playlists synchronisées/distantes n\'est pas pris en charge. Toute autre combinaison est valide.</string>
-
     <string name="auto_download_on_like">Téléchargement automatique sur « J\'aime »</string>
     <string name="auto_download_on_like_desc">Téléchargez automatiquement les titres qui vous plaisent.</string>
-
     <string name="swipe_sensitivity">Sensibilité du balayage du mini-lecteur</string>
     <string name="swipe_sensitivity_desc">Réglez la sensibilité des gestes de balayage pour changer de titre.</string>
     <string name="sensitivity_percentage">%1$d%%</string>
-
     <string name="clear_song_cache_dialog">  Êtes-vous sûr de vouloir effacer tous les titres mis en cache ?</string>
     <string name="clear_image_cache_dialog">  Êtes-vous sûr de vouloir effacer toutes les images mises en cache ?</string>
     <string name="clear_downloads_dialog">  Êtes-vous sûr de vouloir effacer tous les téléchargements ?</string>
-
     <string name="disable">Désactiver</string>
-
     <string name="pause_remote_listen_history">Mettez en pause, partagez et consultez votre historique d\'écoute sur YouTube Music.</string>
     <string name="not_logged_in_youtube">Non connecté à YouTube</string>
-
     <string name="default_links">Ouvrir les liens pris en charge</string>
     <string name="open_app_settings_error">Impossible d\'ouvrir les paramètres de l\'application</string>
-
     <string name="release_notes">Notes de mise à jour</string>
-
     <string name="all_time">Tout le temps</string>
     <string name="past_24_hours">Au cours des dernières 24 heures</string>
     <string name="past_week">Semaine dernière</string>
@@ -274,14 +244,11 @@
         <item quantity="one">1 seconde</item>
         <item quantity="other">%d secondes</item>
     </plurals>
-
-    <!-- Player Settings -->
     <string name="disable_load_more_when_repeat_all">Désactiver le chargement supplémentaire lors de la répétition de tout</string>
     <string name="disable_load_more_when_repeat_all_desc">Ne pas charger automatiquement d\'autres titres et contenus similaires lorsque le mode de répétition est activé</string>
     <string name="pause_music_when_media_is_muted">Mettre la musique en pause lorsque le son est coupé</string>
     <string name="resume_on_bluetooth_connect">Reprise de la connexion Bluetooth</string>
     <string name="keep_screen_on_when_player_is_expanded">Garder l\'écran allumé lorsque le lecteur est agrandi</string>
-
     <string name="crossfade">Fondu enchaîné</string>
     <string name="crossfade_desc">Fondu enchaîné entre les titres</string>
     <string name="crossfade_duration">Durée du fondu enchaîné</string>
@@ -289,8 +256,6 @@
     <string name="crossfade_gapless_desc">Ne pas effectuer de fondu enchaîné si l\'album est sans interruption</string>
     <string name="crossfade_beta_title">Fonctionnalité Bêta</string>
     <string name="crossfade_beta_message">Le fondu enchaîné est une nouvelle fonctionnalité qui peut présenter des bugs. Si vous rencontrez des problèmes, veuillez les signaler. \n\nCette fonctionnalité désactive le déchargement audio en raison de limitations techniques.</string>
-
-    <!-- Romanization Settings -->
     <string name="lyrics_romanization_cyrillic">Cyrillique</string>
     <string name="lyrics_romanize_title">Romanisation</string>
     <string name="lyrics_romanization">Romanisation des paroles</string>
@@ -312,56 +277,40 @@
     <string name="line_by_line_dialog_desc">Il s\'agit d\'une fonctionnalité expérimentale qui peut fonctionner ou non. \n\nPar défaut, la langue est déterminée à partir de l\'ensemble du titre, mais lorsque cette option est activée, elle est déterminée ligne par ligne. Cela permet aux titres multilingues de fonctionner, MAIS la langue peut ne pas toujours être correcte (par exemple, si les paroles ukrainiennes ne contiennent pas de lettres spécifiques à l\'ukrainien, elles peuvent être romanisées en russe à la place). \n\nSi vous ne rencontrez pas de problèmes, il est recommandé de désactiver cette option.</string>
     <string name="line_by_line_dialog_enable">Activer</string>
     <string name="romanize_current_track">Romaniser le titre actuel</string>
-
-    <!-- Lyrics Offset Settings -->
     <string name="lyrics_offset">Paroles Offset</string>
-
-    <!-- Material 3 Settings Sections -->
     <string name="settings_section_ui">Interface</string>
     <string name="settings_section_privacy">Confidentialité &amp; Sécurité</string>
     <string name="settings_section_player">Lecteur &amp; Média</string>
     <string name="settings_section_player_content">Lecteur &amp; Contenu</string>
     <string name="settings_section_storage">Stockage &amp; Données</string>
     <string name="settings_section_system">Système &amp; À propos</string>
-
-    <!-- Updater -->
     <string name="updater">Mise à jour</string>
     <string name="check_for_updates">Rechercher automatiquement les mises à jour</string>
     <string name="update_available_title">Mise à jour disponible</string>
     <string name="update_channel_name">Mises à jour de l\'application</string>
     <string name="update_channel_desc">Notifications concernant les nouvelles versions</string>
-
-    <!-- Offload -->
     <string name="audio_offload">Activer le déchargement</string>
     <string name="audio_offload_description">Utilisez le chemin audio déporté pour la lecture audio. La désactivation de cette option peut augmenter la consommation d\'énergie, mais peut s\'avérer utile en cas de problèmes de lecture ou de post-traitement audio.</string>
     <string name="audio_offload_disabled_by_crossfade">Désactivé car le fondu enchaîné est activé</string>
-
-    <!-- Google Cast -->
     <string name="google_cast">Google Cast</string>
     <string name="google_cast_description">Activer la diffusion audio vers Chromecast et d\'autres appareils compatibles avec Cast</string>
-
     <string name="lyrics_romanize_macedonian">Romaniser les paroles macédoniennes</string>
     <string name="lyrics_romanize_as_main">Afficher les paroles romanisées en premier plan</string>
-
     <string name="integrations">Intégrations</string>
     <string name="username">Nom d\'utilisateur</string>
     <string name="password">Mot de passe</string>
-
-    <!-- Last.fm -->
     <string name="lastfm_integration">Intégration de Last.fm</string>
     <string name="enable_scrobbling">Activer le scrobbling</string>
     <string name="lastfm_now_playing">Envoyer « En cours de lecture »</string>
     <string name="last_fm_send_likes">Envoyer des « J\'aime » / « Je n\'aime pas »</string>
     <string name="last_fm_send_likes_description">Ajouter/Retirer des titres de la liste « J\'aime » sur Last.fm lorsqu\'ils sont ajoutés/retirés de la liste « J\'aime » dans mochy Music</string>
     <string name="logging_in">Connexion en cours…</string>
-
     <string name="scrobbling_configuration">Configuration du scrobbling</string>
     <string name="scrobble_min_track_duration">Enregistrer les titres d\'une durée supérieure à</string>
     <string name="scrobble_delay_percent">Pourcentage de délai de scrobble</string>
     <string name="scrobble_delay_minutes">Délai de scrobble (en minutes)</string>
     <string name="hide_video_songs">Masquer les titres en vidéo</string>
     <string name="hide_youtube_shorts">Masquer YouTube Shorts</string>
-
     <string name="details_desc">Afficher les informations sur le titre</string>
     <string name="edit_desc">Modifier le titre ou l\'interprète</string>
     <string name="start_radio_desc">Créer une station à partir de cet élément</string>
@@ -382,8 +331,6 @@
     <string name="cache_size_warning_title">Attendez !</string>
     <string name="cache_size_warning_message">Vous avez choisi une limite de taille de cache inférieure à celle actuellement utilisée par l\'application (%1$s). Si vous continuez, l\'application supprimera peut-être certains %2$s mis en cache afin de respecter la nouvelle limite. Voulez-vous quand même continuer ?</string>
     <string name="cache_size_warning_confirm">Continuer</string>
-
-    <!-- Lyrics Animation Styles -->
     <string name="lyrics_animation_style">Animation mot à mot</string>
     <string name="none">Aucun</string>
     <string name="fade">Fondu</string>
@@ -396,7 +343,7 @@
     <string name="apple_music_lyrics_blur">Paroles d\'Apple Music floues</string>
     <string name="apple_music_lyrics_blur_desc">Appliquez un effet de flou aux lignes de paroles inactives pour créer un effet de mise au point haut de gamme.</string>
     <string name="lyrics_v2_fluid">Paroles V2 (Fluide)</string>
-	<string name="lyrics_animation_metro">Paroles de Metro</string>
+    <string name="lyrics_animation_metro">Paroles de Metro</string>
     <string name="lyrics_text_size">Taille du texte des paroles</string>
     <string name="lyrics_line_spacing">Interligne des paroles</string>
     <string name="album_art_for">Pochette de l\'album %s</string>
@@ -439,8 +386,6 @@
     <string name="wrapped_playlist_title">Votre %s en résumé</string>
     <string name="wrapped_create_playlist">Créer une playlist</string>
     <string name="wrapped_playlist_saved">Playlist enregistrée</string>
-
-    <!-- Equalizer UI -->
     <plurals name="profiles_count">
         <item quantity="one">%d profil</item>
         <item quantity="other">%d profils</item>
@@ -463,8 +408,6 @@ est irréversible.
     <string name="import_error_title">Erreur d\'importation</string>
     <string name="error_title">Erreur</string>
     <string name="error_eq_apply_failed">Échec de l\'application du profil d\'égalisation : %1$s</string>
-
-    <!-- Hardcoded strings -->
     <string name="found_in_settings_content">Dans les Paramètres &gt; Contenu</string>
     <string name="plays">lectures</string>
     <string name="casting_to">Conversion vers %s</string>
@@ -478,14 +421,10 @@ est irréversible.
     <string name="copied_artist">Artiste copié</string>
     <string name="error_playing">Erreur lors de la lecture</string>
     <string name="failed_to_parse_proxy">Échec de l\'analyse de l\'URL du proxy</string>
-
-    <!-- Playback errors -->
     <string name="error_playback_failed">Échec de la lecture</string>
     <string name="error_copied">Informations d\'erreur copiées dans le presse-papiers</string>
     <string name="copy_error">Erreur de copie</string>
     <string name="error_copy_hint">Copier les informations relatives à l\'erreur pour aider les développeurs à résoudre le problème</string>
-
-    <!-- Widget strings -->
     <string name="album_art">Pochette d\'album</string>
     <string name="no_song_playing">Aucun titre n\'est en cours de lecture</string>
     <string name="tap_to_open">Appuyez pour ouvrir mochy Music</string>
@@ -500,22 +439,16 @@ est irréversible.
     <string name="turntable_widget_description">Widget musical circulaire avec boutons de lecture et de « J\'aime »</string>
     <string name="widget_music_player">Lecteur de Musique</string>
     <string name="widget_turntable">Platine</string>
-
-    <!-- Player Client Settings -->
     <string name="player_client">Lecteur Client</string>
     <string name="player_client_android_vr">Android VR</string>
     <string name="player_client_android_vr_desc">Option la plus rapide. Accès direct aux URL de flux sans décryptage de signature. Recommandée pour la plupart des utilisateurs.</string>
     <string name="player_client_web_remix">Web Remix</string>
     <string name="player_client_web_remix_desc">Plus lent, mais compatible avec les formats premium. Utilise le décryptage de signature JavaScript, ce qui ajoute environ 5 à 10 secondes au démarrage de la lecture.</string>
-
-    <!-- Decryption Library Settings -->
     <string name="decryption_library">Bibliothèque de décryptage</string>
     <string name="decryption_library_newpipe">NewPipe Extractor (Officiel)</string>
     <string name="decryption_library_newpipe_desc">Bibliothèque officielle TeamNewPipe. Elle est parfaitement à jour avec les dernières modifications apportées par YouTube. Recommandée comme option par défaut. Recours automatique à l\'API PipePipe en cas d\'échec.</string>
     <string name="decryption_library_pipepipe_api">API PipePipe</string>
     <string name="decryption_library_pipepipe_api_desc">Décryptage via API à l\'aide de MetroExtractor. Plus rapide, mais dépend d\'une API externe. Recours automatique à NewPipe en cas d\'échec.</string>
-
-    <!-- Listen Together -->
     <string name="together">Ensemble</string>
     <string name="listen_together">Écouter ensemble</string>
     <string name="listen_together_desc">Écoutez de la musique avec vos amis en temps réel.</string>
@@ -609,8 +542,6 @@ est irréversible.
     <string name="listen_together_no_blocked_users">Aucun utilisateur bloqué</string>
     <string name="unblock">Débloquer</string>
     <string name="user_blocked_by_host">Utilisateur bloqué par l\'hôte</string>
-
-    <!-- AI Lyrics Translation -->
     <string name="ai_lyrics_translation">Traduction des paroles par IA</string>
     <string name="ai_translating_lyrics">Traduction des paroles...</string>
     <string name="ai_lyrics_translated">Paroles traduites</string>
@@ -635,7 +566,7 @@ est irréversible.
     <string name="ai_error_translation_failed">Échec de la traduction</string>
     <string name="ai_provider_help">Obtenir des clés API</string>
     <string name="ai_provider_openrouter_help">Rendez-vous sur openrouter.ai pour découvrir les modèles gratuits et payants</string>
-	<string name="ai_provider_mistral_help">Rendez-vous sur console.mistral.ai/api-keys</string>
+    <string name="ai_provider_mistral_help">Rendez-vous sur console.mistral.ai/api-keys</string>
     <string name="ai_provider_openai_help">Rendez-vous sur platform.openai.com/api-keys</string>
     <string name="ai_provider_claude_help">Rendez-vous sur console.anthropic.com/settings/keys</string>
     <string name="ai_provider_gemini_help">Rendez-vous sur aistudio.google.com/apikey</string>
@@ -646,18 +577,14 @@ est irréversible.
     <string name="ai_deepl_formality_default">Par défaut</string>
     <string name="ai_deepl_formality_more">Plus formel</string>
     <string name="ai_deepl_formality_less">Moins formel</string>
-
-    <!-- Crash Handler -->
     <string name="crash_title">L\'application a planté</string>
     <string name="crash_description">Une erreur inattendue s\'est produite. Merci de nous envoyer le rapport d\'erreur afin de nous aider à résoudre le problème.</string>
     <string name="crash_share_logs">Partager les journaux</string>
-	<string name="copy_logs">Copier les journaux</string>
+    <string name="copy_logs">Copier les journaux</string>
     <string name="crash_share_title">Partager un rapport d\'incident</string>
     <string name="crash_report_subject">Rapport d\'erreur mochy Music</string>
     <string name="crash_close">Fermer</string>
     <string name="crash_no_log">Aucun journal d\'erreurs n\'est disponible</string>
-
-    <!-- Theme Palette Names -->
     <string name="palette_dynamic">Dynamique</string>
     <string name="palette_crimson">Crimson</string>
     <string name="palette_rose">Rose</string>
@@ -678,8 +605,6 @@ est irréversible.
     <string name="palette_brown">Marron</string>
     <string name="palette_grey">Gris</string>
     <string name="palette_blue_grey">Bleu Gris</string>
-
-    <!-- Theme Content Descriptions -->
     <string name="cd_back">Retour</string>
     <string name="cd_pure_black_mode">Mode Noir pur</string>
     <string name="cd_light_mode">Mode clair</string>
@@ -689,8 +614,6 @@ est irréversible.
     <string name="play_all">Tout lire</string>
     <string name="enable_high_refresh_rate">Activer un taux de rafraîchissement élevé</string>
     <string name="enable_high_refresh_rate_desc">Forcez l\'écran à fonctionner à la fréquence de rafraîchissement la plus élevée prise en charge (par exemple, 120 Hz).</string>
-
-    <!-- Music Recognition -->
     <string name="recognition">Reconnaissance</string>
     <string name="recognize_music">Reconnaître la musique</string>
     <string name="tap_to_recognize">Appuyez pour reconnaître</string>
@@ -707,8 +630,6 @@ est irréversible.
     <string name="hold_to_recognize">Maintenez l\'icône de recherche enfoncée pour reconnaître un titre.</string>
     <string name="play_on_app">Écoutez sur mochy Music</string>
     <string name="recognized_track">Titre reconnu</string>
-
-    <!-- CSV Import Strings -->
     <string name="map_csv_columns">Mapper les colonnes du fichier CSV</string>
     <string name="first_row_is_header">La première ligne est l\'en-tête</string>
     <string name="artist_name_column">Colonne « Nom de l\'artiste »</string>
@@ -720,8 +641,6 @@ est irréversible.
     <string name="column_label">Col %d</string>
     <string name="csv_import_failed">Échec de l\'importation du fichier CSV</string>
     <string name="csv_preview_failed">Impossible d\'afficher l\'aperçu du fichier CSV</string>
-
-    <!-- Discord Integration Redesign -->
     <string name="discord_integration_settings">Intégration à Discord</string>
     <string name="discord_status">Statut</string>
     <string name="discord_status_online">En ligne</string>
@@ -756,8 +675,6 @@ est irréversible.
     <string name="unpin_from_speed_dial">Détacher de l\'Accès Rapide</string>
     <string name="randomize_home_order">Mélanger l\'ordre des éléments de l\'écran d\'accueil</string>
     <string name="randomize_home_order_desc">Réorganisez aléatoirement les sections de l\'écran d\'accueil en fonction de priorités pondérées.</string>
-
-    <!-- Daily Discover -->
     <string name="daily_discover_sounds_like">On dirait %1$s</string>
     <string name="your_daily_discover">Votre découverte du jour</string>
     <string name="daily_discover_because_you_listen_to">Parce que vous écoutez %1$s</string>
@@ -770,9 +687,6 @@ est irréversible.
     <string name="monthly_listeners">Mensuel</string>
     <string name="unlock_queue">Débloquer la file d\'attente</string>
     <string name="lock_queue">Verrouiller la file d\'attente</string>
-<!--    //Members-->
-
-    <!-- ShowMediaInfo -->
     <string name="song_info">Informations sur le titre</string>
     <string name="song_info_title_label">Titre</string>
     <string name="song_info_format_label">Format</string>
@@ -782,8 +696,6 @@ est irréversible.
     <string name="song_info_views_count">%s vues</string>
     <string name="song_info_likes_count">%s aime</string>
     <string name="song_info_no_description">Aucune description disponible</string>
-
-<!--    changelog-->
     <string name="error_loading_changelog">Erreur lors du chargement du journal des modifications</string>
     <string name="no_old_releases_with_changelog">Aucune ancienne version avec journal des modifications n\'a été trouvée</string>
     <string name="failed_to_fetch_changelog">Impossible de récupérer le journal des modifications</string>
@@ -801,7 +713,7 @@ est irréversible.
     <string name="error_loading_commits">Impossible de charger les engagements car vous ne m\'avez pas payé.</string>
     <string name="commits">Engagements</string>
     <string name="view_commit_history">Consultez les modifications récentes sur la branche principale.</string>
-	<string name="suggestions">Suggestions</string>
+    <string name="suggestions">Suggestions</string>
     <string name="comments">Commentaires</string>
     <string name="no_comments">Aucun commentaire trouvé</string>
 </resources>

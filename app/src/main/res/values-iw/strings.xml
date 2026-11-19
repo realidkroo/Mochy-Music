@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="songs">שירים</string>
-    <string name="history">היסטוריה</string>
     <string name="home">בית</string>
+    <string name="songs">שירים</string>
     <string name="artists">אמנים</string>
     <string name="albums">אלבומים</string>
     <string name="playlists">פלייליסטים</string>
@@ -11,6 +10,7 @@
         <item quantity="two">%d נבחרו</item>
         <item quantity="other">%d נבחרו</item>
     </plurals>
+    <string name="history">היסטוריה</string>
     <string name="stats">סטטיסטיקות</string>
     <string name="mood_and_genres">מצב רוח וז\'אנרים</string>
     <string name="account">חשבון</string>
@@ -78,6 +78,7 @@
     <string name="view_album">הצג אלבום</string>
     <string name="refetch">אחזור</string>
     <string name="share">שיתוף</string>
+    <string name="more_options">אפשרויות נוספות</string>
     <string name="delete">מחיקה</string>
     <string name="remove_from_history">הסר מההיסטוריה</string>
     <string name="remove_from_playlist">הסר מהפלייליסט</string>
@@ -155,11 +156,6 @@
         <item quantity="two">%d חודשים</item>
         <item quantity="other">%d חודשים</item>
     </plurals>
-    <string name="end_of_song">סוף השיר</string>
-    <string name="action_like_all">‌</string>
-    <string name="queue_all_songs">כל השירים</string>
-    <string name="music_player">‪שירים שחיפשת</string>
-    <string name="pure_black">שחור</string>
     <plurals name="n_year">
         <item quantity="one">שנה %d</item>
         <item quantity="two">%d שנים</item>
@@ -171,6 +167,7 @@
     <string name="undo">בטל</string>
     <string name="lyrics_not_found">מילות השיר לא נמצאו</string>
     <string name="sleep_timer">טיימר שינה</string>
+    <string name="end_of_song">סוף השיר</string>
     <plurals name="minute">
         <item quantity="one">דקה 1</item>
         <item quantity="two">%d דקות</item>
@@ -181,6 +178,7 @@
     <string name="error_timeout">פסק זמן</string>
     <string name="error_unknown">שגיאה לא ידועה</string>
     <string name="action_like">לייק</string>
+    <string name="action_like_all">‌</string>
     <string name="action_remove_like">הסר לייק</string>
     <string name="action_remove_like_all">הסר את כל הלייקים</string>
     <string name="action_shuffle_on">ערבוב מופעל</string>
@@ -188,7 +186,9 @@
     <string name="repeat_mode_off">מצב חזרה כבוי</string>
     <string name="repeat_mode_one">חזרה על השיר הנוכחי</string>
     <string name="repeat_mode_all">חזרה על התור</string>
+    <string name="queue_all_songs">כל השירים</string>
     <string name="queue_searched_songs">שירים שחיפשת</string>
+    <string name="music_player">‪שירים שחיפשת</string>
     <string name="settings">הגדרות</string>
     <string name="appearance">נראות</string>
     <string name="theme">עיצוב</string>
@@ -197,16 +197,17 @@
     <string name="dark_theme_on">פועל</string>
     <string name="dark_theme_off">כבוי</string>
     <string name="dark_theme_follow_system">כמו המערכת</string>
+    <string name="pure_black">שחור</string>
     <string name="customize_navigation_tabs">התאמה אישית של כרטיסיות ניווט</string>
     <string name="player">נגן</string>
+    <string name="player_text_alignment">יישור טקסט של הנגן</string>
+    <string name="lyrics_text_position">מיקום מילות השיר</string>
     <string name="sided">צדדי</string>
     <string name="left">שמאל</string>
     <string name="center">מרכז</string>
     <string name="right">ימין</string>
     <string name="player_slider_style">‎סגנון מחוון הנגן</string>
     <string name="default_">ברירת מחדל</string>
-    <string name="player_text_alignment">יישור טקסט של הנגן</string>
-    <string name="lyrics_text_position">מיקום מילות השיר</string>
     <string name="squiggly">מתפתל</string>
     <string name="misc">שונות</string>
     <string name="default_open_tab">‌כרטיסיית פתיחה כברירת מחדל</string>

@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="server_error">서버 오류 (%1$s)</string>
     <string name="playing_status">재생 중</string>

@@ -47,6 +47,7 @@
     <string name="app_update_uptodate">Sudah versi terbaru</string>
     <string name="auto_update_check">Pemeriksaan pembaruan otomatis</string>
     <string name="auto_update_check_subtitle">Periksa pembaruan secara otomatis saat membuka layar pembaruan</string>
+    <string name="update_notifications">Notifikasi pembaruan</string>
     <string name="update_notifications_subtitle">Tampilkan notifikasi saat pembaruan baru ditemukan</string>
     <string name="settings_check_updates_title">Periksa pembaruan</string>
     <string name="later">Nanti</string>
@@ -77,5 +78,4 @@
     <string name="new_update">Pembaruan baru</string>
     <string name="release_date_v">Dirilis pada: %1$s</string>
     <string name="update_size_v">Ukuran: %1$s MB</string>
-    <string name="update_notifications">Notifikasi pembaruan</string>
 </resources>

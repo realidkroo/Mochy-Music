@@ -1,19 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- the bedside player style: a big clock for the nightstand -->
     <string name="bedside_close">Oynatıcıyı kapat</string>
     <string name="bedside_unlock_to_close">Oynatıcıyı kapatmak için kilidi aç</string>
     <string name="bedside_more">Daha fazla</string>
     <string name="bedside_like">Beğen</string>
     <string name="bedside_now_playing">Şimdi çalıyor</string>
-
-    <!-- asked once over the bedside when the phone keeps apps off the lock screen (MIUI and HyperOS do, until you allow it) -->
     <string name="bedside_lock_ask_title">Saat kilit ekranında kalsın mı?</string>
     <string name="bedside_lock_ask_body">Telefonun izin verene kadar uygulamaları kilit ekranından uzak tutar. Sonraki ekranda \"Kilit ekranında göster\"i aç.</string>
     <string name="bedside_lock_ask_allow">İzin ver</string>
     <string name="bedside_lock_ask_later">Şimdi değil</string>
-
-    <!-- the bedside's sheet in the player editor -->
     <string name="bedside_sheet_title">Başucu</string>
     <string name="bedside_rest_caption">Onu kendi hâline bıraktığında</string>
     <string name="bedside_tint_off">Beyaz kal</string>

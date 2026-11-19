@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Playback logs -->
     <string name="playback_logs_clip_label">Oynatma kayıtları</string>
-
-    <!-- Manage downloads sheet -->
     <string name="storage_manage_sort_by">Sırala -</string>
     <string name="storage_manage_sort_size">boyut</string>
     <string name="storage_manage_sort_name">ad</string>
@@ -28,13 +25,9 @@
     <string name="storage_manage_all">Tümü</string>
     <string name="storage_manage_unpick">Seçimi kaldır</string>
     <string name="storage_manage_pick_all">Tümünü seç</string>
-
-    <!-- Playlist menu & sheets -->
     <string name="sheet_label_recents">son çalınanlar</string>
     <string name="sheet_label_results">sonuçlar</string>
     <string name="sheet_label_all">tümü</string>
-
-    <!-- Device output -->
     <string name="ps_device_usb_audio">USB ses</string>
     <string name="ps_device_usb_dac">USB DAC</string>
 </resources>

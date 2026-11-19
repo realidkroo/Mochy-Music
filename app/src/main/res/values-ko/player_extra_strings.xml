@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="playback_logs_clip_label">재생 로그</string>
     <string name="storage_manage_sort_by">정렬 기준 - </string>

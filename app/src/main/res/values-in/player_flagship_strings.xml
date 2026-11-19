@@ -6,7 +6,6 @@
     <string name="flagship_output_bluetooth">Bluetooth</string>
     <string name="flagship_output_hdmi">HDMI</string>
     <string name="flagship_output_change">Ganti tempat musik diputar</string>
-
     <string name="flagship_play">Putar</string>
     <string name="flagship_pause">Jeda</string>
     <string name="flagship_next">Lagu berikutnya</string>
@@ -16,7 +15,6 @@
     <string name="flagship_lyrics">Lirik</string>
     <string name="flagship_queue">Antrean</string>
     <string name="flagship_volume">Volume</string>
-
     <string name="flagship_layout_three">Mundur, putar, maju</string>
     <string name="flagship_layout_three_caption">Tiga tombol besar, tanpa bingkai</string>
     <string name="flagship_layout_ten">Dengan lompat 10 detik</string>

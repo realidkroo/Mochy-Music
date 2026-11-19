@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- About Sheet -->
     <string name="about_app">Uygulama hakkında</string>
     <string name="about_mochy_music_version">Mochy Music | %1$s</string>
     <string name="about_app_description">Mochy Music bir müzik uygulaması ama\nbiraz da havalı.</string>
@@ -14,8 +13,6 @@
     <string name="about_more_license">Lisans hakkında daha fazla</string>
     <string name="about_cool_contributors">Harika katkıda bulunanlar</string>
     <string name="about_credits">Katkılar</string>
-
-    <!-- Update Sheet -->
     <string name="update_actions">Eylemler</string>
     <string name="update_checking">Denetleniyor…</string>
     <string name="update_check_for_update">Güncelleme denetle</string>
@@ -40,8 +37,6 @@
     <string name="update_no_apk">Bu sürümde APK yok</string>
     <string name="update_install_here">Buradan yükle</string>
     <string name="update_open_web">Web\'i aç</string>
-
-    <!-- Artist Screen -->
     <string name="artist_menu_shuffle">Karıştır</string>
     <string name="artist_menu_start_radio">Radyo başlat</string>
     <string name="artist_menu_copy_link">Bağlantıyı kopyala</string>
@@ -57,8 +52,6 @@
     <string name="artist_saved_albums_of">Kaydettiğin %1$s albümleri</string>
     <string name="artist_about">%1$s hakkında</string>
     <string name="artist_load_failed">Bu sanatçı yüklenemedi. Tekrar denemek için dokun</string>
-
-    <!-- Playlist Screens -->
     <string name="playlist_removed_song_from">%1$s, %2$s listesinden kaldırıldı</string>
     <string name="playlist_fallback_name">çalma listesi</string>
     <string name="playlist_drag_to_move">Taşımak için sürükle</string>
@@ -66,8 +59,6 @@
     <string name="playlist_sort_order">Sıralama düzeni</string>
     <string name="playlist_sort_desc">(Azalan)</string>
     <string name="playlist_sort_asc">(Artan)</string>
-
-    <!-- Search & Genre Screens -->
     <string name="genre_nothing_here">Burada henüz bir şey yok</string>
     <string name="genre_featured">Öne çıkanlar</string>
     <string name="genre_from_the_community">Topluluktan</string>
@@ -88,8 +79,6 @@
     <string name="search_no_results">Sonuç yok</string>
     <string name="search_placeholder_tracks_albums">Parça, albüm, şarkı sözü ara…</string>
     <string name="search_by_artist">%1$s tarafından</string>
-
-    <!-- Suggestion Region Sheet -->
     <string name="suggestion_choose_region">Öneri bölgesini seç</string>
     <string name="suggestion_search_regions">Bölgelerde ara…</string>
     <string name="suggestion_search_desc">Ara</string>
@@ -97,8 +86,6 @@
     <string name="suggestion_system_default">Sistem varsayılanı</string>
     <string name="suggestion_countries_regions">Ülkeler ve bölgeler</string>
     <string name="suggestion_selected_desc">Seçili</string>
-
-    <!-- Donate Sheet -->
     <string name="donate_dismiss_button">ne yani istemiyorum ki</string>
     <string name="donate_thank_you_title">Arigatou! :3</string>
     <string name="donate_subtitle">Bize destek olmanın ve bağış yapmanın bir yolu!</string>
@@ -107,8 +94,6 @@
     <string name="donate_sociabuzz_desc">Bazı Güneydoğu Asya ve Latin Amerika ülkeleri için önerilir</string>
     <string name="donate_buymeacoffee">Buy Me a Coffee\'da bizi destekle</string>
     <string name="donate_note">bağışın, ne kadar küçük olursa olsun, bizim için her zaman çok çok faydalı olacak :3</string>
-
-    <!-- Album Screen -->
     <string name="album_more_by_artist">%1$s tarafından daha fazla</string>
     <string name="album_more_by_this_artist">Bu sanatçıdan daha fazla</string>
     <string name="album_other_versions">Diğer sürümler</string>

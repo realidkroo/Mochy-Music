@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- usage at the top of the page -->
     <string name="storage_overall">Genel</string>
     <string name="storage_legend_mochy">Mochy</string>
     <string name="storage_legend_yours">Depolaman</string>
@@ -13,8 +12,6 @@
     <string name="storage_legend_downloads">İndirilen müzik ve yerel</string>
     <string name="storage_legend_database">Veritabanı</string>
     <string name="storage_legend_app_data">Uygulama verisi</string>
-
-    <!-- cutting the junk -->
     <string name="storage_junk_title">İşte çöpü azaltmak için yapabileceklerinin listesi</string>
     <string name="storage_hint_full">Telefonun neredeyse dolu.</string>
     <string name="storage_hint_cache">Önbellek en kolayı. Temizlemek %1$s boşaltır ve şarkılar yeniden akışa geçer.</string>
@@ -34,8 +31,6 @@
     <string name="storage_clear_cache_message">Akıştan saklanan şarkılar ve kaydedilen kapak resimleri silinir. Çaldıkça ve gezdikçe geri gelirler. Kütüphanen ve indirmelerin olduğu gibi kalır.</string>
     <string name="storage_clear_cache_action">Önbelleği temizle</string>
     <string name="storage_manage_downloads">İndirmeleri yönet</string>
-
-    <!-- where things are saved, and exporting songs -->
     <string name="storage_or">Veya</string>
     <string name="storage_downloads_place">İndirmelerin kaydedileceği yeri seç</string>
     <string name="storage_cache_place">Önbelleğin kaydedileceği yeri seç</string>
@@ -64,7 +59,6 @@
     <string name="storage_place_move_downloads_message">%1$s konumuna kopyalanırken indirmeler duraklar. Bitince Mochy yeniden başlar ve eski kopya temizlenir.</string>
     <string name="storage_place_move_cache_message">Şu anki önbelleğin temizlenir ve Mochy yeniden başlar, sonra çaldığın şarkılar yeni yerde tutulur.</string>
     <string name="storage_place_move_action">Taşı ve yeniden başlat</string>
-
     <string name="storage_export_sheet_title">İndirilen şarkıları dışa aktar</string>
     <string name="storage_export_note">Seçtiğin yerin içindeki bir mochy-preserve klasörüne kopyalanırlar. İndirmelerin olduğu yerde kalır.</string>
     <string name="storage_export_layout_playlists">Müzik ve çalma listeleri</string>
@@ -89,8 +83,6 @@
     <string name="storage_export_folder_playlists" translatable="false">Playlist</string>
     <string name="storage_export_folder_albums" translatable="false">Albums</string>
     <string name="storage_export_folder_liked" translatable="false">Liked songs</string>
-
-    <!-- moving to a new phone -->
     <string name="storage_transfer_title">Yeni telefona mı geçiyorsun? Her şeyi yanında götür</string>
     <string name="storage_export_user_data">Kullanıcı verilerini dışa aktar</string>
     <string name="storage_import_user_data">Kullanıcı verilerini içe aktar</string>

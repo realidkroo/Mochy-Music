@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- pengaturan, modul: daftar modul, halaman modul, mencari modul lain dan masuk -->
 <resources>
     <string name="module_adds_songs">Lagu</string>
     <string name="module_adds_lyrics">Lirik</string>
     <string name="module_adds_look">Tampilan</string>
     <string name="modules_beta">BETA</string>
-    <string name="modules_intro">Modul menambahkan sesuatu ke Mochy: sumber lagu baru, lirik baru, dan tampilan baru. Matikan satu dan semua yang ia tambahkan ikut hilang, dari Kualitas Audio juga.</string>
     <string name="module_status_signed_out">Belum masuk</string>
     <string name="module_status_expired">Masuk lagi · %1$s</string>
     <string name="module_status_on">Aktif · %1$s</string>
@@ -13,9 +11,7 @@
     <string name="module_origin_built_in">Bawaan · v%1$s</string>
     <string name="module_origin_app">Aplikasi modul · v%1$s</string>
     <string name="module_origin_web">Dari tautan · v%1$s</string>
-    <string name="module_by">%1$s · oleh %2$s</string>
     <string name="modules_find_more">Cari sumber lain</string>
-    <string name="modules_find_more_desc">Tambahkan modul dari katalog atau dari tautan</string>
     <string name="modules_find_more_body">Modul adalah layanan yang dijalankan orang lain. Mochy hanya memintanya lagu, lirik, atau tampilan, dan ia tidak bisa menyentuh bagian lain aplikasi.</string>
     <string name="modules_add_from_link">Tambahkan dari tautan</string>
     <string name="modules_link_hint">https://…</string>
@@ -38,16 +34,12 @@
     <string name="module_check_account">Periksa akun</string>
     <string name="module_check_server">Periksa server</string>
     <string name="module_sign_out">Keluar</string>
-    <string name="module_use">Pakai %1$s</string>
     <string name="module_use_sign_in_first">Masuk dulu, lalu nyalakan di sini.</string>
     <string name="module_use_songs">Lagu diputar dari %1$s kalau ada, sesuai urutan di Kualitas Audio.</string>
     <string name="module_use_lyrics">Liriknya ikut jadi sumber lirikmu.</string>
     <string name="module_use_look">Tampilannya menggantikan setelan tampilanmu selama aktif, dan setelanmu kembali saat kamu mematikannya.</string>
     <string name="module_test">Uji pemutaran</string>
-    <string name="module_test_body">Menjalankan setiap langkah di ponsel ini dengan “%1$s”: mencari lagu, membuka stream, dan memutar awal lagunya tanpa suara.</string>
-    <string name="module_test_body_drm">Menjalankan setiap langkah di ponsel ini dengan “%1$s”: mencari lagu, membuka stream, meminta lisensi dari Widevine ponsel ini, dan memutar awal lagunya tanpa suara.</string>
     <string name="module_run_test">Jalankan uji</string>
-    <string name="module_testing">Menguji…</string>
     <string name="module_test_passed">Semua berjalan. Dengan %1$s aktif, putar apa saja dan sebuah toast memberi tahu asal setiap lagu.</string>
     <string name="module_remove">Hapus modul ini</string>
     <string name="module_apple_limits">Tidak tersedia: lossless, Dolby Atmos, dan Spatial mix Apple (Apple hanya mengodekannya untuk DRM miliknya, FairPlay) serta unduhan (pemutar web tidak mendapat lisensi offline).</string>

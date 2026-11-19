@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="flagship_output_speaker">내장 스피커</string>
     <string name="flagship_output_wired">유선 헤드폰</string>

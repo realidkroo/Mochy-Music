@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="no_title">Bez naslova</string>
-    <string name="unknown_artist">Nepoznati izvođač</string>
-    <string name="elements_selected">%1$d elementi odabrani</string>
     <string name="explore">Istraži</string>
+    <string name="local_history">Lokalno</string>
+    <string name="remote_history">Udaljeno</string>
     <string name="charts">Liste</string>
     <string name="back_button_desc">Natrag</string>
+    <string name="no_title">Bez naslova</string>
+    <string name="unknown_artist">Nepoznati izvođač</string>
     <string name="unknown_item_type">Nepoznata vrsta stavke</string>
     <string name="loading_charts">Učitavam ljestvice pjesama…</string>
     <string name="retry_button">Pokušaj ponovno</string>
@@ -22,6 +23,7 @@
     <string name="cached_playlist">Predmemorirano</string>
     <string name="sync_playlist">Sinkroniziraj popis za reprodukciju</string>
     <string name="sync_disabled">Sync onemogućen</string>
+    <string name="elements_selected">%1$d elementi odabrani</string>
     <string name="allows_for_sync_witch_youtube">Napomena: Ovo omogućuje sinkronizaciju s YouTube Music. Ovo NIJE moguće kasnije promijeniti.</string>
     <string name="generating_image">Generiram sliku</string>
     <string name="please_wait">Molim pričekajte</string>
@@ -29,12 +31,9 @@
     <string name="share_lyrics">Podijeli tekst pjesme</string>
     <string name="share_as_text">Podijeli kao tekst</string>
     <string name="share_as_image">Podijeli kao sliku</string>
-    <string name="local_history">Lokalno</string>
-    <string name="remote_history">Udaljeno</string>
     <string name="max_selection_limit">Maksimalno ograničenje odabira</string>
     <string name="share_selected">Podijeli odabrano</string>
     <string name="customize_colors">Prilagodi boje</string>
-    <string name="more_options">Više opcija</string>
     <string name="text_color">Tekstualna boja</string>
     <string name="secondary_text_color">Sekundarna boja teksta</string>
     <string name="background_color">Boja pozadine</string>
@@ -47,7 +46,14 @@
     <string name="dislike_all">Ne volim sve</string>
     <string name="sort_by_last_updated">Datum ažuriranja</string>
     <string name="link_copied">Veza kopirana u međuspremnik</string>
+    <string name="starting_radio">Pokretanje radija</string>
+    <string name="now_playing">Trenutna reprodukcija</string>
     <string name="lyrics">Tekst</string>
+    <string name="close">Zatvori</string>
+    <string name="minimum_volume">Minimalna glasnoća</string>
+    <string name="maximum_volume">Maksimalna glasnoća</string>
+    <string name="hide_player_thumbnail">Sakrij sličicu reproduktora</string>
+    <string name="hide_player_thumbnail_desc">Zamijeni naslovnicu albuma s logotipom aplikacije u reproduktoru</string>
     <string name="already_in_playlist">Već je u predlošku:</string>
     <plurals name="n_element">
         <item quantity="one">%d element</item>
@@ -59,6 +65,12 @@
         <item quantity="few">%d puta</item>
         <item quantity="other">%d puta</item>
     </plurals>
+    <string name="seek_backward">5 sek. unazad</string>
+    <string name="seek_forward">5 sek. unaprijed</string>
+    <string name="seek_forward_dynamic">+%1$d sek. unaprijed</string>
+    <string name="seek_backward_dynamic">-%1$d sek. unazad</string>
+    <string name="seek_seconds_addup">Progresivno traženje</string>
+    <string name="seek_seconds_addup_description">Ako je omogućeno, dodaje i do 5 dodatnih sek. pri svakom preskakanju traženja</string>
     <string name="similar_content">Sličan sadržaj</string>
     <string name="login_settings">Postavke prijave</string>
     <string name="general_settings">Opća postavka</string>
@@ -75,8 +87,6 @@
     <string name="swipe_song_to_add">Proslijedi pjesmu desnom prstom da je dodaješ u red čekanja ili lijevim prstom da je odmah riješiš</string>
     <string name="lyrics_click_change">Promijeni stihove po kliku</string>
     <string name="lyrics_auto_scroll">Automatsko scrollanje teksta pjesme</string>
-    <string name="lyrics_romanize_japanese">Romanizacija japanskog teksta</string>
-    <string name="lyrics_romanize_korean">Romanizacija korejskog teksta</string>
     <string name="slim">Tanak/a</string>
     <string name="slim_navbar">Tanka traka navigacije</string>
     <string name="auto_playlists">Automatski odabrane liste</string>
@@ -145,30 +155,19 @@
     <string name="dislikes">Nenavoli [English to Croatian translation by translation software</string>
     <string name="subscribe">Prihvaćanje</string>
     <string name="subscribed">Pretplaćeni</string>
+    <string name="playlist_not_found">Popis za reprodukciju nije pronađen</string>
+    <string name="playlist_not_found_desc">Zatraženi popis za reprodukciju se ne može učitati</string>
+    <string name="empty_playlist">Prazan popis za reprodukciju</string>
+    <string name="empty_playlist_desc">Ovaj popis za reprodukciju ne sadrži nijednu pjesmu</string>
     <plurals name="seconds">
         <item quantity="one">%d sekunda</item>
         <item quantity="few">%d sekunde</item>
         <item quantity="other">%d sekundi</item>
     </plurals>
-    <string name="starting_radio">Pokretanje radija</string>
-    <string name="now_playing">Trenutna reprodukcija</string>
-    <string name="close">Zatvori</string>
-    <string name="minimum_volume">Minimalna glasnoća</string>
-    <string name="maximum_volume">Maksimalna glasnoća</string>
-    <string name="hide_player_thumbnail">Sakrij sličicu reproduktora</string>
-    <string name="hide_player_thumbnail_desc">Zamijeni naslovnicu albuma s logotipom aplikacije u reproduktoru</string>
-    <string name="seek_backward">5 sek. unazad</string>
-    <string name="seek_forward">5 sek. unaprijed</string>
-    <string name="seek_forward_dynamic">+%1$d sek. unaprijed</string>
-    <string name="seek_backward_dynamic">-%1$d sek. unazad</string>
-    <string name="seek_seconds_addup">Progresivno traženje</string>
-    <string name="seek_seconds_addup_description">Ako je omogućeno, dodaje i do 5 dodatnih sek. pri svakom preskakanju traženja</string>
-    <string name="playlist_not_found">Popis za reprodukciju nije pronađen</string>
-    <string name="playlist_not_found_desc">Zatraženi popis za reprodukciju se ne može učitati</string>
-    <string name="empty_playlist">Prazan popis za reprodukciju</string>
-    <string name="empty_playlist_desc">Ovaj popis za reprodukciju ne sadrži nijednu pjesmu</string>
     <string name="disable_load_more_when_repeat_all">Onemogući učitavanje više prilikom ponavljanja svega</string>
     <string name="disable_load_more_when_repeat_all_desc">Ne učitava automatski više pjesama i sličnog sadržaja kad je omogućen način ponavljanja svega</string>
+    <string name="lyrics_romanize_japanese">Romanizacija japanskog teksta</string>
+    <string name="lyrics_romanize_korean">Romanizacija korejskog teksta</string>
     <string name="settings_section_ui">Korisničko sučelje</string>
     <string name="settings_section_privacy">Privatnost i sigurnost</string>
     <string name="settings_section_player">Reproduktor i medija</string>

@@ -56,10 +56,7 @@
     <string name="playback_hires">Keluaran hi-res</string>
     <string name="playback_hifi">Resampler hi-fi</string>
     <string name="settings_app_behaviour">Perilaku aplikasi</string>
-    <string name="settings_local_section">Pengaturan lokal</string>
-    <string name="settings_player_behaviour">Perilaku pemutar</string>
     <string name="settings_on_the_player">Di pemutar</string>
-    <string name="settings_other">Lainnya</string>
     <string name="settings_related">Terkait</string>
     <string name="settings_hide_descriptions">Sembunyikan deskripsi di pengaturan</string>
     <string name="settings_hide_descriptions_desc">Hanya judul yang tampil, tahan pengaturan untuk membaca fungsinya</string>
@@ -69,8 +66,6 @@
     <string name="settings_rec_blur">Atur pengaturan blur</string>
     <string name="settings_rec_crossfade">Atur pengaturan crossfade</string>
     <string name="settings_rec_equalizer">Atur pengaturan equalizer</string>
-    <string name="settings_crumb_customisation">Pengaturan › Kustomisasi</string>
-    <string name="settings_crumb_audio_lab">Pengaturan › Audio Lab</string>
     <string name="customise_title">Kustomisasi</string>
     <string name="customise_nothing_matches">Tidak ada yang cocok dengan “%1$s”. Coba kata lain.</string>
     <string name="customise_cover_rounding">Lengkungan\nsampul</string>

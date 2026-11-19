@@ -13,6 +13,8 @@
     <string name="album_cover_desc">এ্যালবাম কভার</string>
     <string name="top_music_videos">শীর্ষ মিউজিক ভিডিও</string>
     <string name="trending">ট্রেন্ডিং</string>
+    <string name="top_result">শীর্ষ ফলাফল</string>
+    <string name="other_results">অন্যান্য</string>
     <string name="weeks">সপ্তাহ</string>
     <string name="months">মাস</string>
     <string name="years">বছর</string>
@@ -35,10 +37,7 @@
     <string name="share_as_image">ছবি হিসেবে শেয়ার</string>
     <string name="max_selection_limit">সর্বোচ্চ নির্বাচন সংখ্যা</string>
     <string name="share_selected">নির্বাচিতগুলো শেয়ার</string>
-    <string name="top_result">শীর্ষ ফলাফল</string>
-    <string name="other_results">অন্যান্য</string>
     <string name="customize_colors">রঙ পরিবর্তন</string>
-    <string name="more_options">আরো অপসন</string>
     <string name="text_color">লিখার রঙ</string>
     <string name="secondary_text_color">লিখার রঙ (গৌণ)</string>
     <string name="background_color">ব্যাকগ্রাউন্ড এর রঙ</string>

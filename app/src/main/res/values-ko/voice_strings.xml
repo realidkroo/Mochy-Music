@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="voice_nothing_found">“%1$s”에 대한 결과를 찾지 못했습니다. 다른 말로 요청해 보세요.</string>
     <string name="voice_nothing_to_play">재생할 항목이 없습니다. 곡, 아티스트 또는 재생목록을 요청하세요.</string>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <string name="home">Головна</string>
     <string name="songs">Музика</string>
     <string name="artists">Виконавці</string>
@@ -79,6 +79,7 @@
     <string name="view_album">Перейти до альбому</string>
     <string name="refetch">Оновити</string>
     <string name="share">Поділитися</string>
+    <string name="more_options">Більше параметрів</string>
     <string name="delete">Видалити</string>
     <string name="remove_from_history">Видалити з історії</string>
     <string name="remove_from_playlist">Видалити з плейлиста</string>
@@ -223,8 +224,11 @@
     <string name="small">Малий</string>
     <string name="big">Великий</string>
     <string name="content">Контент</string>
+    <string name="action_logout">Вийти</string>
+    <string name="action_login">Увійти</string>
     <string name="login">Логін</string>
     <string name="not_logged_in">Не авторизовано</string>
+    <string name="login_failed">Помилка входу</string>
     <string name="content_language">Мова контенту</string>
     <string name="content_country">Країна контенту</string>
     <string name="system_default">Використовувати налаштування системи</string>
@@ -265,10 +269,12 @@
     <string name="pause_listen_history">Призупинити історію прослуховування</string>
     <string name="clear_listen_history">Очистити історію прослуховування</string>
     <string name="clear_listen_history_confirm">Ви впевнені, що хочете очистити всю історію прослуховування?</string>
-    <string name="pause_search_history">Призупинити історію пошуку</string>
     <string name="search_history">Історія пошуку</string>
+    <string name="pause_search_history">Призупинити історію пошуку</string>
     <string name="clear_search_history">Очистити історію пошуку</string>
     <string name="clear_search_history_confirm">Ви впевнені, що хочете очистити всю історію пошуку?</string>
+    <string name="use_login_for_browse">Використовуйте логін для перегляду вмісту</string>
+    <string name="use_login_for_browse_desc">Це може вплинути на те, який вміст ви бачите, і, наприклад, показує лише платні альбоми, якщо ви ввійшли в обліковий запис Premium</string>
     <string name="disable_screenshot">Вимкнути знімок екрана</string>
     <string name="disable_screenshot_desc">Якщо ця опція увімкнена, знімки екрана та відображення програми в списку останніх відключаються.</string>
     <string name="enable_lrclib">Увімкнути провайдера текстів LrcLib</string>
@@ -286,15 +292,10 @@
     <string name="dismiss">Закрити</string>
     <string name="options">Налаштування</string>
     <string name="preview">Попередній перегляд</string>
-    <string name="login_failed">Помилка входу</string>
-    <string name="action_logout">Вийти</string>
     <string name="enable_discord_rpc">Увімкнути Rich Presenсe</string>
     <string name="about">Про програму</string>
     <string name="app_version">Версія застосунку</string>
     <string name="new_version_available">Доступна нова версія</string>
     <string name="translation_models">Моделі перекладу</string>
     <string name="clear_translation_models">Очистити моделі перекладу</string>
-    <string name="use_login_for_browse_desc">Це може вплинути на те, який вміст ви бачите, і, наприклад, показує лише платні альбоми, якщо ви ввійшли в обліковий запис Premium</string>
-    <string name="use_login_for_browse">Використовуйте логін для перегляду вмісту</string>
-    <string name="action_login">Увійти</string>
 </resources>

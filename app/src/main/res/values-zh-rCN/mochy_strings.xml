@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="explore">探索</string>
-    <string name="tab_explore">Explore</string>
-    <string name="tab_Suggestions">Suggestions</string>
-    <string name="tab_album">Album</string>
     <string name="local_history">本地</string>
     <string name="remote_history">远程</string>
     <string name="charts">排行榜</string>
@@ -16,16 +13,8 @@
     <string name="album_cover_desc">专辑封面</string>
     <string name="top_music_videos">热门音乐视频</string>
     <string name="trending">热门</string>
-    <string name="trending_billboard">Billboard Hot 100</string>
-    <string name="top_artists">Top Artists</string>
-    <string name="page_indicator">%1$d of %2$d</string>
     <string name="top_result">最佳结果</string>
     <string name="other_results">其他</string>
-    <string name="parsed_from_link">From link</string>
-    <string name="album_text">Album</string>
-    <string name="by_text">By </string>
-    <string name="artist">Artist </string>
-    <string name="explicit">Explicit</string>
     <string name="weeks">周</string>
     <string name="months">月</string>
     <string name="years">年</string>
@@ -56,22 +45,13 @@
     <string name="added_to_play_next">已添加到接下来播放</string>
     <string name="added_to_queue">已添加到队列中</string>
     <string name="remove_from_cache">从缓存中删除</string>
-    <string name="save_album">Save</string>
-    <!-- Artist about section -->
     <string name="about_artist">关于</string>
-    <string name="about_album">About</string>
-    <string name="about_playlist">About</string>
     <string name="show_more">显示更多</string>
     <string name="show_less">显示更少</string>
     <string name="artist_page_settings">音乐人页面</string>
     <string name="show_artist_description">显示音乐人简介</string>
     <string name="show_artist_subscriber_count">显示订阅者数量</string>
     <string name="show_artist_monthly_listeners">每月听众人数</string>
-    <string name="show_artist_video">Show artist canvas video</string>
-    <string name="show_artist_video_desc">Display a looping video next to the artist name on the artist page</string>
-    <string name="show_artist_background_video">Show artist background video</string>
-    <string name="show_artist_background_video_desc">Display a looping motion art video behind the artist image</string>
-    <!-- Menu descriptions -->
     <string name="download_playlist_desc">下载所有歌曲以离线播放</string>
     <string name="remove_download_playlist_desc">从此播放列表中删除所有已下载的歌曲</string>
     <string name="download_in_progress_desc">下载正在进行</string>
@@ -92,16 +72,8 @@
     <string name="maximum_volume">最大音量</string>
     <string name="hide_player_thumbnail">隐藏专辑封面</string>
     <string name="hide_player_thumbnail_desc">在播放器中用App图标代替专辑封面</string>
-    <string name="thumbnail_corner_radius">Thumbnail Corner Radius</string>
-    <string name="thumbnail_corner_radius_desc">Change the corner radius of the album cover thumbnail</string>
     <string name="crop_album_art">裁剪专辑封面</string>
     <string name="crop_album_art_desc">通过裁剪视频缩略图强制使用正方形宽高比</string>
-    <string name="mochy_canvas">Canvas</string>
-    <string name="mochy_canvas_desc">Show animated album covers when available</string>
-    <string name="show_album_canvas">Show Album Canvas</string>
-    <string name="show_album_canvas_desc">Display animated canvas in album</string>
-    <string name="rotating_thumbnail">Rotating thumbnail</string>
-    <string name="rotating_thumbnail_desc">Enable a rotating thumbnail animation effect</string>
     <string name="already_in_playlist">已在播放列表中：</string>
     <plurals name="n_element">
         <item quantity="other">%d 个项目</item>
@@ -115,10 +87,6 @@
     <string name="seek_backward_dynamic">快退-%1$d 秒</string>
     <string name="seek_seconds_addup">渐进式快进/快退</string>
     <string name="seek_seconds_addup_description">启用后，每次快进/快退都额外增加5秒</string>
-    <string name="continue_playing_next_in_queue">Continue playing next in queue</string>
-    <string name="next_in_queue">Next in Queue</string>
-    <string name="upcoming_recommendations">Upcoming Recommendations</string>
-    <string name="continue_playing">Continue Playing</string>
     <string name="similar_content">相似内容</string>
     <string name="login_settings">登录设置</string>
     <string name="general_settings">常规设置</string>
@@ -126,8 +94,6 @@
     <string name="player_background_solid">纯色</string>
     <string name="follow_theme">跟随主题</string>
     <string name="gradient">渐变</string>
-    <string name="glow_animated">Glow animated</string>
-    <string name="live_mesh">Live Mesh</string>
     <string name="new_player_design">新的播放器外观</string>
     <string name="new_mini_player_design">新的播放控件外观</string>
     <string name="player_background_blur">模糊</string>
@@ -136,10 +102,6 @@
     <string name="primary_color_style">主色</string>
     <string name="tertiary_color_style">第三色</string>
     <string name="secondary_color_style">辅色</string>
-    <string name="display_density">Display density</string>
-    <string name="restart">Restart</string>
-    <string name="restart_required">Restart required</string>
-    <string name="density_restart_message">The display density change will take effect after restarting the app. Do you want to restart now?</string>
     <string name="enable_wavy_slider">启用波浪滑块</string>
     <string name="wavy">波浪</string>
     <string name="enable_swipe_thumbnail">启用滑动手势切换歌曲</string>
@@ -170,8 +132,6 @@
     <string name="skip_silence_desc">快进跳过歌曲的静音部分</string>
     <string name="skip_silence_instant">立即跳过静音</string>
     <string name="skip_silence_instant_desc">在静音片段快进而非加速播放</string>
-    <string name="google">Google</string>
-    <string name="discord">Discord</string>
     <string name="advanced_login">高级登录 (token)</string>
     <string name="token_hidden">点击显示 token</string>
     <string name="token_shown">再次点击以复制或编辑</string>
@@ -179,19 +139,15 @@
     <string name="ytm_sync">自动与您的 YouTube Music 账号同步</string>
     <string name="yt_sync">自动与账号同步</string>
     <string name="more_content">更多内容</string>
-    <!-- Playlist cover edit -->
     <string name="edit_playlist_cover">编辑播放列表封面</string>
     <string name="edit_playlist_cover_note">提示：您的 YouTube Music 账号必须绑定电话号码并通过验证才能更改播放列表封面。</string>
     <string name="edit_playlist_cover_note_wait">选择图片后，请等待片刻，新封面就会出现在您的播放列表中。</string>
     <string name="choose_from_library">从库中选择</string>
     <string name="remove_custom_image">删除自定义图片</string>
-    <!-- General -->
     <string name="general">常规</string>
     <string name="proxy">代理</string>
     <string name="default_lib_chips">更改默认库标签</string>
     <string name="set_quick_picks">设置歌曲快选</string>
-    <string name="home_most_played">Most Played</string>
-    <string name="home_most_played_empty">Listen to songs to generate your most played</string>
     <string name="last_song_listened">基于上次听的歌曲</string>
     <string name="app_language">应用语言</string>
     <string name="configure_app_language">配置应用语言</string>
@@ -200,8 +156,6 @@
     <string name="configure_supported_links">配置支持的链接</string>
     <string name="intent_supported_links_not_found">未找到受支持的链接设置，请手动配置</string>
     <string name="set_first_lyrics_provider">首选歌词提供商</string>
-    <string name="lyrics_provider_priority">Lyrics provider priority</string>
-    <string name="lyrics_provider_priority_desc">Drag to reorder which provider is tried first</string>
     <string name="config_proxy">配置代理</string>
     <string name="proxy_username">代理用户名</string>
     <string name="proxy_password">代理密码</string>
@@ -217,7 +171,6 @@
     <string name="remember_shuffle_and_repeat_desc">重启应用时，记住随机播放和重复播放模式</string>
     <string name="min_playback_duration_title">最短播放时长</string>
     <string name="min_playback_duration_description">一首歌曲必须播放的最短时长，才能被视为“已播放”</string>
-    <string name="percentage_format">%d%%</string>
     <string name="minimum_playback_duration">最短播放时长</string>
     <string name="import_online">导入 m3u 格式的播放列表</string>
     <string name="import_csv">导入 csv 格式的播放列表</string>
@@ -226,14 +179,9 @@
     <string name="auto_download_on_like_desc">当你点赞某首歌曲时，系统会自动为你下载该歌曲</string>
     <string name="swipe_sensitivity">播放控件灵敏度</string>
     <string name="swipe_sensitivity_desc">调整滑动切歌灵敏度</string>
-    <string name="sensitivity_percentage">%1$d%%</string>
     <string name="clear_song_cache_dialog">您确定要清除所有缓存的歌曲吗？</string>
     <string name="clear_image_cache_dialog">您确定要清除所有缓存的图片吗？</string>
     <string name="clear_downloads_dialog">您确定要清除所有下载内容吗？</string>
-    <string name="logout_dialog_title">Logout</string>
-    <string name="logout_dialog_message">Do you wish to keep every library and other thing?</string>
-    <string name="logout_keep_data">Keep Data</string>
-    <string name="logout_clear_data">Clear Data</string>
     <string name="disable">禁用</string>
     <string name="pause_remote_listen_history">暂停与 YouTube Music 共享聆听历史</string>
     <string name="not_logged_in_youtube">未登录 YouTube</string>
@@ -263,7 +211,6 @@
     <plurals name="seconds">
         <item quantity="other">%d 秒</item>
     </plurals>
-    <!-- Player Settings -->
     <string name="disable_load_more_when_repeat_all">如果循环播放则停止加载更多歌曲</string>
     <string name="disable_load_more_when_repeat_all_desc">循环播放模式启用后，不会自动加载更多歌曲与相似内容</string>
     <string name="pause_music_when_media_is_muted">在静音时暂停播放</string>
@@ -276,7 +223,6 @@
     <string name="crossfade_gapless_desc">如果专辑为无缝格式则不淡入淡出</string>
     <string name="crossfade_beta_title">测试功能</string>
     <string name="crossfade_beta_message">淡入淡出是一项新功能，可能存在错误。如果您遇到任何问题，请及时反馈。\n\n由于技术限制，此功能会禁用省电播放。</string>
-    <!-- Romanization Settings -->
     <string name="lyrics_romanization_cyrillic">罗马音设置</string>
     <string name="lyrics_romanize_title">罗马化</string>
     <string name="lyrics_romanization">歌词罗马化</string>
@@ -298,71 +244,27 @@
     <string name="line_by_line_dialog_desc">这是一个不稳定的实验性功能。\n\n默认情况下，语言会根据整首歌曲来判断，但启用该选项后，将会按行检测语言。这样可以支持多语言歌曲，但检测出的语言可能并非总是正确（例如，如果一行乌克兰语歌词没有包含任何乌克兰语特有字母，可能会被识别并罗马化为俄语）。\n\n如果你没有遇到相关问题，建议保持该选项关闭。</string>
     <string name="line_by_line_dialog_enable">启用</string>
     <string name="romanize_current_track">罗马化当前曲目</string>
-    <!-- Lyrics Offset Settings -->
     <string name="lyrics_offset">歌词偏移</string>
-    <!-- Material 3 Settings Sections -->
     <string name="settings_section_ui">用户界面</string>
     <string name="settings_section_privacy">安全与隐私</string>
     <string name="settings_section_player">播放器与媒体</string>
     <string name="settings_section_player_content">播放器与内容</string>
     <string name="settings_section_storage">储存与数据</string>
     <string name="settings_section_system">系统与关于</string>
-    <!-- Updater -->
     <string name="updater">更新器</string>
     <string name="check_for_updates">自动检查更新</string>
     <string name="update_available_title">有可用更新</string>
     <string name="update_channel_name">应用更新</string>
     <string name="update_channel_desc">新版本通知</string>
-    <!-- Offload -->
     <string name="audio_offload">开启省电播放</string>
     <string name="audio_offload_description">开启省电播放模式。关闭后可能会增加耗电量，如果您遇到音频播放或后处理相关的问题，关闭它可能会有所帮助</string>
     <string name="audio_offload_disabled_by_crossfade">因淡入淡出已启用而禁用</string>
-    <!-- Google Cast -->
-    <string name="google_cast">Google Cast</string>
     <string name="google_cast_description">启用向 Chromecast 和其他支持投屏功能的设备投屏音频</string>
     <string name="lyrics_romanize_macedonian">使用马其顿语（罗马音）</string>
     <string name="lyrics_romanize_as_main">将罗马化歌词设为主要显示</string>
     <string name="integrations">集成</string>
     <string name="username">用户名</string>
     <string name="password">密码</string>
-    <!-- Integrations page, and signing in to Last.fm and Libre.fm right in the app -->
-    <string name="integration_discord_desc">Rich Presence</string>
-    <string name="integration_scrobbling_desc">%1$s scrobbling</string>
-    <string name="scrobble_page_subtitle">Scrobbling</string>
-    <string name="scrobble_account">Account</string>
-    <string name="scrobble_sign_in_title">Sign in to %1$s</string>
-    <string name="scrobble_sign_in_desc">Keep your listening history, stats and recommendations there</string>
-    <string name="scrobble_not_set_up">Not set up in this build of Mochy</string>
-    <string name="scrobble_to">Scrobble to %1$s</string>
-    <string name="scrobble_signed_in_as">Signed in as %1$s</string>
-    <string name="scrobble_paused_signed_in_as">Paused. Signed in as %1$s</string>
-    <string name="scrobble_open_profile">Open your profile</string>
-    <string name="scrobble_open_profile_desc">Your scrobbles and stats on %1$s</string>
-    <string name="scrobble_sign_out">Sign out</string>
-    <string name="scrobble_sign_out_desc">Mochy stops scrobbling to %1$s</string>
-    <string name="scrobble_while_listening">While you listen</string>
-    <string name="scrobble_now_playing">Now Playing</string>
-    <string name="scrobble_now_playing_desc">Show the song you\'re on right now on your profile</string>
-    <string name="scrobble_send_likes">Send likes</string>
-    <string name="scrobble_send_likes_desc">Liking a song here loves it there too</string>
-    <plurals name="scrobble_plays_waiting">
-        <item quantity="other">%d plays waiting to send</item>
-    </plurals>
-    <string name="scrobble_plays_waiting_desc">They go out on their own once you\'re online. Tap to send now</string>
-    <string name="scrobble_all_sent">All sent</string>
-    <string name="scrobble_send_later">Couldn\'t send them yet. Mochy keeps trying whenever you\'re online.</string>
-    <string name="scrobble_signed_in">Signed in to %1$s as %2$s. Songs you play are scrobbled from now on.</string>
-    <string name="scrobble_signed_out">%1$s signed Mochy out. Sign in again in Settings → Integrations to keep scrobbling.</string>
-    <string name="scrobble_sign_in_body">Use your %1$s username and password. Mochy only keeps the sign-in key %1$s sends back, never your password.</string>
-    <string name="scrobble_username_hint">Your %1$s username</string>
-    <string name="scrobble_password_hint">Your %1$s password</string>
-    <string name="scrobble_sign_in_button">Sign in</string>
-    <string name="scrobble_signing_in">Signing in…</string>
-    <string name="scrobble_sign_in_wrong">That username or password didn\'t work. Check them and try again.</string>
-    <string name="scrobble_sign_in_busy">%1$s couldn\'t sign you in right now. Try again in a moment.</string>
-    <string name="scrobble_sign_in_offline">Couldn\'t reach %1$s. Check your connection and try again.</string>
-    <string name="scrobble_sign_up">No account yet? Make one on %1$s</string>
-    <!-- Last.fm -->
     <string name="lastfm_integration">Last.fm 集成</string>
     <string name="enable_scrobbling">启用记录</string>
     <string name="lastfm_now_playing">发送正在播放的歌曲</string>
@@ -390,26 +292,17 @@
     <string name="equalizer_desc">调整音频均衡器</string>
     <string name="enable_dynamic_icon">开启动态图标</string>
     <string name="mini_player">迷你播放器</string>
-    <string name="miniplayer_background_style">Mini-player background style</string>
     <string name="pure_black_mini_player">纯黑迷你播放器</string>
     <string name="mini_player_outline">迷你播放器的轮廓</string>
     <string name="cache_size_warning_title">且慢!</string>
     <string name="cache_size_warning_message">您选择的缓存大小限制小于应用当前使用的大小 (%1$s)。如果继续，应用可能会删除一些缓存的 %2$s 以匹配新的限制。是否仍然继续？</string>
     <string name="cache_size_warning_confirm">继续</string>
-    <!-- Lyrics Animation Styles -->
     <string name="lyrics_animation_style">逐字动画风格</string>
     <string name="none">无</string>
     <string name="fade">褪色</string>
     <string name="glow">生长</string>
     <string name="slide">滑动</string>
     <string name="karaoke">卡拉OK</string>
-    <string name="apple_music_style">Apple Music</string>
-    <string name="apple_music_style_letter">Apple Music V2 (Letter by Letter)</string>
-    <string name="mochy_1">mochy (Fluid)</string>
-    <string name="apple_music_lyrics_blur">Apple Music Lyrics Blur</string>
-    <string name="apple_music_lyrics_blur_desc">Apply blur to inactive lyrics lines for a premium focus effect</string>
-    <string name="lyrics_v2_fluid">Lyrics V2 (Fluid)</string>
-    <string name="lyrics_animation_metro">MetroLyrics</string>
     <string name="lyrics_text_size">歌词文字大小</string>
     <string name="lyrics_line_spacing">歌词行间距</string>
     <string name="album_art_for">%s 的专辑封面</string>
@@ -435,7 +328,6 @@
     <string name="wrapped_total_artists_subtitle">独特的音乐人</string>
     <string name="wrapped_total_songs_title">您听了</string>
     <string name="wrapped_total_songs_subtitle">独特的歌曲</string>
-    <string name="wrapped_intro_title">mochy</string>
     <string name="wrapped_intro_subtitle">是时候看看您最近听了什么了</string>
     <string name="wrapped_intro_button">让我们开始吧!</string>
     <string name="wrapped_end_thanks">感谢您使用 mochy 听歌!</string>
@@ -443,7 +335,6 @@
     <string name="wrapped_end_creating_playlist">正在创建…</string>
     <string name="wrapped_end_playlist_saved">播放列表已保存</string>
     <string name="wrapped_logo_content_description">mochy 徽标</string>
-    <string name="wrapped_year">2025</string>
     <string name="wrapped_ready_title">您的年度总结已准备好！</string>
     <string name="wrapped_ready_subtitle">是时候看看您今年最喜欢什么了.</string>
     <string name="wrapped_thank_you">谢谢您的聆听</string>
@@ -452,7 +343,6 @@
     <string name="wrapped_playlist_title">您的 %s 年度总结</string>
     <string name="wrapped_create_playlist">创建播放列表</string>
     <string name="wrapped_playlist_saved">播放列表已保存</string>
-    <!-- Equalizer UI -->
     <plurals name="profiles_count">
         <item quantity="other">%d 个配置文件</item>
     </plurals>
@@ -471,49 +361,6 @@
     <string name="import_error_title">导入错误</string>
     <string name="error_title">错误</string>
     <string name="error_eq_apply_failed">无法应用均衡器配置：%1$s</string>
-    <!-- mochyEqualizer Strings -->
-    <string name="mochy_equalizer">mochyEqualizer</string>
-    <string name="mochy_equalizer_desc">Pro-grade acoustic tuning &amp; effects</string>
-    <string name="eq_simple">Simple</string>
-    <string name="eq_advanced">Advanced</string>
-    <string name="eq_label_bass">Bass</string>
-    <string name="eq_label_mid">Mids</string>
-    <string name="eq_label_treble">Treble</string>
-    <string name="eq_preset_flat">Flat</string>
-    <string name="eq_preset_mochy_signature">mochy Signature</string>
-    <string name="eq_preset_acoustic">Acoustic</string>
-    <string name="eq_preset_spatial">3D Stage</string>
-    <string name="eq_preset_bass_boost">Bass Boost</string>
-    <string name="eq_preset_pure_clarity">Pure Clarity</string>
-    <string name="eq_preset_soft_bass">Soft Bass</string>
-    <string name="eq_preset_electronic">Electronic</string>
-    <string name="eq_preset_rock">Rock</string>
-    <string name="eq_preset_pop">Pop</string>
-    <string name="eq_preset_jazz">Jazz</string>
-    <string name="eq_preset_voice">Voice</string>
-    <string name="eq_preset_dolby_open">Dolby Open</string>
-    <string name="eq_preset_dolby_rich">Dolby Rich</string>
-    <string name="eq_preset_dolby_focused">Dolby Focused</string>
-    <string name="eq_preset_dirac_music">Dirac Music</string>
-    <string name="eq_preset_dirac_movie">Dirac Movie</string>
-    <string name="eq_preset_dirac_game">Dirac Game</string>
-    <string name="eq_enable_title">mochyEqualizer</string>
-    <string name="eq_enable_summary">Toggle professional audio processing</string>
-    <string name="eq_label_mochy">mochy Signature</string>
-    <string name="eq_label_dolby">Dolby Atmos</string>
-    <string name="eq_label_dirac">Dirac Audio</string>
-    <string name="eq_reset">Reset</string>
-    <string name="eq_label_custom">Custom</string>
-    <string name="eq_save">Save</string>
-    <string name="eq_save_dialog_title">Save Preset</string>
-    <string name="eq_save_name_hint">Preset Name</string>
-    <string name="eq_profile_saved">Preset saved</string>
-    <string name="eq_manage_presets">Manage Presets</string>
-    <string name="eq_delete_selected">Delete</string>
-    <string name="eq_no_custom_presets">No custom presets found</string>
-    <!-- Hardcoded strings -->
-    <string name="found_in_settings_content">Found in Settings &gt; Content</string>
-    <string name="plays">plays</string>
     <string name="casting_to">转换为 %s</string>
     <string name="progress_percent">进度 %s%%</string>
     <string name="listening_to_mochy">收听 mochy</string>
@@ -525,12 +372,10 @@
     <string name="copied_artist">已复制音乐人</string>
     <string name="error_playing">播放错误</string>
     <string name="failed_to_parse_proxy">无法解析代理网址。</string>
-    <!-- Playback errors -->
     <string name="error_playback_failed">播放失败</string>
     <string name="error_copied">错误信息已复制到剪贴板</string>
     <string name="copy_error">复制错误信息</string>
     <string name="error_copy_hint">复制错误信息以帮助开发者调试问题</string>
-    <!-- Widget strings -->
     <string name="album_art">专辑封面</string>
     <string name="no_song_playing">没有音乐正在播放</string>
     <string name="tap_to_open">点击打开 mochy</string>
@@ -545,19 +390,14 @@
     <string name="turntable_widget_description">带有播放和点赞控制按钮的播放控件</string>
     <string name="widget_music_player">播放器</string>
     <string name="widget_turntable">虚拟打碟台</string>
-    <!-- Player Client Settings -->
     <string name="player_client">播放器客户端</string>
-    <string name="player_client_android_vr">Android VR</string>
     <string name="player_client_android_vr_desc">速度最快. 直接传输流媒体 URL,无需解密签名 推荐给大多数用户.</string>
     <string name="player_client_web_remix">网络混音</string>
     <string name="player_client_web_remix_desc">速度较慢. 但支持高级格式. 使用 JavaScript 签名解密, 这会使播放开始时间增加约 5-10 秒.</string>
-    <!-- Decryption Library Settings -->
     <string name="decryption_library">解密库</string>
     <string name="decryption_library_newpipe">NewPipe Extractor (官方)</string>
     <string name="decryption_library_newpipe_desc">TeamNewPipe 官方库。紧跟 YouTube 最新变化。推荐设为默认选项。请求失败时将自动切换至 PipePipe API。</string>
-    <string name="decryption_library_pipepipe_api">PipePipe API</string>
     <string name="decryption_library_pipepipe_api_desc">基于 MetroExtractor 的 API 解密。速度更快，但依赖外部 API。请求失败时将自动切换至 NewPipe 模式。</string>
-    <!-- Listen Together -->
     <string name="together">一起听</string>
     <string name="listen_together">一起听</string>
     <string name="listen_together_desc">跨越距离，与好友实时共赏音乐</string>
@@ -651,7 +491,6 @@
     <string name="listen_together_no_blocked_users">无已屏蔽的用户</string>
     <string name="unblock">取消屏蔽</string>
     <string name="user_blocked_by_host">你已被房主拉黑</string>
-    <!-- AI Lyrics Translation -->
     <string name="ai_lyrics_translation">AI歌词翻译</string>
     <string name="ai_translating_lyrics">正在翻译歌词…</string>
     <string name="ai_lyrics_translated">歌词已翻译</string>
@@ -676,7 +515,6 @@
     <string name="ai_error_translation_failed">翻译失败</string>
     <string name="ai_provider_help">获得API密钥</string>
     <string name="ai_provider_openrouter_help">访问 openrouter.ai 获取免费和付费模型</string>
-    <string name="ai_provider_mistral_help">Visit console.mistral.ai/api-keys</string>
     <string name="ai_provider_openai_help">访问 platform.openai.com/api-keys</string>
     <string name="ai_provider_claude_help">访问 console.anthropic.com/settings/keys</string>
     <string name="ai_provider_gemini_help">访问aistudio.google.com/apikey</string>
@@ -687,16 +525,13 @@
     <string name="ai_deepl_formality_default">默认</string>
     <string name="ai_deepl_formality_more">更正式一些</string>
     <string name="ai_deepl_formality_less">不太正式</string>
-    <!-- Crash Handler -->
     <string name="crash_title">应用崩溃了</string>
     <string name="crash_description">发生意外错误。请提供崩溃报告以帮助我们修复问题。</string>
     <string name="crash_share_logs">分享日志</string>
-    <string name="copy_logs">Copy Logs</string>
     <string name="crash_share_title">分享崩溃报告</string>
     <string name="crash_report_subject">mochy 崩溃报告</string>
     <string name="crash_close">关闭</string>
     <string name="crash_no_log">没有可用的崩溃日志</string>
-    <!-- Theme Palette Names -->
     <string name="palette_dynamic">灵动</string>
     <string name="palette_crimson">赤红</string>
     <string name="palette_rose">玫瑰</string>
@@ -717,7 +552,6 @@
     <string name="palette_brown">棕色</string>
     <string name="palette_grey">灰色</string>
     <string name="palette_blue_grey">蓝灰</string>
-    <!-- Theme Content Descriptions -->
     <string name="cd_back">返回</string>
     <string name="cd_pure_black_mode">纯黑模式</string>
     <string name="cd_light_mode">浅色模式</string>
@@ -727,7 +561,6 @@
     <string name="play_all">播放全部</string>
     <string name="enable_high_refresh_rate">启用高刷新率</string>
     <string name="enable_high_refresh_rate_desc">强制屏幕以最高支持的刷新率运行（例如 120Hz）</string>
-    <!-- Music Recognition -->
     <string name="recognition">识别</string>
     <string name="recognize_music">识别音乐</string>
     <string name="tap_to_recognize">点击识别</string>
@@ -744,7 +577,6 @@
     <string name="hold_to_recognize">按住搜索图标识别音乐</string>
     <string name="play_on_app">在 mochy 上播放</string>
     <string name="recognized_track">已识别曲目</string>
-    <!-- CSV Import Strings -->
     <string name="map_csv_columns">映射 CSV 列</string>
     <string name="first_row_is_header">首行为标题</string>
     <string name="artist_name_column">音乐人名称列</string>
@@ -756,7 +588,6 @@
     <string name="column_label">列 %d</string>
     <string name="csv_import_failed">无法导入 CSV 文件</string>
     <string name="csv_preview_failed">无法预览 CSV 文件</string>
-    <!-- Discord Integration Redesign -->
     <string name="discord_integration_settings">Discord 集成</string>
     <string name="discord_status">状态</string>
     <string name="discord_status_online">在线</string>
@@ -786,251 +617,4 @@
     <string name="discord_activity_name_description">自定义活动名称（留空则使用默认值）</string>
     <string name="discord_advanced_mode">高级模式</string>
     <string name="discord_advanced_mode_description">显示 Rich Presence 的更多自定义选项</string>
-    <string name="speed_dial">Jump Back In</string>
-    <string name="pin_to_speed_dial">Pin to library</string>
-    <string name="unpin_from_speed_dial">Unpin from library</string>
-    <string name="randomize_home_order">Randomize Home Screen Order</string>
-    <string name="randomize_home_order_desc">Randomly reorder home screen sections with weighted priorities</string>
-    <!-- Daily Discover -->
-    <string name="daily_discover_sounds_like">Sounds like %1$s</string>
-    <string name="your_daily_discover">Your daily discover</string>
-    <string name="daily_discover_because_you_listen_to">Because you listen to %1$s</string>
-    <string name="daily_discover_similar_to">Similar to %1$s</string>
-    <string name="daily_discover_based_on">Based on %1$s</string>
-    <string name="daily_discover_for_fans_of">For fans of %1$s</string>
-    <string name="from_the_community">From the community</string>
-    <string name="songs_count">%s songs</string>
-    <string name="repeat">Repeat</string>
-    <string name="monthly_listeners">Monthly</string>
-    <string name="unlock_queue">Unlock Queue</string>
-    <string name="lock_queue">Lock Queue</string>
-    <!--    //Members-->
-    <!-- ShowMediaInfo -->
-    <string name="song_info">Song Info</string>
-    <string name="song_info_title_label">Title</string>
-    <string name="song_info_format_label">Format</string>
-    <string name="song_info_duration_label">Duration</string>
-    <string name="song_info_itag_label">Itag</string>
-    <string name="song_info_standard">Standard</string>
-    <string name="song_info_views_count">%s views</string>
-    <string name="song_info_likes_count">%s likes</string>
-    <string name="song_info_no_description">No description available</string>
-    <!--    changelog-->
-    <string name="error_loading_changelog">Error loading changelog</string>
-    <string name="no_old_releases_with_changelog">No old releases with changelog found</string>
-    <string name="failed_to_fetch_changelog">Failed to fetch changelog</string>
-    <string name="changelog_title">Changelog</string>
-    <string name="loading_changelog">Loading changelog…</string>
-    <string name="cached">Cached</string>
-    <string name="current">Current</string>
-    <string name="old_releases">Old Releases</string>
-    <string name="changelog_section">Changelog</string>
-    <string name="version_code">Version code</string>
-    <string name="namespace">Namespace</string>
-    <string name="telegram_channel">Telegram</string>
-    <!-- Onboarding -->
-    <string name="welcome_to">Welcome to</string>
-    <string name="welcome_preparing_subtitle">Let\'s get everything ready for you.</string>
-    <string name="get_started">Get Started</string>
-    <string name="perm_required">Required</string>
-    <string name="perm_permissions">Permissions</string>
-    <string name="perm_intro_text">These permissions are required for mochy to function correctly. Please grant them to proceed.</string>
-    <string name="perm_notif_title">Notifications</string>
-    <string name="perm_notif_desc">Know immediately when your music is playing and control it from the notification bar.</string>
-    <string name="perm_install_title">App Installation</string>
-    <string name="perm_install_desc">Required to download and install app updates seamlessly.</string>
-    <string name="feat_discover">Discover</string>
-    <string name="feat_features">Features</string>
-    <string name="feat_intro">Explore everything mochy has to offer for your music journey.</string>
-    <string name="feat_lyrics_title">Smart Lyrics</string>
-    <string name="feat_lyrics_desc">Enjoy synchronized, word-by-word lyrics for millions of songs.</string>
-    <string name="feat_download_title">Offline Playback</string>
-    <string name="feat_download_desc">Download your favorite tracks and listen anywhere, anytime.</string>
-    <string name="feat_quality_title">Premium Quality</string>
-    <string name="feat_quality_desc">Stream and download.</string>
-    <string name="feat_update_title">Dynamic Updates</string>
-    <string name="feat_update_desc">Always stay updated with our built-in updater.</string>
-    <string name="feat_license_title">License</string>
-    <string name="feat_license_desc">General Public License v3.0</string>
-    <string name="feat_github_title">GitHub</string>
-    <string name="feat_github_desc">Open source project</string>
-    <string name="join_telegram">Join our Telegram channel</string>
-    <string name="welcome_update_check">Stay</string>
-    <string name="welcome_update_status">Updated</string>
-    <string name="welcome_update_intro">Ensuring you have the latest features and security improvements.</string>
-    <string name="welcome_checking_updates">Checking for updates…</string>
-    <string name="welcome_up_to_date">mochy is up to date!</string>
-    <string name="welcome_update_available">New version is available: %s</string>
-    <string name="welcome_everything_ready">Everything is now up to date</string>
-    <string name="commits_title">Commits</string>
-    <string name="error_loading_commits">Failed to load commits becoz you didnt pay me ?</string>
-    <string name="commits">Commits</string>
-    <string name="view_commit_history">Browse recent changes on main branch</string>
-    <string name="suggestions">Suggestions</string>
-    <string name="comments">Comments</string>
-    <string name="no_comments">No comments found</string>
-    <string name="type_message">Type a message…</string>
-    <string name="send">Send</string>
-    <string name="clear_downloaded_updates_auto_info">Dynamically it will be deleted after one day.</string>
-    <string name="update_info_badge">Info &amp; Tips</string>
-    <string name="update_info_title">Update Information</string>
-    <string name="manual_delete_hint_title">Manual Cleanup</string>
-    <string name="manual_delete_hint_desc">You can manually also delete. Deleting old apk will improve the updater to update properly.</string>
-    <!-- Playback Log -->
-    <string name="logs_heading">Logs</string>
-    <string name="playback_logs">Playback logs</string>
-    <string name="playback_logs_desc">View real-time stream resolution and bot mitigation events</string>
-    <string name="playback_logs_title">Playback logs</string>
-    <string name="no_playback_logs">No playback events recorded yet</string>
-    <string name="show_comment_button">Show comment button</string>
-    <string name="show_comment_button_description">Show a button to view comments in the player queue</string>
-    <string name="build_stable">STABLE</string>
-    <string name="build_nightly">NIGHTLY</string>
-    <string name="recently_played">Recently Played</string>
-    <string name="home_history">History</string>
-    <string name="your_library">Your Library</string>
-    <string name="downloaded">Downloaded</string>
-    <string name="uploaded">Uploaded</string>
-    <string name="dont_forget_these_songs">Don\'t forget these songs</string>
-    <string name="artist_list">Artist List</string>
-    <string name="music_videos_for_you">Music Videos for You</string>
-    <string name="live_shows">Live Shows</string>
-    <string name="home_because_you_like">Because you like</string>
-    <string name="home_more_like">More like</string>
-    <string name="home_because_you_listen_to">Because you listen to</string>
-    <string name="home_try_something_new">Try something new</string>
-    <string name="home_new_from_your_artists">New from your artists</string>
-    <string name="all_time_hits">All Time Hits</string>
-    <string name="most_played_genre">Most played %1$s</string>
-    <string name="add_music">Add Music</string>
-    <!-- the full video mode and youtube video quality -->
-    <string name="video_mode">Full video</string>
-    <string name="video_mode_exit">Exit video mode</string>
-    <string name="video_mode_close_player">Close player</string>
-    <string name="video_mode_finding">Looking for the video…</string>
-    <string name="video_mode_no_video">No video for this song. The lyrics still play here.</string>
-    <string name="video_mode_no_lyrics">No lyrics for this song</string>
-    <string name="video_mode_queue">Queue</string>
-    <string name="video_mode_lyrics">Lyrics</string>
-    <string name="video_mode_lyrics_provider">Lyrics provider</string>
-    <string name="video_mode_lyrics_offset">Lyrics offset</string>
-    <string name="video_mode_lyrics_translation">Lyrics translation</string>
-    <string name="video_mode_speed">Playback speed and tempo</string>
-    <string name="video_mode_volume">Volume</string>
-    <string name="video_quality">Video quality</string>
-    <string name="video_quality_auto">Auto</string>
-    <string name="video_quality_auto_desc">Drops to a lower picture when your connection slows down, so the video keeps moving instead of freezing</string>
-    <string name="video_quality_auto_now">Auto · %1$s</string>
-    <string name="video_quality_size">%1$dp</string>
-    <string name="video_quality_fixed_desc">Stays at this size. On a slow connection the video may stop to load</string>
-    <string name="video_quality_settings_desc">How sharp YouTube videos play. Auto keeps them smooth on a slow connection</string>
-    <string name="video_quality_not_loaded">The sizes show up once the video has loaded</string>
-    <string name="video_mode_song_info">Song info</string>
-    <string name="video_mode_whole_video">Show the whole video</string>
-    <string name="video_mode_whole_video_desc">Off, the video is zoomed in to fill the screen</string>
-    <plurals name="video_mode_seek_seconds">
-        <item quantity="other">%d seconds</item>
-    </plurals>
-    <!-- song share: the share song pages from the player menu and the song menus -->
-    <string name="song_share_menu">share song</string>
-    <string name="song_share_music_title">Share music</string>
-    <string name="song_share_music_only">Music only</string>
-    <string name="song_share_music_only_hint">The song on a card</string>
-    <string name="song_share_lyrics">Lyrics</string>
-    <string name="song_share_lyrics_looking">Looking for the lyrics…</string>
-    <string name="song_share_lyrics_missing">No lyrics for this song</string>
-    <string name="song_share_lyrics_synced">They flow along with the song</string>
-    <string name="song_share_lyrics_unsynced">No timing, so they show as a picture</string>
-    <string name="song_share_go_back">No, go back pls</string>
-    <string name="song_share_type_title">Type</string>
-    <string name="song_share_type_subtitle">Select background type</string>
-    <string name="song_share_type_video">Video</string>
-    <string name="song_share_type_video_hint">Your own, the music video or the moving cover</string>
-    <string name="song_share_type_still">Static</string>
-    <string name="song_share_type_still_hint">A picture, the music\'s colours or a plain colour</string>
-    <string name="song_share_type_link">Copy link</string>
-    <string name="song_share_type_link_hint">The YouTube Music link</string>
-    <string name="song_share_type_link_missing">This song only lives on your phone</string>
-    <string name="song_share_link_copied">Link copied</string>
-    <string name="song_share_editor_title">Share</string>
-    <string name="song_share_editor_hint">Tap the card to style it, drag or pinch to move the background</string>
-    <string name="song_share_share_button">Share!</string>
-    <string name="song_share_ok">Ok</string>
-    <string name="song_share_card_title">Customize card</string>
-    <string name="song_share_card_colour">Colour</string>
-    <string name="song_share_card_opacity">Opacity</string>
-    <string name="song_share_card_blur">Blur</string>
-    <string name="song_share_card_blur_note">Blur goes away when you share straight to Instagram or Facebook, where the card turns into a sticker</string>
-    <string name="song_share_bg_own_video">Add your own video</string>
-    <string name="song_share_bg_own_video_hint">Tap the circle to pick a video from your phone</string>
-    <string name="song_share_bg_music_video">The music video</string>
-    <string name="song_share_bg_music_video_hint">Lined up with the song, so it shows the same moment</string>
-    <string name="song_share_bg_animated_cover">Moving cover</string>
-    <string name="song_share_bg_animated_cover_hint">The album\'s moving cover, looping</string>
-    <string name="song_share_bg_music">Made from the music</string>
-    <string name="song_share_bg_music_hint">Soft clouds of the cover\'s colours, drifting over the cover itself</string>
-    <string name="song_share_bg_picture">Add your own image</string>
-    <string name="song_share_bg_picture_hint">Tap the circle to pick a picture from your phone</string>
-    <string name="song_share_bg_colour">Pick a colour</string>
-    <string name="song_share_bg_pick_video">Pick a video</string>
-    <string name="song_share_bg_pick_picture">Pick a picture</string>
-    <string name="song_share_bg_which_part">Pick the part</string>
-    <string name="song_share_bg_change_video">Change video</string>
-    <string name="song_share_bg_brightness">Brightness</string>
-    <string name="song_share_bg_which_part_title">Which part?</string>
-    <string name="song_share_bg_max_seconds">Up to 10 seconds</string>
-    <string name="song_share_send_title">Share to</string>
-    <string name="song_share_send_apps">Share to an app</string>
-    <string name="song_share_send_apps_sticker">Share to an app (the card\'s blur turns off)</string>
-    <string name="song_share_send_or">or</string>
-    <string name="song_share_export_button">Export and share</string>
-    <string name="song_share_cancel">Cancel</string>
-    <string name="song_share_preview">Preview</string>
-    <string name="song_share_pause">Pause</string>
-    <string name="song_share_quality">Quality</string>
-    <string name="song_share_quality_4k">4K</string>
-    <string name="song_share_quality_1080">1080p</string>
-    <string name="song_share_making_video">Making your video… %1$d%%</string>
-    <string name="song_share_making_picture">Making your picture…</string>
-    <string name="song_share_saved">Saved to your gallery too</string>
-    <string name="song_share_failed">Couldn\'t make it. Check your connection and try again.</string>
-    <string name="song_share_app_instagram">Instagram</string>
-    <string name="song_share_app_whatsapp">WhatsApp</string>
-    <string name="song_share_app_facebook">Facebook</string>
-    <string name="song_share_app_missing">Not installed</string>
-    <string name="song_share_chooser_title">Share song</string>
-    <string name="song_share_edit_background">Edit background</string>
-    <string name="song_share_editor_hint_words">Tap the words to style them, the arrow to move the song, drag or pinch to move the background</string>
-    <string name="song_share_seconds">%1$ds</string>
-    <string name="song_share_style_title">Share</string>
-    <string name="song_share_style_subtitle">Select styles</string>
-    <string name="song_share_style_card">Card styles</string>
-    <string name="song_share_style_cinematic">Cinematic styles</string>
-    <string name="song_share_style_fits">Up to %1$d words</string>
-    <string name="song_share_style_too_many">Too many words for this one</string>
-    <string name="song_share_as_video">Share as video</string>
-    <string name="song_share_as_video_hint">The song plays and the lyrics flow</string>
-    <string name="song_share_caption">%1$s · %2$s</string>
-    <!-- a meta app id from developers.facebook.com; while it's empty instagram and facebook get the finished video instead of a story with a sticker -->
-    <string name="yt_sync_exclude_title">Don\'t send imported music to YouTube</string>
-    <string name="yt_sync_exclude_desc">Songs and playlists from Spotify and other apps stay on this phone</string>
-    <string name="yt_sync_undo_title">Undo last sync</string>
-    <string name="yt_sync_undo_desc">Puts back likes, library and playlists from before the last sync</string>
-    <string name="yt_sync_undo_dialog_title">Undo the last sync?</string>
-    <string name="yt_sync_undo_dialog_body">Pick where to undo. Automatic sync pauses after an undo, so the changes stay put until you press Sync now.</string>
-    <string name="yt_sync_undo_phone">This phone</string>
-    <string name="yt_sync_undo_both">This phone and YouTube</string>
-    <string name="yt_sync_undo_both_hint">Also removes the likes the sync sent to YouTube</string>
-    <string name="yt_sync_undo_done_phone">Undone on this phone. YouTube won\'t be pulled again until you sync now.</string>
-    <string name="yt_sync_undo_done_both">Undone on this phone and on YouTube. YouTube won\'t be pulled again until you sync now.</string>
-    <string name="yt_sync_undo_nothing">Nothing to undo yet. Run a sync first.</string>
-    <plurals name="yt_sync_undo_failed">
-        <item quantity="other">Undone, but %1$d likes couldn\'t come off YouTube. Try again later.</item>
-    </plurals>
-    <string name="module_youtube_name">YouTube Music</string>
-    <string name="module_youtube_desc">Sync likes, library, playlists and history</string>
-    <string name="about_song_provided_by">provided by %1$s</string>
-    <string name="about_song_nothing_yet">%1$s doesn\'t have anything about this song yet.</string>
-    <string name="not_recommended_menu">Don\'t recommend this again</string>
-    <string name="not_recommended_done">We won\'t recommend this song again</string>
 </resources>

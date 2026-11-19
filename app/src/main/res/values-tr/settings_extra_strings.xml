@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Experimental Settings -->
     <string name="experimental_settings_title">Deneysel</string>
     <string name="experimental_import_sync_title">İçe aktar ve senkronize et</string>
     <string name="experimental_import_sync_desc">Diğer servislerden çalma listelerini getir, YouTube ile senkronize et, yedek dışa aktar</string>
@@ -37,8 +36,6 @@
     <string name="experimental_playback_diagnostics_desc">Her parçayı hangi istemcinin sunduğu ve PoToken durumu</string>
     <string name="experimental_repeat_setup_title">İlk kurulumu tekrarla</string>
     <string name="experimental_repeat_setup_desc">Kurulum sihirbazını yeniden çalıştır</string>
-
-    <!-- Cipher Settings -->
     <string name="cipher_settings_title">Cipher</string>
     <string name="cipher_status_not_loaded">Yüklenmedi</string>
     <string name="cipher_status_stale">Eski — sonraki oynatmada yenilenir</string>
@@ -68,8 +65,6 @@
     <string name="cipher_duration_ms">%1$ddk %2$02dsn</string>
     <string name="cipher_duration_s">%1$dsn</string>
     <string name="cipher_duration_zero">0sn</string>
-
-    <!-- Playback Diagnostics -->
     <string name="playback_diagnostics_title">Oynatma teşhisi</string>
     <string name="playback_potoken_ready">PoToken hazır</string>
     <string name="playback_no_potoken">PoToken yok</string>
@@ -80,8 +75,6 @@
     <string name="playback_clear_logs_title">Kayıtları temizle</string>
     <string name="playback_clear_logs_desc">Şimdiye kadar yakalanan her şeyi çöpe at</string>
     <string name="playback_logs_empty">Henüz bir şey yakalanmadı. Bir parça çal ve geri dön.</string>
-
-    <!-- Developer Playground -->
     <string name="dev_playground_title">Geliştirici oyun alanı</string>
     <string name="dev_spaces_back_label">Geliştirici Alanları</string>
     <string name="dev_since_this_build">Bu derlemeden beri</string>
@@ -94,8 +87,6 @@
     <string name="dev_reported_issues">bildirilen sorun</string>
     <string name="dev_resolved_issue">çözülen sorun</string>
     <string name="dev_experimental_settings_bubble">Deneysel ayarlar</string>
-
-    <!-- Dev Repo Cards -->
     <string name="dev_filter_all">Tümü</string>
     <string name="dev_filter_bug">Hata</string>
     <string name="dev_filter_feature">Özellik</string>
@@ -113,8 +104,6 @@
     <string name="dev_time_days_ago">%1$d gün önce</string>
     <string name="dev_time_months_ago">%1$d ay önce</string>
     <string name="dev_time_years_ago">%1$d yıl önce</string>
-
-    <!-- Discord Integration -->
     <string name="discord_no_browser_toast">Discord\'un giriş sayfasını açacak bir tarayıcı yok.</string>
     <string name="discord_settings_title">Discord</string>
     <string name="discord_subtitle_rich_presence">Profilinde zengin durum</string>

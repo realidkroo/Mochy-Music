@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Stats screen -->
     <string name="rc_stats_done">Bitti</string>
     <string name="rc_stats_title">İstatistikler</string>
     <string name="rc_stats_year_recap_link">\"%1$d Özeti &gt;\"</string>
@@ -14,7 +13,6 @@
     <string name="rc_stats_cd_profile">Profil</string>
     <string name="rc_stats_cd_collapse">Daralt</string>
     <string name="rc_stats_cd_expand">Genişlet</string>
-
     <string name="rc_stats_total_month">Bu ay şu kadar dinledin:</string>
     <string name="rc_stats_total_year">Bu yıl şu kadar dinledin:</string>
     <string name="rc_stats_every_day">%1$s ayının her günü</string>
@@ -35,11 +33,9 @@
         <item quantity="one">%1$d çalma</item>
         <item quantity="other">%1$d çalma</item>
     </plurals>
-
     <string name="rc_stats_dominant_genre">Baskın tür</string>
     <string name="rc_stats_genre_loading">Türlerin sıralanıyor…</string>
     <string name="rc_stats_genre_unavailable">Türlerini şu an adlandıramadık - bunun için ilk seferinde bağlantı gerekir.</string>
-
     <string name="rc_stats_artist_love">Bu sanatçıyı dinlemeyi gerçekten seviyorsun</string>
     <plurals name="rc_stats_artist_row">
         <item quantity="one">%1$s · %2$d çalma</item>
@@ -49,7 +45,6 @@
         <item quantity="one">%3$s sanatçısından %1$s dinleme süresi ve %2$d çalma</item>
         <item quantity="other">%3$s sanatçısından %1$s dinleme süresi ve %2$d çalma</item>
     </plurals>
-
     <string name="rc_stats_song_number_one">Ve fark etmeden, bu şarkı senin 1 numaran</string>
     <plurals name="rc_stats_song_row">
         <item quantity="one">%1$s · %2$d çalma · %3$s</item>
@@ -60,7 +55,6 @@
         <item quantity="one">%1$s dinleme süresi ve %2$d çalma</item>
         <item quantity="other">%1$s dinleme süresi ve %2$d çalma</item>
     </plurals>
-
     <string name="rc_stats_weekday_month">Bu ay, müziği her şu günde dinlemeyi seviyorsun:</string>
     <string name="rc_stats_weekday_year">Bu yıl, müziği her şu günde dinlemeyi seviyorsun:</string>
     <string name="rc_stats_totaling_hours">toplam %1$s saat</string>
@@ -69,7 +63,6 @@
     <string name="rc_stats_hour_evening">Akşamları tam olarak şu saatlerde dinlemeyi seviyorsun:</string>
     <string name="rc_stats_hour_night">Geceleri tam olarak şu saatlerde dinlemeyi seviyorsun:</string>
     <string name="rc_stats_totaling_hours_time">bu saatlerde toplam %1$s saat!</string>
-
     <string name="rc_stats_show_by">Göster:</string>
     <string name="rc_stats_kind_month">Ay</string>
     <string name="rc_stats_kind_year">Yıl</string>
@@ -77,10 +70,6 @@
     <string name="rc_stats_what_year">Hangi yıl?</string>
     <string name="rc_stats_what_month">Hangi ay?</string>
     <string name="rc_stats_this_month_tag">(bu ay)</string>
-
-    <!-- Recap availability (why the recap is locked) -->
-
-    <!-- Recap story -->
     <string name="rc_story_hey">selam, %1$s!</string>
     <string name="rc_story_journey_started">Mochy\'deki yolculuğuna %1$s tarihinde başladın</string>
     <string name="rc_story_journey_listening">ve toplam şu kadar süre müzik dinledin:</string>
@@ -126,6 +115,4 @@
     <string name="rc_story_there_you_go">İşte oldu</string>
     <string name="rc_story_thats_your">Bu senin\n%1$s özetin!</string>
     <string name="rc_story_tap_finish">BİTİRMEK İÇİN DOKUN</string>
-
-    <!-- Recap ID card back -->
 </resources>

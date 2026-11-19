@@ -51,8 +51,6 @@
     <string name="update_notifications_subtitle">Afficher une notification lorsqu\'une nouvelle mise à jour est disponible</string>
     <string name="settings_check_updates_title">Vérifier les mises à jour</string>
     <string name="later">Plus tard</string>
-
-
     <string name="mochy_music_title">mochy MUSIC</string>
     <string name="developer_section">DÉVELOPPEUR</string>
     <string name="collaborator_section">COLLABORATEUR</string>

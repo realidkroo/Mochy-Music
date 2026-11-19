@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="import_sync_title">가져오기 및 동기화</string>
     <string name="import_sync_progress_resyncing">\"%1$s\" 다시 동기화 중…</string>

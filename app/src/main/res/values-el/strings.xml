@@ -17,6 +17,7 @@
     <string name="quick_picks_empty">Ακούστε σε τραγούδια για να δημιουργήσετε τις γρήγορες επιλογές σας</string>
     <string name="forgotten_favorites">Ξεχασμένα αγαπημένα</string>
     <string name="keep_listening">Συνέχεια ακρόασης</string>
+    <string name="your_youtube_playlists">Οι λίστες YouTube</string>
     <string name="similar_to">Παρόμοια με</string>
     <string name="new_release_albums">Άλμπουμ νέας κυκλοφορίας</string>
     <string name="today">Σήμερα</string>
@@ -47,6 +48,7 @@
     <string name="library_album_empty">Τα άλμπουμ βιβλιοθήκης εμφανίζονται εδώ</string>
     <string name="library_playlist_empty">Οι λίστες αναπαραγωγής θα εμφανίζονται εδώ</string>
     <string name="from_your_library">Από τη βιβλιοθήκη σας</string>
+    <string name="other_versions">Άλλες εκδόσεις</string>
     <string name="liked_songs">Αγαπημένα τραγούδια</string>
     <string name="downloaded_songs">Κατεβασμένα τραγούδια</string>
     <string name="playlist_is_empty">Η λίστα αναπαρ. είναι κενή</string>
@@ -63,7 +65,9 @@
     <string name="play_next">Αναπαραγωγή επόμενου</string>
     <string name="add_to_queue">Προσθήκη στην ουρά</string>
     <string name="add_to_library">Προσθήκη στη βιβλιοθήκη</string>
+    <string name="add_all_to_library">Προσθήκη όλων στη βιβλιοθήκη</string>
     <string name="remove_from_library">Αφαίρεση από τη βιβλιοθήκη</string>
+    <string name="remove_all_from_library">Αφαίρεση όλων από την βιβλιοθήκη</string>
     <string name="action_download">Λήψη</string>
     <string name="downloading">Γίνεται λήψη</string>
     <string name="remove_download">Αφαίρεση λήψης</string>
@@ -73,6 +77,7 @@
     <string name="view_album">Προβολή άλμπουμ</string>
     <string name="refetch">Ανάκτηση</string>
     <string name="share">Κοινή χρήση</string>
+    <string name="more_options">Περισσότερες επιλογές</string>
     <string name="delete">Διαγραφή</string>
     <string name="remove_from_history">Αφαίρεση από το ιστορικό</string>
     <string name="remove_from_playlist">Αφαίρεση από λίστα</string>
@@ -201,8 +206,11 @@
     <string name="small">Μικρό</string>
     <string name="big">Μεγάλο</string>
     <string name="content">Περιεχόμενο</string>
+    <string name="action_logout">Αποσύνδεση</string>
+    <string name="action_login">Συνδεθείτε</string>
     <string name="login">Σύνδεση</string>
     <string name="not_logged_in">Δεν έχετε συνδεθεί</string>
+    <string name="login_failed">Η σύνδεση απέτυχε</string>
     <string name="content_language">Προεπιλεγμένη γλώσσα περιεχομένου</string>
     <string name="content_country">Προεπιλεγμένη χώρα περιεχομένου</string>
     <string name="system_default">Προεπιλογή συστήματος</string>
@@ -218,6 +226,8 @@
     <string name="queue">Ουρά</string>
     <string name="persistent_queue">Επίμονη ουρά</string>
     <string name="persistent_queue_desc">Επαναγορά τελευταίας ουράς κατά την εκκίνηση εφαρμογής</string>
+    <string name="auto_load_more">Αυτόματη φόρτωση περισσότερων τραγουδιών</string>
+    <string name="auto_load_more_desc">Αυτόματη προσθήκη περισσότερων τραγουδιών όταν το τέλος της ουράς επιτυγχάνεται, αν είναι δυνατόν</string>
     <string name="skip_silence">Παράλειψη σιωπής</string>
     <string name="audio_normalization">Κανονικοποίηση ήχου</string>
     <string name="auto_skip_next_on_error">Αυτόματη μετάβαση στο επόμενο τραγούδι όταν προκύψει σφάλμα</string>
@@ -237,12 +247,16 @@
     <string name="clear_song_cache">Εκκαθάριση προσωρινής μνήμης τραγουδιών</string>
     <string name="size_used">%s χρησιμοποιείται</string>
     <string name="privacy">Απόρρητο</string>
+    <string name="listen_history">Ιστορικό ακρόασης</string>
     <string name="pause_listen_history">Παύση ιστορικού ακρόασης</string>
     <string name="clear_listen_history">Εκκαθάριση ιστορικού ακρόασης</string>
     <string name="clear_listen_history_confirm">Είστε σίγουροι ότι θέλετε να διαγράψετε όλο το ιστορικό ακροάσεων;</string>
+    <string name="search_history">Ιστορικό αναζήτησης</string>
     <string name="pause_search_history">Παύση ιστορικού αναζήτησης</string>
     <string name="clear_search_history">Εκκαθάριση ιστορικού αναζήτησης</string>
     <string name="clear_search_history_confirm">Είστε σίγουροι ότι θέλετε να διαγράψετε όλο το ιστορικό αναζήτησης;</string>
+    <string name="disable_screenshot">Απενεργοποίηση στιγμιότυπων οθόνης</string>
+    <string name="disable_screenshot_desc">Όταν αυτή η επιλογή είναι ενεργή, τα στιγμιότυπα και η Πρόσφατη προβολή εφαρμογών θα είναι ανενεργή.</string>
     <string name="enable_lrclib">Ενεργοποίηση του παρόχου στίχων LrcLib</string>
     <string name="enable_kugou">Ενεργοποίηση παρόχου στίχων KuGou</string>
     <string name="hide_explicit">Απόκρυψη ρητού περιεχομένου</string>
@@ -258,23 +272,10 @@
     <string name="dismiss">Απόρριψη</string>
     <string name="options">Επιλογές</string>
     <string name="preview">Προεπισκόπηση</string>
-    <string name="login_failed">Η σύνδεση απέτυχε</string>
-    <string name="action_logout">Αποσύνδεση</string>
     <string name="enable_discord_rpc">Ενεργοποίηση Πλούσιας Παρουσίας</string>
     <string name="about">Σχετικά</string>
     <string name="app_version">Έκδοση εφαρμογής</string>
     <string name="new_version_available">Νέα διαθέσιμη έκδοση</string>
     <string name="translation_models">Μοντέλα Μετάφρασης</string>
     <string name="clear_translation_models">Εκκάθαριση μοντέλων μετάφρασης</string>
-    <string name="auto_load_more_desc">Αυτόματη προσθήκη περισσότερων τραγουδιών όταν το τέλος της ουράς επιτυγχάνεται, αν είναι δυνατόν</string>
-    <string name="listen_history">Ιστορικό ακρόασης</string>
-    <string name="disable_screenshot_desc">Όταν αυτή η επιλογή είναι ενεργή, τα στιγμιότυπα και η Πρόσφατη προβολή εφαρμογών θα είναι ανενεργή.</string>
-    <string name="your_youtube_playlists">Οι λίστες YouTube</string>
-    <string name="other_versions">Άλλες εκδόσεις</string>
-    <string name="remove_all_from_library">Αφαίρεση όλων από την βιβλιοθήκη</string>
-    <string name="add_all_to_library">Προσθήκη όλων στη βιβλιοθήκη</string>
-    <string name="auto_load_more">Αυτόματη φόρτωση περισσότερων τραγουδιών</string>
-    <string name="search_history">Ιστορικό αναζήτησης</string>
-    <string name="disable_screenshot">Απενεργοποίηση στιγμιότυπων οθόνης</string>
-    <string name="action_login">Συνδεθείτε</string>
 </resources>

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="fx_title_audio">Ses</string>
-
     <string name="fx_loudness_title">Ses Yüksekliği</string>
     <string name="fx_loudness_sub">Daha yüksek ve daha dolgun, asla bozulmadan</string>
     <string name="fx_loudness_gentle">Yumuşak</string>
@@ -18,7 +17,6 @@
     <string name="fx_rg_album">Albüm</string>
     <string name="fx_preamp">Ön yükseltici</string>
     <string name="fx_replaygain_note">ReplayGain taşıyan şarkılar (Monochrome\'un FLAC\'leri, kendi dosyalarının çoğu) onunla eşitlenir: Parça her şarkıyı aynı düzeyde tutar, Albüm bir albümün sessiz ve yüksek şarkılarını ustalaştırıldığı gibi korur. YouTube şarkıları YouTube\'un yüksekliğini kullanır.</string>
-
     <string name="fx_spatial_title">Uzamsal ses</string>
     <string name="fx_spatial_sub">Stereo sesi kafanın içinden çıkarıp önüne koyar</string>
     <string name="fx_mode_crossfeed">Çapraz besleme</string>
@@ -30,10 +28,8 @@
     <string name="fx_amount">Miktar</string>
     <string name="fx_speaker_angle">Hoparlör açısı</string>
     <string name="fx_speakers_note">Modellenmiş bir kafanın önünde iki sanal hoparlör: uzak kulak her birini biraz daha geç ve daha donuk duyar, tıpkı bir odada olduğu gibi. 30° bir stüdyo çiftidir.</string>
-
     <string name="fx_mono_title">Mono ses</string>
     <string name="fx_mono_sub">İki kulak da tüm miksi duyar: tek kulaklık için veya tek kulakla duymak için</string>
-
     <string name="fx_atmos_title">Dolby Atmos ve sarmal ses</string>
     <string name="fx_atmos_sub">5.1, 7.1 ve Atmos tabanlarını herhangi bir kulaklıkta Mochy\'nin kafa modeliyle 3D ses olarak çalar, stereoya katlamak yerine. Sonraki şarkıdan itibaren.</string>
     <string name="fx_atmos_decoder">Atmos kod çözücü</string>
@@ -45,7 +41,6 @@
     <string name="fx_state_on">Açık</string>
     <string name="fx_state_off">Kapalı</string>
     <string name="fx_state_unknown">Bilinmiyor</string>
-
     <string name="fx_speed_normal">Normal</string>
     <string name="fx_speed_slowed">Yavaşlatılmış</string>
     <string name="fx_speed_slowed_reverb">Yavaşlatılmış + yankı</string>
@@ -59,7 +54,6 @@
     <string name="fx_pitch">Perde</string>
     <string name="fx_semitones">%1$s yarım ton</string>
     <string name="fx_reset">Sıfırla</string>
-
     <string name="fx_volume_title">Üstel ses</string>
     <string name="fx_volume_sub">Düşük seste daha ince kontrol için logaritmik bir eğri</string>
     <string name="fx_curve_gentle">Yumuşak</string>
@@ -68,7 +62,6 @@
     <string name="fx_curve">Eğri</string>
     <string name="fx_volume_limit">Ses sınırı</string>
     <string name="fx_volume_note">Mochy\'nin kendi sesini (oynatıcının kaydırıcısı, solmalar ve bastırmalar) şekillendirir. Sınır, uygulamanın asla aşamayacağı yüksekliği belirler.</string>
-
     <string name="fx_reverb_title">Yankı</string>
     <string name="fx_reverb_sub">Müziğe yankı ekle</string>
     <string name="fx_reverb_room">Oda</string>

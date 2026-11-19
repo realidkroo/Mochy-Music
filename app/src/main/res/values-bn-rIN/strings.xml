@@ -148,12 +148,12 @@
     <string name="dark_theme_off">নিষ্ক্রিয়</string>
     <string name="dark_theme_follow_system">সিস্টেম অনুসরণ করুন</string>
     <string name="pure_black">কালো</string>
-    <string name="default_open_tab">ডিফল্ট প্রধান ট্যাব</string>
     <string name="customize_navigation_tabs">নেভিগেশন ট্যাব কাস্টমাইজ করুন</string>
     <string name="lyrics_text_position">গানের কথার অবস্থান</string>
     <string name="left">বাম</string>
     <string name="center">কেন্দ্র</string>
     <string name="right">ডান</string>
+    <string name="default_open_tab">ডিফল্ট প্রধান ট্যাব</string>
     <string name="content">কনটেন্ট</string>
     <string name="login">সাইন ইন</string>
     <string name="content_language">ডিফল্ট কন্টেন্টের ভাষা</string>

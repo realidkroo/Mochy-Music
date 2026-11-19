@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="platform_generated_empty">\"%1$s\"에 해당하는 항목이 없습니다</string>
     <string name="platform_duration_hours_minutes">%1$d시간 %2$d분</string>

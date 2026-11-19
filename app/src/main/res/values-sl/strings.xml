@@ -18,6 +18,7 @@
     <string name="quick_picks">Hitri izbori</string>
     <string name="quick_picks_empty">Poslušajte skladbe in ustvarite hitre izbire</string>
     <string name="forgotten_favorites">Pozabljene priljubljene</string>
+    <string name="keep_listening">Nadaljuj z poslušanjem</string>
     <string name="your_youtube_playlists">Vaši seznami predvajanja YouTube</string>
     <string name="similar_to">Podobno kot</string>
     <string name="new_release_albums">Novi izdani albumi</string>
@@ -35,10 +36,10 @@
     <string name="filter_liked">Všečkano</string>
     <string name="filter_downloaded">Preneseno</string>
     <string name="filter_all">Vse</string>
-    <string name="keep_listening">Nadaljuj z poslušanjem</string>
     <string name="filter_songs">Glasbe</string>
     <string name="filter_videos">Video</string>
     <string name="filter_albums">Albumi</string>
     <string name="filter_artists">Izvajalci</string>
     <string name="filter_playlists">Seznami predvajanja</string>
+    <string name="more_options">Več možnosti</string>
 </resources>

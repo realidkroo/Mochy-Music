@@ -79,6 +79,7 @@
     <string name="view_album">Zobraziť album</string>
     <string name="refetch">Obnoviť</string>
     <string name="share">Zdieľať</string>
+    <string name="more_options">Viac nastavení</string>
     <string name="delete">Vymazať</string>
     <string name="remove_from_history">Odstrániť z histórie</string>
     <string name="remove_from_playlist">Odstrániť z playlistu</string>
@@ -94,7 +95,6 @@
     <string name="sort_by_song_count">Počet skladieb</string>
     <string name="sort_by_length">Dĺžka</string>
     <string name="sort_by_play_time">Čas prehrávania</string>
-    <string name="song_title">Názov skladby</string>
     <string name="sort_by_custom">Vlastné poradie</string>
     <string name="media_id">ID médiá</string>
     <string name="mime_type">Typ MIME</string>
@@ -109,6 +109,7 @@
     <string name="edit_lyrics">Upraviť text piesne</string>
     <string name="search_lyrics">Hľadať text piesne</string>
     <string name="edit_song">Upraviť skladbu</string>
+    <string name="song_title">Názov skladby</string>
     <string name="song_artists">Interpreti skladby</string>
     <string name="error_song_title_empty">Názov skladby nemôže byť prázdny.</string>
     <string name="error_song_artist_empty">Interpret skladby nesmie byť prázdny.</string>

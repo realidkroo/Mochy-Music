@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="origin_card_queue_empty">재생 대기열이 비어 있습니다</string>
     <string name="origin_card_queue_empty_hint">Mochy에서 음악을 재생해 보세요</string>

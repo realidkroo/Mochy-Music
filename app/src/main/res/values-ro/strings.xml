@@ -5,6 +5,11 @@
     <string name="artists">Artiști</string>
     <string name="albums">Albume</string>
     <string name="playlists">Playlisturi</string>
+    <plurals name="n_selected">
+        <item quantity="one">%d selectat</item>
+        <item quantity="few">%d selectate</item>
+        <item quantity="other">%d selectate</item>
+    </plurals>
     <string name="history">Istoric</string>
     <string name="stats">Statistici</string>
     <string name="mood_and_genres">Stare de spirit și genuri</string>
@@ -48,6 +53,7 @@
     <string name="liked_songs">Melodii apreciate</string>
     <string name="downloaded_songs">Melodii descărcate</string>
     <string name="playlist_is_empty">Playlistul este gol</string>
+    <string name="remove_download_playlist_confirm">Sigur vrei să ștergi toate cele %s (de) melodii din playlist din Melodii descărcate?</string>
     <string name="delete_playlist_confirm">Sigur vrei să ștergi playlistul \"%s\"?</string>
     <string name="retry">Reîncearcă</string>
     <string name="radio">Radio</string>
@@ -70,7 +76,9 @@
     <string name="add_to_playlist">Adaugă în playlist</string>
     <string name="view_artist">Vezi artistul</string>
     <string name="view_album">Vezi albumul</string>
+    <string name="refetch">Reîncarcă</string>
     <string name="share">Distribuie</string>
+    <string name="more_options">Mai multe opțiuni</string>
     <string name="delete">Șterge</string>
     <string name="remove_from_history">Elimină din istoric</string>
     <string name="remove_from_playlist">Elimină din playlist</string>
@@ -177,11 +185,6 @@
     <string name="action_shuffle_off">Amestecare oprită</string>
     <string name="repeat_mode_off">Mod repetare oprit</string>
     <string name="repeat_mode_one">Repetă melodia curentă</string>
-    <plurals name="n_selected">
-        <item quantity="one">%d selectat</item>
-        <item quantity="few">%d selectate</item>
-        <item quantity="other">%d selectate</item>
-    </plurals>
     <string name="repeat_mode_all">Repetă coada</string>
     <string name="queue_all_songs">Toate melodiile</string>
     <string name="queue_searched_songs">Melodii căutate</string>
@@ -199,11 +202,13 @@
     <string name="player">Player</string>
     <string name="player_text_alignment">Alinierea textului din player</string>
     <string name="lyrics_text_position">Poziția textului versurilor</string>
+    <string name="sided">Într-o parte</string>
     <string name="left">Stânga</string>
     <string name="center">Centru</string>
     <string name="right">Dreapta</string>
     <string name="player_slider_style">Stilul slider-ului player-ului</string>
     <string name="default_">Implicit</string>
+    <string name="squiggly">Ondulat</string>
     <string name="misc">Diverse</string>
     <string name="default_open_tab">Fila prestabilită deschisă</string>
     <string name="grid_cell_size">Mărimea celulelor grilei</string>
@@ -284,8 +289,4 @@
     <string name="new_version_available">Versiune nouă disponibilă</string>
     <string name="translation_models">Modele de traducere</string>
     <string name="clear_translation_models">Elimină modelele de traducere</string>
-    <string name="squiggly">Ondulat</string>
-    <string name="refetch">Reîncarcă</string>
-    <string name="sided">Într-o parte</string>
-    <string name="remove_download_playlist_confirm">Sigur vrei să ștergi toate cele %s (de) melodii din playlist din Melodii descărcate?</string>
 </resources>

@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- the song edit sheet, the add to library first sheet, and select video -->
 <resources>
-    <!-- the edit sheet -->
     <string name="song_edit_menu">Şarkı bilgilerini düzenle</string>
     <string name="song_edit_cover_custom">Özel</string>
     <string name="song_edit_cover_current">Geçerli</string>
@@ -53,13 +51,9 @@
     <string name="song_edit_video_none">Video yok</string>
     <string name="song_edit_saving">Kaydediliyor…</string>
     <string name="song_edit_failed">Değişikliklerin kaydedilemedi. Tekrar dene.</string>
-
-    <!-- shown first when the song isn't in the library yet -->
     <string name="song_edit_need_library">Düzenlemek için bu şarkıyı kütüphanene eklemen gerekiyor.</string>
     <string name="song_edit_add_to_library">Kütüphaneye ekle</string>
     <string name="song_edit_not_now">Şimdi değil</string>
-
-    <!-- select video -->
     <string name="video_pick_title">Video seç</string>
     <string name="video_pick_subtitle">Yanlış video mu? Yoksa hiç yok mu?</string>
     <string name="video_pick_search">YouTube videolarında ara</string>

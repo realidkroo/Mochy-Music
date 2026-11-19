@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- settings, modules: the modules list, a module's page, finding more and signing in -->
 <resources>
     <string name="module_adds_songs">Şarkılar</string>
     <string name="module_adds_lyrics">Şarkı sözleri</string>

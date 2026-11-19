@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- audio pass: audio lab's page for usb dacs, bluetooth codecs and bit-perfect output -->
     <string name="audiopass_hub_title">Audio Pass</string>
     <string name="audiopass_title_first">DAC</string>
     <string name="audiopass_title_second">dan lainnya</string>
     <string name="audiopass_joined">%1$s · %2$s</string>
-
     <string name="audiopass_status_label">status</string>
     <string name="audiopass_status_connected">Terhubung</string>
     <string name="audiopass_status_driven">Dijalankan Mochy</string>
@@ -15,7 +13,6 @@
     <string name="audiopass_status_none_hint">Colokkan DAC USB atau sambungkan headphone, lalu kemampuannya muncul di sini.</string>
     <string name="audiopass_kind_usb">DAC USB</string>
     <string name="audiopass_kind_speaker">Speaker ponsel</string>
-
     <string name="audiopass_info_dac">DAC</string>
     <string name="audiopass_info_maker">Pembuat</string>
     <string name="audiopass_info_usb">Audio USB</string>
@@ -31,7 +28,6 @@
     <string name="audiopass_info_also">Juga bisa</string>
     <string name="audiopass_info_output">Keluaran</string>
     <string name="audiopass_info_playing">Diputar</string>
-
     <string name="audiopass_value_uac">UAC %1$d</string>
     <string name="audiopass_value_uac_async">UAC %1$d · pakai clock sendiri</string>
     <string name="audiopass_value_any_rate">Rate apa saja</string>
@@ -48,7 +44,6 @@
     <string name="audiopass_value_jack">Colokan headphone</string>
     <string name="audiopass_value_le_audio">LE Audio</string>
     <string name="audiopass_value_unknown">Belum dibagikan ponsel ini</string>
-
     <string name="audiopass_bt_reencoded">Bluetooth selalu meng-encode ulang musiknya, jadi tidak pernah bit-perfect. Codec yang lebih baik hanya kehilangan lebih sedikit.</string>
     <string name="audiopass_bt_lossless">aptX Lossless menjaga kualitas CD selama sinyalnya kuat.</string>
     <string name="audiopass_bt_better">Headphone kamu bisa pakai %1$s, tapi sekarang %2$s yang dipakai. Kamu bisa menggantinya di Opsi developer.</string>
@@ -58,7 +53,6 @@
     <string name="audiopass_bt_permission">Tampilkan codec</string>
     <string name="audiopass_bt_permission_hint">Mochy perlu izin Perangkat sekitar untuk melihat codec yang dipakai headphone kamu.</string>
     <string name="audiopass_bt_unknown_hint">Ponsel ini tidak langsung memberi tahu codec ke aplikasi. Codec muncul di sini begitu berubah.</string>
-
     <string name="audiopass_options">Opsi</string>
     <string name="audiopass_prefer_usb">Pakai DAC saat terhubung</string>
     <string name="audiopass_hires">Keluaran hi-res (32-bit)</string>
@@ -79,7 +73,6 @@
     <string name="audiopass_mode_exclusive_dac">DAC bawaan</string>
     <string name="audiopass_mode_exclusive_dac_desc">Untuk pemutar musik dengan DAC sendiri: colokan headphone dibuka khusus untuk Mochy.</string>
     <string name="audiopass_mode_needs">Perlu Android %1$s</string>
-
     <string name="audiopass_blockers_title">Bit-perfect menunggu sampai ini mati</string>
     <string name="audiopass_blockers_clear_title">Tidak ada yang menghalangi</string>
     <string name="audiopass_blockers_button">Matikan semua</string>

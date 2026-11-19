@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="ps_device_change_playback">재생 기기 변경</string>
     <string name="ps_device_this_device">이 기기</string>

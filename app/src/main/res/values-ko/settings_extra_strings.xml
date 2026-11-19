@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="experimental_settings_title">실험적 기능</string>
     <string name="experimental_import_sync_title">가져오기 및 동기화</string>

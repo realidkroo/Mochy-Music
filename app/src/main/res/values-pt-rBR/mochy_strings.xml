@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="explore">Explorar</string>
-    <string name="tab_explore">Explore</string>
-    <string name="tab_Suggestions">Suggestions</string>
-    <string name="tab_album">Album</string>
-    <string name="local_history">Local</string>
     <string name="remote_history">Remoto</string>
     <string name="charts">Ranques</string>
     <string name="back_button_desc">Voltar</string>
@@ -16,16 +12,8 @@
     <string name="album_cover_desc">Arte do álbum</string>
     <string name="top_music_videos">Vídeos de música populares</string>
     <string name="trending">Em alta</string>
-    <string name="trending_billboard">Billboard Hot 100</string>
-    <string name="top_artists">Top Artists</string>
-    <string name="page_indicator">%1$d of %2$d</string>
     <string name="top_result">Melhor resultado</string>
     <string name="other_results">Outro</string>
-    <string name="parsed_from_link">From link</string>
-    <string name="album_text">Album</string>
-    <string name="by_text">By </string>
-    <string name="artist">Artist </string>
-    <string name="explicit">Explicit</string>
     <string name="weeks">Semanas</string>
     <string name="months">Meses</string>
     <string name="years">Anos</string>
@@ -56,22 +44,13 @@
     <string name="added_to_play_next">Será tocado na próxima</string>
     <string name="added_to_queue">Adicionado à fila</string>
     <string name="remove_from_cache">Remover do cache</string>
-    <string name="save_album">Save</string>
-    <!-- Artist about section -->
     <string name="about_artist">Sobre</string>
-    <string name="about_album">About</string>
-    <string name="about_playlist">About</string>
     <string name="show_more">Mostrar mais</string>
     <string name="show_less">Mostrar menos</string>
     <string name="artist_page_settings">Página do artista</string>
     <string name="show_artist_description">Mostrar descrição do artista</string>
     <string name="show_artist_subscriber_count">Mostrar quantidade de inscritos</string>
     <string name="show_artist_monthly_listeners">Mostrar ouvintes mensais</string>
-    <string name="show_artist_video">Show artist canvas video</string>
-    <string name="show_artist_video_desc">Display a looping video next to the artist name on the artist page</string>
-    <string name="show_artist_background_video">Show artist background video</string>
-    <string name="show_artist_background_video_desc">Display a looping motion art video behind the artist image</string>
-    <!-- Menu descriptions -->
     <string name="download_playlist_desc">Baixar todas as músicas para reprodução offline</string>
     <string name="remove_download_playlist_desc">Remove todas as músicas baixadas desta playlist</string>
     <string name="download_in_progress_desc">Transferência está em andamento</string>
@@ -92,16 +71,8 @@
     <string name="maximum_volume">Volume máximo</string>
     <string name="hide_player_thumbnail">Ocultar miniatura do tocador</string>
     <string name="hide_player_thumbnail_desc">Substituir arte do álbum com a logo do app no tocador</string>
-    <string name="thumbnail_corner_radius">Thumbnail Corner Radius</string>
-    <string name="thumbnail_corner_radius_desc">Change the corner radius of the album cover thumbnail</string>
     <string name="crop_album_art">Cortar Capa do Álbum</string>
     <string name="crop_album_art_desc">Forçar formato quadrado nas miniaturas dos vídeos</string>
-    <string name="mochy_canvas">Canvas</string>
-    <string name="mochy_canvas_desc">Show animated album covers when available</string>
-    <string name="show_album_canvas">Show Album Canvas</string>
-    <string name="show_album_canvas_desc">Display animated canvas in album</string>
-    <string name="rotating_thumbnail">Rotating thumbnail</string>
-    <string name="rotating_thumbnail_desc">Enable a rotating thumbnail animation effect</string>
     <string name="already_in_playlist">Já está na lista:</string>
     <plurals name="n_element">
         <item quantity="one">%d elemento</item>
@@ -117,10 +88,6 @@
     <string name="seek_backward_dynamic">-%1$d segundos para trás</string>
     <string name="seek_seconds_addup">Avançar/retroceder progressivo</string>
     <string name="seek_seconds_addup_description">Ao ativar, adiciona acréscimos de até 5 segundos extras em cada pulo do avançar/retroceder</string>
-    <string name="continue_playing_next_in_queue">Continue playing next in queue</string>
-    <string name="next_in_queue">Next in Queue</string>
-    <string name="upcoming_recommendations">Upcoming Recommendations</string>
-    <string name="continue_playing">Continue Playing</string>
     <string name="similar_content">Conteúdo similar</string>
     <string name="login_settings">Configurações de login</string>
     <string name="general_settings">Configurações gerais</string>
@@ -128,8 +95,6 @@
     <string name="player_background_solid">Sólido</string>
     <string name="follow_theme">Seguir o tema</string>
     <string name="gradient">Gradiente</string>
-    <string name="glow_animated">Glow animated</string>
-    <string name="live_mesh">Live Mesh</string>
     <string name="new_player_design">Novo design do tocador</string>
     <string name="new_mini_player_design">Novo design do mini tocador</string>
     <string name="player_background_blur">Desfocado</string>
@@ -138,10 +103,6 @@
     <string name="primary_color_style">Cor primária</string>
     <string name="tertiary_color_style">Cor terciária</string>
     <string name="secondary_color_style">Secundárias</string>
-    <string name="display_density">Display density</string>
-    <string name="restart">Restart</string>
-    <string name="restart_required">Restart required</string>
-    <string name="density_restart_message">The display density change will take effect after restarting the app. Do you want to restart now?</string>
     <string name="enable_wavy_slider">Ativar o controle deslizante flutuante</string>
     <string name="wavy">Ondulado</string>
     <string name="enable_swipe_thumbnail">Deslizar para trocar de música</string>
@@ -172,8 +133,6 @@
     <string name="skip_silence_desc">Avançar rapidamente a partes silenciosas das músicas</string>
     <string name="skip_silence_instant">Pular silêncio instantâneamente</string>
     <string name="skip_silence_instant_desc">Em momentos de silêncio, avançar para a próxima tela em vez de acelerar a reprodução</string>
-    <string name="google">Google</string>
-    <string name="discord">Discord</string>
     <string name="advanced_login">Login com token</string>
     <string name="token_hidden">Toque para mostrar o token</string>
     <string name="token_shown">Toque novamente para copiar ou editar</string>
@@ -181,19 +140,14 @@
     <string name="ytm_sync">Sincronizar com a sua conta do YouTube Music automaticamente</string>
     <string name="yt_sync">Sincronizar automaticamente com a conta</string>
     <string name="more_content">Mais conteúdo</string>
-    <!-- Playlist cover edit -->
     <string name="edit_playlist_cover">Editar capa da lista</string>
     <string name="edit_playlist_cover_note">Observação: A sua conta deve estar vinculada a um número de telefone e verificada no YouTube Music para alterar a capa da lista.</string>
     <string name="edit_playlist_cover_note_wait">Ao selecionar uma imagem, aguarde um momento para que a capa nova apareça na sua lista.</string>
     <string name="choose_from_library">Escolher da biblioteca</string>
     <string name="remove_custom_image">Remover imagem customizada</string>
-    <!-- General -->
     <string name="general">Geral</string>
-    <string name="proxy">Proxy</string>
     <string name="default_lib_chips">Alterar tela da biblioteca padrão</string>
     <string name="set_quick_picks">Definir escolhas rápidas</string>
-    <string name="home_most_played">Most Played</string>
-    <string name="home_most_played_empty">Listen to songs to generate your most played</string>
     <string name="last_song_listened">Com base na última música ouvida</string>
     <string name="app_language">Idioma do app</string>
     <string name="configure_app_language">Configure os idiomas do app</string>
@@ -202,8 +156,6 @@
     <string name="configure_supported_links">Configure os links suportados</string>
     <string name="intent_supported_links_not_found">Não foi possível encontrar as configurações de links suportados, por favor, configure-os manualmente</string>
     <string name="set_first_lyrics_provider">Provedor de letras preferido</string>
-    <string name="lyrics_provider_priority">Lyrics provider priority</string>
-    <string name="lyrics_provider_priority_desc">Drag to reorder which provider is tried first</string>
     <string name="config_proxy">Configurar proxy</string>
     <string name="proxy_username">Nome do usuário da proxy</string>
     <string name="proxy_password">Senha da proxy</string>
@@ -219,7 +171,6 @@
     <string name="remember_shuffle_and_repeat_desc">Memorizar aleatório e modo de repetição ao reiniciar o aplicativo</string>
     <string name="min_playback_duration_title">Duração de reprodução mínima</string>
     <string name="min_playback_duration_description">O tempo mínimo que uma música deve ser tocada para que seja considerada \"tocada\"</string>
-    <string name="percentage_format">%d%%</string>
     <string name="minimum_playback_duration">Duração de reprodução mínima</string>
     <string name="import_online">Importar uma lista \"m3u\"</string>
     <string name="import_csv">Importar uma lista \"csv\"</string>
@@ -228,14 +179,9 @@
     <string name="auto_download_on_like_desc">Baixar músicas automaticamente quando você as curte</string>
     <string name="swipe_sensitivity">Sensibilidade do gesto de deslizar no mini tocador</string>
     <string name="swipe_sensitivity_desc">Ajuste o quanto você precisa deslizar para mudar de música</string>
-    <string name="sensitivity_percentage">%1$d%%</string>
     <string name="clear_song_cache_dialog">Você tem certeza que quer limpar todas as músicas em cache?</string>
     <string name="clear_image_cache_dialog">Tem certeza que quer apagar todas as imagens no cache?</string>
     <string name="clear_downloads_dialog">Você tem certeza que você quer limpar todos os downloads?</string>
-    <string name="logout_dialog_title">Logout</string>
-    <string name="logout_dialog_message">Do you wish to keep every library and other thing?</string>
-    <string name="logout_keep_data">Keep Data</string>
-    <string name="logout_clear_data">Clear Data</string>
     <string name="disable">Desativar</string>
     <string name="pause_remote_listen_history">Pausar o compartilhamento do histórico de reprodução com o YouTube Music</string>
     <string name="not_logged_in_youtube">Não conectado ao YouTube</string>
@@ -266,7 +212,6 @@
         <item quantity="one">%d segundo</item>
         <item quantity="other">%d segundos</item>
     </plurals>
-    <!-- Player Settings -->
     <string name="disable_load_more_when_repeat_all">Desativar o carregar mais ao repetir tudo</string>
     <string name="disable_load_more_when_repeat_all_desc">Não carregar mais músicas automaticamente e conteúdo parecido quando o modo de repetir tudo está ativado</string>
     <string name="pause_music_when_media_is_muted">Pausar a música quando o dispositivo estiver sem som</string>
@@ -279,7 +224,6 @@
     <string name="crossfade_gapless_desc">Não suavizar transição se o álbum for ininterrupto</string>
     <string name="crossfade_beta_title">Recurso Beta</string>
     <string name="crossfade_beta_message">Transição suave é uma nova função e podem haver erros. Se você experiênciar qualquer problema, por favor reporte-os.\n\nEsse recurso desativa a descarga de áudio devido a limitações técnicas.</string>
-    <!-- Romanization Settings -->
     <string name="lyrics_romanization_cyrillic">Alfabeto cirílico</string>
     <string name="lyrics_romanize_title">Romanização</string>
     <string name="lyrics_romanization">Romanização da letra</string>
@@ -301,72 +245,26 @@
     <string name="line_by_line_dialog_desc">Este é um recurso experimental que pode acertar ou errar.\n\nPor padrão, o idioma é determinado da música inteira, mas com esta opção ativada, será determinado de linha por linha. Isto permite que funcione para músicas em vários idiomas MAS o idioma pode estar incorreto (por exemplo se há uma letra em Ucraniano que não contém nenhum símbolo específico ao Ucraniano, ela pode ser romanizada como Russo).\n\nSe você não está tendo problemas, é recomendado manter esta opção desativada.</string>
     <string name="line_by_line_dialog_enable">Ativar</string>
     <string name="romanize_current_track">Romanizar faixa atual</string>
-    <!-- Lyrics Offset Settings -->
     <string name="lyrics_offset">Atraso da letra</string>
-    <!-- Material 3 Settings Sections -->
-    <string name="settings_section_ui">Interface</string>
     <string name="settings_section_privacy">Privacidade e segurança</string>
     <string name="settings_section_player">Tocador e mídia</string>
     <string name="settings_section_player_content">Tocador e conteúdo</string>
     <string name="settings_section_storage">Armazenamento e dados</string>
     <string name="settings_section_system">Sistema e informações</string>
-    <!-- Updater -->
     <string name="updater">Atualizador</string>
     <string name="check_for_updates">Conferir se há atualizações automaticamente</string>
     <string name="update_available_title">Atualização disponível</string>
     <string name="update_channel_name">Atualizações do aplicativo</string>
     <string name="update_channel_desc">Notificações sobre novas versões</string>
-    <!-- Offload -->
     <string name="audio_offload">Ativar descarga</string>
     <string name="audio_offload_description">Usar o caminho de descarga de áudio para a reprodução de áudio. Ao desativar isto, o consumo de energia aumenta, mas pode ser útil se ter problemas com reprodução de áudio ou pós-processamento</string>
     <string name="audio_offload_disabled_by_crossfade">Desabilitado porque a transição suave está ativa</string>
-    <!-- Google Cast -->
-    <string name="google_cast">Google Cast</string>
     <string name="google_cast_description">Habilitar transmissão de áudio para o Chromecast e outros dispositivos compatíveis</string>
     <string name="lyrics_romanize_macedonian">Romanizar letras em Macedônio</string>
     <string name="lyrics_romanize_as_main">Mostrar letras romanizadas como principal</string>
     <string name="integrations">Integrações</string>
     <string name="username">Nome do usuário</string>
     <string name="password">Senha</string>
-    <!-- Integrations page, and signing in to Last.fm and Libre.fm right in the app -->
-    <string name="integration_discord_desc">Rich Presence</string>
-    <string name="integration_scrobbling_desc">%1$s scrobbling</string>
-    <string name="scrobble_page_subtitle">Scrobbling</string>
-    <string name="scrobble_account">Account</string>
-    <string name="scrobble_sign_in_title">Sign in to %1$s</string>
-    <string name="scrobble_sign_in_desc">Keep your listening history, stats and recommendations there</string>
-    <string name="scrobble_not_set_up">Not set up in this build of Mochy</string>
-    <string name="scrobble_to">Scrobble to %1$s</string>
-    <string name="scrobble_signed_in_as">Signed in as %1$s</string>
-    <string name="scrobble_paused_signed_in_as">Paused. Signed in as %1$s</string>
-    <string name="scrobble_open_profile">Open your profile</string>
-    <string name="scrobble_open_profile_desc">Your scrobbles and stats on %1$s</string>
-    <string name="scrobble_sign_out">Sign out</string>
-    <string name="scrobble_sign_out_desc">Mochy stops scrobbling to %1$s</string>
-    <string name="scrobble_while_listening">While you listen</string>
-    <string name="scrobble_now_playing">Now Playing</string>
-    <string name="scrobble_now_playing_desc">Show the song you\'re on right now on your profile</string>
-    <string name="scrobble_send_likes">Send likes</string>
-    <string name="scrobble_send_likes_desc">Liking a song here loves it there too</string>
-    <plurals name="scrobble_plays_waiting">
-        <item quantity="one">%d play waiting to send</item>
-        <item quantity="other">%d plays waiting to send</item>
-    </plurals>
-    <string name="scrobble_plays_waiting_desc">They go out on their own once you\'re online. Tap to send now</string>
-    <string name="scrobble_all_sent">All sent</string>
-    <string name="scrobble_send_later">Couldn\'t send them yet. Mochy keeps trying whenever you\'re online.</string>
-    <string name="scrobble_signed_in">Signed in to %1$s as %2$s. Songs you play are scrobbled from now on.</string>
-    <string name="scrobble_signed_out">%1$s signed Mochy out. Sign in again in Settings → Integrations to keep scrobbling.</string>
-    <string name="scrobble_sign_in_body">Use your %1$s username and password. Mochy only keeps the sign-in key %1$s sends back, never your password.</string>
-    <string name="scrobble_username_hint">Your %1$s username</string>
-    <string name="scrobble_password_hint">Your %1$s password</string>
-    <string name="scrobble_sign_in_button">Sign in</string>
-    <string name="scrobble_signing_in">Signing in…</string>
-    <string name="scrobble_sign_in_wrong">That username or password didn\'t work. Check them and try again.</string>
-    <string name="scrobble_sign_in_busy">%1$s couldn\'t sign you in right now. Try again in a moment.</string>
-    <string name="scrobble_sign_in_offline">Couldn\'t reach %1$s. Check your connection and try again.</string>
-    <string name="scrobble_sign_up">No account yet? Make one on %1$s</string>
-    <!-- Last.fm -->
     <string name="lastfm_integration">Integração com o Last.fm</string>
     <string name="enable_scrobbling">Ativar scrobbling</string>
     <string name="lastfm_now_playing">Enviar reprodução atual</string>
@@ -394,26 +292,16 @@
     <string name="equalizer_desc">Ajustar o equalizador de áudio</string>
     <string name="enable_dynamic_icon">Ativar ícone dinâmico</string>
     <string name="mini_player">Mini-reprodutor</string>
-    <string name="miniplayer_background_style">Mini-player background style</string>
     <string name="pure_black_mini_player">Mini-tocador preto puro</string>
     <string name="mini_player_outline">Contorno do mini-tocador</string>
     <string name="cache_size_warning_title">Espere!</string>
     <string name="cache_size_warning_message">Você escolheu um limite do tamanho de cache menor do que o aplicativo está usando atualmente (%1$s). Se continuar, o aplicativo poderá remover parte do cache %2$s para corresponder ao novo limite. Continuar mesmo assim?</string>
     <string name="cache_size_warning_confirm">Continuar</string>
-    <!-- Lyrics Animation Styles -->
     <string name="lyrics_animation_style">Estilo de Animação das Letras</string>
     <string name="none">Nenhum</string>
     <string name="fade">Desvanecer</string>
     <string name="glow">Brilhar</string>
     <string name="slide">Deslizar</string>
-    <string name="karaoke">Karaoke</string>
-    <string name="apple_music_style">Apple Music</string>
-    <string name="apple_music_style_letter">Apple Music V2 (Letter by Letter)</string>
-    <string name="mochy_1">mochy (Fluid)</string>
-    <string name="apple_music_lyrics_blur">Apple Music Lyrics Blur</string>
-    <string name="apple_music_lyrics_blur_desc">Apply blur to inactive lyrics lines for a premium focus effect</string>
-    <string name="lyrics_v2_fluid">Lyrics V2 (Fluid)</string>
-    <string name="lyrics_animation_metro">MetroLyrics</string>
     <string name="lyrics_text_size">Tamanho do texto das letras</string>
     <string name="lyrics_line_spacing">Espaçamento de linha das letras</string>
     <string name="album_art_for">Arte de álbum para %s</string>
@@ -439,15 +327,12 @@
     <string name="wrapped_total_artists_subtitle">Artistas únicos</string>
     <string name="wrapped_total_songs_title">Você ouviu</string>
     <string name="wrapped_total_songs_subtitle">canções únicas</string>
-    <string name="wrapped_intro_title">mochy</string>
     <string name="wrapped_intro_subtitle">é hora de checar o que você tem ouvido</string>
     <string name="wrapped_intro_button">vamos lá!</string>
     <string name="wrapped_end_thanks">Obrigado por ouvir com o mochy!</string>
     <string name="wrapped_end_create_playlist">Crie Sua Lista de Reprodução Embrulhada</string>
     <string name="wrapped_end_creating_playlist">Criando...</string>
     <string name="wrapped_end_playlist_saved">Lista de Reprodução Salva</string>
-    <string name="wrapped_logo_content_description">mochy Logo</string>
-    <string name="wrapped_year">2025</string>
     <string name="wrapped_ready_title">SEU EMBRULHO ESTÁ PRONTO!</string>
     <string name="wrapped_ready_subtitle">Hora de checar o que você amou esse ano.</string>
     <string name="wrapped_thank_you">Obrigado por ouvir</string>
@@ -456,7 +341,6 @@
     <string name="wrapped_playlist_title">Seu %s Embrulhado</string>
     <string name="wrapped_create_playlist">Criar lista de reprodução</string>
     <string name="wrapped_playlist_saved">Playlist salva</string>
-    <!-- Equalizer UI -->
     <plurals name="profiles_count">
         <item quantity="one">%d Perfil</item>
         <item quantity="other">%d Perfis</item>
@@ -477,49 +361,6 @@
     <string name="import_error_title">Erro ao importar</string>
     <string name="error_title">Erro inesperado</string>
     <string name="error_eq_apply_failed">Falha ao aplicar o perfil de equalização: %1$s</string>
-    <!-- mochyEqualizer Strings -->
-    <string name="mochy_equalizer">mochyEqualizer</string>
-    <string name="mochy_equalizer_desc">Pro-grade acoustic tuning &amp; effects</string>
-    <string name="eq_simple">Simple</string>
-    <string name="eq_advanced">Advanced</string>
-    <string name="eq_label_bass">Bass</string>
-    <string name="eq_label_mid">Mids</string>
-    <string name="eq_label_treble">Treble</string>
-    <string name="eq_preset_flat">Flat</string>
-    <string name="eq_preset_mochy_signature">mochy Signature</string>
-    <string name="eq_preset_acoustic">Acoustic</string>
-    <string name="eq_preset_spatial">3D Stage</string>
-    <string name="eq_preset_bass_boost">Bass Boost</string>
-    <string name="eq_preset_pure_clarity">Pure Clarity</string>
-    <string name="eq_preset_soft_bass">Soft Bass</string>
-    <string name="eq_preset_electronic">Electronic</string>
-    <string name="eq_preset_rock">Rock</string>
-    <string name="eq_preset_pop">Pop</string>
-    <string name="eq_preset_jazz">Jazz</string>
-    <string name="eq_preset_voice">Voice</string>
-    <string name="eq_preset_dolby_open">Dolby Open</string>
-    <string name="eq_preset_dolby_rich">Dolby Rich</string>
-    <string name="eq_preset_dolby_focused">Dolby Focused</string>
-    <string name="eq_preset_dirac_music">Dirac Music</string>
-    <string name="eq_preset_dirac_movie">Dirac Movie</string>
-    <string name="eq_preset_dirac_game">Dirac Game</string>
-    <string name="eq_enable_title">mochyEqualizer</string>
-    <string name="eq_enable_summary">Toggle professional audio processing</string>
-    <string name="eq_label_mochy">mochy Signature</string>
-    <string name="eq_label_dolby">Dolby Atmos</string>
-    <string name="eq_label_dirac">Dirac Audio</string>
-    <string name="eq_reset">Reset</string>
-    <string name="eq_label_custom">Custom</string>
-    <string name="eq_save">Save</string>
-    <string name="eq_save_dialog_title">Save Preset</string>
-    <string name="eq_save_name_hint">Preset Name</string>
-    <string name="eq_profile_saved">Preset saved</string>
-    <string name="eq_manage_presets">Manage Presets</string>
-    <string name="eq_delete_selected">Delete</string>
-    <string name="eq_no_custom_presets">No custom presets found</string>
-    <!-- Hardcoded strings -->
-    <string name="found_in_settings_content">Found in Settings &gt; Content</string>
-    <string name="plays">plays</string>
     <string name="casting_to">Transmitir para %s</string>
     <string name="progress_percent">Progresso %s%%</string>
     <string name="listening_to_mochy">Ouvindo mochy</string>
@@ -531,12 +372,10 @@
     <string name="copied_artist">Artista Copiado</string>
     <string name="error_playing">Erro ao reproduzir</string>
     <string name="failed_to_parse_proxy">Não foi possível analisar o url proxy.</string>
-    <!-- Playback errors -->
     <string name="error_playback_failed">Falha na reprodução</string>
     <string name="error_copied">Informações do erro copiadas para a área de transferência</string>
     <string name="copy_error">Copiar erro</string>
     <string name="error_copy_hint">Copie as informações do erro para ajudar os desenvolvedores a identificar o problema</string>
-    <!-- Widget strings -->
     <string name="album_art">Capa do Álbum</string>
     <string name="no_song_playing">Nenhuma música tocando</string>
     <string name="tap_to_open">Clique para abrir o mochy</string>
@@ -551,19 +390,16 @@
     <string name="turntable_widget_description">Widget circular de música com controles de reprodução e curtida</string>
     <string name="widget_music_player">Reprodutor de música</string>
     <string name="widget_turntable">Toca-discos</string>
-    <!-- Player Client Settings -->
     <string name="player_client">Reprodutor</string>
     <string name="player_client_android_vr">Realidade Virtual do Android</string>
     <string name="player_client_android_vr_desc">Opção mais rápida. Usa URLs de transmissão direta sem descriptografar a assinatura. Recomendada para a maioria dos usuários.</string>
     <string name="player_client_web_remix">Remix da Web</string>
     <string name="player_client_web_remix_desc">Mais lenta, porém compatível com formatos premium. Utiliza descriptografia de assinatura em JavaScript, o que pode adicionar de 5 a 10 segundos ao início da reprodução.</string>
-    <!-- Decryption Library Settings -->
     <string name="decryption_library">Biblioteca de descriptografia</string>
     <string name="decryption_library_newpipe">NewPipe Extractor (Oficial)</string>
     <string name="decryption_library_newpipe_desc">Biblioteca oficial do TeamNewPipe. Mantida atualizada com as mudanças do YouTube. Recomendada como padrão. Usa a API do PipePipe automaticamente em caso de falha.</string>
     <string name="decryption_library_pipepipe_api">API do PipePipe</string>
     <string name="decryption_library_pipepipe_api_desc">Descriptografia via API usando o MetroExtractor. Mais rápida, porém depende de uma API externa. Usa o NewPipe automaticamente em caso de falha.</string>
-    <!-- Listen Together -->
     <string name="together">Juntos</string>
     <string name="listen_together">Ouvir juntos</string>
     <string name="listen_together_desc">Ouça músicas com amigos em tempo real</string>
@@ -657,7 +493,6 @@
     <string name="listen_together_no_blocked_users">Nenhum usuário bloqueado</string>
     <string name="unblock">Desbloquear</string>
     <string name="user_blocked_by_host">Usuário bloqueado pelo anfitrião</string>
-    <!-- AI Lyrics Translation -->
     <string name="ai_lyrics_translation">Tradução de letras por IA</string>
     <string name="ai_translating_lyrics">Traduzindo letras de músicas...</string>
     <string name="ai_lyrics_translated">Letra traduzida</string>
@@ -682,7 +517,6 @@
     <string name="ai_error_translation_failed">A tradução falhou</string>
     <string name="ai_provider_help">Obter chaves de API</string>
     <string name="ai_provider_openrouter_help">Visite openrouter.ai para modelos gratuitos e pagos</string>
-    <string name="ai_provider_mistral_help">Visit console.mistral.ai/api-keys</string>
     <string name="ai_provider_openai_help">Visite a plataforma.openai.com/api-keys</string>
     <string name="ai_provider_claude_help">Visite console.anthropic.com/settings/keys</string>
     <string name="ai_provider_gemini_help">Visite aistudio.google.com/apikey</string>
@@ -693,16 +527,13 @@
     <string name="ai_deepl_formality_default">Padrão</string>
     <string name="ai_deepl_formality_more">Mais formal</string>
     <string name="ai_deepl_formality_less">Menos formal</string>
-    <!-- Crash Handler -->
     <string name="crash_title">O aplicativo travou</string>
     <string name="crash_description">Ocorreu um erro inesperado. Por favor, compartilhe o relatório de falha para nos ajudar a corrigir o problema.</string>
     <string name="crash_share_logs">Compartilhar registros</string>
-    <string name="copy_logs">Copy Logs</string>
     <string name="crash_share_title">Compartilhar relatório de falha</string>
     <string name="crash_report_subject">Relatório de Acidente da mochy</string>
     <string name="crash_close">Fechar</string>
     <string name="crash_no_log">Nenhum registro de falha disponível</string>
-    <!-- Theme Palette Names -->
     <string name="palette_dynamic">Dinâmico</string>
     <string name="palette_crimson">Carmesim</string>
     <string name="palette_rose">Rosa</string>
@@ -723,7 +554,6 @@
     <string name="palette_brown">Marrom</string>
     <string name="palette_grey">Cinza</string>
     <string name="palette_blue_grey">Azul acinzentado</string>
-    <!-- Theme Content Descriptions -->
     <string name="cd_back">Voltar</string>
     <string name="cd_pure_black_mode">Modo Preto Puro</string>
     <string name="cd_light_mode">Modo claro</string>
@@ -733,7 +563,6 @@
     <string name="play_all">Reproduzir tudo</string>
     <string name="enable_high_refresh_rate">Ativar alta taxa de atualização</string>
     <string name="enable_high_refresh_rate_desc">Forçar a exibição a rodar na maior taxa de atualização suportada (ex: 120Hz)</string>
-    <!-- Music Recognition -->
     <string name="recognition">Reconhecimento</string>
     <string name="recognize_music">Reconhecer música</string>
     <string name="tap_to_recognize">Toque para reconhecer</string>
@@ -750,7 +579,6 @@
     <string name="hold_to_recognize">Segure o ícone de pesquisa para reconhecer música</string>
     <string name="play_on_app">Tocar no mochy</string>
     <string name="recognized_track">Trilha reconhecida</string>
-    <!-- CSV Import Strings -->
     <string name="map_csv_columns">Mapear colunas CSV</string>
     <string name="first_row_is_header">A primeira linha é o cabeçalho</string>
     <string name="artist_name_column">Coluna com o nome do artista</string>
@@ -759,13 +587,9 @@
     <string name="continue_action">Continuar</string>
     <string name="importing_csv">Importando CSV</string>
     <string name="recently_converted">Convertido Recentemente</string>
-    <string name="column_label">Col %d</string>
     <string name="csv_import_failed">Falha ao importar o arquivo CSV</string>
     <string name="csv_preview_failed">Falha ao visualizar o arquivo CSV</string>
-    <!-- Discord Integration Redesign -->
     <string name="discord_integration_settings">Integração de Discord</string>
-    <string name="discord_status">Status</string>
-    <string name="discord_status_online">Online</string>
     <string name="discord_status_idle">Ocioso</string>
     <string name="discord_status_dnd">Não perturbar</string>
     <string name="discord_buttons">Botões</string>
@@ -792,253 +616,4 @@
     <string name="discord_activity_name_description">Nome personalizado para a atividade (deixe vazio para padrão)</string>
     <string name="discord_advanced_mode">Modo avançado</string>
     <string name="discord_advanced_mode_description">Mostrar opções de personalização adicionais para a Rich Presence</string>
-    <string name="speed_dial">Jump Back In</string>
-    <string name="pin_to_speed_dial">Pin to library</string>
-    <string name="unpin_from_speed_dial">Unpin from library</string>
-    <string name="randomize_home_order">Randomize Home Screen Order</string>
-    <string name="randomize_home_order_desc">Randomly reorder home screen sections with weighted priorities</string>
-    <!-- Daily Discover -->
-    <string name="daily_discover_sounds_like">Sounds like %1$s</string>
-    <string name="your_daily_discover">Your daily discover</string>
-    <string name="daily_discover_because_you_listen_to">Because you listen to %1$s</string>
-    <string name="daily_discover_similar_to">Similar to %1$s</string>
-    <string name="daily_discover_based_on">Based on %1$s</string>
-    <string name="daily_discover_for_fans_of">For fans of %1$s</string>
-    <string name="from_the_community">From the community</string>
-    <string name="songs_count">%s songs</string>
-    <string name="repeat">Repeat</string>
-    <string name="monthly_listeners">Monthly</string>
-    <string name="unlock_queue">Unlock Queue</string>
-    <string name="lock_queue">Lock Queue</string>
-    <!--    //Members-->
-    <!-- ShowMediaInfo -->
-    <string name="song_info">Song Info</string>
-    <string name="song_info_title_label">Title</string>
-    <string name="song_info_format_label">Format</string>
-    <string name="song_info_duration_label">Duration</string>
-    <string name="song_info_itag_label">Itag</string>
-    <string name="song_info_standard">Standard</string>
-    <string name="song_info_views_count">%s views</string>
-    <string name="song_info_likes_count">%s likes</string>
-    <string name="song_info_no_description">No description available</string>
-    <!--    changelog-->
-    <string name="error_loading_changelog">Error loading changelog</string>
-    <string name="no_old_releases_with_changelog">No old releases with changelog found</string>
-    <string name="failed_to_fetch_changelog">Failed to fetch changelog</string>
-    <string name="changelog_title">Changelog</string>
-    <string name="loading_changelog">Loading changelog…</string>
-    <string name="cached">Cached</string>
-    <string name="current">Current</string>
-    <string name="old_releases">Old Releases</string>
-    <string name="changelog_section">Changelog</string>
-    <string name="version_code">Version code</string>
-    <string name="namespace">Namespace</string>
-    <string name="telegram_channel">Telegram</string>
-    <!-- Onboarding -->
-    <string name="welcome_to">Welcome to</string>
-    <string name="welcome_preparing_subtitle">Let\'s get everything ready for you.</string>
-    <string name="get_started">Get Started</string>
-    <string name="perm_required">Required</string>
-    <string name="perm_permissions">Permissions</string>
-    <string name="perm_intro_text">These permissions are required for mochy to function correctly. Please grant them to proceed.</string>
-    <string name="perm_notif_title">Notifications</string>
-    <string name="perm_notif_desc">Know immediately when your music is playing and control it from the notification bar.</string>
-    <string name="perm_install_title">App Installation</string>
-    <string name="perm_install_desc">Required to download and install app updates seamlessly.</string>
-    <string name="feat_discover">Discover</string>
-    <string name="feat_features">Features</string>
-    <string name="feat_intro">Explore everything mochy has to offer for your music journey.</string>
-    <string name="feat_lyrics_title">Smart Lyrics</string>
-    <string name="feat_lyrics_desc">Enjoy synchronized, word-by-word lyrics for millions of songs.</string>
-    <string name="feat_download_title">Offline Playback</string>
-    <string name="feat_download_desc">Download your favorite tracks and listen anywhere, anytime.</string>
-    <string name="feat_quality_title">Premium Quality</string>
-    <string name="feat_quality_desc">Stream and download.</string>
-    <string name="feat_update_title">Dynamic Updates</string>
-    <string name="feat_update_desc">Always stay updated with our built-in updater.</string>
-    <string name="feat_license_title">License</string>
-    <string name="feat_license_desc">General Public License v3.0</string>
-    <string name="feat_github_title">GitHub</string>
-    <string name="feat_github_desc">Open source project</string>
-    <string name="join_telegram">Join our Telegram channel</string>
-    <string name="welcome_update_check">Stay</string>
-    <string name="welcome_update_status">Updated</string>
-    <string name="welcome_update_intro">Ensuring you have the latest features and security improvements.</string>
-    <string name="welcome_checking_updates">Checking for updates…</string>
-    <string name="welcome_up_to_date">mochy is up to date!</string>
-    <string name="welcome_update_available">New version is available: %s</string>
-    <string name="welcome_everything_ready">Everything is now up to date</string>
-    <string name="commits_title">Commits</string>
-    <string name="error_loading_commits">Failed to load commits becoz you didnt pay me ?</string>
-    <string name="commits">Commits</string>
-    <string name="view_commit_history">Browse recent changes on main branch</string>
-    <string name="suggestions">Suggestions</string>
-    <string name="comments">Comments</string>
-    <string name="no_comments">No comments found</string>
-    <string name="type_message">Type a message…</string>
-    <string name="send">Send</string>
-    <string name="clear_downloaded_updates_auto_info">Dynamically it will be deleted after one day.</string>
-    <string name="update_info_badge">Info &amp; Tips</string>
-    <string name="update_info_title">Update Information</string>
-    <string name="manual_delete_hint_title">Manual Cleanup</string>
-    <string name="manual_delete_hint_desc">You can manually also delete. Deleting old apk will improve the updater to update properly.</string>
-    <!-- Playback Log -->
-    <string name="logs_heading">Logs</string>
-    <string name="playback_logs">Playback logs</string>
-    <string name="playback_logs_desc">View real-time stream resolution and bot mitigation events</string>
-    <string name="playback_logs_title">Playback logs</string>
-    <string name="no_playback_logs">No playback events recorded yet</string>
-    <string name="show_comment_button">Show comment button</string>
-    <string name="show_comment_button_description">Show a button to view comments in the player queue</string>
-    <string name="build_stable">STABLE</string>
-    <string name="build_nightly">NIGHTLY</string>
-    <string name="recently_played">Recently Played</string>
-    <string name="home_history">History</string>
-    <string name="your_library">Your Library</string>
-    <string name="downloaded">Downloaded</string>
-    <string name="uploaded">Uploaded</string>
-    <string name="dont_forget_these_songs">Don\'t forget these songs</string>
-    <string name="artist_list">Artist List</string>
-    <string name="music_videos_for_you">Music Videos for You</string>
-    <string name="live_shows">Live Shows</string>
-    <string name="home_because_you_like">Because you like</string>
-    <string name="home_more_like">More like</string>
-    <string name="home_because_you_listen_to">Because you listen to</string>
-    <string name="home_try_something_new">Try something new</string>
-    <string name="home_new_from_your_artists">New from your artists</string>
-    <string name="all_time_hits">All Time Hits</string>
-    <string name="most_played_genre">Most played %1$s</string>
-    <string name="add_music">Add Music</string>
-    <!-- the full video mode and youtube video quality -->
-    <string name="video_mode">Full video</string>
-    <string name="video_mode_exit">Exit video mode</string>
-    <string name="video_mode_close_player">Close player</string>
-    <string name="video_mode_finding">Looking for the video…</string>
-    <string name="video_mode_no_video">No video for this song. The lyrics still play here.</string>
-    <string name="video_mode_no_lyrics">No lyrics for this song</string>
-    <string name="video_mode_queue">Queue</string>
-    <string name="video_mode_lyrics">Lyrics</string>
-    <string name="video_mode_lyrics_provider">Lyrics provider</string>
-    <string name="video_mode_lyrics_offset">Lyrics offset</string>
-    <string name="video_mode_lyrics_translation">Lyrics translation</string>
-    <string name="video_mode_speed">Playback speed and tempo</string>
-    <string name="video_mode_volume">Volume</string>
-    <string name="video_quality">Video quality</string>
-    <string name="video_quality_auto">Auto</string>
-    <string name="video_quality_auto_desc">Drops to a lower picture when your connection slows down, so the video keeps moving instead of freezing</string>
-    <string name="video_quality_auto_now">Auto · %1$s</string>
-    <string name="video_quality_size">%1$dp</string>
-    <string name="video_quality_fixed_desc">Stays at this size. On a slow connection the video may stop to load</string>
-    <string name="video_quality_settings_desc">How sharp YouTube videos play. Auto keeps them smooth on a slow connection</string>
-    <string name="video_quality_not_loaded">The sizes show up once the video has loaded</string>
-    <string name="video_mode_song_info">Song info</string>
-    <string name="video_mode_whole_video">Show the whole video</string>
-    <string name="video_mode_whole_video_desc">Off, the video is zoomed in to fill the screen</string>
-    <plurals name="video_mode_seek_seconds">
-        <item quantity="one">%d second</item>
-        <item quantity="other">%d seconds</item>
-    </plurals>
-    <!-- song share: the share song pages from the player menu and the song menus -->
-    <string name="song_share_menu">share song</string>
-    <string name="song_share_music_title">Share music</string>
-    <string name="song_share_music_only">Music only</string>
-    <string name="song_share_music_only_hint">The song on a card</string>
-    <string name="song_share_lyrics">Lyrics</string>
-    <string name="song_share_lyrics_looking">Looking for the lyrics…</string>
-    <string name="song_share_lyrics_missing">No lyrics for this song</string>
-    <string name="song_share_lyrics_synced">They flow along with the song</string>
-    <string name="song_share_lyrics_unsynced">No timing, so they show as a picture</string>
-    <string name="song_share_go_back">No, go back pls</string>
-    <string name="song_share_type_title">Type</string>
-    <string name="song_share_type_subtitle">Select background type</string>
-    <string name="song_share_type_video">Video</string>
-    <string name="song_share_type_video_hint">Your own, the music video or the moving cover</string>
-    <string name="song_share_type_still">Static</string>
-    <string name="song_share_type_still_hint">A picture, the music\'s colours or a plain colour</string>
-    <string name="song_share_type_link">Copy link</string>
-    <string name="song_share_type_link_hint">The YouTube Music link</string>
-    <string name="song_share_type_link_missing">This song only lives on your phone</string>
-    <string name="song_share_link_copied">Link copied</string>
-    <string name="song_share_editor_title">Share</string>
-    <string name="song_share_editor_hint">Tap the card to style it, drag or pinch to move the background</string>
-    <string name="song_share_share_button">Share!</string>
-    <string name="song_share_ok">Ok</string>
-    <string name="song_share_card_title">Customize card</string>
-    <string name="song_share_card_colour">Colour</string>
-    <string name="song_share_card_opacity">Opacity</string>
-    <string name="song_share_card_blur">Blur</string>
-    <string name="song_share_card_blur_note">Blur goes away when you share straight to Instagram or Facebook, where the card turns into a sticker</string>
-    <string name="song_share_bg_own_video">Add your own video</string>
-    <string name="song_share_bg_own_video_hint">Tap the circle to pick a video from your phone</string>
-    <string name="song_share_bg_music_video">The music video</string>
-    <string name="song_share_bg_music_video_hint">Lined up with the song, so it shows the same moment</string>
-    <string name="song_share_bg_animated_cover">Moving cover</string>
-    <string name="song_share_bg_animated_cover_hint">The album\'s moving cover, looping</string>
-    <string name="song_share_bg_music">Made from the music</string>
-    <string name="song_share_bg_music_hint">Soft clouds of the cover\'s colours, drifting over the cover itself</string>
-    <string name="song_share_bg_picture">Add your own image</string>
-    <string name="song_share_bg_picture_hint">Tap the circle to pick a picture from your phone</string>
-    <string name="song_share_bg_colour">Pick a colour</string>
-    <string name="song_share_bg_pick_video">Pick a video</string>
-    <string name="song_share_bg_pick_picture">Pick a picture</string>
-    <string name="song_share_bg_which_part">Pick the part</string>
-    <string name="song_share_bg_change_video">Change video</string>
-    <string name="song_share_bg_brightness">Brightness</string>
-    <string name="song_share_bg_which_part_title">Which part?</string>
-    <string name="song_share_bg_max_seconds">Up to 10 seconds</string>
-    <string name="song_share_send_title">Share to</string>
-    <string name="song_share_send_apps">Share to an app</string>
-    <string name="song_share_send_apps_sticker">Share to an app (the card\'s blur turns off)</string>
-    <string name="song_share_send_or">or</string>
-    <string name="song_share_export_button">Export and share</string>
-    <string name="song_share_cancel">Cancel</string>
-    <string name="song_share_preview">Preview</string>
-    <string name="song_share_pause">Pause</string>
-    <string name="song_share_quality">Quality</string>
-    <string name="song_share_quality_4k">4K</string>
-    <string name="song_share_quality_1080">1080p</string>
-    <string name="song_share_making_video">Making your video… %1$d%%</string>
-    <string name="song_share_making_picture">Making your picture…</string>
-    <string name="song_share_saved">Saved to your gallery too</string>
-    <string name="song_share_failed">Couldn\'t make it. Check your connection and try again.</string>
-    <string name="song_share_app_instagram">Instagram</string>
-    <string name="song_share_app_whatsapp">WhatsApp</string>
-    <string name="song_share_app_facebook">Facebook</string>
-    <string name="song_share_app_missing">Not installed</string>
-    <string name="song_share_chooser_title">Share song</string>
-    <string name="song_share_edit_background">Edit background</string>
-    <string name="song_share_editor_hint_words">Tap the words to style them, the arrow to move the song, drag or pinch to move the background</string>
-    <string name="song_share_seconds">%1$ds</string>
-    <string name="song_share_style_title">Share</string>
-    <string name="song_share_style_subtitle">Select styles</string>
-    <string name="song_share_style_card">Card styles</string>
-    <string name="song_share_style_cinematic">Cinematic styles</string>
-    <string name="song_share_style_fits">Up to %1$d words</string>
-    <string name="song_share_style_too_many">Too many words for this one</string>
-    <string name="song_share_as_video">Share as video</string>
-    <string name="song_share_as_video_hint">The song plays and the lyrics flow</string>
-    <string name="song_share_caption">%1$s · %2$s</string>
-    <!-- a meta app id from developers.facebook.com; while it's empty instagram and facebook get the finished video instead of a story with a sticker -->
-    <string name="yt_sync_exclude_title">Don\'t send imported music to YouTube</string>
-    <string name="yt_sync_exclude_desc">Songs and playlists from Spotify and other apps stay on this phone</string>
-    <string name="yt_sync_undo_title">Undo last sync</string>
-    <string name="yt_sync_undo_desc">Puts back likes, library and playlists from before the last sync</string>
-    <string name="yt_sync_undo_dialog_title">Undo the last sync?</string>
-    <string name="yt_sync_undo_dialog_body">Pick where to undo. Automatic sync pauses after an undo, so the changes stay put until you press Sync now.</string>
-    <string name="yt_sync_undo_phone">This phone</string>
-    <string name="yt_sync_undo_both">This phone and YouTube</string>
-    <string name="yt_sync_undo_both_hint">Also removes the likes the sync sent to YouTube</string>
-    <string name="yt_sync_undo_done_phone">Undone on this phone. YouTube won\'t be pulled again until you sync now.</string>
-    <string name="yt_sync_undo_done_both">Undone on this phone and on YouTube. YouTube won\'t be pulled again until you sync now.</string>
-    <string name="yt_sync_undo_nothing">Nothing to undo yet. Run a sync first.</string>
-    <plurals name="yt_sync_undo_failed">
-        <item quantity="one">Undone, but 1 like couldn\'t come off YouTube. Try again later.</item>
-        <item quantity="other">Undone, but %1$d likes couldn\'t come off YouTube. Try again later.</item>
-    </plurals>
-    <string name="module_youtube_name">YouTube Music</string>
-    <string name="module_youtube_desc">Sync likes, library, playlists and history</string>
-    <string name="about_song_provided_by">provided by %1$s</string>
-    <string name="about_song_nothing_yet">%1$s doesn\'t have anything about this song yet.</string>
-    <string name="not_recommended_menu">Don\'t recommend this again</string>
-    <string name="not_recommended_done">We won\'t recommend this song again</string>
 </resources>

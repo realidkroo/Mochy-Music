@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- device integration: the sheet that lists paired devices -->
     <string name="devices_title">Cihaz entegrasyonu</string>
     <string name="devices_row_detail">Aynı Wi-Fi\'daki TV\'ni, başka bir telefonu veya tableti bağla</string>
     <string name="devices_hero">Wi-Fi\'ında 10 cihaza kadar bağlan: diğer telefonun, tabletin, TV\'n, araç ünitesi ve daha fazlası.</string>
@@ -23,8 +22,6 @@
     <string name="devices_kind_tablet">Tablet</string>
     <string name="devices_kind_tv">TV</string>
     <string name="devices_kind_car">Araç</string>
-
-    <!-- one device's own sheet -->
     <string name="devices_ok">Tamam</string>
     <string name="devices_remote_control">Uzaktan kumandayı etkinleştir</string>
     <string name="devices_remote_control_tv_detail">Bu telefondan çal, atla ve ayarlarını değiştir</string>
@@ -38,8 +35,6 @@
     <string name="devices_sync_now">Şimdi senkronize et</string>
     <string name="devices_sync_asked">%1$s en son kütüphaneni alıyor</string>
     <string name="devices_unlink_question">%1$s bağlantısı kaldırılsın mı? Zaten sahip olduklarını korur.</string>
-
-    <!-- adding a device -->
     <string name="devices_add_title">Cihaz ekle</string>
     <string name="devices_pairing_code">Eşleştirme modu kodu</string>
     <string name="devices_detected">Algılandı</string>
@@ -55,8 +50,6 @@
     <string name="devices_pair_full">Birinizde zaten 10 cihaz var. Önce birinin bağlantısını kaldır.</string>
     <string name="devices_pair_failed">Ona ulaşılamadı. İkisinin de aynı Wi-Fi\'da olduğundan emin ol.</string>
     <string name="devices_pair_outdated">O cihaz daha eski bir Mochy çalıştırıyor. Güncelle, sonra kodu tekrar dene</string>
-
-    <!-- remote control mode -->
     <string name="remote_controlling">%1$s kontrol ediliyor</string>
     <string name="remote_stop">Kontrolü durdur</string>
     <string name="remote_playing">Çalıyor</string>
@@ -78,8 +71,6 @@
     <string name="remote_settings_retry">Tekrar dene</string>
     <string name="remote_setting_failed">Bu, %1$s üzerinde değiştirilemedi</string>
     <string name="remote_seconds">%1$d sn</string>
-
-    <!-- the settings a controlling phone sees, sent by the device that has them -->
     <string name="link_section_playback">Oynatma</string>
     <string name="link_section_audio_lab">Ses Laboratuvarı</string>
     <string name="link_section_youtube">YouTube</string>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <string name="home">Галоўнае</string>
     <string name="songs">Песні</string>
     <string name="artists">Выканаўцы</string>
@@ -175,12 +175,12 @@
     <string name="dark_theme_off">Выкл.</string>
     <string name="dark_theme_follow_system">Прытрымлівацца сістэмнай каляровай тэмы</string>
     <string name="pure_black">Рэжым чыстага чорнага колеру</string>
-    <string name="default_open_tab">Прадвызначаная укладка</string>
     <string name="customize_navigation_tabs">Дапасаваць укладак</string>
     <string name="lyrics_text_position">Пазіцыя тэкста песні</string>
     <string name="left">Па левым краі</string>
     <string name="center">Па цэнтры</string>
     <string name="right">Па правым краі</string>
+    <string name="default_open_tab">Прадвызначаная укладка</string>
     <string name="content">Змесціва</string>
     <string name="login">Лагін</string>
     <string name="content_language">Мова змесціва</string>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <string name="home">ਘਰ</string>
     <string name="songs">ਗੀਤ</string>
     <string name="artists">ਕਲਾਕਾਰ</string>
@@ -15,6 +15,10 @@
     <string name="account">ਖਾਤਾ</string>
     <string name="quick_picks">ਉਂਗਲਾਂ ਤੇ ਚੁਣੇ ਗੀਤ</string>
     <string name="quick_picks_empty">ਉਂਗਲਾਂ ਤੇ ਚੁਣੇ ਗੀਤ ਪਾਉਣ ਲਈ ਗੀਤ ਸੁਣਨੇ ਆਰੰਭ ਕਰੋ</string>
+    <string name="forgotten_favorites">ਭੁੱਲੇ ਹੋਏ ਮਨਪਸੰਦ ਗਾਣੇ</string>
+    <string name="keep_listening">ਸੁਣਦੇ ਰਹੋ</string>
+    <string name="your_youtube_playlists">ਤੁਹਾਡੀ ਯੂਟਿਊਬ ਚਾਲ ਸੂਚੀਆਂ</string>
+    <string name="similar_to">ਇਹਦੇ ਵਰਗੇ</string>
     <string name="new_release_albums">ਨਵੀਆਂ ਜਾਰੀ ਐਲਬਮਾਂ</string>
     <string name="today">ਅੱਜ</string>
     <string name="yesterday">ਕੱਲ੍ਹ</string>
@@ -39,7 +43,12 @@
     <string name="filter_featured_playlists">ਪ੍ਰਦਰਸ਼ਿਤ ਪਲੇਲਿਸਟਾਂ</string>
     <string name="filter_bookmarked">ਬੁੱਕਮਾਰਕ ਕੀਤੇ</string>
     <string name="no_results_found">ਕੋਈ ਨਤੀਜੇ ਨਹੀਂ ਲੱਭੇ</string>
+    <string name="library_song_empty">ਲਾਇਬ੍ਰੇਰੀ</string>
+    <string name="library_artist_empty">ਲਾਇਬ੍ਰੇਰੀ ਗਾਇਕ ਇੱਥੇ ਦਿਖਣਗੇ</string>
+    <string name="library_album_empty">ਲਾਇਬ੍ਰੇਰੀ ਟੇਪਾਂ ਇੱਥੇ ਦਿਖਣ ਗੀਆਂ</string>
+    <string name="library_playlist_empty">ਤੁਹਾਡੀਆਂ ਚਾਲ ਸੂਚੀਆਂ ਇੱਥੇ ਦਿਖਣ ਗਿਆਂ</string>
     <string name="from_your_library">ਤੁਹਾਡੀ ਲਾਇਬ੍ਰੇਰੀ ਤੋਂ</string>
+    <string name="other_versions">ਟੇਪ ਦ੍ਰਿਸ਼</string>
     <string name="liked_songs">ਪਸੰਦ ਕੀਤੇ ਗੀਤ</string>
     <string name="downloaded_songs">ਡਾਊਨਲੋਡ ਕੀਤੇ ਗੀਤ</string>
     <string name="playlist_is_empty">ਪਲੇਲਿਸਟ ਖਾਲੀ ਹੈ</string>
@@ -164,12 +173,12 @@
     <string name="dark_theme_off">ਬੰਦ</string>
     <string name="dark_theme_follow_system">ਸਿਸਟਮ ਦੀ ਪਾਲਣਾ ਕਰੋ</string>
     <string name="pure_black">ਸ਼ਾਹ ਕਾਲ੍ਹਾ</string>
-    <string name="default_open_tab">ਡੀਫ਼ਾਲਟ ਟੈਬ</string>
     <string name="customize_navigation_tabs">ਨੈਵੀਗੇਸ਼ਨ ਟੈਬਾਂ ਨੂੰ ਆਪਣੀ ਪਸੰਦ ਦਾ ਢਾਲੋ</string>
     <string name="lyrics_text_position">ਬੋਲਾਂ ਦੀ ਸਥਿਤੀ</string>
     <string name="left">ਖੱਬੇ</string>
     <string name="center">ਵਿਚਕਾਰ</string>
     <string name="right">ਸੱਜੇ</string>
+    <string name="default_open_tab">ਡੀਫ਼ਾਲਟ ਟੈਬ</string>
     <string name="content">ਸਮੱਗਰੀ</string>
     <string name="login">ਲਾਗ-ਇਨ</string>
     <string name="content_language">ਡੀਫ਼ਾਲਟ ਸਮੱਗਰੀ ਭਾਸ਼ਾ</string>
@@ -220,13 +229,4 @@
     <string name="new_version_available">ਨਵਾਂ ਸੰਸਕਰਣ ਉਪਲੱਬਧ ਹੈ</string>
     <string name="translation_models">ਆਨੁਵਾਦ ਦੇ ਮਾਡਲ</string>
     <string name="clear_translation_models">ਅਨੁਵਾਦ ਦੇ ਮਾਡਲ ਮਿਟਾਓ</string>
-    <string name="forgotten_favorites">ਭੁੱਲੇ ਹੋਏ ਮਨਪਸੰਦ ਗਾਣੇ</string>
-    <string name="keep_listening">ਸੁਣਦੇ ਰਹੋ</string>
-    <string name="your_youtube_playlists">ਤੁਹਾਡੀ ਯੂਟਿਊਬ ਚਾਲ ਸੂਚੀਆਂ</string>
-    <string name="similar_to">ਇਹਦੇ ਵਰਗੇ</string>
-    <string name="library_song_empty">ਲਾਇਬ੍ਰੇਰੀ</string>
-    <string name="library_artist_empty">ਲਾਇਬ੍ਰੇਰੀ ਗਾਇਕ ਇੱਥੇ ਦਿਖਣਗੇ</string>
-    <string name="library_album_empty">ਲਾਇਬ੍ਰੇਰੀ ਟੇਪਾਂ ਇੱਥੇ ਦਿਖਣ ਗੀਆਂ</string>
-    <string name="library_playlist_empty">ਤੁਹਾਡੀਆਂ ਚਾਲ ਸੂਚੀਆਂ ਇੱਥੇ ਦਿਖਣ ਗਿਆਂ</string>
-    <string name="other_versions">ਟੇਪ ਦ੍ਰਿਸ਼</string>
 </resources>

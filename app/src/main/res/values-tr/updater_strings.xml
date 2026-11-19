@@ -51,8 +51,6 @@
     <string name="update_notifications_subtitle">Yeni bir güncelleme bulunduğunda bir bildirim göster</string>
     <string name="settings_check_updates_title">Güncellemeleri denetle</string>
     <string name="later">Sonra</string>
-
-
     <string name="mochy_music_title">mochy MUSIC</string>
     <string name="developer_section">GELİŞTİRİCİ</string>
     <string name="collaborator_section">İŞBİRLİKÇİ</string>
@@ -80,8 +78,6 @@
     <string name="new_update">Yeni güncelleme</string>
     <string name="release_date_v">Yayınlanma: %1$s</string>
     <string name="update_size_v">Boyut: %1$s MB</string>
-
-    <!-- update channels: release, or the nightly prereleases -->
     <string name="channel_switch_to_nightly">Gece sürümüne geç</string>
     <string name="channel_switch_to_release">Kararlı sürüme geç</string>
     <string name="channel_release_waits">Daha yeni bir sürüm gerekir</string>
