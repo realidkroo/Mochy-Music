@@ -65,7 +65,7 @@ class OnboardingViewModel @Inject constructor(
         private set
 
     val cardNumber: String = (10_000_000_000L + Random.nextLong(89_999_999_999L)).toString()
-    val joinedText: String = "joined at " + LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+    val joinedDateText: String = LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
 
     /** Onboarding can be run again from Settings; start each run clean. */
     fun reset() {

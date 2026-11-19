@@ -40,8 +40,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.CrossmixMode
 import com.mochyy.mochymusic.constants.CrossmixModeKey
 import com.mochyy.mochymusic.constants.DisableAiFilterKey
@@ -266,7 +268,7 @@ fun SetupWizardScreen(
     val (crossmixMode, onCrossmixModeChange) = rememberEnumPreference(CrossmixModeKey, defaultValue = DefaultTransitionMode)
     val (disableAiFilter, onDisableAiFilterChange) = rememberPreference(DisableAiFilterKey, defaultValue = false)
 
-    val card = CardInfo(username = username, photo = profilePicUri, cardNumber = vm.cardNumber, joinedText = vm.joinedText)
+    val card = CardInfo(username = username, photo = profilePicUri, cardNumber = vm.cardNumber, joinedText = stringResource(R.string.profile_joined_at, vm.joinedDateText))
 
     fun afterHello(): Step = if (vm.blur?.verdict == BlurCapability.Verdict.Laggy) Step.BlurWarning else Step.LastOne
 
@@ -419,7 +421,7 @@ fun SetupWizardScreen(
                                 if (existing != null) selectedUncroppedUri = existing else openPhotoPicker()
                             },
                             cardNumber = vm.cardNumber,
-                            joinedText = vm.joinedText,
+                            joinedText = stringResource(R.string.profile_joined_at, vm.joinedDateText),
                             onNext = { if (username.isNotBlank()) go(Step.Hello) },
                         )
 

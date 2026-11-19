@@ -37,6 +37,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -45,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.HomeContentInset
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.launch
@@ -136,11 +138,13 @@ internal fun StatsRuler(
         if (target != currentCommitted) currentOnSelect(items[target])
     }
 
+    val rulerDescription = stringResource(R.string.platform_stats_ruler_description, labelOf(selected))
+
     Canvas(
         modifier = modifier
             .fillMaxWidth()
             .height(RulerHeight)
-            .semantics { contentDescription = "Showing ${labelOf(selected)}. Drag to pick another." }
+            .semantics { contentDescription = rulerDescription }
             .pointerInput(items) {
                 val tracker = VelocityTracker()
                 detectHorizontalDragGestures(

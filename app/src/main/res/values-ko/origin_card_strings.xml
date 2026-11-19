@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="origin_card_queue_empty">재생 대기열이 비어 있습니다</string>
+    <string name="origin_card_queue_empty_hint">Mochy에서 음악을 재생해 보세요</string>
+    <string name="origin_card_liked_empty">아직 좋아요 표시한 곡이 없습니다</string>
+    <string name="origin_card_liked_empty_hint">Mochy에서 좋아요 표시한 곡이 여기에 표시됩니다</string>
+    <string name="origin_card_local_empty">아직 다운로드한 곡이 없습니다</string>
+    <string name="origin_card_local_empty_hint">Mochy에서 다운로드한 곡이 여기에 표시됩니다</string>
+</resources>

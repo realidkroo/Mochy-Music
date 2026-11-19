@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="builtin_module_apple_description">Plays your Apple Music subscription in Mochy, in AAC 256, with every Audio Lab effect</string>
+    <string name="builtin_module_monochrome_description">Lossless FLAC for every song Monochrome has, no account needed, with every Audio Lab effect</string>
+    <string name="builtin_module_jiosaavn_description">JioSaavn\'s catalog in AAC up to 320 kbps, no account needed. Strongest on Indian music</string>
+    <string name="builtin_module_stream">Stream</string>
+    <string name="builtin_module_apple_aac_description">Apple Music\'s standard stereo stream</string>
+    <string name="builtin_module_apple_he_description">A quarter of the data, for slow or metered networks</string>
+    <string name="builtin_module_saavn_320_description">JioSaavn\'s best, 160 for the songs that don\'t have it</string>
+    <string name="builtin_module_saavn_160_description">Half the data, still clear</string>
+    <string name="builtin_module_saavn_96_description">For slow or metered networks</string>
+    <string name="builtin_module_region">Region</string>
+    <string name="builtin_module_account_region">Your account\'s</string>
+    <string name="builtin_module_account_region_description">Searches the catalog of your Apple account\'s country</string>
+    <string name="builtin_module_region_description">Searches the %1$s catalog. Songs your account\'s country doesn\'t license may still be refused</string>
+</resources>

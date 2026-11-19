@@ -1034,7 +1034,7 @@ class MainActivity : ComponentActivity() {
                                                         if (profilePicStr.isNotEmpty()) {
                                                             coil3.compose.AsyncImage(
                                                                 model = if (profilePicStr.startsWith("file://")) profilePicStr else "file://$profilePicStr",
-                                                                contentDescription = "Profile",
+                                                                contentDescription = stringResource(R.string.profile_label),
                                                                 modifier = Modifier
                                                                     .size(32.dp)
                                                                     .clip(CircleShape),

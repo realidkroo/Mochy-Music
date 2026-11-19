@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="rc_stats_done">완료</string>
+    <string name="rc_stats_title">통계</string>
+    <string name="rc_stats_year_recap_link">%1$d년 되돌아보기  &gt;</string>
+    <string name="rc_stats_year_recap">%1$d년 되돌아보기</string>
+    <string name="rc_stats_collapse_all">모두 접기</string>
+    <string name="rc_stats_expand_all">모두 펼치기</string>
+    <string name="rc_stats_empty_title">아직 %1$s에 재생한 곡이 없습니다.</string>
+    <string name="rc_stats_empty_hint">곡을 몇 개 재생하면 자동으로 채워집니다.</string>
+    <string name="rc_stats_often">얼마나 자주 음악을 들었는지 살펴볼까요?</string>
+    <string name="rc_stats_privacy">이 통계는 앱 사용 기록으로 생성되며 외부 서버에 전송되지 않습니다! 장르 조회에는 아티스트 이름만 사용합니다.</string>
+    <string name="rc_stats_cd_profile">프로필</string>
+    <string name="rc_stats_cd_collapse">접기</string>
+    <string name="rc_stats_cd_expand">펼치기</string>
+    <string name="rc_stats_total_month">이번 달 음악을 들은 시간</string>
+    <string name="rc_stats_total_year">올해 음악을 들은 시간</string>
+    <string name="rc_stats_every_day">%1$s의 일별 기록</string>
+    <string name="rc_stats_every_month">%1$d년의 월별 기록</string>
+    <plurals name="rc_stats_fact_songs">
+        <item quantity="other">%1$d곡</item>
+    </plurals>
+    <plurals name="rc_stats_fact_artists">
+        <item quantity="other">아티스트 %1$d명</item>
+    </plurals>
+    <plurals name="rc_stats_fact_albums">
+        <item quantity="other">앨범 %1$d개</item>
+    </plurals>
+    <plurals name="rc_stats_fact_plays">
+        <item quantity="other">%1$d회 재생</item>
+    </plurals>
+    <string name="rc_stats_dominant_genre">가장 많이 들은 장르</string>
+    <string name="rc_stats_genre_loading">장르 정리 중…</string>
+    <string name="rc_stats_genre_unavailable">지금은 장르를 확인할 수 없습니다. 처음 조회할 때는 인터넷 연결이 필요합니다.</string>
+    <string name="rc_stats_artist_love">이 아티스트의 음악을 정말 좋아하시네요</string>
+    <plurals name="rc_stats_artist_row">
+        <item quantity="other">%1$s · %2$d회 재생</item>
+    </plurals>
+    <plurals name="rc_stats_artist_summary">
+        <item quantity="other">%3$s의 음악을 %2$d회, 총 %1$s 재생했습니다</item>
+    </plurals>
+    <string name="rc_stats_song_number_one">어느새 이 곡이 가장 많이 들은 곡이 되었네요</string>
+    <plurals name="rc_stats_song_row">
+        <item quantity="other">%1$s · %2$d회 재생 · %3$s</item>
+    </plurals>
+    <string name="rc_stats_song_from">%2$s의 %1$s</string>
+    <plurals name="rc_stats_song_summary">
+        <item quantity="other">%2$d회, 총 %1$s 재생했습니다</item>
+    </plurals>
+    <string name="rc_stats_weekday_month">이번 달 음악을 즐겨 들은 요일</string>
+    <string name="rc_stats_weekday_year">올해 음악을 즐겨 들은 요일</string>
+    <string name="rc_stats_totaling_hours">총 %1$s시간</string>
+    <string name="rc_stats_hour_morning">아침에는 이 시간대에 자주 들었어요</string>
+    <string name="rc_stats_hour_afternoon">오후에는 이 시간대에 자주 들었어요</string>
+    <string name="rc_stats_hour_evening">저녁에는 이 시간대에 자주 들었어요</string>
+    <string name="rc_stats_hour_night">밤에는 이 시간대에 자주 들었어요</string>
+    <string name="rc_stats_totaling_hours_time">이 시간대에 총 %1$s시간 들었어요!</string>
+    <string name="rc_stats_show_by">표시 기준</string>
+    <string name="rc_stats_kind_month">월</string>
+    <string name="rc_stats_kind_year">연도</string>
+    <string name="rc_stats_selected">선택됨</string>
+    <string name="rc_stats_what_year">연도 선택</string>
+    <string name="rc_stats_what_month">월 선택</string>
+    <string name="rc_stats_this_month_tag">(이번 달)</string>
+    <string name="rc_story_hey">%1$s님, 안녕하세요!</string>
+    <string name="rc_story_journey_started">%1$s님이 Mochy와 함께하기 시작한 날</string>
+    <string name="rc_story_journey_listening">지금까지 음악을 들은 총 시간</string>
+    <string name="rc_story_journey_bye">다음에도 함께해요!</string>
+    <string name="rc_story_tap">탭하세요!</string>
+    <string name="rc_story_month_is">%1$s 기록</string>
+    <string name="rc_story_out_of_100" formatted="false">전체 100% 중</string>
+    <string name="rc_story_weekday_at_this_time">그리고 이 시간대에,</string>
+    <string name="rc_story_weekday_favourite">음악을 가장 즐겨 들은 요일입니다</string>
+    <plurals name="rc_story_hours">
+        <item quantity="other">시간</item>
+    </plurals>
+    <plurals name="rc_story_minutes">
+        <item quantity="other">분</item>
+    </plurals>
+    <string name="rc_story_more_than_second">2위보다 더 많이 들었어요!</string>
+    <string name="rc_story_nothing_close">다른 곡과는 비교할 수 없을 만큼!</string>
+    <string name="rc_story_again">다시\n또\n다시</string>
+    <string name="rc_story_this_artist">이\n아티스트…</string>
+    <string name="rc_story_recognize_artist">이 아티스트를\n아시나요?</string>
+    <string name="rc_story_favorite_artist">이번 달 가장 좋아한 아티스트예요!</string>
+    <plurals name="rc_story_plays">
+        <item quantity="other">%1$d회 재생</item>
+    </plurals>
+    <string name="rc_story_x_plays">회 재생</string>
+    <string name="rc_story_plays_bang">재생했어요!</string>
+    <string name="rc_story_might_recognize">이 곡은\n아실 거예요!</string>
+    <string name="rc_story_which_one">어떤 곡일까요…</string>
+    <string name="rc_story_hear_melody">멜로디를\n들어 보세요…</string>
+    <string name="rc_story_title_by">%1$s\n아티스트: %2$s</string>
+    <string name="rc_story_favourite_song">이번 달 가장\n좋아한 곡이에요!</string>
+    <string name="rc_story_bill">음악 영수증을 확인해 볼까요?</string>
+    <string name="rc_story_receipt_recap">%1$s 되돌아보기</string>
+    <string name="rc_story_receipt_printed">%1$s/%2$s 출력</string>
+    <string name="rc_story_receipt_top_artist">최다 감상 아티스트</string>
+    <string name="rc_story_receipt_top_music">최다 감상 곡</string>
+    <string name="rc_story_receipt_total">총 재생 시간: %1$s</string>
+    <string name="rc_story_receipt_counts">%1$d회 재생 · %2$d곡 · 아티스트 %3$d명</string>
+    <string name="rc_story_receipt_end">기록 끝</string>
+    <string name="rc_story_there_you_go">이렇게 들었어요</string>
+    <string name="rc_story_thats_your">나의 %1$s\n되돌아보기!</string>
+    <string name="rc_story_tap_finish">탭하여 마치기</string>
+</resources>

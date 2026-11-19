@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.webkit.WebSettingsCompat
@@ -424,7 +425,7 @@ fun WebLoginHeader(title: String, subtitle: String, onBack: () -> Unit) {
             .padding(horizontal = 8.dp, vertical = 4.dp),
     ) {
         IconButton(onClick = onBack) {
-            Icon(painterResource(R.drawable.arrow_back), contentDescription = "Back", tint = Color.White)
+            Icon(painterResource(R.drawable.arrow_back), contentDescription = stringResource(R.string.back_content_desc), tint = Color.White)
         }
         Spacer(Modifier.width(4.dp))
         Column(modifier = Modifier.weight(1f)) {

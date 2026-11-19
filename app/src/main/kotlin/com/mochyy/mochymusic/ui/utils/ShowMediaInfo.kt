@@ -343,13 +343,14 @@ fun InfoItem(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val copiedMessage = stringResource(R.string.media_info_copied, label)
     Column(
         modifier = modifier
             .padding(end = 8.dp)
             .clickable {
                 val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
                 cm.setPrimaryClip(ClipData.newPlainText(label, value))
-                Toast.makeText(context, "$label copied", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, copiedMessage, Toast.LENGTH_SHORT).show()
             },
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {

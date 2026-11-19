@@ -549,10 +549,10 @@ private fun TotalCard(
         )
         Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
             OdometerText("${minutes / 60}", big, progress = roll)
-            Text("h", style = unit, modifier = Modifier.padding(bottom = 8.dp))
+            Text(stringResource(R.string.profile_unit_hour_short), style = unit, modifier = Modifier.padding(bottom = 8.dp))
             Text(":", style = big)
             OdometerText((minutes % 60).toString().padStart(2, '0'), big, progress = roll)
-            Text("m", style = unit, modifier = Modifier.padding(bottom = 8.dp))
+            Text(stringResource(R.string.profile_unit_minute_short), style = unit, modifier = Modifier.padding(bottom = 8.dp))
         }
         Spacer(Modifier.height(10.dp))
         Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF3A3A3A)))

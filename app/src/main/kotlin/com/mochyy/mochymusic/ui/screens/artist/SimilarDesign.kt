@@ -51,6 +51,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -158,9 +159,9 @@ internal fun SimilarPage(
     groups: SimilarGroups?,
     deepLoading: Boolean,
     artistsTitle: String,
-    playlistsTitle: String = "Featured Playlist",
-    songsTitle: String = "Featured songs",
-    albumsTitle: String = "New from them",
+    playlistsTitle: String = stringResource(R.string.supplemental_featured_playlist),
+    songsTitle: String = stringResource(R.string.supplemental_featured_songs),
+    albumsTitle: String = stringResource(R.string.supplemental_artist_new_releases),
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val menuState = LocalMenuState.current
@@ -374,7 +375,7 @@ internal fun SimilarPage(
                     ) {
                         item(key = "empty") {
                             Text(
-                                text = "Nothing to show here yet",
+                                text = stringResource(R.string.supplemental_nothing_here),
                                 style = TrackSubtitleStyle.copy(fontSize = 13.sp),
                                 color = Color.White.copy(alpha = 0.6f),
                                 modifier = Modifier.padding(horizontal = PlaylistInset, vertical = 28.dp),
@@ -488,7 +489,7 @@ internal fun StartOfTheLine(modifier: Modifier = Modifier) {
     ) {
         ReceiptLine()
         Text(
-            text = "START OF THE LINE",
+            text = stringResource(R.string.supplemental_start_of_line),
             style = ReceiptCenterStyle,
             color = Color.White.copy(alpha = 0.78f),
             maxLines = 1,

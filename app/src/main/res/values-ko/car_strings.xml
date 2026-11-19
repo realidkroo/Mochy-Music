@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="car_tab_home">홈</string>
+    <string name="car_tab_remote">원격 제어</string>
+    <string name="car_tab_recent">최근 항목</string>
+    <string name="car_tab_library">보관함</string>
+    <string name="car_quick_picks">빠른 선곡</string>
+    <string name="car_categories">카테고리</string>
+    <string name="car_home_empty">휴대전화에서 곡을 몇 개 재생하면 여기에 추천곡이 표시됩니다!</string>
+    <string name="car_recent_songs">곡</string>
+    <string name="car_recent_lists">앨범 및 재생목록</string>
+    <string name="car_recent_empty">재생한 곡이 여기에 표시됩니다.</string>
+    <string name="car_liked">좋아요 표시한 곡</string>
+    <string name="car_downloaded">다운로드한 항목</string>
+    <string name="car_playlists">재생목록</string>
+    <string name="car_albums">앨범</string>
+    <string name="car_artists">아티스트</string>
+    <string name="car_list_empty">아직 항목이 없습니다.</string>
+    <string name="car_couldnt_load">불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.</string>
+    <string name="car_shuffle">무작위 재생</string>
+    <string name="car_lyrics">가사</string>
+    <string name="car_lyrics_on_player">플레이어에 표시</string>
+    <string name="car_lyrics_none">이 곡의 가사가 없습니다.</string>
+    <string name="car_lyrics_player_on">주행 중 플레이어에 가사가 표시될 수 있습니다. 베타 기능입니다!</string>
+    <string name="car_lyrics_player_off">플레이어의 가사 표시를 껐습니다.</string>
+    <string name="car_pair_code">페어링 코드</string>
+    <string name="car_pair_status">상태</string>
+    <string name="car_pair_how">페어링 방법</string>
+    <string name="car_pair_steps">다른 휴대전화에서 Mochy의 설정 › 기기 연동 › 기기 추가를 열고 이 코드를 입력하세요. 두 휴대전화가 같은 Wi-Fi에 연결되어 있어야 합니다.</string>
+    <string name="car_pair_waiting">연결되지 않았습니다. 휴대전화 페어링을 기다리는 중입니다.</string>
+    <string name="car_pair_connected">%1$s에 연결됨</string>
+    <plurals name="car_pair_connected_more">
+        <item quantity="other">%1$s 외 휴대전화 %2$d대에 연결됨</item>
+    </plurals>
+    <string name="car_pair_getting_code">코드 준비 중…</string>
+</resources>

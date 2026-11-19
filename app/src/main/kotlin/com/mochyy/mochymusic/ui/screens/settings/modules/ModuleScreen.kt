@@ -203,7 +203,7 @@ private fun ModuleHeader(entry: ModuleEntry) {
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            info.description, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
+            builtInModuleDescription(entry), fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
             lineHeight = 20.sp, color = Color.White.copy(alpha = 0.92f),
         )
         Spacer(Modifier.height(8.dp))

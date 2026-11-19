@@ -279,7 +279,7 @@ fun ProfileScreen(navController: NavController) {
     }
     val cardNumber = cardNumberPref.ifBlank { "00000000000" }
     val joinedDate = if (joinedEpochDay >= 0L) LocalDate.ofEpochDay(joinedEpochDay) else LocalDate.now()
-    val joinedText = stringResource(R.string.profile_joined_at, joinedDate.format(DateLong)) + joinedDate.format(DateLong)
+    val joinedText = stringResource(R.string.profile_joined_at, joinedDate.format(DateLong))
     val photo: Any? = profilePicUri.takeIf { it.isNotBlank() }?.let { if (it.contains("://")) it else "file://$it" }
 
     // ---- header state -------------------------------------------------------------------------

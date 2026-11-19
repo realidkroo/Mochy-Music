@@ -155,6 +155,7 @@ enum class AudioDeviceType {
 @Composable
 fun AudioDeviceBottomSheet(onDismiss: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val bluetoothPermissionMessage = stringResource(R.string.bluetooth_permission_required)
     var audioDevices by remember { mutableStateOf<List<AudioDevice>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -183,7 +184,7 @@ fun AudioDeviceBottomSheet(onDismiss: () -> Unit, modifier: Modifier = Modifier)
                 isLoading = false
             })
         } else {
-            errorMessage = context.getString(R.string.bluetooth_permission_required)
+            errorMessage = bluetoothPermissionMessage
             isLoading = false
         }
     }
@@ -897,7 +898,7 @@ private fun loadDevices(
                         } else null
 
                         AudioDevice(
-                            name = deviceInfo.productName?.toString() ?: "Bluetooth Device",
+                            name = deviceInfo.productName?.toString() ?: context.getString(R.string.ps_device_bluetooth_device),
                             type = AudioDeviceType.BLUETOOTH,
                             isConnected = true,
                             isActive = false,
@@ -917,7 +918,7 @@ private fun loadDevices(
                     }
                     AudioDeviceInfo.TYPE_USB_HEADSET, AudioDeviceInfo.TYPE_USB_DEVICE -> {
                         AudioDevice(
-                            name = deviceInfo.productName?.toString() ?: "USB Audio",
+                            name = deviceInfo.productName?.toString() ?: context.getString(R.string.ps_device_usb_audio),
                             type = AudioDeviceType.USB_HEADSET,
                             isConnected = true,
                             isActive = false,
@@ -967,7 +968,7 @@ private fun loadDevices(
             loadDevicesLegacy(context, onSuccess, onError)
         }
     } catch (e: Exception) {
-        onError("Failed to load devices: ${e.message}")
+        onError(context.getString(R.string.platform_audio_load_failed, e.message.orEmpty()))
     }
 }
 
@@ -1002,16 +1003,16 @@ private fun loadDevicesLegacy(context: Context, onSuccess: (List<AudioDevice>) -
     val devices = mutableListOf<AudioDevice>()
 
     if (audioManager.isBluetoothA2dpOn) {
-        devices.add(AudioDevice("Bluetooth Device", AudioDeviceType.BLUETOOTH, true, true))
+        devices.add(AudioDevice(context.getString(R.string.ps_device_bluetooth_device), AudioDeviceType.BLUETOOTH, true, true))
     }
     if (audioManager.isWiredHeadsetOn) {
-        devices.add(AudioDevice("Wired Headphones", AudioDeviceType.WIRED_HEADPHONES, true, true))
+        devices.add(AudioDevice(context.getString(R.string.wired_headphones), AudioDeviceType.WIRED_HEADPHONES, true, true))
     }
     if (audioManager.isSpeakerphoneOn) {
-        devices.add(AudioDevice("External Speaker", AudioDeviceType.EXTERNAL_SPEAKER, true, true))
+        devices.add(AudioDevice(context.getString(R.string.platform_external_speaker), AudioDeviceType.EXTERNAL_SPEAKER, true, true))
     }
     if (devices.isEmpty() || !devices.any { it.isActive }) {
-        devices.add(AudioDevice("Phone Speaker", AudioDeviceType.PHONE_SPEAKER, true, true))
+        devices.add(AudioDevice(context.getString(R.string.phone_speaker), AudioDeviceType.PHONE_SPEAKER, true, true))
     }
     onSuccess(devices.filter { it.isActive }.take(1))
 }
@@ -1107,7 +1108,7 @@ private fun AudioDeviceRow(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                val statusText = if (isActiveDevice) "Connected" else "Available"
+                val statusText = stringResource(if (isActiveDevice) R.string.platform_device_connected else R.string.platform_audio_available)
 
                 Row(
                     modifier = Modifier
@@ -1137,7 +1138,7 @@ private fun AudioDeviceRow(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.VolumeUp,
-                        contentDescription = "Volume level",
+                        contentDescription = stringResource(R.string.platform_volume_level),
                         tint = onContainer,
                         modifier = Modifier.size(14.dp)
                     )

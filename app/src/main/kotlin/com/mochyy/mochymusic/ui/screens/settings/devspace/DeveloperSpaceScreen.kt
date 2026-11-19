@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.BuildConfig
@@ -200,6 +201,6 @@ private fun BackButton(onClick: () -> Unit) {
             .background(DevBarButtonFill)
             .clickable(interactionSource = interaction, indication = RemoteFocus, onClick = onClick),
     ) {
-        Icon(painterResource(R.drawable.chevron_leftpx), contentDescription = "Back", tint = Color.White, modifier = Modifier.size(20.dp))
+        Icon(painterResource(R.drawable.chevron_leftpx), contentDescription = stringResource(R.string.back_content_desc), tint = Color.White, modifier = Modifier.size(20.dp))
     }
 }
