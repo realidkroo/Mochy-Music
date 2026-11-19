@@ -3,6 +3,7 @@ package com.mochyy.mochymusic.eq
 import android.content.Context
 import androidx.core.content.edit
 import com.mochyy.mochymusic.eq.audio.Biquad
+import com.mochyy.mochymusic.eq.audio.EightDParams
 import com.mochyy.mochymusic.eq.audio.LoudnessParams
 import com.mochyy.mochymusic.eq.audio.PeakLimiter
 import com.mochyy.mochymusic.eq.audio.ReplayGainMode
@@ -138,6 +139,22 @@ data class VolumeSettings(
     fun toCurve() = VolumeCurve(enabled, exponent, limit)
 }
 
+@Serializable
+data class EightDSettings(
+    val enabled: Boolean = false,
+    val rotationSpeedHz: Float = 0.15f,
+    val depth: Float = 0.85f,
+    val reverbLevel: Float = 0.4f,
+) {
+    fun normalized() = copy(
+        rotationSpeedHz = rotationSpeedHz.coerceIn(0.05f, 0.5f),
+        depth = depth.coerceIn(0f, 1f),
+        reverbLevel = reverbLevel.coerceIn(0f, 1f),
+    )
+
+    fun toParams() = EightDParams(enabled, rotationSpeedHz, depth, reverbLevel)
+}
+
 /** everything audio lab sets (equalizer and audio fx), each change goes to the players live and is saved a moment later, so a slider can be dragged freely */
 @Singleton
 class AudioLabStore @Inject constructor(
@@ -175,6 +192,9 @@ class AudioLabStore @Inject constructor(
     private val _spatial = MutableStateFlow(load("spatial") ?: SpatialSettings())
     val spatial: StateFlow<SpatialSettings> = _spatial.asStateFlow()
 
+    private val _eightD = MutableStateFlow((load("eight_d") ?: EightDSettings()).normalized())
+    val eightD: StateFlow<EightDSettings> = _eightD.asStateFlow()
+
     /** MusicService applies this to whichever player is playing */
     private val _playback = MutableStateFlow(load("playback") ?: PlaybackSettings())
     val playback: StateFlow<PlaybackSettings> = _playback.asStateFlow()
@@ -201,7 +221,8 @@ class AudioLabStore @Inject constructor(
             eq.enabled || songPreset != null || reverb.enabled || loudness.enabled || spatial.enabled || spatial.mono
         },
         stage,
-    ) { others, stage -> others || stage.enabled }.distinctUntilChanged()
+        eightD,
+    ) { others, stage, eightD -> others || stage.enabled || eightD.enabled }.distinctUntilChanged()
 
     init {
         migrateLegacyEqualizer()
@@ -229,6 +250,12 @@ class AudioLabStore @Inject constructor(
 
     fun updateStage(transform: (StageSettings) -> StageSettings) {
         _stage.update(transform)
+        pushFx()
+        scheduleSave()
+    }
+
+    fun updateEightD(transform: (EightDSettings) -> EightDSettings) {
+        _eightD.update { transform(it).normalized() }
         pushFx()
         scheduleSave()
     }
@@ -328,6 +355,7 @@ class AudioLabStore @Inject constructor(
         val stage = _stage.value
         audioFx.stage = stage.toParams(speaker = _stageOutput.value.isSpeaker(stage))
         if (stage.enabled) loadHrtf()
+        audioFx.eightD = _eightD.value.toParams()
         audioFx.replayGain = _normalize.value.toParams()
         val curve = _volume.value.toCurve()
         if (curve != audioFx.volumeCurve) audioFx.volumeCurve = curve
@@ -342,6 +370,7 @@ class AudioLabStore @Inject constructor(
                 putString("reverb", json.encodeToString(ReverbSettings.serializer(), _reverb.value))
                 putString("loudness", json.encodeToString(LoudnessSettings.serializer(), _loudness.value))
                 putString("spatial", json.encodeToString(SpatialSettings.serializer(), _spatial.value))
+                putString("eight_d", json.encodeToString(EightDSettings.serializer(), _eightD.value))
                 putString("playback", json.encodeToString(PlaybackSettings.serializer(), _playback.value))
                 putString("volume", json.encodeToString(VolumeSettings.serializer(), _volume.value))
                 putString("normalize", json.encodeToString(NormalizeSettings.serializer(), _normalize.value))

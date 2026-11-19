@@ -89,6 +89,7 @@ fun AudioLabScreen(
     val reverb by viewModel.reverb.collectAsState()
     val loudness by viewModel.loudness.collectAsState()
     val spatial by viewModel.spatial.collectAsState()
+    val eightD by viewModel.eightD.collectAsState()
     val playback by viewModel.playback.collectAsState()
     val volume by viewModel.volume.collectAsState()
     val (quality) = rememberEnumPreference(AudioQualityKey, defaultValue = AudioQuality.AUTO)
@@ -104,7 +105,7 @@ fun AudioLabScreen(
     val (mode) = rememberEnumPreference(CrossmixModeKey, defaultValue = DefaultTransitionMode)
 
     val stage by viewModel.stage.collectAsState()
-    val effects = activeEffects(reverb, loudness, spatial, playback, volume, stage)
+    val effects = activeEffects(reverb, loudness, spatial, eightD, playback, volume, stage)
 
     AudioLabPage(
         title = LabTitle("Audio", "Lab"),

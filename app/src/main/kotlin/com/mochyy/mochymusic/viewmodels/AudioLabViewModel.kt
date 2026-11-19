@@ -62,6 +62,7 @@ class AudioLabViewModel @Inject constructor(
     val reverb = store.reverb
     val loudness = store.loudness
     val spatial = store.spatial
+    val eightD = store.eightD
     val playback = store.playback
     val volume = store.volume
     val normalize = store.normalize
@@ -233,6 +234,9 @@ class AudioLabViewModel @Inject constructor(
 
     fun updateSpatial(transform: (com.mochyy.mochymusic.eq.SpatialSettings) -> com.mochyy.mochymusic.eq.SpatialSettings) =
         store.updateSpatial(transform)
+
+    fun updateEightD(transform: (com.mochyy.mochymusic.eq.EightDSettings) -> com.mochyy.mochymusic.eq.EightDSettings) =
+        store.updateEightD(transform)
 
     fun updatePlayback(transform: (com.mochyy.mochymusic.eq.PlaybackSettings) -> com.mochyy.mochymusic.eq.PlaybackSettings) =
         store.updatePlayback(transform)

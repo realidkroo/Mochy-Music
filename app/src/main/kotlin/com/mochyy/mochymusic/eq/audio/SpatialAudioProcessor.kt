@@ -50,6 +50,7 @@ class SpatialAudioProcessor(private val service: AudioFxService) : AudioProcesso
 
     private var amount = 0f
     private var monoAmount = 0f
+    private var frame = FloatArray(0)
     private var crossfeed: Crossfeed? = null
     private var head: HeadRenderer? = null
     private var headAngle = Float.NaN
@@ -94,7 +95,6 @@ class SpatialAudioProcessor(private val service: AudioFxService) : AudioProcesso
         if (surround) {
             val renderer = head ?: HeadRenderer(sampleRate, surroundAzimuths(inChannels)).also { head = it }
             val out = replaceOutputBuffer(frames * 4)
-            val frame = FloatArray(inChannels)
             for (f in 0 until frames) {
                 for (c in 0 until inChannels) frame[c] = inputBuffer.getShort() * scale
                 renderer.render(frame)
@@ -138,7 +138,6 @@ class SpatialAudioProcessor(private val service: AudioFxService) : AudioProcesso
                 val angle = params.speakerAngle.coerceIn(5f, 90f)
                 val renderer = head?.takeIf { headAngle == angle }
                     ?: HeadRenderer(sampleRate, floatArrayOf(-angle, angle)).also { head = it; headAngle = angle }
-                val frame = FloatArray(2)
                 for (f in 0 until frames) {
                     var l = inputBuffer.getShort() * scale
                     var r = inputBuffer.getShort() * scale
@@ -195,6 +194,7 @@ class SpatialAudioProcessor(private val service: AudioFxService) : AudioProcesso
                 sampleRate = format.sampleRate
                 inChannels = format.channelCount
                 surround = pendingSurround
+                frame = FloatArray(inChannels)
                 crossfeed = null
                 head = null
                 headAngle = Float.NaN

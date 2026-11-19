@@ -3,6 +3,8 @@ package com.mochyy.mochymusic.eq
 import androidx.media3.common.C
 import androidx.media3.common.audio.AudioProcessor
 import com.mochyy.mochymusic.eq.audio.CustomEqualizerAudioProcessor
+import com.mochyy.mochymusic.eq.audio.EightDAudioProcessor
+import com.mochyy.mochymusic.eq.audio.EightDParams
 import com.mochyy.mochymusic.eq.audio.LoudnessAudioProcessor
 import com.mochyy.mochymusic.eq.audio.LoudnessParams
 import com.mochyy.mochymusic.eq.audio.ReverbAudioProcessor
@@ -164,6 +166,27 @@ class AudioLabDspTest {
         val late = rmsDb(out, from = rate * 7 / 4 * 2, to = rate * 2 * 2)
         assertTrue("tail $tail dB after the burst", tail > -60)
         assertTrue("dies away: late $late < tail $tail", late < tail)
+    }
+
+    @Test
+    fun `8D panning bypasses unsupported formats and smooths live enable changes`() {
+        val fx = AudioFxService()
+        val processor = EightDAudioProcessor(fx)
+        configure(processor)
+        val input = sine(440.0, 0.4, rate)
+        assertArrayEquals(input, run(processor, input))
+
+        fx.eightD = EightDParams(enabled = true, rotationSpeedHz = 0.15f, depth = 0.85f)
+        val output = run(processor, input)
+        assertTrue("enabled panning changes the signal", !input.contentEquals(output))
+        assertTrue("fade-in remains smooth", maxStep(output) < maxStep(input) * 3)
+
+        val mono = EightDAudioProcessor(AudioFxService())
+        assertEquals(AudioProcessor.AudioFormat.NOT_SET, configure(mono, channels = 1))
+        assertEquals(
+            AudioProcessor.AudioFormat.NOT_SET,
+            mono.configure(AudioProcessor.AudioFormat(rate, 2, C.ENCODING_PCM_FLOAT)),
+        )
     }
 
     @Test
