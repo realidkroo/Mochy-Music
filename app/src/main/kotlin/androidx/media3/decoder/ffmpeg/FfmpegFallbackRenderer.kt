@@ -70,11 +70,17 @@ open class FfmpegFallbackRenderer(
             .build()
     }
 
-    // float keeps a 24-bit alac whole, 16 bits would cut it down; media3's own renderer leaves ac-3 at 16 bits and so do we
+    // float keeps a 24-bit alac whole, 16 bits would cut it down; dolby and dts stay at 16-bit integer pcm so unclamped float peaks never crackle
     private fun shouldOutputFloat(format: Format): Boolean {
         if (!sinkTakes(format, C.ENCODING_PCM_16BIT)) return true
+        val mime = format.sampleMimeType
+        if (mime == MimeTypes.AUDIO_AC3 || mime == MimeTypes.AUDIO_E_AC3 || mime == MimeTypes.AUDIO_E_AC3_JOC ||
+            mime == MimeTypes.AUDIO_DTS || mime == MimeTypes.AUDIO_DTS_HD || mime == MimeTypes.AUDIO_TRUEHD
+        ) {
+            return false
+        }
         val floatSupport = getSinkFormatSupport(Util.getPcmFormat(C.ENCODING_PCM_FLOAT, format.channelCount, format.sampleRate))
-        return floatSupport == AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY && format.sampleMimeType != MimeTypes.AUDIO_AC3
+        return floatSupport == AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY
     }
 
     private fun sinkTakes(format: Format, encoding: Int) =

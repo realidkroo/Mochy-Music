@@ -80,8 +80,9 @@ class VideoAudioSync(
     }
 
     private companion object {
-        const val MaxRecordingUs = 20 * 60_000_000L
-        const val ListenTimeoutMs = 180_000L
+        // the first 90 seconds is enough to line up any intro or cut without downloading two whole 20-minute streams
+        const val MaxRecordingUs = 90 * 1_000_000L
+        const val ListenTimeoutMs = 60_000L
         const val MissRetryMs = 10 * 60_000L
     }
 }

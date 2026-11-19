@@ -41,6 +41,7 @@ import com.mochyy.mochymusic.eq.PlaybackSettings
 import com.mochyy.mochymusic.eq.ReverbSettings
 import com.mochyy.mochymusic.eq.SpatialSettings
 import com.mochyy.mochymusic.eq.VolumeSettings
+import com.mochyy.mochymusic.eq.stage.StageSettings
 import com.mochyy.mochymusic.ui.component.damageBoundary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -55,7 +56,9 @@ internal fun activeEffects(
     spatial: SpatialSettings,
     playback: PlaybackSettings,
     volume: VolumeSettings,
+    stage: StageSettings,
 ): List<ActiveEffect> = buildList {
+    if (stage.enabled) add(ActiveEffect("stage", "3D Sims"))
     if (reverb.enabled) add(ActiveEffect("reverb", "Reverb"))
     if (loudness.enabled) add(ActiveEffect("loudness", "Loudness"))
     if (spatial.enabled) add(ActiveEffect("spatial", "Spatial"))
@@ -74,6 +77,7 @@ internal fun effectLabelRes(key: String): Int = when (key) {
     "surround" -> R.string.lab_effect_surround
     "mono" -> R.string.lab_effect_mono
     "playback" -> R.string.lab_effect_playback
+    "stage" -> R.string.lab_effect_stage
     else -> R.string.lab_effect_volume
 }
 

@@ -126,4 +126,20 @@
     <string name="lib_manage_clear_cache_title">Clear your cache?</string>
     <string name="lib_manage_clear_cache_msg">Every cached song is deleted from this phone and streams again the next time you play it. Your library and your downloads stay as they are.</string>
     <string name="lib_manage_remove_songs">Remove songs</string>
+    <string name="library_tab_genres">Genres</string>
+    <string name="lib_all_songs_title">All Songs</string>
+    <string name="lib_stats_in_library">In your library · %1$s</string>
+    <string name="lib_stats_in_library_time">In your library · %1$s · %2$s to listen</string>
+    <string name="lib_time_hours_minutes">%1$dh %2$dm</string>
+    <string name="lib_time_minutes">%1$dm</string>
+    <string name="lib_view_grid">Show as a grid</string>
+    <string name="lib_view_list">Show as a list</string>
+    <string name="lib_see_all">See all</string>
+    <string name="lib_history_empty">Nothing played yet. Songs show up here as you listen.</string>
+    <string name="lib_history_all">All history</string>
+    <string name="lib_genres_local_empty">No genres yet. Songs on your phone show up here by the genre in their tags.</string>
+    <string name="lib_genre_search">Find a song in this genre</string>
+    <string name="lib_added_when">Added %1$s</string>
+    <string name="lib_added_earlier">Earlier</string>
+    <string name="lib_nothing_matches">Nothing here matches \"%1$s\"</string>
 </resources>

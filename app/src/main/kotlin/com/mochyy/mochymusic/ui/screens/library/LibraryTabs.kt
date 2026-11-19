@@ -50,6 +50,8 @@ enum class LibraryTab(val labelRes: Int, val shelf: LibraryShelfKind? = null) {
     All(R.string.library_tab_all),
     Local(R.string.library_tab_local, LibraryShelfKind.Local),
     Cached(R.string.cached, LibraryShelfKind.Cached),
+    History(R.string.history),
+    Genres(R.string.library_tab_genres),
     Imported(R.string.library_tab_imported),
 }
 

@@ -17,6 +17,12 @@ import com.mochyy.mochymusic.eq.autoeq.AutoEqRepository
 import com.mochyy.mochymusic.eq.autoeq.AutoEqTuning
 import com.mochyy.mochymusic.eq.data.FilterType
 import com.mochyy.mochymusic.eq.data.ParametricEQBand
+import com.mochyy.mochymusic.eq.stage.StageListener
+import com.mochyy.mochymusic.eq.stage.StageNative
+import com.mochyy.mochymusic.eq.stage.StageObject
+import com.mochyy.mochymusic.eq.stage.StagePresets
+import com.mochyy.mochymusic.eq.stage.StageSettings
+import com.mochyy.mochymusic.eq.stage.StageSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -59,6 +65,8 @@ class AudioLabViewModel @Inject constructor(
     val playback = store.playback
     val volume = store.volume
     val normalize = store.normalize
+    val stage = store.stage
+    val stageOutput = store.stageOutput
 
     // ---- the user's curve -------------------------------------------------------------------
 
@@ -234,6 +242,52 @@ class AudioLabViewModel @Inject constructor(
 
     fun updateNormalize(transform: (com.mochyy.mochymusic.eq.NormalizeSettings) -> com.mochyy.mochymusic.eq.NormalizeSettings) =
         store.updateNormalize(transform)
+
+    // ---- 3D Sims ----------------------------------------------------------------------------
+
+    fun updateStage(transform: (StageSettings) -> StageSettings) = store.updateStage(transform)
+
+    /** moves or changes one thing in the room; the preset it came from no longer matches */
+    fun updateStageObject(id: Int, transform: (StageObject) -> StageObject) = store.updateStage { s ->
+        s.copy(objects = s.objects.map { if (it.id == id) transform(it) else it }, presetId = null)
+    }
+
+    fun updateListener(transform: (StageListener) -> StageListener) = store.updateStage { s ->
+        s.copy(listener = transform(s.listener), presetId = null)
+    }
+
+    /** another copy of a part, a little to the side of the last one; null when all four of that kind are in the room */
+    fun addStageObject(source: StageSource): Int? {
+        var added: Int? = null
+        store.updateStage { s ->
+            val same = s.objects.filter { it.source == source }
+            if (same.size >= StageNative.Copies) return@updateStage s
+            val last = same.lastOrNull()
+            val id = (s.objects.maxOfOrNull { it.id } ?: -1) + 1
+            val x = last?.let { if (it.x > 0.5f) it.x - 0.4f else it.x + 0.4f } ?: 0f
+            added = id
+            val copy = last?.copy(id = id, x = x, solo = false) ?: StageObject(id, source, x, if (source == StageSource.Sub) 0.05f else 0.4f, 0.5f)
+            s.copy(objects = s.objects + copy, presetId = null)
+        }
+        return added
+    }
+
+    /** a copy can go; the last one of each part always keeps its place */
+    fun removeStageObject(id: Int) = store.updateStage { s ->
+        val target = s.objects.firstOrNull { it.id == id } ?: return@updateStage s
+        if (s.objects.count { it.source == target.source } <= 1) s
+        else s.copy(objects = s.objects - target, presetId = null)
+    }
+
+    fun applyStagePreset(id: String) {
+        val preset = StagePresets.All.firstOrNull { it.id == id } ?: return
+        store.updateStage { StagePresets.apply(it, preset) }
+    }
+
+    /** null goes back to guessing */
+    fun setOutputKind(key: String, speaker: Boolean?) = store.updateStage { s ->
+        s.copy(outputKinds = if (speaker == null) s.outputKinds - key else s.outputKinds + (key to speaker))
+    }
 
     companion object {
         const val MaxNodes = 16

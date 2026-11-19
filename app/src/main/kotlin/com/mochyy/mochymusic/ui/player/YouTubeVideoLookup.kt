@@ -223,31 +223,35 @@ private fun rememberVideoTimeline(mediaId: String, videoId: String): ((Long) -> 
     val currentLyrics by playerConnection.currentLyrics.collectAsState(initial = null)
 
     var lyricTimeline by remember(mediaId) { mutableStateOf<LyricVideoTimeline?>(null) }
-    LaunchedEffect(videoId, currentLyrics?.lyrics, lyricsSyncEnabled) {
-        val lyricsRaw = currentLyrics?.lyrics?.takeIf { it.isNotBlank() && it != LYRICS_NOT_FOUND }
-        if (!lyricsSyncEnabled || lyricsRaw == null) {
-            lyricTimeline = null
-            return@LaunchedEffect
-        }
-        val key = "$mediaId|$videoId|${lyricsRaw.hashCode()}"
-        if (LyricVideoTimelineCache.contains(key)) {
-            lyricTimeline = LyricVideoTimelineCache.get(key)
-            return@LaunchedEffect
-        }
-        val timeline = try {
-            buildLyricVideoTimeline(videoId, lyricsRaw)
-        } catch (e: kotlinx.coroutines.CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            null
-        }
-        LyricVideoTimelineCache.put(key, timeline)
-        lyricTimeline = timeline
-    }
-
     var audioMap by remember(mediaId) { mutableStateOf<com.mochyy.mochymusic.lyrics.SongVideoMap?>(null) }
-    LaunchedEffect(mediaId, videoId, lyricsSyncEnabled) {
-        audioMap = if (lyricsSyncEnabled) playerConnection.service.matchSongToVideo(mediaId, videoId) else null
+    LaunchedEffect(mediaId, videoId, currentLyrics?.lyrics, lyricsSyncEnabled) {
+        val lyricsRaw = currentLyrics?.lyrics?.takeIf { it.isNotBlank() && it != LYRICS_NOT_FOUND }
+        if (!lyricsSyncEnabled) {
+            lyricTimeline = null
+            audioMap = null
+            return@LaunchedEffect
+        }
+        val timeline = if (lyricsRaw == null) {
+            null
+        } else {
+            val key = "$mediaId|$videoId|${lyricsRaw.hashCode()}"
+            if (LyricVideoTimelineCache.contains(key)) {
+                LyricVideoTimelineCache.get(key)
+            } else {
+                val built = try {
+                    buildLyricVideoTimeline(videoId, lyricsRaw)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    null
+                }
+                LyricVideoTimelineCache.put(key, built)
+                built
+            }
+        }
+        lyricTimeline = timeline
+        // only listen to both audio streams when the captions couldn't line the video up
+        audioMap = if (timeline == null) playerConnection.service.matchSongToVideo(mediaId, videoId) else null
     }
 
     return remember(lyricTimeline, audioMap) {

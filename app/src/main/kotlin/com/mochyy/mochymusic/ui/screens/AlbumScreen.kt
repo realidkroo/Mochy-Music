@@ -82,7 +82,7 @@ import com.mochyy.mochymusic.ui.component.detail.PlaylistModeBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSearchBar
 import com.mochyy.mochymusic.ui.component.detail.PlaylistSelectTick
 import com.mochyy.mochymusic.ui.component.detail.PlaylistTrackRow
-import com.mochyy.mochymusic.ui.component.detail.featuredArtistsOf
+import com.mochyy.mochymusic.ui.component.detail.rememberFeaturedArtists
 import com.mochyy.mochymusic.ui.component.detail.playlistCoverHeight
 import com.mochyy.mochymusic.ui.component.librarySwipeAction
 import com.mochyy.mochymusic.ui.component.queueSwipeAction
@@ -184,9 +184,7 @@ fun AlbumScreen(
     val revealSeen = rememberRevealSeenState()
     val album = albumWithSongs
     val totalSeconds = remember(filteredSongs) { filteredSongs.sumOf { it.song.duration } }
-    val featuredArtists = remember(filteredSongs) {
-        featuredArtistsOf(filteredSongs.flatMap { it.artists }, id = { it.id }, name = { it.name })
-    }
+    val featuredArtists = rememberFeaturedArtists(filteredSongs, { filteredSongs.flatMap { it.artists } }, id = { it.id }, name = { it.name })
     val mainArtistName = album?.artists?.firstOrNull()?.name
     // the shelves are built outside composition, so their titles are read here first
     val moreByArtistTitle = if (mainArtistName != null) {

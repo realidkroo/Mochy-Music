@@ -1,9 +1,10 @@
 // LibraryHomeScreen.kt
 //
-// The Library tab's landing page: collapsing title + search, then All / Local / Cached / Imported.
-// All has the import banner, Pinned, the four category cards, Recently added and Liked; the others
-// are in LibraryLocalTab.kt, LibraryCachedTab.kt and LibraryImportedTab.kt. While songs download or
-// files come in from the phone, a progress card sits at the top of All and Local.
+// The Library tab's landing page: collapsing title + search, then All / Local / Cached / History /
+// Genres / Imported. All has the import banner, Pinned, the four category cards, Recently
+// added and Liked; the others are in LibraryLocalTab.kt, LibraryCachedTab.kt, LibraryMoreTabs.kt and
+// LibraryImportedTab.kt. While songs download or files come in from the phone, a progress card sits
+// at the top of All and Local.
 
 package com.mochyy.mochymusic.ui.screens.library
 
@@ -52,7 +53,9 @@ import com.mochyy.mochymusic.ui.screens.search.SearchHorizontalPadding
 import com.mochyy.mochymusic.ui.screens.search.rememberCollapseProgress
 import com.mochyy.mochymusic.ui.screens.settings.importsync.ImportProgressRoute
 import com.mochyy.mochymusic.utils.rememberPreference
+import com.mochyy.mochymusic.viewmodels.HistoryViewModel
 import com.mochyy.mochymusic.viewmodels.LibraryHomeViewModel
+import com.mochyy.mochymusic.viewmodels.LocalGenresViewModel
 import com.mochyy.mochymusic.viewmodels.LibraryImportViewModel
 import com.music.innertube.models.SongItem
 import com.music.innertube.models.YTItem
@@ -86,9 +89,21 @@ fun LibraryHomeScreen(
     val shelfData = tab.shelf?.let { collectShelfTabData(viewModel, it) }
     val localActions = rememberLocalImportActions(importViewModel)
 
-    // read inside the Cached tab's rows only, so playback changes don't recompose this screen
+    // read inside the Cached and History tabs' rows only, so playback changes don't recompose this screen
     val nowPlaying = playerConnection?.mediaMetadata?.collectAsState()
     val isPlaying = playerConnection?.isEffectivelyPlaying?.collectAsState()
+
+    // the History and Genres tabs only load once they're opened: one reads every play, the other every local song's genre
+    val historyEvents = if (tab == LibraryTab.History) {
+        hiltViewModel<HistoryViewModel>().events.collectAsState().value
+    } else {
+        null
+    }
+    val genres = if (tab == LibraryTab.Genres) {
+        hiltViewModel<LocalGenresViewModel>().genres.collectAsState().value
+    } else {
+        null
+    }
 
     val profilePicStr by rememberPreference(ProfilePicUriKey, defaultValue = "")
     val (hideImportBanner, onHideImportBannerChange) = rememberPreference(HideLibraryImportBannerKey, defaultValue = false)
@@ -237,6 +252,10 @@ fun LibraryHomeScreen(
                         navController = navController,
                     )
                 }
+
+                LibraryTab.History -> libraryHistoryTab(historyEvents, nowPlaying, isPlaying, playerConnection, navController)
+
+                LibraryTab.Genres -> libraryGenresTab(genres, navController)
 
                 LibraryTab.Imported -> libraryImportedTab(
                     importProgress = importProgress,

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stage_title_first">3D</string>
+    <string name="stage_title_second">Sims</string>
+
+    <string name="stage_card_title">3D Sims</string>
+    <string name="stage_card_sub">Pulls the song apart and places each part around you in a room you shape.</string>
+    <string name="stage_open">Open the room</string>
+    <string name="stage_toggle_sub">Vocals, bass and the rest of the mix, each where you put it. Best on headphones.</string>
+    <string name="stage_room_hint">Drag a dot to move it, two fingers to lift it, drag the room to turn it</string>
+    <string name="stage_reset_view">Reset the view</string>
+
+    <string name="stage_source_vocal">Vocal</string>
+    <string name="stage_source_center">Center</string>
+    <string name="stage_source_left">Left</string>
+    <string name="stage_source_right">Right</string>
+    <string name="stage_source_ambience">Ambience</string>
+    <string name="stage_source_sub">Sub</string>
+    <string name="stage_source_numbered">%1$s %2$d</string>
+    <string name="stage_you">You</string>
+    <string name="stage_add">Add a sound</string>
+    <string name="stage_add_title">Add to the room</string>
+    <string name="stage_add_count">%1$d of %2$d in the room</string>
+    <string name="stage_add_full">All %1$d are in the room</string>
+    <string name="stage_remove">Remove</string>
+    <string name="stage_mute">Mute</string>
+    <string name="stage_solo">Solo</string>
+
+    <string name="stage_axis_side">Left to right</string>
+    <string name="stage_axis_height">Height</string>
+    <string name="stage_axis_depth">Back to front</string>
+    <string name="stage_level">Level</string>
+    <string name="stage_width">Width</string>
+    <string name="stage_facing">Facing</string>
+    <string name="stage_middle">Middle</string>
+    <string name="stage_meters_left">%1$s m left</string>
+    <string name="stage_meters_right">%1$s m right</string>
+    <string name="stage_meters_up">%1$s m up</string>
+    <string name="stage_meters_front">%1$s m to the front</string>
+    <string name="stage_meters_back">%1$s m to the back</string>
+    <string name="stage_facing_ahead">Straight ahead</string>
+    <string name="stage_facing_left">%1$d° left</string>
+    <string name="stage_facing_right">%1$d° right</string>
+
+    <string name="stage_presets">Rooms</string>
+    <string name="stage_preset_studio">Studio</string>
+    <string name="stage_preset_living">Living room</string>
+    <string name="stage_preset_front_row">Front row</string>
+    <string name="stage_preset_on_stage">On stage</string>
+    <string name="stage_preset_around">All around</string>
+    <string name="stage_preset_hall">Hall</string>
+
+    <string name="stage_room">Room</string>
+    <string name="stage_room_size">Size</string>
+    <string name="stage_room_size_value">%1$s × %2$s m</string>
+    <string name="stage_walls_soft">Soft</string>
+    <string name="stage_walls_wood">Wood</string>
+    <string name="stage_walls_concrete">Concrete</string>
+    <string name="stage_room_amount">Room sound</string>
+    <string name="stage_output_level">Output level</string>
+
+    <string name="stage_output">Playing on</string>
+    <string name="stage_output_phone">Phone speaker</string>
+    <string name="stage_output_wired">Wired headphones</string>
+    <string name="stage_output_usb">USB audio</string>
+    <string name="stage_output_bluetooth">Bluetooth</string>
+    <string name="stage_output_hdmi">TV or HDMI</string>
+    <string name="stage_kind_headphones">Headphones</string>
+    <string name="stage_kind_speaker">Speaker</string>
+    <string name="stage_output_guessed">Mochy guessed this from the device. Wrong? Pick the right one.</string>
+    <string name="stage_output_set">You picked this for this device.</string>
+    <string name="stage_output_reset">Let Mochy guess</string>
+    <string name="stage_on_speakers">On speakers</string>
+    <string name="stage_speakers_off">Off</string>
+    <string name="stage_speakers_stereo">Plain stereo</string>
+    <string name="stage_speakers_3d">Keep 3D</string>
+    <string name="stage_speakers_note">3D sound is made for two ears. On a speaker, plain stereo keeps your layout as left and right, and the room stays.</string>
+
+    <string name="stage_surround_note">Surround and Atmos songs use their own channels as the sounds, from the next song.</string>
+    <string name="stage_credit">Ear measurements from the MIT Media Lab KEMAR set by Bill Gardner and Keith Martin.</string>
+    <string name="stage_spatial_note">3D Sims is on, so it places the sound instead.</string>
+</resources>

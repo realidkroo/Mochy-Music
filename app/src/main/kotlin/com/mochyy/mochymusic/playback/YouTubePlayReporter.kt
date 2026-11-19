@@ -53,11 +53,14 @@ class YouTubePlayReporter(
         // local files have nothing on youtube to count against
         if (!isEnabled || metadata == null || metadata.localUri != null) return
         val lengthMs = if (durationMs > 0) durationMs else metadata.duration * 1000L
-        listen = Listen(lengthMs, trackingFor(metadata.id))
+        listen = Listen(metadata.id, lengthMs, trackingFor(metadata.id))
         resume()
     }
 
     fun onPlayingChanged(isPlaying: Boolean, metadata: MediaMetadata?, durationMs: Long) {
+        if (listen != null && metadata?.id != null && metadata.id != listen?.videoId) {
+            onSongStop()
+        }
         when {
             !isPlaying -> pause()
             listen == null -> onSongStart(metadata, durationMs)
@@ -189,7 +192,7 @@ class YouTubePlayReporter(
 }
 
 // one listen of one song, from when it starts playing until it ends, gets skipped or the app stops
-private class Listen(val lengthMs: Long, val tracking: Deferred<PlaybackTracking?>) {
+private class Listen(val videoId: String, val lengthMs: Long, val tracking: Deferred<PlaybackTracking?>) {
     val cpn = YouTube.newPlaybackNonce()
     val startedAt = SystemClock.elapsedRealtime()
 

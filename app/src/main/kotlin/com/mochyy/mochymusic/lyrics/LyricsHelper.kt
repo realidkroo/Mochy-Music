@@ -270,6 +270,8 @@ constructor(
         }
 
         val chineseSong = isChineseSong(referenceScript, candidates)
+        val hindiSong = referenceScript == LyricsUtils.Script.DEVANAGARI ||
+            candidates.any { it.script == LyricsUtils.Script.DEVANAGARI || it.language == "hi-Latn" }
         val songLanguage = songLanguage(referenceScript, candidates)
         val pool = eligible(candidates, chineseSong, songLanguage)
         if (pool.isEmpty()) return null
@@ -292,7 +294,14 @@ constructor(
         }
 
         return pool.withIndex().maxByOrNull { (index, c) ->
+            // hindi songs come back in devanagari from youtube and in romanised hindi from apple and musixmatch; both are the real song
+            val hindiMatch = hindiSong && (
+                c.script == LyricsUtils.Script.DEVANAGARI ||
+                    c.language == "hi-Latn" ||
+                    (c.script == LyricsUtils.Script.LATIN && c.language == null)
+                )
             val scriptScore = when {
+                hindiMatch -> 3
                 referenceScript != null -> when {
                     c.script == referenceScript -> 3
                     sameLanguageFamily(c.script, referenceScript) -> 2
@@ -334,6 +343,9 @@ constructor(
                 else -> 0
             }
 
+            // for hindi songs betterlyrics and lyricsplus beat youtube music whenever they have the song
+            val preferredBonus = if (hindiMatch && c.providerName in PreferredHindiProviders) SyncWeight * 3 else 0
+
             // The Chinese services are the strongest sources for Chinese songs, so for one they win
             // a tie outright, and among themselves the user's order decides
             val orderScore = if (chineseSong && c.providerName in ChineseSources) {
@@ -343,6 +355,7 @@ constructor(
             }
 
             scriptScore * ScriptWeight +
+                preferredBonus +
                 syncScore * SyncWeight +
                 duetScore * DuetWeight +
                 orderScore
@@ -556,6 +569,7 @@ constructor(
          * language is the song's language.
          */
         private val LanguageReferenceProviders = setOf("YouTubeMusic", "YouTubeSubtitle")
+        private val PreferredHindiProviders = setOf("BetterLyrics", "YouLyPlus")
 
         /** Chinese services: trusted first-hand only for Chinese songs; see [eligible]. */
         private val ChineseSources = setOf(

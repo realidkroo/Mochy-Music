@@ -70,6 +70,54 @@ private const val CanvasSettleMs = 700L
 private const val CanvasSamplePx = 32
 private const val CanvasSampleMs = 1_500L
 
+// one shared client for every animated cover so song changes don't pile up connection pools
+private val CanvasHttpClient: OkHttpClient by lazy {
+    OkHttpClient
+        .Builder()
+        .followAppProxy()
+        .addInterceptor { chain ->
+            val request = chain.request()
+            val host = request.url.host
+            val isYouTubeMediaHost =
+                host.endsWith("googlevideo.com") ||
+                    host.endsWith("googleusercontent.com") ||
+                    host.endsWith("youtube.com") ||
+                    host.endsWith("youtube-nocookie.com") ||
+                    host.endsWith("ytimg.com")
+
+            if (!isYouTubeMediaHost) return@addInterceptor chain.proceed(request)
+
+            val clientParam = request.url.queryParameter("c")?.trim().orEmpty()
+            val isWeb =
+                clientParam.startsWith("WEB", ignoreCase = true) ||
+                    clientParam.startsWith("WEB_REMIX", ignoreCase = true) ||
+                    request.url.toString().contains("c=WEB", ignoreCase = true)
+
+            val userAgent =
+                when {
+                    clientParam.startsWith("WEB", ignoreCase = true) ||
+                        clientParam.startsWith("WEB_REMIX", ignoreCase = true) -> YouTubeClient.USER_AGENT_WEB
+
+                    clientParam.startsWith("IOS", ignoreCase = true) -> YouTubeClient.IOS.userAgent
+
+                    clientParam.startsWith("ANDROID_VR", ignoreCase = true) -> YouTubeClient.ANDROID_VR_NO_AUTH.userAgent
+
+                    clientParam.startsWith("ANDROID", ignoreCase = true) -> YouTubeClient.MOBILE.userAgent
+
+                    else -> YouTubeClient.USER_AGENT_WEB
+                }
+
+            val builder = request.newBuilder().header("User-Agent", userAgent)
+            if (isWeb) {
+                builder.header("Origin", YouTubeClient.ORIGIN_YOUTUBE_MUSIC)
+                builder.header("Referer", YouTubeClient.REFERER_YOUTUBE_MUSIC)
+            }
+
+            chain.proceed(builder.build())
+        }
+        .build()
+}
+
 @Composable
 fun CanvasArtworkPlayer(
     primaryUrl: String?,
@@ -96,53 +144,7 @@ fun CanvasArtworkPlayer(
     LaunchedEffect(isVideoReady) { currentOnReadyChange?.invoke(isVideoReady) }
     DisposableEffect(Unit) { onDispose { currentOnReadyChange?.invoke(false) } }
 
-    val okHttpClient =
-        remember {
-            OkHttpClient
-                .Builder()
-                .followAppProxy()
-                .addInterceptor { chain ->
-                    val request = chain.request()
-                    val host = request.url.host
-                    val isYouTubeMediaHost =
-                        host.endsWith("googlevideo.com") ||
-                            host.endsWith("googleusercontent.com") ||
-                            host.endsWith("youtube.com") ||
-                            host.endsWith("youtube-nocookie.com") ||
-                            host.endsWith("ytimg.com")
-
-                    if (!isYouTubeMediaHost) return@addInterceptor chain.proceed(request)
-
-                    val clientParam = request.url.queryParameter("c")?.trim().orEmpty()
-                    val isWeb =
-                        clientParam.startsWith("WEB", ignoreCase = true) ||
-                            clientParam.startsWith("WEB_REMIX", ignoreCase = true) ||
-                            request.url.toString().contains("c=WEB", ignoreCase = true)
-
-                    val userAgent =
-                        when {
-                            clientParam.startsWith("WEB", ignoreCase = true) ||
-                                clientParam.startsWith("WEB_REMIX", ignoreCase = true) -> YouTubeClient.USER_AGENT_WEB
-
-                            clientParam.startsWith("IOS", ignoreCase = true) -> YouTubeClient.IOS.userAgent
-
-                            clientParam.startsWith("ANDROID_VR", ignoreCase = true) -> YouTubeClient.ANDROID_VR_NO_AUTH.userAgent
-
-                            clientParam.startsWith("ANDROID", ignoreCase = true) -> YouTubeClient.MOBILE.userAgent
-
-                            else -> YouTubeClient.USER_AGENT_WEB
-                        }
-
-                    val builder = request.newBuilder().header("User-Agent", userAgent)
-                    if (isWeb) {
-                        builder.header("Origin", YouTubeClient.ORIGIN_YOUTUBE_MUSIC)
-                        builder.header("Referer", YouTubeClient.REFERER_YOUTUBE_MUSIC)
-                    }
-
-                    chain.proceed(builder.build())
-                }
-                .build()
-        }
+    val okHttpClient = CanvasHttpClient
     val mediaSourceFactory =
         remember(okHttpClient) {
             val upstreamFactory = DefaultDataSource.Factory(
@@ -250,10 +252,11 @@ fun CanvasArtworkPlayer(
         do {
             val view = aspectRatioFrameLayout.getChildAt(0) as? TextureView
             if (sampler.read(session.frameSurface, view)) {
-                sampler.bitmap.getPixels(pixels, 0, CanvasSamplePx, 0, 0, CanvasSamplePx, CanvasSamplePx)
-                currentOnFrameColors?.invoke(
+                val tones = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    sampler.bitmap.getPixels(pixels, 0, CanvasSamplePx, 0, 0, CanvasSamplePx, CanvasSamplePx)
                     com.mochyy.mochymusic.ui.player.flagship.ambientTones(pixels, CanvasSamplePx, CanvasSamplePx)
-                )
+                }
+                currentOnFrameColors?.invoke(tones)
             }
             kotlinx.coroutines.delay(CanvasSampleMs)
         } while (shouldPlay)

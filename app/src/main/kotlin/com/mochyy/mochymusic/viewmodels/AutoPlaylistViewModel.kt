@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -140,11 +141,16 @@ constructor(
                     else -> flowOf(AutoPlaylistSongs(emptyList()))
                 }
             }
+            .onEach { lastShown = playlist to it }
             .flowOn(Dispatchers.Default)
             // Stops a moment after the page stops watching: the Cached lists look at the player's
             // cache every couple of seconds, which shouldn't go on from the background. The last
             // list is kept, so coming back shows it at once.
-            .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), null)
+            .stateIn(
+                viewModelScope,
+                kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000),
+                lastShown?.takeIf { it.first == playlist }?.second,
+            )
 
     /**
      * Liked songs by the service each was imported from, the ones liked here first and then the
@@ -166,6 +172,12 @@ constructor(
             bySource[source]?.let { LikedSourceSection(source, it) }
         }
         return AutoPlaylistSongs(songs = sections.flatMap { it.songs }, sections = sections)
+    }
+
+    private companion object {
+        // the list the page showed last time, so opening it again has its songs from the first frame instead of popping in after the morph; one slot keeps the memory small
+        @Volatile
+        var lastShown: Pair<String, AutoPlaylistSongs>? = null
     }
 
     fun syncLikedSongs() {

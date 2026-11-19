@@ -130,16 +130,20 @@ object MusicRecognitionService {
         val startTime = System.currentTimeMillis()
 
         try {
+            if (audioRecord.state != AudioRecord.STATE_INITIALIZED) {
+                error("Microphone is unavailable")
+            }
             audioRecord.startRecording()
 
             while (System.currentTimeMillis() - startTime < RECORDING_DURATION_MS && isActive) {
                 val bytesRead = audioRecord.read(buffer, 0, bufferSize)
+                if (bytesRead < 0) break
                 if (bytesRead > 0) {
                     outputStream.write(buffer, 0, bytesRead)
                 }
             }
         } finally {
-            audioRecord.stop()
+            runCatching { audioRecord.stop() }
             audioRecord.release()
         }
 

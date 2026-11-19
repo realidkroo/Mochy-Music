@@ -56,6 +56,8 @@ data class SongEntity(
     // in the library only because it was liked, so its album stays out of Albums unless the old way is on
     @ColumnInfo(defaultValue = "0")
     val addedByLike: Boolean = false,
+    // a local file's genre tag, "" once read from a file that has none, null until it's been read
+    val genre: String? = null,
 ) {
     fun localToggleLike() = copy(
         liked = !liked,

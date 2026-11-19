@@ -28,6 +28,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,7 +46,9 @@ import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.models.MediaMetadata
 import com.mochyy.mochymusic.ui.component.containerTransformTarget
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.withContext
 
 // one row of the album page, whatever list it came from
 @Immutable
@@ -57,6 +60,18 @@ internal data class TvTrack(
     val durationSeconds: Int,
     val ref: TvSongRef,
 )
+
+// how many rows rise in one after another when the page opens; rows further down just appear as you reach them
+private const val RevealRows = 12
+
+// rows are built off the main thread, since each one carries a full song for the menu and a long playlist stalled a weak tv as it opened; null while they're being built
+@Composable
+internal fun <T> rememberTvTracks(items: List<T>, toTrack: (T) -> TvTrack): List<TvTrack>? {
+    val tracks by produceState<List<TvTrack>?>(null, items) {
+        value = withContext(Dispatchers.Default) { items.map(toTrack) }
+    }
+    return tracks
+}
 
 // the album and playlist page from the concept: the cover down the left melting into the dark, the songs on the right
 @OptIn(ExperimentalFoundationApi::class)
@@ -76,6 +91,7 @@ internal fun TvTrackListPage(
     val player = LocalPlayerConnection.current
     val playingId by remember(player) { player?.mediaMetadata ?: MutableStateFlow<MediaMetadata?>(null) }.collectAsState()
     val firstSong = remember { FocusRequester() }
+    val seen = remember { HashSet<Any>() }
     LaunchedEffect(tracks.isNotEmpty()) { if (tracks.isNotEmpty()) runCatching { firstSong.requestFocus() } }
 
     BoxWithConstraints(
@@ -101,7 +117,13 @@ internal fun TvTrackListPage(
                     },
             )
         }
-        Column(Modifier.align(Alignment.BottomStart).padding(start = TvSpace.Start, bottom = 40.dp).width(coverWidth - TvSpace.Start)) {
+        Column(
+            Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = TvSpace.Start, bottom = 40.dp)
+                .width(coverWidth - TvSpace.Start)
+                .tvReveal("header", seen, delayMillis = 60),
+        ) {
             Text(title, style = TvText.Hero.copy(fontSize = 34.sp), maxLines = 2, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(4.dp))
             Text(subtitle, style = TvText.Sub.copy(fontSize = 12.sp, color = Color(0xFFBDBDBD)), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -129,7 +151,9 @@ internal fun TvTrackListPage(
                         subtitle = track.subtitle,
                         thumbnailUrl = track.thumbnailUrl,
                         isCurrent = playingId?.id == track.id,
-                        modifier = if (index == 0) Modifier.focusRequester(firstSong) else Modifier,
+                        modifier = Modifier
+                            .then(if (index == 0) Modifier.focusRequester(firstSong) else Modifier)
+                            .then(if (index < RevealRows) Modifier.tvReveal(track.id to index, seen, delayMillis = 120 + index * 35) else Modifier),
                         onMenu = { actions.openMenu(track.ref) },
                         onClick = { onPlay(index, false) },
                     )

@@ -17,18 +17,24 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
@@ -83,6 +89,10 @@ private object ContainerTransformRegistry {
     val sourceCovers = HashMap<String, String>()
     // which screens are showing a card for each key right now, so a page can tell where it was opened from
     val hosts = HashMap<String, MutableList<String>>()
+    // every card showing each screen key, in the order they appeared
+    val scopedOwners = HashMap<String, MutableList<TransformOwner>>()
+    // the card a key's morph belongs to once a finger or the remote picked it, read in composition so the morph moves to it
+    val claimed = mutableStateMapOf<String, TransformOwner>()
     var targetWidth = 0f
 }
 
@@ -148,6 +158,50 @@ private fun screenCornerRadiusPx(view: View): Float =
 private fun roundedCornerRadiusPx(view: View): Float =
     view.rootWindowInsets?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius?.toFloat() ?: 0f
 
+// home can show liked songs in two or three rows at once; only one card per screen may carry the morph, and it has to be the one tapped or the page opened from the wrong card or from nowhere
+private class TransformOwner(private val scoped: String) : RememberObserver {
+    private val owners = ContainerTransformRegistry.scopedOwners.getOrPut(scoped) { mutableListOf() }.also { it += this }
+    var coordinates: LayoutCoordinates? = null
+
+    // read while composing, so a new claim moves the morph onto this card
+    val isPrimary: Boolean
+        get() {
+            val picked = ContainerTransformRegistry.claimed[scoped]
+            return if (picked != null && picked in owners) picked === this else owners.first() === this
+        }
+
+    fun claim() {
+        if (owners.size > 1 && ContainerTransformRegistry.claimed[scoped] !== this) ContainerTransformRegistry.claimed[scoped] = this
+    }
+
+    fun contains(point: Offset): Boolean =
+        coordinates?.takeIf { it.isAttached }?.boundsInWindow()?.contains(point) == true
+
+    override fun onRemembered() = Unit
+    override fun onForgotten() = release()
+    override fun onAbandoned() = release()
+
+    private fun release() {
+        val wasPrimary = isPrimary
+        owners.remove(this)
+        when {
+            owners.isEmpty() -> {
+                ContainerTransformRegistry.scopedOwners.remove(scoped)
+                ContainerTransformRegistry.claimed.remove(scoped)
+            }
+            // the card left (scrolled away, say), so the one still showing takes over instead of nobody
+            wasPrimary -> ContainerTransformRegistry.claimed[scoped] = owners.first()
+        }
+    }
+}
+
+/** a finger went down at [point] (window pixels): of the cards sharing a key, the one under it is the one the page will grow from */
+fun claimContainerTransformAt(point: Offset) {
+    ContainerTransformRegistry.scopedOwners.values.forEach { owners ->
+        if (owners.size > 1) owners.firstOrNull { it.contains(point) }?.claim()
+    }
+}
+
 /** the tapped side: a cover card on Home (or anywhere a playlist can be opened from) */
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -160,6 +214,8 @@ fun Modifier.containerTransformSource(
     val sharedScope = LocalSharedTransitionScope.current ?: return this
     val visibilityScope = LocalNavAnimatedContentScope.current ?: return this
     val screenId = currentScreenId()
+    val scoped = screenKey(key, screenId)
+    val owner = remember(scoped) { TransformOwner(scoped) }
     DisposableEffect(key, screenId) {
         val hosts = ContainerTransformRegistry.hosts.getOrPut(key) { mutableListOf() }
         hosts += screenId
@@ -168,17 +224,22 @@ fun Modifier.containerTransformSource(
             if (hosts.isEmpty()) ContainerTransformRegistry.hosts.remove(key)
         }
     }
-    val scoped = screenKey(key, screenId)
     val clip = rememberMorphingCornerClip(scoped, cornerRadius)
 
     return with(sharedScope) {
-        this@containerTransformSource
+        val placed = this@containerTransformSource
             .onPlaced {
+                owner.coordinates = it
                 ContainerTransformRegistry.sourceWidths[scoped] = it.size.width.toFloat()
                 ContainerTransformRegistry.sourceRadii[scoped] = cornerRadius
                 if (coverUrl != null) ContainerTransformRegistry.sourceCovers[key] = coverUrl
             }
-            .sharedBounds(
+            // on a tv the remote picks a card by focusing it
+            .onFocusChanged { if (it.hasFocus) owner.claim() }
+        if (!owner.isPrimary) {
+            placed
+        } else {
+            placed.sharedBounds(
                 sharedContentState = rememberSharedContentState(scoped),
                 animatedVisibilityScope = visibilityScope,
                 // the opened screen is drawn above the card, so the card only has to be gone
@@ -189,6 +250,7 @@ fun Modifier.containerTransformSource(
                 resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(ContentScale.FillWidth, Alignment.TopCenter),
                 clipInOverlayDuringTransition = clip,
             )
+        }
     }
 }
 

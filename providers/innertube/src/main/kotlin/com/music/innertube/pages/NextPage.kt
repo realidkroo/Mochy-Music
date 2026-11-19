@@ -23,7 +23,7 @@ data class NextResult(
 
 object NextPage {
     fun fromPlaylistPanelVideoRenderer(renderer: PlaylistPanelVideoRenderer): SongItem? {
-        val longByLineRuns = renderer.longBylineText?.runs?.splitBySeparator() ?: return null
+        val longByLineRuns = (renderer.longBylineText ?: renderer.shortBylineText)?.runs?.splitBySeparator() ?: return null
 
         val libraryTokens = PageHelper.extractLibraryTokensFromMenuItems(renderer.menu?.menuRenderer?.items)
 

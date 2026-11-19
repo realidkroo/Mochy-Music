@@ -1138,6 +1138,18 @@ interface DatabaseDao {
     @Query("SELECT * FROM song WHERE isLocal AND albumId IS NULL AND albumName IS NOT NULL AND albumName != ''")
     suspend fun localSongsWithoutAlbum(): List<Song>
 
+    // local files whose genre tag hasn't been read yet
+    @Query("SELECT * FROM song WHERE isLocal AND genre IS NULL AND localUri IS NOT NULL")
+    suspend fun localSongsWithoutGenre(): List<SongEntity>
+
+    @Query("UPDATE song SET genre = :genre WHERE id = :songId")
+    fun setSongGenre(songId: String, genre: String)
+
+    // the local songs that have a genre, for the Genres tab and each genre's page
+    @Transaction
+    @Query("SELECT * FROM song WHERE isLocal AND genre IS NOT NULL AND genre != '' ORDER BY title COLLATE NOCASE")
+    fun localSongsWithGenre(): Flow<List<Song>>
+
     @Transaction
     @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL ORDER BY rowId")
     fun playlistsByCreateDateAsc(): Flow<List<Playlist>>

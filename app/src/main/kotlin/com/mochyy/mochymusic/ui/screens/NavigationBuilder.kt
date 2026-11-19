@@ -314,6 +314,14 @@ fun NavGraphBuilder.navigationBuilder(
         com.mochyy.mochymusic.ui.screens.library.LibraryRecentlyAddedScreen(navController = navController)
     }
 
+    // one genre from the Library's Genres tab: the songs on the phone tagged with it
+    coverSourceComposable(
+        route = "local_genre/{name}",
+        arguments = listOf(navArgument("name") { type = NavType.StringType }),
+    ) {
+        com.mochyy.mochymusic.ui.screens.library.LibraryGenreScreen(navController = navController)
+    }
+
     // The Library's Local and Cached tabs open these: the same pages again, counting only that
     // tab's songs. "library/local/albums", "library/cached/albums" and so on.
     com.mochyy.mochymusic.viewmodels.LibraryShelfKind.entries.forEach { shelf ->
@@ -527,6 +535,10 @@ fun NavGraphBuilder.navigationBuilder(
 
     composable("audio_fx") {
         com.mochyy.mochymusic.ui.screens.audiolab.AudioFxScreen(navController = navController)
+    }
+
+    composable("audio_stage") {
+        com.mochyy.mochymusic.ui.screens.audiolab.stage.StageScreen(navController = navController)
     }
 
     composable("audio_quality") {

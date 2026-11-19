@@ -27,6 +27,7 @@ class PrecisionSink(
     private var outputChannels: IntArray? = null
     private var configuredAllowed = false
     private var configuredTarget: Int? = null
+    private var configuredCap: Int? = null
     private var handedFormat: Format? = null
 
     /** true while buffers are reworked here instead of going straight down */
@@ -65,10 +66,12 @@ class PrecisionSink(
         val format = inputFormat ?: return
         configuredAllowed = outputs.floatAllowed
         configuredTarget = outputs.fixedOutputRate
+        configuredCap = outputs.effectRateCap
         val encoding = format.pcmEncoding
         val workable = MimeTypes.AUDIO_RAW == format.sampleMimeType && encoding in Workable && format.channelCount > 0
         val hiRes = workable && Util.isEncodingHighResolutionPcm(encoding)
-        val target = configuredTarget?.takeIf { workable && it != format.sampleRate }
+        val capped = configuredCap?.takeIf { format.sampleRate > it }
+        val target = listOfNotNull(configuredTarget, capped).minOrNull()?.takeIf { workable && it != format.sampleRate }
         val nextResampler = target?.let {
             resampler?.takeIf { r -> r.inRate == format.sampleRate && r.outRate == it }
                 ?: SincResampler.create(format.sampleRate, it, format.channelCount)
@@ -105,7 +108,7 @@ class PrecisionSink(
     override fun handleBuffer(buffer: ByteBuffer, presentationTimeUs: Long, encodedAccessUnitCount: Int): Boolean {
         // an effect or the output changed mid-song: the sink drains the old track and reopens, a moment's gap
         if (pending == null && inputFormat != null &&
-            (configuredAllowed != outputs.floatAllowed || configuredTarget != outputs.fixedOutputRate)
+            (configuredAllowed != outputs.floatAllowed || configuredTarget != outputs.fixedOutputRate || configuredCap != outputs.effectRateCap)
         ) {
             applyConfiguration()
         }
@@ -202,14 +205,20 @@ class PrecisionSink(
         }
     }
 
-    // tpdf dither: two random halves of a step added before rounding, so quiet detail fades into a faint even hiss instead of grit
+    // tpdf dither: two random halves of a step added before rounding, soft-clamped first so dolby float peaks above 1.0 never crackle
     private fun ditherTo16(sample: Float): Short {
         dither = dither xor (dither shl 13)
         dither = dither xor (dither ushr 17)
         dither = dither xor (dither shl 5)
         val a = (dither and 0xFFFF) / 65536f
         val b = ((dither ushr 16) and 0xFFFF) / 65536f
-        val value = (sample * 32768f + a - b).roundToInt()
+        val clamped = when {
+            !sample.isFinite() -> 0f
+            sample > 0.98f -> 0.98f + 0.02f * kotlin.math.tanh((sample - 0.98f) / 0.02f)
+            sample < -0.98f -> -0.98f + 0.02f * kotlin.math.tanh((sample + 0.98f) / 0.02f)
+            else -> sample
+        }
+        val value = (clamped * 32768f + a - b).roundToInt()
         return value.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
     }
 

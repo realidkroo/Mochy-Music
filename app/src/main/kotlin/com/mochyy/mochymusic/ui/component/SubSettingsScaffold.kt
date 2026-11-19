@@ -317,12 +317,14 @@ fun SubSettingsScaffold(
                     }
                     .background(Color(0xFF2C2C2E))
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer { alpha = (1f - collapse.value / 0.6f).coerceIn(0f, 1f) }
-                ) {
-                    searchBar()
+                if (!iconTappable && !searchOverlayVisible) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { alpha = (1f - collapse.value / 0.6f).coerceIn(0f, 1f) }
+                    ) {
+                        searchBar()
+                    }
                 }
 
                 Box(
@@ -330,9 +332,14 @@ fun SubSettingsScaffold(
                         .fillMaxSize()
                         .graphicsLayer { alpha = ((collapse.value - 0.45f) / 0.55f).coerceIn(0f, 1f) }
                         .clip(CircleShape)
-                        .clickable(enabled = iconTappable) {
-                            searchOverlayVisible = !searchOverlayVisible
-                        },
+                        // only attach clickable once collapsed so the invisible circle doesn't swallow taps on the open search field
+                        .then(
+                            if (iconTappable) {
+                                Modifier.clickable { searchOverlayVisible = !searchOverlayVisible }
+                            } else {
+                                Modifier
+                            }
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
