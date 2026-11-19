@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- "hey google, play … on mochy" -->
+    <string name="voice_nothing_found">“%1$s” için bir şey bulamadım. Farklı bir şekilde söylemeyi dene.</string>
+    <string name="voice_nothing_to_play">Henüz çalınacak bir şey yok. Bir şarkı, sanatçı veya çalma listesi iste.</string>
+    <string name="voice_offline">YouTube Music\'e ulaşılamadı. Bağlantını kontrol edip tekrar dene.</string>
+</resources>

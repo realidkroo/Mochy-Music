@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- vivo'nun müzik kartı (OriginOS kilit ekranı ve Atomic Island): listelerin boşken söyledikleri -->
+    <string name="origin_card_queue_empty">Kuyrukta bir şey yok</string>
+    <string name="origin_card_queue_empty_hint">Mochy\'de bir şey çal</string>
+    <string name="origin_card_liked_empty">Henüz beğenilen şarkı yok</string>
+    <string name="origin_card_liked_empty_hint">Mochy\'de beğendiğin şarkılar burada görünür</string>
+    <string name="origin_card_local_empty">Henüz indirme yok</string>
+    <string name="origin_card_local_empty_hint">Mochy\'de indirdiğin şarkılar burada görünür</string>
+</resources>

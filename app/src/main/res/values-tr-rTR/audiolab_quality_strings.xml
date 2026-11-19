@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="aq_title_first">Ses</string>
+    <string name="aq_title_second">Kalitesi</string>
+    <string name="aq_nothing_on">Hiçbir şey açık değil</string>
+    <string name="aq_turn_provider_on">Bir sağlayıcı aç</string>
+    <string name="aq_youtube_tier">YouTube · %1$s</string>
+    <string name="aq_section_streaming">Akış</string>
+    <string name="aq_section_download">İndirme</string>
+    <string name="aq_section_provider">Sağlayıcı</string>
+    <string name="aq_youtube_status_on">Diğerlerinde olmayanı çalar</string>
+    <string name="aq_youtube_status_off_none">Kapalı ve başka hiçbir şey açık değil, bu yüzden şarkılar çalmaz</string>
+    <string name="aq_youtube_status_off">Kapalı: diğerlerinde olmayan şarkılar atlanır</string>
+    <string name="aq_quality_auto">Otomatik</string>
+    <string name="aq_quality_high">Yüksek</string>
+    <string name="aq_quality_medium">Orta</string>
+    <string name="aq_quality_low">Düşük</string>
+    <string name="aq_quality_lossless">Kayıpsız</string>
+    <string name="aq_desc_auto">Wi-Fi\'de yüksek, mobil veride orta</string>
+    <string name="aq_desc_high">Akışın sunduğu en iyisi: daha az sıkıştırma, daha çok veri</string>
+    <string name="aq_desc_medium">Yaklaşık 128 kbps, veriye nazik</string>
+    <string name="aq_desc_low">Yavaş bağlantılar için en küçük akışlar</string>
+    <string name="aq_fmt_adaptive">Uyarlanabilir</string>
+    <string name="aq_fmt_high">~160 kbps · Opus</string>
+    <string name="aq_fmt_medium">~128 kbps · AAC</string>
+    <string name="aq_fmt_low">~50–70 kbps · Opus</string>
+    <string name="aq_desc_monochrome_lossless">FLAC, Monochrome\'daki gibi: CD kalitesi veya daha iyisi</string>
+    <string name="aq_module_settings">%1$s ayarları</string>
+    <string name="aq_dl_desc_high">YouTube\'un sunabildiği en iyisi: ~160 kbps Opus</string>
+    <string name="aq_dl_desc_medium">Yaklaşık 128 kbps, yarı yarıya yer</string>
+    <string name="aq_dl_desc_low">En küçük dosyalar, ~50–70 kbps</string>
+    <string name="aq_status_sign_in">Ondan çalmak için giriş yap</string>
+    <string name="aq_status_sign_in_again">Tekrar giriş yap</string>
+    <string name="aq_status_on">Açık</string>
+    <string name="aq_status_off_tap">Kapalı, açmak için dokun</string>
+    <string name="aq_status_not_installed">Yüklü değil</string>
+</resources>

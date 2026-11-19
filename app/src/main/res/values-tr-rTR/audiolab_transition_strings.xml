@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="xmix_title">Crossfade</string>
+    <string name="xmix_back">Ses Laboratuvarı</string>
+    <string name="xmix_off">Kapalı</string>
+    <string name="xmix_off_desc">Sıkıcı sıkıcı sıkıcı</string>
+    <string name="xmix_auto">Otomatik Crossfade</string>
+    <string name="xmix_auto_desc">Her şarkıdan sonrakine yumuşak, %1$d saniyelik bir geçiş</string>
+    <string name="xmix_manual">Manuel Crossfade</string>
+    <string name="xmix_manual_desc">Özel crossfade ayarla</string>
+    <string name="xmix_length">Uzunluk</string>
+    <string name="xmix_crossmix">CrossMix</string>
+    <string name="xmix_crossmix_desc">DJ tarzı: her şarkının temposunu, vuruşlarını, tonunu, enerjisini ve vokalinin nerede olduğunu okur, sonra 27 geçişten uygun olanı seçer, böylece iki vokal asla üst üste söylemez</string>
+    <string name="xmix_crossmix_desc_unavailable">Hâlâ ayarlanıyor, bu yüzden henüz açılamıyor. Her şarkının temposunu, vuruşlarını, tonunu ve vokalini okuyan DJ tarzı miksler</string>
+    <string name="xmix_gapless">Gapless albümleri bozmadan koru</string>
+    <string name="xmix_gapless_desc">Birbirine doğrudan bağlanan albüm parçaları mikssiz çalar</string>
+    <string name="xmix_in_progress">Devam ediyor</string>
+    <string name="xmix_transport_title">Duraklatma, çalma, ileri ve geri geçiş</string>
+    <string name="xmix_fade_enable">Soldurmayı etkinleştir</string>
+    <string name="xmix_fade_enable_desc">Duraklattığında veya atladığında müziği yumuşatır, çaldığında geri getirir</string>
+    <string name="xmix_layered_effect">Katmanlı efekt</string>
+    <string name="xmix_layered_effect_desc">Solmanın üstüne bir CrossMix efekti, yankı izi veya plağın geriye dönmesi gibi</string>
+    <string name="xmix_choose_effect">Bir efekt seç</string>
+    <string name="xmix_effect_none">Hiçbiri</string>
+    <string name="xmix_effect_echo">Yankı</string>
+    <string name="xmix_effect_rewind">Geri sarma</string>
+    <string name="xmix_effect_tape_stop">Kaset durması</string>
+    <string name="xmix_effect_far_away">Uzağa solma</string>
+    <string name="xmix_effect_reverb">Yankı dalgası</string>
+    <string name="xmix_effect_filter">Filtre süpürmesi</string>
+    <string name="xmix_status_title">Crossmix durumu</string>
+    <string name="xmix_status_empty">Henüz bir şey yok. Ardına başka bir şarkı sıralanmışken bir şarkı çal</string>
+    <string name="xmix_test_title">Bu şarkıda test et</string>
+    <string name="xmix_test_desc">Sonraki şarkıya karışır</string>
+    <string name="xmix_test_detail">Sonraki şarkıya karışımı planlar, sonra ondan birkaç saniye öncesine atlar</string>
+</resources>

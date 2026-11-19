@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels -->
+    <string name="lib_artist">Sanatçı</string>
+    <string name="lib_album">Albüm</string>
+    <string name="lib_playlist">Çalma listesi</string>
+    <string name="lib_nothing_to_show">Burada gösterilecek bir şey yok</string>
+    <string name="lib_no_results">Kütüphanende \"%1$s\" ile eşleşen yok</string>
+    <plurals name="lib_song_count">
+        <item quantity="one">%1$d şarkı</item>
+        <item quantity="other">%1$d şarkı</item>
+    </plurals>
+    <string name="lib_count_on_device">%1$s bu cihazda</string>
+    <string name="lib_count_cached">%1$s önbellekte</string>
+
+    <!-- Albums / artists / playlists / songs screens -->
+    <string name="lib_albums_local_subtitle">Müziği bu cihazda olan albümler.</string>
+    <string name="lib_albums_cached_subtitle">Şarkıları önbelleğinde olan albümler.</string>
+    <string name="lib_artists_local_subtitle">Müziği bu cihazda olan sanatçılar.</string>
+    <string name="lib_artists_cached_subtitle">Şarkıları önbelleğinde olan sanatçılar.</string>
+    <string name="lib_artists_all_subtitle">Kütüphanendeki tüm sanatçılar burada listelenir.</string>
+    <string name="lib_artists_search">Bir sanatçıyı adıyla bul</string>
+    <string name="lib_playlists_imported_subtitle">%1$s üzerinden içe aktarılan çalma listeleri.</string>
+    <string name="lib_playlists_local_subtitle">Müziği bu cihazda olan çalma listeleri.</string>
+    <string name="lib_playlists_cached_subtitle">Şarkıları önbelleğinde olan çalma listeleri.</string>
+    <string name="lib_playlists_all_subtitle">Kütüphanendeki tüm çalma listeleri burada listelenir.</string>
+    <string name="lib_playlists_search">Bir çalma listesini adıyla bul</string>
+    <string name="lib_songs_subtitle">Kütüphanendeki tüm şarkılar burada listelenir.</string>
+    <string name="lib_songs_search">Bir şarkıyı adıyla veya sanatçısıyla bul</string>
+    <string name="lib_recent_title">Eklendi</string>
+    <string name="lib_recent_subtitle">Son eklenenler</string>
+    <string name="lib_recent_search">Burada listelenen bir şarkıyı sözleriyle veya sanatçısıyla bul</string>
+
+    <!-- Imported screen -->
+    <string name="lib_imported_unknown_source">bilinmeyen bir kaynak</string>
+    <plurals name="lib_imported_songs_subtitle">
+        <item quantity="one">%2$s üzerinden %1$d şarkı içe aktarıldı.</item>
+        <item quantity="other">%2$s üzerinden %1$d şarkı içe aktarıldı.</item>
+    </plurals>
+    <string name="lib_imported_search">%1$s üzerinden içe aktarılan bir şarkıyı bul</string>
+    <string name="lib_imported_queue_title">%1$s üzerinden içe aktarıldı</string>
+
+    <!-- Tabs -->
+    <string name="lib_cached_empty">Henüz önbelleğe alınan bir şey yok. Çaldığın şarkılar burada görünür.</string>
+    <string name="lib_manage_cache_pill">Önbelleği yönet</string>
+    <string name="lib_cached_all_music">Tüm önbellekteki müzik</string>
+    <string name="lib_all_music">Tüm müzik</string>
+    <string name="lib_manage_imports_pill">İçe aktarımları yönet</string>
+    <string name="lib_manage_local_pill">Yerelleri yönet</string>
+    <string name="lib_local_or">Veya</string>
+    <string name="lib_local_let_read">Tüm şarkılarını bulmak için Mochy\'nin depolama alanını okumasına izin ver</string>
+    <string name="lib_local_import_here">Yerel müziğini buraya aktar</string>
+    <string name="lib_local_imported_from_local">Yerelden içe aktarıldı</string>
+
+    <!-- Import banner -->
+    <string name="lib_import_banner_title">Müziğini buraya aktar!</string>
+    <string name="lib_import_checking_resync">\"%1$s\" yeni şarkılar için denetleniyor…</string>
+    <string name="lib_import_adding_resync">\"%3$s\" listesine %2$d yeni şarkıdan %1$d tanesi ekleniyor</string>
+    <string name="lib_import_getting_ready">Parçaların hazırlanıyor…</string>
+    <string name="lib_import_adding_from">%3$s üzerinden %2$d parçadan %1$d tanesi ekleniyor</string>
+    <string name="lib_import_adding">%2$d parçadan %1$d tanesi ekleniyor</string>
+    <string name="lib_import_still_running">Bir içe aktarma hâlâ sürüyor. Bitince tekrar dene.</string>
+
+    <!-- Local import -->
+    <string name="lib_local_no_access">Mochy erişim olmadan müziğini göremez</string>
+    <string name="lib_local_no_new_songs">Müzik klasörlerinde yeni şarkı yok</string>
+    <plurals name="lib_local_repaired">
+        <item quantity="one">%1$d şarkının adı, sözleri veya kapağı düzeltildi</item>
+        <item quantity="other">%1$d şarkının adı, sözleri veya kapağı düzeltildi</item>
+    </plurals>
+
+    <!-- Transfer progress -->
+    <string name="lib_transfer_download_title">İndirme ilerlemesi</string>
+    <string name="lib_transfer_download_idle">Şu an hiçbir şey indirilmiyor.</string>
+    <string name="lib_transfer_import_title">İçe aktarma ilerlemesi</string>
+    <string name="lib_transfer_import_idle">Şu an hiçbir şey içe aktarılmıyor.</string>
+    <string name="lib_transfer_n_of_m">%1$d / %2$d</string>
+    <string name="lib_transfer_failed">Bu eklenemedi</string>
+    <string name="lib_transfer_cancel_all">Tüm indirmeleri iptal et</string>
+    <string name="lib_transfer_create_playlist">Çalma listesi oluştur</string>
+
+    <!-- Song picker sheets -->
+    <string name="lib_picker_done">Bitti</string>
+    <plurals name="lib_picker_add_songs">
+        <item quantity="one">%1$d şarkı ekle</item>
+        <item quantity="other">%1$d şarkı ekle</item>
+    </plurals>
+    <plurals name="lib_picker_remove_songs">
+        <item quantity="one">%1$d şarkıyı kaldır</item>
+        <item quantity="other">%1$d şarkıyı kaldır</item>
+    </plurals>
+    <string name="lib_picker_add_music">Müzik ekle</string>
+    <string name="lib_picker_looking">Telefonunda müzik aranıyor…</string>
+    <string name="lib_picker_all_in_library">Telefonundaki her şarkı zaten kütüphanende.</string>
+    <string name="lib_picker_remove_from_list">Listeden kaldır</string>
+    <string name="lib_picker_no_local_files">Henüz kütüphanende telefonundan bir dosya yok.</string>
+    <string name="lib_picker_files_stay">Dosyalar telefonunda kalır.</string>
+    <string name="lib_picker_remove_from_cache">Önbellekten kaldır</string>
+    <string name="lib_picker_nothing_cached">Henüz önbellekte bir şey yok.</string>
+    <string name="lib_picker_cache_hint">Bir sonraki çalışında yeniden akışa geçecekler.</string>
+    <string name="lib_picker_pick_to_remove">Kaldırılacak şarkıları seç</string>
+    <string name="lib_picker_select_none">Hiçbirini seçme</string>
+    <string name="lib_picker_select_all">Tümünü seç</string>
+    <string name="lib_picker_nothing_matches">\"%1$s\" ile eşleşen yok</string>
+
+    <!-- Manage sheets -->
+    <string name="lib_manage_delete_all_imports">Tüm içe aktarımları sil</string>
+    <string name="lib_manage_delete_all_imports_title">Tüm içe aktarımlar silinsin mi?</string>
+    <string name="lib_manage_delete_all_imports_msg">İçe aktardığın her şarkı, beğeni ve çalma listesi kütüphanenden çıkar. Zaten orada olan şarkılar ve YouTube senkronunun güncel tuttuğu müzik kalır.</string>
+    <string name="lib_manage_undo_session">İçe aktarma oturumunu geri al</string>
+    <string name="lib_manage_undo_last_title">Son içe aktarımın geri alınsın mı?</string>
+    <string name="lib_manage_undo_last_msg">Son içe aktarımının getirdiği şarkılar, beğeniler ve çalma listeleri kütüphanenden çıkar. Önceden orada olanlar kalır.</string>
+    <string name="lib_manage_undo_import">İçe aktarımı geri al</string>
+    <string name="lib_manage_resync_all">Tümünü yeniden senkronize et</string>
+    <string name="lib_manage_delete_source">%1$s içe aktarımlarını sil</string>
+    <string name="lib_manage_delete_source_title">%1$s içe aktarımları silinsin mi?</string>
+    <string name="lib_manage_delete_source_msg">%1$s üzerinden içe aktardığın her şey, çalma listeleri dahil, kütüphanenden çıkar.</string>
+    <string name="lib_manage_delete_source_msg_youtube">%1$s üzerinden içe aktardığın her şey, çalma listeleri dahil, kütüphanenden çıkar. YouTube senkronunun güncel tuttuğu müzik kalır.</string>
+    <string name="lib_manage_delete">Sil</string>
+    <string name="lib_manage_rescan_local">Yerelleri yeniden tara</string>
+    <string name="lib_manage_delete_from_list">Listeden sil</string>
+    <string name="lib_manage_add_folder">Müzik klasörü ekle</string>
+    <string name="lib_manage_undo_local_title">Son yerel içe aktarımın geri alınsın mı?</string>
+    <string name="lib_manage_undo_local_msg">Eklediği şarkılar kütüphanenden çıkar. Dosyalar telefonunda kalır.</string>
+    <string name="lib_manage_clear_cache">Önbelleği temizle</string>
+    <string name="lib_manage_clear_cache_title">Önbelleğin temizlensin mi?</string>
+    <string name="lib_manage_clear_cache_msg">Önbellekteki her şarkı bu telefondan silinir ve bir sonraki çalışında yeniden akışa geçer. Kütüphanen ve indirmelerin olduğu gibi kalır.</string>
+    <string name="lib_manage_remove_songs">Şarkıları kaldır</string>
+</resources>

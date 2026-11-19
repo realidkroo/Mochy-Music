@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lab_back">Geri</string>
+    <string name="lab_equalizer">Ekolayzer</string>
+    <string name="lab_audio_effect">Ses Efekti</string>
+    <string name="lab_audio_quality">Ses Kalitesi</string>
+    <string name="lab_transition">Geçiş</string>
+    <string name="lab_status_off">KAPALI</string>
+    <string name="lab_status_all_off">HEPSİ KAPALI</string>
+    <string name="lab_status_custom">Özel</string>
+    <string name="lab_transition_off">Kapalı</string>
+    <string name="lab_transition_auto">Otomatik</string>
+    <string name="lab_transition_manual">Manuel</string>
+    <string name="lab_transition_crossmix">CrossMix</string>
+    <string name="lab_quality_monochrome">Monochrome · Kayıpsız</string>
+    <string name="lab_quality_apple_music">Apple Music · AAC</string>
+    <string name="lab_quality_youtube">YouTube · %1$s</string>
+    <string name="lab_quality_low">Düşük</string>
+    <string name="lab_quality_medium">Orta</string>
+    <string name="lab_quality_high">Yüksek</string>
+    <string name="lab_quality_auto">Otomatik</string>
+    <string name="lab_effects_and_more">%1$s ve %2$d tane daha</string>
+    <string name="lab_effect_reverb">Yankı</string>
+    <string name="lab_effect_loudness">Ses Yüksekliği</string>
+    <string name="lab_effect_spatial">Uzamsal</string>
+    <string name="lab_effect_surround">Sarmal</string>
+    <string name="lab_effect_mono">Mono</string>
+    <string name="lab_effect_playback">Oynatma</string>
+    <string name="lab_effect_volume">Ses düzeyi</string>
+    <string name="lab_fx_on">AÇIK</string>
+    <string name="lab_fx_position">%1$d / %2$d</string>
+    <string name="lab_fx_and_other">ve %1$d tane daha</string>
+</resources>
