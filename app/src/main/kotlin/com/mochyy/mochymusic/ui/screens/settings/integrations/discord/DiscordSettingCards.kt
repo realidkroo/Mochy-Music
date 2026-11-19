@@ -364,6 +364,10 @@ internal fun DiscordImageSourceCard(
     // the picture behind "your own picture", and a way to pick another
     customPicture: String = "",
     onPickCustom: () -> Unit = {},
+    // fps and pixels of the canvas gif, shown once a canvas or apple music animated cover is picked
+    canvasFps: Int = PresenceSettings.DefaultCanvasFps,
+    canvasSize: Int = PresenceSettings.DefaultCanvasSize,
+    onCanvasChange: (fps: Int, size: Int) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
     DiscordCard {
@@ -382,11 +386,39 @@ internal fun DiscordImageSourceCard(
                     PresenceImage.SPINNING_ARTIST -> context.getString(R.string.discord_image_spinning_artist)
                     PresenceImage.SPINNING_ARTWORK -> context.getString(R.string.discord_image_spinning_artwork)
                     PresenceImage.CUSTOM -> context.getString(R.string.discord_image_custom)
+                    PresenceImage.SPOTIFY_CANVAS -> context.getString(R.string.discord_image_spotify_canvas)
+                    PresenceImage.APPLE_COVER -> context.getString(R.string.discord_image_apple_cover)
+                    PresenceImage.CANVAS_OR_APPLE -> context.getString(R.string.discord_image_canvas_or_apple)
                 }
             },
             onSelect = onSelect,
         )
         if (selected == PresenceImage.CUSTOM) CustomPictureRow(customPicture, onPickCustom)
+        if (selected.isCanvas) {
+            FieldLabel(stringResource(R.string.discord_canvas_smoothness))
+            DiscordStepSlider(
+                value = canvasFps,
+                values = PresenceSettings.CanvasFpsSteps,
+                label = { "$it fps" },
+                onValueChange = { onCanvasChange(it, canvasSize) },
+            )
+            FieldLabel(stringResource(R.string.discord_canvas_size))
+            DiscordStepSlider(
+                value = canvasSize,
+                values = PresenceSettings.CanvasSizeSteps,
+                label = { "$it px" },
+                onValueChange = { onCanvasChange(canvasFps, it) },
+            )
+            // live progress of the gif for the song that is playing
+            CanvasGifProgressRow()
+            Text(
+                text = stringResource(R.string.discord_canvas_note),
+                color = DiscordColors.Secondary,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                modifier = Modifier.padding(start = 4.dp, top = 10.dp),
+            )
+        }
         if (selected.isRotating && spin != null) {
             FieldLabel(stringResource(R.string.discord_spin_full_turn))
             DiscordStepSlider(

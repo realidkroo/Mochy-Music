@@ -23,6 +23,10 @@ sealed interface PresencePicture {
     // a picture on the phone (a local song's cover, a picked one) that goes to a free host before discord can show it
     data class Local(val sourceUrl: String) : PresencePicture
 
+    enum class CanvasSource { SPOTIFY, APPLE, EITHER }
+    // the canvas or apple music animated cover of this song, falls back to [fallback] (the artwork) until the gif is ready
+    data class Canvas(val title: String, val artist: String, val durationSec: Int?, val fallback: String?, val source: CanvasSource, val fps: Int, val size: Int) : PresencePicture
+
     data object Logo : PresencePicture
 }
 
@@ -45,7 +49,7 @@ object PresenceImages {
     }
 
     /** What [source] shows for [track]; artwork that's missing falls back to the next best thing. */
-    fun pick(source: PresenceImage, track: NowPlaying, nowMs: Long, spin: SpinStyle, custom: String = ""): PresencePicture? {
+    fun pick(source: PresenceImage, track: NowPlaying, nowMs: Long, spin: SpinStyle, custom: String = "", canvasFps: Int = PresenceSettings.DefaultCanvasFps, canvasSize: Int = PresenceSettings.DefaultCanvasSize): PresencePicture? {
         // YouTube hands out small thumbnails; Discord shows the big picture at up to 240px
         val artwork = track.artworkUrl?.takeIf { it.isNotBlank() }?.let(::sized)
         val artistArtwork = track.artistArtworkUrl?.takeIf { it.isNotBlank() }?.let(::sized)
@@ -62,6 +66,9 @@ object PresenceImages {
             PresenceImage.SPINNING_ARTIST ->
                 (artistArtwork ?: artwork)?.let { PresencePicture.Spinning(it, spin) } ?: PresencePicture.Logo
             PresenceImage.CUSTOM -> still(custom.takeIf { it.isNotBlank() }) ?: PresencePicture.Logo
+            PresenceImage.SPOTIFY_CANVAS -> PresencePicture.Canvas(track.title, track.artist, (track.durationMs / 1000).toInt().takeIf { it > 0 }, artwork, PresencePicture.CanvasSource.SPOTIFY, canvasFps, canvasSize)
+            PresenceImage.APPLE_COVER -> PresencePicture.Canvas(track.title, track.artist, (track.durationMs / 1000).toInt().takeIf { it > 0 }, artwork, PresencePicture.CanvasSource.APPLE, canvasFps, canvasSize)
+            PresenceImage.CANVAS_OR_APPLE -> PresencePicture.Canvas(track.title, track.artist, (track.durationMs / 1000).toInt().takeIf { it > 0 }, artwork, PresencePicture.CanvasSource.EITHER, canvasFps, canvasSize)
         }
     }
 

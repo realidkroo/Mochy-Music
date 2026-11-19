@@ -1395,3 +1395,5 @@ val DonateOpenPromptAtKey = longPreferencesKey("donateOpenPromptAt")
 // one-off lyrics cache clears (App.kt). raise LyricsCacheWipeGeneration to clear it again in a later release
 val LyricsCacheWipeKey = intPreferencesKey("lyricsCacheWipe")
 const val LyricsCacheWipeGeneration = 1
+val DiscordCanvasFpsKey = intPreferencesKey("discordPresenceCanvasFps")
+val DiscordCanvasSizeKey = intPreferencesKey("discordPresenceCanvasSize")

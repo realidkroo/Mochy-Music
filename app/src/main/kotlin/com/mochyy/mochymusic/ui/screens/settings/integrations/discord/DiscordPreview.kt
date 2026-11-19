@@ -422,6 +422,10 @@ private fun PictureView(picture: PresencePicture) {
         is PresencePicture.Spinning -> {
             SpinningPicture(picture.sourceUrl, picture.style.secondsPerTurn, fill)
         }
+
+        is PresencePicture.Canvas -> {
+            CanvasPreview(picture, fill)
+        }
     }
 }
 
@@ -517,5 +521,29 @@ internal fun DiscordFloatingPreview(
                     .shadow(elevation = 18.dp, shape = RoundedCornerShape(14.dp))
                     .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(14.dp)),
         )
+    }
+}
+
+// the cover first, the canvas video plays over it once it was found (same video the status turns into a gif)
+@Composable
+private fun CanvasPreview(picture: PresencePicture.Canvas, modifier: Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val video = androidx.compose.runtime.produceState<String?>(null, picture.title, picture.artist, picture.source) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                com.mochyy.mochymusic.discord.CanvasVideo.find(context, picture.title, picture.artist, picture.durationSec, picture.source)
+            }.getOrNull()
+        }
+    }.value
+    Box(modifier) {
+        AsyncImage(model = picture.fallback, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        if (video != null) {
+            com.mochyy.mochymusic.ui.player.CanvasArtworkPlayer(
+                primaryUrl = video,
+                fallbackUrl = null,
+                isPlaying = true,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }

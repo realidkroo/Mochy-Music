@@ -91,6 +91,7 @@ class DiscordPresence @Inject constructor(
     private val refusedUrls = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
 
     private val spinning = SpinningArtwork(scope, onReady = ::nudge, loadLocal = { source, size -> loadLocalPicture(context, source, size) })
+    private val canvasGif = CanvasGif(context, onReady = ::nudge)
 
     // covers of local songs and pictures the user picked, put on the web first
     private val uploads = UploadedPictures(context, scope, onReady = ::nudge)
@@ -192,7 +193,7 @@ class DiscordPresence @Inject constructor(
     // a spinning gif or an uploaded picture that was still being made last time may be ready now
     private fun picturesChanged(activity: PresenceActivity, previous: Sent): Boolean {
         fun readyNow(picture: PresencePicture?, sentAsset: String?): Boolean {
-            if (picture !is PresencePicture.Spinning && picture !is PresencePicture.Local) return false
+            if (picture !is PresencePicture.Spinning && picture !is PresencePicture.Local && picture !is PresencePicture.Canvas) return false
             // discord turned the better one down already: what it fell back to stays
             val best = candidatesFor(picture).firstOrNull { it !in refusedUrls } ?: return false
             return synchronized(assetPaths) { assetPaths[best] } != sentAsset
@@ -300,6 +301,11 @@ class DiscordPresence @Inject constructor(
         PresencePicture.Logo -> listOf(PresenceImages.LogoUrl)
         is PresencePicture.Spinning -> listOfNotNull(spinning.urlFor(picture.sourceUrl, picture.style), stillUrl(picture.sourceUrl))
         is PresencePicture.Local -> listOfNotNull(uploads.urlFor(picture.sourceUrl))
+        is PresencePicture.Canvas -> listOfNotNull(
+            canvasGif.urlFor(picture.title, picture.artist, picture.durationSec, picture.source, picture.fps, picture.size),
+            picture.fallback?.let(::stillUrl),
+            PresenceImages.LogoUrl,
+        )
     }
 
     // the still picture behind a spinning one: as it is from the web, uploaded first from the phone

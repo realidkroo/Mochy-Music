@@ -2,6 +2,7 @@
 
 package com.mochyy.mochymusic.ui.screens.settings.storage
 
+import kotlinx.coroutines.launch
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -256,6 +257,16 @@ private fun ClearButtons(viewModel: StorageViewModel, downloadCount: Int) {
     val clearTitle = stringResource(R.string.storage_clear_cache_title)
     val clearMessage = stringResource(R.string.storage_clear_cache_message)
     val clearAction = stringResource(R.string.storage_clear_cache_action)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val gifRefresh = remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    // how much room the canvas gifs for discord take, measured again after a clear
+    val gifs by androidx.compose.runtime.produceState(com.mochyy.mochymusic.discord.CanvasGifStore.Stats(0L, 0), gifRefresh.intValue, busy) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.mochyy.mochymusic.discord.CanvasGifStore.stats(context) }
+    }
+    val gifTitle = stringResource(R.string.storage_clear_canvas_gifs_title)
+    val gifMessage = stringResource(R.string.storage_clear_canvas_gifs_message)
+    val gifAction = stringResource(R.string.storage_clear_canvas_gifs_action)
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         StorageActionButton(
             label = removeAction,
@@ -268,6 +279,21 @@ private fun ClearButtons(viewModel: StorageViewModel, downloadCount: Int) {
             danger = true,
             enabled = !busy,
             onClick = { menuState.showConfirm(clearTitle, clearMessage, clearAction, viewModel::clearCaches) },
+        )
+        StorageActionButton(
+            label = stringResource(R.string.storage_clear_canvas_gifs),
+            detail = if (gifs.count == 0) stringResource(R.string.storage_canvas_gifs_none)
+            else stringResource(R.string.storage_canvas_gifs_detail, formatSize(gifs.bytes), gifs.count),
+            danger = true,
+            enabled = !busy && gifs.count > 0,
+            onClick = {
+                menuState.showConfirm(gifTitle, gifMessage, gifAction) {
+                    scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                        com.mochyy.mochymusic.discord.CanvasGifStore.clear(context)
+                        gifRefresh.intValue++
+                    }
+                }
+            },
         )
         StorageActionButton(
             label = stringResource(R.string.storage_manage_downloads),

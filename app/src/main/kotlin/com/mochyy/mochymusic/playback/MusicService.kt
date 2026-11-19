@@ -3786,6 +3786,23 @@ class MusicService :
         }
     }
 
+    // artists the library has no picture for come from youtube once, so the artist artwork is not the song cover again
+    private val artistPhotos = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val artistPhotoAsked = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
+    private fun artistPhotoFor(artists: List<com.mochyy.mochymusic.db.entities.ArtistEntity>?): String? {
+        val artist = artists?.firstOrNull { it.isYouTubeArtist } ?: return null
+        artistPhotos[artist.id]?.let { return it }
+        if (artistPhotoAsked.add(artist.id)) {
+            scope.launch {
+                val url = withContext(Dispatchers.IO) { YouTube.artist(artist.id).getOrNull()?.artist?.thumbnail } ?: return@launch
+                artistPhotos[artist.id] = url
+                publishPresence()
+            }
+        }
+        return null
+    }
+
     /** Tells the Discord status what's playing; it ignores this when Discord isn't signed in or is off. */
     private fun publishPresence() {
         val metadata = player.currentMetadata
@@ -3804,7 +3821,7 @@ class MusicService :
                 artist = metadata.artists.joinToString { it.name },
                 album = metadata.album?.title ?: song?.song?.albumName,
                 artworkUrl = metadata.thumbnailUrl,
-                artistArtworkUrl = song?.artists?.firstNotNullOfOrNull { it.thumbnailUrl },
+                artistArtworkUrl = song?.artists?.firstNotNullOfOrNull { it.thumbnailUrl } ?: artistPhotoFor(song?.artists),
                 durationMs = player.duration.takeIf { it > 0 } ?: (metadata.duration * 1000L),
                 positionMs = player.currentPosition,
                 readAtMs = System.currentTimeMillis(),

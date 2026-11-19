@@ -43,10 +43,19 @@ enum class PresenceImage(val label: String, val forLargeImage: Boolean) {
     SPINNING_ARTWORK("Rotating music artwork", false),
     // a picture from the phone, put on a free host for discord like the rotating ones
     CUSTOM("Your own picture", true),
+    // the song spotify canvas as a looping gif, needs the token from the spotify canvas page
+    SPOTIFY_CANVAS("Spotify Canvas", true),
+    // the animated cover from apple music, a stream that gets converted first
+    APPLE_COVER("Apple Music Animated Cover", true),
+    // spotify canvas when the song has one, otherwise the apple music animated cover
+    CANVAS_OR_APPLE("Spotify Canvas or Apple Music Animated Cover", true),
     ;
 
     /** a looping GIF of the artwork turning, made and uploaded by SpinningArtwork */
     val isRotating: Boolean get() = this == SPINNING_ARTIST || this == SPINNING_ARTWORK
+
+    /** spotify canvas or the apple music animated cover, CanvasGif makes a GIF of its video */
+    val isCanvas: Boolean get() = this == SPOTIFY_CANVAS || this == APPLE_COVER || this == CANVAS_OR_APPLE
 
     companion object {
         val ForLarge = entries.filter { it.forLargeImage }
@@ -91,6 +100,9 @@ data class PresenceSettings(
     // the files picked for "your own picture", empty until one is
     val largeCustomImage: String = "",
     val smallCustomImage: String = "",
+    // the canvas and apple music animated cover gif: frames per second and pixels, one of CanvasFpsSteps and CanvasSizeSteps
+    val canvasFps: Int = DefaultCanvasFps,
+    val canvasSize: Int = DefaultCanvasSize,
 ) {
     val spin: SpinStyle get() = SpinStyle(spinSeconds, spinFps)
 
@@ -114,6 +126,8 @@ data class PresenceSettings(
         prefs[DiscordClearOnPauseKey] = clearOnPause
         prefs[DiscordLargeCustomImageKey] = largeCustomImage
         prefs[DiscordSmallCustomImageKey] = smallCustomImage
+        prefs[com.mochyy.mochymusic.constants.DiscordCanvasFpsKey] = canvasFps
+        prefs[com.mochyy.mochymusic.constants.DiscordCanvasSizeKey] = canvasSize
     }
 
     companion object {
@@ -131,6 +145,12 @@ data class PresenceSettings(
          */
         val SpinFpsSteps = listOf(10, 12, 14, 17, 20, 25, 33, 50)
         const val DefaultSpinFps = 25
+
+        // the canvas gif: what the bars offer, it starts at 30 fps and 128 px
+        val CanvasFpsSteps = listOf(10, 15, 20, 24, 30, 40, 50)
+        const val DefaultCanvasFps = 30
+        val CanvasSizeSteps = listOf(96, 128, 160, 192, 240)
+        const val DefaultCanvasSize = 128
 
         private val Defaults = PresenceSettings()
 
@@ -160,6 +180,8 @@ data class PresenceSettings(
             clearOnPause = prefs[DiscordClearOnPauseKey] ?: Defaults.clearOnPause,
             largeCustomImage = prefs[DiscordLargeCustomImageKey] ?: Defaults.largeCustomImage,
             smallCustomImage = prefs[DiscordSmallCustomImageKey] ?: Defaults.smallCustomImage,
+            canvasFps = prefs[com.mochyy.mochymusic.constants.DiscordCanvasFpsKey]?.takeIf { it in CanvasFpsSteps } ?: Defaults.canvasFps,
+            canvasSize = prefs[com.mochyy.mochymusic.constants.DiscordCanvasSizeKey]?.takeIf { it in CanvasSizeSteps } ?: Defaults.canvasSize,
         )
 
         private inline fun <reified T : Enum<T>> enumOf(name: String?, fallback: T): T =
