@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Now playing 4x1: a slim pill, round artwork on the left, "title - artist" over a row of five controls -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_np_pill"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="6dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="6dp">
+
+    <ImageView
+        android:id="@+id/widget_np_art"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        android:contentDescription="@string/album_art"
+        android:scaleType="centerCrop"
+        android:src="@drawable/widget_np_art_placeholder" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_np_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/widget_np_preview_title_artist"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:layout_marginTop="2dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/widget_np_like"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@null"
+                android:contentDescription="@string/like"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_np_star" />
+
+            <ImageButton
+                android:id="@+id/widget_np_prev"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@null"
+                android:contentDescription="@string/widget_np_previous"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_np_prev" />
+
+            <ImageButton
+                android:id="@+id/widget_np_play"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@null"
+                android:contentDescription="@string/play_pause"
+                android:padding="4dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_np_play" />
+
+            <ImageButton
+                android:id="@+id/widget_np_next"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@null"
+                android:contentDescription="@string/widget_np_next"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_np_next" />
+
+            <ImageButton
+                android:id="@+id/widget_np_repeat"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@null"
+                android:contentDescription="@string/widget_np_repeat"
+                android:padding="7dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_np_repeat" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

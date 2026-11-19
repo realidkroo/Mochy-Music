@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Now playing 4x2: frosted artwork, the line being sung and the next one, progress, the cover and the controls -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_np_gradient"
+    android:clipToOutline="true">
+
+    <ImageView
+        android:id="@+id/widget_np_backdrop"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/album_art"
+        android:scaleType="centerCrop"
+        android:src="@drawable/widget_np_art_placeholder" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_np_overlay"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="10dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/widget_np_track"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="11sp" />
+                <ImageButton
+                    android:id="@+id/widget_np_like"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@null"
+                    android:contentDescription="@string/like"
+                    android:padding="6dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_np_star" />
+            </LinearLayout>
+
+            <!-- Two blocks crossfade. The alpha values in and out are linear and add up to 1,
+                 so the line never dims to a blank frame; the small upward drift just shows change. -->
+            <ViewFlipper
+                android:id="@+id/widget_np_lyric_flipper"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:animateFirstView="false"
+                android:autoStart="false"
+                android:inAnimation="@anim/widget_lyric_in"
+                android:outAnimation="@anim/widget_lyric_out">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/widget_np_lyric_a"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="3"
+                        android:text="@string/widget_np_lyrics_unavailable"
+                        android:textColor="#FFFFFF"
+                        android:textSize="19sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/widget_np_next_a"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="#99FFFFFF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/widget_np_lyric_b"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="3"
+                        android:textColor="#FFFFFF"
+                        android:textSize="19sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/widget_np_next_b"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="#99FFFFFF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </ViewFlipper>
+
+            <ProgressBar
+                android:id="@+id/widget_np_progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:layout_marginTop="6dp"
+                android:max="1000"
+                android:progress="0"
+                android:progressDrawable="@drawable/widget_np_progress" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/widget_np_elapsed"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/widget_np_time_zero"
+                    android:textColor="#E6FFFFFF"
+                    android:textSize="10sp" />
+                <TextView
+                    android:id="@+id/widget_np_duration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_np_time_zero"
+                    android:textColor="#BFFFFFFF"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/widget_np_art"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_marginStart="10dp"
+            android:contentDescription="@string/album_art"
+            android:scaleType="centerCrop"
+            android:src="@drawable/widget_np_art_placeholder" />
+
+        <LinearLayout
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="4dp"
+            android:gravity="center"
+            android:orientation="vertical">
+            <ImageButton
+                android:id="@+id/widget_np_prev"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="@null"
+                android:contentDescription="@string/widget_np_previous"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_np_prev" />
+            <ImageButton
+                android:id="@+id/widget_np_play"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="@null"
+                android:contentDescription="@string/play_pause"
+                android:padding="7dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_np_play" />
+            <ImageButton
+                android:id="@+id/widget_np_next"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="@null"
+                android:contentDescription="@string/widget_np_next"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_np_next" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

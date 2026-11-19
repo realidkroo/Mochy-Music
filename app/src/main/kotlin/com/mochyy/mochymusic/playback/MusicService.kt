@@ -90,6 +90,7 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.car.CarLyrics
 import com.mochyy.mochymusic.car.CarLyricsPlayer
 import com.mochyy.mochymusic.car.CarLyricsSource
+import com.mochyy.mochymusic.widget.WidgetLyricTracker
 import com.mochyy.mochymusic.constants.AudioNormalizationKey
 import com.mochyy.mochymusic.constants.AudioOffload
 import com.mochyy.mochymusic.constants.AudioQualityKey
@@ -4574,6 +4575,15 @@ class MusicService :
             MusicWidgetReceiver.ACTION_UPDATE_WIDGET -> {
                 updateWidgetUI(player.isPlaying)
             }
+            MusicWidgetReceiver.ACTION_REPEAT -> {
+                // off -> all -> one -> off, the same order as the repeat button in the player
+                player.repeatMode = when (player.repeatMode) {
+                    REPEAT_MODE_OFF -> REPEAT_MODE_ALL
+                    REPEAT_MODE_ALL -> REPEAT_MODE_ONE
+                    else -> REPEAT_MODE_OFF
+                }
+                updateWidgetUI(player.isPlaying)
+            }
         }
 
         return super.onStartCommand(intent, flags, startId)
@@ -4581,7 +4591,16 @@ class MusicService :
 
     private val powerManager by lazy { getSystemService(android.os.PowerManager::class.java) }
 
+    // which lyric line the now playing widgets show; the scope is asked for each time because the service replaces it
+    private val widgetLyrics by lazy {
+        WidgetLyricTracker(this, CarLyricsSource(database, lyricsHelper), { scope }) { updateWidgetUI(player.isPlaying) }
+    }
+
     private fun updateWidgetUI(isPlaying: Boolean, progressOnly: Boolean = false) {
+        // without a lyric widget placed nobody sees the lines, and following them would fetch lyrics for every song
+        val lyricsShown = widgetManager.hasLyricWidgets
+        // looked up on the main thread the tracker expects, before the launch so the position is the moment of the tick
+        val lyricCue = if (lyricsShown) widgetLyrics.cue(currentMediaMetadata.value, player.currentPosition) else NoLyricCue
         scope.launch {
             try {
                 val songData = currentSong.value
@@ -4589,6 +4608,7 @@ class MusicService :
                 val songTitle = song?.title ?: getString(R.string.no_song_playing)
                 val artistName = songData?.artists?.joinToString(", ") { it.name } ?: getString(R.string.tap_to_open)
                 val isLiked = songData?.song?.liked == true
+                val (currentLyric, nextLyric) = lyricCue
 
                 widgetManager.updateWidgets(
                     title = songTitle,
@@ -4598,8 +4618,13 @@ class MusicService :
                     isLiked = isLiked,
                     duration = if (player.duration != C.TIME_UNSET) player.duration else 0,
                     currentPosition = player.currentPosition,
+                    currentLyric = currentLyric,
+                    nextLyric = nextLyric,
                     progressOnly = progressOnly,
+                    repeatMode = player.repeatMode,
                 )
+                // a lyric widget was just placed, so draw once more now that its lines get looked up
+                if (!lyricsShown && widgetManager.hasLyricWidgets) updateWidgetUI(isPlaying)
             } catch (e: Exception) {
 
             }
@@ -4613,12 +4638,13 @@ class MusicService :
         widgetUpdateJob = scope.launch {
             while (isActive) {
                 // nobody sees a widget with the screen off, and redrawing it every second there was all cost
+                var wait = WidgetProgressIntervalMs
                 if (player.isPlaying && powerManager?.isInteractive != false) {
                     updateWidgetUI(true, progressOnly = true)
+                    // wake early for the next lyric line so it changes on time, not up to a second late
+                    if (widgetManager.hasLyricWidgets) wait = widgetLyrics.wakeInMs.coerceAtMost(WidgetProgressIntervalMs)
                 }
-                // the widget's progress bar moves in whole seconds anyway; more often only cost
-                // frames in the app
-                delay(WidgetProgressIntervalMs)
+                delay(wait)
             }
         }
     }
@@ -5627,6 +5653,9 @@ class MusicService :
 
 /** How often a placed home screen widget's progress is redrawn while playing. */
 private const val WidgetProgressIntervalMs = 1_000L
+
+// what the lyric lines carry while no lyric widget is placed
+private val NoLyricCue = WidgetLyricTracker.Cue("", "")
 
 // a timed save skips a place in the song that moved less than this; coming back a second or two early doesn't matter
 private const val PositionSaveStepMs = 2_000L

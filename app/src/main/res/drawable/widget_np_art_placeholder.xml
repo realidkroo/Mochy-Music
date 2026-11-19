@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the round dark disc shown where the artwork goes until a song is playing -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:angle="270"
+        android:startColor="#0A0A10"
+        android:endColor="#2C2F4F"
+        android:type="linear" />
+</shape>
