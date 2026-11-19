@@ -36,6 +36,9 @@ captures/
 CLAUDE.md
 .agents/
 AGENTS.md
+# the root rule files are public on purpose, so every fork's AI reads them
+!/CLAUDE.md
+!/AGENTS.md
 .kotlin/
 assetscon/
 apk-generated/
