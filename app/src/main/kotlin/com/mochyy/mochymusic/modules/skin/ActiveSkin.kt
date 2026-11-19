@@ -1,4 +1,4 @@
-// the looks that are on right now: every player they bring as a style to pick, the app's font, the glass and the nav bar from the highest one that brings them, and the pages that take mochy's over
+// the looks that are on right now: every player they bring as a style to pick, the app's font, the glass, the nav bar and the mini player from the highest one that brings them, and the pages that take mochy's over
 
 package com.mochyy.mochymusic.modules.skin
 
@@ -68,6 +68,10 @@ class ModuleStyle(
 @Immutable
 data class ActiveBar(val skin: ModuleSkin, val bar: SkinBar, val values: Map<String, String>, val program: SkinProgram?)
 
+/** the look's own mini player, with its module's settings */
+@Immutable
+data class ActiveMini(val skin: ModuleSkin, val layout: SkinPlayer, val values: Map<String, String>)
+
 /** a module page taking one of mochy's pages over, with its module's settings for the page's conditions */
 @Immutable
 data class Takeover(val skin: ModuleSkin, val page: SkinPage, val values: Map<String, String>)
@@ -83,6 +87,7 @@ internal data class SkinParts(
     val glass: SkinGlass? = null,
     val bar: LookValues? = null,
     val pages: List<LookValues> = emptyList(),
+    val mini: LookValues? = null,
 )
 
 object ActiveSkin {
@@ -116,6 +121,10 @@ object ActiveSkin {
 
     /** the highest look's own nav bar, null to keep mochy's */
     var bar: ActiveBar? by mutableStateOf(null)
+        private set
+
+    /** the highest look's own mini player, null to keep mochy's */
+    var mini: ActiveMini? by mutableStateOf(null)
         private set
 
     /** module pages by the name of the mochy page each one takes over */
@@ -169,7 +178,7 @@ object ActiveSkin {
         if (parts == requested) return
         requested = parts
         val glassSkin = parts.glassSkin
-        val shaded = (parts.players.map { it.skin } + listOfNotNull(parts.bar?.skin)).distinct()
+        val shaded = (parts.players.map { it.skin } + listOfNotNull(parts.bar?.skin, parts.mini?.skin)).distinct()
         scope.launch(Dispatchers.IO) {
             val loaded = synchronized(this@ActiveSkin) {
                 // the app's font and each player's own font, each loaded once and kept while its look stays
@@ -203,6 +212,8 @@ object ActiveSkin {
                     ActiveBar(skin, own, values, own.shader?.let { loaded.programs["${skin.moduleId}/${it.file}"] })
                 }
                 if (nextBar != bar) bar = nextBar
+                val nextMini = parts.mini?.let { (skin, values) -> skin.mini?.let { ActiveMini(skin, it, values) } }
+                if (nextMini != mini) mini = nextMini
                 val nextTakeovers = takeoversOf(parts.pages)
                 if (nextTakeovers != takeovers) takeovers = nextTakeovers
             }

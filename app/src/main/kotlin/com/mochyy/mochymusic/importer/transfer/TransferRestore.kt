@@ -73,9 +73,10 @@ object TransferRestore {
 
     // files first and the library last, so a stop halfway leaves an app that still starts and can import again
     private fun swapIn(context: Context, staging: File, ready: JSONObject) {
+        val carriesDownloads = File(staging, TransferArchive.FilesPrefix + StoredKind.Downloads.folder).exists()
         moveFiles(context, File(staging, TransferArchive.FilesPrefix))
-        // the import's downloads land on the phone, so a card that held the old ones is let go
-        if (File(context.filesDir, StoredKind.Downloads.folder).exists()) StoragePlaces.resetToPhone(context, StoredKind.Downloads)
+        // the import's downloads land on the phone, so a card that held the old ones is let go; a backup without songs leaves them be
+        if (carriesDownloads) StoragePlaces.resetToPhone(context, StoredKind.Downloads)
         File(staging, TransferArchive.MediaEntry).takeIf { it.exists() }?.let { media ->
             // the streaming cache's index lived in the old media database, so the cache starts over with the new one
             StoragePlaces.dir(context, StoredKind.SongCache).deleteRecursively()

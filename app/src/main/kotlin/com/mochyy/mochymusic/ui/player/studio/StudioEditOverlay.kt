@@ -189,7 +189,14 @@ fun StudioEditOverlay(
  * beside it, and the content under it frosted and darkened toward the top.
  */
 @Composable
-private fun StudioTopBar(studio: PlayerStudioState, glassState: GlassState) {
+internal fun StudioTopBar(
+    studio: PlayerStudioState,
+    glassState: GlassState,
+    // a module player's editor names its own: the open part's title, its own hint ("" for none), its own way back
+    titleOverride: String? = null,
+    subtitleOverride: String? = null,
+    onBack: () -> Unit = { studio.back() },
+) {
     val r = rememberResponsive()
     val statusTop = WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding()
     val editBackground = stringResource(R.string.ps_studio_edit_background)
@@ -258,7 +265,7 @@ private fun StudioTopBar(studio: PlayerStudioState, glassState: GlassState) {
                     .size(30.dp)
                     .clip(CircleShape)
                     .background(Color.Black.copy(alpha = 0.45f))
-                    .clickable(enabled = studio.stage >= StudioStage.EDIT) { studio.back() },
+                    .clickable(enabled = studio.stage >= StudioStage.EDIT) { onBack() },
             ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back_ios),
@@ -270,7 +277,7 @@ private fun StudioTopBar(studio: PlayerStudioState, glassState: GlassState) {
             Spacer(Modifier.width(14.dp))
             Column {
                 AnimatedContent(
-                    targetState = title,
+                    targetState = titleOverride ?: title,
                     transitionSpec = {
                         (slideInVertically(tween(420)) { it } + fadeIn(tween(300))) togetherWith
                             (slideOutVertically(tween(360)) { -it } + fadeOut(tween(220)))
@@ -280,13 +287,13 @@ private fun StudioTopBar(studio: PlayerStudioState, glassState: GlassState) {
                     Text(text, color = Color.White, style = inter(StudioType.Title))
                 }
                 // what the first page's tiles are for; it goes as a tile opens
-                val onTiles = studio.stage == StudioStage.EDIT
+                val onTiles = if (subtitleOverride != null) subtitleOverride.isNotEmpty() else studio.stage == StudioStage.EDIT
                 androidx.compose.animation.AnimatedVisibility(
                     visible = onTiles,
                     enter = fadeIn(tween(240)) + androidx.compose.animation.expandVertically(tween(300)),
                     exit = fadeOut(tween(160)) + androidx.compose.animation.shrinkVertically(tween(260)),
                 ) {
-                    Text(stringResource(R.string.ps_studio_hold_to_adjust), color = Color.White.copy(alpha = 0.7f), style = inter(StudioType.Subtitle, FontWeight.Medium))
+                    Text(subtitleOverride?.takeIf { it.isNotEmpty() } ?: stringResource(R.string.ps_studio_hold_to_adjust), color = Color.White.copy(alpha = 0.7f), style = inter(StudioType.Subtitle, FontWeight.Medium))
                 }
             }
         }

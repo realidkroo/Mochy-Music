@@ -440,6 +440,19 @@ private fun PlayerSheet(
     }
     // a module player without an editor page of its own edits through its customise sheet, over the player
     var moduleCustomiseOpen by remember { mutableStateOf(false) }
+    // the flagship's editor on a module player: its parts as tiles, a panel for the open one
+    val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
+    val moduleRegistry = remember(appContext) {
+        dagger.hilt.android.EntryPointAccessors.fromApplication(appContext, com.mochyy.mochymusic.di.ModulesEntryPoint::class.java).moduleRegistry()
+    }
+    val moduleEditor = remember(studio, moduleRegistry) {
+        com.mochyy.mochymusic.ui.player.styles.ModuleEditorState(
+            progress = { studio.edit.value },
+            active = { studio.editing && currentPlayerStyleForStudio == PlayerStyle.MODULE },
+            rangeOf = { module, key -> moduleRegistry.entries.value.firstOrNull { it.id == module }?.ranges?.get(key) },
+            commit = moduleRegistry::setField,
+        )
+    }
     // a hold opens it with a buzz rising from soft to strong, the selector arriving on the peak
     val studioContext = androidx.compose.ui.platform.LocalContext.current
     val studioScope = androidx.compose.runtime.rememberCoroutineScope()
@@ -1085,6 +1098,7 @@ private fun PlayerSheet(
                     androidx.compose.runtime.CompositionLocalProvider(
                         com.mochyy.mochymusic.ui.player.styles.LocalStyleInteractive provides styleInteractive,
                         com.mochyy.mochymusic.ui.player.styles.LocalStyleCovered provides styleCoveredNow,
+                        com.mochyy.mochymusic.ui.player.styles.LocalModuleEditor provides moduleEditor,
                     ) {
                         com.mochyy.mochymusic.ui.player.styles.AlternatePlayerStyle(
                             style = playerStyle,
@@ -1883,7 +1897,11 @@ private fun PlayerSheet(
                     com.mochyy.mochymusic.modules.skin.ActiveSkin.pick(moduleStyle.key)
                     if (playerStyle != PlayerStyle.MODULE) onPlayerStyleChange(PlayerStyle.MODULE)
                     val editor = moduleStyle.player.editor
-                    if (editor != null) {
+                    if (moduleStyle.player.edit.isNotEmpty()) {
+                        // its parts, edited on the player itself the way the flagship's are
+                        studio.livePage = focused
+                        studio.go(StudioStage.EDIT)
+                    } else if (editor != null) {
                         styleActions.onOpenRoute(com.mochyy.mochymusic.ui.screens.settings.modules.modulePageRoute(moduleStyle.skin.moduleId, editor))
                     } else {
                         studio.settleOn(focused, repicked || playerStyle != PlayerStyle.MODULE) { moduleCustomiseOpen = true }
@@ -1954,6 +1972,7 @@ private fun PlayerSheet(
                 com.mochyy.mochymusic.constants.PlayerEndTimestamp.END_TIME,
             )
             val artworkPalette = com.mochyy.mochymusic.ui.theme.ArtworkPalette.from(com.mochyy.mochymusic.LocalArtworkColor.current)
+            if (playerStyle == PlayerStyle.MODULE) com.mochyy.mochymusic.ui.player.studio.ModuleEditOverlay(studio, moduleEditor, morphingGlassState)
             if (playerStyle.hasFullEditor) StudioEditOverlay(
                 parts = studioParts,
                 glassState = morphingGlassState,

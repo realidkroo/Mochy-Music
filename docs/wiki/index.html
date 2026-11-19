@@ -448,6 +448,7 @@ echo "built build/neon-night.mochyymodule.zip"</code></pre>
 <tr><td><code>font</code></td><td>zip only</td><td><a href="#modules-fonts">your own font</a></td></tr>
 <tr><td><code>glass</code></td><td>zip only</td><td><a href="#modules-glass">a shader for the bars</a></td></tr>
 <tr><td><code>bar</code></td><td>no (its shader zip only)</td><td><a href="#modules-navbar">a nav bar of your own</a></td></tr>
+<tr><td><code>mini</code></td><td>no</td><td><a href="#modules-mini">a mini player of your own</a></td></tr>
 <tr><td><code>pages</code></td><td>no</td><td><a href="#modules-pages">pages</a>, even in settings, and ones that <a href="#modules-takeover">take mochy's over</a></td></tr>
 <tr><td><code>actions</code></td><td>no</td><td><a href="#modules-pages">rows in the player's menu</a></td></tr>
 <tr><td><code>url</code></td><td>zip only</td><td>the server a zip's songs, lyrics or song info come from</td></tr>
@@ -456,7 +457,7 @@ echo "built build/neon-night.mochyymodule.zip"</code></pre>
 <p>fields mochy doesn't know are ignored, so a manifest written for a newer mochy still opens on an older one. the same goes for blocks and animations inside a player: an older mochy skips what it doesn't know.</p>
 <h2>Two rules worth knowing</h2>
 <ul>
-  <li>a manifest with no <code>resources</code> and nothing that changes the look (<code>look</code>, <code>player</code>, <code>players</code>, <code>bar</code>, <code>font</code>, <code>pages</code>, <code>actions</code>, <code>glass</code>, or settings that carry a look or a glass) is read as a song source, because that's what most services like this are.</li>
+  <li>a manifest with no <code>resources</code> and nothing that changes the look (<code>look</code>, <code>player</code>, <code>players</code>, <code>bar</code>, <code>mini</code>, <code>font</code>, <code>pages</code>, <code>actions</code>, <code>glass</code>, or settings that carry a look or a glass) is read as a song source, because that's what most services like this are.</li>
   <li>a website's own manifest.json is turned away. websites have one for "install to home screen", with <code>start_url</code>, <code>display</code>, <code>short_name</code> or <code>icons</code>. a manifest with any of those and none of the module fields gets "that's a website, not a module". so don't use those names.</li>
 </ul>
 <h2>Numbers and text</h2>
@@ -769,6 +770,7 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><th>type</th><th>what it does</th><th>fields</th></tr>
 <tr><td><code>progress</code></td><td>where the song is, tap or drag to seek</td><td><code>style</code>: line, thick, pill (line) · <code>color</code> (ink) · <code>track</code> (chip) · <code>times</code> show the times (true) · <code>seek</code> (true)</td></tr>
 <tr><td><code>controls</code></td><td>previous, play/pause and next together</td><td><code>size</code> 28–96 (48) · <code>style</code>: circles or plain · <code>color</code> the circles' fill · <code>icon</code> the icons' colour</td></tr>
+<tr><td><code>bottomBar</code></td><td>the bar under the controls that opens the lyrics and the queue: two cards (the sung line, and what's next with its cover), two pills, or mochy's own volume bar with its lyrics and queue buttons</td><td><code>style</code>: cards, pills, volume (cards) · <code>height</code> 36–160 (76, pills 48) · <code>corner</code> 0–80 (22) · <code>glass</code> true or a blur, frosted over your backdrop · <code>fill</code> or <code>colors</code> · <code>color</code> its words and icons (ink) · <code>gap</code> 0–40 (10). the volume style keeps mochy's own look</td></tr>
 <tr><td><code>button</code></td><td>one control, or a custom action, in a circle</td><td><code>action</code> or <code>link</code>/<code>page</code>/<code>search</code> · <code>size</code> 24–96 (44) · <code>color</code> icon colour · <code>fill</code> circle colour · <code>image</code> your own icon · <code>imageOn</code> your icon while it's on. <a href="#modules-player-custom">all the actions</a></td></tr>
 </table></div>
 <h2>Decoration</h2>
@@ -801,6 +803,7 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>origin</code></td><td>the point it turns and grows around: <code>"center"</code>, <code>"top"</code>, <code>"bottom left"</code>… or <code>originX</code>/<code>originY</code> from 0 to 1</td></tr>
 <tr><td><code>animate</code></td><td>a loop while the song plays, a preset or your <a href="#modules-player-keyframes">keyframes</a>. one, or a list of up to 4</td></tr>
 <tr><td><code>enter</code></td><td>how it comes in when the player opens (<a href="#modules-player-motion">presets</a> or keyframes)</td></tr>
+<tr><td><code>part</code></td><td>which part of <a href="#modules-player-editor">your editor</a> it belongs to</td></tr>
 <tr><td><code>when</code></td><td>only show it while a setting or the player says so (<a href="#modules-player-states">states &amp; events</a>)</td></tr>
 <tr><td><code>states</code>, <code>transition</code></td><td>poses it blends into while something holds, like paused or liked</td></tr>
 <tr><td><code>on</code></td><td>a one-shot animation on an event: a new song, play, pause, like, a beat</td></tr>
@@ -1385,17 +1388,41 @@ half4 main(float2 p) {
 
 <article class="page" id="modules-player-editor" data-group="Your own player" data-title="Your own editor">
 <h1>Your own editor</h1>
-<p class="sub">an edit screen for your player, made of your own pages</p>
-<p>mochy's flagship has its own editor. yours can too: name one of your <a href="#modules-pages">pages</a> as the player's <code>editor</code>, and <b>edit</b> on your card in the style picker opens it. put a live preview of your player at the top, your settings under it, and it's an editor.</p>
-<pre><code class="json">"player": { "id": "neon", "name": "Neon Night", "editor": "neon-editor", "blocks": [ ... ] },
+<p class="sub">the flagship's editor, on your player</p>
+<p>hold the player, pick your card and press <b>edit</b>: your player gets the same editor the flagship has. mochy's top bar comes down, every part you marked gets a tile round it, and a tap opens that part: the rest of the player steps back, and a panel slides up with the part's choices side by side and its other settings. everything you change shows on the player behind it straight away. hold a part instead and drag up or down to resize it, with a tick at each end.</p>
+<pre><code class="json">"player": {
+  "edit": [
+    { "part": "cover", "title": "Cover", "choose": "coverShape", "hold": "size" },
+    { "part": "lyrics", "title": "Lyrics", "settings": ["wave", "lyricSize"], "hold": "lyricSize" },
+    { "part": "bar", "title": "Bottom bar", "choose": "barLook" },
+    { "part": "colours", "title": "Colours", "choose": "glow" }
+  ],
+  "blocks": [
+    { "type": "cover", "shape": "rounded", "part": "cover", "when": "coverShape=rounded" },
+    { "type": "cover", "shape": "circle", "spin": true, "part": "cover", "when": "coverShape=round" },
+    { "type": "lyrics", "style": "custom", "part": "lyrics" },
+    { "type": "bottomBar", "style": "cards", "part": "bar", "when": "barLook=cards" },
+    { "type": "bottomBar", "style": "pills", "part": "bar", "when": "barLook=pills" }
+  ]
+}</code></pre>
+<h2>Parts</h2>
+<div class="tbl"><table>
+<tr><th>field</th><th>what it's for</th></tr>
+<tr><td><code>part</code></td><td>its id, a–z, 0–9, <code>-</code> and <code>_</code>. blocks with <code>"part": "cover"</code> (any block, any depth) are where its tile goes; several blocks share one tile round them all</td></tr>
+<tr><td><code>title</code></td><td>its name in the top bar while it's open</td></tr>
+<tr><td><code>choose</code></td><td>one of your <code>select</code> <a href="#modules-settings">settings</a>, its options shown side by side. the trick is to switch blocks with <code>when</code> on it, so each option is a different look</td></tr>
+<tr><td><code>settings</code></td><td>more settings under the choices: toggles, sliders, colours, lists. up to 12</td></tr>
+<tr><td><code>hold</code></td><td>a <a href="#modules-scaling">slider</a> setting that holding the part and dragging changes: up is more, down is less</td></tr>
+</table></div>
+<p>up to 8 parts. a part with no block on the player (a background, a colour scheme) shows as a round button along the bottom of the editor instead of a tile. a sub-style can pin a setting with its <code>values</code>; a part that changes a pinned setting won't show a difference while that sub-style is picked.</p>
+<h2>An editor page instead</h2>
+<p>you can also make your editor a <a href="#modules-pages">page</a> of your own: name it as the player's <code>editor</code>. edit opens it when the player has no <code>edit</code> parts. put a live preview of your player at the top, your settings under it:</p>
+<pre><code class="json">"player": { "id": "tape", "name": "Tape", "editor": "tape-editor", "blocks": [ ... ] },
 "pages": [
-  { "id": "neon-editor", "title": "Edit Neon Night", "blocks": [
+  { "id": "tape-editor", "title": "Edit Tape", "blocks": [
     { "type": "player", "height": 420 },
     { "type": "styles" },
-    { "type": "card", "glass": true, "blocks": [
-      { "type": "setting", "key": "glow" },
-      { "type": "setting", "key": "size" }
-    ] },
+    { "type": "card", "glass": true, "blocks": [ { "type": "setting", "key": "glow" } ] },
     { "type": "use" }
   ] }
 ]</code></pre>
@@ -1405,7 +1432,7 @@ half4 main(float2 p) {
 <tr><td><code>styles</code></td><td>your players and their sub-styles as chips, the one in use lit. tapping one makes it the player</td><td></td></tr>
 <tr><td><code>use</code></td><td>a button that makes your player the one mochy uses</td><td><code>text</code> (Use this player) · <code>filled</code></td></tr>
 </table></div>
-<p>without an <code>editor</code>, edit opens your <a href="#modules-player-custom">customise sheet</a> over the player when you have one. a button with <code>"action": "editor"</code> opens the editor from inside your player too.</p>
+<p>with neither, edit opens your <a href="#modules-player-custom">customise sheet</a> over the player. a button with <code>"action": "editor"</code> opens whichever your player has, from inside it.</p>
 </article>
 
 <article class="page" id="modules-player-info" data-group="Your own player" data-title="Player info">
@@ -1497,19 +1524,19 @@ half4 main(float2 p) {
 <div class="tbl"><table>
 <tr><th>uniform</th><th>what it is</th></tr>
 <tr><td><code>uniform float2 size;</code></td><td>this line's box in pixels</td></tr>
-<tr><td><code>uniform float distance;</code></td><td>how far the line is from the sung one, smooth as they move: 0 sung, -1 just sung, 1 next</td></tr>
+<tr><td><code>uniform float lineOffset;</code></td><td>how far the line is from the sung one, smooth as they move: 0 sung, -1 just sung, 1 next. (not <code>distance</code>: that's agsl's own function)</td></tr>
 <tr><td><code>uniform float lineProgress;</code></td><td>this line's progress: 1 for lines already sung, 0 for ones coming</td></tr>
 </table></div>
 <pre><code>// shaders/lyrics.agsl: a warm sweep across the sung line, cool for the rest
 uniform float2 size;
-uniform float distance;
+uniform float lineOffset;
 uniform float lineProgress;
 uniform float bass;
 layout(color) uniform half4 accent;
 
 half4 main(float2 p) {
     float sung = step(p.x / size.x, lineProgress);
-    float near = 1.0 - clamp(abs(distance), 0.0, 1.0);
+    float near = 1.0 - clamp(abs(lineOffset), 0.0, 1.0);
     half3 cool = half3(0.55, 0.6, 0.75);
     half3 warm = mix(half3(1.0), half3(accent.rgb), 0.35 + 0.3 * bass);
     return half4(mix(cool, warm, sung * near), 1.0);
@@ -1826,10 +1853,40 @@ layout(color) uniform half4 accent;
 
 half4 main(float2 p) {
     float2 c = float2((pill.x + pill.z) * 0.5 + sin(time * speed) * 6.0, size.y * 0.5);
-    float glow = smoothstep(size.y * 1.4, 0.0, distance(p, c)) * pillShown;
+    float glow = (1.0 - smoothstep(0.0, size.y * 1.4, distance(p, c))) * pillShown;
     return half4(half3(accent.rgb) * glow * 0.35, glow * 0.35);
 }</code></pre>
 <div class="note warn">the bar's shader runs for every pixel of the bar, every frame, while it shows and your shader declares <code>time</code>. mochy keeps the repaint to the bar's own rectangle so the app under it isn't redrawn, but keep it light. it needs android 13 and a zip; without them the bar draws without it. on a tablet or a phone on its side, mochy's wide bar stays as it is.</div>
+</article>
+
+<article class="page" id="modules-mini" data-group="Interfaces" data-title="Your own mini player">
+<h1>Your own mini player</h1>
+<p class="sub">your row in the pill, under the nav bar</p>
+<p>the mini player is the pill over the nav bar while the player is closed. <code>mini</code> fills it with blocks of your own, laid out in a row beside the cover, with a ground of your own over mochy's glass. mochy keeps the cover itself, so it still grows into your player as it opens. your row fades out by the time the player is halfway open, the way mochy's own does.</p>
+<pre><code class="json">"mini": {
+  "background": { "type": "gradient", "colors": ["#33FF5CA8", "#335CC8FF"] },
+  "align": "start",
+  "keyframes": { "pop": { "40%": { "scale": 1.3 } } },
+  "blocks": [
+    { "type": "column", "gap": 0, "blocks": [
+      { "type": "title", "size": 14 },
+      { "type": "text", "text": "{line}", "size": 11, "color": "inkSoft" }
+    ] },
+    { "type": "button", "action": "like", "size": 34, "fill": "#00000000", "color": "accent",
+      "on": { "like": { "keyframes": "pop", "duration": 400 } } },
+    { "type": "button", "action": "playPause", "size": 36, "fill": "#26FFFFFF" },
+    { "type": "button", "action": "next", "size": 34, "fill": "#00000000" }
+  ]
+}</code></pre>
+<p>it's written like a <a href="#modules-player">player</a>, and almost everything a player has works here: every <a href="#modules-player-blocks">block</a>, <a href="#modules-player-keyframes">keyframes</a>, <a href="#modules-player-states">states and events</a>, <a href="#modules-player-styles">style sheets</a>, <a href="#modules-player-info">player info</a>, your shaders, <code>scale</code>. the blocks sit in one row; words, columns and bars share the room left by the buttons and pictures.</p>
+<div class="tbl"><table>
+<tr><th>field</th><th>what it's for</th><th>default</th></tr>
+<tr><td><code>blocks</code></td><td>what's in the row</td><td></td></tr>
+<tr><td><code>background</code></td><td>a player background, drawn inside the pill over mochy's glass. left out, the glass shows as it is</td><td></td></tr>
+<tr><td><code>padding</code></td><td>room at the row's ends, 0–32</td><td>0</td></tr>
+<tr><td><code>align</code></td><td>how its words line up</td><td>center</td></tr>
+</table></div>
+<div class="note">it shows on phones; a tablet or a phone on its side keeps mochy's wide bar and its mini player. a tap on the pill outside your buttons opens the player, as always. keep it small: the pill is 64 dp tall, so 36 dp buttons and 14 sp words fit best. anything that moves (a visualizer, a loop) runs while the mini player shows, so use them gently.</div>
 </article>
 
 <article class="page" id="modules-pages" data-group="Interfaces" data-title="Your own pages">
@@ -2626,6 +2683,9 @@ unzip -l neon-night.mochyymodule.zip</code></pre>
 <tr><td>a player's boxes and paths</td><td><code>ui/player/styles/SkinPanels.kt</code></td></tr>
 <tr><td>a page's background, cards and shader blocks</td><td><code>ui/screens/settings/modules/ModulePageScreen.kt</code>, its shaders in <code>ModulePageShaders.kt</code></td></tr>
 <tr><td>every module player and sub-style there is to pick, the pick, the nav bar and the takeovers that are on</td><td><code>modules/skin/ActiveSkin.kt</code> (<code>ModuleStyle</code>, <code>ActiveBar</code>, <code>Takeover</code>), the picker's columns in <code>ui/player/BottomSheetPlayer.kt</code> and <code>studio/PlayerSelector.kt</code></td></tr>
+<tr><td>the flagship's editor on a module player</td><td>the parts in <code>SkinEditPart</code> (<code>ModuleSkin.kt</code>); <code>ui/player/styles/ModuleEditor.kt</code> (its state, the tiles and the hold); <code>ui/player/studio/ModuleEditOverlay.kt</code> (the top bar and the part's panel), opened from <code>BottomSheetPlayer</code>'s edit</td></tr>
+<tr><td>a module player's bottom bar</td><td><code>ui/player/styles/SkinBottomBar.kt</code>, the volume style reusing <code>ui/player/PlayerVolumeBar.kt</code></td></tr>
+<tr><td>a look's mini player</td><td><code>ui/player/styles/ModuleMiniPlayer.kt</code>, drawn in <code>ui/player/MorphingCover.kt</code> in place of mochy's words and buttons; its clocks run off <code>LocalStyleShowing</code></td></tr>
 <tr><td>a nav bar of a look's own</td><td>the model in <code>modules/skin/SkinBar.kt</code>, read by <code>SkinBarParser.kt</code>, drawn by <code>ui/component/ModuleNavBar.kt</code> in <code>AppNavigationBar</code>'s place</td></tr>
 <tr><td>custom lyrics and player info</td><td><code>modules/skin/SkinLyricStyle.kt</code>, <code>SkinLyricsParser.kt</code>; <code>ui/player/styles/SkinCustomLyrics.kt</code> and <code>SkinPlayerInfo.kt</code> (the lyric clock and the placeholders)</td></tr>
 <tr><td>scaling and sliders</td><td><code>modules/skin/SkinSize.kt</code>, <code>ScaledContent</code> in <code>ModulePlayerStyle.kt</code>; a slider's range in <code>web/ManifestSettings.kt</code> (<code>FieldRange</code>), drawn by <code>ModuleOptions.kt</code></td></tr>

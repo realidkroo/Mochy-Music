@@ -295,6 +295,8 @@
     <string name="ps_studio_edit_menu">Edit Menu</string>
     <string name="ps_studio_edit_player">Edit Player</string>
     <string name="ps_studio_hold_to_adjust">Hold to adjust position, tap to edit</string>
+    <string name="ps_module_edit_hint">Tap a part to change it</string>
+    <string name="ps_module_edit_hint_hold">Tap a part to change it, hold to resize it</string>
     <string name="ps_studio_background_n">BACKGROUND - %1$03d</string>
     <string name="ps_studio_style_n">STYLE - %1$03d</string>
     <string name="ps_studio_more_options">Show more option for this cover</string>

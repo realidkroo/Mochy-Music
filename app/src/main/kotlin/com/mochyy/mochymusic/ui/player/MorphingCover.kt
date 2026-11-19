@@ -713,6 +713,17 @@ fun MorphingCover(
             pureBlack = pureBlack,
         )
 
+        // a look's own mini player draws in the pill in place of mochy's words and buttons; the cover stays mochy's, so it still grows into the player
+        val moduleMini = com.mochyy.mochymusic.modules.skin.ActiveSkin.mini?.takeIf { !pillFrame.merged }
+        if (moduleMini != null) {
+            com.mochyy.mochymusic.ui.player.styles.ModuleMiniPlayer(
+                mini = moduleMini,
+                carousel = carousel,
+                progress = progressProvider,
+                space = com.mochyy.mochymusic.ui.player.styles.MiniPillSpace(pillFrame.start, pillFrame.end, pillFrame.height, endpoints.miniTextX),
+            )
+        }
+
         val isEdgeToEdge = coverStyle == PlayerCoverStyle.EDGE_TO_EDGE
         // a record player stays put when paused: the record stops, the arm says where it is
         val targetPauseScale = when {
@@ -1165,89 +1176,91 @@ fun MorphingCover(
             }
         }
 
-        MiniSongInfo(
-            carousel = carousel,
-            trackInfo = trackInfo,
-            progressProvider = progressProvider,
-            horizontalOffsetProvider = horizontalOffsetProvider,
-            endpointsPx = endpointsPx,
-        )
+        if (moduleMini == null) {
+            MiniSongInfo(
+                carousel = carousel,
+                trackInfo = trackInfo,
+                progressProvider = progressProvider,
+                horizontalOffsetProvider = horizontalOffsetProvider,
+                endpointsPx = endpointsPx,
+            )
 
-        if (pillFrame.withPrevious) {
-            MiniPreviousButton(progressProvider = progressProvider, endpointsPx = endpointsPx, size = miniPlaySize)
-        }
+            if (pillFrame.withPrevious) {
+                MiniPreviousButton(progressProvider = progressProvider, endpointsPx = endpointsPx, size = miniPlaySize)
+            }
 
-        Box(
-            modifier = Modifier
-                .morphLayout(
-                    progressProvider = progressProvider,
-                    horizontalOffsetProvider = { 0f },
-                    endpointsPx = endpointsPx,
-                    element = MorphElement.PLAY,
-                )
-                .requiredSize(miniPlaySize)
-                .graphicsLayer {
-                    val p = progressProvider()
-                    val playScale = 1f + (p * 1.0f)
-                    scaleX = playScale
-                    scaleY = playScale
-                    transformOrigin = TransformOrigin(0.5f, 0.5f)
-                    alpha = (1f - (p / 0.5f)).coerceIn(0f, 1f)
-                }
-        ) {
-            MiniPlayerButton(onClick = { playerConnection?.togglePlayPause() }) {
-                val tint = MaterialTheme.colorScheme.onSurface
-                // replay pops in for a finished song; play and pause swap with the flagship's squash
-                AnimatedContent(
-                    targetState = playbackState == Player.STATE_ENDED,
-                    transitionSpec = { MiniIconSwap },
-                    contentAlignment = Alignment.Center,
-                    label = "miniPlayerIcon",
-                ) { ended ->
-                    if (ended) {
-                        Icon(painter = painterResource(R.drawable.replay), contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
-                    } else {
-                        AnimatedPlayGlyph(playing = isPlaying, color = tint, height = MiniPlayHeight)
+            Box(
+                modifier = Modifier
+                    .morphLayout(
+                        progressProvider = progressProvider,
+                        horizontalOffsetProvider = { 0f },
+                        endpointsPx = endpointsPx,
+                        element = MorphElement.PLAY,
+                    )
+                    .requiredSize(miniPlaySize)
+                    .graphicsLayer {
+                        val p = progressProvider()
+                        val playScale = 1f + (p * 1.0f)
+                        scaleX = playScale
+                        scaleY = playScale
+                        transformOrigin = TransformOrigin(0.5f, 0.5f)
+                        alpha = (1f - (p / 0.5f)).coerceIn(0f, 1f)
+                    }
+            ) {
+                MiniPlayerButton(onClick = { playerConnection?.togglePlayPause() }) {
+                    val tint = MaterialTheme.colorScheme.onSurface
+                    // replay pops in for a finished song; play and pause swap with the flagship's squash
+                    AnimatedContent(
+                        targetState = playbackState == Player.STATE_ENDED,
+                        transitionSpec = { MiniIconSwap },
+                        contentAlignment = Alignment.Center,
+                        label = "miniPlayerIcon",
+                    ) { ended ->
+                        if (ended) {
+                            Icon(painter = painterResource(R.drawable.replay), contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+                        } else {
+                            AnimatedPlayGlyph(playing = isPlaying, color = tint, height = MiniPlayHeight)
+                        }
                     }
                 }
             }
-        }
 
-        Box(
-            modifier = Modifier
-                .morphLayout(
-                    progressProvider = progressProvider,
-                    horizontalOffsetProvider = { 0f },
-                    endpointsPx = endpointsPx,
-                    element = MorphElement.SKIP,
-                )
-                .requiredSize(miniPlaySize)
-                .graphicsLayer {
-                    val p = progressProvider()
-                    val playScale = 1f + (p * 1.0f)
-                    scaleX = playScale
-                    scaleY = playScale
-                    transformOrigin = TransformOrigin(0.5f, 0.5f)
-                    alpha = (1f - (p / 0.5f)).coerceIn(0f, 1f)
-                }
-        ) {
-            val skipScope = rememberCoroutineScope()
-            val skipCycle = remember { SkipCycleState() }
-            MiniPlayerButton(
-                onClick = {
-                    skipScope.launch { skipCycle.step() }
-                    playerConnection?.let { connection ->
-                        // through the same skip as every other button (its fade, the cast), with the row gliding first so the song change can't make it stutter
-                        val row = currentCarousel
-                        if (row == null) {
-                            connection.seekToNext()
-                        } else {
-                            row.skipToNext(connection.player, connection.service.transport.skipDelayMs()) { connection.seekToNext() }
-                        }
+            Box(
+                modifier = Modifier
+                    .morphLayout(
+                        progressProvider = progressProvider,
+                        horizontalOffsetProvider = { 0f },
+                        endpointsPx = endpointsPx,
+                        element = MorphElement.SKIP,
+                    )
+                    .requiredSize(miniPlaySize)
+                    .graphicsLayer {
+                        val p = progressProvider()
+                        val playScale = 1f + (p * 1.0f)
+                        scaleX = playScale
+                        scaleY = playScale
+                        transformOrigin = TransformOrigin(0.5f, 0.5f)
+                        alpha = (1f - (p / 0.5f)).coerceIn(0f, 1f)
                     }
-                },
             ) {
-                AnimatedSkipGlyph(cycle = skipCycle, backwards = false, color = MaterialTheme.colorScheme.onSurface, width = MiniSkipWidth)
+                val skipScope = rememberCoroutineScope()
+                val skipCycle = remember { SkipCycleState() }
+                MiniPlayerButton(
+                    onClick = {
+                        skipScope.launch { skipCycle.step() }
+                        playerConnection?.let { connection ->
+                            // through the same skip as every other button (its fade, the cast), with the row gliding first so the song change can't make it stutter
+                            val row = currentCarousel
+                            if (row == null) {
+                                connection.seekToNext()
+                            } else {
+                                row.skipToNext(connection.player, connection.service.transport.skipDelayMs()) { connection.seekToNext() }
+                            }
+                        }
+                    },
+                ) {
+                    AnimatedSkipGlyph(cycle = skipCycle, backwards = false, color = MaterialTheme.colorScheme.onSurface, width = MiniSkipWidth)
+                }
             }
         }
     }

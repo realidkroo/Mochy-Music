@@ -44,6 +44,8 @@ internal data class WebModuleManifest(
     // more players than the one, each with sub-styles of its own, and a nav bar of the look's own
     val players: JsonElement? = null,
     val bar: JsonElement? = null,
+    // the look's own mini player
+    val mini: JsonElement? = null,
 ) {
     @Serializable
     data class Setting(
@@ -141,9 +143,9 @@ internal data class WebModuleManifest(
             ((element as? JsonPrimitive) ?: ((element as? JsonObject)?.get("name") as? JsonPrimitive))?.contentOrNull?.lowercase()
         }.toSet()
 
-    // anything that changes how mochy looks or what it shows: settings, players, a font, a glass, a nav bar, pages, menu rows
+    // anything that changes how mochy looks or what it shows: settings, players, a font, a glass, a nav bar, a mini player, pages, menu rows
     val changesLook: Boolean
-        get() = look.isNotEmpty() || player != null || players != null || bar != null || font != null || pages != null || actions != null || glass != null ||
+        get() = look.isNotEmpty() || player != null || players != null || bar != null || mini != null || font != null || pages != null || actions != null || glass != null ||
             settings.any { it.changesLook }
 
     // a manifest that lists nothing is an audio source, that's what most services of this kind are
@@ -169,7 +171,7 @@ internal data class WebModuleManifest(
         }
 
         private val SiteKeys = listOf("start_url", "display", "short_name", "icons")
-        private val ModuleKeys = listOf("resources", "look", "player", "players", "bar", "font", "pages", "actions", "glass")
+        private val ModuleKeys = listOf("resources", "look", "player", "players", "bar", "mini", "font", "pages", "actions", "glass")
 
         // people paste the manifest's own link as often as the service's, both end up as the service's base
         fun baseOf(link: String): String? {

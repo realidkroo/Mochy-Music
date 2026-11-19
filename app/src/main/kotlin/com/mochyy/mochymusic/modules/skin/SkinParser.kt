@@ -26,6 +26,7 @@ internal object SkinParser {
         glass: JsonElement? = null,
         players: JsonElement? = null,
         bar: JsonElement? = null,
+        mini: JsonElement? = null,
     ): ModuleSkin? {
         val parsedPlayers = SkinPlayerParser.players(player, players, moduleName, fromZip = files != null)
         // a font has to be a file on the phone, so only a zip can bring one
@@ -35,8 +36,9 @@ internal object SkinParser {
         // a shader is code the gpu runs, so it only comes as a file in a zip, the same as a font
         val parsedGlass = (glass as? JsonObject)?.let(::glass)?.takeIf { files != null }
         val parsedBar = (bar as? JsonObject)?.let { SkinBarParser.bar(it, fromZip = files != null) }
-        if (parsedPlayers.isEmpty() && parsedFont == null && parsedPages.isEmpty() && parsedActions.isEmpty() && parsedGlass == null && parsedBar == null) return null
-        return ModuleSkin(moduleId, moduleName, parsedPlayers, parsedFont, parsedPages, files, base, parsedActions, parsedGlass, parsedBar)
+        val parsedMini = (mini as? JsonObject)?.let { SkinPlayerParser.mini(it, moduleName, fromZip = files != null) }
+        if (parsedPlayers.isEmpty() && parsedFont == null && parsedPages.isEmpty() && parsedActions.isEmpty() && parsedGlass == null && parsedBar == null && parsedMini == null) return null
+        return ModuleSkin(moduleId, moduleName, parsedPlayers, parsedFont, parsedPages, files, base, parsedActions, parsedGlass, parsedBar, parsedMini)
     }
 
     // ---- the bottom bar's glass -----------------------------------------------------------------

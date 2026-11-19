@@ -250,6 +250,7 @@ class ModuleRegistry @Inject constructor(
                 glassSkin = glass?.skin,
                 glass = glass?.glass,
                 bar = looks.firstOrNull { it.skin?.bar != null }?.let { entry -> entry.skin?.let { LookValues(it, entry.values) } },
+                mini = looks.firstOrNull { it.skin?.mini != null }?.let { entry -> entry.skin?.let { LookValues(it, entry.values) } },
                 // a page can take one of mochy's over from any module that's on, not only a look
                 pages = list.filter { it.active }.mapNotNull { entry -> entry.skin?.takeIf { it.takeovers.isNotEmpty() }?.let { LookValues(it, entry.values) } },
             ),
@@ -267,12 +268,13 @@ class ModuleRegistry @Inject constructor(
 
     private val ModuleEntry.glass: SkinGlass? get() = (module as? SkinSource)?.glass
 
-    // what a look brings that another could also bring: its settings by name, and its font, glass and nav bar; players all stay pickable, so they don't count
+    // what a look brings that another could also bring: its settings by name, and its font, glass, nav bar and mini player; players all stay pickable, so they don't count
     private fun partsOf(entry: ModuleEntry): Set<String> = buildSet {
         (entry.module as? LookModule)?.look?.keys?.let(::addAll)
         if (entry.skin?.font?.wholeApp == true) add("font")
         if (entry.glass != null) add("glass")
         if (entry.skin?.bar != null) add("bar")
+        if (entry.skin?.mini != null) add("mini")
     }
 
     // the first look above [entry] that takes something [entry] also brings, for its page to say so

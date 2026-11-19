@@ -397,6 +397,11 @@ val ScrobbleDelayPercentKey = floatPreferencesKey("scrobbleDelayPercent")
 val ScrobbleMinSongDurationKey = intPreferencesKey("scrobbleMinSongDuration")
 val ScrobbleDelaySecondsKey = intPreferencesKey("scrobbleDelaySeconds")
 
+// cloud backup: only the schedule lives here, the account itself sits in no_backup so it never travels in a zip
+val CloudBackupAutoKey = booleanPreferencesKey("cloudBackupAuto")
+val CloudBackupEveryMinutesKey = intPreferencesKey("cloudBackupEveryMinutes")
+val CloudBackupKeepKey = intPreferencesKey("cloudBackupKeep")
+
 val ChipSortTypeKey = stringPreferencesKey("chipSortType")
 val SongSortTypeKey = stringPreferencesKey("songSortType")
 val SongSortDescendingKey = booleanPreferencesKey("songSortDescending")

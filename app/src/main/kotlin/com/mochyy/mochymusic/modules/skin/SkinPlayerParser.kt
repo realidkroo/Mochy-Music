@@ -85,8 +85,34 @@ internal object SkinPlayerParser {
             scroll = o.bool("scroll") ?: false,
             editor = o.string("editor")?.lowercase()?.takeIf { PlayerId.matches(it) },
             size = SkinSize.of(o),
+            edit = editParts(o["edit"]),
         )
     }
+
+    /** a look's mini player: blocks in a row over the pill, and no background of its own unless it names one, so mochy's glass shows */
+    fun mini(o: JsonObject, fallbackName: String, fromZip: Boolean): SkinPlayer? {
+        val parsed = player(o, fallbackName, fromZip) ?: return null
+        return parsed.copy(
+            id = "mini",
+            padding = (o.float("padding") ?: 0f).coerceIn(0f, 32f).dp,
+            background = if (o["background"] == null) SkinBackground.Tones else parsed.background,
+        )
+    }
+
+    // "edit": [ { "part": "cover", "title": "Cover", "choose": "shape", "settings": ["spin"], "hold": "coverSize" } ]
+    private fun editParts(element: JsonElement?): List<SkinEditPart> =
+        (element as? JsonArray).orEmpty().mapNotNull { item ->
+            val o = item as? JsonObject ?: return@mapNotNull null
+            val id = (o.string("part") ?: o.string("id"))?.lowercase()?.takeIf { PlayerId.matches(it) } ?: return@mapNotNull null
+            val settings = (o["settings"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.contentOrNull?.trim()?.takeIf(String::isNotEmpty)?.take(60) }
+            SkinEditPart(
+                id = id,
+                title = o.string("title")?.take(30) ?: id.replaceFirstChar { it.uppercase() },
+                choose = o.string("choose")?.take(60),
+                settings = settings.distinct().take(MaxCustomise),
+                hold = o.string("hold")?.take(60),
+            )
+        }.distinctBy { it.id }.take(MaxEditParts)
 
     // "menuButton": "start", "hidden", false, or { "side": "start", "color": "cover", "fill": "#00000000" }
     private fun menuButton(element: JsonElement?): SkinMenuButton {
@@ -173,6 +199,7 @@ internal object SkinPlayerParser {
             val states = SkinAnimationParser.states(o["states"])
             val transition = SkinAnimationParser.transition(o["transition"]) ?: SkinAnimationParser.DefaultTransition.takeIf { states.isNotEmpty() }
             val triggers = SkinAnimationParser.triggers(o["on"], library)
+            val part = o.string("part")?.lowercase()?.takeIf { PlayerId.matches(it) }
             val opacity = (o.float("opacity") ?: 1f).coerceIn(0f, 1f)
             val x = (o.float("x") ?: 0f).coerceIn(-400f, 400f)
             val y = (o.float("y") ?: 0f).coerceIn(-400f, 400f)
@@ -181,12 +208,12 @@ internal object SkinPlayerParser {
             val blur = (o.float("blur") ?: 0f).coerceIn(0f, SkinAnimationParser.MaxBlur)
             val (originX, originY) = origin(o)
             val plain = motions.isEmpty() && timelines.isEmpty() && enter == null && condition == null && states.isEmpty() && triggers.isEmpty() &&
-                opacity == 1f && x == 0f && y == 0f && rotate == 0f && scale == 1f && blur == 0f
+                opacity == 1f && x == 0f && y == 0f && rotate == 0f && scale == 1f && blur == 0f && part == null
             if (plain) return inner
             return SkinBlock.Styled(
                 inner, motions, enter, condition, opacity, x.dp, y.dp, rotate,
                 scale = scale, blur = blur, originX = originX, originY = originY,
-                timelines = timelines, states = states, transition = transition, triggers = triggers,
+                timelines = timelines, states = states, transition = transition, triggers = triggers, part = part,
             )
         }
 
@@ -251,6 +278,7 @@ internal object SkinPlayerParser {
                 )
             }
             "box", "panel", "card" -> box(o, depth)
+            "bottombar", "deck" -> bottomBar(o)
             "path", "vector", "svg" -> vector(o)
             "progress" -> SkinBlock.Progress(
                 style = when (o.string("style")?.lowercase()) {
@@ -375,6 +403,29 @@ internal object SkinPlayerParser {
                 width = o.float("width")?.coerceIn(8f, 600f)?.dp,
                 height = o.float("height")?.coerceIn(8f, 800f)?.dp,
                 shadow = o.bool("shadow") ?: false,
+            )
+        }
+
+        // { "type": "bottomBar", "style": "cards", "glass": true } or "pills", or mochy's own "volume"
+        private fun bottomBar(o: JsonObject): SkinBlock {
+            val kind = when (o.string("style")?.lowercase()) {
+                "pills", "pill", "buttons" -> BottomBarKind.Pills
+                "volume" -> BottomBarKind.Volume
+                else -> BottomBarKind.Cards
+            }
+            val glass = when (val g = o["glass"]) {
+                is JsonPrimitive -> g.booleanOrNull?.let { if (it) DefaultGlassBlur else null } ?: g.contentOrNull?.toFloatOrNull()
+                is JsonObject -> g.float("blur") ?: DefaultGlassBlur
+                else -> null
+            }?.coerceIn(0f, SkinAnimationParser.MaxBlur)
+            return SkinBlock.BottomBar(
+                kind = kind,
+                height = (o.float("height") ?: if (kind == BottomBarKind.Pills) 48f else 76f).coerceIn(36f, 160f).dp,
+                corner = (o.float("corner") ?: 22f).coerceIn(0f, 80f).dp,
+                fill = colors(o["colors"]) ?: listOfNotNull(skinColor(o.string("fill"))),
+                glass = glass,
+                color = skinColor(o.string("color")),
+                gap = (o.float("gap") ?: 10f).coerceIn(0f, 40f).dp,
             )
         }
 
@@ -519,6 +570,7 @@ internal object SkinPlayerParser {
     private const val MaxMenu = 4
     private const val MaxHeader = 8
     private const val MaxPlayers = 6
+    private const val MaxEditParts = 8
     private const val MaxVariants = 8
     private const val MaxVariantValues = 24
     private val PlayerId = Regex("[a-z0-9_-]{1,40}")
@@ -530,5 +582,5 @@ internal object SkinPlayerParser {
         "line", "lineCount", "lineProgress", "wordProgress", "singing", "position", "duration",
     )
     // the lyrics' shaders get the player's and their own: how far a line is from the sung one, and the drawn words
-    val LyricUniforms = PlayerUniforms + setOf("distance", "content")
+    val LyricUniforms = PlayerUniforms + setOf("lineOffset", "content")
 }

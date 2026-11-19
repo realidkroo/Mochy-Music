@@ -284,13 +284,14 @@ private fun LyricTranslation(line: LyricsEntry, textStyle: TextStyle, color: Col
 private fun lyricProgram(context: SkinContext, source: SkinShaderSource): SkinProgram? =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ActiveSkin.shader(context.skin.moduleId, source.file) else null
 
-// a row's fill: mochy's uniforms, its distance from the sung line and how far it's sung, then the module's own
+// a row's fill: mochy's uniforms, how far it is from the sung line and how far it's sung, then the module's own
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.setRowUniforms(program: SkinProgram, source: SkinShaderSource?, context: SkinContext, distance: Float, progress: Float) {
     val shader = program.shader
     val declared = program.declared
     commonUniforms(shader, declared, context, size.width, size.height, density)
-    if ("distance" in declared) shader.setAgslUniform("distance", distance)
+    // not "distance", which is agsl's own function and would clash with the module's code
+    if ("lineOffset" in declared) shader.setAgslUniform("lineOffset", distance)
     // the row's own progress, after the clock's so a past or coming row reads 1 or 0
     if ("lineProgress" in declared) shader.setAgslUniform("lineProgress", progress)
     source?.uniforms?.forEach { (name, value) -> if (name in declared) shader.setAgslUniform(name, value) }

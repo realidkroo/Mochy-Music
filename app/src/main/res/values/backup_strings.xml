@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- integrations: the backup row and its page -->
+    <string name="integration_backup_name">Backup</string>
+    <string name="integration_backup_desc">Keep your library and stats safe in your own cloud</string>
+    <string name="backup_page_subtitle">Your playlists, likes, listening stats, recap, profile and settings, kept in your own cloud. Songs stay out, so backups stay small.</string>
+
+    <!-- where backups go -->
+    <string name="backup_group_where">Back up to</string>
+    <string name="backup_dropbox_desc">Sign in with your Dropbox account</string>
+    <string name="backup_onedrive_desc">Sign in with your Microsoft account</string>
+    <string name="backup_webdav_desc">Nextcloud, pCloud, Koofr, a NAS and more</string>
+    <string name="backup_not_set_up">Not set up in this build</string>
+    <string name="backup_signed_in_as">Signed in as %1$s</string>
+    <string name="backup_webdav_connected">Backing up to %1$s</string>
+    <string name="backup_waiting_browser">Finish signing in in your browser</string>
+    <string name="backup_finishing_sign_in">Signing in…</string>
+    <string name="backup_no_browser">There\'s no browser on this phone to sign in with.</string>
+    <string name="backup_disconnect">Disconnect</string>
+    <string name="backup_disconnect_desc">Stop backing up to %1$s. Backups already there stay.</string>
+    <string name="backup_connected_toast">Connected. Your backups go to %1$s now.</string>
+
+    <!-- backing up and restoring -->
+    <string name="backup_group_backups">Backups</string>
+    <string name="backup_now">Back up now</string>
+    <string name="backup_last">Last backup %1$s · %2$s</string>
+    <string name="backup_never">No backup yet</string>
+    <string name="backup_connect_first">Connect a cloud above first</string>
+    <string name="backup_packing">Packing up… %1$d%%</string>
+    <string name="backup_uploading">Uploading… %1$d%%</string>
+    <string name="backup_downloading">Downloading… %1$d%%</string>
+    <string name="backup_unpacking">Unpacking… %1$d%%</string>
+    <string name="backup_restored">Restored. Mochy is restarting…</string>
+    <string name="backup_done_toast">Backed up to %1$s</string>
+    <string name="backup_last_failed">The last automatic backup didn\'t go through. %1$s</string>
+    <string name="backup_restore">Restore a backup</string>
+    <string name="backup_restore_desc">Bring your library, stats and settings back from the cloud</string>
+
+    <!-- the schedule -->
+    <string name="backup_auto_title">Back up automatically</string>
+    <string name="backup_auto_desc">Runs in the background whenever there\'s a connection, and skips a turn when nothing changed</string>
+    <string name="backup_every">How often</string>
+    <string name="backup_keep">Keep in the cloud</string>
+    <string name="backup_keep_note">After each backup, this phone\'s oldest ones are deleted so only this many stay. Other phones\' backups are left alone.</string>
+    <plurals name="backup_every_minutes">
+        <item quantity="one">Every minute</item>
+        <item quantity="other">Every %d minutes</item>
+    </plurals>
+    <plurals name="backup_every_hours">
+        <item quantity="one">Every hour</item>
+        <item quantity="other">Every %d hours</item>
+    </plurals>
+    <plurals name="backup_every_days">
+        <item quantity="one">Every day</item>
+        <item quantity="other">Every %d days</item>
+    </plurals>
+    <plurals name="backup_every_weeks">
+        <item quantity="one">Every week</item>
+        <item quantity="other">Every %d weeks</item>
+    </plurals>
+    <plurals name="backup_keep_count">
+        <item quantity="one">%d backup</item>
+        <item quantity="other">%d backups</item>
+    </plurals>
+
+    <!-- the restore sheet -->
+    <string name="backup_restore_body">Pick one. Your library, stats and settings are swapped for the ones in it, then Mochy restarts. Downloaded songs stay as they are.</string>
+    <string name="backup_restore_loading">Looking in your cloud…</string>
+    <string name="backup_restore_empty">No backups there yet.</string>
+    <string name="backup_restore_item">%1$s · %2$s</string>
+    <string name="backup_restore_this">Restore and restart</string>
+    <string name="backup_try_again">Try again</string>
+
+    <!-- the webdav sheet -->
+    <string name="webdav_title">Connect a WebDAV server</string>
+    <string name="webdav_body">Backups go into a Mochy Backups folder at this address. Your password stays on this phone and never goes into a backup.</string>
+    <string name="webdav_address">Server address</string>
+    <string name="webdav_address_hint">https://cloud.example.com/remote.php/dav/files/you/</string>
+    <string name="webdav_username_hint">Your username</string>
+    <string name="webdav_password_hint">Your password, or an app password</string>
+    <string name="webdav_connect">Connect</string>
+    <string name="webdav_connecting">Checking…</string>
+
+    <!-- what went wrong -->
+    <string name="cloud_problem_offline">Couldn\'t reach the cloud. Check your connection and try again.</string>
+    <string name="cloud_problem_signed_out">Mochy isn\'t signed in there anymore. Sign in again to keep backing up.</string>
+    <string name="cloud_problem_wrong_login">The server turned down that username or password.</string>
+    <string name="cloud_problem_bad_address">That doesn\'t look like a server address.</string>
+    <string name="cloud_problem_not_found">Couldn\'t find that folder on the server. Check the address.</string>
+    <string name="cloud_problem_not_webdav">That address doesn\'t answer like a WebDAV server. Check it and try again.</string>
+    <string name="cloud_problem_full">Your cloud is full. Free up some space there and try again.</string>
+    <string name="cloud_problem_no_room">Couldn\'t pack the backup. Make sure this phone has some free space and try again.</string>
+    <string name="cloud_problem_busy">The cloud is having a moment. Try again in a bit.</string>
+    <string name="cloud_problem_denied">You said no on the sign-in page, so nothing\'s connected.</string>
+    <string name="cloud_problem_expired">That sign-in link had expired. Try signing in again.</string>
+</resources>

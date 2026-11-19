@@ -4,7 +4,6 @@ package com.mochyy.mochymusic.discord
 
 import android.content.Context
 import android.net.Uri
-import android.util.Base64
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -16,6 +15,7 @@ import com.mochyy.mochymusic.constants.DiscordLoginVerifierKey
 import com.mochyy.mochymusic.constants.DiscordProfileKey
 import com.mochyy.mochymusic.constants.DiscordRefreshTokenKey
 import com.mochyy.mochymusic.constants.DiscordTokenExpiresAtKey
+import com.mochyy.mochymusic.utils.Pkce
 import com.mochyy.mochymusic.utils.dataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -38,8 +38,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.contentOrNull
 import timber.log.Timber
-import java.security.MessageDigest
-import java.security.SecureRandom
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -85,8 +83,8 @@ class DiscordAuth @Inject constructor(
      * Android may close Mochy while the browser is in front.
      */
     suspend fun loginUri(): Uri {
-        val state = randomCode(24)
-        val verifier = randomCode(64)
+        val state = Pkce.randomCode(24)
+        val verifier = Pkce.randomCode(64)
         context.dataStore.edit {
             it[DiscordLoginStateKey] = state
             it[DiscordLoginVerifierKey] = verifier
@@ -98,7 +96,7 @@ class DiscordAuth @Inject constructor(
             .appendQueryParameter("redirect_uri", RedirectUri)
             .appendQueryParameter("scope", Scopes)
             .appendQueryParameter("state", state)
-            .appendQueryParameter("code_challenge", challengeOf(verifier))
+            .appendQueryParameter("code_challenge", Pkce.challengeOf(verifier))
             .appendQueryParameter("code_challenge_method", "S256")
             .build()
     }
@@ -261,16 +259,6 @@ class DiscordAuth @Inject constructor(
             it[DiscordTokenExpiresAtKey] = if (expiresIn > 0) System.currentTimeMillis() + expiresIn * 1000 else 0L
         }
         return access
-    }
-
-    private fun randomCode(bytes: Int): String {
-        val raw = ByteArray(bytes).also { SecureRandom().nextBytes(it) }
-        return Base64.encodeToString(raw, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
-    }
-
-    private fun challengeOf(verifier: String): String {
-        val digest = MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.US_ASCII))
-        return Base64.encodeToString(digest, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
     }
 
     companion object {

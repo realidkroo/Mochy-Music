@@ -25,6 +25,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.InputStream
+import java.io.OutputStream
 import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -42,12 +43,20 @@ class TransferExporter @Inject constructor(
     private val running = Mutex()
 
     /** writes the zip to target, onProgress goes from 0 to 1, the failure message is ready to show */
-    suspend fun export(target: Uri, onProgress: (Float) -> Unit): Result<TransferManifest> = withContext(Dispatchers.IO) {
+    suspend fun export(target: Uri, onProgress: (Float) -> Unit): Result<TransferManifest> =
+        exclusive { work -> withDownloadsPaused { pack(work, withSongs = true, onProgress) { openTarget(target) } } }
+            .onSuccess { markExported(context) }
+
+    /** the same zip without a single song, for cloud backups: library, stats, recap, settings and pictures, so it stays small */
+    suspend fun exportBackup(target: File, onProgress: (Float) -> Unit): Result<TransferManifest> =
+        exclusive { work -> pack(work, withSongs = false, onProgress) { target.outputStream() } }
+
+    // one export at a time, in a scratch folder that's always cleaned up, failing with a message ready to show
+    private suspend fun exclusive(block: suspend (work: File) -> TransferManifest): Result<TransferManifest> = withContext(Dispatchers.IO) {
         if (!running.tryLock()) return@withContext Result.failure(TransferException("An export is already running."))
         val work = File(context.cacheDir, "transfer_export").apply { deleteRecursively(); mkdirs() }
         try {
-            runCatching { withDownloadsPaused { pack(target, work, onProgress) } }
-                .onSuccess { markExported(context) }
+            runCatching { block(work) }
                 .recoverCatching { throw if (it is TransferException) it else TransferException("Couldn't export. Make sure there's free space and try again.", it) }
         } finally {
             work.deleteRecursively()
@@ -55,15 +64,22 @@ class TransferExporter @Inject constructor(
         }
     }
 
-    private suspend fun pack(target: Uri, work: File, onProgress: (Float) -> Unit): TransferManifest {
+    // "wt" empties a file picked twice, some providers like drive only know "w"
+    private fun openTarget(target: Uri): OutputStream =
+        runCatching { context.contentResolver.openOutputStream(target, "wt") }.getOrNull()
+            ?: runCatching { context.contentResolver.openOutputStream(target, "w") }.getOrNull()
+            ?: throw TransferException("Couldn't open the file you picked. Try picking another folder.")
+
+    private suspend fun pack(work: File, withSongs: Boolean, onProgress: (Float) -> Unit, open: () -> OutputStream): TransferManifest {
         onProgress(0f)
         val library = File(work, "library.db")
         val live = database.openHelper.writableDatabase
         snapshotDatabase(File(requireNotNull(live.path)), library, begin = live::beginTransaction, end = live::endTransaction)
 
+        // media3's database is the list of downloads, which only means something with the songs beside it
         val media = File(work, "media.db")
         val liveMedia = databaseProvider.writableDatabase
-        val hasMedia = runCatching {
+        val hasMedia = withSongs && runCatching {
             snapshotDatabase(File(liveMedia.path), media, begin = liveMedia::beginTransaction, end = liveMedia::endTransaction)
             dropStreamingCacheIndex(media)
         }.isSuccess
@@ -73,15 +89,12 @@ class TransferExporter @Inject constructor(
             TransferArchive.sharedPreferencesToJson(context.getSharedPreferences(fileName, Context.MODE_PRIVATE))
         }
         val localSongs = describeLocalSongs(library)
-        val files = carriedFiles()
+        val files = carriedFiles(withSongs)
 
         val totalBytes = library.length() + (if (hasMedia) media.length() else 0L) + files.sumOf { it.second.length() }
         val manifest = readManifest(library, totalBytes, localSongs = localSongs.length())
 
-        // "wt" empties a file picked twice, some providers like drive only know "w"
-        val stream = runCatching { context.contentResolver.openOutputStream(target, "wt") }.getOrNull()
-            ?: runCatching { context.contentResolver.openOutputStream(target, "w") }.getOrNull()
-            ?: throw TransferException("Couldn't open the file you picked. Try picking another folder.")
+        val stream = open()
         var written = 0L
         val report: (Long) -> Unit = { bytes ->
             written += bytes
@@ -97,7 +110,7 @@ class TransferExporter @Inject constructor(
             if (hasMedia) zip.putFile(TransferArchive.MediaEntry, media, report)
             for ((relative, file) in files) {
                 // songs are already squeezed, so they go in as they are and the export stays quick
-                zip.setLevel(if (relative.startsWith("download/") || relative.startsWith("shared_audio/")) Deflater.NO_COMPRESSION else Deflater.BEST_SPEED)
+                zip.setLevel(if (relative.substringBefore('/') in TransferArchive.SongFolders) Deflater.NO_COMPRESSION else Deflater.BEST_SPEED)
                 zip.putFile(TransferArchive.FilesPrefix + relative, file, report)
             }
         }
@@ -167,12 +180,13 @@ class TransferExporter @Inject constructor(
     }.getOrNull()
 
     // everything under the files folder that carries over, as zip-style relative paths
-    private fun carriedFiles(): List<Pair<String, File>> {
+    private fun carriedFiles(withSongs: Boolean): List<Pair<String, File>> {
         val root = context.filesDir
         val onPhone = root.listFiles().orEmpty()
-            .filter { TransferArchive.carriesFile(it.name) }
+            .filter { TransferArchive.carriesFile(it.name) && (withSongs || it.name !in TransferArchive.SongFolders) }
             .flatMap { top -> top.walkTopDown().filter { it.isFile }.toList() }
             .map { it.relativeTo(root).invariantSeparatorsPath to it }
+        if (!withSongs) return onPhone
         // downloads kept on a memory card go in under the same name, so the other phone finds them where it looks
         val downloads = StoragePlaces.dir(context, StoredKind.Downloads)
         if (downloads.parentFile == root) return onPhone

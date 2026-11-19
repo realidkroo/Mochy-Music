@@ -201,4 +201,8 @@
     <string name="module_page_use_player">Use this player</string>
     <string name="module_page_more_songs">Show more</string>
     <string name="module_page_no_player">Turn this module on to see its player here.</string>
+    <!-- a module player's bottom bar -->
+    <string name="skin_bar_up_next">Up next</string>
+    <string name="skin_bar_nothing_next">Nothing queued yet</string>
+    <string name="skin_bar_no_lyrics">No lyrics for this song</string>
 </resources>

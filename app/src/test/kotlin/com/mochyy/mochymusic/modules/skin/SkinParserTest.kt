@@ -17,7 +17,7 @@ class SkinParserTest {
 
     private fun skin(text: String, files: File? = null, base: String? = null): ModuleSkin? {
         val m = manifest(text)
-        return SkinParser.parse("local.test", "Test", m.player, m.font, m.pages, files, base, m.actions, m.glass, m.players, m.bar)
+        return SkinParser.parse("local.test", "Test", m.player, m.font, m.pages, files, base, m.actions, m.glass, m.players, m.bar, m.mini)
     }
 
     private val vinyl = """
@@ -421,5 +421,31 @@ class SkinParserTest {
         assertEquals("0.8", size.toField().default)
         // ends the wrong way round get a sensible top
         assertEquals(4f, m.setting("x")!!.range!!.end)
+    }
+
+    @Test
+    fun `editor parts, the bottom bar and a mini player`() {
+        val text = """
+            { "id": "p", "name": "P",
+              "player": {
+                "edit": [ { "part": "cover", "title": "Cover", "choose": "shape", "settings": ["spin"], "hold": "size" }, { "part": "bad id!" }, { "part": "bg" } ],
+                "blocks": [ { "type": "cover", "part": "cover" }, { "type": "bottomBar", "style": "pills", "glass": true, "height": 999 } ] },
+              "mini": { "blocks": [ { "type": "title" }, { "type": "button", "action": "playPause" } ] } }
+        """
+        val skin = skin(text)!!
+        val player = skin.player!!
+        assertEquals(listOf("cover", "bg"), player.edit.map { it.id })
+        assertEquals(SkinEditPart("cover", "Cover", "shape", listOf("spin"), "size"), player.edit[0])
+        assertEquals("Bg", player.edit[1].title)
+        assertEquals(setOf("cover"), player.partIds)
+        val bar = player.blocks[1] as SkinBlock.BottomBar
+        assertEquals(BottomBarKind.Pills, bar.kind)
+        assertEquals(160.dp, bar.height)
+        assertTrue(player.frosted)
+        val mini = skin.mini!!
+        assertEquals("mini", mini.id)
+        // a mini player that names no background keeps mochy's glass
+        assertEquals(SkinBackground.Tones, mini.background)
+        assertTrue(skin.restyles)
     }
 }

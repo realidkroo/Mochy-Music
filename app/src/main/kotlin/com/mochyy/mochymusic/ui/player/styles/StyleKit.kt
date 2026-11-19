@@ -229,10 +229,14 @@ val LocalStyleCovered = androidx.compose.runtime.compositionLocalOf<() -> Boolea
 /** whether the style can be seen: it stays composed in the mini player and under its lyrics page, with its clocks held still. read it in effects and gestures, not composition */
 @Composable
 internal fun rememberStyleShowing(): () -> Boolean {
+    LocalStyleShowing.current?.let { return it }
     val sheet = LocalPlayerBottomSheetState.current
     val covered = LocalStyleCovered.current
     return remember(sheet, covered) { { (sheet == null || sheet.progress > 0f) && !covered() } }
 }
+
+/** when a layout can be seen, for one that isn't the open player (a module's mini player shows while the player is closed) */
+val LocalStyleShowing = androidx.compose.runtime.staticCompositionLocalOf<(() -> Boolean)?> { null }
 
 /** the song's length in ms, never 0 */
 @Composable
