@@ -85,6 +85,7 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.draw.drawWithContent
@@ -149,7 +150,8 @@ private enum class CustomiseSection(@StringRes val titleRes: Int, val keys: List
 // settings > customisation: cover rounding, style pickers, blur, animation, lyrics, the player's top and bottom bars and song swipe gestures
 @Composable
 fun CustomisationScreen(navController: NavController) {
-    var query by remember { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf("") }
+    val fontSectionState = rememberFontSectionState()
     val statusTop = WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding()
     val bottomInset = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
     val titles = CustomiseSection.entries.associateWith { stringResource(it.titleRes) }
@@ -193,7 +195,7 @@ fun CustomisationScreen(navController: NavController) {
                 shown.forEachIndexed { index, section ->
                     if (index > 0) SectionRule()
                     Box(Modifier.highlightTarget(section.keys)) {
-                        CustomiseSectionContent(section)
+                        CustomiseSectionContent(section, fontSectionState)
                     }
                 }
             }
@@ -202,11 +204,11 @@ fun CustomisationScreen(navController: NavController) {
 }
 
 @Composable
-private fun CustomiseSectionContent(section: CustomiseSection) {
+private fun CustomiseSectionContent(section: CustomiseSection, fontSectionState: FontSectionState) {
     val pagerBleed = Modifier.bleedHorizontally(CustomisePageMargin)
     when (section) {
         CustomiseSection.ICONS -> IconsSection()
-        CustomiseSection.FONT -> FontSection()
+        CustomiseSection.FONT -> FontSection(fontSectionState)
         CustomiseSection.ROUNDING -> {
             val (coverRadiusPx, onCoverRadiusChange) = rememberPreference(ThumbnailCornerRadiusKey, defaultValue = DefaultCoverRadius)
             CoverRoundingSection(

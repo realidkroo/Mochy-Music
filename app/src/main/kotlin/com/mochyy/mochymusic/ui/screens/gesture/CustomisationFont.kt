@@ -41,11 +41,18 @@ import kotlinx.coroutines.launch
 
 internal const val FontHighlightKey = "Font"
 
+internal class FontSectionState(
+    val busy: Boolean,
+    val error: AppFonts.Error?,
+    val openPicker: () -> Unit,
+    val select: (AppFontMode) -> Unit,
+    val remove: () -> Unit,
+)
+
 @Composable
-internal fun FontSection() {
+internal fun rememberFontSectionState(): FontSectionState {
     val context = LocalContext.current.applicationContext
     val scope = rememberCoroutineScope()
-    val selection = AppFonts.selection
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<AppFonts.Error?>(null) }
 
@@ -65,16 +72,26 @@ internal fun FontSection() {
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) perform { AppFonts.importFont(context, uri) }
     }
-    val openPicker = {
-        try {
-            // Some providers expose valid TTF documents as application/octet-stream.
-            picker.launch(arrayOf("*/*"))
-        } catch (_: ActivityNotFoundException) {
-            error = AppFonts.Error.Storage
-        }
-    }
+    return FontSectionState(
+        busy = busy,
+        error = error,
+        openPicker = {
+            try {
+                // Some providers expose valid TTF documents as application/octet-stream.
+                picker.launch(arrayOf("*/*"))
+            } catch (_: ActivityNotFoundException) {
+                error = AppFonts.Error.Storage
+            }
+        },
+        select = { mode -> perform { AppFonts.select(context, mode) } },
+        remove = { perform { AppFonts.delete(context) } },
+    )
+}
 
-    val enabled = selection.ready && !busy
+@Composable
+internal fun FontSection(state: FontSectionState) {
+    val selection = AppFonts.selection
+    val enabled = selection.ready && !state.busy
     Column(
         modifier = Modifier.fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
@@ -95,9 +112,9 @@ internal fun FontSection() {
                 Row(
                     modifier = Modifier.fillMaxWidth().selectable(selected = isSelected, enabled = enabled, role = Role.RadioButton) {
                         if (mode == AppFontMode.CUSTOM && selection.fileName == null) {
-                            openPicker()
+                            state.openPicker()
                         } else if (!isSelected) {
-                            perform { AppFonts.select(context, mode) }
+                            state.select(mode)
                         }
                     }.padding(vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -113,10 +130,10 @@ internal fun FontSection() {
         if (fileName != null) {
             Text(fileName, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Default)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(enabled = enabled, onClick = openPicker) {
+                TextButton(enabled = enabled, onClick = state.openPicker) {
                     Text(stringResource(R.string.customise_font_replace), fontFamily = FontFamily.Default)
                 }
-                TextButton(enabled = enabled, onClick = { perform { AppFonts.delete(context) } }) {
+                TextButton(enabled = enabled, onClick = state.remove) {
                     Text(stringResource(R.string.customise_font_remove), fontFamily = FontFamily.Default)
                 }
             }
@@ -125,8 +142,8 @@ internal fun FontSection() {
             Text(stringResource(help), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Default)
         }
 
-        if (busy || !selection.ready) LinearProgressIndicator(Modifier.fillMaxWidth())
-        val message = when (error) {
+        if (state.busy || !selection.ready) LinearProgressIndicator(Modifier.fillMaxWidth())
+        val message = when (state.error) {
             AppFonts.Error.InvalidFont -> R.string.customise_font_invalid
             AppFonts.Error.TooLarge -> R.string.customise_font_too_large
             AppFonts.Error.Storage -> R.string.customise_font_storage_error
