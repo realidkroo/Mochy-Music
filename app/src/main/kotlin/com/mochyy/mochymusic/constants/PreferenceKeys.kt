@@ -1404,3 +1404,7 @@ val LyricsCacheWipeKey = intPreferencesKey("lyricsCacheWipe")
 const val LyricsCacheWipeGeneration = 1
 val DiscordCanvasFpsKey = intPreferencesKey("discordPresenceCanvasFps")
 val DiscordCanvasSizeKey = intPreferencesKey("discordPresenceCanvasSize")
+
+val AppFontModeKey = stringPreferencesKey("appFontMode")
+val CustomFontIdKey = stringPreferencesKey("customFontId")
+val CustomFontNameKey = stringPreferencesKey("customFontName")

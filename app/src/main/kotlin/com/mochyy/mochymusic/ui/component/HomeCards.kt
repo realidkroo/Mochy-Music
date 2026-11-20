@@ -58,44 +58,49 @@ val HomeCardSpacing = 15.dp
 
 private val HomeTracking = (-0.06).em
 
-val HomeLabelStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 16.sp,
-    lineHeight = 19.sp,
-    letterSpacing = HomeTracking,
-)
+val HomeLabelStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 16.sp,
+        lineHeight = 19.sp,
+        letterSpacing = HomeTracking,
+    )
 
-val HomeTitleStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 24.sp,
-    lineHeight = 28.sp,
-    letterSpacing = HomeTracking,
-)
+val HomeTitleStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 24.sp,
+        lineHeight = 28.sp,
+        letterSpacing = HomeTracking,
+    )
 
-private val HomeCardTitleStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 14.sp,
-    lineHeight = 17.sp,
-    letterSpacing = (-0.03).em,
-)
+private val HomeCardTitleStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 14.sp,
+        lineHeight = 17.sp,
+        letterSpacing = (-0.03).em,
+    )
 
-private val HomeCardSubtitleStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Medium,
-    fontSize = 12.sp,
-    lineHeight = 15.sp,
-    letterSpacing = (-0.02).em,
-)
+private val HomeCardSubtitleStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 15.sp,
+        letterSpacing = (-0.02).em,
+    )
 
-private val HomeRankStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 22.sp,
-    letterSpacing = HomeTracking,
-)
+private val HomeRankStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 22.sp,
+        letterSpacing = HomeTracking,
+    )
 
 private val SectionLabelColor = Color.White.copy(alpha = 0.69f)
 private val HomeRowShape = RoundedCornerShape(14.dp)
@@ -283,21 +288,23 @@ fun HomeCoverCard(
 // the Figma "Concert" card (20:195) is 314 x 247 on a 402 wide frame
 const val HomeVideoCardAspect = 314f / 247f
 
-private val HomeVideoTitleStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 15.sp,
-    lineHeight = 18.sp,
-    letterSpacing = (-0.03).em,
-)
+private val HomeVideoTitleStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 15.sp,
+        lineHeight = 18.sp,
+        letterSpacing = (-0.03).em,
+    )
 
-private val HomeVideoSubtitleStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Medium,
-    fontSize = 13.sp,
-    lineHeight = 16.sp,
-    letterSpacing = (-0.02).em,
-)
+private val HomeVideoSubtitleStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 13.sp,
+        lineHeight = 16.sp,
+        letterSpacing = (-0.02).em,
+    )
 
 // dark at the top where the text sits, clear by the middle so the frame itself shows
 private val HomeVideoScrim = Brush.verticalGradient(

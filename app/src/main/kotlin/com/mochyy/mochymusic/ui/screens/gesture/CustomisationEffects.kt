@@ -81,12 +81,13 @@ private const val DefaultBlurStrength = 25f
 private val BlurPreviewWidth = 104.dp
 
 private val PillShape = RoundedCornerShape(14.dp)
-private val PillTextStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 11.sp,
-    letterSpacing = (-0.02).em,
-)
+private val PillTextStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 11.sp,
+        letterSpacing = (-0.02).em,
+    )
 
 // glass blur: on or off, progressive or flat bars, low or high quality, and how strong, with the app's own glass as the preview
 @Composable

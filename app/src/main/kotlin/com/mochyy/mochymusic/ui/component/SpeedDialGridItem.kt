@@ -44,13 +44,14 @@ private val TitleFade = Brush.verticalGradient(
     1f to Color.Black.copy(alpha = 0.85f),
 )
 
-private val TileTitleStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 12.sp,
-    lineHeight = 14.sp,
-    letterSpacing = (-0.02).em,
-)
+private val TileTitleStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 12.sp,
+        lineHeight = 14.sp,
+        letterSpacing = (-0.02).em,
+    )
 
 /** a speed dial tile: the cover, with its title on a dark fade at the bottom */
 @OptIn(ExperimentalFoundationApi::class)

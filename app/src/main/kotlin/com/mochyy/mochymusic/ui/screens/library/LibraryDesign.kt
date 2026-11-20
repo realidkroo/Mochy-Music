@@ -258,13 +258,14 @@ private fun LibraryCoverStack(
 }
 
 /** The big grey count on every Library card. */
-private val LibraryCountStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 34.sp,
-    lineHeight = 36.sp,
-    letterSpacing = (-0.03).em,
-)
+private val LibraryCountStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 34.sp,
+        lineHeight = 36.sp,
+        letterSpacing = (-0.03).em,
+    )
 
 /** A card's label, a step above its count. */
 @Composable

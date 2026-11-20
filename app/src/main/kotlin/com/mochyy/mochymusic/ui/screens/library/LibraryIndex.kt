@@ -237,14 +237,16 @@ private sealed interface RailSlot {
 /** Where everything on the rail sits right now, in px from its top, and how visible it is. */
 private class RailPositions(val centers: FloatArray, val alphas: FloatArray, val keys: Array<String?>)
 
-private val RailLabelStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 9.sp,
-    letterSpacing = (-0.02).em,
-)
+private val RailLabelStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 9.sp,
+        letterSpacing = (-0.02).em,
+    )
 
-private val RailTagStyle = RailLabelStyle.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.em)
+private val RailTagStyle: TextStyle
+    get() = RailLabelStyle.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.em)
 
 /** How far the letters around the finger are pushed apart, relative to their distance from it. */
 private const val FisheyeSpread = 1.25f

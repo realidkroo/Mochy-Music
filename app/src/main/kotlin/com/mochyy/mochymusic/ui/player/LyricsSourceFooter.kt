@@ -57,18 +57,20 @@ private val LabelColor = Color.White.copy(alpha = 0.55f)
 private val ValueColor = Color.White.copy(alpha = 0.38f)
 private val StarColor = Color(0xFFFFD60A)
 
-private val FooterTextStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontSize = 17.sp,
-    letterSpacing = (-0.01).em,
-    color = ValueColor,
-)
+private val FooterTextStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontSize = 17.sp,
+        letterSpacing = (-0.01).em,
+        color = ValueColor,
+    )
 
-private val ButtonTextStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 13.sp,
-)
+private val ButtonTextStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 13.sp,
+    )
 
 /**
  * The end of the lyrics page: where these lyrics came from, a button to pick another source and,

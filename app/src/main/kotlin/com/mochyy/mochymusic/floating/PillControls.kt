@@ -385,9 +385,10 @@ internal fun SeekBarTouch(state: PillState, host: PillHost, scrub: MutableFloatS
 // the time gone and the time left at the bar's two ends, rising in once the bar has mostly unrolled
 @Composable
 internal fun SongTimes(state: PillState, elapsed: MutableLongState, scrub: MutableFloatState, opened: () -> Float, body: () -> Float) {
-    val style = remember {
+    val fontFamily = InterFontFamily
+    val style = remember(fontFamily) {
         TextStyle(
-            fontFamily = InterFontFamily,
+            fontFamily = fontFamily,
             fontWeight = FontWeight.SemiBold,
             fontSize = 11.sp,
             color = Color.White.copy(alpha = 0.86f),
