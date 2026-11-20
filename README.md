@@ -211,10 +211,9 @@ Mochy is an independent, unofficial project made for personal and educational us
 
 Forks are welcome, that's what open source is for! Just two asks:
 
-- **Keep the credit.** If you rename it, say it's forked from [Mochy Music](https://github.com/realidkroo/mochy-music) by realidkroo, in your README and inside your app, and keep the credits below for everyone Mochy is built on.
+- **Keep the credit.** If you rename it, please keep credits of this app, the other project that helped mochy possible.
 - **Keep it free.** Mochy is not monetized and never will be. Please don't put features behind a paywall. A donation page is fine.
 
-AI tools working on this repo or a fork of it follow [AGENTS.md](AGENTS.md), and they're asked to leave this section alone.
 <!-- mochy-credit:end -->
 
 ---
