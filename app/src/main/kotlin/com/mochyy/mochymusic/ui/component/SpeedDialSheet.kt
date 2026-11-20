@@ -44,6 +44,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,7 +78,8 @@ private val PagePadding = 14.dp
 private val TileGap = 10.dp
 private val AvatarSize = 52.dp
 
-private val OwnerStyle = HomeTitleStyle.copy(fontSize = 34.sp, lineHeight = 38.sp)
+private val OwnerStyle: TextStyle
+    get() = HomeTitleStyle.copy(fontSize = 34.sp, lineHeight = 38.sp)
 private val EmptySlot = Color.White.copy(alpha = 0.04f)
 
 /** your speed dial in a sheet: nine tiles a page, sliding on to the next page when there are more */

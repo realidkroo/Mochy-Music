@@ -245,7 +245,8 @@ private val RailLabelStyle: TextStyle
         letterSpacing = (-0.02).em,
     )
 
-private val RailTagStyle = RailLabelStyle.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.em)
+private val RailTagStyle: TextStyle
+    get() = RailLabelStyle.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.em)
 
 /** How far the letters around the finger are pushed apart, relative to their distance from it. */
 private const val FisheyeSpread = 1.25f

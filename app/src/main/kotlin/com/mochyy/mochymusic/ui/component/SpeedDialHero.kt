@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -57,7 +58,8 @@ private val TileBlank = Color(0xFFD9D9D9)
 // the hero's own scrims dim this card already, so the wash keeps more of the covers' colour than a card does
 private val HeroTintDarkening = floatArrayOf(0.3f, 0.45f, 0.6f)
 
-private val SummonTitleStyle = HomeTitleStyle.copy(fontSize = 36.sp, lineHeight = 36.sp)
+private val SummonTitleStyle: TextStyle
+    get() = HomeTitleStyle.copy(fontSize = 36.sp, lineHeight = 36.sp)
 
 /** the hero card that opens your speed dial: its covers tilted over a wash of their own colours */
 @Immutable
