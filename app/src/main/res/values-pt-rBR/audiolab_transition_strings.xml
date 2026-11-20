@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="xmix_title">Transição cruzada</string>
+    <string name="xmix_back">Laboratório de áudio</string>
+    <string name="xmix_off">Desativada</string>
+    <string name="xmix_off_desc">Sem transição</string>
+    <string name="xmix_auto">Transição automática</string>
+    <string name="xmix_auto_desc">Uma transição suave de %1$d segundos entre cada música e a próxima</string>
+    <string name="xmix_manual">Transição manual</string>
+    <string name="xmix_manual_desc">Defina a duração da transição</string>
+    <string name="xmix_length">Duração</string>
+    <string name="xmix_crossmix">CrossMix</string>
+    <string name="xmix_crossmix_desc">Estilo DJ: analisa o ritmo, as batidas, o tom, a energia e a posição dos vocais de cada música. Depois escolhe uma das 27 transições que melhor se encaixa, evitando que duas vozes cantem ao mesmo tempo</string>
+    <string name="xmix_crossmix_desc_unavailable">Ainda está sendo ajustado e não pode ser ativado. Mixagens no estilo DJ que analisam o ritmo, as batidas, o tom e os vocais de cada música</string>
+    <string name="xmix_gapless">Manter álbuns sem pausas intactos</string>
+    <string name="xmix_gapless_desc">Faixas de álbuns que seguem diretamente umas às outras são reproduzidas sem transição</string>
+    <string name="xmix_in_progress">Em andamento</string>
+    <string name="xmix_transport_title">Transição ao pausar, reproduzir, avançar e voltar</string>
+    <string name="xmix_fade_enable">Ativar fade</string>
+    <string name="xmix_fade_enable_desc">Suaviza a saída da música ao pausar ou avançar e a entrada ao reproduzir</string>
+    <string name="xmix_layered_effect">Efeito em camadas</string>
+    <string name="xmix_layered_effect_desc">Um efeito CrossMix sobre o fade, como um eco ou o som de um disco voltando</string>
+    <string name="xmix_choose_effect">Escolher um efeito</string>
+    <string name="xmix_effect_none">Nenhum</string>
+    <string name="xmix_effect_echo">Eco</string>
+    <string name="xmix_effect_rewind">Retroceder</string>
+    <string name="xmix_effect_tape_stop">Parada de fita</string>
+    <string name="xmix_effect_far_away">Desaparecer ao longe</string>
+    <string name="xmix_effect_reverb">Reverberação intensa</string>
+    <string name="xmix_effect_filter">Variação de filtro</string>
+    <string name="xmix_status_title">Status do CrossMix</string>
+    <string name="xmix_status_empty">Nada por enquanto. Reproduza uma música com outra na fila depois dela</string>
+    <string name="xmix_test_title">Testar nesta música</string>
+    <string name="xmix_test_desc">Faz a transição para a próxima música</string>
+    <string name="xmix_test_detail">Planeja a transição para a próxima música e então avança para alguns segundos antes dela</string>
+</resources>

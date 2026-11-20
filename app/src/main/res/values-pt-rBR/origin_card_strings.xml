@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- vivo's music card (OriginOS lock screen and Atomic Island): what its lists say when there's nothing in them -->
+    <string name="origin_card_queue_empty">Nada na fila</string>
+    <string name="origin_card_queue_empty_hint">Reproduza algo no Mochy</string>
+    <string name="origin_card_liked_empty">Ainda não há músicas curtidas</string>
+    <string name="origin_card_liked_empty_hint">As músicas que você curtir no Mochy aparecerão aqui</string>
+    <string name="origin_card_local_empty">Ainda não há downloads</string>
+    <string name="origin_card_local_empty_hint">As músicas que você baixar no Mochy aparecerão aqui</string>
+</resources>

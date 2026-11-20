@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- "hey google, play … on mochy" -->
+    <string name="voice_nothing_found">Não foi possível encontrar nada para “%1$s”. Tente dizer de outra forma.</string>
+    <string name="voice_nothing_to_play">Ainda não há nada para reproduzir. Peça uma música, um artista ou uma playlist.</string>
+    <string name="voice_offline">Não foi possível acessar o YouTube Music. Verifique sua conexão e tente novamente.</string>
+</resources>

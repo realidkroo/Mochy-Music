@@ -1,0 +1,97 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- integrations: the backup row and its page -->
+    <string name="integration_backup_name">Backup</string>
+    <string name="integration_backup_desc">Mantenha sua biblioteca e estatísticas seguras na sua própria nuvem</string>
+    <string name="backup_page_subtitle">Suas playlists, curtidas, estatísticas de audição, retrospectiva, perfil e configurações na sua própria nuvem. As músicas ficam de fora para manter os backups pequenos.</string>
+
+    <!-- where backups go -->
+    <string name="backup_group_where">Fazer backup em</string>
+    <string name="backup_dropbox_desc">Entre com sua conta do Dropbox</string>
+    <string name="backup_onedrive_desc">Entre com sua conta Microsoft</string>
+    <string name="backup_webdav_desc">Nextcloud, pCloud, Koofr, NAS e outros</string>
+    <string name="backup_not_set_up">Não configurado nesta versão</string>
+    <string name="backup_signed_in_as">Conectado como %1$s</string>
+    <string name="backup_webdav_connected">Fazendo backup em %1$s</string>
+    <string name="backup_waiting_browser">Conclua o login no navegador</string>
+    <string name="backup_finishing_sign_in">Entrando…</string>
+    <string name="backup_no_browser">Este celular não tem um navegador para fazer login.</string>
+    <string name="backup_dropbox_notice">O backup pelo Dropbox ainda está em testes. Apenas as primeiras 500 pessoas podem se conectar, e o Dropbox pode interromper novos logins antes disso, até aprovar o Mochy. Se o Dropbox não permitir seu acesso, o WebDAV não tem limite.</string>
+    <string name="backup_disconnect">Desconectar</string>
+    <string name="backup_disconnect_desc">Parar de fazer backup em %1$s. Os backups que já estão lá serão mantidos.</string>
+    <string name="backup_connected_toast">Conectado. Seus backups serão enviados para %1$s.</string>
+
+    <!-- backing up and restoring -->
+    <string name="backup_group_backups">Backups</string>
+    <string name="backup_now">Fazer backup agora</string>
+    <string name="backup_last">Último backup %1$s · %2$s</string>
+    <string name="backup_never">Nenhum backup ainda</string>
+    <string name="backup_connect_first">Conecte primeiro um serviço de nuvem acima</string>
+    <string name="backup_packing">Preparando… %1$d%%</string>
+    <string name="backup_uploading">Enviando… %1$d%%</string>
+    <string name="backup_downloading">Baixando… %1$d%%</string>
+    <string name="backup_unpacking">Extraindo… %1$d%%</string>
+    <string name="backup_restored">Restaurado. O Mochy está reiniciando…</string>
+    <string name="backup_done_toast">Backup enviado para %1$s</string>
+    <string name="backup_last_failed">O último backup automático não foi concluído. %1$s</string>
+    <string name="backup_restore_title">Restaurar um backup</string>
+    <string name="backup_restore_desc">Recupere sua biblioteca, estatísticas e configurações da nuvem</string>
+
+    <!-- the schedule -->
+    <string name="backup_auto_title">Fazer backup automaticamente</string>
+    <string name="backup_auto_desc">Executado em segundo plano sempre que houver conexão, sem repetir quando nada tiver mudado</string>
+    <string name="backup_every">Frequência</string>
+    <string name="backup_keep">Manter na nuvem</string>
+    <string name="backup_keep_note">Após cada backup, os mais antigos deste celular são excluídos para manter apenas essa quantidade. Os backups de outros celulares não são alterados.</string>
+    <plurals name="backup_every_minutes">
+        <item quantity="one">A cada minuto</item>
+        <item quantity="other">A cada %d minutos</item>
+    </plurals>
+    <plurals name="backup_every_hours">
+        <item quantity="one">A cada hora</item>
+        <item quantity="other">A cada %d horas</item>
+    </plurals>
+    <plurals name="backup_every_days">
+        <item quantity="one">A cada dia</item>
+        <item quantity="other">A cada %d dias</item>
+    </plurals>
+    <plurals name="backup_every_weeks">
+        <item quantity="one">A cada semana</item>
+        <item quantity="other">A cada %d semanas</item>
+    </plurals>
+    <plurals name="backup_keep_count">
+        <item quantity="one">%d backup</item>
+        <item quantity="other">%d backups</item>
+    </plurals>
+
+    <!-- the restore sheet -->
+    <string name="backup_restore_body">Escolha um backup. Sua biblioteca, estatísticas e configurações serão substituídas pelas dele, e o Mochy será reiniciado. As músicas baixadas permanecerão como estão.</string>
+    <string name="backup_restore_loading">Procurando na sua nuvem…</string>
+    <string name="backup_restore_empty">Ainda não há backups.</string>
+    <string name="backup_restore_item">%1$s · %2$s</string>
+    <string name="backup_restore_this">Restaurar e reiniciar</string>
+    <string name="backup_try_again">Tentar novamente</string>
+
+    <!-- the webdav sheet -->
+    <string name="webdav_title">Conectar a um servidor WebDAV</string>
+    <string name="webdav_body">Os backups serão salvos em uma pasta Mochy Backups neste endereço. Sua senha permanece neste celular e nunca é incluída em um backup.</string>
+    <string name="webdav_address">Endereço do servidor</string>
+    <string name="webdav_address_hint">https://cloud.example.com/remote.php/dav/files/you/</string>
+    <string name="webdav_username_hint">Seu nome de usuário</string>
+    <string name="webdav_password_hint">Sua senha ou uma senha de aplicativo</string>
+    <string name="webdav_connect">Conectar</string>
+    <string name="webdav_connecting">Verificando…</string>
+
+    <!-- what went wrong -->
+    <string name="cloud_problem_offline">Não foi possível acessar a nuvem. Verifique sua conexão e tente novamente.</string>
+    <string name="cloud_problem_signed_out">O Mochy não está mais conectado a esse serviço. Entre novamente para continuar fazendo backups.</string>
+    <string name="cloud_problem_wrong_login">O servidor rejeitou esse nome de usuário ou senha.</string>
+    <string name="cloud_problem_bad_address">Esse endereço não parece ser de um servidor.</string>
+    <string name="cloud_problem_not_found">Não foi possível encontrar essa pasta no servidor. Confira o endereço.</string>
+    <string name="cloud_problem_not_webdav">Esse endereço não respondeu como um servidor WebDAV. Confira e tente novamente.</string>
+    <string name="cloud_problem_full">Sua nuvem está cheia. Libere espaço e tente novamente.</string>
+    <string name="cloud_problem_no_room">Não foi possível preparar o backup. Confira se há espaço livre neste celular e tente novamente.</string>
+    <string name="cloud_problem_busy">A nuvem está ocupada no momento. Tente novamente daqui a pouco.</string>
+    <string name="cloud_problem_denied">Você recusou o login na página de autenticação, então nada foi conectado.</string>
+    <string name="cloud_problem_expired">Esse link de login expirou. Tente entrar novamente.</string>
+</resources>

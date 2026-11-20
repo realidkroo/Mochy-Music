@@ -1,0 +1,132 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- audio pass: audio lab's page for usb dacs, bluetooth codecs and bit-perfect output -->
+    <string name="audiopass_hub_title">Audio Pass</string>
+    <string name="audiopass_title_first">DACs</string>
+    <string name="audiopass_title_second">e mais</string>
+    <string name="audiopass_joined">%1$s · %2$s</string>
+
+    <string name="audiopass_status_label">status</string>
+    <string name="audiopass_status_connected">Conectado</string>
+    <string name="audiopass_status_driven">Controlado pelo Mochy</string>
+    <string name="audiopass_status_bluetooth">Bluetooth</string>
+    <string name="audiopass_status_wired">Fones de ouvido</string>
+    <string name="audiopass_status_none">Não conectado</string>
+    <string name="audiopass_status_none_hint">Conecte um DAC USB ou seus fones de ouvido.</string>
+    <string name="audiopass_kind_usb">DAC USB</string>
+    <string name="audiopass_kind_speaker">Alto-falante do celular</string>
+
+    <string name="audiopass_info_dac">DAC</string>
+    <string name="audiopass_info_maker">Fabricante</string>
+    <string name="audiopass_info_usb">Áudio USB</string>
+    <string name="audiopass_info_takes">Suporta</string>
+    <string name="audiopass_info_bitperfect">Bit-perfect</string>
+    <string name="audiopass_info_mixer">Mixer do Android</string>
+    <string name="audiopass_info_id">ID</string>
+    <string name="audiopass_info_power">Potência</string>
+    <string name="audiopass_info_mic">Microfone</string>
+    <string name="audiopass_info_headphones">Fones de ouvido</string>
+    <string name="audiopass_info_codec">Codec</string>
+    <string name="audiopass_info_quality">Qualidade</string>
+    <string name="audiopass_info_also">Também suporta</string>
+    <string name="audiopass_info_output">Saída</string>
+    <string name="audiopass_info_playing">Reproduzindo</string>
+
+    <string name="audiopass_value_uac">UAC %1$d</string>
+    <string name="audiopass_value_uac_async">UAC %1$d · opera com clock próprio</string>
+    <string name="audiopass_value_any_rate">Qualquer taxa</string>
+    <string name="audiopass_value_khz">%1$s kHz</string>
+    <string name="audiopass_value_bits">%1$s bits</string>
+    <string name="audiopass_value_needs_14">Requer Android 14</string>
+    <string name="audiopass_value_not_offered">Não oferecido por este DAC</string>
+    <string name="audiopass_value_power">Solicita até %1$d mA</string>
+    <string name="audiopass_value_firmware">%1$s · firmware %2$s</string>
+    <string name="audiopass_value_yes">Sim</string>
+    <string name="audiopass_value_no">Não</string>
+    <string name="audiopass_value_kbps">%1$d kbps</string>
+    <string name="audiopass_value_adaptive">Adaptativo</string>
+    <string name="audiopass_value_jack">Conector de fone de ouvido</string>
+    <string name="audiopass_value_le_audio">LE Audio</string>
+    <string name="audiopass_value_unknown">Este celular ainda não compartilhou essa informação</string>
+
+    <string name="audiopass_bt_reencoded">O Bluetooth sempre recodifica a música, então ela nunca é bit-perfect. Um codec melhor apenas causa menos perdas.</string>
+    <string name="audiopass_bt_lossless">O aptX Lossless mantém a qualidade de CD enquanto o sinal estiver forte.</string>
+    <string name="audiopass_bt_better">Seus fones podem usar %1$s, mas %2$s está em uso agora. Você pode mudar isso nas Opções do desenvolvedor.</string>
+    <string name="audiopass_bt_ldac_low">O LDAC está configurado em %1$s. 990 kbps oferece o melhor som quando o celular está por perto.</string>
+    <string name="audiopass_bt_open_developer">Abrir opções do desenvolvedor</string>
+    <string name="audiopass_bt_developer_off">Ative primeiro as Opções do desenvolvedor: toque 7 vezes em Número da versão, em Sobre o telefone.</string>
+    <string name="audiopass_bt_permission">Mostrar codec</string>
+    <string name="audiopass_bt_permission_hint">O Mochy precisa da permissão Dispositivos próximos para identificar o codec usado pelos seus fones.</string>
+    <string name="audiopass_bt_unknown_hint">Este celular não informa o codec imediatamente aos apps. Ele aparecerá aqui assim que mudar.</string>
+
+    <string name="audiopass_options">Opções</string>
+    <string name="audiopass_prefer_usb">Usar o DAC quando conectado</string>
+    <string name="audiopass_hires">Saída de alta resolução (32 bits)</string>
+    <string name="audiopass_exclusive">Recursos exclusivos</string>
+    <string name="audiopass_resampler">Reamostrador Hi-Fi próprio do Mochy</string>
+    <string name="audiopass_resampler_desc">Somente alto-falante e conector de fones. As músicas são convertidas para a taxa nativa do celular com um filtro mais limpo que o do Android.</string>
+    <string name="audiopass_passthrough">Passagem bit-perfect</string>
+    <string name="audiopass_passthrough_desc">As músicas chegam ao DAC como estão, sem mixagem ou reamostragem pelo Android.</string>
+    <string name="audiopass_modes">Modos</string>
+    <string name="audiopass_mode_song_rate">Taxa da música</string>
+    <string name="audiopass_mode_song_rate_desc">O Android opera o DAC na taxa original de cada música. Os efeitos continuam funcionando.</string>
+    <string name="audiopass_mode_bit_perfect">Bit-perfect</string>
+    <string name="audiopass_mode_bit_perfect_desc">O Android envia cada música sem perdas ao DAC, sem alterações.</string>
+    <string name="audiopass_mode_direct_usb">USB direto</string>
+    <string name="audiopass_mode_direct_usb_desc">O próprio Mochy controla o DAC em qualquer versão do Android e ajusta o volume nele. Requer acesso USB.</string>
+    <string name="audiopass_mode_exclusive_usb">USB exclusivo</string>
+    <string name="audiopass_mode_exclusive_usb_desc">O DAC é reservado ao Mochy na taxa da música. Nem todo celular permite isso.</string>
+    <string name="audiopass_mode_exclusive_dac">DAC integrado</string>
+    <string name="audiopass_mode_exclusive_dac_desc">Para players com DAC próprio: o conector de fones fica reservado ao Mochy.</string>
+    <string name="audiopass_mode_needs">Requer Android %1$s</string>
+
+    <string name="audiopass_blockers_title">O modo bit-perfect aguarda a desativação destes recursos</string>
+    <string name="audiopass_blockers_clear_title">Nada está impedindo a reprodução</string>
+    <string name="audiopass_blockers_button">Desativar estes recursos</string>
+    <string name="audiopass_blocker_equalizer">Equalizador</string>
+    <string name="audiopass_blocker_fx">Efeitos de áudio</string>
+    <string name="audiopass_blocker_volume">Volume abaixo de 100%</string>
+    <string name="audiopass_blocker_normalization">Uniformização do volume das músicas</string>
+    <string name="audiopass_blocker_speed">Velocidade ou tom alterados</string>
+    <string name="audiopass_blocker_transitions">Transição entre músicas ou efeito de fade</string>
+    <string name="audiopass_blocker_silence">Pular silêncios ou vibrações</string>
+    <string name="audiopass_blocker_lossy">Músicas com perdas (YouTube, Apple Music) sempre são reproduzidas no modo normal.</string>
+    <string name="audiopass_now_bitperfect">Bit-perfect para %1$s · %2$s kHz · %3$s bits</string>
+    <string name="audiopass_now_untouched">Enviado sem alterações para %1$s · %2$s kHz · %3$s bits. A própria música já foi comprimida antes de chegar aqui.</string>
+    <string name="audiopass_now_inexact">Chegando a %1$s sem alterações, mas as amostras desta música já haviam sido arredondadas antes de o Mochy recebê-las.</string>
+    <string name="audiopass_now_waiting">Pronto. A próxima música compatível será enviada diretamente ao DAC.</string>
+    <string name="audiopass_now_fell">Uma música de %1$s kHz e %2$s bits não conseguiu abrir o DAC neste modo, então será reproduzida normalmente.</string>
+    <string name="audiopass_usb_title">USB direto</string>
+    <string name="audiopass_usb_permission">Permitir acesso USB</string>
+    <string name="audiopass_usb_permission_hint">O Android solicita isso sempre que o DAC é conectado. Até você permitir, as músicas serão reproduzidas normalmente.</string>
+    <string name="audiopass_usb_no_dac">Conecte um DAC USB e o Mochy cuidará do resto.</string>
+    <string name="audiopass_fixed_volume">DACs sem controle próprio de volume</string>
+    <string name="audiopass_fixed_volume_desc">A reprodução ocorre no volume máximo, e somente o botão do próprio DAC pode reduzi-lo. Isso pode ser muito alto com fones sensíveis.</string>
+    <string name="audiopass_dac_volume">Volume do DAC</string>
+    <string name="audiopass_dac_volume_desc">O volume é ajustado no próprio DAC, sem alterar o sinal da música. As teclas de volume também o controlam.</string>
+    <string name="audiopass_value_db">%1$s dB</string>
+    <string name="audiopass_blocker_lossy_direct">Músicas com perdas também são enviadas ao DAC sem alterações. Elas já foram comprimidas antes de chegar aqui.</string>
+    <string name="audiopass_blockers_restore">Reativar estes recursos</string>
+    <string name="audiopass_beta">BETA</string>
+
+    <!-- the stats sheet's line on whether this song went straight to the DAC, and why not -->
+    <string name="audiopass_stat_label">Passagem direta</string>
+    <string name="audiopass_stat_off">Desativada: as músicas passam pelo mixer do Android</string>
+    <string name="audiopass_stat_song_rate">Taxa da música: o Android ainda mixa o áudio</string>
+    <string name="audiopass_stat_old_android">Este modo requer Android %1$s</string>
+    <string name="audiopass_stat_blocked">Aguardando a desativação destes recursos: %1$s</string>
+    <string name="audiopass_stat_skip_busy">O DAC está sendo usado pela outra música durante a transição</string>
+    <string name="audiopass_stat_skip_format">O formato desta música não pode ser enviado diretamente ao DAC</string>
+    <string name="audiopass_stat_skip_lossy">Músicas com perdas são reproduzidas normalmente neste modo</string>
+    <string name="audiopass_stat_skip_decoded_16">Esta música começou antes da ativação da passagem direta e já foi convertida para 16 bits. A próxima será enviada diretamente ao DAC</string>
+    <string name="audiopass_stat_skip_fell">Esta taxa e profundidade de bits não conseguiram abrir o DAC antes, então a música será reproduzida normalmente</string>
+    <string name="audiopass_stat_skip_no_dac">Nenhum DAC encontrado para este modo. Conecte um ou escolha outro modo</string>
+    <string name="audiopass_stat_skip_no_access">O Mochy ainda não pode usar o DAC. Toque em Permitir acesso USB na página Audio Pass</string>
+    <string name="audiopass_stat_skip_dac_cant">Seu DAC não oferece uma configuração para a taxa e a profundidade de bits desta música</string>
+    <string name="audiopass_stat_unknown">Ativado, mas esta música foi reproduzida normalmente</string>
+
+    <!-- asked when passthrough is switched on while something still changes the sound -->
+    <string name="audiopass_offer_title">Alguns recursos estão impedindo a passagem direta</string>
+    <string name="audiopass_offer_body">A passagem direta só funciona quando nada altera o som. Estes recursos estão ativos agora:</string>
+    <string name="audiopass_offer_keep">Manter ativados</string>
+</resources>

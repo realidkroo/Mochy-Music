@@ -1,0 +1,171 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- the tv app -->
+    <string name="tv_hii">oi!</string>
+    <string name="tv_tap_anything">Pressione qualquer botão para continuar</string>
+    <string name="tv_welcome">boas-vindas\nao Mochy Music</string>
+    <string name="tv_lets_sync">Vamos sincronizar com seu celular</string>
+    <string name="tv_skip_phone">Usar o Mochy sem celular</string>
+    <string name="tv_whats_your_name">Como devemos chamar você?</string>
+    <string name="tv_continue">Continuar</string>
+    <string name="tv_whos_listening">Quem está ouvindo?</string>
+    <string name="tv_add_profile">Adicionar pessoa</string>
+    <string name="tv_remove_profile">Remover %1$s desta TV? A biblioteca dela nesta TV também será removida.</string>
+    <string name="tv_remove">Remover</string>
+    <string name="tv_cancel">Cancelar</string>
+    <string name="tv_done">Concluir</string>
+
+    <string name="tv_your_phone">Seu celular</string>
+    <string name="tv_library">Biblioteca</string>
+    <string name="tv_playing">Reproduzindo</string>
+    <string name="tv_paused">Pausado</string>
+    <string name="tv_loading">Carregando…</string>
+    <string name="tv_nothing_found">Nada encontrado. Tente outras palavras.</string>
+    <string name="tv_nothing_here">Ainda não há nada aqui.</string>
+    <string name="tv_search_hint">Músicas, artistas, álbuns</string>
+
+    <string name="tv_recap_headline">Veja sua retrospectiva\ndeste mês!</string>
+    <string name="tv_view">Ver</string>
+    <string name="tv_hello_again">Olá novamente, %1$s</string>
+    <string name="tv_play_something">Reproduzir algo</string>
+    <string name="tv_regular_music">músicas e álbuns comuns</string>
+    <string name="tv_recap_title">Seu %1$s</string>
+    <string name="tv_recap_stats">%1$d minutos · %2$d reproduções</string>
+
+    <string name="tv_tab_all">Tudo</string>
+    <string name="tv_cached">Em cache</string>
+    <string name="tv_local_and_downloaded">Locais e baixadas</string>
+    <string name="tv_imported">Importadas</string>
+    <string name="tv_downloaded_here">Baixadas nesta TV</string>
+    <string name="tv_local_files">Arquivos de música</string>
+    <string name="tv_on_your_phone">No seu celular</string>
+
+    <string name="tv_end_of_line">Fim da fila</string>
+    <plurals name="tv_ledger_songs">
+        <item quantity="one">%d música</item>
+        <item quantity="other">%d músicas</item>
+    </plurals>
+    <plurals name="tv_ledger_minutes">
+        <item quantity="one">%d minuto</item>
+        <item quantity="other">%d minutos</item>
+    </plurals>
+    <plurals name="tv_song_count">
+        <item quantity="one">%d música</item>
+        <item quantity="other">%d músicas</item>
+    </plurals>
+
+    <string name="tv_follow">Seguir</string>
+    <string name="tv_following">Seguindo</string>
+    <string name="tv_similar_artists">artistas semelhantes</string>
+
+    <string name="tv_lyrics">Letras</string>
+    <string name="tv_lyrics_provider">Serviço de letras</string>
+    <string name="tv_song_info">Informações da música</string>
+    <string name="tv_flagship_square">Player quadrado</string>
+    <string name="tv_like">Curtir</string>
+    <string name="tv_unlike">Remover curtida</string>
+    <string name="tv_go_to_album">Ir para o álbum</string>
+    <string name="tv_go_to_artist">Ir para %1$s</string>
+    <string name="tv_go_to_playlists">Ir para playlists</string>
+    <string name="tv_copy_to_tv">Copiar do seu celular para esta TV</string>
+
+    <string name="tv_sync_from_phone">Sincronizar do celular</string>
+    <string name="tv_same_wifi">Verifique se seu celular está na mesma rede Wi-Fi que esta TV</string>
+    <string name="tv_pair_step_open">Abra o Mochy no celular e acesse Configurações → Integração entre dispositivos → Adicionar dispositivo</string>
+    <string name="tv_pair_step_pick">Escolha %1$s na lista</string>
+    <string name="tv_pair_step_code">Digite o código acima</string>
+    <string name="tv_from_phone">De %1$s</string>
+    <string name="tv_sync_now">Sincronizar agora</string>
+    <string name="tv_copy_all">Copiar todas as músicas para cá</string>
+    <string name="tv_unlink">Desconectar</string>
+    <string name="tv_controlled_from">Controlado por %1$s</string>
+    <string name="tv_sync_looking">Procurando seu celular…</string>
+    <string name="tv_sync_syncing">Sincronizando sua biblioteca…</string>
+    <string name="tv_sync_away">Seu celular não está por perto. Abra o Mochy nele, na mesma rede Wi-Fi.</string>
+    <string name="tv_sync_unlinked">Seu celular desconectou esta TV. A biblioteca continuará aqui.</string>
+    <string name="tv_sync_failed">Não foi possível sincronizar. Verifique se o Mochy está atualizado nos dois dispositivos e tente novamente.</string>
+    <string name="tv_sync_no_phone">Nenhum celular conectado</string>
+    <string name="tv_sync_just_now">Sincronizado agora mesmo</string>
+    <plurals name="tv_sync_minutes_ago">
+        <item quantity="one">Sincronizado há um minuto</item>
+        <item quantity="other">Sincronizado há %d minutos</item>
+    </plurals>
+    <plurals name="tv_sync_copying">
+        <item quantity="one">Copiando uma música para esta TV…</item>
+        <item quantity="other">Copiando %d músicas para esta TV…</item>
+    </plurals>
+
+    <!-- the phone side of the tv link -->
+    <string name="tv_link_title">Mochy na sua TV</string>
+    <string name="tv_link_tap_to_unlink">Conectado. Toque para desconectar.</string>
+    <string name="tv_link_found">TVs nesta rede Wi-Fi</string>
+    <string name="tv_link_enter_code">Digite o código exibido em %1$s</string>
+    <string name="tv_link_code_label">Código de 6 dígitos</string>
+    <string name="tv_link_pair">Conectar</string>
+    <string name="tv_link_pairing">Conectando…</string>
+    <string name="tv_link_channel">Conexão com a TV</string>
+
+    <!-- the tv's mochy page -->
+    <string name="tv_mochy">Mochy</string>
+    <string name="tv_mochy_version">Versão %1$s</string>
+    <string name="tv_mochy_link_phone">Conecte seu celular para transferir sua biblioteca</string>
+    <string name="tv_mochy_phone_control">O celular pode controlar esta TV</string>
+    <string name="tv_on">Ativado</string>
+    <string name="tv_off">Desativado</string>
+    <string name="tv_mochy_updates">Atualizações</string>
+    <string name="tv_mochy_support">Apoiar o Mochy</string>
+    <string name="tv_mochy_support_detail">Ajude a manter o projeto</string>
+
+    <!-- playing next, up in the tv's player -->
+    <string name="tv_playing_next">Reproduzindo a seguir</string>
+    <string name="tv_queue_empty">Não há nada na fila depois desta música</string>
+    <string name="tv_queue_play_now">Reproduzir agora</string>
+    <string name="tv_queue_earlier">Mover para antes</string>
+    <string name="tv_queue_later">Mover para depois</string>
+    <string name="tv_queue_remove">Remover da fila</string>
+
+    <!-- the phone's player menu and remote for a linked tv -->
+    <string name="tv_menu_play_on">Reproduzir em %1$s</string>
+    <string name="tv_menu_play_next_on">Reproduzir a seguir em %1$s</string>
+    <string name="tv_menu_control">Controlar %1$s</string>
+    <string name="tv_menu_sent">Reproduzindo em %1$s</string>
+    <string name="tv_menu_next_sent">Adicionado à fila de %1$s</string>
+    <string name="tv_menu_unreachable">Não foi possível acessar %1$s. Verifique se o Mochy está aberto nele.</string>
+    <string name="tv_menu_nothing_on">Nada sendo reproduzido</string>
+    <string name="tv_link_open_now">Aberto agora. Toque para desconectar.</string>
+    <string name="tv_link_control_title">Abrir agora</string>
+    <string name="tv_link_control_detail">Reproduza, avance e altere o player por aqui</string>
+
+    <!-- the phone's tv page, its notices, the tv's banner and the tv's song panel -->
+    <string name="tv_link_notify">Avisar quando a TV sincronizar</string>
+    <string name="tv_link_notify_detail">Uma breve notificação quando sua TV se conectar e receber a biblioteca mais recente</string>
+    <string name="tv_link_status_open">Aberto agora</string>
+    <string name="tv_link_status_open_synced">Aberto agora · sincronizado %1$s</string>
+    <string name="tv_link_status_seen">Última vez aberto %1$s</string>
+    <string name="tv_link_status_waiting">Aguardando o Mochy abrir nele</string>
+    <string name="tv_link_status_connected">Conectado a %1$s</string>
+    <string name="tv_link_status_connected_detail">Sua biblioteca está sincronizada</string>
+    <string name="tv_link_status_streaming">Transmitindo para %1$s</string>
+    <string name="tv_link_status_streaming_detail">Seus downloads estão sendo reproduzidos na TV a partir deste celular</string>
+    <string name="tv_link_events_channel">Sincronização da TV</string>
+    <string name="tv_link_notice_connected">Conectado a %1$s</string>
+    <string name="tv_link_notice_connected_detail">Sua TV pode sincronizar e transmitir conteúdo deste celular</string>
+    <string name="tv_link_notice_synced">%1$s está sincronizado</string>
+    <string name="tv_link_notice_synced_detail">Sua TV recebeu suas curtidas, playlists e downloads mais recentes</string>
+    <string name="tv_toast_connected">Conectado a %1$s</string>
+    <string name="tv_toast_connected_detail">Sincronizando sua biblioteca agora</string>
+    <string name="tv_toast_synced">Sincronizado com %1$s</string>
+    <string name="tv_toast_synced_detail">Sua biblioteca está atualizada</string>
+    <string name="tv_info_about">Sobre</string>
+    <string name="tv_info_go_to">Ir para</string>
+    <string name="tv_info_source">Reproduzindo de</string>
+    <string name="tv_info_source_unknown">Ainda procurando a origem da reprodução</string>
+    <string name="tv_info_close">Fechar</string>
+
+    <!-- pairing by sheet and by address -->
+    <string name="tv_pair_by_address">Ou conecte pelo endereço no celular: %1$s</string>
+    <string name="tv_pair_sheet_title">Conectar %1$s</string>
+    <string name="tv_pair_sheet_by_address">Conectar por endereço</string>
+    <string name="tv_pair_sheet_address_detail">Digite o endereço exibido pela TV abaixo do código e, em seguida, o código</string>
+    <string name="tv_pair_address_hint">192.168.1.20</string>
+</resources>

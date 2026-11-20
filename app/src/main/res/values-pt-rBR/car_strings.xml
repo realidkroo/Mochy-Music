@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- android auto -->
+    <string name="car_tab_home">Início</string>
+    <string name="car_tab_remote">Remoto</string>
+    <string name="car_tab_recent">Recentes</string>
+    <string name="car_tab_library">Biblioteca</string>
+
+    <string name="car_quick_picks">Escolhas rápidas</string>
+    <string name="car_categories">Categorias</string>
+    <string name="car_home_empty">Reproduza algumas músicas no celular para que suas escolhas apareçam aqui!</string>
+
+    <string name="car_recent_songs">Músicas</string>
+    <string name="car_recent_lists">Álbuns e playlists</string>
+    <string name="car_recent_empty">As músicas que você reproduzir aparecerão aqui.</string>
+
+    <string name="car_liked">Músicas curtidas</string>
+    <string name="car_downloaded">Baixadas</string>
+    <string name="car_playlists">Playlists</string>
+    <string name="car_albums">Álbuns</string>
+    <string name="car_artists">Artistas</string>
+    <string name="car_list_empty">Ainda não há nada aqui.</string>
+    <string name="car_couldnt_load">Não foi possível carregar. Verifique sua conexão e tente novamente.</string>
+    <string name="car_shuffle">Aleatório</string>
+
+    <string name="car_lyrics">Letras</string>
+    <string name="car_lyrics_on_player">No reprodutor</string>
+    <string name="car_lyrics_none">Não há letras para esta música.</string>
+    <string name="car_lyrics_player_on">As letras podem aparecer no reprodutor enquanto você dirige. Ei, ainda está em fase beta!</string>
+    <string name="car_lyrics_player_off">As letras no reprodutor estão desativadas.</string>
+
+    <string name="car_pair_code">Código de pareamento</string>
+    <string name="car_pair_status">Status</string>
+    <string name="car_pair_how">Como parear</string>
+    <string name="car_pair_steps">No outro celular, abra o Mochy e vá para Configurações › Integração de dispositivos › Adicionar dispositivo. Em seguida, digite este código. Os dois celulares precisam estar na mesma rede Wi-Fi.</string>
+    <string name="car_pair_waiting">Não conectado. Aguardando o pareamento com um celular.</string>
+    <string name="car_pair_connected">Conectado a %1$s</string>
+    <plurals name="car_pair_connected_more">
+        <item quantity="one">Conectado a %1$s e a mais %2$d celular</item>
+        <item quantity="other">Conectado a %1$s e a mais %2$d celulares</item>
+    </plurals>
+    <string name="car_pair_getting_code">Preparando um código…</string>
+</resources>

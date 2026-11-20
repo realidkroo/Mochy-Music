@@ -1,0 +1,118 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- About Sheet -->
+    <string name="about_app">Sobre o app</string>
+    <string name="about_mochy_music_version">Mochy Music | %1$s</string>
+    <string name="about_app_description">O Mochy Music é um app de música, mas\ncom um toque especial.</string>
+    <string name="about_actions">Ações</string>
+    <string name="about_support_me">Apoie o desenvolvedor :3 →</string>
+    <string name="about_github">GitHub do Mochy Music →</string>
+    <string name="about_meet_lead_dev">Conheça o desenvolvedor principal</string>
+    <string name="about_we_wont_exist">Não existiríamos sem estas pessoas</string>
+    <string name="about_and_more">E mais →</string>
+    <string name="about_license">Licença</string>
+    <string name="about_more_license">Mais sobre a licença</string>
+    <string name="about_cool_contributors">Colaboradores incríveis</string>
+    <string name="about_credits">Créditos</string>
+
+    <!-- Update Sheet -->
+    <string name="update_actions">Ações</string>
+    <string name="update_checking">Verificando…</string>
+    <string name="update_check_for_update">Verificar atualizações</string>
+    <string name="update_downgrade_to">Voltar para a versão %1$s</string>
+    <string name="update_switch_nightly">Mudar para a versão nightly</string>
+    <string name="update_not_out_yet">Ainda não foi lançada</string>
+    <string name="update_help_us">Ajude-nos!</string>
+    <string name="update_status_new_update">Nova atualização!</string>
+    <string name="update_action_update_now">ATUALIZAR AGORA</string>
+    <string name="update_status_looking">Procurando atualizações</string>
+    <string name="update_status_latest">Você está na versão mais recente</string>
+    <string name="update_status_all_good">Tudo certo</string>
+    <string name="update_status_failed">Não foi possível verificar atualizações</string>
+    <string name="update_status_offline">Sem conexão?</string>
+    <string name="update_action_try_again">TENTAR NOVAMENTE</string>
+    <string name="update_install_permission_error">Permita \"Instalar apps desconhecidos\" para o Mochy e toque em Instalar aqui novamente.</string>
+    <string name="update_back_desc">Voltar</string>
+    <string name="update_changelog">Registro de alterações</string>
+    <string name="update_to_be_installed">A ser instalado -</string>
+    <string name="update_download_failed">Falha no download</string>
+    <string name="update_downloading_progress">Baixando… %1$d%%</string>
+    <string name="update_no_apk">Nenhum APK nesta versão</string>
+    <string name="update_install_here">Instalar aqui</string>
+    <string name="update_open_web">Abrir página na web</string>
+
+    <!-- Artist Screen -->
+    <string name="artist_menu_shuffle">Reproduzir aleatoriamente</string>
+    <string name="artist_menu_start_radio">Iniciar rádio</string>
+    <string name="artist_menu_copy_link">Copiar link</string>
+    <string name="artist_link_label">Link do artista</string>
+    <string name="artist_top_songs">Músicas mais populares</string>
+    <string name="artist_albums">Álbuns</string>
+    <string name="artist_singles_eps">Singles e EPs</string>
+    <string name="artist_videos">Vídeos</string>
+    <string name="artist_concert">Shows</string>
+    <string name="artist_featured_on">Participações em</string>
+    <string name="artist_similar">Artistas semelhantes</string>
+    <string name="artist_in_your_library">Na sua biblioteca</string>
+    <string name="artist_saved_albums_of">Álbuns de %1$s que você salvou</string>
+    <string name="artist_about">Sobre %1$s</string>
+    <string name="artist_load_failed">Não foi possível carregar este artista. Toque para tentar novamente</string>
+
+    <!-- Playlist Screens -->
+    <string name="playlist_removed_song_from">%1$s foi removida de %2$s</string>
+    <string name="playlist_fallback_name">playlist</string>
+    <string name="playlist_drag_to_move">Arraste para mover</string>
+    <string name="playlist_related">Playlists relacionadas</string>
+    <string name="playlist_sort_order">Ordem de classificação</string>
+    <string name="playlist_sort_desc"> (Decrescente)</string>
+    <string name="playlist_sort_asc"> (Crescente)</string>
+
+    <!-- Search & Genre Screens -->
+    <string name="genre_nothing_here">Ainda não há nada aqui</string>
+    <string name="genre_featured">Em destaque</string>
+    <string name="genre_from_the_community">Da comunidade</string>
+    <string name="item_kind_album">Álbum</string>
+    <string name="item_kind_artist">Artista</string>
+    <string name="item_kind_playlist">Playlist</string>
+    <string name="item_kind_video">Vídeo</string>
+    <string name="item_kind_song">Música</string>
+    <string name="search_category_all">Tudo</string>
+    <string name="search_category_music">Música</string>
+    <string name="search_category_artist">Artista</string>
+    <string name="search_category_video">Vídeo</string>
+    <string name="search_category_album">Álbum</string>
+    <string name="search_category_playlist">Playlist</string>
+    <string name="search_category_featured">Em destaque</string>
+    <string name="search_top_results">Principais resultados</string>
+    <string name="search_exact_matches">Correspondências exatas</string>
+    <string name="search_no_results">Nenhum resultado</string>
+    <string name="search_placeholder_tracks_albums">Pesquise faixas, álbuns, letras…</string>
+    <string name="search_by_artist">por %1$s</string>
+
+    <!-- Suggestion Region Sheet -->
+    <string name="suggestion_choose_region">Escolher região das sugestões</string>
+    <string name="suggestion_search_regions">Pesquisar regiões…</string>
+    <string name="suggestion_search_desc">Pesquisar</string>
+    <string name="suggestion_system">Sistema</string>
+    <string name="suggestion_system_default">Padrão do sistema</string>
+    <string name="suggestion_countries_regions">Países e regiões</string>
+    <string name="suggestion_selected_desc">Selecionado</string>
+
+    <!-- Donate Sheet -->
+    <string name="donate_dismiss_button">não, obrigado</string>
+    <string name="donate_thank_you_title">Arigatou! :3</string>
+    <string name="donate_subtitle">Veja como apoiar e fazer uma doação!</string>
+    <string name="donate_kofi">Apoiar pelo Ko-fi</string>
+    <string name="donate_sociabuzz">Apoiar pelo SociaBuzz</string>
+    <string name="donate_sociabuzz_desc">Recomendado para alguns países do Sudeste Asiático e da América Latina</string>
+    <string name="donate_buymeacoffee">Apoiar pelo Buy Me a Coffee</string>
+    <string name="donate_note">sua doação, por menor que seja, será sempre muito útil para nós :3</string>
+
+    <!-- Album Screen -->
+    <string name="album_more_by_artist">Mais de %1$s</string>
+    <string name="album_more_by_this_artist">Mais deste artista</string>
+    <string name="album_other_versions">Outras versões</string>
+    <string name="album_releases_for_you">Lançamentos para você</string>
+    <string name="album_explicit_tag">Conteúdo explícito</string>
+    <string name="album_load_failed">Não foi possível carregar este álbum. Toque para tentar novamente</string>
+</resources>

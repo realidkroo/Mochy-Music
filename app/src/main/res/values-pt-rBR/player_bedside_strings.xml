@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- the bedside player style: a big clock for the nightstand -->
+    <string name="bedside_close">Fechar o player</string>
+    <string name="bedside_unlock_to_close">Desbloqueie para fechar o player</string>
+    <string name="bedside_more">Mais</string>
+    <string name="bedside_like">Curtir</string>
+    <string name="bedside_now_playing">Reproduzindo agora</string>
+
+    <!-- asked once over the bedside when the phone keeps apps off the lock screen (MIUI and HyperOS do, until you allow it) -->
+    <string name="bedside_lock_ask_title">Manter o relógio na tela de bloqueio?</string>
+    <string name="bedside_lock_ask_body">Seu celular mantém os apps fora da tela de bloqueio até que você permita. Na próxima tela, ative “Mostrar na tela de bloqueio”.</string>
+    <string name="bedside_lock_ask_allow">Permitir</string>
+    <string name="bedside_lock_ask_later">Agora não</string>
+
+    <!-- the bedside's sheet in the player editor -->
+    <string name="bedside_sheet_title">Modo de cabeceira</string>
+    <string name="bedside_rest_caption">Quando você não estiver usando</string>
+    <string name="bedside_tint_off">Manter branco</string>
+    <string name="bedside_tint_off_caption">As cores não mudam</string>
+    <string name="bedside_tint_orange">Laranja suave</string>
+    <string name="bedside_tint_orange_caption">Tudo ganha um tom alaranjado suave, agradável para os olhos sonolentos</string>
+    <string name="bedside_tint_cover">Cor da capa</string>
+    <string name="bedside_tint_cover_caption">Tudo assume a cor da capa da música</string>
+    <string name="bedside_saver">Protetor de tela</string>
+    <string name="bedside_saver_caption">A tela escurece e se move de vez em quando para evitar marcas permanentes</string>
+    <string name="bedside_keep_awake">Manter a tela ligada</string>
+    <string name="bedside_keep_awake_caption">O celular não entrará em repouso enquanto esta tela estiver aberta</string>
+    <string name="bedside_lock_screen">Mostrar na tela de bloqueio</string>
+    <string name="bedside_lock_screen_caption">Bloqueie o celular com esta tela aberta; ela continuará aqui quando a tela acender</string>
+    <string name="bedside_lock_blocked">Seu celular está bloqueando esse recurso</string>
+    <string name="bedside_lock_blocked_caption">Toque para ativar “Mostrar na tela de bloqueio” para o Mochy</string>
+    <string name="bedside_lock_blocked_tag">CORRIGIR</string>
+</resources>

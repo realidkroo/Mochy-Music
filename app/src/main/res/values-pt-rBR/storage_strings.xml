@@ -1,0 +1,106 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- usage at the top of the page -->
+    <string name="storage_overall">Geral</string>
+    <string name="storage_legend_mochy">Mochy</string>
+    <string name="storage_legend_yours">Seu armazenamento</string>
+    <string name="storage_free">%1$s livres</string>
+    <string name="storage_measuring">Calculando quanto espaço o Mochy ocupa…</string>
+    <string name="storage_uses">O Mochy usa %1$s do seu armazenamento (%2$s), dividido em</string>
+    <string name="storage_uses_drives">O Mochy usa %1$s em %2$d unidades, dividido em</string>
+    <string name="storage_breakdown_title">Uso de dados do app Mochy</string>
+    <string name="storage_legend_cache">Cache</string>
+    <string name="storage_legend_downloads">Músicas baixadas e arquivos locais</string>
+    <string name="storage_legend_database">Banco de dados</string>
+    <string name="storage_legend_app_data">Dados do aplicativo</string>
+
+    <!-- cutting the junk -->
+    <string name="storage_junk_title">Veja algumas coisas que você pode fazer para liberar espaço</string>
+    <string name="storage_hint_full">Seu celular está quase cheio.</string>
+    <string name="storage_hint_cache">O cache é o mais fácil de limpar. Isso libera %1$s, e as músicas serão transmitidas novamente quando você as reproduzir.</string>
+    <string name="storage_hint_downloads">Os downloads ocupam mais espaço. Em Gerenciar downloads, você encontra os maiores e os que quase não reproduz.</string>
+    <string name="storage_cache_limit">Definir limite do cache de música</string>
+    <string name="storage_cache_none">Sem cache</string>
+    <string name="storage_cache_unlimited">Ilimitado</string>
+    <string name="storage_cache_off">Desativado</string>
+    <string name="storage_cache_mb">%1$d MB</string>
+    <string name="storage_cache_gb">%1$d GB</string>
+    <string name="storage_cache_applies_later">O novo limite será aplicado na próxima vez que você abrir o Mochy.</string>
+    <string name="storage_remove_downloads">Remover todos os downloads</string>
+    <string name="storage_remove_downloads_title">Remover todos os downloads?</string>
+    <string name="storage_remove_downloads_message">Todas as músicas baixadas serão excluídas deste celular. Elas continuarão na sua biblioteca e serão transmitidas novamente quando você as reproduzir, portanto será necessária uma conexão.</string>
+    <string name="storage_clear_cache">Remover todo o cache de músicas e capas</string>
+    <string name="storage_clear_cache_title">Limpar o cache?</string>
+    <string name="storage_clear_cache_message">As músicas mantidas em cache e as capas salvas serão excluídas. Elas voltarão conforme você reproduzir músicas e navegar. Sua biblioteca e seus downloads continuarão como estão.</string>
+    <string name="storage_clear_cache_action">Limpar cache</string>
+    <string name="storage_manage_downloads">Gerenciar downloads</string>
+
+    <!-- where things are saved, and exporting songs -->
+    <string name="storage_or">Ou</string>
+    <string name="storage_downloads_place">Escolher onde salvar os downloads</string>
+    <string name="storage_cache_place">Escolher onde salvar o cache</string>
+    <string name="storage_export_downloads">Exportar músicas baixadas como uma pasta</string>
+    <string name="storage_moving">Movendo… %1$d%%</string>
+    <string name="storage_move_failed">Não foi possível mover tudo, então nada foi alterado. Tente novamente.</string>
+    <string name="storage_place_phone">Este celular</string>
+    <string name="storage_place_card">Cartão de memória</string>
+    <string name="storage_place_sheet_downloads">Onde os downloads são salvos</string>
+    <string name="storage_place_sheet_cache">Onde o cache é salvo</string>
+    <string name="storage_place_note_downloads">Todas as músicas baixadas serão movidas, e suas letras permanecerão com elas. O Mochy será reiniciado uma vez para concluir.</string>
+    <string name="storage_place_note_cache">O cache começará do zero no novo local. O Mochy será reiniciado uma vez para concluir.</string>
+    <string name="storage_place_card_note">Em um cartão de memória, o Mochy salva em sua própria pasta, que o Android apaga se o Mochy for desinstalado.</string>
+    <string name="storage_place_choose_folder">Escolher uma pasta</string>
+    <string name="storage_place_folder_note">O Mochy salvará os arquivos em uma pasta Mochy dentro da pasta escolhida, sem alterar os outros arquivos.</string>
+    <string name="storage_place_access_needed">Para salvar em %1$s, o Mochy precisa de acesso a todos os arquivos. O Android solicitará isso nas Configurações.</string>
+    <string name="storage_place_allow_access">Permitir acesso</string>
+    <string name="storage_place_no_access">O Mochy não recebeu acesso e não pode salvar nesse local. Permita o acesso ou escolha outra pasta.</string>
+    <string name="storage_place_folder_unsupported">Essa pasta não pode ser usada. Escolha uma pasta neste celular ou em um cartão de memória.</string>
+    <string name="storage_place_free">%1$s livres de %2$s</string>
+    <string name="storage_place_here_now">Salvo aqui atualmente</string>
+    <string name="storage_place_no_room">Espaço insuficiente</string>
+    <string name="storage_place_move">Mover para cá</string>
+    <string name="storage_place_move_downloads_title">Mover os downloads para %1$s?</string>
+    <string name="storage_place_move_cache_title">Mover o cache para %1$s?</string>
+    <string name="storage_place_move_downloads_message">Os downloads serão pausados enquanto %1$s é copiado. O Mochy será reiniciado quando terminar, e a cópia antiga será removida.</string>
+    <string name="storage_place_move_cache_message">O cache atual será limpo e o Mochy será reiniciado. Depois, as músicas reproduzidas serão armazenadas no novo local.</string>
+    <string name="storage_place_move_action">Mover e reiniciar</string>
+
+    <string name="storage_export_sheet_title">Exportar músicas baixadas</string>
+    <string name="storage_export_note">Elas serão copiadas para uma pasta mochy-preserve no local escolhido. Seus downloads permanecerão onde estão.</string>
+    <string name="storage_export_layout_playlists">Músicas e playlists</string>
+    <string name="storage_export_layout_playlists_detail">Uma pasta para cada playlist e para as músicas curtidas; as demais vão para Música</string>
+    <string name="storage_export_layout_albums">Álbuns</string>
+    <string name="storage_export_layout_albums_detail">Uma pasta para cada álbum; as músicas sem álbum vão para Música</string>
+    <string name="storage_export_covers">Capas</string>
+    <string name="storage_export_lyrics">Letras</string>
+    <string name="storage_export_pick">Escolher uma pasta</string>
+    <string name="storage_export_progress">Exportando… %1$d de %2$d</string>
+    <string name="storage_export_starting">Preparando as músicas…</string>
+    <string name="storage_export_failed">A exportação foi interrompida. Confira a pasta escolhida e tente novamente.</string>
+    <plurals name="storage_export_done">
+        <item quantity="one">%d música exportada</item>
+        <item quantity="other">%d músicas exportadas</item>
+    </plurals>
+    <plurals name="storage_export_skipped">
+        <item quantity="one">%d música não foi totalmente baixada e foi ignorada</item>
+        <item quantity="other">%d músicas não foram totalmente baixadas e foram ignoradas</item>
+    </plurals>
+    <string name="storage_export_folder_music" translatable="false">Música</string>
+    <string name="storage_export_folder_playlists" translatable="false">Playlist</string>
+    <string name="storage_export_folder_albums" translatable="false">Álbuns</string>
+    <string name="storage_export_folder_liked" translatable="false">Músicas curtidas</string>
+
+    <!-- moving to a new phone -->
+    <string name="storage_transfer_title">Vai trocar de celular? Leve tudo com você</string>
+    <string name="storage_export_user_data">Exportar dados do usuário</string>
+    <string name="storage_import_user_data">Importar dados do usuário</string>
+    <string name="storage_transfer_exporting">Exportando…</string>
+    <string name="storage_transfer_exporting_percent">Exportando… %1$d%%</string>
+    <string name="storage_transfer_exported">Exportação concluída! Importe o arquivo .zip no Mochy do outro celular</string>
+    <string name="storage_transfer_importing">Importando…</string>
+    <string name="storage_transfer_importing_percent">Importando… %1$d%%, o Mochy será reiniciado quando terminar</string>
+    <string name="storage_transfer_restarting">Concluído, reiniciando…</string>
+    <string name="storage_import_title">Substituir sua biblioteca?</string>
+    <string name="storage_import_message">Tudo o que está no Mochy agora será substituído pelo conteúdo da exportação, incluindo biblioteca, histórico, downloads e configurações. Seus logins serão mantidos. O Mochy será reiniciado uma vez para concluir.</string>
+    <string name="storage_import_action">Escolher o arquivo .zip</string>
+</resources>
