@@ -29,6 +29,9 @@ object LookFont {
     var family: FontFamily? by mutableStateOf(null)
 }
 
+internal fun fontFamilyForMode(mode: AppFontMode): FontFamily =
+    mode.resolve(LookFont.family, AppFonts.selection.family, Inter)
+
 // Read during composition so both Look changes and user selections update visible text.
 val InterFontFamily: FontFamily
     get() {
