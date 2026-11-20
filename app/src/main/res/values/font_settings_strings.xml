@@ -4,7 +4,7 @@
     <string name="customise_font_default">Default</string>
     <string name="customise_font_system">System</string>
     <string name="customise_font_custom">Custom</string>
-    <string name="customise_font_sample">Now playing · 가나다 123</string>
+    <string name="customise_font_sample">Now playing · ABC 123</string>
     <string name="customise_font_replace">Change</string>
     <string name="customise_font_remove">Delete</string>
     <string name="customise_font_file_help">Choose a .ttf file up to 32 MB.</string>
