@@ -264,8 +264,9 @@ internal fun MarqueeStrip(
     running: () -> Boolean = { true },
 ) {
     val measurer = rememberTextMeasurer()
-    val style = remember(color, fontSizeSp) {
-        TextStyle(color = color, fontFamily = InterFontFamily, fontSize = fontSizeSp.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+    val fontFamily = InterFontFamily
+    val style = remember(color, fontSizeSp, fontFamily) {
+        TextStyle(color = color, fontFamily = fontFamily, fontSize = fontSizeSp.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
     }
     val layout = remember(text, style) { measurer.measure("$text   ·   ", style) }
     var progress by remember { mutableFloatStateOf(0f) }

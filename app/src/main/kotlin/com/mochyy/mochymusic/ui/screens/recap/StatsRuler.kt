@@ -71,12 +71,13 @@ private val MinorTick = 22.dp
 private val HighlightTick = 44.dp
 private val EdgeFade = 40.dp
 
-private val BigLabel = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 30.sp,
-    letterSpacing = (-1.1).sp,
-)
+private val BigLabel: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 30.sp,
+        letterSpacing = (-1.1).sp,
+    )
 
 // the other names are the same text drawn at this share of the size
 private const val SmallLabelScale = 0.48f
@@ -107,7 +108,8 @@ internal fun StatsRuler(
             (first..today.year + 1).map { StatsRange(StatsRange.Kind.Year, it) }
         }
     }
-    val labels = remember(items, measurer) { items.map { measurer.measure(labelOf(it), BigLabel) } }
+    val labelStyle = BigLabel
+    val labels = remember(items, measurer, labelStyle) { items.map { measurer.measure(labelOf(it), labelStyle) } }
 
     val committed = items.indexOf(selected).coerceAtLeast(0)
     val currentCommitted by rememberUpdatedState(committed)

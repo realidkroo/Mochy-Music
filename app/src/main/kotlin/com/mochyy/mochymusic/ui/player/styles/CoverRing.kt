@@ -136,8 +136,9 @@ fun CoverRing(
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val measurer = rememberTextMeasurer(cacheSize = 24)
-    val labelStyle = remember {
-        TextStyle(fontFamily = com.mochyy.mochymusic.ui.theme.InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color.White)
+    val fontFamily = com.mochyy.mochymusic.ui.theme.InterFontFamily
+    val labelStyle = remember(fontFamily) {
+        TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color.White)
     }
     val currentCircle by rememberUpdatedState(circle)
     val showing = rememberStyleShowing()

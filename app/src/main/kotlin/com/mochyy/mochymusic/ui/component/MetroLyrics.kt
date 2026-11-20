@@ -40,10 +40,12 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -58,6 +60,8 @@ import com.mochyy.mochymusic.constants.AppleMusicLyricsBlurKey
 import com.mochyy.mochymusic.constants.LyricsRomanizeAsMainKey
 import com.mochyy.mochymusic.lyrics.LyricsEntry
 import com.mochyy.mochymusic.ui.screens.LyricsPosition
+import com.mochyy.mochymusic.ui.theme.AppFontMode
+import com.mochyy.mochymusic.ui.theme.AppFonts
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.isActive
@@ -350,6 +354,16 @@ private fun WordLevelCanvasLyrics(
         ResourcesCompat.getFont(context, R.font.inter_bold)
             ?: ResourcesCompat.getFont(context, R.font.inter_regular)
             ?: Typeface.create("sans-serif", Typeface.NORMAL)
+    }
+    val glowTypeface = if (AppFonts.selection.mode == AppFontMode.DEFAULT) {
+        interBoldTypeface
+    } else {
+        LocalFontFamilyResolver.current.resolve(
+            fontFamily = lyricStyle.fontFamily,
+            fontWeight = lyricStyle.fontWeight ?: FontWeight.Normal,
+            fontStyle = lyricStyle.fontStyle ?: FontStyle.Normal,
+            fontSynthesis = lyricStyle.fontSynthesis ?: FontSynthesis.All,
+        ).value as Typeface
     }
     val glowPaint = remember {
         android.graphics.Paint().apply {
@@ -845,7 +859,7 @@ private fun WordLevelCanvasLyrics(
                                         BlurMaskFilter(baseGlowRadius, BlurMaskFilter.Blur.NORMAL)
                                     glowPaint.color = expressiveAccent.copy(alpha = glowAlpha).toArgb()
                                     glowPaint.textSize = lyricStyle.fontSize.toPx()
-                                    glowPaint.typeface = interBoldTypeface
+                                    glowPaint.typeface = glowTypeface
                                     canvas.nativeCanvas.drawText(letterLayouts[i].layoutInput.text.text, 0f, letterLayouts[i].firstBaseline, glowPaint)
                                 }
                             }

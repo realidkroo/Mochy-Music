@@ -41,13 +41,14 @@ internal val ShareMuted = Color(0xFF9A9AA0)
 internal val ShareRowCorner = 16.dp
 internal val ShareRowPadH = 16.dp
 internal val ShareRowFontSize = 15.sp
-internal val ShareRowTextStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = ShareRowFontSize,
-    letterSpacing = (-0.3).sp,
-    color = Color.White,
-)
+internal val ShareRowTextStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = ShareRowFontSize,
+        letterSpacing = (-0.3).sp,
+        color = Color.White,
+    )
 
 /** A picked line's fill: the cover's two strongest colours, side to side across [width]. */
 internal fun pickedBrush(palette: List<Color>, width: Float = Float.POSITIVE_INFINITY): Brush {

@@ -20,12 +20,13 @@ import com.mochyy.mochymusic.ui.theme.InterFontFamily
 @Composable
 internal fun chevronMenuLabelStyle(color: Color, fontSize: TextUnit): TextStyle {
     val density = LocalDensity.current
-    return remember(color, fontSize, density) {
+    val fontFamily = InterFontFamily
+    return remember(color, fontSize, density, fontFamily) {
         // a very soft shade, dark under light words and light under dark ones, so it lifts them without a hard edge
         val shade = if (color.luminance() > 0.5f) Color.Black else Color.White
         TextStyle(
             color = color,
-            fontFamily = InterFontFamily,
+            fontFamily = fontFamily,
             fontWeight = FontWeight.SemiBold,
             fontSize = fontSize,
             // semibold sets a touch narrower than bold, so a little less tightening keeps the words as wide as they were

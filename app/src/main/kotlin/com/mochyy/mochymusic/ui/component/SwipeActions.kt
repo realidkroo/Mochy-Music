@@ -143,12 +143,13 @@ private val PillPadding = 13.dp
 private val PillIconSize = 18.dp
 private val PillLabelSpacing = 6.dp
 
-private val SwipeLabelStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 12.5.sp,
-    letterSpacing = (-0.02).em,
-)
+private val SwipeLabelStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 12.5.sp,
+        letterSpacing = (-0.02).em,
+    )
 
 /**
  * a row you can drag sideways, like Frame 117: the row slides on a dark rounded slab, and the
@@ -370,8 +371,9 @@ internal fun BoxScope.SwipePill(
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
     val pillHeight = with(density) { (rowHeight.toDp() * 0.6f).coerceIn(32.dp, 38.dp).toPx() }
-    val labelWidth = remember(action.label, density) {
-        measurer.measure(action.label, SwipeLabelStyle).size.width.toFloat()
+    val labelStyle = SwipeLabelStyle
+    val labelWidth = remember(action.label, measurer, labelStyle) {
+        measurer.measure(action.label, labelStyle).size.width.toFloat()
     }
     val need = with(density) { (PillPadding * 2 + PillIconSize + PillLabelSpacing).toPx() } + labelWidth
     SideEffect { onNeed(need) }

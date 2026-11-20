@@ -29,8 +29,12 @@ object LookFont {
     var family: FontFamily? by mutableStateOf(null)
 }
 
-// read through a state, so text set in it follows a look's font turning on or off
-val InterFontFamily: FontFamily get() = LookFont.family ?: Inter
+// Read during composition so both Look changes and user selections update visible text.
+val InterFontFamily: FontFamily
+    get() {
+        val selection = AppFonts.selection
+        return selection.mode.resolve(LookFont.family, selection.family, Inter)
+    }
 
 private val GlobalFontWeight = FontWeight.SemiBold
 private val GlobalLetterSpacing = (-0.05).em
