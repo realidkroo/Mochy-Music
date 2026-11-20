@@ -1020,6 +1020,13 @@
                 android:resource="@xml/provider_paths" />
         </provider>
 
+        <!-- local songs' covers for Android Auto, widgets and the lock screen, which can't open files in Mochy's own folder; read only, covers folder only -->
+        <provider
+            android:name="com.mochyy.mochymusic.importer.LocalArtworkProvider"
+            android:authorities="${applicationId}.localartwork"
+            android:exported="true"
+            tools:ignore="ExportedContentProvider" />
+
         <provider
             android:name="com.dpi.DensityScaler"
             android:authorities="${applicationId}.com.dpi.DensityScaler"
@@ -1042,6 +1049,25 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="${discordRedirectScheme}" />
+            </intent-filter>
+        </activity>
+
+        <!-- dropbox's and onedrive's sign-in pages send the browser back here for cloud backups -->
+        <activity
+            android:name=".backup.CloudLoginActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="mochy-backup" />
             </intent-filter>
         </activity>
 

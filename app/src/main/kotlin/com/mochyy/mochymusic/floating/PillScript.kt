@@ -45,6 +45,9 @@ internal class PillRow(
 ) {
     val sweeps: Boolean get() = !words.isNullOrEmpty()
     val small: Boolean get() = kind != PillRowKind.LEAD && kind != PillRowKind.TITLE && kind != PillRowKind.INTRO
+
+    // the song's title or artist, which has no time of its own
+    val isInfo: Boolean get() = kind == PillRowKind.TITLE || kind == PillRowKind.ARTIST
 }
 
 // what goes under each line besides its backing vocals, by line index, from the same settings the lyrics page reads

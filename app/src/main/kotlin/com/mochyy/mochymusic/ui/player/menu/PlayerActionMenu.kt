@@ -288,7 +288,8 @@ fun PlayerActionMenu(
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 SheetActionCardRow {
-                    SheetDownloadCard(
+                    // a song imported from the phone is already a file here; downloading it only looked it up online by name
+                    if (currentMetadata?.id?.startsWith("LOCAL_") != true) SheetDownloadCard(
                         downloadState = download?.state,
                         onDownload = {
                             currentMetadata?.let { metadata ->

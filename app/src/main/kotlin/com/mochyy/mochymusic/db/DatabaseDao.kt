@@ -1150,10 +1150,13 @@ interface DatabaseDao {
     @Query("UPDATE song SET genre = :genre WHERE id = :songId")
     fun setSongGenre(songId: String, genre: String)
 
-    // the local songs that have a genre, for the Genres tab and each genre's page
+    // songs the genres tab can sort: tagged files, plus anything saved, liked or played for a minute, which goes by its artist's genre
     @Transaction
-    @Query("SELECT * FROM song WHERE isLocal AND genre IS NOT NULL AND genre != '' ORDER BY title COLLATE NOCASE")
-    fun localSongsWithGenre(): Flow<List<Song>>
+    @Query(
+        "SELECT * FROM song WHERE (isLocal AND genre IS NOT NULL AND genre != '') OR inLibrary IS NOT NULL OR liked OR totalPlayTime >= 60000 " +
+            "ORDER BY title COLLATE NOCASE",
+    )
+    fun songsForGenres(): Flow<List<Song>>
 
     @Transaction
     @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL ORDER BY rowId")
@@ -1413,6 +1416,14 @@ interface DatabaseDao {
     /** Every play in [fromTimeStamp, toTimeStamp), bare - the monthly recap and Stats aggregate these themselves. */
     @Query("SELECT songId, timestamp, playTime FROM event WHERE timestamp >= :fromTimeStamp AND timestamp < :toTimeStamp")
     suspend fun recapEvents(fromTimeStamp: Long, toTimeStamp: Long): List<RecapEventRow>
+
+    // which of these songs were already played before a period started, so stats can tell new finds from old favourites
+    @Query("SELECT DISTINCT songId FROM event WHERE timestamp < :beforeTimeStamp AND songId IN (:songIds)")
+    suspend fun songsPlayedBefore(songIds: List<String>, beforeTimeStamp: Long): List<String>
+
+    // all the listening in a period added up, for stats' "more than last month"
+    @Query("SELECT COALESCE(SUM(playTime), 0) FROM event WHERE timestamp >= :fromTimeStamp AND timestamp < :toTimeStamp")
+    suspend fun listeningTotal(fromTimeStamp: Long, toTimeStamp: Long): Long
 
     @Query("SELECT MIN(timestamp) FROM event")
     suspend fun firstEventTimestamp(): Long?
@@ -1940,6 +1951,20 @@ interface DatabaseDao {
     /** Every file already in the library, so a storage scan only offers the new ones. */
     @Query("SELECT localUri FROM song WHERE localUri IS NOT NULL")
     fun localUris(): List<String>
+
+    // how many songs, albums, playlists and artists show this picture: local songs share cover files, so one only goes with its last user
+    @Query(
+        "SELECT (SELECT COUNT(*) FROM song WHERE thumbnailUrl = :url) + (SELECT COUNT(*) FROM album WHERE thumbnailUrl = :url) + " +
+            "(SELECT COUNT(*) FROM playlist WHERE thumbnailUrl = :url) + (SELECT COUNT(*) FROM artist WHERE thumbnailUrl = :url)"
+    )
+    fun thumbnailUsers(url: String): Int
+
+    // the songs and albums that still name an artist, so a name that got split into its artists only goes once nothing uses it
+    @Query(
+        "SELECT (SELECT COUNT(*) FROM song_artist_map WHERE artistId = :artistId) + " +
+            "(SELECT COUNT(*) FROM album_artist_map WHERE artistId = :artistId)"
+    )
+    fun artistUses(artistId: String): Int
 
     @Query("DELETE FROM format WHERE id = :songId")
     fun deleteFormat(songId: String)

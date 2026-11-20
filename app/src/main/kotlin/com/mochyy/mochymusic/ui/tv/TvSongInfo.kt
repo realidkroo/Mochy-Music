@@ -56,7 +56,7 @@ import com.mochyy.mochymusic.ui.player.info.textFor
 import com.mochyy.mochymusic.viewmodels.LyricsMenuViewModel
 
 // which part of the panel the remote lands on first
-internal enum class TvInfoStart { Song, Source, Lyrics }
+internal enum class TvInfoStart { Song, Lyrics }
 
 // the song's info on a tv: a drawer from the right where every line is a stop for the remote, artists and album open their pages
 @Composable
@@ -79,13 +79,11 @@ internal fun TvSongInfoPanel(
     val lyricsEntity by player.currentLyrics.collectAsState(initial = null)
     val sources by lyricsViewModel.sources.collectAsState()
     val firstFocus = remember { FocusRequester() }
-    val sourceFocus = remember { FocusRequester() }
     val lyricsFocus = remember { FocusRequester() }
     var aboutOpen by remember { mutableStateOf(false) }
     LaunchedEffect(current.id) { lyricsViewModel.checkSources(current) }
     LaunchedEffect(start) {
         val target = when (start) {
-            TvInfoStart.Source -> sourceFocus
             TvInfoStart.Lyrics -> lyricsFocus
             TvInfoStart.Song -> firstFocus
         }
@@ -195,7 +193,7 @@ internal fun TvSongInfoPanel(
             TvInfoRow(
                 icon = R.drawable.graphic_eq,
                 text = sourceLine.ifBlank { stringResource(R.string.tv_info_source_unknown) },
-                modifier = Modifier.focusRequester(sourceFocus).then(firstModifier()),
+                modifier = firstModifier(),
                 onClick = {},
             )
             Spacer(Modifier.height(14.dp))

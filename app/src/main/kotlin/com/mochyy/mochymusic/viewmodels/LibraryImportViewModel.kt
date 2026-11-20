@@ -8,14 +8,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.db.MusicDatabase
+import com.mochyy.mochymusic.db.entities.SongEntity
 import com.mochyy.mochymusic.importer.DeviceMusicScanner
 import com.mochyy.mochymusic.importer.DeviceSong
+import com.mochyy.mochymusic.importer.FolderScan
 import com.mochyy.mochymusic.importer.ImportHistory
 import com.mochyy.mochymusic.importer.ImportSource
 import com.mochyy.mochymusic.importer.LocalArtwork
 import com.mochyy.mochymusic.importer.LocalFile
 import com.mochyy.mochymusic.importer.LocalFolders
 import com.mochyy.mochymusic.importer.LocalImportService
+import com.mochyy.mochymusic.importer.LocalMissingFiles
 import com.mochyy.mochymusic.importer.LocalSongRepair
 import androidx.media3.exoplayer.offline.DownloadService
 import com.mochyy.mochymusic.models.TransferBatch
@@ -42,6 +45,12 @@ sealed interface DeviceScan {
     data object Scanning : DeviceScan
     data class Found(val songs: List<DeviceSong>) : DeviceScan
 }
+
+/** What a re-scan did: whether an import started, and whether it already told the user something worth more than "no new songs". */
+data class Rescan(val started: Boolean, val alreadyTold: Boolean)
+
+// a scan's longer notes (the folder cap, skipped formats) stay up long enough to read
+private const val LongNoticeMs = 5_000L
 
 /**
  * Backs the Library's import side: the progress of downloads and local imports, the storage scan
@@ -103,16 +112,18 @@ class LibraryImportViewModel @Inject constructor(
             return false
         }
         // picking a folder again also brings the lyrics and covers beside its songs to the ones already in
-        reportRepaired(LocalSongRepair.repair(context, database, scanned))
-        val files = withContext(Dispatchers.IO) { LocalFolders.onlyNew(context, scanned, knownLocalUris(withMediaStore = false)) }
-        return startFolderImport(files, emptyMessage = "Every song in that folder is already in your library")
+        reportRepaired(LocalSongRepair.repair(context, database, scanned.files))
+        val files = withContext(Dispatchers.IO) { LocalFolders.onlyNew(context, scanned.files, knownLocalUris(withMediaStore = false)) }
+        val started = startFolderImport(files, emptyMessage = "Every song in that folder is already in your library")
+        reportScan(scanned, missing = emptyList())
+        return started
     }
 
     /**
      * Re-scan: brings back covers that went missing, gives songs in the saved music folders the
-     * lyrics and covers sitting beside them, then imports new files. Returns true when an import started.
+     * lyrics and covers sitting beside them, imports new files and offers to drop songs whose file is gone.
      */
-    suspend fun refreshLocal(): Boolean {
+    suspend fun refreshLocal(): Rescan {
         val (fixedCovers, scanned) = withContext(Dispatchers.IO) {
             val fixed = LocalArtwork.repair(context, database, includeMissing = true)
             fixed to LocalFolders.scanSaved(context)
@@ -120,15 +131,43 @@ class LibraryImportViewModel @Inject constructor(
         if (fixedCovers > 0) {
             TopToaster.show(if (fixedCovers == 1) "Brought back 1 cover" else "Brought back $fixedCovers covers", iconRes = R.drawable.library_music)
         }
-        reportRepaired(LocalSongRepair.repair(context, database, scanned))
-        val files = withContext(Dispatchers.IO) { LocalFolders.onlyNew(context, scanned, knownLocalUris(withMediaStore = false)) }
-        if (files.isEmpty()) return false
-        return startFolderImport(files, emptyMessage = null)
+        reportRepaired(LocalSongRepair.repair(context, database, scanned.files))
+        val (files, missing) = withContext(Dispatchers.IO) {
+            val songs = database.localSongsByRowIdAsc().first().map { it.song }
+            LocalFolders.onlyNew(context, scanned.files, knownLocalUris(withMediaStore = false)) to LocalMissingFiles.find(songs, scanned)
+        }
+        val started = files.isNotEmpty() && startFolderImport(files, emptyMessage = null)
+        return Rescan(started = started, alreadyTold = reportScan(scanned, missing))
     }
 
     private fun reportRepaired(count: Int) {
         if (count == 0) return
         TopToaster.show(context.resources.getQuantityString(R.plurals.lib_local_repaired, count, count), iconRes = R.drawable.library_music)
+    }
+
+    // the one thing from a scan worth saying, most useful first, since a newer toast covers the last; true when something was said
+    private fun reportScan(scan: FolderScan, missing: List<SongEntity>): Boolean {
+        val resources = context.resources
+        when {
+            missing.isNotEmpty() -> TopToaster.show(
+                text = resources.getQuantityString(R.plurals.local_missing_files, missing.size, missing.size),
+                iconRes = R.drawable.library_music,
+                actionLabel = context.getString(R.string.local_missing_remove),
+                onAction = { removeLocalSongs(missing.map { it.id }) },
+            )
+            scan.truncated -> TopToaster.show(
+                text = context.getString(R.string.local_import_folder_cap, LocalFolders.MAX_FILES),
+                iconRes = R.drawable.library_music,
+                durationMs = LongNoticeMs,
+            )
+            scan.unplayable > 0 -> TopToaster.show(
+                text = resources.getQuantityString(R.plurals.local_import_skipped_formats, scan.unplayable, scan.unplayable),
+                iconRes = R.drawable.library_music,
+                durationMs = LongNoticeMs,
+            )
+            else -> return false
+        }
+        return true
     }
 
     /** True if Mochy has music folders the user picked. */

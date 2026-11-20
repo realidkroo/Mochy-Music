@@ -9,7 +9,7 @@ import org.json.JSONObject
 import java.io.File
 import java.time.Instant
 
-/** backups in mochy's app folder on dropbox (Apps/<app name>), the only folder the app can see */
+/** backups in mochy's app folder on dropbox (apps/<app name>), the only folder the app can see */
 internal class DropboxCloud(private val session: OAuthSession) : BackupCloud {
     // dropbox takes at most 150 mb in one request, so every backup goes up in pieces through an upload session
     override suspend fun upload(file: File, name: String, onProgress: (Float) -> Unit) {

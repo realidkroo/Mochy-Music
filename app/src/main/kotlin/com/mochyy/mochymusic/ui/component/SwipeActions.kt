@@ -189,14 +189,16 @@ fun SwipeActionsBox(
     var startNeed by remember { mutableFloatStateOf(0f) }
     var endNeed by remember { mutableFloatStateOf(0f) }
 
-    val baseThreshold = with(density) { (rowSize.width * 0.3f).coerceIn(100.dp.toPx(), 150.dp.toPx()) }
+    val minThreshold = with(density) { 100.dp.toPx() }
+    val maxThreshold = with(density) { 150.dp.toPx() }
     // the pill's width is the travel less this: its gap to the row and to the screen edge
     val pillRoom = with(density) { (PillEdgeInset + PillGap - SlabInset).toPx() }
     val deadSideLimit = with(density) { 22.dp.toPx() }
     val hysteresis = with(density) { 4.dp.toPx() }
 
+    // worked out while dragging, never in composition: the row's size lands after its first layout and recomposed every new row a second time
     fun thresholdFor(direction: Float): Float =
-        maxOf(baseThreshold, (if (direction > 0f) startNeed else endNeed) + pillRoom)
+        maxOf((rowSize.width * 0.3f).coerceIn(minThreshold, maxThreshold), (if (direction > 0f) startNeed else endNeed) + pillRoom)
 
     fun resisted(raw: Float): Float {
         val allowed = if (raw > 0f) start != null else end != null
@@ -217,8 +219,9 @@ fun SwipeActionsBox(
         return if (distance <= line) shown else sign(shown) * (line + (distance - line) / SwipeResistance)
     }
 
-    LaunchedEffect(enabled) {
-        if (!enabled) {
+    // only while switched off, so the rows of a list don't each start an effect that does nothing
+    if (!enabled) {
+        LaunchedEffect(Unit) {
             offset = 0f
             travel = 0f
             armed = 0
@@ -485,6 +488,9 @@ fun downloadSwipeAction(mediaItem: (() -> MediaItem)?): SwipeAction {
         if (isDownloaded) {
             DownloadService.sendRemoveDownload(context, ExoDownloadService::class.java, target.mediaId, false)
             TopToaster.show(text = context.getString(R.string.remove_download), thumbnail = thumb, iconRes = R.drawable.offline)
+        } else if (target.mediaId.startsWith("LOCAL_")) {
+            // an imported file is already here, and downloading it only looked it up online by name
+            TopToaster.show(text = context.getString(R.string.local_already_on_phone), thumbnail = thumb, iconRes = R.drawable.offline)
         } else {
             target.metadata?.let { meta -> database.query { insert(meta) } }
             val request = DownloadRequest.Builder(target.mediaId, target.mediaId.toUri())

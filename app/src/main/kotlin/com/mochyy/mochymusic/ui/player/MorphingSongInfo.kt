@@ -38,6 +38,12 @@ private val HeaderEndMargin = LyricsHeaderArtX
 /** A title too long for the header fades out over this much of its right end. */
 private val TitleEndFade = 20.dp
 
+// the queue page's heart chip and a gap before it, kept clear of the title (its 34dp, 10dp of gap, from its own edge margin to the title's)
+private val ChipRoom = 34.dp + 10.dp + com.mochyy.mochymusic.constants.PlayerHorizontalPadding - LyricsHeaderArtX
+
+// with the chip there the fade runs longer, so the title has faded out well before it
+private val ChipEndFade = 32.dp
+
 // the player row's own edge fade, so the flying title lands looking exactly like the one it hands over to
 private val RowEndFade = 10.dp
 
@@ -61,6 +67,8 @@ fun MorphingSongInfo(
      * title is set differently) it fades in over the other one instead.
      */
     handOff: Boolean = true,
+    // how much the header's trailing chip (the queue page's heart) is there, 0 to 1; read while drawing
+    endRoom: () -> Float = { 0f },
 ) {
     // Whether it can be seen at all. Decided in a derived state so the providers aren't read here:
     // the source rect moves with every frame of a sheet slide, and reading it in composition
@@ -114,9 +122,12 @@ fun MorphingSongInfo(
                     // header's width at the end, fading out over its last few dp
                     val progress = lyricsProgressProvider().coerceIn(0f, 1f)
                     val sourceWidth = sourceRectProvider()?.width?.takeIf { it > 1f } ?: headerWidthPx
-                    val shownWidth = androidx.compose.ui.util.lerp(sourceWidth, headerWidthPx, progress)
+                    val chip = endRoom().coerceIn(0f, 1f)
+                    val headerEnd = headerWidthPx - ChipRoom.toPx() * chip
+                    val shownWidth = androidx.compose.ui.util.lerp(sourceWidth, headerEnd, progress)
                     clipRect(right = shownWidth) { this@drawWithContent.drawContent() }
-                    val fadePx = androidx.compose.ui.util.lerp(RowEndFade.toPx(), TitleEndFade.toPx(), progress)
+                    val headerFade = androidx.compose.ui.util.lerp(TitleEndFade.toPx(), ChipEndFade.toPx(), chip)
+                    val fadePx = androidx.compose.ui.util.lerp(RowEndFade.toPx(), headerFade, progress)
                     drawRect(
                         brush = window.fadeAt(shownWidth, fadePx),
                         size = size.copy(width = shownWidth),

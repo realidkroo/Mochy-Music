@@ -16,6 +16,7 @@
     <string name="backup_waiting_browser">Finish signing in in your browser</string>
     <string name="backup_finishing_sign_in">Signing in…</string>
     <string name="backup_no_browser">There\'s no browser on this phone to sign in with.</string>
+    <string name="backup_dropbox_notice">Dropbox backup is still in testing. Only the first 500 people can connect, and Dropbox may stop new sign-ins sooner until it approves Mochy. If Dropbox won\'t let you in, WebDAV has no limit.</string>
     <string name="backup_disconnect">Disconnect</string>
     <string name="backup_disconnect_desc">Stop backing up to %1$s. Backups already there stay.</string>
     <string name="backup_connected_toast">Connected. Your backups go to %1$s now.</string>
@@ -33,7 +34,7 @@
     <string name="backup_restored">Restored. Mochy is restarting…</string>
     <string name="backup_done_toast">Backed up to %1$s</string>
     <string name="backup_last_failed">The last automatic backup didn\'t go through. %1$s</string>
-    <string name="backup_restore">Restore a backup</string>
+    <string name="backup_restore_title">Restore a backup</string>
     <string name="backup_restore_desc">Bring your library, stats and settings back from the cloud</string>
 
     <!-- the schedule -->

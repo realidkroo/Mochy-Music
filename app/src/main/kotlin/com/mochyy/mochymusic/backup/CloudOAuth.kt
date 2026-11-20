@@ -20,7 +20,7 @@ internal enum class OAuthApp(
     val kind: CloudKind,
     private val authorizeUrl: String,
     private val tokenUrl: String,
-    // where the cloud sends the browser back to; it's registered with the cloud's app and CloudLoginActivity catches it
+    // where the cloud sends the browser back to; it's registered with the cloud's app and the login activity catches it
     val redirectUri: String,
 ) {
     Dropbox(

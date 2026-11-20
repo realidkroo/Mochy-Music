@@ -40,6 +40,7 @@ import com.mochyy.mochymusic.ui.component.SettingsItem
 import com.mochyy.mochymusic.ui.component.SubSettingsScaffold
 import com.mochyy.mochymusic.ui.screens.settings.integrations.IntegrationPageSubtitle
 import com.mochyy.mochymusic.ui.screens.settings.storage.StorageDanger
+import com.mochyy.mochymusic.ui.screens.settings.storage.StorageMuted
 import com.mochyy.mochymusic.ui.screens.settings.storage.formatSize
 import com.mochyy.mochymusic.ui.screens.settings.storage.storageText
 import com.mochyy.mochymusic.viewmodels.CloudBackupViewModel
@@ -47,6 +48,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 const val BackupRoute = "integrations_settings/backup"
+
+// onedrive stays off the page until its microsoft app is registered, the code behind it is ready
+private val ShownClouds = listOf(CloudKind.Dropbox, CloudKind.WebDav)
 
 @Composable
 fun BackupScreen(
@@ -159,7 +163,7 @@ private fun CloudGroup(
     onSignIn: (CloudKind) -> Unit,
     onDisconnect: () -> Unit,
 ) {
-    val clouds = CloudKind.entries.map { kind ->
+    val clouds = ShownClouds.map { kind ->
         val connected = account?.kind == kind
         val configured = isConfigured(kind)
         SettingsItem(
@@ -206,6 +210,14 @@ private fun CloudGroup(
         style = SettingsGroupStyle.Grouped,
         items = clouds + listOfNotNull(disconnect),
     )
+    // dropbox's app is still in development mode, so new sign-ins can stop; someone already connected keeps working
+    if (account?.kind != CloudKind.Dropbox && isConfigured(CloudKind.Dropbox)) {
+        Text(
+            stringResource(R.string.backup_dropbox_notice),
+            style = storageText(13f, FontWeight.Medium, StorageMuted, -0.2f),
+            modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp),
+        )
+    }
 }
 
 /** back up now, with how the last one went or how far this one is, and restore */
@@ -240,7 +252,7 @@ private fun BackupsGroup(
                 onClick = onBackUp,
             ),
             SettingsItem(
-                title = { Text(stringResource(R.string.backup_restore)) },
+                title = { Text(stringResource(R.string.backup_restore_title)) },
                 highlightKey = "Restore a backup",
                 descriptionText = stringResource(R.string.backup_restore_desc),
                 icon = painterResource(R.drawable.restore),

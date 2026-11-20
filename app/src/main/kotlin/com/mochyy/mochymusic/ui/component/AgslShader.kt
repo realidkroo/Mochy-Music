@@ -40,6 +40,12 @@ internal fun Any.setAgslUniform(name: String, first: Float, second: Float, third
     (this as RuntimeShader).setFloatUniform(name, first, second, third, fourth)
 }
 
+// a uniform array: a float4 list of 16 takes 64 numbers, in order
+@RequiresApi(33)
+internal fun Any.setAgslUniformArray(name: String, values: FloatArray) {
+    (this as RuntimeShader).setFloatUniform(name, values)
+}
+
 /** For a `layout(color) uniform half4`: [color] is an sRGB ARGB int, converted for the shader. */
 @RequiresApi(33)
 internal fun Any.setAgslColorUniform(name: String, color: Int) {

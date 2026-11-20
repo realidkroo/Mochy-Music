@@ -16,12 +16,16 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.scrobble.ScrobbleSite
 import com.mochyy.mochymusic.ui.component.SubSettingsScaffold
 import com.mochyy.mochymusic.ui.screens.settings.importsync.YouTubeSyncRoute
+import com.mochyy.mochymusic.ui.screens.settings.integrations.backup.BackupRoute
 import com.mochyy.mochymusic.ui.screens.settings.integrations.discord.DiscordRoute
 
 const val IntegrationsRoute = "integrations_settings"
 
 // the youtube music logo is a red disc, this fills its corners so it sits as a tile like the others
 private val YouTubeMusicRed = Color(0xFFFF0000)
+
+// backup has no brand of its own, so its white cloud sits on a plain blue tile
+private val BackupBlue = Color(0xFF2F7CF6)
 
 @Composable
 fun IntegrationsScreen(navController: NavController) {
@@ -54,6 +58,14 @@ fun IntegrationsScreen(navController: NavController) {
                 icon = R.drawable.provider_youtube_music,
                 iconBackground = YouTubeMusicRed,
                 onClick = { navController.navigate(YouTubeSyncRoute) },
+            )
+            IntegrationRow(
+                name = stringResource(R.string.integration_backup_name),
+                description = stringResource(R.string.integration_backup_desc),
+                icon = R.drawable.backup,
+                iconBackground = BackupBlue,
+                iconPadding = 7.dp,
+                onClick = { navController.navigate(BackupRoute) },
             )
         }
 

@@ -170,6 +170,9 @@ class App : Application(), SingletonImageLoader.Factory {
             com.mochyy.mochymusic.ui.launch.LaunchGate.awaitIntro()
             runCatching { com.mochyy.mochymusic.importer.LocalArtwork.repair(this@App, musicDatabase) }
                 .onFailure { Timber.w(it, "Repairing local covers failed") }
+            // once: the cover every song of an album saved for itself becomes one shared file, and huge ones shrink
+            runCatching { com.mochyy.mochymusic.importer.LocalArtwork.compact(this@App) }
+                .onFailure { Timber.w(it, "Sharing out local covers failed") }
         }
 
         applicationScope.launch(Dispatchers.Default) {

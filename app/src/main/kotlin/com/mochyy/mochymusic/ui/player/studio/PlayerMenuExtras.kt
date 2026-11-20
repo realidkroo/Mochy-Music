@@ -82,6 +82,11 @@ class PlayerMenuExtras internal constructor(
             toast(context.getString(if (downloadState == Download.STATE_COMPLETED) R.string.ps_extras_download_removed else R.string.ps_extras_download_stopped))
             return
         }
+        // an imported file is already here, and downloading it only looked it up online by name
+        if (song.id.startsWith("LOCAL_")) {
+            toast(context.getString(R.string.local_already_on_phone))
+            return
+        }
         // the song has to be in the database for its download to be listed and played from there
         database.transaction { insert(song) }
         val request = DownloadRequest.Builder(song.id, song.id.toUri())

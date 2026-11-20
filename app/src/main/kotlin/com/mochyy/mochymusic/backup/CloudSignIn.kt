@@ -30,7 +30,7 @@ sealed interface CloudLogin {
     data class Failed(val problem: CloudProblem) : CloudLogin
 }
 
-/** signs in to dropbox or onedrive on their own page in the browser, then CloudLoginActivity hands the answer to finish */
+/** signs in to dropbox or onedrive on their own page in the browser, then the login activity hands the answer back here */
 @Singleton
 class CloudSignIn @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -56,7 +56,7 @@ class CloudSignIn @Inject constructor(
         return app.authorizeUri(state, Pkce.challengeOf(verifier))
     }
 
-    /** for CloudLoginActivity, which closes straight away while this carries on */
+    /** for the login activity, which closes straight away while this carries on */
     fun handleRedirect(redirect: Uri) {
         scope.launch { finish(redirect) }
     }

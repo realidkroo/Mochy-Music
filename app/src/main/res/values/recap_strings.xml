@@ -70,6 +70,41 @@
     <string name="rc_stats_hour_night">And you love to listen in the nights exactly around</string>
     <string name="rc_stats_totaling_hours_time">totaling %1$s hours at this time!</string>
 
+    <string name="rc_stats_vs_more">↑ %1$d%% more than %2$s</string>
+    <string name="rc_stats_vs_less">↓ %1$d%% less than %2$s</string>
+    <string name="rc_stats_vs_same">About the same as %1$s</string>
+    <string name="rc_stats_vs_more_so_far">↑ %1$d%% more than %2$s at this point</string>
+    <string name="rc_stats_vs_less_so_far">↓ %1$d%% less than %2$s at this point</string>
+    <string name="rc_stats_vs_same_so_far">About the same as %1$s at this point</string>
+
+    <string name="rc_stats_repeat_title">You couldn\'t stop playing this one</string>
+    <plurals name="rc_stats_repeat_times">
+        <item quantity="one">%1$d time on %2$s</item>
+        <item quantity="other">%1$d times on %2$s</item>
+    </plurals>
+
+    <string name="rc_stats_new_title">You found new music along the way</string>
+    <plurals name="rc_stats_new_songs">
+        <item quantity="one">%1$d new song</item>
+        <item quantity="other">%1$d new songs</item>
+    </plurals>
+    <string name="rc_stats_new_share">%1$d%% of your listening was music you\'d never played before</string>
+    <string name="rc_stats_new_best">Best new find</string>
+
+    <string name="rc_stats_habits_title">Your listening habits</string>
+    <string name="rc_stats_habit_days">Days you listened</string>
+    <string name="rc_stats_habit_days_value">%1$d of %2$d</string>
+    <string name="rc_stats_habit_days_average">About %1$s a day</string>
+    <string name="rc_stats_habit_streak">Longest streak</string>
+    <plurals name="rc_stats_habit_streak_value">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="rc_stats_habit_streak_hint">Days in a row with music</string>
+    <string name="rc_stats_habit_session">Longest sitting</string>
+    <string name="rc_stats_habit_biggest">Biggest day</string>
+    <string name="rc_stats_date_at_time">%1$s at %2$s</string>
+
     <string name="rc_stats_show_by">Show by</string>
     <string name="rc_stats_kind_month">Month</string>
     <string name="rc_stats_kind_year">Year</string>

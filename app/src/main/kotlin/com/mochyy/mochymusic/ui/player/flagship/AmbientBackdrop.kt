@@ -18,13 +18,12 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
 import com.mochyy.mochymusic.ui.component.asAgslPaintShader
 import com.mochyy.mochymusic.ui.component.createAgslShader
-import com.mochyy.mochymusic.ui.component.setAgslColorUniform
 import com.mochyy.mochymusic.ui.component.setAgslUniform
+import com.mochyy.mochymusic.ui.component.setAgslUniformArray
 import kotlinx.coroutines.isActive
 import kotlin.math.PI
 import kotlin.math.cos
@@ -64,13 +63,12 @@ fun AmbientBackdrop(
                     Modifier.drawWithCache {
                         // the same shader every frame, only its numbers change, so drawing allocates nothing
                         val brush = ShaderBrush(shader.asAgslPaintShader())
+                        val grid = FloatArray(GridSide * GridSide * 4)
                         onDrawBehind {
+                            colors.gridInto(grid)
                             shader.setAgslUniform("resolution", size.width, size.height)
                             shader.setAgslUniform("time", step / StepsPerSecond)
-                            shader.setAgslColorUniform("seamLeft", colors.tone(ToneSeamLeft).toArgb())
-                            shader.setAgslColorUniform("seamRight", colors.tone(ToneSeamRight).toArgb())
-                            shader.setAgslColorUniform("deep", colors.tone(ToneDeep).toArgb())
-                            shader.setAgslColorUniform("accent", colors.tone(ToneAccent).toArgb())
+                            shader.setAgslUniformArray("grid", grid)
                             drawRect(brush)
                         }
                     }
@@ -142,40 +140,42 @@ fun rememberAmbientClock(running: Boolean): () -> Float {
     return { time.floatValue }
 }
 
-// four soft colour pools drifting on slow loops, blended by closeness into one smooth field, a touch darker at the bottom
+// the cover's grid of colours spread over the screen, each cell a soft pool in its own place, the whole picture slowly turning and flowing like apple music's backdrop
 private const val AmbientShaderSource = """
 uniform float2 resolution;
 uniform float time;
-layout(color) uniform half4 seamLeft;
-layout(color) uniform half4 seamRight;
-layout(color) uniform half4 deep;
-layout(color) uniform half4 accent;
+uniform float4 grid[16];
 
 const float TAU = 6.2831853;
 
-float pool(float2 p, float2 centre, float spread) {
-    float2 d = p - centre;
-    return exp(-dot(d, d) * spread);
-}
-
 half4 main(float2 fragCoord) {
     float2 uv = fragCoord / resolution;
-    float aspect = resolution.y / max(resolution.x, 1.0);
-    float2 p = float2(uv.x, uv.y * aspect);
-    float w = TAU / 50.0;
-    float t = time;
+    float t = time * TAU / 100.0;
 
-    float2 a = float2(0.22 + 0.16 * sin(t * w + 0.4), (0.58 + 0.07 * cos(t * w * 2.0)) * aspect);
-    float2 b = float2(0.80 + 0.14 * cos(t * w + 1.3), (0.62 + 0.08 * sin(t * w * 2.0 + 0.7)) * aspect);
-    float2 c = float2(0.48 + 0.24 * cos(t * w * 3.0 + 2.1), (0.92 + 0.06 * sin(t * w + 1.9)) * aspect);
-    float2 d = float2(0.62 + 0.22 * sin(t * w * 2.0 + 3.4), (0.78 + 0.10 * cos(t * w * 3.0 + 0.4)) * aspect);
+    // the picture fills the screen and turns a little each way about its middle, breathing in and out
+    float2 c = uv - 0.5;
+    c.x *= resolution.x / max(resolution.y, 1.0);
+    float a = 0.32 * sin(t) + 0.12 * sin(t * 3.0 + 1.1);
+    float s = 1.0 + 0.07 * sin(t * 2.0 + 0.6);
+    c = float2(c.x * cos(a) - c.y * sin(a), c.x * sin(a) + c.y * cos(a)) / s;
 
-    float wa = pool(p, a, 3.2);
-    float wb = pool(p, b, 3.2);
-    float wc = pool(p, c, 2.4);
-    float wd = pool(p, d, 4.0) * 0.8;
-    float sum = wa + wb + wc + wd + 0.0001;
-    float3 col = (float3(seamLeft.rgb) * wa + float3(seamRight.rgb) * wb + float3(deep.rgb) * wc + float3(accent.rgb) * wd) / sum;
+    // a slow liquid warp, so the colours flow past each other instead of sliding as one sheet
+    c += 0.06 * float2(sin(c.y * 4.5 + t * 2.0), cos(c.x * 4.0 - t * 3.0));
+    c += 0.035 * float2(sin((c.x + c.y) * 7.0 - t * 4.0), cos((c.x - c.y) * 6.0 + t * 5.0));
+
+    // grid coordinates, each cell's centre on a whole number
+    float2 g = (c + 0.5) * 4.0 - 0.5;
+    float3 col = float3(0.0);
+    float sum = 0.0001;
+    for (int i = 0; i < 16; i++) {
+        float fi = float(i);
+        float row = floor(fi / 4.0);
+        float2 d = g - float2(fi - row * 4.0, row);
+        float w = exp(-dot(d, d) * 1.25);
+        col += grid[i].rgb * w;
+        sum += w;
+    }
+    col /= sum;
 
     col *= 1.0 - 0.16 * smoothstep(0.6, 1.0, uv.y);
     float grain = fract(sin(dot(fragCoord, float2(12.9898, 78.233))) * 43758.5453);

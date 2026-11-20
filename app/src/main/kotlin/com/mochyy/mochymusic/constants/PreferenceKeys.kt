@@ -931,6 +931,8 @@ val LyricsClickKey = booleanPreferencesKey("lyricsClick")
 val LyricsWaveAnimationKey = booleanPreferencesKey("lyricsWaveAnimation")
 
 val LyricsHighBloomKey = booleanPreferencesKey("lyricsHighBloom")
+// resting lyric lines soft-lit onto the cover background instead of plain grey, on until turned off
+val LyricsSoftLightKey = booleanPreferencesKey("lyricsSoftLight")
 val LyricsScrollKey = booleanPreferencesKey("lyricsScrollKey")
 val LyricsRomanizeJapaneseKey = booleanPreferencesKey("lyricsRomanizeJapanese")
 val LyricsRomanizeKoreanKey = booleanPreferencesKey("lyricsRomanizeKorean")

@@ -3,7 +3,8 @@
 // Stats: everything the play history says about one month or one year. A ruler of months (each
 // tick a day, as tall as that day's listening) picks the period; "Re'cap >" opens the Show by /
 // year / month picker. Cards open into the detail behind them: a line of every day, the top ten,
-// the genre split, the week and the clock. Nothing here is sent anywhere.
+// the genre split, new finds, the week and the clock, with the song on repeat and your habits
+// around them. Nothing here is sent anywhere.
 
 package com.mochyy.mochymusic.ui.screens.recap
 
@@ -25,9 +26,11 @@ import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -37,6 +40,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -238,6 +242,7 @@ fun StatsScreen(navController: NavController) {
                         selected = range,
                         available = available,
                         today = today,
+                        labelStart = PagePadding,
                         onSelect = { p ->
                             year = p.year
                             if (p.kind == StatsRange.Kind.Month) month = p.month
@@ -291,6 +296,9 @@ fun StatsScreen(navController: NavController) {
                     item(key = "genre") { GenreCard(genres, expanded) }
                     s.topArtists.firstOrNull()?.let { top -> item(key = "artist") { ArtistCard(s, top, expanded) } }
                     s.topSongs.firstOrNull()?.let { top -> item(key = "song") { SongCard(s, top, expanded) } }
+                    s.repeat?.let { repeat -> item(key = "repeat") { RepeatCard(repeat) } }
+                    // when everything is new (the very first month) there's nothing to tell apart
+                    if (s.newSongCount in 1 until s.songCount) item(key = "new") { NewFindsCard(s, expanded) }
                     item(key = "often") {
                         Text(
                             stringResource(R.string.rc_stats_often),
@@ -300,6 +308,7 @@ fun StatsScreen(navController: NavController) {
                     }
                     item(key = "weekday") { WeekdayCard(s, expanded) }
                     item(key = "hour") { HourCard(s, expanded) }
+                    s.habits?.let { habits -> item(key = "habits") { HabitsCard(s, habits) } }
                     item(key = "privacy") {
                         Text(
                             stringResource(R.string.rc_stats_privacy),
@@ -413,7 +422,7 @@ fun StatsScreen(navController: NavController) {
     }
 }
 
-private val CardKeys = listOf("total", "genre", "artist", "song", "weekday", "hour")
+private val CardKeys = listOf("total", "genre", "artist", "song", "new", "weekday", "hour")
 
 internal sealed interface GenreState {
     data object Loading : GenreState
@@ -446,7 +455,8 @@ private fun StatsCardBox(
                 .then(if (expandKey != null && expanded != null) Modifier.clickable { expanded[expandKey] = !open } else Modifier)
                 .padding(start = 20.dp, end = 16.dp, top = 18.dp, bottom = 14.dp),
     ) {
-        Box {
+        // full width, or the chevron sat right after short content like "Wednesday" instead of at the edge
+        Box(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(end = if (detail != null) 30.dp else 0.dp)) { content() }
             if (detail != null) {
                 Box(
@@ -554,10 +564,12 @@ private fun TotalCard(
             OdometerText((minutes % 60).toString().padStart(2, '0'), big, progress = roll)
             Text(stringResource(R.string.profile_unit_minute_short), style = unit, modifier = Modifier.padding(bottom = 8.dp))
         }
+        ComparisonLine(s)
         Spacer(Modifier.height(10.dp))
         Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF3A3A3A)))
         Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        // wraps onto a second line; in one row the last fact got squeezed to a sliver under the chevron
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Fact(pluralStringResource(R.plurals.rc_stats_fact_songs, s.songCount, s.songCount))
             Fact(pluralStringResource(R.plurals.rc_stats_fact_artists, s.artistCount, s.artistCount))
             Fact(pluralStringResource(R.plurals.rc_stats_fact_albums, s.albumCount, s.albumCount))
@@ -644,7 +656,11 @@ private fun GenreCard(
                     }
                 }
                 // identity never by colour alone: the top five are named under the ring
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(top = 12.dp),
+                ) {
                     donutSlices(state.shares).take(5).forEachIndexed { i, (_, color) ->
                         val name = state.shares.getOrNull(i)?.name ?: return@forEachIndexed
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -655,7 +671,7 @@ private fun GenreCard(
                                 style = statsText(11f, FontWeight.Medium, StatsInkMuted, 0f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.width(52.dp),
+                                modifier = Modifier.widthIn(max = 140.dp),
                             )
                         }
                     }
@@ -699,12 +715,11 @@ private fun ArtistCard(
             )
             Spacer(Modifier.width(16.dp))
             Column {
-                Text(top.name, style = statsText(24f, tracking = -0.8f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                // never cut: a long name was clipped with nothing to say there was more
+                Text(top.name, style = statsText(24f, tracking = -0.8f))
                 Text(
                     pluralStringResource(R.plurals.rc_stats_artist_summary, top.plays, shortDuration(top.playTimeMs), top.plays, top.name),
                     style = statsText(12f, FontWeight.SemiBold, StatsInkMuted, 0f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -754,8 +769,6 @@ private fun SongCard(
                 Text(
                     stringResource(R.string.rc_stats_song_from, top.title, top.artistName),
                     style = statsText(20f, tracking = -0.6f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     pluralStringResource(R.plurals.rc_stats_song_summary, top.plays, shortDuration(top.playTimeMs), top.plays),
@@ -839,6 +852,167 @@ private fun HourCard(
         )
     }
 }
+
+// how this period compares with the last one, left out when there's nothing fair to compare with
+@Composable
+private fun ComparisonLine(s: ListeningStats) {
+    val previous = s.previousTotalMs?.takeIf { it >= 10 * 60_000L } ?: return
+    val name = s.range.previous().let { if (it.kind == StatsRange.Kind.Month) monthFull(it.month) else "${it.year}" }
+    val percent = ((s.totalMs - previous) * 100 / previous).toInt()
+    val partial = s.previousIsPartial
+    val text =
+        when {
+            percent >= 3 -> stringResource(if (partial) R.string.rc_stats_vs_more_so_far else R.string.rc_stats_vs_more, percent, name)
+            percent <= -3 -> stringResource(if (partial) R.string.rc_stats_vs_less_so_far else R.string.rc_stats_vs_less, -percent, name)
+            else -> stringResource(if (partial) R.string.rc_stats_vs_same_so_far else R.string.rc_stats_vs_same, name)
+        }
+    Text(
+        text,
+        style = statsText(13f, FontWeight.SemiBold, if (percent >= 3) StatsAccent else StatsInkSecondary, 0f),
+        modifier = Modifier.padding(top = 2.dp),
+    )
+}
+
+@Composable
+private fun RepeatCard(repeat: RepeatDay) {
+    StatsCardBox {
+        Text(stringResource(R.string.rc_stats_repeat_title), style = statsText(15f))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp)) {
+            AsyncImage(
+                model = repeat.song.thumbnailUrl?.resize(240, 240),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(64.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF2A2A2A)),
+            )
+            Spacer(Modifier.width(14.dp))
+            Column {
+                Text(repeat.song.title, style = statsText(18f, tracking = -0.5f))
+                Text(repeat.song.artistName, style = statsText(12f, FontWeight.SemiBold, StatsInkMuted, 0f))
+                Text(
+                    pluralStringResource(R.plurals.rc_stats_repeat_times, repeat.plays, repeat.plays, shortDate(repeat.date)),
+                    style = statsText(13f, FontWeight.SemiBold, StatsAccent, 0f),
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NewFindsCard(
+    s: ListeningStats,
+    expanded: MutableMap<String, Boolean>,
+) {
+    val share = if (s.totalMs > 0) (s.newMs * 100 / s.totalMs).toInt() else 0
+    StatsCardBox(
+        expandKey = "new",
+        expanded = expanded,
+        detail = {
+            RankList(
+                rows =
+                    s.newSongs.map { song ->
+                        RankRow(
+                            song.title,
+                            pluralStringResource(R.plurals.rc_stats_song_row, song.plays, song.artistName, song.plays, shortDuration(song.playTimeMs)),
+                            song.plays.toLong(),
+                            song.thumbnailUrl,
+                        )
+                    },
+                circle = false,
+            )
+        },
+    ) {
+        Text(stringResource(R.string.rc_stats_new_title), style = statsText(15f))
+        Text(
+            pluralStringResource(R.plurals.rc_stats_new_songs, s.newSongCount, s.newSongCount),
+            style = statsText(32f, tracking = -1.2f),
+            modifier = Modifier.padding(vertical = 2.dp),
+        )
+        Text(stringResource(R.string.rc_stats_new_share, share), style = statsText(12f, FontWeight.SemiBold, StatsInkSecondary, 0f))
+        s.newSongs.firstOrNull()?.let { best ->
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 14.dp)) {
+                AsyncImage(
+                    model = best.thumbnailUrl?.resize(160, 160),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF2A2A2A)),
+                )
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(stringResource(R.string.rc_stats_new_best), style = statsText(11f, FontWeight.SemiBold, StatsInkMuted, 0f))
+                    Text(stringResource(R.string.rc_stats_song_from, best.title, best.artistName), style = statsText(14f, tracking = -0.2f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HabitsCard(
+    s: ListeningStats,
+    habits: ListeningHabits,
+) {
+    val perDay = s.totalMs / habits.activeDays.coerceAtLeast(1)
+    StatsCardBox {
+        Text(stringResource(R.string.rc_stats_habits_title), style = statsText(15f))
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HabitTile(
+                label = stringResource(R.string.rc_stats_habit_days),
+                value = stringResource(R.string.rc_stats_habit_days_value, habits.activeDays, habits.elapsedDays),
+                hint = stringResource(R.string.rc_stats_habit_days_average, shortDuration(perDay)),
+            )
+            HabitTile(
+                label = stringResource(R.string.rc_stats_habit_streak),
+                value = pluralStringResource(R.plurals.rc_stats_habit_streak_value, habits.longestStreak, habits.longestStreak),
+                hint = stringResource(R.string.rc_stats_habit_streak_hint),
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HabitTile(
+                label = stringResource(R.string.rc_stats_habit_session),
+                value = shortDuration(habits.longestSessionMs),
+                hint =
+                    habits.longestSessionStart?.let {
+                        stringResource(R.string.rc_stats_date_at_time, shortDate(it.toLocalDate()), timeLabel(it.toLocalTime()))
+                    },
+            )
+            HabitTile(
+                label = stringResource(R.string.rc_stats_habit_biggest),
+                value = shortDuration(habits.biggestDayMs),
+                hint = habits.biggestDay?.let(::shortDate),
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.HabitTile(
+    label: String,
+    value: String,
+    hint: String?,
+) {
+    Column(
+        modifier =
+            Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFF1A1A1A))
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Text(label, style = statsText(12f, FontWeight.SemiBold, StatsInkMuted, 0f))
+        Text(value, style = statsText(22f, tracking = -0.8f), modifier = Modifier.padding(vertical = 2.dp))
+        if (hint != null) Text(hint, style = statsText(11f, FontWeight.Medium, StatsInkSecondary, 0f))
+    }
+}
+
+// "wed, nov 19" style, the way the chart's tooltip names a day
+private fun shortDate(date: LocalDate): String =
+    "${date.dayOfWeek.getDisplayName(JavaTextStyle.SHORT, Locale.getDefault())}, ${monthShort(date.monthValue)} ${date.dayOfMonth}"
+
+private fun timeLabel(time: java.time.LocalTime): String =
+    time.format(java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT))
 
 private fun hourLabel(h: Int): String =
     java.time.LocalTime

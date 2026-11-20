@@ -156,12 +156,14 @@ class CloudBackupManager @Inject constructor(
         try {
             val account = accounts.current() ?: return BackupOutcome.Stopped
             if (automatic && withContext(Dispatchers.IO) { lastChangeAt() } < account.lastBackupAt) return BackupOutcome.Skipped
+            // stamped with when packing began, so a song played during a long upload still counts as new next time
+            val packedAt = System.currentTimeMillis()
             _step.value = CloudBackupStep.Packing(0f)
             exporter.exportBackup(zip) { _step.value = CloudBackupStep.Packing(whole(it)) }.getOrThrow()
             val cloud = cloudFor(account)
             _step.value = CloudBackupStep.Uploading(0f)
             cloud.upload(zip, zip.name) { _step.value = CloudBackupStep.Uploading(whole(it)) }
-            accounts.update { it.copy(lastBackupAt = System.currentTimeMillis(), lastBackupBytes = zip.length(), lastProblem = null) }
+            accounts.update { it.copy(lastBackupAt = packedAt, lastBackupBytes = zip.length(), lastProblem = null) }
             trimOld(cloud, keep = context.dataStore.data.first()[CloudBackupKeepKey] ?: CloudBackupSchedule.DefaultKeep)
             _step.value = if (automatic) CloudBackupStep.Idle else CloudBackupStep.BackedUp
             return BackupOutcome.Done

@@ -622,15 +622,10 @@ fun MoodTile(
                 .padding(end = 2.dp)
                 .size(width = 84.dp, height = 76.dp)
 
-                .then(
-                    if (titleWraps) {
-                        Modifier.graphicsLayer {
-                            compositingStrategy = CompositingStrategy.Offscreen
-                        }
-                    } else {
-                        Modifier
-                    }
-                )
+                // read in the layer, not in composition: the title's wrap is only known after layout, and every wrapping tile composed twice
+                .graphicsLayer {
+                    compositingStrategy = if (titleWraps) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                }
                 .drawWithCache {
                     val fade = Brush.horizontalGradient(
                         0.00f to Color.Transparent,

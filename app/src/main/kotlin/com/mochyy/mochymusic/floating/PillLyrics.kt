@@ -4,6 +4,8 @@ package com.mochyy.mochymusic.floating
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -73,6 +75,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.exp
+import kotlin.math.roundToInt
 import kotlin.math.sign
 
 // room between the bubble's edge and the text, where a long line fades out
@@ -87,6 +90,13 @@ private const val PillMotionScale = 0.62f
 // a long line slides along so the sweep stays about this far into the bubble
 private const val SweepKeep = 0.62f
 private const val SlideFollowSec = 0.28f
+
+// a long line with no timed words rests this long at each end of its time and glides to its end in between
+private const val GlideRestMs = 700L
+
+// a title or artist too long for the bubble rests this long, then reads along to its end at this pace, and back
+private const val BrowseRestMs = 2_500L
+private val BrowsePerSecond = 36.dp
 
 // the sweep's soft edge behind its head, as a share of the text size, and how far it reaches ahead
 private const val SweepSoftEm = 0.55f
@@ -284,6 +294,7 @@ private fun PillRows(prepared: PreparedScript, state: PillState, width: Dp, appR
                     row = row,
                     layout = prepared.layouts[index],
                     position = { index - (lead.value + (trail.value - lead.value) * weight) },
+                    current = inLine,
                     live = row.sweeps && !showsDots && inLine,
                     look = look,
                     showsDots = showsDots,
@@ -302,6 +313,7 @@ private fun PillLyricRow(
     row: PillRow,
     layout: TextLayoutResult,
     position: () -> Float,
+    current: Boolean,
     live: Boolean,
     look: RowLook,
     showsDots: Boolean,
@@ -310,14 +322,30 @@ private fun PillLyricRow(
     tint: PillTint,
     state: PillState,
 ) {
-    val slide = remember(row) { mutableFloatStateOf(0f) }
+    val width = layout.size.width
+    val height = layout.size.height
+    // a line too long for the bubble with no timed words to follow slides along by itself, or its end never shows
+    val overflow = (width - geometry.slotWidth).coerceAtLeast(0f)
+    val glides = overflow > 0f && !row.sweeps
+    val slide = remember(row, overflow) {
+        mutableFloatStateOf(if (glides && !row.isInfo) glideAt(row, state.lyricsClock(), overflow) else 0f)
+    }
+    if (glides) {
+        val browsePx = with(LocalDensity.current) { BrowsePerSecond.toPx() }
+        LaunchedEffect(row, overflow, current) {
+            snapshotFlow { state.playing to state.seekTick }.collectLatest { (playing, _) ->
+                when {
+                    !row.isInfo -> glide(row, slide, overflow, state, playing)
+                    current && playing -> browse(slide, overflow, browsePx)
+                }
+            }
+        }
+    }
     val dots = animateFloatAsState(if (showsDots) 1f else 0f, tween(320), label = "dots")
     val lit = animateFloatAsState(dotsLit.coerceAtLeast(0).toFloat(), tween(420), label = "dotsLit")
     // a row that stops waiting eases into its colour instead of flicking
     val waiting = animateFloatAsState(if (look == RowLook.WAITING) 1f else 0f, tween(300), label = "rowWaiting")
     val rtlText = remember(layout) { row.text.isNotEmpty() && layout.isRtlLine(0) }
-    val width = layout.size.width
-    val height = layout.size.height
     val next = animateFloatAsState(
         if (look == RowLook.WAITING && (row.kind == PillRowKind.LEAD || row.kind == PillRowKind.TITLE)) 1f else 0f,
         NextSpring,
@@ -498,6 +526,52 @@ private fun MutableFloatState.follow(target: Float, dt: Float): Boolean {
     }
     floatValue = now + (target - now) * (1f - exp(-dt / SlideFollowSec))
     return true
+}
+
+// the rest at each end of a line's time, shorter for a quick line so it still has room to glide
+private fun glideRest(row: PillRow): Long = minOf(GlideRestMs, (row.endMs - row.startMs) / 6)
+
+// how far a long line with no timed words has slid at positionMs: none while it rests at the start, all of it by the rest at the end
+private fun glideAt(row: PillRow, positionMs: Long, overflow: Float): Float {
+    val rest = glideRest(row)
+    val span = (row.endMs - row.startMs - rest * 2).coerceAtLeast(1L)
+    val through = ((positionMs - row.startMs - rest).toFloat() / span).coerceIn(0f, 1f)
+    return overflow * through * through * (3f - 2f * through)
+}
+
+// keeps a long line where the clock says it should be; it sleeps until its glide starts and stops asking for frames once it's done
+private suspend fun glide(row: PillRow, slide: MutableFloatState, overflow: Float, state: PillState, playing: Boolean) {
+    val from = row.startMs + glideRest(row)
+    val to = row.endMs - glideRest(row)
+    var lastFrame = -1L
+    while (true) {
+        val position = state.lyricsClock()
+        if (playing && position < from && slide.floatValue == glideAt(row, position, overflow)) {
+            delay(((from - position) / state.speed()).toLong().coerceAtLeast(MinStepMs))
+            lastFrame = -1L
+            continue
+        }
+        val moving = withFrameNanos { now ->
+            val dt = if (lastFrame < 0L) 0.016f else ((now - lastFrame) / 1_000_000_000f).coerceIn(0f, 0.064f)
+            lastFrame = now
+            val at = state.lyricsClock()
+            // a seek eases over to the new spot instead of jumping there
+            val settling = slide.follow(glideAt(row, at, overflow), dt)
+            settling || (playing && at in from until to)
+        }
+        if (!moving && (!playing || state.lyricsClock() >= to)) break
+    }
+}
+
+// a title too long for the bubble rests, reads along to its end, rests, and goes back, for as long as the song plays
+private suspend fun browse(slide: MutableFloatState, overflow: Float, pxPerSecond: Float) {
+    val spec = tween<Float>((overflow / pxPerSecond * 1000f).roundToInt().coerceAtLeast(400), easing = FastOutSlowInEasing)
+    while (true) {
+        delay(BrowseRestMs)
+        animate(slide.floatValue, overflow, animationSpec = spec) { value, _ -> slide.floatValue = value }
+        delay(BrowseRestMs)
+        animate(slide.floatValue, 0f, animationSpec = spec) { value, _ -> slide.floatValue = value }
+    }
 }
 
 // the sung colour up to the head, fading into the waiting grey just past it; one gradient for the whole line, made again only when the head moves

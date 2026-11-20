@@ -180,6 +180,8 @@ class CustomEqualizerAudioProcessor : AudioProcessor {
     }
 
     override fun queueEndOfStream() {
+        // media3 calls this again on every pass while it drains between two songs; re-arming the tail each time let the limiter's silent milliseconds out forever, so the next song never started and the old one ran on silent until a seek
+        if (inputEnded) return
         inputEnded = true
         // written on the next (empty) queueInput, once the chain has read what's already out
         tailPending = channels > 0

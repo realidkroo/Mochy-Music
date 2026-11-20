@@ -1,7 +1,7 @@
 // LibraryGenreScreen.kt
 //
-// One genre from the Library's Genres tab, as a playlist: every song on your phone tagged with it,
-// a to z, with Play, shuffle and search.
+// One genre from the Library's Genres tab, as a playlist: every song tagged with it or by an artist
+// of that genre, a to z, with Play, shuffle and search.
 
 package com.mochyy.mochymusic.ui.screens.library
 

@@ -49,7 +49,11 @@ internal const val ToneAccent = 3
 
 // not a colour you see: a grey whose level says how much of the picture under the text is near white
 internal const val ToneGlare = 4
-private const val ToneCount = 5
+
+// the cover cut into a grid, each cell's own colour kept where it sits, so the backdrop has the picture's layout and not just its average
+internal const val GridSide = 4
+internal const val ToneGrid = 5
+private const val ToneCount = ToneGrid + GridSide * GridSide
 
 // a pixel this bright (rec. 709 luma out of 255) is one white text gets lost on
 private const val GlareLuma = 194
@@ -74,6 +78,17 @@ class AmbientColors internal constructor(private val scope: CoroutineScope) {
     private var fade: Job? = null
 
     fun tone(index: Int): Color = shownTones[index]
+
+    // the grid's colours as red, green, blue, alpha for each cell, row by row, ready for the shader
+    fun gridInto(out: FloatArray) {
+        for (cell in 0 until GridSide * GridSide) {
+            val c = shownTones[ToneGrid + cell]
+            out[cell * 4] = c.red
+            out[cell * 4 + 1] = c.green
+            out[cell * 4 + 2] = c.blue
+            out[cell * 4 + 3] = 1f
+        }
+    }
 
     // 0 on dark and mid covers, up to 1 when the picture under the title is mostly white; read it while drawing
     fun glare(): Float = shownTones[ToneGlare].red
@@ -237,13 +252,34 @@ internal fun ambientTones(pixels: IntArray, width: Int, height: Int, insetX: Flo
         return Color(level, level, level)
     }
 
+    val grid = List(GridSide * GridSide) { cell ->
+        val col = cell % GridSide
+        val row = cell / GridSide
+        val x0 = left + (right - left) * col / GridSide
+        val x1 = left + (right - left) * (col + 1) / GridSide
+        val y0 = top + span * row / GridSide
+        val y1 = top + span * (row + 1) / GridSide
+        vividTone(average(x0, maxOf(x1, x0 + 1), y0, maxOf(y1, y0 + 1)))
+    }
+
     return listOf(
         tone(average(left, midX, seamTop, bottom), minLight = 0.14f, maxLight = 0.44f, saturation = 1.05f),
         tone(average(midX, right, seamTop, bottom), minLight = 0.14f, maxLight = 0.44f, saturation = 1.05f),
         tone(average(left, right, top, bottom), minLight = 0.08f, maxLight = 0.26f, saturation = 0.9f),
         tone(average(left, right, top, accentBottom), minLight = 0.16f, maxLight = 0.42f, saturation = 1.25f),
         glare(left, right, seamTop, bottom),
-    )
+    ) + grid
+}
+
+// a grid cell's colour with more life than the picture, the way apple music lifts its backdrop, but never so bright that white text gets lost on it
+private fun vividTone(color: Color): Color {
+    val hsl = FloatArray(3)
+    ColorUtils.colorToHSL(color.toArgb(), hsl)
+    // a grey stays grey, only a real colour gets pushed further
+    val colourful = ((hsl[1] - 0.06f) / 0.2f).coerceIn(0f, 1f)
+    hsl[1] = (hsl[1] * (1f + 0.45f * colourful) + 0.08f * colourful).coerceAtMost(0.9f)
+    hsl[2] = 0.1f + 0.42f * hsl[2]
+    return Color(ColorUtils.HSLToColor(hsl))
 }
 
 // calmer and darker than the picture, so it stays rich without ever fighting the white text over it

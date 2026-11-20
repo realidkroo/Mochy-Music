@@ -5,12 +5,15 @@ package com.mochyy.mochymusic.importer
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.db.MusicDatabase
 import com.mochyy.mochymusic.db.entities.ImportSession
 import com.mochyy.mochymusic.db.entities.ImportSessionSong
 import com.mochyy.mochymusic.models.TransferBatch
 import com.mochyy.mochymusic.models.TransferItem
 import com.mochyy.mochymusic.models.TransferState
+import com.mochyy.mochymusic.ui.component.TopToaster
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -64,8 +67,27 @@ class LocalImportService @Inject constructor(
     /** files chosen in the system file picker, lyrics and pictures picked with them go to their songs. false if an import is already running */
     fun importPicked(uris: List<Uri>): Boolean =
         start(uris.map { Pending(it, title = "", subtitle = null, artworkUrl = null, keepAccess = true) }) {
-            LocalSidecars.pairPicked(context, uris).map { it.toPending(keepAccess = true) }
+            val picked = LocalSidecars.pairPicked(context, uris)
+            notePicked(picked)
+            picked.files.map { it.toPending(keepAccess = true) }
         }
+
+    // a big pick is better as a folder, since android drops the oldest single-file grants past its limit; otherwise says what was left out
+    private fun notePicked(picked: FolderScan) {
+        val held = runCatching { context.contentResolver.persistedUriPermissions.size }.getOrDefault(0)
+        when {
+            picked.files.size >= PickFolderHintAt || held + picked.files.size > GrantLimit * 9 / 10 -> TopToaster.show(
+                text = context.getString(R.string.local_import_pick_folder_hint),
+                iconRes = R.drawable.library_music,
+                durationMs = 6_000L,
+            )
+            picked.unplayable > 0 -> TopToaster.show(
+                text = context.resources.getQuantityString(R.plurals.local_import_skipped_formats, picked.unplayable, picked.unplayable),
+                iconRes = R.drawable.library_music,
+                durationMs = 5_000L,
+            )
+        }
+    }
 
     /** songs found by a storage scan. false if an import is already running */
     fun importDeviceSongs(songs: List<DeviceSong>): Boolean =
@@ -162,4 +184,12 @@ class LocalImportService @Inject constructor(
         lyrics = lyrics,
         cover = cover,
     )
+
+    private companion object {
+        // from this many picked songs on, adding their folder is suggested instead
+        const val PickFolderHintAt = 100
+
+        // single files android keeps read access to for good: 512 from android 11, 128 before
+        val GrantLimit = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) 512 else 128
+    }
 }

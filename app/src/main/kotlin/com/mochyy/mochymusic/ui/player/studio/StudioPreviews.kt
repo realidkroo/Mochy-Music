@@ -247,7 +247,7 @@ internal fun FlagshipPreview(
         if (turntable) {
             // the Turntable's own pills and title row, standing above the card as in its frame
             TurntableControls(
-                isExpandMenuOpen = false,
+                isExpandMenuOpen = { false },
                 onToggleExpandMenu = {},
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

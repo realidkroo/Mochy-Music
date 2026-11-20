@@ -9,7 +9,7 @@ import org.json.JSONObject
 import java.io.File
 import java.time.Instant
 
-/** backups in mochy's app folder on onedrive (Apps/<app name>), the only folder it asked for */
+/** backups in mochy's app folder on onedrive (apps/<app name>), the only folder it asked for */
 internal class OneDriveCloud(private val session: OAuthSession) : BackupCloud {
     // anything past a few mb has to go through an upload session, so every backup does, in pieces
     override suspend fun upload(file: File, name: String, onProgress: (Float) -> Unit) {

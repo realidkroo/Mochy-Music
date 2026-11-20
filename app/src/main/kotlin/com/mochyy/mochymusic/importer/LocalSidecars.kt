@@ -46,14 +46,20 @@ object LocalSidecars {
         }
     }
 
-    // the files someone picked, sorted into songs with their lyrics and pictures
-    fun pairPicked(context: Context, uris: List<Uri>): List<LocalFile> {
-        val named = uris.map { uri ->
+    // the files someone picked, sorted into songs with their lyrics and pictures; audio the player can't open is left out and counted
+    fun pairPicked(context: Context, uris: List<Uri>): FolderScan {
+        var unplayable = 0
+        val named = uris.mapNotNull { uri ->
             val name = LocalFileNames.of(context, uri).orEmpty()
             val mime = runCatching { context.contentResolver.getType(uri) }.getOrNull()
-            NamedFile(uri, name, LocalFileNames.kind(name, mime))
+            val kind = LocalFileNames.kind(name, mime)
+            if (kind == Kind.Audio && !LocalFileNames.canPlay(name, mime)) {
+                unplayable++
+                return@mapNotNull null
+            }
+            NamedFile(uri, name, kind)
         }
-        return pair(named, picked = true)
+        return FolderScan(pair(named, picked = true), unplayable = unplayable)
     }
 
     // the file's own lyrics against the ones beside it: whichever is timed closer wins, the file beside it on a tie since someone put it there

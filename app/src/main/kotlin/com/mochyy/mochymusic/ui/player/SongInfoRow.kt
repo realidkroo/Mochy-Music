@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.BlendMode
@@ -47,9 +48,11 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.LocalPlayerConnection
@@ -68,9 +71,10 @@ import com.mochyy.mochymusic.ui.component.RemoteFocus
 @Composable
 fun SongInfoRow(
     modifier: Modifier = Modifier,
-    isExpandMenuOpen: Boolean = false,
-    /** Hides this row's chevron while the lyrics page's chevron (the same control, moved) is up. */
-    hideChevron: Boolean = false,
+    // read by the chevron alone, so opening its menu doesn't recompose this row or the player around it
+    isExpandMenuOpen: () -> Boolean = { false },
+    // hides this row's chevron while the lyrics page's (the same control, moved) is up; read while drawing
+    hideChevron: () -> Boolean = { false },
     onToggleExpandMenu: () -> Unit = {},
     onTitlePositioned: (androidx.compose.ui.geometry.Rect) -> Unit = {},
     onChevronPositioned: (androidx.compose.ui.geometry.Rect) -> Unit = {},
@@ -96,8 +100,8 @@ fun SongInfoRow(
      * opens, drawn exactly like them, so this hides them the moment it does. Read while drawing.
      */
     infoAlpha: () -> Float = { 1f },
-    /** How much of the format badge shows; it has nowhere to go in the header, so it fades. */
-    badgeAlpha: () -> Float = { 1f },
+    // how far the format badge has tucked into the title's end, 0 to 1; it has nowhere to go in the header, so it slides away as a page opens
+    badgeTuck: () -> Float = { 0f },
     /** Where the side button goes as a page opens (into the page's button column, or behind the chevron). */
     sideLayer: (androidx.compose.ui.graphics.GraphicsLayerScope.() -> Unit)? = null,
     onSidePositioned: (androidx.compose.ui.geometry.Rect) -> Unit = {},
@@ -177,7 +181,7 @@ fun SongInfoRow(
                         showFormatBadge = showFormatBadge,
                         showSampleRate = showSampleRate,
                         infoAlpha = infoAlpha,
-                        badgeAlpha = badgeAlpha,
+                        badgeTuck = badgeTuck,
                         onBadgeClick = onStreamInfoClick,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -191,7 +195,7 @@ fun SongInfoRow(
                                 showFormatBadge = showFormatBadge,
                                 showSampleRate = showSampleRate,
                                 infoAlpha = infoAlpha,
-                                badgeAlpha = badgeAlpha,
+                                badgeTuck = badgeTuck,
                                 onBadgeClick = onStreamInfoClick,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -233,47 +237,58 @@ fun SongInfoRow(
                     modifier = sidePlaced,
                 )
             }
-            val arrowRotation by animateFloatAsState(
-                targetValue = if (isExpandMenuOpen) 180f else 0f, 
-                label = "arrowRot",
-                animationSpec = spring(dampingRatio = 0.55f, stiffness = 380f)
-            )
-            val arrowScale by animateFloatAsState(
-                targetValue = if (isExpandMenuOpen) 0.86f else 1f, 
-                label = "arrowScale",
-                animationSpec = spring(dampingRatio = 0.55f, stiffness = 380f)
-            )
-            val chevronBgColor by animateColorAsState(
-                targetValue = if (isExpandMenuOpen) Color.White.copy(alpha = 0.32f) else Color.White.copy(alpha = 0.15f),
-                label = "chevronBgColor",
-                animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
-            )
-            val chevronTint by animateColorAsState(
-                targetValue = if (isExpandMenuOpen) Color.White else Color.White.copy(alpha = 0.90f),
-                label = "chevronTint",
-                animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
-            )
-            PressScaleActionButton(
-                icon = R.drawable.expand_less,
-                tint = chevronTint,
-                containerColor = chevronBgColor,
+            RowChevron(
+                open = isExpandMenuOpen,
+                hidden = hideChevron,
                 onClick = onToggleExpandMenu,
-                hasShadow = false,
                 modifier = Modifier
                     .onGloballyPositioned { coords ->
                         onChevronPositioned(coords.boundsInRoot())
                         onChevronPlaced?.invoke(coords)
                     }
-                    .then(chevronModifier)
-                    .graphicsLayer {
-                        rotationZ = arrowRotation
-                        scaleX = arrowScale
-                        scaleY = arrowScale
-                        alpha = if (isExpandMenuOpen || hideChevron) 0f else 1f
-                    }
+                    .then(chevronModifier),
             )
         }
     }
+}
+
+// the chevron on its own, so its menu opening and its colour fade recompose this button and nothing around it
+@Composable
+private fun RowChevron(open: () -> Boolean, hidden: () -> Boolean, onClick: () -> Unit, modifier: Modifier) {
+    val isOpen = open()
+    val arrowRotation by animateFloatAsState(
+        targetValue = if (isOpen) 180f else 0f,
+        label = "arrowRot",
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 380f)
+    )
+    val arrowScale by animateFloatAsState(
+        targetValue = if (isOpen) 0.86f else 1f,
+        label = "arrowScale",
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 380f)
+    )
+    val chevronBgColor by animateColorAsState(
+        targetValue = if (isOpen) Color.White.copy(alpha = 0.32f) else Color.White.copy(alpha = 0.15f),
+        label = "chevronBgColor",
+        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
+    )
+    val chevronTint by animateColorAsState(
+        targetValue = if (isOpen) Color.White else Color.White.copy(alpha = 0.90f),
+        label = "chevronTint",
+        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
+    )
+    PressScaleActionButton(
+        icon = R.drawable.expand_less,
+        tint = chevronTint,
+        containerColor = chevronBgColor,
+        onClick = onClick,
+        hasShadow = false,
+        modifier = modifier.graphicsLayer {
+            rotationZ = arrowRotation
+            scaleX = arrowScale
+            scaleY = arrowScale
+            alpha = if (isOpen || hidden()) 0f else 1f
+        }
+    )
 }
 
 /** One song's title, format badge and artist. */
@@ -285,7 +300,7 @@ private fun SongLines(
     showFormatBadge: Boolean,
     showSampleRate: Boolean,
     infoAlpha: () -> Float,
-    badgeAlpha: () -> Float,
+    badgeTuck: () -> Float,
     onBadgeClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
@@ -319,13 +334,24 @@ private fun SongLines(
                     .weight(1f, fill = false)
                     .graphicsLayer { alpha = infoAlpha() },
             )
+            // toward the title's end, which is the right side on an rtl title
+            val tuckSide = if (LocalLayoutDirection.current == LayoutDirection.Rtl) 1f else -1f
             AnimatedVisibility(
                 visible = badge != null,
-                modifier = Modifier.graphicsLayer { alpha = badgeAlpha() },
+                // cut at the title's end, so the badge slides into it and disappears instead of drifting over the words
+                modifier = Modifier.clipToBounds(),
                 enter = fadeIn(tween(220)) + expandHorizontally(tween(280, easing = FastOutSlowInEasing), expandFrom = Alignment.Start),
                 exit = fadeOut(tween(160)) + shrinkHorizontally(tween(240, easing = FastOutSlowInEasing), shrinkTowards = Alignment.Start),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.graphicsLayer {
+                        val tuck = badgeTuck()
+                        translationX = tuckSide * size.width * tuck
+                        // a little fade near the end, so its last sliver doesn't blink out at the edge
+                        alpha = 1f - tuck * tuck
+                    },
+                ) {
                     Spacer(Modifier.width(8.dp))
                     StreamFormatBadge(
                         text = badge ?: lastBadge[0].orEmpty(),

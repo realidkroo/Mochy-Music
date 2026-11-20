@@ -1431,7 +1431,8 @@ fun PlaylistTrackRow(
     liked: Boolean? = null,
     onLikeClick: (() -> Unit)? = null,
 ) {
-    val band by animateFloatAsState(if (selected) 1f else 0f, tween(180), label = "selectedBand")
+    // starts only when picking begins, so the rows of a long playlist mount without a coroutine each
+    val band by com.mochyy.mochymusic.ui.utils.animateFloatOnChange(if (selected) 1f else 0f, tween(180))
     // Keep album rows as compact as the other tracks while giving the heart a 48dp tap target.
     val verticalPadding = if (trailing == null && liked != null && onLikeClick != null) 5.dp else 9.dp
     Row(
@@ -1467,12 +1468,11 @@ fun PlaylistTrackRow(
                 .weight(1f)
                 .padding(horizontal = 11.dp)
         ) {
-            Text(
+            com.mochyy.mochymusic.ui.component.TitleWithMarks(
                 text = title,
+                songId = songId,
                 style = TrackTitleStyle,
                 color = Color.White.copy(alpha = if (isActive) 1f else 0.94f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = subtitle,
@@ -1482,7 +1482,6 @@ fun PlaylistTrackRow(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        com.mochyy.mochymusic.ui.component.OnDeviceMarks(songId, modifier = Modifier.padding(end = 2.dp))
         if (trailing == null && liked != null && onLikeClick != null) {
             Box(
                 contentAlignment = Alignment.Center,

@@ -120,7 +120,7 @@ private fun EndLabels(start: String, end: String) {
     }
 }
 
-// the biggest whole unit the step fits, so 4320 minutes reads "Every 3 days"
+// the biggest whole unit the step fits, so 4320 minutes reads as every 3 days
 @Composable
 private fun everyLabel(minutes: Int): String = when {
     minutes % MinutesInWeek == 0 -> (minutes / MinutesInWeek).let { pluralStringResource(R.plurals.backup_every_weeks, it, it) }

@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.mochyy.mochymusic.lyrics.LyricsUtils
 import java.util.concurrent.ConcurrentHashMap
 
-// bold is a little wider than semibold, so a long resting line breaks where its bold self will and doesn't gain or lose a row when it lights up
+// the sung weight is a little wider than the resting one, so a long resting line breaks where its sung self will and doesn't gain or lose a row when it lights up
 @Composable
 internal fun rememberSteadyWrap(text: String, boldStyle: TextStyle): SteadyWrap {
     val measurer = rememberTextMeasurer(cacheSize = 1)

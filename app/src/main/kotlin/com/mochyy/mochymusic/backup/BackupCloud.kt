@@ -36,7 +36,7 @@ enum class CloudProblem { Offline, SignedOut, WrongLogin, BadAddress, NotFound, 
 
 class CloudException(val problem: CloudProblem, cause: Throwable? = null) : Exception(problem.name, cause)
 
-/** how backups are named: mochy-backup-<phone>-<yyyyMMdd-HHmmss>.zip, so each phone keeps and trims only its own */
+/** how backups are named: mochy-backup-<phone>-<date>-<time>.zip, so each phone keeps and trims only its own */
 object BackupNames {
     private const val Prefix = "mochy-backup-"
     private const val Suffix = ".zip"

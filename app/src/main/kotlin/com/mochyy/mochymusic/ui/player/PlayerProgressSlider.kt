@@ -136,7 +136,8 @@ fun PlayerProgressSlider(
     }
     sliderState.onValueChangeFinished = {
         sliderPosition?.let { target ->
-            playerConnection.player.seekTo(target)
+            // through the connection, so a fade still holding the volume down lets go, like a seek from the lock screen or the car
+            playerConnection.seekTo(target)
             pendingSeek = target
         }
         sliderPosition = null

@@ -124,8 +124,9 @@ private class BandPlan {
         val ks = IntArray(MaxBands)
         count = 1
         starts[0] = 0f
-        ks[0] = glassDownscale(0f, low)
-        for (step in StepRadii) {
+        // low draws the whole ramp at the resolution its strongest end needs: one capture, and the soft start sits under the mask's fade
+        ks[0] = glassDownscale(if (low) radius else 0f, low)
+        if (!low) for (step in StepRadii) {
             if (count == MaxBands || step >= radius) break
             val k = glassDownscale(step, low)
             if (k == ks[count - 1]) continue

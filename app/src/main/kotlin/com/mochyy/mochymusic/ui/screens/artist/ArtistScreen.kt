@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -61,6 +62,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -264,6 +266,17 @@ fun ArtistScreen(
     val obscured = LocalAppContentObscured.current
     val edgeBlur = rememberCoverBlurAvailable()
 
+    // with no apple still and no video playing over it, the banner is the very photo the circle shows, so the circle would only repeat it
+    val bannerLook by viewModel.bannerLook.collectAsState()
+    val avatarRepeatsBanner = bannerLook?.let { look -> !look.hasStill && (!look.hasMotion || !showBackgroundVideo) } == true
+    // a page opened again already knows, so the circle starts gone instead of fading out
+    val avatarAlpha = animateFloatAsState(
+        targetValue = if (avatarRepeatsBanner) 0f else 1f,
+        animationSpec = tween(300),
+        label = "artistAvatar",
+    )
+    val avatarGone by remember { derivedStateOf { avatarAlpha.value <= 0f } }
+
     val liked = libraryArtist?.artist?.bookmarkedAt != null
 
     fun playTopSongs() {
@@ -364,7 +377,15 @@ fun ArtistScreen(
                                 .padding(top = if (landscape) 0.dp else bannerHeight * ArtistAvatarAt)
                                 .padding(start = PlaylistInset - 3.dp, end = PlaylistInset)
                         ) {
-                            ArtistAvatar(url = header?.avatarUrl ?: photo?.resize(544, 544))
+                            // its room stays, so the name and the list don't jump when the circle leaves
+                            if (avatarGone) {
+                                Spacer(Modifier.height(ArtistAvatarSize))
+                            } else {
+                                ArtistAvatar(
+                                    url = header?.avatarUrl ?: photo?.resize(544, 544),
+                                    modifier = Modifier.graphicsLayer { alpha = avatarAlpha.value },
+                                )
+                            }
                             Spacer(Modifier.height(14.dp))
                             ArtistName(name = name, logoUrl = header?.logoUrl, logoAspect = header?.logoAspect)
                             val stats = artistStats(

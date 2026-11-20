@@ -2,6 +2,11 @@
 
 package com.mochyy.mochymusic.ui.screens.settings.modules
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -183,18 +188,41 @@ internal fun StatusDot(color: Color, size: Dp = 10.dp, modifier: Modifier = Modi
     Box(modifier.size(size).clip(CircleShape).background(color))
 }
 
-/** a section's big grey title, the mock's "Looks Module", with an optional small line under it */
+/** a section's big grey title, the mock's "Looks Module", with an optional small line under it and a done pill on the right while its list is being sorted */
 @Composable
-internal fun ModuleSectionTitle(title: String, subtitle: String? = null) {
+internal fun ModuleSectionTitle(title: String, subtitle: String? = null, showDone: Boolean = false, onDone: () -> Unit = {}) {
     Column(Modifier.padding(start = 2.dp, bottom = 14.dp)) {
-        Text(
-            title, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 24.sp,
-            letterSpacing = (-0.6).sp, color = Color(0xFFB4B4B8),
-        )
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                title, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 24.sp,
+                letterSpacing = (-0.6).sp, color = Color(0xFFB4B4B8), modifier = Modifier.weight(1f),
+            )
+            AnimatedVisibility(
+                showDone,
+                enter = fadeIn() + scaleIn(initialScale = 0.85f),
+                exit = fadeOut() + scaleOut(targetScale = 0.85f),
+            ) {
+                DonePill(onDone)
+            }
+        }
         subtitle?.let {
             Text(it, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = LabColors.Secondary)
         }
     }
+}
+
+// puts the lines away again so the cards get their full width back
+@Composable
+private fun DonePill(onClick: () -> Unit) {
+    Text(
+        stringResource(R.string.done), fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 13.sp,
+        color = Color.Black, maxLines = 1,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(Color.White)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 6.dp),
+    )
 }
 
 /** an empty slot drawn in dashes with a square plus in it: there's room for a module here */

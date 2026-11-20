@@ -16,6 +16,13 @@ object LocalFileNames {
 
     private val AudioExtensions = setOf("mp3", "m4a", "aac", "flac", "ogg", "opus", "wav", "wma", "alac", "aiff", "aif", "ape", "mka", "webm", "oga", "wv", "dsf", "dff", "amr", "3gp")
 
+    // audio the player has no reader for: these came in fine, then never played
+    private val UnplayableExtensions = setOf("wma", "aiff", "aif", "ape", "wv", "dsf", "dff")
+    private val UnplayableMimeTypes = setOf(
+        "audio/x-ms-wma", "audio/aiff", "audio/x-aiff", "audio/ape", "audio/x-ape", "audio/x-monkeys-audio",
+        "audio/wavpack", "audio/x-wavpack", "audio/dsf", "audio/x-dsf", "audio/dff", "audio/x-dff", "audio/x-dsd",
+    )
+
     // every lyrics file LyricsFileReader understands, from plain lrc to kugou's krc
     private val LyricsExtensions = setOf("lrc", "elrc", "lrcx", "ttml", "xml", "srt", "vtt", "ass", "ssa", "txt", "yrc", "qrc", "krc")
 
@@ -37,6 +44,12 @@ object LocalFileNames {
             extension in ImageExtensions || mime?.startsWith("image/") == true -> Kind.Image
             else -> Kind.Other
         }
+    }
+
+    // false for wma, aiff, ape, wavpack and dsd, which the player can't open, so they're left out of an import instead of failing on every play
+    fun canPlay(name: String, mime: String? = null): Boolean {
+        if (name.substringAfterLast('.', "").lowercase() in UnplayableExtensions) return false
+        return mime?.lowercase() !in UnplayableMimeTypes
     }
 
     // "night drive.mp3" for any file mochy can open; null when nothing better than an id is known

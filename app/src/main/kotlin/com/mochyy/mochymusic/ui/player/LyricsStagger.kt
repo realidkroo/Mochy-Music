@@ -33,6 +33,11 @@ internal class LyricsStagger(rowCount: Int) {
         return if (row in lags.indices) lags[row] else 0f
     }
 
+    // read in a draw that has to follow the rows while they trail
+    fun observe() {
+        version.intValue
+    }
+
     // the list just scrolled by px and this row holds back by that much
     fun holdBack(row: Int, px: Float) {
         if (row !in lags.indices) return

@@ -460,7 +460,8 @@ fun LocalPlaylistScreen(
                                 }
                             }
                             else -> {
-                                songs.forEach { song ->
+                                // imported files are already on the phone, with nothing online to download
+                                songs.filterNot { it.song.song.isLocal }.forEach { song ->
                                     val downloadRequest = DownloadRequest
                                         .Builder(song.song.id, song.song.id.toUri())
                                         .setCustomCacheKey(song.song.id)

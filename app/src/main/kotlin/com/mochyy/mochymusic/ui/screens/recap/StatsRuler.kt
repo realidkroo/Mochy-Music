@@ -44,6 +44,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.R
@@ -89,6 +90,7 @@ internal fun StatsRuler(
     available: Set<StatsRange>,
     today: LocalDate,
     onSelect: (StatsRange) -> Unit,
+    labelStart: Dp,
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
@@ -211,13 +213,14 @@ internal fun StatsRuler(
                 )
             }
 
-            // its name, centred over its first tick; the one under the highlight grows to full size
+            // its name, centred over its first tick; the chosen one grows and, at rest, lines up with the page title
             val near = (1f - abs(i - p)).coerceIn(0f, 1f)
             val layout = labels[i]
             val k = lerpF(SmallLabelScale, 1f, near)
             val w = layout.size.width * k
             val h = layout.size.height * k
-            val left = max(x0 - w / 2f, 6.dp.toPx())
+            val aligned = x0 - (RestAnchor.toPx() - labelStart.toPx())
+            val left = max(lerpF(x0 - w / 2f, aligned, near * (1f - lift.value)), 6.dp.toPx())
             val color = if (open) lerp(StatsInkMuted, StatsInk, near) else lerp(GreyLabel, GreyLabelLit, near)
             val alpha = max(edge(x0), near)
             if (alpha > 0.01f) {

@@ -142,6 +142,9 @@ constructor(
         ) { dataSpec ->
             val mediaId = dataSpec.key ?: error("No media id")
 
+            // an imported file has no online copy: looking it up by name downloaded some other recording under its id
+            if (mediaId.startsWith("LOCAL_")) throw java.io.IOException("$mediaId is a file on this phone, there's nothing to download")
+
             // a tv copying a song its linked phone already has takes the phone's file, the very same song and much quicker
             com.mochyy.mochymusic.link.PhoneFiles.streamUrl(mediaId)?.let { return@Factory dataSpec.withUri(it.toUri()) }
 

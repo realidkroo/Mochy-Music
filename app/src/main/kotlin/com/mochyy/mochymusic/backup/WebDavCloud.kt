@@ -15,7 +15,7 @@ import java.io.File
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-/** backups in a "Mochy Backups" folder on any webdav server: nextcloud, owncloud, pcloud, koofr, yandex disk, a nas at home */
+/** backups in a mochy backups folder on any webdav server: nextcloud, owncloud, pcloud, koofr, yandex disk, a nas at home */
 internal class WebDavCloud(account: CloudAccount) : BackupCloud {
     private val folder: HttpUrl = folderOf(requireNotNull(addressOf(account.serverUrl)) { "saved webdav address doesn't parse" })
     private val login = Credentials.basic(account.username, account.password)

@@ -45,6 +45,7 @@ import com.mochyy.mochymusic.db.entities.PlaylistEntity
 import com.mochyy.mochymusic.db.entities.Song
 import com.mochyy.mochymusic.extensions.toMediaItem
 import com.mochyy.mochymusic.extensions.toggleRepeatMode
+import com.mochyy.mochymusic.importer.LocalArtwork
 import com.mochyy.mochymusic.models.toMediaMetadata
 import com.mochyy.mochymusic.playback.voice.VoicePicker
 import com.mochyy.mochymusic.playback.voice.VoiceRequest
@@ -256,7 +257,7 @@ constructor(
                                 album.artists.joinToString {
                                     it.name
                                 },
-                                album.album.thumbnailUrl?.toUri(),
+                                LocalArtwork.shareableUri(album.album.thumbnailUrl),
                                 MediaMetadata.MEDIA_TYPE_ALBUM,
                                 singleItemStyle = MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM,
                             )
@@ -844,7 +845,7 @@ constructor(
                             "${MusicService.ALBUM}/${album.id}",
                             album.album.title,
                             album.artists.joinToString { it.name },
-                            album.album.thumbnailUrl?.toUri(),
+                            LocalArtwork.shareableUri(album.album.thumbnailUrl),
                             MediaMetadata.MEDIA_TYPE_ALBUM,
                             singleItemStyle = MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM,
                         )
@@ -1031,7 +1032,8 @@ constructor(
                     .setTitle(song.title)
                     .setSubtitle(artists.joinToString { it.name })
                     .setArtist(artists.joinToString { it.name })
-                    .setArtworkUri(song.thumbnailUrl?.toUri())
+                    // a local cover goes out through the cover provider: the car can't open a file inside mochy's own folder
+                    .setArtworkUri(LocalArtwork.shareableUri(song.thumbnailUrl))
                     .setIsPlayable(isPlayable)
                     .setIsBrowsable(isBrowsable)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)

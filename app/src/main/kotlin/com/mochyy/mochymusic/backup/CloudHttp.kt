@@ -47,7 +47,7 @@ internal object CloudHttp {
     fun fail(code: Int): Nothing = throw CloudException(problemOf(code))
 }
 
-/** a piece of a file as an upload body, telling onSent how far into the whole file it has got */
+/** a piece of a file as an upload body, saying how far into the whole file it has got as it goes */
 internal class FileSliceBody(
     private val file: File,
     private val offset: Long,

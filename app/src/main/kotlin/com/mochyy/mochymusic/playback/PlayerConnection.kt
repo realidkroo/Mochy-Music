@@ -762,7 +762,7 @@ class PlayerConnection(
                 if (songEntity.song.isLocal &&
                     (thumbnailUrl == null || com.mochyy.mochymusic.importer.LocalArtwork.needsRepair(context, thumbnailUrl))
                 ) {
-                    val newThumbnailUrl = com.mochyy.mochymusic.importer.LocalArtwork.save(context, mediaItem.mediaId, artworkData)
+                    val newThumbnailUrl = com.mochyy.mochymusic.importer.LocalArtwork.save(context, artworkData)
                         ?: return@launch
                     database.query {
                         upsert(songEntity.song.copy(thumbnailUrl = newThumbnailUrl))

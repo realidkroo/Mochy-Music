@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Songs imported from the phone -->
+    <string name="local_already_on_phone">This song is already on your phone</string>
+
+    <!-- Why a song imported from the phone couldn't play -->
+    <string name="local_error_file_gone">This song\'s file isn\'t on your phone any more. It may have been moved or deleted.</string>
+    <string name="local_error_access_lost">Mochy can\'t open this file any more. Add its folder again from Library to bring it back.</string>
+    <string name="local_error_permission">Mochy needs permission to read your music to play this song</string>
+    <string name="local_error_format">Mochy can\'t play this kind of file yet</string>
+    <string name="local_error_damaged">This file looks damaged, so it can\'t be played</string>
+
+    <!-- Local import -->
+    <plurals name="local_import_skipped_formats">
+        <item quantity="one">Skipped %1$d file Mochy can\'t play yet (WMA, AIFF, APE, WavPack or DSD)</item>
+        <item quantity="other">Skipped %1$d files Mochy can\'t play yet (WMA, AIFF, APE, WavPack or DSD)</item>
+    </plurals>
+    <string name="local_import_folder_cap">That folder has more than %1$d songs, so only the first %1$d came in. Add its folders one at a time for the rest.</string>
+    <string name="local_import_pick_folder_hint">For this many songs, add the folder instead. Android only keeps access to about 500 single files, then the oldest stop playing.</string>
+    <plurals name="local_missing_files">
+        <item quantity="one">%1$d song\'s file is gone from your phone</item>
+        <item quantity="other">%1$d songs\' files are gone from your phone</item>
+    </plurals>
+    <string name="local_missing_remove">Remove</string>
+</resources>

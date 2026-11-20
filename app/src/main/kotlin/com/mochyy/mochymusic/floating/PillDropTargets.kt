@@ -107,9 +107,12 @@ internal class PillDropTargets(private val context: Context, private val coverPx
         }
     }
 
-    // they drop away and the fade goes with them
-    fun hide() {
-        if (view.visibility != View.VISIBLE) return
+    // they drop away and the fade goes with them; then runs once they're gone
+    fun hide(then: (() -> Unit)? = null) {
+        if (view.visibility != View.VISIBLE) {
+            then?.invoke()
+            return
+        }
         targets.forEach { target ->
             target.stop()
             target.view.animate()
@@ -120,7 +123,10 @@ internal class PillDropTargets(private val context: Context, private val coverPx
                 .setInterpolator(AccelerateInterpolator())
                 .start()
         }
-        view.animate().alpha(0f).setDuration(200L).withEndAction { view.visibility = View.GONE }.start()
+        view.animate().alpha(0f).setDuration(200L).withEndAction {
+            view.visibility = View.GONE
+            then?.invoke()
+        }.start()
     }
 
     // gone at once, before the window shrinks back around the pill

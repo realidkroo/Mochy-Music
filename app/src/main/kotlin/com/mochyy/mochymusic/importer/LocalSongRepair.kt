@@ -31,7 +31,7 @@ object LocalSongRepair {
     // when the library opens: link titles are fixed every time, and once per FolderPass the saved folders are read so songs already in get what sits beside them
     suspend fun repairOnOpen(context: Context, database: MusicDatabase): Int {
         val due = (context.dataStore.data.first()[FolderPassKey] ?: 0) < FolderPass
-        val beside = if (due) withContext(Dispatchers.IO) { LocalFolders.scanSaved(context) } else emptyList()
+        val beside = if (due) withContext(Dispatchers.IO) { LocalFolders.scanSaved(context).files } else emptyList()
         val fixed = repair(context, database, beside)
         if (due) context.dataStore.edit { it[FolderPassKey] = FolderPass }
         return fixed
@@ -66,17 +66,28 @@ object LocalSongRepair {
         val artist = tags?.artist?.takeIf { name -> name != UnknownLocalArtist && song.artists.all { it.name == UnknownLocalArtist } }
         val cover = beside?.cover?.takeIf { song.song.thumbnailUrl == null }
             ?.let { LocalSidecars.readCover(context, it) }
-            ?.let { LocalArtwork.save(context, song.id, it) }
+            ?.let { LocalArtwork.save(context, it) }
         val lyrics = beside?.lyrics?.takeIf { hasNoLyrics(database, song.id) }?.let { LocalSidecars.readLyrics(context, it) }
-        if (title == null && artist == null && cover == null && lyrics == null) return false
+        // a tag like "A; B" that came in as one artist before tags were split gets its artists apart
+        val combined = song.artists.singleOrNull()?.takeIf { artist == null && it.isLocal }
+        val artists = when {
+            artist != null -> LocalArtistNames.split(artist, null) { database.artistByName(it) != null }
+            combined != null -> LocalArtistNames.split(combined.name, null) { database.artistByName(it) != null }.takeIf { it.size > 1 }
+            else -> null
+        }
+        if (title == null && artists == null && cover == null && lyrics == null) return false
 
         database.withTransaction {
             update(song.song.copy(title = title ?: song.song.title, thumbnailUrl = cover ?: song.song.thumbnailUrl))
-            if (artist != null) {
+            if (artists != null) {
                 songArtistMap(song.id).forEach { delete(it) }
-                val artistId = artistByName(artist)?.id
-                    ?: ArtistEntity.generateArtistId().also { insert(ArtistEntity(id = it, name = artist, isLocal = true)) }
-                insert(SongArtistMap(songId = song.id, artistId = artistId, position = 0))
+                artists.forEachIndexed { position, name ->
+                    val artistId = artistByName(name)?.id
+                        ?: ArtistEntity.generateArtistId().also { insert(ArtistEntity(id = it, name = name, isLocal = true)) }
+                    insert(SongArtistMap(songId = song.id, artistId = artistId, position = position))
+                }
+                // the old one (a joined name, or Unknown Artist) only goes once no other song or album names it
+                song.artists.filter { it.isLocal && artistUses(it.id) == 0 }.forEach { delete(it) }
             }
             if (lyrics != null) upsert(LyricsEntity(id = song.id, lyrics = lyrics, provider = EmbeddedLyrics.Provider))
         }

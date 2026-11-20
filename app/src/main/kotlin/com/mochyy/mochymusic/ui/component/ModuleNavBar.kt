@@ -345,10 +345,3 @@ internal fun SkinColor.onChrome(accent: Color, values: Map<String, String>): Col
 // the tallest a bar can be and still fit the room mochy keeps for it
 private val MaxBarHeight: Dp = 64.dp
 private const val UnlitAlpha = 0.7f
-
-/** whether the module page on screen is one of the look's bar tabs, so the bar stays up on it like on mochy's own tabs */
-internal fun isModuleBarTab(page: String?): Boolean {
-    page ?: return false
-    val active = com.mochyy.mochymusic.modules.skin.ActiveSkin.bar ?: return false
-    return active.bar.tabs.any { tab -> (tab.target as? BarTarget.Page)?.let { "${active.skin.moduleId}/${it.id}" == page } == true }
-}

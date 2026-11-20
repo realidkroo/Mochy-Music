@@ -438,8 +438,6 @@ private fun TvControlStrip(
             TvPillButton(stringResource(R.string.playlists), onClick = { onOpen("${TvRoutes.Grid}/playlists") }, icon = R.drawable.queue_music)
             Spacer(Modifier.width(8.dp))
             TvPillButton(stringResource(R.string.tv_song_info), onClick = { onInfo(TvInfoStart.Song) }, icon = R.drawable.info)
-            Spacer(Modifier.width(8.dp))
-            TvPillButton(stringResource(R.string.tv_source), onClick = { onInfo(TvInfoStart.Source) }, icon = R.drawable.graphic_eq)
         }
         Spacer(Modifier.height(12.dp))
         Row(

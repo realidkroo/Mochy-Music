@@ -53,6 +53,8 @@ object DeviceMusicScanner {
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.DURATION,
             MediaStore.Audio.Media.ALBUM_ID,
+            MediaStore.Audio.Media.DISPLAY_NAME,
+            MediaStore.Audio.Media.MIME_TYPE,
         )
         val songs = ArrayList<DeviceSong>()
         try {
@@ -68,7 +70,11 @@ object DeviceMusicScanner {
                 val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
                 val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
                 val albumColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
+                val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
+                val mimeColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
                 while (cursor.moveToNext()) {
+                    // wma, aiff and the like would come in and never play, so they aren't offered
+                    if (!LocalFileNames.canPlay(cursor.getString(nameColumn).orEmpty(), cursor.getString(mimeColumn))) continue
                     val uri = ContentUris.withAppendedId(collection, cursor.getLong(idColumn))
                     if (uri.toString() in alreadyImported) continue
                     songs += DeviceSong(

@@ -436,6 +436,10 @@ fun NavGraphBuilder.navigationBuilder(
         com.mochyy.mochymusic.ui.screens.settings.integrations.discord.DiscordScreen(navController = navController)
     }
 
+    composable(com.mochyy.mochymusic.ui.screens.settings.integrations.backup.BackupRoute) {
+        com.mochyy.mochymusic.ui.screens.settings.integrations.backup.BackupScreen(navController = navController)
+    }
+
     composable(
         route = com.mochyy.mochymusic.ui.screens.settings.integrations.ScrobbleServiceRoute,
         arguments = listOf(navArgument("site") { type = NavType.StringType }),

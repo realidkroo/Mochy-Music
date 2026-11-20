@@ -60,7 +60,7 @@ data class StorageUsage(
     val drives: List<DriveUsage>,
     /** songs streamed and kept for next time, cover pictures, and other throwaway files */
     val cache: Long,
-    /** downloaded songs and the covers saved for local files */
+    /** downloaded songs only: covers saved for local files count as app data, so importing a folder never looks like a download */
     val downloads: Long,
     val database: Long,
     /** the app itself and its settings, everything not counted above */
@@ -184,13 +184,12 @@ class StorageViewModel @Inject constructor(
         val dataDir = context.dataDir
         val songCacheDir = StoragePlaces.dir(context, StoredKind.SongCache)
         val downloadDir = StoragePlaces.dir(context, StoredKind.Downloads)
-        val localArtwork = context.filesDir.resolve("local_artwork")
         val databases = context.getDatabasePath("x").parentFile
 
         val songCache = sizeOf(songCacheDir)
         val downloadedSongs = sizeOf(downloadDir)
         val cache = songCache + sizeOf(context.cacheDir) + sizeOf(context.codeCacheDir)
-        val downloads = downloadedSongs + sizeOf(localArtwork)
+        val downloads = downloadedSongs
         val db = sizeOf(databases)
         // only what sits in the data folder comes off it before the rest is counted, a folder on a card was never in it
         val onCards = listOf(songCacheDir to songCache, downloadDir to downloadedSongs).filter { (dir, _) -> dir.parentFile != context.filesDir }
@@ -231,6 +230,17 @@ class StorageViewModel @Inject constructor(
 
     private fun sizeOf(file: File?): Long {
         if (file == null || !file.exists()) return 0L
-        return runCatching { file.walkTopDown().filter { it.isFile }.sumOf { it.length() } }.getOrDefault(0L)
+        // a cover shared by a whole album is one file under several names, and only takes its room once
+        val counted = HashSet<Long>()
+        return runCatching {
+            file.walkTopDown().filter { it.isFile }.sumOf { entry ->
+                val stat = runCatching { android.system.Os.lstat(entry.path) }.getOrNull()
+                when {
+                    stat == null -> entry.length()
+                    stat.st_nlink > 1 && !counted.add(stat.st_ino) -> 0L
+                    else -> stat.st_size
+                }
+            }
+        }.getOrDefault(0L)
     }
 }

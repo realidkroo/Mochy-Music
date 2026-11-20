@@ -41,6 +41,7 @@ import com.mochyy.mochymusic.ui.player.LyricsHeaderArtTopFromStatusBar
 import com.mochyy.mochymusic.ui.player.LyricsHeaderArtX
 import com.mochyy.mochymusic.ui.player.LyricsScreen
 import com.mochyy.mochymusic.ui.player.QueueScreen
+import com.mochyy.mochymusic.ui.player.takesSoftLight
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.ui.utils.stableStatusBarsPadding
 
@@ -60,12 +61,19 @@ fun StyleLyricsPage(
     onCoveredChange: (Boolean) -> Unit = {},
     onSwitchSource: (() -> Unit)? = null,
 ) {
-    StyleOverlayPage(open = open, onClose = onClose, modifier = modifier, onCoveredChange = onCoveredChange) { nav ->
+    StyleOverlayPage(
+        open = open,
+        onClose = onClose,
+        modifier = modifier,
+        onCoveredChange = onCoveredChange,
+        modulateAlpha = true,
+    ) { nav, backgroundStyle ->
         LyricsScreen(
             onClose = onClose,
             screenHeight = screenHeight,
             contentBottomInset = nav + 28.dp,
             onSwitchSource = onSwitchSource,
+            onCoverBackdrop = backgroundStyle.takesSoftLight,
             modifier = Modifier.fillMaxSize(),
         )
     }
@@ -79,7 +87,7 @@ fun StyleQueuePage(
     modifier: Modifier = Modifier,
     onCoveredChange: (Boolean) -> Unit = {},
 ) {
-    StyleOverlayPage(open = open, onClose = onClose, modifier = modifier, onCoveredChange = onCoveredChange) { nav ->
+    StyleOverlayPage(open = open, onClose = onClose, modifier = modifier, onCoveredChange = onCoveredChange) { nav, _ ->
         QueueScreen(
             onClose = onClose,
             contentBottomInset = nav + 28.dp,
@@ -89,14 +97,16 @@ fun StyleQueuePage(
     }
 }
 
-// a page that rises over a style on the player's own background, with the cover and title where the flagship's header sits; [content] gets the nav bar's height
+// a page that rises over a style on the player's own background, with the cover and title where the flagship's header sits; [content] gets the nav bar's height and that background
 @Composable
 private fun StyleOverlayPage(
     open: Boolean,
     onClose: () -> Unit,
     modifier: Modifier,
     onCoveredChange: (Boolean) -> Unit,
-    content: @Composable (nav: Dp) -> Unit,
+    // the rows fade one by one instead of in one buffer, which would cut soft-lit lyrics off from the background
+    modulateAlpha: Boolean = false,
+    content: @Composable (nav: Dp, backgroundStyle: com.mochyy.mochymusic.constants.PlayerBackgroundStyle) -> Unit,
 ) {
     val shown = remember { Animatable(0f) }
     LaunchedEffect(open) {
@@ -144,6 +154,7 @@ private fun StyleOverlayPage(
                     val p = shown.value
                     alpha = p.coerceIn(0f, 1f)
                     translationY = (1f - p) * 72.dp.toPx()
+                    if (modulateAlpha) compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.ModulateAlpha
                 },
         ) {
             // where the flagship's cover morphs to on its lyrics page; the page's own hit box over it closes
@@ -182,7 +193,7 @@ private fun StyleOverlayPage(
                     }
                 }
             }
-            content(nav)
+            content(nav, backgroundStyle)
         }
     }
 }

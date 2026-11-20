@@ -1,7 +1,7 @@
 // LibraryMoreTabs.kt
 //
-// The Library's History and Genres tabs: the last few days of what you played, and the genres of the
-// songs on your phone, each with a way into its full page.
+// The Library's History and Genres tabs: the last few days of what you played, and the genres of
+// everything you keep or play, each with a way into its full page.
 
 package com.mochyy.mochymusic.ui.screens.library
 
@@ -97,7 +97,7 @@ fun LazyListScope.libraryHistoryTab(
     }
 }
 
-/** the genres of the songs on your phone, one row each like a playlist, each opening its own page */
+/** the genres of your songs (tags first, the artist's genre otherwise), one row each like a playlist, each opening its own page */
 fun LazyListScope.libraryGenresTab(genres: List<LocalGenre>?, navController: NavController) {
     if (genres == null) {
         item(key = "genres_loading") {

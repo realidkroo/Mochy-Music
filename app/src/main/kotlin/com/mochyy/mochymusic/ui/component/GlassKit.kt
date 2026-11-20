@@ -551,10 +551,10 @@ fun ProgressiveGlassBackground(
         }
         return
     }
-    val smooth = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-        LocalBlurQuality.current == com.mochyy.mochymusic.constants.BlurQuality.HIGH
+    // low quality too: its stacked steps each drew and blurred the list again, three to five times per scroll frame
+    val smooth = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
     if (smooth) {
-        // high quality: one pass whose radius grows row by row, faded in where the first step used to fade in
+        // one pass whose radius grows row by row, faded in where the first step used to fade in (low draws it in one band, see BandPlan)
         val fade = 1f / steps.coerceAtLeast(1)
         val mask = remember(direction, fade) {
             if (direction == BlurDirection.TopToBottom) {

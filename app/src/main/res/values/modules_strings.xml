@@ -21,7 +21,7 @@
     <string name="modules_looks">Look modules</string>
     <string name="modules_looks_empty">Nothing here yet, add one</string>
     <string name="modules_sources">JS &amp; source modules</string>
-    <string name="modules_swipe_to_delete">Swipe to delete, drag the lines to reorder</string>
+    <string name="modules_swipe_to_delete">Swipe to delete, hold a module to reorder</string>
     <string name="modules_add_more">Add a module</string>
     <string name="module_version">v%1$s</string>
     <string name="module_remove_short">Remove</string>

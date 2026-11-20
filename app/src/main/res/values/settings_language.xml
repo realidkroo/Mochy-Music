@@ -15,6 +15,8 @@
     <string name="appearance_shader_desc">Glow on sung lyrics (and Style 2\'s letter wave)</string>
     <string name="appearance_bloom">High quality bloom</string>
     <string name="appearance_bloom_desc">Extra soft bloom pass on lyrics</string>
+    <string name="appearance_lyrics_soft_light">Tinted lyrics</string>
+    <string name="appearance_lyrics_soft_light_desc">Lines that aren\'t being sung take on the cover\'s colours. Turn it off if the lyrics feel slow</string>
     <string name="appearance_format_badge">Audio format badge</string>
     <string name="appearance_format_badge_desc">What the song is playing as, beside its title</string>
     <string name="appearance_sample_rate">Show sample rate</string>

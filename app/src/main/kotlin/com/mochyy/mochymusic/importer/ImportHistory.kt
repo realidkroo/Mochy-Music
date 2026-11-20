@@ -3,6 +3,7 @@
 package com.mochyy.mochymusic.importer
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import com.mochyy.mochymusic.db.MusicDatabase
 import com.mochyy.mochymusic.db.entities.ImportSession
@@ -51,7 +52,7 @@ class ImportHistory @Inject constructor(
         database.withTransaction {
             songs.forEach { deleteLocalSong(it) }
         }
-        songs.forEach { deleteOwnCopies(it) }
+        deleteOwnCopies(songs)
     }
 
     private suspend fun undo(session: ImportSession): Int {
@@ -95,7 +96,7 @@ class ImportHistory @Inject constructor(
             deleteImportSession(session.id)
         }
 
-        removedFiles.forEach { deleteOwnCopies(it) }
+        deleteOwnCopies(removedFiles)
         // a like still waiting to go up to youtube shouldn't go now; one already there is taken back
         PendingYouTubeLikes.remove(context, unliked.map { it.id })
         if (context.isSyncEnabled()) unliked.forEach { syncUtils.likeSong(it) }
@@ -110,16 +111,24 @@ class ImportHistory @Inject constructor(
         deleteImportSessionSong(song.id)
     }
 
-    /** the artwork pulled out of the file's tags and the app's own copy of a shared file, both live in app folders and are useless once the song is gone */
-    private fun deleteOwnCopies(song: SongEntity) {
-        runCatching {
-            song.thumbnailUrl?.let(Uri::parse)?.takeIf { it.scheme == "file" }?.path?.let { File(it) }
-                ?.takeIf { it.startsWith(context.cacheDir) }
-                ?.delete()
-            val sharedRoot = File(context.filesDir, "shared_audio")
-            song.localUri?.let(Uri::parse)?.takeIf { it.scheme == "file" }?.path?.let { File(it) }
-                ?.takeIf { it.startsWith(sharedRoot) }
-                ?.parentFile?.deleteRecursively()
+    /** what the removed songs left in app folders (their covers, a shared file's own copy) and the read access a picked file kept, all useless once they're gone */
+    private suspend fun deleteOwnCopies(songs: List<SongEntity>) {
+        if (songs.isEmpty()) return
+        val sharedRoot = File(context.filesDir, "shared_audio")
+        // asked once for the whole batch, since removing hundreds of songs would otherwise ask hundreds of times
+        val stillInLibrary = database.localUris().toHashSet()
+        val held = runCatching { context.contentResolver.persistedUriPermissions.mapTo(HashSet()) { it.uri } }.getOrDefault(emptySet())
+        for (song in songs) {
+            runCatching { LocalArtwork.deleteIfUnused(context, database, song.thumbnailUrl) }
+            val uri = song.localUri?.let(Uri::parse) ?: continue
+            if (song.localUri in stillInLibrary) continue
+            runCatching {
+                uri.takeIf { it.scheme == "file" }?.path?.let { File(it) }
+                    ?.takeIf { it.startsWith(sharedRoot) }
+                    ?.parentFile?.deleteRecursively()
+                // android only keeps around 500 single-file grants and drops the oldest past that, so a removed song gives its back
+                if (uri in held) context.contentResolver.releasePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
         }
     }
 }

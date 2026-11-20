@@ -19,8 +19,12 @@ class HapticAudioProcessor(
     private var sampleRate = 0
     private var channelCount = 0
     private var encoding = C.ENCODING_INVALID
+    // what configure asked for, taken up at the next flush: until then the audio still arriving is in the last song's format
+    private var pendingFormat = AudioProcessor.AudioFormat.NOT_SET
 
     private var outputBuffer: ByteBuffer = EMPTY_BUFFER
+    // kept and reused: getOutput hands outputBuffer back as empty, so sizing against it made a new direct buffer for every block of audio
+    private var buffer: ByteBuffer = EMPTY_BUFFER
     private var inputEnded = false
 
     @Volatile
@@ -45,14 +49,10 @@ class HapticAudioProcessor(
     private var filterState2: Double = 0.0
 
     override fun configure(inputAudioFormat: AudioProcessor.AudioFormat): AudioProcessor.AudioFormat {
-        sampleRate = inputAudioFormat.sampleRate
-        channelCount = inputAudioFormat.channelCount
-        encoding = inputAudioFormat.encoding
-
-        if (encoding != C.ENCODING_PCM_16BIT) {
+        if (inputAudioFormat.encoding != C.ENCODING_PCM_16BIT) {
             throw AudioProcessor.UnhandledAudioFormatException(inputAudioFormat)
         }
-
+        pendingFormat = inputAudioFormat
         return inputAudioFormat
     }
 
@@ -188,10 +188,16 @@ class HapticAudioProcessor(
         outputBuffer = EMPTY_BUFFER
         inputEnded = false
         smoothedAmplitude = 0f
+        if (pendingFormat != AudioProcessor.AudioFormat.NOT_SET) {
+            sampleRate = pendingFormat.sampleRate
+            channelCount = pendingFormat.channelCount
+            encoding = pendingFormat.encoding
+        }
     }
 
     @Deprecated("Deprecated in AudioProcessor")
     override fun reset() {
+        pendingFormat = AudioProcessor.AudioFormat.NOT_SET
         flush()
         sampleRate = 0
         channelCount = 0
@@ -199,12 +205,13 @@ class HapticAudioProcessor(
     }
 
     private fun replaceOutputBuffer(size: Int): ByteBuffer {
-        if (outputBuffer.capacity() < size) {
-            outputBuffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+        if (buffer.capacity() < size) {
+            buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
         } else {
-            outputBuffer.clear()
+            buffer.clear()
         }
-        return outputBuffer
+        outputBuffer = buffer
+        return buffer
     }
 
     companion object {

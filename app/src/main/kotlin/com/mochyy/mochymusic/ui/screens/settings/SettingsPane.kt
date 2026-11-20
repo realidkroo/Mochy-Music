@@ -29,6 +29,7 @@ import com.mochyy.mochymusic.ui.screens.settings.devspace.DevPlaygroundRoute
 import com.mochyy.mochymusic.ui.screens.settings.importsync.ImportSyncRoute
 import com.mochyy.mochymusic.ui.screens.settings.integrations.IntegrationsRoute
 import com.mochyy.mochymusic.ui.screens.settings.integrations.ScrobbleServiceRoute
+import com.mochyy.mochymusic.ui.screens.settings.integrations.backup.BackupRoute
 import com.mochyy.mochymusic.ui.screens.settings.integrations.discord.DiscordRoute
 import com.mochyy.mochymusic.ui.screens.settings.modules.ModulesRoute
 import com.mochyy.mochymusic.ui.screens.settings.storage.StorageRoute
@@ -54,6 +55,7 @@ val SettingsPaneRoutes = setOf(
     IntegrationsRoute,
     DiscordRoute,
     ScrobbleServiceRoute,
+    BackupRoute,
     ProxySettingsRoute,
     ModulesRoute,
     "module/{id}",

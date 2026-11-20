@@ -301,7 +301,8 @@ fun SongMenu(
             // big cards. Then the song-menu mock's four rows - add to playlist, share, album,
             // artist - and the rest.
             SheetActionCardRow {
-                SheetDownloadCard(
+                // a song imported from the phone is already a file here; downloading it only looked it up online by name
+                if (!song.song.isLocal) SheetDownloadCard(
                     downloadState = download?.state,
                     onDownload = {
                         val downloadRequest = DownloadRequest

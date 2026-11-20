@@ -394,7 +394,8 @@ fun SelectionSongMenu(
                                         )
                                     },
                                     onClick = {
-                                        songSelection.forEach { song ->
+                                        // imported files are already on the phone, with nothing online to download
+                                        songSelection.filterNot { it.song.isLocal }.forEach { song ->
                                             val downloadRequest =
                                                 DownloadRequest
                                                     .Builder(song.id, song.id.toUri())

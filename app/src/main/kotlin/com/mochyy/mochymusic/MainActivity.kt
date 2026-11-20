@@ -20,7 +20,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -162,7 +161,6 @@ import com.mochyy.mochymusic.constants.DynamicThemeKey
 import com.mochyy.mochymusic.constants.EnableHighRefreshRateKey
 import com.mochyy.mochymusic.constants.MiniPlayerBottomSpacing
 import com.mochyy.mochymusic.constants.MiniPlayerHeight
-import com.mochyy.mochymusic.constants.NavigationBarAnimationSpec
 import com.mochyy.mochymusic.constants.NavigationBarHeight
 import com.mochyy.mochymusic.constants.SlimNavBarHeight
 import com.mochyy.mochymusic.constants.SlimNavBarKey
@@ -725,10 +723,6 @@ class MainActivity : ComponentActivity() {
                         currentRoute?.startsWith("search/") == true
                     }
                 }
-                val navigationItemRoutes = remember(navigationItems) {
-                    navigationItems.map { it.route }.toSet()
-                }
-
                 // "module/page" while one of a module's pages is open, so a look's own bar can keep it as a tab
                 val currentModulePage by remember {
                     derivedStateOf {
@@ -736,74 +730,37 @@ class MainActivity : ComponentActivity() {
                             ?.arguments?.let { "${it.getString("id")}/${it.getString("page")}" }
                     }
                 }
-                val onModuleTab = com.mochyy.mochymusic.ui.component.isModuleBarTab(currentModulePage)
-
-                val shouldShowNavigationBar = onModuleTab || remember(currentRoute, navigationItemRoutes) {
-                    currentRoute == null ||
-                        navigationItemRoutes.contains(currentRoute) ||
-                        currentRoute!!.startsWith("search/") ||
-
-                        currentRoute!!.startsWith("genre/") ||
-                        currentRoute!!.startsWith("local_playlist/") ||
-                        currentRoute!!.startsWith("online_playlist/") ||
-                        currentRoute!!.startsWith("auto_playlist/") ||
-                        // the bar stays while a page from the Library, an album or an artist is open
-                        currentRoute!!.startsWith("library/") ||
-                        currentRoute!!.startsWith("album/") ||
-                        currentRoute!!.startsWith("artist/") ||
-
-                        currentRoute in SubSettingsRoutes
-                }
-
                 // a phone on its side or a tablet: the mini player and the tabs share one pill along the bottom
                 val wideBar = if (isWideLayout()) {
                     com.mochyy.mochymusic.ui.component.rememberWideBar(maxWidth, maxHeight, navigationItems.size)
                 } else null
-                val miniPill = when {
-                    wideBar == null -> com.mochyy.mochymusic.ui.component.PhoneMiniPill
-                    shouldShowNavigationBar -> wideBar.miniFrame
-                    else -> wideBar.miniAloneFrame
-                }
+                val miniPill = wideBar?.miniFrame ?: com.mochyy.mochymusic.ui.component.PhoneMiniPill
 
                 // the row the tabs take along the bottom: the wide bar's shrinks with a short screen
                 val navRowHeight = wideBar?.rowHeight ?: NavigationBarHeight
-                val navPadding = if (shouldShowNavigationBar) {
-                    if (slimNav && wideBar == null) SlimNavBarHeight else navRowHeight
-                } else {
-                    0.dp
-                }
-
-                val navigationBarHeight by animateDpAsState(
-                    targetValue = if (shouldShowNavigationBar) navRowHeight else 0.dp,
-                    animationSpec = NavigationBarAnimationSpec,
-                    label = "navBarHeight",
-                )
+                val navPadding = if (slimNav && wideBar == null) SlimNavBarHeight else navRowHeight
 
                 val playerBottomSheetState = rememberBottomSheetState(
                     dismissedBound = 0.dp,
-                    collapsedBound = when {
+                    collapsedBound = if (wideBar != null) {
                         // level with the tabs, in the same pill
-                        wideBar != null && shouldShowNavigationBar -> bottomInset + navPadding - wideBar.pillGap
-                        shouldShowNavigationBar -> bottomInset + navPadding + MiniPlayerHeight
-                        else -> bottomInset + MiniPlayerHeight
+                        bottomInset + navPadding - wideBar.pillGap
+                    } else {
+                        bottomInset + navPadding + MiniPlayerHeight
                     },
                     expandedBound = maxHeight,
                 )
 
                 PlayerSystemBarsSync(playerBottomSheetState)
 
-                val sharedBarRow = wideBar != null && shouldShowNavigationBar
+                val sharedBarRow = wideBar != null
                 val playerAwareWindowInsets = remember(
                     bottomInset,
                     navRowHeight,
-                    shouldShowNavigationBar,
                     playerBottomSheetState.isDismissed,
                     sharedBarRow,
                 ) {
-                    var bottom = bottomInset
-                    if (shouldShowNavigationBar) {
-                        bottom += navRowHeight
-                    }
+                    var bottom = bottomInset + navRowHeight
                     // in the wide bar the mini player shares the tabs' row, so it takes no room of its own
                     if (!playerBottomSheetState.isDismissed && !sharedBarRow) bottom += MiniPlayerHeight
                     windowsInsets
@@ -1119,42 +1076,22 @@ class MainActivity : ComponentActivity() {
                                                     )
                                                 }
                                                 .graphicsLayer {
-                                                    val navBarHeightPx = navigationBarHeight.toPx()
-                                                    val totalHeightPx = navBarTotalHeight.toPx()
-
-                                                    translationY = if (navBarHeightPx == 0f) {
-                                                        totalHeightPx
-                                                    } else {
-                                                        val progress = playerBottomSheetState.progress.coerceIn(0f, 1f)
-                                                        val slideOffset = totalHeightPx * progress
-                                                        val hideOffset = totalHeightPx * (1 - navBarHeightPx / navRowHeight.toPx())
-                                                        slideOffset + hideOffset
-                                                    }
+                                                    val progress = playerBottomSheetState.progress.coerceIn(0f, 1f)
+                                                    translationY = navBarTotalHeight.toPx() * progress
                                                 }
                                         )
 
                                         }
 
                                         if (!hideAppChrome.value) {
-                                        // the bar slides away as the player opens or a page without tabs comes up, every piece of it together
+                                        // the bar slides away as the player opens, every piece of it together
                                         val barMotion = Modifier
                                             .align(Alignment.BottomCenter)
                                             .launchRise(order = 3)
                                             .height(bottomInset + navPadding)
                                             .graphicsLayer {
-                                                val navBarHeightPx = navigationBarHeight.toPx()
-                                                val totalHeightPx = navBarTotalHeight.toPx()
-
                                                 val progress = playerBottomSheetState.progress.coerceIn(0f, 1f)
-
-                                                translationY = if (navBarHeightPx == 0f) {
-                                                    totalHeightPx
-                                                } else {
-                                                    val slideOffset = totalHeightPx * progress
-                                                    val hideOffset = totalHeightPx * (1 - navBarHeightPx / navRowHeight.toPx())
-                                                    slideOffset + hideOffset
-                                                }
-
+                                                translationY = navBarTotalHeight.toPx() * progress
                                                 alpha = (1f - progress / 0.6f).coerceIn(0f, 1f)
                                             }
                                         // the wide pill shrinks onto the tabs while nothing is playing, read while laying out
@@ -1697,32 +1634,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-val SubSettingsRoutes = setOf(
-    "experimental_settings",
-    "cipher_settings",
-    "playback_diagnostics",
-    "mochy_settings",
-    "import_sync",
-    "import_providers",
-    "import_tunemymusic",
-    "import_progress",
-    "youtube_sync",
-    "stats",
-    "developer_space",
-    "developer_playground",
-    "storage_settings",
-    "gesture_settings",
-    "customisation_settings",
-    // Audio Lab keeps the bar, as in its designs
-    "audio_lab",
-    "equalizer",
-    "audio_fx",
-    "audio_quality",
-    "crossmix_settings",
-    "modules",
-    "module/{id}",
-)
 
 val LocalDatabase = staticCompositionLocalOf<MusicDatabase> { error("No database provided") }
 val LocalPlayerConnection = staticCompositionLocalOf<PlayerConnection?> { error("No PlayerConnection provided") }

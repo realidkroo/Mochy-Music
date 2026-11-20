@@ -28,7 +28,7 @@ extensions.configure<ApplicationExtension> {
         minSdk = 24
         targetSdk = 37
         versionCode = 73
-        versionName = "8.4.2 build#1272"
+        versionName = "8.4.3 build#1280"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -60,6 +60,12 @@ extensions.configure<ApplicationExtension> {
         buildConfigField("String", "DISCORD_CLIENT_ID", "\"$discordClientId\"")
         manifestPlaceholders["discordRedirectScheme"] =
             if (discordClientId.isNotBlank()) "discord-$discordClientId" else "mochy-discord-unset"
+
+        // the dropbox and microsoft apps cloud backups sign in through (setup in docs/notes/backup.md), a blank one shows "not set up"
+        val dropboxAppKey = localProperties.getProperty("DROPBOX_APP_KEY") ?: System.getenv("DROPBOX_APP_KEY") ?: ""
+        val oneDriveClientId = localProperties.getProperty("ONEDRIVE_CLIENT_ID") ?: System.getenv("ONEDRIVE_CLIENT_ID") ?: ""
+        buildConfigField("String", "DROPBOX_APP_KEY", "\"$dropboxAppKey\"")
+        buildConfigField("String", "ONEDRIVE_CLIENT_ID", "\"$oneDriveClientId\"")
 
 //add nightly build label support
         val isNightly = project.hasProperty("nightly") && project.property("nightly") == "true"

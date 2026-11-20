@@ -137,7 +137,7 @@
     <string name="lib_see_all">See all</string>
     <string name="lib_history_empty">Nothing played yet. Songs show up here as you listen.</string>
     <string name="lib_history_all">All history</string>
-    <string name="lib_genres_local_empty">No genres yet. Songs on your phone show up here by the genre in their tags.</string>
+    <string name="lib_genres_local_empty">No genres yet. Save, like or play a few songs and they\'ll sort themselves in here.</string>
     <string name="lib_genre_search">Find a song in this genre</string>
     <string name="lib_added_when">Added %1$s</string>
     <string name="lib_added_earlier">Earlier</string>

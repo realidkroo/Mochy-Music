@@ -27,6 +27,7 @@ import com.mochyy.mochymusic.constants.CanvasThumbnailAnimationKey
 import com.mochyy.mochymusic.constants.CanvasWifiOnlyKey
 import com.mochyy.mochymusic.constants.DisableVideoAutoplayKey
 import com.mochyy.mochymusic.constants.LyricsHighBloomKey
+import com.mochyy.mochymusic.constants.LyricsSoftLightKey
 import com.mochyy.mochymusic.constants.LyricsMotionStyle
 import com.mochyy.mochymusic.constants.LyricsMotionStyleKey
 import com.mochyy.mochymusic.constants.LyricsRomanizeAsMainKey
@@ -46,6 +47,7 @@ import com.mochyy.mochymusic.ui.component.SettingsHighlight
 import com.mochyy.mochymusic.ui.component.SettingsItem
 import com.mochyy.mochymusic.ui.component.SubSettingsScaffold
 import com.mochyy.mochymusic.ui.component.SubSettingsSearchBar
+import com.mochyy.mochymusic.ui.player.SoftLightSupported
 import com.mochyy.mochymusic.ui.screens.audiolab.LabSelect
 import com.mochyy.mochymusic.ui.screens.settings.integrations.spotify.SpotifyRoute
 import com.mochyy.mochymusic.utils.rememberEnumPreference
@@ -109,6 +111,7 @@ private fun lyricsItems(): List<SettingsItem> {
     val (syncLyricsToVideo, onSyncLyricsToVideoChange) = rememberPreference(SyncLyricsToVideoKey, defaultValue = true)
     val (romanizeAsMain, onRomanizeAsMainChange) = rememberPreference(LyricsRomanizeAsMainKey, defaultValue = false)
     val (highBloom, onHighBloomChange) = rememberPreference(LyricsHighBloomKey, defaultValue = true)
+    val (softLight, onSoftLightChange) = rememberPreference(LyricsSoftLightKey, defaultValue = true)
     val (lyricsStyle) = rememberEnumPreference(LyricsMotionStyleKey, defaultValue = LyricsMotionStyle.MOTION)
     val (floatingLyrics, onFloatingLyricsChange) = rememberFloatingLyricsSwitch()
     return listOf(
@@ -147,6 +150,16 @@ private fun lyricsItems(): List<SettingsItem> {
             checked = highBloom,
             onCheckedChange = onHighBloomChange,
             visible = lyricsStyle.shaded,
+        ),
+        // the blend needs android 10, older phones never see it
+        switchItem(
+            key = "Tinted lyrics",
+            title = stringResource(R.string.appearance_lyrics_soft_light),
+            description = stringResource(R.string.appearance_lyrics_soft_light_desc),
+            icon = painterResource(R.drawable.palette),
+            checked = softLight,
+            onCheckedChange = onSoftLightChange,
+            visible = SoftLightSupported,
         ),
         switchItem(
             key = "Floating lyrics overlay bubble",

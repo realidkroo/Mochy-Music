@@ -102,8 +102,6 @@ class WideBar(
     val screenWidth: Dp,
     // where the tabs sit on their own, centred, while nothing is playing
     val tabsAloneStart: Dp,
-    // where the mini player sits on its own, centred, on a page without tabs
-    val miniAloneStart: Dp,
     // the pill's height and its gap to the top of the row, both shrunk together on a short screen
     val height: Dp,
     val pillGap: Dp,
@@ -119,14 +117,6 @@ class WideBar(
         start = pillStart,
         end = screenWidth - pillStart - miniWidth,
         merged = true,
-        withPrevious = true,
-        height = height,
-    )
-
-    val miniAloneFrame = MiniPillFrame(
-        start = miniAloneStart,
-        end = screenWidth - miniAloneStart - miniWidth,
-        merged = false,
         withPrevious = true,
         height = height,
     )
@@ -155,7 +145,6 @@ fun rememberWideBar(screenWidth: Dp, screenHeight: Dp, tabCount: Int): WideBar {
             extrasWidth = extrasWidth,
             screenWidth = screenWidth,
             tabsAloneStart = safeStart + (room - tabsWidth) / 2,
-            miniAloneStart = safeStart + (room - miniWidth) / 2,
             height = NavBarHeight * scale,
             pillGap = WideBarPillGap * scale,
         )

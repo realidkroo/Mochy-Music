@@ -72,11 +72,12 @@ internal fun isTurntableWideLayout(screenWidthDp: Int): Boolean = screenWidthDp 
 
 @Composable
 fun TurntableControls(
-    isExpandMenuOpen: Boolean,
+    // read by the chevron alone, so opening its menu doesn't recompose the controls
+    isExpandMenuOpen: () -> Boolean,
     onToggleExpandMenu: () -> Unit,
     modifier: Modifier = Modifier,
-    /** hides the chevron while the lyrics page's own (the same control, moved) is up */
-    hideChevron: Boolean = false,
+    // hides the chevron while the lyrics page's own (the same control, moved) is up; read while drawing
+    hideChevron: () -> Boolean = { false },
     onTitlePositioned: (androidx.compose.ui.geometry.Rect) -> Unit = {},
     onChevronPositioned: (androidx.compose.ui.geometry.Rect) -> Unit = {},
     likeBurst: LikeBurstState? = null,
@@ -272,8 +273,9 @@ private fun PressScaleIcon(icon: Int, tint: Color, onClick: () -> Unit, modifier
 }
 
 @Composable
-private fun ChevronButton(open: Boolean, hidden: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val rotation by animateFloatAsState(if (open) 180f else 0f, spring(dampingRatio = 0.55f, stiffness = 380f), label = "ttChevron")
+private fun ChevronButton(open: () -> Boolean, hidden: () -> Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val isOpen = open()
+    val rotation by animateFloatAsState(if (isOpen) 180f else 0f, spring(dampingRatio = 0.55f, stiffness = 380f), label = "ttChevron")
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.86f else 1f, spring(dampingRatio = 0.54f, stiffness = 720f), label = "ttChevronPress")
@@ -291,7 +293,7 @@ private fun ChevronButton(open: Boolean, hidden: Boolean, onClick: () -> Unit, m
                 .fillMaxSize()
                 .graphicsLayer {
                     scaleX = scale; scaleY = scale
-                    alpha = if (open || hidden) 0f else 1f
+                    alpha = if (isOpen || hidden()) 0f else 1f
                 }
                 .clip(CircleShape)
                 .background(PillFill),
