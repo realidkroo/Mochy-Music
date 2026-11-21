@@ -45,9 +45,9 @@ class PrecisionSink(
     private var out: ByteBuffer? = null
     private var dither = 0x2545F491
 
-    // the decoder is asked for float only when float would make it all the way to the track
+    // the decoder is asked for float only when float would make it all the way to the track; multichannel stays 16-bit so surround processors still see it
     override fun getFormatSupport(format: Format): Int {
-        if (format.pcmEncoding == C.ENCODING_PCM_FLOAT && MimeTypes.AUDIO_RAW == format.sampleMimeType && !outputs.floatAllowed) {
+        if (format.pcmEncoding == C.ENCODING_PCM_FLOAT && MimeTypes.AUDIO_RAW == format.sampleMimeType && (!outputs.floatAllowed || format.channelCount > 2)) {
             return AudioSink.SINK_FORMAT_SUPPORTED_WITH_TRANSCODING
         }
         return super.getFormatSupport(format)
@@ -128,6 +128,20 @@ class PrecisionSink(
         }
         return done
     }
+
+    override fun playToEndOfStream() {
+        pending?.let { reworked ->
+            if (!reworked.hasRemaining() || super.handleBuffer(reworked, C.TIME_UNSET, 1)) {
+                pending = null
+                pendingSource = null
+            } else {
+                return
+            }
+        }
+        super.playToEndOfStream()
+    }
+
+    override fun isEnded(): Boolean = pending == null && super.isEnded()
 
     override fun flush() {
         pending = null

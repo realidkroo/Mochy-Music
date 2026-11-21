@@ -272,7 +272,17 @@ class AudioOutputs(private val context: Context) {
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 private object UsbMixer {
     fun apply(audioManager: AudioManager, device: AudioDeviceInfo, sampleRate: Int, channels: Int, encoding: Int): AudioOutputs.Mixer? {
-        val mask = if (channels == 1) AudioFormat.CHANNEL_OUT_MONO else AudioFormat.CHANNEL_OUT_STEREO
+        val mask = when (channels) {
+            1 -> AudioFormat.CHANNEL_OUT_MONO
+            2 -> AudioFormat.CHANNEL_OUT_STEREO
+            6 -> AudioFormat.CHANNEL_OUT_5POINT1
+            8 -> AudioFormat.CHANNEL_OUT_7POINT1_SURROUND
+            else -> {
+                // a dac with no matching surround mask shouldn't be locked to stereo while a multichannel stream plays
+                clear(audioManager, device)
+                return null
+            }
+        }
         val atRate = audioManager.getSupportedMixerAttributes(device)
             .filter { it.format.sampleRate == sampleRate && it.format.channelMask == mask }
         val bitPerfect = atRate.firstOrNull {

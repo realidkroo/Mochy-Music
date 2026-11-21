@@ -79,6 +79,7 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.modules.browser.FeedInstall
 import com.mochyy.mochymusic.modules.browser.FeedModule
 import com.mochyy.mochymusic.modules.browser.FeedResult
+import com.mochyy.mochymusic.modules.browser.PackItem
 import com.mochyy.mochymusic.ui.component.ActionPromptDialog
 import com.mochyy.mochymusic.ui.component.DiscordFormattedText
 import com.mochyy.mochymusic.ui.component.containerTransformTarget
@@ -88,6 +89,7 @@ import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.ui.utils.isWideLayout
 import com.mochyy.mochymusic.viewmodels.ModuleBrowserViewModel
 import com.mochyy.mochymusic.viewmodels.ModulesViewModel
+import com.mochyy.mochymusic.viewmodels.packKey
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -120,6 +122,7 @@ fun ModuleStoreScreen(navController: NavController, post: String, viewModel: Mod
     val module = (page as? FeedResult.Modules)?.modules?.firstOrNull { it.id == post }
     val added = remember(entries) { addedModules(entries) }
     val act = rememberStoreAdd(viewModel, modules, navController)
+    val addItem = rememberPackAdd(viewModel, modules, navController)
     val context = LocalContext.current
     val bottom = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
     val wide = isWideLayout()
@@ -161,6 +164,10 @@ fun ModuleStoreScreen(navController: NavController, post: String, viewModel: Mod
                 if (action == BrowserAction.Update) {
                     Spacer(Modifier.height(22.dp))
                     UpdateNotice(module, installed = entry?.let { added.versions[it] }, fetching = fetching == module.id) { act(module) }
+                }
+                if (module.install == FeedInstall.Pack && module.pack.isNotEmpty()) {
+                    Spacer(Modifier.height(24.dp))
+                    PackList(module, added, fetching) { item -> addItem(module, item) }
                 }
                 Spacer(Modifier.height(if (action == BrowserAction.Update) 14.dp else 26.dp))
                 AboutCard(module)
@@ -255,8 +262,11 @@ private fun StoreHeader(module: FeedModule, action: BrowserAction, fetching: Boo
                 Text(stringResource(R.string.module_browser_by, it), color = PageSoft, fontFamily = InterFontFamily, fontWeight = FontWeight.Medium, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
-        Spacer(Modifier.width(12.dp))
-        GetButton(action, fetching, onClick = if (action == BrowserAction.Added) onRemove else onAction)
+        // a pack has no one thing to get, its modules each have their own button below
+        if (action != BrowserAction.View) {
+            Spacer(Modifier.width(12.dp))
+            GetButton(action, fetching, onClick = if (action == BrowserAction.Added) onRemove else onAction)
+        }
     }
 }
 
@@ -293,6 +303,7 @@ private fun GetButton(action: BrowserAction, fetching: Boolean, onClick: () -> U
         BrowserAction.Added -> R.drawable.delete to R.string.module_remove
         BrowserAction.Locked -> R.drawable.lock to R.string.module_browser_locked
         BrowserAction.Open -> R.drawable.language to R.string.module_browser_open
+        BrowserAction.View -> R.drawable.download to R.string.module_browser_view
     }
     val (fill, ink) = when (action) {
         BrowserAction.Added -> RemoveFill to RemoveInk
@@ -326,6 +337,7 @@ private fun StoreFacts(module: FeedModule) {
             FeedInstall.Zip -> R.string.module_store_install_zip
             FeedInstall.Link -> R.string.module_store_install_link
             FeedInstall.Web -> R.string.module_store_install_web
+            FeedInstall.Pack -> R.string.module_store_install_pack
         },
     )
     // how it's added always shows, so each part before it brings its own line and the date brings one after
@@ -378,6 +390,38 @@ private fun DateFact(date: String) {
     Column {
         Text(stringResource(R.string.module_store_updated), color = PageSoft, fontFamily = InterFontFamily, fontWeight = FontWeight.Normal, fontSize = 10.sp)
         Text(date, color = PageInk, fontFamily = InterFontFamily, fontWeight = FontWeight.Normal, fontSize = 17.sp, maxLines = 1)
+    }
+}
+
+/** a pack's modules, each with its own button, added one by one */
+@Composable
+private fun PackList(module: FeedModule, added: AddedModules, fetching: String?, onAdd: (PackItem) -> Unit) {
+    Text(stringResource(R.string.module_store_pack_title), color = Color.White, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 21.sp, letterSpacing = (-0.5).sp)
+    Spacer(Modifier.height(12.dp))
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        module.pack.forEach { item ->
+            PackRow(item, actionFor(module, item, added), fetching == packKey(module, item)) { onAdd(item) }
+        }
+    }
+}
+
+@Composable
+private fun PackRow(item: PackItem, action: BrowserAction, fetching: Boolean, onAction: () -> Unit) {
+    val context = LocalContext.current
+    val detail = if (item.isLink) {
+        stringResource(R.string.module_store_pack_link)
+    } else {
+        remember(item) { listOfNotNull(item.version, item.size?.let { Formatter.formatShortFileSize(context, it) }).joinToString(" · ") }
+    }
+    Row(Modifier.fillMaxWidth().clip(CardShape).background(PageCard).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        ModuleLogo(item.moduleId ?: item.id, item.name, size = 52, art = item.icon, corner = 0.28f)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(item.name, color = Color.White, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (detail.isNotBlank()) Text(detail, color = PageSoft, fontFamily = InterFontFamily, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Spacer(Modifier.width(10.dp))
+        ActionPill(action, fetching, onClick = onAction)
     }
 }
 

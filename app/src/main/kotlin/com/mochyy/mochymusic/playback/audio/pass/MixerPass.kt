@@ -77,7 +77,14 @@ internal class MixerPass private constructor(
 
     override fun playedFrames(): Long {
         val head = track.playbackHeadPosition.toLong() and 0xffffffffL
-        if (head < lastHead) wraps += 1L shl 32
+        // usb audio hals can briefly report a smaller head position after startup or pause; only a half-range drop is a real 32-bit wrap
+        if (head < lastHead) {
+            if (lastHead - head > (1L shl 31)) {
+                wraps += 1L shl 32
+            } else {
+                return wraps + lastHead
+            }
+        }
         lastHead = head
         return wraps + head
     }

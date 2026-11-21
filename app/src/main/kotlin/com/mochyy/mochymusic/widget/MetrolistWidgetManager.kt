@@ -71,6 +71,11 @@ class MochyWidgetManager @Inject constructor(
     var hasLyricWidgets = false
         private set
 
+    // whether any widget on the home screen needs the once-a-second progress or lyric tick
+    @Volatile
+    var hasTickingWidgets = true
+        private set
+
     /** One update at a time: they share the cached artwork, and they no longer run on one thread. */
     private val updating = kotlinx.coroutines.sync.Mutex()
 
@@ -122,6 +127,7 @@ class MochyWidgetManager @Inject constructor(
         val np4x1Ids = if (progressOnly) IntArray(0) else appWidgetManager.getAppWidgetIds(ComponentName(context, NowPlaying4x1WidgetReceiver::class.java))
         val np4x2Ids = appWidgetManager.getAppWidgetIds(ComponentName(context, NowPlaying4x2WidgetReceiver::class.java))
         hasLyricWidgets = np2x2Ids.isNotEmpty() || np4x2Ids.isNotEmpty()
+        hasTickingWidgets = widgetIds.isNotEmpty() || hasLyricWidgets
         if (widgetIds.isEmpty() && turntableWidgetIds.isEmpty() &&
             np2x2Ids.isEmpty() && np4x1Ids.isEmpty() && np4x2Ids.isEmpty()
         ) return

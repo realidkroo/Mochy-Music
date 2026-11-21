@@ -94,12 +94,21 @@ class SpatialAudioProcessor(private val service: AudioFxService) : AudioProcesso
 
         if (surround) {
             val renderer = head ?: HeadRenderer(sampleRate, surroundAzimuths(inChannels)).also { head = it }
+            val gain = surroundGain(inChannels)
+            val mono = params.mono
             val out = replaceOutputBuffer(frames * 4)
             for (f in 0 until frames) {
                 for (c in 0 until inChannels) frame[c] = inputBuffer.getShort() * scale
                 renderer.render(frame)
-                out.putShort(toPcm(renderer.left * SurroundGain))
-                out.putShort(toPcm(renderer.right * SurroundGain))
+                var l = renderer.left * gain
+                var r = renderer.right * gain
+                if (mono) {
+                    val m = (l + r) * 0.5f
+                    l = m
+                    r = m
+                }
+                out.putShort(toPcm(l))
+                out.putShort(toPcm(r))
             }
             out.flip()
             return
@@ -322,8 +331,9 @@ class SpatialAudioProcessor(private val service: AudioFxService) : AudioProcesso
             }
             val earliest = raw.minOrNull() ?: 0.0
             for (i in 0 until n * 2) {
-                delay[i] = if (azimuths[i / 2].isNaN()) 0f else ((raw[i] - earliest) * sampleRate).toFloat()
-                    .coerceIn(0f, (DelaySize - 2).toFloat())
+                // lfe aligns with the centre speaker instead of zero delay so deep bass arrives in phase with the front channels
+                val target = if (azimuths[i / 2].isNaN()) 0.0 else raw[i]
+                delay[i] = ((target - earliest) * sampleRate).toFloat().coerceIn(0f, (DelaySize - 2).toFloat())
             }
         }
 
@@ -378,8 +388,14 @@ class SpatialAudioProcessor(private val service: AudioFxService) : AudioProcesso
         private val EMPTY_BUFFER: ByteBuffer = ByteBuffer.allocateDirect(0).order(ByteOrder.nativeOrder())
         private const val ToggleSeconds = 0.15f
         private const val SpeakerGain = 0.6f
-        private const val SurroundGain = 0.28f
         private const val Knee = 0.9f
+
+        // scales surround mixes to match stereo loudness without crushing dynamics; the soft knee catches peaks
+        private fun surroundGain(channels: Int): Float = when {
+            channels <= 4 -> 0.70f
+            channels <= 6 -> 0.55f
+            else -> 0.48f
+        }
 
         /** android's channel order: fl fr fc lfe bl br sl sr (fewer channels drop from the end) */
         private fun surroundAzimuths(channels: Int): FloatArray = when (channels) {

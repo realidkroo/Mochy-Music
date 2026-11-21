@@ -10,6 +10,7 @@ import com.mochyy.mochymusic.modules.browser.FeedInstall
 import com.mochyy.mochymusic.modules.browser.FeedModule
 import com.mochyy.mochymusic.modules.browser.FeedResult
 import com.mochyy.mochymusic.modules.browser.ModuleFeed
+import com.mochyy.mochymusic.modules.browser.PackItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,8 +63,17 @@ class ModuleBrowserViewModel @Inject constructor(
         return result
     }
 
-    private suspend fun checkZip(postId: String): ModuleRegistry.LinkCheck {
-        val file = feed.download(postId) ?: return ModuleRegistry.LinkCheck.Unreachable
+    /** one of a pack's modules, checked the same way; its spinner goes by [packKey] */
+    suspend fun fetchItem(module: FeedModule, item: PackItem): ModuleRegistry.LinkCheck {
+        _fetching.value = packKey(module, item)
+        val link = item.link.takeIf { item.isLink }
+        val result = if (link != null) registry.check(link) else checkZip(module.id, item.id)
+        _fetching.value = null
+        return result
+    }
+
+    private suspend fun checkZip(postId: String, item: String? = null): ModuleRegistry.LinkCheck {
+        val file = feed.download(postId, item) ?: return ModuleRegistry.LinkCheck.Unreachable
         return registry.checkZip(Uri.fromFile(file))
     }
 }
@@ -81,3 +91,6 @@ fun List<FeedModule>.matching(query: String, category: String?): List<FeedModule
 }
 
 private val PaidWords = Regex("paid|premium", RegexOption.IGNORE_CASE)
+
+/** what the spinner on one of a pack's modules goes by */
+fun packKey(module: FeedModule, item: PackItem) = "${module.id}/${item.id}"

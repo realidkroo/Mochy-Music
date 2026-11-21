@@ -242,11 +242,41 @@ class AudioLabDspTest {
         assertEquals(2, format.channelCount)
         val six = ShortArray(rate * 6) { i -> if (i % 6 == 2) (8000 * sin(2 * PI * 440.0 * (i / 6) / rate)).toInt().toShort() else 0 }
         val out = run(on, six, channels = 6, outChannels = 2)
-        // the centre channel arrives in both ears, equally
+        // the centre channel arrives in both ears, equally and at a healthy level
         val left = ShortArray(out.size / 2) { out[it * 2] }
         val right = ShortArray(out.size / 2) { out[it * 2 + 1] }
         assertEquals(rmsDb(left), rmsDb(right), 0.5)
-        assertTrue(rmsDb(left) > -40)
+        assertTrue("surround centre too quiet: ${rmsDb(left)} dB", rmsDb(left) > -26)
+    }
+
+    @Test
+    fun `surround aligns lfe with centre and honours mono folddown`() {
+        val fx = AudioFxService()
+        fx.spatial = SpatialParams(surround = true)
+        val processor = SpatialAudioProcessor(fx)
+        configure(processor, channels = 6)
+
+        val centreOnly = ShortArray(rate * 6) { i ->
+            if (i % 6 == 2) (10000 * sin(2 * PI * 80.0 * (i / 6) / rate)).toInt().toShort() else 0
+        }
+        val centreAndLfe = ShortArray(rate * 6) { i ->
+            if (i % 6 == 2 || i % 6 == 3) (10000 * sin(2 * PI * 80.0 * (i / 6) / rate)).toInt().toShort() else 0
+        }
+        val outCentre = run(processor, centreOnly, channels = 6, outChannels = 2)
+        processor.flush()
+        val outBoth = run(processor, centreAndLfe, channels = 6, outChannels = 2)
+        // in-phase lfe must reinforce the centre bass instead of cancelling or arriving early
+        assertTrue("centre+lfe (${rmsDb(outBoth)}) should beat centre alone (${rmsDb(outCentre)})", rmsDb(outBoth) > rmsDb(outCentre) + 2.0)
+
+        fx.spatial = SpatialParams(surround = true, mono = true)
+        processor.flush()
+        val backLeftOnly = ShortArray(rate / 2 * 6) { i ->
+            if (i % 6 == 4) (12000 * sin(2 * PI * 300.0 * (i / 6) / rate)).toInt().toShort() else 0
+        }
+        val monoOut = run(processor, backLeftOnly, channels = 6, outChannels = 2)
+        for (i in monoOut.size / 2 until monoOut.size step 2) {
+            assertEquals(monoOut[i].toInt(), monoOut[i + 1].toInt())
+        }
     }
 
     @Test

@@ -34,14 +34,21 @@ import coil3.toBitmap
 import coil3.imageLoader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Spacer
+import com.mochyy.mochymusic.ui.player.flagship.downscaledLayer
+import kotlin.math.floor
 
 // one warp shader for every backdrop copy: each draw sets its own numbers first, and a song change compiles nothing
 private val sharedWarpShader: Any? by lazy {
     if (android.os.Build.VERSION.SDK_INT >= 33) createAgslShader(DirectWarpShaderSource) else null
 }
+
+// soft 48px liquid warp looks the same at 30 steps a second while cutting gpu work and refresh wakeups by 4x
+private const val WarpStepsPerSecond = 30f
+private const val WarpWakeMillis = 30L
 
 // null below android 13, where the warp can't run; passing null to a backdrop turns the warp off
 @Composable
@@ -75,9 +82,11 @@ fun CoverGradientBackdrop(
 
                 ownTime.floatValue = ((frameTimeNanos / 1_000_000f) * (100f / 100_000f)).mod(100f)
             }
+            kotlinx.coroutines.delay(WarpWakeMillis)
         }
     }
-    val time = timeProvider ?: { ownTime.floatValue }
+    val currentTime by androidx.compose.runtime.rememberUpdatedState(timeProvider ?: { ownTime.floatValue })
+    val step by remember { derivedStateOf { floor(currentTime() * WarpStepsPerSecond) } }
 
     val request = remember(context, thumbnailUrl) {
         ImageRequest.Builder(context)
@@ -91,11 +100,7 @@ fun CoverGradientBackdrop(
 
     Box(modifier = modifier) {
         if (shader != null && android.os.Build.VERSION.SDK_INT >= 33) {
-            // The warp in one pass. This used to be the cover drawn into a layer, the warp run
-            // over that layer as a RenderEffect into a second one, and the result scaled up from a
-            // third (an Offscreen layer kept only for the zoom) - three full-screen buffers for a
-            // 48px picture, every frame the player was open. The shader below samples the picture
-            // directly, with the zoom folded into its coordinates, so it is one full-screen draw.
+            // one downscaled pass over the 48px picture: a sixteenth of the pixels at 30 hz looks identical and saves huge gpu power
             val bitmap by produceState<android.graphics.Bitmap?>(null, request) {
                 value = runCatching { context.imageLoader.execute(request).image?.toBitmap() }.getOrNull()
                 currentOnLoaded?.invoke()
@@ -104,8 +109,10 @@ fun CoverGradientBackdrop(
             Spacer(
                 modifier = Modifier
                     .requiredSize(width, height)
+                    .downscaledLayer()
                     .drawWithCache {
                         val picture = bitmap
+                        val brush = ShaderBrush(directWarp.asAgslPaintShader())
                         val input = picture?.let {
                             android.graphics.BitmapShader(
                                 it,
@@ -126,9 +133,9 @@ fun CoverGradientBackdrop(
                             if (input == null || !isShown()) return@onDrawBehind
                             directWarp.setAgslInputShader("image", input)
                             directWarp.setAgslUniform("resolution", size.width, size.height)
-                            directWarp.setAgslUniform("time", time())
+                            directWarp.setAgslUniform("time", step / WarpStepsPerSecond)
                             directWarp.setAgslUniform("zoom", BackdropZoom)
-                            drawRect(brush = ShaderBrush(directWarp.asAgslPaintShader()))
+                            drawRect(brush = brush)
                         }
                     }
             )

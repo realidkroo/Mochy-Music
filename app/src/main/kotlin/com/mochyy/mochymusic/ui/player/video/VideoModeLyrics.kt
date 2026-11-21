@@ -539,13 +539,14 @@ internal fun FollowingLyrics(
             return@Box
         }
 
-        val progress by connection.progressState.collectAsState()
+        // kept as state rather than read here, so 15 hz position ticks only recalculate the derived line indices
+        val progress = connection.progressState.collectAsState()
         val offsetMs by connection.lyricsOffsetMs.collectAsState()
         val currentIndex by remember(lines, unsynced) {
-            derivedStateOf { if (unsynced) -1 else LyricsUtils.findCurrentLineIndex(lines, progress.position + offsetMs) }
+            derivedStateOf { if (unsynced) -1 else LyricsUtils.findCurrentLineIndex(lines, progress.value.position + offsetMs) }
         }
         val anchorIndex by remember(lines, unsynced) {
-            derivedStateOf { if (unsynced) -1 else lyricAnchorIndex(lines, progress.position + offsetMs) }
+            derivedStateOf { if (unsynced) -1 else lyricAnchorIndex(lines, progress.value.position + offsetMs) }
         }
         val rows = remember(lines) { buildLyricRows(lines) }
         val rowOfLine = remember(rows, lines) {
@@ -554,7 +555,7 @@ internal fun FollowingLyrics(
             }
         }
         val activeInterlude by remember(lines, rows) {
-            derivedStateOf { activeInterludeOf(rows, progress.position + offsetMs) }
+            derivedStateOf { activeInterludeOf(rows, progress.value.position + offsetMs) }
         }
         val useAgents = remember(lines) { usesAgentAlignment(lines) }
         val anchorRow by remember(rowOfLine) { derivedStateOf { rowOfLine.getOrNull(anchorIndex) ?: -1 } }

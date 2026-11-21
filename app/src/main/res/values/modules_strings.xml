@@ -167,6 +167,7 @@
     <string name="module_browser_added">ADDED</string>
     <string name="module_browser_locked">LOCKED</string>
     <string name="module_browser_open">OPEN</string>
+    <string name="module_browser_view">VIEW</string>
     <string name="module_browser_by">by %1$s</string>
     <string name="module_browser_by_version">by %1$s · %2$s</string>
     <string name="module_browser_account">Signed in as %1$s</string>
@@ -221,6 +222,8 @@
     <string name="module_store_fork_devs_title">Building your own Mochy?</string>
     <string name="module_store_fork_devs">The store only answers official builds, which carry a key that isn\'t in the public code. To take it out of your fork, set FeedUrl to an empty string in modules/browser/ModuleFeed.kt: the Module Store card leaves Settings and the store switches itself off. Or run your own module feed from github.com/ryukeicii/mochy-modulebot.</string>
     <string name="module_store_fork_get">Get official Mochy</string>
+    <string name="experimental_simulate_fork_title">Pretend to be a fork</string>
+    <string name="experimental_simulate_fork_desc">The Module Store treats this phone like a fork, so you can see the page a fork gets. Turn it off to go back to the store.</string>
     <string name="module_store_update_title">There\'s an update</string>
     <string name="module_store_update_versions">%1$s → %2$s</string>
     <string name="module_store_update_newer">A newer version was posted since you added it.</string>
@@ -230,6 +233,9 @@
     <string name="module_store_install_zip">.Zip</string>
     <string name="module_store_install_link">Link</string>
     <string name="module_store_install_web">Web</string>
+    <string name="module_store_install_pack">Pack</string>
+    <string name="module_store_pack_title">In this pack</string>
+    <string name="module_store_pack_link">Added from its link</string>
     <string name="module_store_previews">Preview</string>
     <string name="module_store_preview">A preview of %1$s</string>
     <string name="module_store_open_post">Open its post on Discord</string>

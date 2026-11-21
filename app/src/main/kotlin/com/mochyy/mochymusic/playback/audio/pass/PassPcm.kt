@@ -63,9 +63,13 @@ internal object PassPcm {
                 C.ENCODING_PCM_32BIT -> input.int
                 else -> {
                     val value = input.float.toDouble()
-                    val step = (value * floatScale).roundToLong().coerceIn(-floatScale.toLong(), floatScale.toLong() - 1)
-                    if (exact && abs(value * floatScale - step) > 1e-3) exact = false
-                    step.toInt() shl floatShift
+                    if (!value.isFinite()) {
+                        0
+                    } else {
+                        val step = (value * floatScale).roundToLong().coerceIn(-floatScale.toLong(), floatScale.toLong() - 1)
+                        if (exact && abs(value * floatScale - step) > 1e-3) exact = false
+                        step.toInt() shl floatShift
+                    }
                 }
             }
             put(output, if (muted) 0 else sample, outBits)

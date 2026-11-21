@@ -43,7 +43,8 @@ class DynamicResolvingMediaSource(
 
     private var innerMediaSource: MediaSource? = null
     private var timeline: Timeline? = null
-    private var fetchError: IOException? = null
+    // written on dispatchers.io and read on exoplayer's playback thread in maybeThrowSourceInfoRefreshError
+    @Volatile private var fetchError: IOException? = null
     private var fetchScope = CoroutineScope(Dispatchers.IO + Job())
 
     // The resolved stream's source is built and prepared on the playback thread this source was
@@ -95,10 +96,13 @@ class DynamicResolvingMediaSource(
             val builder = originalMediaItem.buildUpon().setUri(Uri.parse(result.streamUrl))
             result.cacheKey?.let(builder::setCustomCacheKey)
 
-            if (result.isDash || result.streamUrl.endsWith(".mpd")) {
+            val cleanUrl = result.streamUrl.substringBefore('?')
+            if (result.isDash || cleanUrl.endsWith(".mpd", ignoreCase = true)) {
                 builder.setMimeType(MimeTypes.APPLICATION_MPD)
             }
-            if (result.isHls) builder.setMimeType(MimeTypes.APPLICATION_M3U8)
+            if (result.isHls || cleanUrl.endsWith(".m3u8", ignoreCase = true)) {
+                builder.setMimeType(MimeTypes.APPLICATION_M3U8)
+            }
 
             val widevine = result.widevineLicense
             if (widevine != null) {

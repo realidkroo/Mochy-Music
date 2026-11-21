@@ -270,16 +270,20 @@ class PlayerConnection(
 
     // mainactivity turns this off while the app is hidden, the poll below rests then instead of recomposing the player for nobody
     val isUiVisible = MutableStateFlow(true)
+    // nudged by player callbacks so the position poller sleeps with zero wakeups while paused
+    private val progressNudge = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     val progressState: kotlinx.coroutines.flow.StateFlow<com.mochyy.mochymusic.ui.player.models.ProgressState> =
         kotlinx.coroutines.flow.callbackFlow {
             while (true) {
                 isUiVisible.first { it }
+                var moving = false
                 try {
                     val p = attachedPlayer
                     if (p != null) {
                         val position = p.currentPosition.coerceAtLeast(0L)
                         val duration = p.duration.coerceAtLeast(0L)
+                        moving = p.isPlaying || p.playbackState == Player.STATE_BUFFERING
                         trySend(
                             com.mochyy.mochymusic.ui.player.models.ProgressState(
                                 position = position,
@@ -289,11 +293,15 @@ class PlayerConnection(
                         )
                     }
                 } catch (_: Exception) {}
-                kotlinx.coroutines.delay(66L)
+                if (moving) {
+                    kotlinx.coroutines.delay(66L)
+                } else {
+                    progressNudge.first()
+                }
             }
         }.distinctUntilChanged().stateIn(
             scope,
-            SharingStarted.Lazily,
+            SharingStarted.WhileSubscribed(5_000L),
             com.mochyy.mochymusic.ui.player.models.ProgressState(),
         )
 
@@ -369,6 +377,7 @@ class PlayerConnection(
         shuffleModeEnabled.value = newPlayer.shuffleModeEnabled
         repeatMode.value = newPlayer.repeatMode
         publishQueueSnapshot()
+        progressNudge.tryEmit(Unit)
 
         Timber.tag(TAG).d("Attached to new player instance: $newPlayer")
     }
@@ -642,6 +651,7 @@ class PlayerConnection(
                 service.transport.cancel()
                 player.seekTo(position)
             }
+            progressNudge.tryEmit(Unit)
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error in seekTo")
         }
@@ -698,6 +708,7 @@ class PlayerConnection(
     override fun onPlaybackStateChanged(state: Int) {
         playbackState.value = state
         error.value = player.playerError
+        progressNudge.tryEmit(Unit)
     }
 
     override fun onPlayWhenReadyChanged(
@@ -705,6 +716,19 @@ class PlayerConnection(
         reason: Int,
     ) {
         playWhenReady.value = newPlayWhenReady
+        progressNudge.tryEmit(Unit)
+    }
+
+    override fun onIsPlayingChanged(isPlaying: Boolean) {
+        progressNudge.tryEmit(Unit)
+    }
+
+    override fun onPositionDiscontinuity(
+        oldPosition: Player.PositionInfo,
+        newPosition: Player.PositionInfo,
+        reason: Int,
+    ) {
+        progressNudge.tryEmit(Unit)
     }
 
     override fun onMediaItemTransition(
@@ -716,6 +740,7 @@ class PlayerConnection(
         currentWindowIndex.value = player.getCurrentQueueIndex()
         publishQueueSnapshot()
         updateCanSkipPreviousAndNext()
+        progressNudge.tryEmit(Unit)
     }
 
     override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
@@ -790,6 +815,7 @@ class PlayerConnection(
         currentWindowIndex.value = player.getCurrentQueueIndex()
         publishQueueSnapshot()
         updateCanSkipPreviousAndNext()
+        progressNudge.tryEmit(Unit)
     }
 
     override fun onShuffleModeEnabledChanged(enabled: Boolean) {
@@ -798,6 +824,7 @@ class PlayerConnection(
         currentWindowIndex.value = player.getCurrentQueueIndex()
         publishQueueSnapshot()
         updateCanSkipPreviousAndNext()
+        progressNudge.tryEmit(Unit)
     }
 
     override fun onRepeatModeChanged(mode: Int) {

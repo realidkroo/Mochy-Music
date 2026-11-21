@@ -4,7 +4,6 @@ package com.mochyy.mochymusic.ui.screens.audiolab
 
 import android.content.Context
 import android.media.AudioManager
-import android.media.MediaCodecList
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
@@ -337,13 +336,9 @@ private fun AtmosCard(viewModel: AudioLabViewModel) {
 
 private class AtmosSupport(@StringRes val decoder: Int, @StringRes val spatializer: Int)
 
-/** what this phone can do with an atmos stream: decode it, and spatialise it itself */
+/** what this phone can do with an atmos stream: decode it (system codec or bundled ffmpeg), and spatialise it itself */
 private fun atmosSupport(context: Context): AtmosSupport {
-    val decoder = runCatching {
-        MediaCodecList(MediaCodecList.ALL_CODECS).codecInfos.any { info ->
-            !info.isEncoder && info.supportedTypes.any { it.equals("audio/eac3-joc", ignoreCase = true) }
-        }
-    }.getOrDefault(false)
+    val decoder = com.mochyy.mochymusic.modules.DeviceDecoders.canPlay("DOLBY ATMOS")
     val spatializer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2) spatializerState(context) else R.string.fx_atmos_needs_android
     return AtmosSupport(if (decoder) R.string.fx_atmos_yes else R.string.fx_atmos_not_on_phone, spatializer)
 }

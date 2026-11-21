@@ -31,6 +31,9 @@ class PassRouterSink(
 
     // the sink that played the last song and is playing out what it holds before the next one writes
     private var retiring: AudioSink? = null
+    private var pendingConfigure = false
+    // captured when configure runs so gapless pre-buffering of the next song never alters the playing song's route
+    private var configuredSource: Format? = null
     private var lastFormat: Format? = null
     private var lastBufferSize = 0
     private var lastChannels: IntArray? = null
@@ -51,6 +54,7 @@ class PassRouterSink(
         lastFormat = inputFormat
         lastBufferSize = specifiedBufferSize
         lastChannels = outputChannels
+        configuredSource = sourceFormat
         route(inputFormat, fresh = true)
     }
 
@@ -58,30 +62,33 @@ class PassRouterSink(
     private fun route(format: Format, fresh: Boolean) {
         decidedAt = pass.generation
         val identity = lastChannels?.let { map -> map.indices.all { map[it] == it } } ?: true
-        val target = if (identity && exclusive.canTake(format, sourceFormat)) exclusive else normal
+        val target = if (identity && exclusive.canTake(format, configuredSource)) exclusive else normal
         if (target !== active) {
             // a handover still going the other way is cut short: that sink is needed again
             if (retiring === target) target.reset()
-            // both play to the same dac: the old one finishes what it holds before the new one opens it
+            // wait until the old sink finishes and lets go of the dac before configuring the new one, or mixer/usb setup collides
             retiring = active
             active = target
-            configureSink(target, format)
+            pendingConfigure = true
         } else if (fresh) {
-            configureSink(target, format)
+            if (retiring != null || (active !== exclusive && pass.holdsNormal())) {
+                pendingConfigure = true
+            } else {
+                pendingConfigure = false
+                configureSink(target, format)
+            }
         }
     }
 
     private fun configureSink(target: AudioSink, format: Format) {
-        if (target === exclusive) exclusive.configure(format, sourceFormat) else normal.configure(format, lastBufferSize, lastChannels)
+        if (target === exclusive) exclusive.configure(format, configuredSource) else normal.configure(format, lastBufferSize, lastChannels)
     }
 
     override fun handleBuffer(buffer: ByteBuffer, presentationTimeUs: Long, encodedAccessUnitCount: Int): Boolean {
         // an effect, the switch or the dac changed mid-song: the song carries on wherever it may go now
-        if (decidedAt != pass.generation && retiring == null) lastFormat?.let { route(it, fresh = false) }
-        if (!finishRetiring()) return false
+        if (decidedAt != pass.generation && retiring == null && !pendingConfigure) lastFormat?.let { route(it, fresh = false) }
+        if (!prepareActive()) return false
         if (active !== exclusive) {
-            // straight after the direct driver, android hasn't got the dac back yet
-            if (pass.holdsNormal()) return false
             return active.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
         }
         return try {
@@ -90,6 +97,27 @@ class PassRouterSink(
             fallBack(failure)
             false
         }
+    }
+
+    // waits for any retiring sink and usb driver hand-back, then configures and starts the new active sink cleanly
+    private fun prepareActive(): Boolean {
+        if (!finishRetiring()) return false
+        // straight after the direct driver, android hasn't got the dac back yet
+        if (active !== exclusive && pass.holdsNormal()) return false
+        if (pendingConfigure) {
+            val format = lastFormat ?: return true
+            pendingConfigure = false
+            configureSink(active, format)
+            if (playing) {
+                try {
+                    active.play()
+                } catch (failure: PassFailure) {
+                    fallBack(failure)
+                    return false
+                }
+            }
+        }
+        return true
     }
 
     // true once the old sink has played out and let go of the dac; one that fails while finishing (unplugged, taken over) has nothing left to wait for, and must not stop the next song
@@ -105,7 +133,7 @@ class PassRouterSink(
         if (!ended) return false
         runCatching { old.reset() }
         retiring = null
-        if (!playing) return true
+        if (!playing || pendingConfigure) return true
         try {
             active.play()
         } catch (failure: PassFailure) {
@@ -118,17 +146,23 @@ class PassRouterSink(
     private fun fallBack(failure: PassFailure) {
         val format = lastFormat ?: return
         Timber.tag("AudioPass").i("exclusive output stopped: ${failure.message}")
-        pass.failed(format, sourceFormat, failure.message ?: "")
+        pass.failed(format, configuredSource, failure.message ?: "")
         exclusive.reset()
-        normal.configure(format, lastBufferSize, lastChannels)
         active = normal
         retiring = null
         decidedAt = pass.generation
-        if (playing) normal.play()
+        // after direct usb lets go, wait until android sees the dac again before opening the normal track
+        if (pass.holdsNormal()) {
+            pendingConfigure = true
+        } else {
+            pendingConfigure = false
+            normal.configure(format, lastBufferSize, lastChannels)
+            if (playing) normal.play()
+        }
     }
 
     override fun playToEndOfStream() {
-        if (!finishRetiring()) return
+        if (!prepareActive()) return
         try {
             active.playToEndOfStream()
         } catch (failure: PassFailure) {
@@ -136,15 +170,27 @@ class PassRouterSink(
         }
     }
 
-    override fun isEnded(): Boolean = retiring == null && active.isEnded
+    override fun isEnded(): Boolean = retiring == null && !pendingConfigure && active.isEnded
 
-    override fun hasPendingData(): Boolean = retiring?.hasPendingData() == true || active.hasPendingData()
+    override fun hasPendingData(): Boolean = retiring?.hasPendingData() == true || pendingConfigure || active.hasPendingData()
 
-    override fun getCurrentPositionUs(sourceEnded: Boolean): Long = (retiring ?: active).getCurrentPositionUs(sourceEnded)
+    override fun getCurrentPositionUs(sourceEnded: Boolean): Long =
+        if (retiring != null) retiring!!.getCurrentPositionUs(sourceEnded)
+        else if (pendingConfigure) AudioSink.CURRENT_POSITION_NOT_SET
+        else active.getCurrentPositionUs(sourceEnded)
 
     override fun play() {
         playing = true
-        retiring?.play() ?: active.play()
+        val old = retiring
+        if (old != null) {
+            runCatching { old.play() }
+        } else if (!pendingConfigure) {
+            try {
+                active.play()
+            } catch (failure: PassFailure) {
+                fallBack(failure)
+            }
+        }
     }
 
     override fun pause() {
@@ -165,6 +211,8 @@ class PassRouterSink(
 
     override fun reset() {
         retiring = null
+        pendingConfigure = false
+        configuredSource = null
         normal.reset()
         exclusive.reset()
         active = normal

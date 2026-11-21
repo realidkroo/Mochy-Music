@@ -1408,3 +1408,6 @@ val DiscordCanvasSizeKey = intPreferencesKey("discordPresenceCanvasSize")
 
 // which version of the module store's terms was agreed to; 0 means never, and a newer version asks again
 val ModuleStoreTermsKey = intPreferencesKey("moduleStoreTerms")
+
+// experimental: the module store answers as it would a fork, to see that page without building one
+val SimulateForkKey = booleanPreferencesKey("simulateFork")

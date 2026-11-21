@@ -3,27 +3,25 @@
 package com.mochyy.mochymusic.ui.player.customize
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
@@ -33,8 +31,10 @@ import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.toBitmap
 import com.mochyy.mochymusic.constants.PlayerBackgroundStyle
-import com.mochyy.mochymusic.ui.utils.resize
+import com.mochyy.mochymusic.ui.player.flagship.downscaledLayer
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -43,6 +43,7 @@ fun PlayerBackgroundContent(
     thumbnailUrl: String?,
     pureBlack: Boolean,
     modifier: Modifier = Modifier,
+    animate: Boolean = true,
 ) {
     when (style) {
         PlayerBackgroundStyle.COVER_GRADIENT -> Unit
@@ -50,10 +51,12 @@ fun PlayerBackgroundContent(
         PlayerBackgroundStyle.DARK_GRADIENT -> DarkGradientBackground(modifier = modifier)
         PlayerBackgroundStyle.APPLE_MUSIC -> AppleMusicBackground(
             thumbnailUrl = thumbnailUrl,
+            animate = animate,
             modifier = modifier,
         )
         PlayerBackgroundStyle.AMBIENT -> StandaloneAmbientBackground(
             thumbnailUrl = thumbnailUrl,
+            animate = animate,
             modifier = modifier,
         )
     }
@@ -61,12 +64,12 @@ fun PlayerBackgroundContent(
 
 // the ambient backdrop on its own, from the picture's colours and with its own clock, for previews and the other styles' pages
 @Composable
-private fun StandaloneAmbientBackground(thumbnailUrl: String?, modifier: Modifier = Modifier) {
+private fun StandaloneAmbientBackground(thumbnailUrl: String?, animate: Boolean, modifier: Modifier = Modifier) {
     val colors = com.mochyy.mochymusic.ui.player.flagship.rememberAmbientColors()
     com.mochyy.mochymusic.ui.player.flagship.FollowPicture(colors, thumbnailUrl)
     com.mochyy.mochymusic.ui.player.flagship.AmbientBackdrop(
         colors = colors,
-        time = com.mochyy.mochymusic.ui.player.flagship.rememberAmbientClock(running = true),
+        time = com.mochyy.mochymusic.ui.player.flagship.rememberAmbientClock(running = animate),
         modifier = modifier,
     )
 }
@@ -90,6 +93,7 @@ fun PlayerBackgroundPreview(
             thumbnailUrl = thumbnailUrl,
             pureBlack = false,
             modifier = modifier,
+            animate = animate,
         )
         return
     }
@@ -124,7 +128,7 @@ private fun DarkGradientBackground(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun AppleMusicBackground(thumbnailUrl: String?, modifier: Modifier = Modifier) {
+private fun AppleMusicBackground(thumbnailUrl: String?, animate: Boolean, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val fallbackColorInt = MaterialTheme.colorScheme.primaryContainer.toArgb()
     val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
@@ -159,16 +163,22 @@ private fun AppleMusicBackground(thumbnailUrl: String?, modifier: Modifier = Mod
         }
     }
 
-    val transition = rememberInfiniteTransition(label = "appleMusicMorph")
-    val drift by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = (2f * Math.PI).toFloat(),
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 24_000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "appleMusicDrift",
-    )
+    // paced to 30 hz and paused while hidden so slow drifting blobs don't burn 120 hz gpu frames
+    val drift = remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(animate) {
+        if (!animate) return@LaunchedEffect
+        var last = 0L
+        while (isActive) {
+            withInfiniteAnimationFrameNanos { now ->
+                if (last != 0L) {
+                    val dt = ((now - last) / 1_000_000_000f).coerceIn(0f, 0.1f)
+                    drift.floatValue = (drift.floatValue + dt * BlobSpeedRadPerSec) % TwoPi
+                }
+                last = now
+            }
+            delay(BlobWakeMillis)
+        }
+    }
 
     val blobColors = List(BlobCount) { index ->
         animateColorAsState(
@@ -180,44 +190,48 @@ private fun AppleMusicBackground(thumbnailUrl: String?, modifier: Modifier = Mod
 
     val base = palette.firstOrNull() ?: surfaceColor
 
-    Box(
+    Spacer(
         modifier = modifier
-            .background(base)
-            .drawColorBlobs(blobColors) { drift },
+            .downscaledLayer()
+            .drawColorBlobs(base, blobColors) { drift.floatValue },
     )
 }
 
 private const val BlobCount = 6
+private const val TwoPi = (2.0 * Math.PI).toFloat()
+private const val BlobSpeedRadPerSec = TwoPi / 24f
+private const val BlobWakeMillis = 32L
 
+// prebuilds every radial and veil brush once per colour change, then only moves the circles each tick
 private fun Modifier.drawColorBlobs(
+    base: Color,
     colors: List<Color>,
     phase: () -> Float,
-): Modifier = drawBehind {
-    val t = phase()
-    colors.forEachIndexed { index, color ->
-
-        val angle = t * (0.6f + index * 0.17f) + index * 1.05f
-        val orbitX = size.width * (0.20f + 0.06f * (index % 3))
-        val orbitY = size.height * (0.14f + 0.05f * (index % 4))
-        val center = Offset(
-            x = size.width * (0.28f + 0.15f * (index % 3)) + orbitX * kotlin.math.cos(angle),
-            y = size.height * (0.24f + 0.18f * (index % 4)) + orbitY * kotlin.math.sin(angle),
-        )
-        val radius = size.minDimension * (0.55f + 0.08f * (index % 3))
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(color.copy(alpha = 0.55f), color.copy(alpha = 0f)),
-                center = center,
-                radius = radius,
-            ),
-            radius = radius,
-            center = center,
+): Modifier = drawWithCache {
+    val radii = FloatArray(colors.size) { index -> size.minDimension * (0.55f + 0.08f * (index % 3)) }
+    val brushes = colors.mapIndexed { index, color ->
+        Brush.radialGradient(
+            colors = listOf(color.copy(alpha = 0.55f), color.copy(alpha = 0f)),
+            center = Offset.Zero,
+            radius = radii[index],
         )
     }
-
-    drawRect(
-        brush = Brush.verticalGradient(
-            listOf(Color.Black.copy(alpha = 0.10f), Color.Black.copy(alpha = 0.45f)),
-        )
+    val veil = Brush.verticalGradient(
+        listOf(Color.Black.copy(alpha = 0.10f), Color.Black.copy(alpha = 0.45f)),
     )
+    onDrawBehind {
+        drawRect(base)
+        val t = phase()
+        for (index in brushes.indices) {
+            val angle = t * (0.6f + index * 0.17f) + index * 1.05f
+            val orbitX = size.width * (0.20f + 0.06f * (index % 3))
+            val orbitY = size.height * (0.14f + 0.05f * (index % 4))
+            val cx = size.width * (0.28f + 0.15f * (index % 3)) + orbitX * kotlin.math.cos(angle)
+            val cy = size.height * (0.24f + 0.18f * (index % 4)) + orbitY * kotlin.math.sin(angle)
+            translate(cx, cy) {
+                drawCircle(brush = brushes[index], radius = radii[index], center = Offset.Zero)
+            }
+        }
+        drawRect(brush = veil)
+    }
 }

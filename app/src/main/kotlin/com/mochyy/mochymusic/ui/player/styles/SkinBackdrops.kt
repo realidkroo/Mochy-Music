@@ -57,7 +57,10 @@ private fun SkinBackgroundFill(background: SkinBackground, context: SkinContext,
         is SkinBackground.Player -> if (background.style == PlayerBackgroundStyle.AMBIENT) {
             AmbientSkinBackdrop(context, modifier)
         } else {
-            PlayerBackgroundContent(style = background.style, thumbnailUrl = context.track.artwork, pureBlack = false, modifier = modifier)
+            val showing = rememberStyleShowing()
+            val obscured = LocalAppContentObscured.current
+            val running by remember { derivedStateOf { !context.preview && showing() && !obscured.value } }
+            PlayerBackgroundContent(style = background.style, thumbnailUrl = context.track.artwork, pureBlack = false, modifier = modifier, animate = running)
         }
         is SkinBackground.Fill -> {
             val colors = background.colors.map(context::color)

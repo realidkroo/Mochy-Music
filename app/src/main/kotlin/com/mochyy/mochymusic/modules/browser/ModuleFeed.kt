@@ -15,7 +15,10 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.RequestBody.Companion.toRequestBody
+import com.mochyy.mochymusic.constants.SimulateForkKey
 import com.mochyy.mochymusic.ui.component.DiscordMarkdown
+import com.mochyy.mochymusic.utils.dataStore
+import com.mochyy.mochymusic.utils.get
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
@@ -47,7 +50,9 @@ data class FeedModule(
     /** the store page's screenshots, set with /preview */
     val previews: List<String>,
     val install: FeedInstall,
-    /** the zip's size in bytes, null for a linked module */
+    /** a pack's modules, each added on its own; empty for anything else */
+    val pack: List<PackItem>,
+    /** the zip's size in bytes (a pack's zips together), null for a linked module */
     val size: Long?,
     /** when it last changed, in milliseconds */
     val updated: Long?,
@@ -56,8 +61,20 @@ data class FeedModule(
     val postUrl: String,
 )
 
-/** how the store gets a module: its post's zip, a link added like a pasted one, or a web page it opens */
-enum class FeedInstall { Zip, Link, Web }
+/** how the store gets a module: its post's zip, a link added like a pasted one, a web page it opens, or a pack of several */
+enum class FeedInstall { Zip, Link, Web, Pack }
+
+/** one module in a pack: a zip in the pack's post, or a link it's added from like a pasted one */
+data class PackItem(
+    val id: String,
+    val isLink: Boolean,
+    val name: String,
+    val moduleId: String?,
+    val version: String?,
+    val size: Long?,
+    val icon: String?,
+    val link: String?,
+)
 
 enum class FeedKind { Look, Player, Source, Other }
 
@@ -127,8 +144,8 @@ class ModuleFeed @Inject constructor(
 
     suspend fun load(): FeedResult = withContext(Dispatchers.IO) {
         if (!isSetUp) return@withContext FeedResult.NotSetUp
-        // a build without the key would only be turned away, so it doesn't ask
-        if (!StoreSignature.isOfficial) return@withContext FeedResult.Unofficial
+        // a build without the key would only be turned away, so it doesn't ask; experimental can pretend to be one, to see what a fork gets
+        if (!StoreSignature.isOfficial || context.dataStore.get(SimulateForkKey, false)) return@withContext FeedResult.Unofficial
         val session = _session.value ?: return@withContext FeedResult.SignedOut
         val response = try {
             call(Request.Builder().url("$FeedUrl/modules"), session)
@@ -151,13 +168,14 @@ class ModuleFeed @Inject constructor(
         }
     }
 
-    /** the module's zip into the cache, ready to be checked like a zip picked from the phone; null when it couldn't be fetched */
-    suspend fun download(postId: String): File? = withContext(Dispatchers.IO) {
+    /** the module's zip, or one of a pack's by its [item] id, into the cache, ready to be checked like a zip picked from the phone; null when it couldn't be fetched */
+    suspend fun download(postId: String, item: String? = null): File? = withContext(Dispatchers.IO) {
         val session = _session.value ?: return@withContext null
         val folder = File(context.cacheDir, "module_browser").apply { mkdirs() }
-        val file = File(folder, "$postId.zip")
+        val file = File(folder, if (item != null) "$postId-$item.zip" else "$postId.zip")
+        val url = if (item != null) "$FeedUrl/modules/$postId/zip?item=${Uri.encode(item)}" else "$FeedUrl/modules/$postId/zip"
         runCatching {
-            call(Request.Builder().url("$FeedUrl/modules/$postId/zip"), session).use { response ->
+            call(Request.Builder().url(url), session).use { response ->
                 if (!response.isSuccessful) return@use null
                 file.outputStream().use { out -> response.body.byteStream().copyTo(out) }
                 file
@@ -195,6 +213,20 @@ class ModuleFeed @Inject constructor(
         )
     }
 
+    private fun packItemOf(item: JSONObject?): PackItem? {
+        val id = item?.optString("id")?.takeIf { it.isNotBlank() } ?: return null
+        return PackItem(
+            id = id,
+            isLink = item.optString("kind") == "link",
+            name = item.optString("name").ifBlank { id },
+            moduleId = item.optString("moduleId").takeIf { it.isNotBlank() && !item.isNull("moduleId") },
+            version = item.optString("version").takeIf { it.isNotBlank() && !item.isNull("version") },
+            size = item.optLong("size", -1).takeIf { it >= 0 && !item.isNull("size") },
+            icon = item.optString("icon").takeIf { it.startsWith("https://") },
+            link = item.optString("link").takeIf { it.startsWith("https://") },
+        )
+    }
+
     private fun modulesOf(body: JSONObject): List<FeedModule> {
         val list = body.optJSONArray("modules") ?: return emptyList()
         return (0 until list.length()).mapNotNull { index ->
@@ -226,8 +258,10 @@ class ModuleFeed @Inject constructor(
                 install = when (item.optString("install")) {
                     "link" -> FeedInstall.Link
                     "web" -> FeedInstall.Web
+                    "pack" -> FeedInstall.Pack
                     else -> FeedInstall.Zip
                 },
+                pack = item.optJSONArray("pack")?.let { items -> (0 until items.length()).mapNotNull { packItemOf(items.optJSONObject(it)) } }.orEmpty(),
                 link = item.optString("link").takeIf { it.startsWith("https://") },
                 size = item.optLong("size", -1).takeIf { it >= 0 && !item.isNull("size") },
                 updated = item.optLong("updated", -1).takeIf { it > 0 },

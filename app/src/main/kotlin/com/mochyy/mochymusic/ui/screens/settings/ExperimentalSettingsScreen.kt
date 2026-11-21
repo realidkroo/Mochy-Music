@@ -39,6 +39,7 @@ import com.mochyy.mochymusic.ui.component.SettingsItem
 import com.mochyy.mochymusic.utils.dataStore
 import com.mochyy.mochymusic.utils.rememberEnumPreference
 import com.mochyy.mochymusic.utils.rememberPreference
+import com.mochyy.mochymusic.constants.SimulateForkKey
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,6 +68,7 @@ fun ExperimentalSettingsScreen(navController: NavController) {
     val crossmixTools = crossmixTestItems(isVisible = crossmixTestTools)
     val (sourceBanner, onSourceBannerChange) = rememberPreference(ShowStreamSourceToastKey, defaultValue = false)
     val (forcePlayback, onForcePlaybackChange) = rememberPreference(ForcePlaybackKey, defaultValue = false)
+    val (simulateFork, onSimulateForkChange) = rememberPreference(SimulateForkKey, defaultValue = false)
     val (streamBackend, onStreamBackendChange) = rememberEnumPreference(
         com.mochyy.mochymusic.constants.StreamBackendKey,
         defaultValue = com.mochyy.mochymusic.constants.StreamBackend.INNERTUBEX,
@@ -183,6 +185,19 @@ fun ExperimentalSettingsScreen(navController: NavController) {
                             onClick = { onForcePlaybackChange(!forcePlayback) },
                             trailingContent = {
                                 AppSwitch(checked = forcePlayback, onCheckedChange = onForcePlaybackChange)
+                            }
+                        )
+                    )
+                    add(
+                        SettingsItem(
+                            title = { Text(stringResource(R.string.experimental_simulate_fork_title)) },
+                            highlightKey = "Pretend to be a fork",
+                            descriptionText = stringResource(R.string.experimental_simulate_fork_desc),
+                            icon = painterResource(R.drawable.lock),
+                            iconShape = androidx.compose.foundation.shape.CircleShape,
+                            onClick = { onSimulateForkChange(!simulateFork) },
+                            trailingContent = {
+                                AppSwitch(checked = simulateFork, onCheckedChange = onSimulateForkChange)
                             }
                         )
                     )

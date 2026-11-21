@@ -246,7 +246,8 @@ fun LyricsScreen(
 
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val lyricsEntity by playerConnection.currentLyrics.collectAsState(initial = null)
-    val progress by playerConnection.progressState.collectAsState()
+    // kept as state rather than read here, so 15 hz position ticks only recalculate the derived line indices
+    val progress = playerConnection.progressState.collectAsState()
     val lyricsOffsetMs by playerConnection.lyricsOffsetMs.collectAsState()
 
     // frame-accurate, so the sweep, the gap dots and backing vocals glide at the display's rate instead of stepping with the 66ms poller
@@ -315,11 +316,11 @@ fun LyricsScreen(
     LyricsReadings(lines, mediaMetadata?.id, viewModel.database, lyricsEntity)
 
     val currentIndex by remember(lines, unsynced) {
-        derivedStateOf { if (unsynced) -1 else LyricsUtils.findCurrentLineIndex(lines, progress.position + lyricsOffsetMs) }
+        derivedStateOf { if (unsynced) -1 else LyricsUtils.findCurrentLineIndex(lines, progress.value.position + lyricsOffsetMs) }
     }
 
     val anchorIndex by remember(lines, unsynced) {
-        derivedStateOf { if (unsynced) -1 else lyricAnchorIndex(lines, progress.position + lyricsOffsetMs) }
+        derivedStateOf { if (unsynced) -1 else lyricAnchorIndex(lines, progress.value.position + lyricsOffsetMs) }
     }
 
     // Every instrumental gap in the song, as its own list row. Building these up front — rather
@@ -351,7 +352,7 @@ fun LyricsScreen(
     var followPlayback by remember { mutableStateOf(true) }
 
     // What the card is showing: the page's copy of it (a line, or the dots of a gap) is what the card grows into.
-    val cardSlot by remember(lines) { derivedStateOf { tickerSlot(lines, progress.position + lyricsOffsetMs) } }
+    val cardSlot by remember(lines) { derivedStateOf { tickerSlot(lines, progress.value.position + lyricsOffsetMs) } }
     val cardLine by remember { derivedStateOf { if (cardSlot.kind == TickerSlot.LINE) cardSlot.index else -1 } }
     val cardGap by remember { derivedStateOf { if (cardSlot.kind == TickerSlot.GAP) cardSlot.index else NoCardGap } }
     // its row, read only inside layers so the card moving on doesn't recompose every row
@@ -490,7 +491,7 @@ fun LyricsScreen(
 
     /** Which gap, if any, is happening right now. [NoInterlude] when a line is being sung. */
     val activeInterlude by remember(lines, rows) {
-        derivedStateOf { activeInterludeOf(rows, progress.position + lyricsOffsetMs) }
+        derivedStateOf { activeInterludeOf(rows, progress.value.position + lyricsOffsetMs) }
     }
 
     // Only honour {agent:v1}/{agent:v2} when the song actually has more than one voice. A solo

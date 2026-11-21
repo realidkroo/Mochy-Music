@@ -502,6 +502,7 @@ private fun TickerLine(
     val viewport = remember { mutableFloatStateOf(0f) }
     val scroll = remember(entry) { mutableFloatStateOf(0f) }
 
+    val playingState = LocalPlayerConnection.current?.isPlaying?.collectAsState()
     // The sideways slide: follows the sweep for a word-synced line, the clock for a line-synced
     // one. A critically damped follow, so a sweep that jumps (a seek) still glides.
     LaunchedEffect(entry, karaoke) {
@@ -509,10 +510,13 @@ private fun TickerLine(
         var velocity = 0f
         var lastMs = -1L
         while (true) {
+            var settled = false
+            var hasOverflow = false
             withFrameMillis { frameMs ->
                 val dt = if (lastMs < 0L) 0.016f else ((frameMs - lastMs) / 1000f).coerceIn(0f, 0.064f)
                 lastMs = frameMs
                 val overflow = (probe.textWidth - viewport.floatValue).coerceAtLeast(0f)
+                hasOverflow = overflow > 0f
                 val target = when {
                     overflow <= 0f -> 0f
                     karaoke -> (probe.headX - viewport.floatValue * SweepKeepFraction).coerceIn(0f, overflow)
@@ -531,9 +535,15 @@ private fun TickerLine(
                 if (kotlin.math.abs(value - target) < 0.05f && kotlin.math.abs(velocity) < 1f) {
                     value = target
                     velocity = 0f
+                    settled = true
                 }
                 if (value != scroll.floatValue) scroll.floatValue = value
                 morph.cardLyricScroll = value
+            }
+            // rest when a short line doesn't overflow or playback is paused and settled instead of waking at 120 hz
+            if (settled && (!hasOverflow || playingState?.value == false)) {
+                lastMs = -1L
+                kotlinx.coroutines.delay(180L)
             }
         }
     }

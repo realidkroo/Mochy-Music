@@ -106,7 +106,7 @@ fun AmbientBackdrop(
 }
 
 // lays the content out a quarter the size and draws it into a small layer of its own, scaled back up to fill the space
-private fun Modifier.downscaledLayer(): Modifier = layout { measurable, constraints ->
+internal fun Modifier.downscaledLayer(): Modifier = layout { measurable, constraints ->
     val width = constraints.maxWidth
     val height = constraints.maxHeight
     val small = measurable.measure(
@@ -125,6 +125,9 @@ private fun Modifier.downscaledLayer(): Modifier = layout { measurable, constrai
     }
 }
 
+// paced to the shader's 30 hz step so 120 hz screens aren't woken four times per actual redraw
+private const val AmbientWakeMillis = 30L
+
 // its own clock for a backdrop with no player clock to share (a selector card, an alternate style's page)
 @Composable
 fun rememberAmbientClock(running: Boolean): () -> Float {
@@ -135,6 +138,7 @@ fun rememberAmbientClock(running: Boolean): () -> Float {
             withInfiniteAnimationFrameNanos { nanos ->
                 time.floatValue = ((nanos / 1_000_000L) % (LoopSeconds * 1000f).toLong()) / 1000f
             }
+            kotlinx.coroutines.delay(AmbientWakeMillis)
         }
     }
     return { time.floatValue }

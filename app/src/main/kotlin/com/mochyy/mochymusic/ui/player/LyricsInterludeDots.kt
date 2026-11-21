@@ -129,10 +129,13 @@ fun LyricsInterludeDots(
     // only ticks while the row is grown, a hidden gap row costs nothing per frame
     LaunchedEffect(startMs, endMs, positionProvider, visible) {
         if (!visible) return@LaunchedEffect
+        var lastPos = Long.MIN_VALUE
         while (true) {
+            var pos = 0L
             withFrameMillis { frameMs ->
                 clockMs.longValue = frameMs
-                val progress = ((positionProvider() - startMs).toFloat() / span).coerceIn(0f, 1f)
+                pos = positionProvider()
+                val progress = ((pos - startMs).toFloat() / span).coerceIn(0f, 1f)
                 finale.floatValue = smoothstep((progress - FinaleFraction) / (1f - FinaleFraction))
                 for (index in 0 until DotCount) {
                     val sliceStart = index.toFloat() / DotCount
@@ -143,6 +146,9 @@ fun LyricsInterludeDots(
                     glows[index].floatValue = if (progress < litAt) fill else exp(-((progress - litAt) * span) / GlowFadeMs)
                 }
             }
+            // paused during an interlude: check back gently instead of spinning 120 hz frames
+            if (pos == lastPos) delay(180L)
+            lastPos = pos
         }
     }
 

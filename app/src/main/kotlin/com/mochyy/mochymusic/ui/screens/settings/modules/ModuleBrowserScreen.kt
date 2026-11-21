@@ -64,6 +64,7 @@ import com.mochyy.mochymusic.modules.ModuleRegistry.LinkCheck
 import com.mochyy.mochymusic.modules.browser.FeedInstall
 import com.mochyy.mochymusic.modules.browser.FeedModule
 import com.mochyy.mochymusic.modules.browser.FeedResult
+import com.mochyy.mochymusic.modules.browser.PackItem
 import com.mochyy.mochymusic.ui.component.GlassState
 import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 import com.mochyy.mochymusic.ui.component.glassRoot
@@ -323,11 +324,37 @@ internal fun rememberStoreAdd(viewModel: ModuleBrowserViewModel, modules: Module
                 context.openDevUrl(module.postUrl)
             } else if (module.install == FeedInstall.Web) {
                 context.openDevUrl(module.link ?: module.postUrl)
+            } else if (module.install == FeedInstall.Pack) {
+                navController.navigate(moduleStoreRoute(module.id))
             } else {
                 scope.launch {
                     when (val result = viewModel.fetch(module)) {
                         is LinkCheck.Ready -> overlay.showAddCheckedSheet(result, modules) { id -> navController.navigate(moduleRoute(id)) }
                         LinkCheck.Unreachable -> Toast.makeText(context, context.getString(R.string.module_browser_fetch_failed, module.name), Toast.LENGTH_LONG).show()
+                        else -> linkProblem(context, result)?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** the button on one of a pack's modules: it comes down and goes through the add sheet like any module */
+@Composable
+internal fun rememberPackAdd(viewModel: ModuleBrowserViewModel, modules: ModulesViewModel, navController: NavController): (FeedModule, PackItem) -> Unit {
+    val context = LocalContext.current
+    val overlay = LocalZoomOutOverlayState.current
+    val scope = rememberCoroutineScope()
+    return remember(viewModel, modules, navController, overlay, context) {
+        { module, item ->
+            if (module.locked) {
+                Toast.makeText(context, context.getString(R.string.module_browser_locked_note, module.name), Toast.LENGTH_LONG).show()
+                context.openDevUrl(module.postUrl)
+            } else {
+                scope.launch {
+                    when (val result = viewModel.fetchItem(module, item)) {
+                        is LinkCheck.Ready -> overlay.showAddCheckedSheet(result, modules) { id -> navController.navigate(moduleRoute(id)) }
+                        LinkCheck.Unreachable -> Toast.makeText(context, context.getString(R.string.module_browser_fetch_failed, item.name), Toast.LENGTH_LONG).show()
                         else -> linkProblem(context, result)?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
                     }
                 }
@@ -343,13 +370,21 @@ internal class AddedModules(
     val updatable: Set<String>,
     val linkEntries: Map<String, String>,
 ) {
-    /** the installed module a store module is, or null while it isn't in; a web page never is */
+    /** the installed module a store module is, or null while it isn't in; a web page or a whole pack never is */
     fun entryFor(module: FeedModule): String? = when (module.install) {
-        FeedInstall.Web -> null
-        FeedInstall.Link -> module.link?.let { linkEntries[linkKey(it)] }
-        // a zip look is added as "local." and its own id, made safe; a module with code keeps its id as it is
-        FeedInstall.Zip -> module.moduleId?.let { id -> listOf("local." + id.lowercase().replace(UnsafeIdChars, "-"), id).firstOrNull { it in versions } }
+        FeedInstall.Web, FeedInstall.Pack -> null
+        FeedInstall.Link -> linkEntry(module.link)
+        FeedInstall.Zip -> zipEntry(module.moduleId)
     }
+
+    /** the installed module one of a pack's modules is */
+    fun entryFor(item: PackItem): String? = if (item.isLink) linkEntry(item.link) else zipEntry(item.moduleId)
+
+    private fun linkEntry(link: String?): String? = link?.let { linkEntries[linkKey(it)] }
+
+    // a zip look is added as "local." and its own id, made safe; a module with code keeps its id as it is
+    private fun zipEntry(moduleId: String?): String? =
+        moduleId?.let { id -> listOf("local." + id.lowercase().replace(UnsafeIdChars, "-"), id).firstOrNull { it in versions } }
 }
 
 private val UnsafeIdChars = Regex("[^a-z0-9._-]")
@@ -369,13 +404,34 @@ private fun linkKey(link: String): String {
 
 internal fun actionFor(module: FeedModule, added: AddedModules): BrowserAction {
     if (module.locked) return BrowserAction.Locked
-    if (module.install == FeedInstall.Web) return BrowserAction.Open
-    val entry = added.entryFor(module) ?: return BrowserAction.Add
-    // a linked module's newer copies are found by the app's own update check, at its link
-    if (module.install == FeedInstall.Link) return if (entry in added.updatable) BrowserAction.Update else BrowserAction.Added
-    // a zip posted after this copy went in is newer even when its maker kept or left out the version; a different version says so too
-    val newerZip = module.updated != null && module.updated > (added.installedAt[entry] ?: Long.MAX_VALUE)
+    return when (module.install) {
+        FeedInstall.Web -> BrowserAction.Open
+        // a pack's modules are added one by one from its page
+        FeedInstall.Pack -> BrowserAction.View
+        FeedInstall.Link -> linkedAction(added.entryFor(module), added)
+        FeedInstall.Zip -> zipAction(added.entryFor(module), module.version, module.updated, added)
+    }
+}
+
+/** the button for one of a pack's modules; a locked pack locks them all */
+internal fun actionFor(module: FeedModule, item: PackItem, added: AddedModules): BrowserAction {
+    if (module.locked) return BrowserAction.Locked
+    val entry = added.entryFor(item)
+    return if (item.isLink) linkedAction(entry, added) else zipAction(entry, item.version, module.updated, added)
+}
+
+// a linked module's newer copies are found by the app's own update check, at its link
+private fun linkedAction(entry: String?, added: AddedModules): BrowserAction = when {
+    entry == null -> BrowserAction.Add
+    entry in added.updatable -> BrowserAction.Update
+    else -> BrowserAction.Added
+}
+
+// a zip posted after this copy went in is newer even when its maker kept or left out the version; a different version says so too
+private fun zipAction(entry: String?, version: String?, updated: Long?, added: AddedModules): BrowserAction {
+    entry ?: return BrowserAction.Add
+    val newerZip = updated != null && updated > (added.installedAt[entry] ?: Long.MAX_VALUE)
     val installed = added.versions[entry]
-    val newerVersion = module.version != null && !installed.isNullOrBlank() && module.version != installed
+    val newerVersion = version != null && !installed.isNullOrBlank() && version != installed
     return if (newerZip || newerVersion) BrowserAction.Update else BrowserAction.Added
 }

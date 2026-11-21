@@ -64,8 +64,8 @@ private val BannerOverlap = 42.dp
 // the chart card's colour under its banner keeps more of the banner's own colour than home's darker cards
 private val FeaturedTint = floatArrayOf(0.35f, 0.42f, 0.5f)
 
-/** what a module's button says: it can be added, a newer one is out, it's already in, it's paid and not theirs yet, or it's a web page to open */
-enum class BrowserAction { Add, Update, Added, Locked, Open }
+/** what a module's button says: it can be added, a newer one is out, it's already in, it's paid and not theirs yet, a web page to open, or a pack to look inside */
+enum class BrowserAction { Add, Update, Added, Locked, Open, View }
 
 /** the signed-in person's avatar, with a dot that's green while they're in mochy's bar */
 @Composable
@@ -199,6 +199,7 @@ internal fun ActionPill(action: BrowserAction, fetching: Boolean, getLabel: Bool
         BrowserAction.Added -> R.string.module_browser_added
         BrowserAction.Locked -> R.string.module_browser_locked
         BrowserAction.Open -> R.string.module_browser_open
+        BrowserAction.View -> R.string.module_browser_view
     }
     Box(
         modifier = Modifier
@@ -219,7 +220,7 @@ internal fun ActionPill(action: BrowserAction, fetching: Boolean, getLabel: Bool
 }
 
 // the pills that do something stand out in white; added and locked stay grey
-private val BrowserAction.isBright get() = this == BrowserAction.Add || this == BrowserAction.Update || this == BrowserAction.Open
+private val BrowserAction.isBright get() = this == BrowserAction.Add || this == BrowserAction.Update || this == BrowserAction.Open || this == BrowserAction.View
 
 /** the grey stand-in for a card while the list is on its way */
 @Composable

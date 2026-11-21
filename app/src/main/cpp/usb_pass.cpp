@@ -154,7 +154,10 @@ public:
             if (control(fd, 0xa1, 0x01, 0x0100, index, &now, 4) == 4 && now == wanted) return true;
             control(fd, 0x21, 0x01, 0x0100, index, &wanted, 4);
             now = 0;
-            return control(fd, 0xa1, 0x01, 0x0100, index, &now, 4) == 4 && now == wanted;
+            bool ok = control(fd, 0xa1, 0x01, 0x0100, index, &now, 4) == 4 && now == wanted;
+            // many uac2 dacs need a few milliseconds for their pll to lock after a rate change, else the first audio bursts with static
+            if (ok) usleep(15000);
+            return ok;
         }
         if (!p.rateControl) return true;
         uint8_t wanted[3] = {static_cast<uint8_t>(p.rate), static_cast<uint8_t>(p.rate >> 8), static_cast<uint8_t>(p.rate >> 16)};
@@ -162,7 +165,9 @@ public:
         control(fd, 0x22, 0x01, 0x0100, static_cast<uint16_t>(p.endpoint), wanted, 3);
         // some uac1 dacs take the rate but can't say it back; only a different answer counts as refused
         int read = control(fd, 0xa2, 0x81, 0x0100, static_cast<uint16_t>(p.endpoint), now, 3);
-        return read != 3 || memcmp(now, wanted, 3) == 0;
+        bool ok = read != 3 || memcmp(now, wanted, 3) == 0;
+        if (ok) usleep(15000);
+        return ok;
     }
 
     bool configure(const Plan &p) {
@@ -449,6 +454,8 @@ Java_com_mochyy_mochymusic_playback_audio_pass_PassNative_usbFlush(JNIEnv *, job
     s->ringStart = 0;
     s->ringSize = 0;
     s->played = 0;
+    s->pace = s->nominal;
+    s->remainder = 0;
     // packets already with the dac finish, but no longer count towards the new start
     s->generation++;
 }
