@@ -53,6 +53,7 @@ import com.mochyy.mochymusic.ui.screens.setup.onboarding.OnboardingPage
 import com.mochyy.mochymusic.ui.screens.setup.onboarding.PageBadge
 import kotlinx.coroutines.launch
 import com.mochyy.mochymusic.ui.component.RemoteFocus
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 /** Opens the editor filled in with the name and picture the profile shows now. */
 fun PopupSheetState.showEditProfileSheet(currentName: String, currentPhoto: Any?) {
@@ -89,7 +90,8 @@ private fun EditProfileContent(currentName: String, currentPhoto: Any?, onSaved:
         OnboardingPage(
             badge = { PageBadge(painterResource(R.drawable.person)) },
             title = stringResource(R.string.profile_edit_title),
-            contentTop = 22.dp,
+            // the page scrolls from the sheet's top edge, under its handle
+            contentTop = sheetHandleRoom() + 22.dp,
             modifier = Modifier.background(Onb.Page),
             footer = {
                 Text(

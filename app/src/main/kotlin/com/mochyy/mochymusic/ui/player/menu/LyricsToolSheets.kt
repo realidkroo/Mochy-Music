@@ -78,6 +78,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import com.mochyy.mochymusic.ui.component.RemoteFocus
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 // ---------------------------------------------------------------------------------------------
 // Editor
@@ -275,6 +276,7 @@ fun LyricsProviderSheet(onDismiss: () -> Unit) {
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
+                .padding(top = sheetHandleRoom())
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp)
                 .padding(top = 16.dp, bottom = 24.dp)
@@ -523,6 +525,7 @@ fun LyricsTranslationSheet(onDismiss: () -> Unit) {
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
+                .padding(top = sheetHandleRoom())
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp)
                 .padding(top = 16.dp, bottom = 24.dp)

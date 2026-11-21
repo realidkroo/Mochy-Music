@@ -64,6 +64,7 @@ import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.SheetIcon
 import kotlinx.coroutines.delay
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 private val CardSurface = MenuRowSurface
 private val SheetEasing = MenuEasing
@@ -83,6 +84,7 @@ fun SleepTimerSheet(onDismiss: () -> Unit) {
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
+                .padding(top = sheetHandleRoom())
                 .padding(horizontal = 24.dp)
                 .padding(top = 10.dp, bottom = 28.dp)
                 .animateContentSize(animationSpec = tween(420, easing = SheetEasing))

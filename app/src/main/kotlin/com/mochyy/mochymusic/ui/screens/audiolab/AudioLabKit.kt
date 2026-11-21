@@ -60,6 +60,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -321,6 +322,7 @@ fun LabChips(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
     onLongPress: ((String) -> Unit)? = null,
+    leading: @Composable RowScope.() -> Unit = {},
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
@@ -328,32 +330,38 @@ fun LabChips(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        leading()
         chips.forEach { chip ->
-            val selected = chip.key == selectedKey
-            val bg by animateColorAsState(if (selected) Color.White else LabColors.Chip, tween(180), label = "chipBg")
-            val fg by animateColorAsState(if (selected) Color.Black else Color.White, tween(180), label = "chipFg")
-            val interaction = remember { MutableInteractionSource() }
-            Row(
-                modifier = Modifier
-                    .height(38.dp)
-                    .clip(RoundedCornerShape(19.dp))
-                    .background(bg)
-                    .then(
-                        if (onLongPress != null) Modifier.combinedClickableCompat(
-                            interaction, onClick = { onSelect(chip.key) }, onLongClick = { onLongPress(chip.key) },
-                        ) else Modifier.clickable(interaction, null) { onSelect(chip.key) }
-                    )
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (chip.dot != null) {
-                    Box(Modifier.size(8.dp).clip(CircleShape).background(chip.dot))
-                    Spacer(Modifier.width(8.dp))
-                }
-                Text(chip.label, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = fg, maxLines = 1)
-            }
+            // keyed, so taking a chip out of the middle doesn't hand its colour to the one after it
+            key(chip.key) { LabChipPill(chip, chip.key == selectedKey, onSelect, onLongPress) }
         }
         trailing()
+    }
+}
+
+@Composable
+private fun LabChipPill(chip: LabChip, selected: Boolean, onSelect: (String) -> Unit, onLongPress: ((String) -> Unit)?) {
+    val bg by animateColorAsState(if (selected) Color.White else LabColors.Chip, tween(180), label = "chipBg")
+    val fg by animateColorAsState(if (selected) Color.Black else Color.White, tween(180), label = "chipFg")
+    val interaction = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .height(38.dp)
+            .clip(RoundedCornerShape(19.dp))
+            .background(bg)
+            .then(
+                if (onLongPress != null) Modifier.combinedClickableCompat(
+                    interaction, onClick = { onSelect(chip.key) }, onLongClick = { onLongPress(chip.key) },
+                ) else Modifier.clickable(interaction, null) { onSelect(chip.key) }
+            )
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (chip.dot != null) {
+            Box(Modifier.size(8.dp).clip(CircleShape).background(chip.dot))
+            Spacer(Modifier.width(8.dp))
+        }
+        Text(chip.label, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = fg, maxLines = 1)
     }
 }
 

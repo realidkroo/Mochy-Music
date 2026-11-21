@@ -78,6 +78,8 @@ fun AudioFxScreen(
         onBack = { navController.navigateUp() },
         art = { hidden -> FxCardStack(effects, hidden) },
     ) {
+        FxPresetsSection(viewModel)
+        Spacer(Modifier.height(24.dp))
         com.mochyy.mochymusic.ui.screens.audiolab.stage.StageCard(viewModel) { navController.navigate("audio_stage") }
         Spacer(Modifier.height(14.dp))
         ReverbCard(viewModel)

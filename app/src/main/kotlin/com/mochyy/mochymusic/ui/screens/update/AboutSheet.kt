@@ -67,6 +67,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import java.net.HttpURLConnection
 import java.net.URL
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 @Immutable
 private data class LeadDevEntry(
@@ -338,6 +339,8 @@ private fun ColumnScope.AboutSheetContent(
         contributors = fetchContributors()
     }
 
+    // the page starts under the sheet's handle now, so the ring and the first row sit that much lower
+    val room = sheetHandleRoom()
     Box(Modifier.fillMaxWidth()) {
         // zero-size layout places the spinning ring behind the top icon without pushing the column down
         VersionRing(
@@ -357,7 +360,7 @@ private fun ColumnScope.AboutSheetContent(
                                 ),
                             )
                         layout(0, 0) {
-                            placeable.place(x = -placeable.width / 2, y = (-166).dp.roundToPx())
+                            placeable.place(x = -placeable.width / 2, y = (room - 166.dp).roundToPx())
                         }
                     },
         )
@@ -366,7 +369,8 @@ private fun ColumnScope.AboutSheetContent(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .verticalScroll(scrollState),
+                    .verticalScroll(scrollState)
+                    .padding(top = room),
         ) {
             Spacer(Modifier.height(18.dp))
             Column(
@@ -530,7 +534,8 @@ private fun ColumnScope.CreditsSheetContent() {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(top = sheetHandleRoom()),
     ) {
         Spacer(Modifier.height(8.dp))
         Text(
@@ -570,7 +575,8 @@ private fun ColumnScope.LicenseSheetContent() {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(top = sheetHandleRoom()),
     ) {
         Spacer(Modifier.height(8.dp))
         Text(

@@ -101,6 +101,7 @@ import java.time.Month
 import java.time.YearMonth
 import java.util.Locale
 import java.time.format.TextStyle as JavaTextStyle
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 private val StatsCard = Color(0xFF0F0F0F)
 private val ChipBg = Color(0xFF2A2A2A)
@@ -1061,7 +1062,7 @@ private fun ColumnScope.StatsPicker(
             Modifier
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 22.dp)
-                .padding(bottom = 8.dp),
+                .padding(top = sheetHandleRoom(), bottom = 8.dp),
     ) {
         Text(stringResource(R.string.rc_stats_show_by), style = statsText(36f, tracking = -1.4f))
         Spacer(Modifier.height(10.dp))

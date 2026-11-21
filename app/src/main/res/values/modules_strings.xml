@@ -220,7 +220,7 @@
     <string name="module_store_fork_users_title">What this means for you</string>
     <string name="module_store_fork_users">You can\'t open the Module Store in this copy. Everything else works, including modules you add yourself. To use the store, get Mochy from its official releases.</string>
     <string name="module_store_fork_devs_title">Building your own Mochy?</string>
-    <string name="module_store_fork_devs">The store only answers official builds, which carry a key that isn\'t in the public code. To take it out of your fork, set FeedUrl to an empty string in modules/browser/ModuleFeed.kt: the Module Store card leaves Settings and the store switches itself off. Or run your own module feed from github.com/ryukeicii/mochy-modulebot.</string>
+    <string name="module_store_fork_devs">The store only answers official builds, which carry a key that isn\'t in the public code. To take it out of your fork, set FeedUrl to an empty string in modules/browser/ModuleFeed.kt: the Module Store card leaves Settings and the store switches itself off.</string>
     <string name="module_store_fork_get">Get official Mochy</string>
     <string name="experimental_simulate_fork_title">Pretend to be a fork</string>
     <string name="experimental_simulate_fork_desc">The Module Store treats this phone like a fork, so you can see the page a fork gets. Turn it off to go back to the store.</string>

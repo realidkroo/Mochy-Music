@@ -17,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.*
@@ -45,6 +44,7 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.platform.LocalDensity
 import com.mochyy.mochymusic.ui.component.backdropClick
+import com.mochyy.mochymusic.ui.component.SheetGrabber
 
 private val IMAGE_INSET = 20.dp
 private val IMAGE_CORNER = 28.dp
@@ -166,14 +166,12 @@ fun PhotoCropperContainer(
                     .background(Color(0xFF121212))
             ) {
 
-                Box(
+                // the cropper can't be pulled away, so its bar stays a line
+                SheetGrabber(
+                    bend = { 0f },
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = 16.dp)
-                        .width(64.dp)
-                        .height(4.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.5f))
+                        .padding(top = 10.dp),
                 )
 
                 Box(

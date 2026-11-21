@@ -59,6 +59,8 @@ class AudioLabViewModel @Inject constructor(
 
     val eq = store.eq
     val presets = store.presets
+    val fxPresets = store.fxPresets
+    val fxPresetId = store.fxPresetId
     val reverb = store.reverb
     val loudness = store.loudness
     val spatial = store.spatial
@@ -73,26 +75,26 @@ class AudioLabViewModel @Inject constructor(
 
     fun setEnabled(enabled: Boolean) = store.updateEq { it.copy(enabled = enabled) }
 
-    fun updateNode(index: Int, transform: (ParametricEQBand) -> ParametricEQBand) = store.updateEq { s ->
+    fun updateNode(index: Int, transform: (ParametricEQBand) -> ParametricEQBand) = store.editEqCurve { s ->
         if (index !in s.nodes.indices) s
-        else s.copy(nodes = s.nodes.toMutableList().also { it[index] = transform(it[index]) }, presetId = null)
+        else s.copy(nodes = s.nodes.toMutableList().also { it[index] = transform(it[index]) })
     }
 
     /** adds a band at [frequency], returning where it went */
     fun addNode(frequency: Double, gain: Double = 0.0): Int {
         var index = -1
-        store.updateEq { s ->
-            if (s.nodes.size >= MaxNodes) return@updateEq s
+        store.editEqCurve { s ->
+            if (s.nodes.size >= MaxNodes) return@editEqCurve s
             val node = ParametricEQBand(frequency = frequency.coerceIn(20.0, 20_000.0), gain = gain, q = 1.0, filterType = FilterType.PK)
             index = s.nodes.size
-            s.copy(nodes = s.nodes + node, presetId = null)
+            s.copy(nodes = s.nodes + node)
         }
         return index
     }
 
-    fun removeNode(index: Int) = store.updateEq { s ->
+    fun removeNode(index: Int) = store.editEqCurve { s ->
         if (s.nodes.size <= 1 || index !in s.nodes.indices) s
-        else s.copy(nodes = s.nodes.filterIndexed { i, _ -> i != index }, presetId = null)
+        else s.copy(nodes = s.nodes.filterIndexed { i, _ -> i != index })
     }
 
     fun applyPreset(id: String) {
@@ -113,9 +115,13 @@ class AudioLabViewModel @Inject constructor(
         if (name.isNotBlank()) store.savePreset(name)
     }
 
+    fun renamePreset(id: String, name: String) {
+        if (name.isNotBlank()) store.renamePreset(id, name)
+    }
+
     fun deletePreset(id: String) = store.deletePreset(id)
 
-    fun setPreamp(db: Double) = store.updateEq { it.copy(preamp = db) }
+    fun setPreamp(db: Double) = store.setEqPreamp(db)
 
     fun setAutoPreamp(on: Boolean) = store.updateEq { it.copy(autoPreamp = on) }
 
@@ -246,6 +252,20 @@ class AudioLabViewModel @Inject constructor(
 
     fun updateNormalize(transform: (com.mochyy.mochymusic.eq.NormalizeSettings) -> com.mochyy.mochymusic.eq.NormalizeSettings) =
         store.updateNormalize(transform)
+
+    fun saveFxPreset(name: String) {
+        if (name.isNotBlank()) store.saveFxPreset(name)
+    }
+
+    fun applyFxPreset(id: String) = store.applyFxPreset(id)
+
+    fun releaseFxPreset() = store.releaseFxPreset()
+
+    fun renameFxPreset(id: String, name: String) {
+        if (name.isNotBlank()) store.renameFxPreset(id, name)
+    }
+
+    fun deleteFxPreset(id: String) = store.deleteFxPreset(id)
 
     // ---- 3D Sims ----------------------------------------------------------------------------
 

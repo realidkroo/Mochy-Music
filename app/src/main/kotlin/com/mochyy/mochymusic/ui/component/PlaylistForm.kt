@@ -71,7 +71,8 @@ internal fun PlaylistFormContent(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 12.dp)
+            // room for the sheet's handle inside the scroll, so the covers slide up under its fade
+            .padding(top = sheetHandleRoom(), bottom = 12.dp)
     ) {
         PlaylistCoverCarousel(
             title = form.name.ifBlank { stringResource(R.string.pc_playlist_default_title) },

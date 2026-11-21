@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +48,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.importer.account.AccountService
+import com.mochyy.mochymusic.ui.component.SheetGrabber
+import com.mochyy.mochymusic.ui.component.rememberSheetGrabberBend
 import kotlinx.coroutines.launch
 
 /** one spring for the sheet and the page behind it so the two never drift apart */
@@ -71,6 +75,9 @@ internal fun OnboardingBrowserSheet(
     var url by remember { mutableStateOf("https://") }
     var dragPx by remember { mutableStateOf(0f) }
     var sheetHeightPx by remember { mutableStateOf(1f) }
+    val arrowAfterPx = with(LocalDensity.current) { 8.dp.toPx() }
+    // the bar folds into an arrow while it's pulled down and while the sheet slides away, like every other sheet's
+    val bend = rememberSheetGrabberBend { dragPx > arrowAfterPx || (presence.isRunning && presence.targetValue == 0f) }
 
     Box(
         modifier = Modifier
@@ -114,8 +121,8 @@ internal fun OnboardingBrowserSheet(
                     }
                 },
         ) {
-            Box(Modifier.fillMaxWidth().padding(top = 10.dp), contentAlignment = Alignment.Center) {
-                Box(Modifier.width(120.dp).height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.9f)))
+            Box(Modifier.fillMaxWidth().height(14.dp), contentAlignment = Alignment.TopCenter) {
+                SheetGrabber(bend = { bend.value }, modifier = Modifier.offset(y = 5.dp), color = Color.White.copy(alpha = 0.9f))
             }
             BrowserSheetBar(
                 icon = { ProviderSquircle(service, size = 38.dp) },

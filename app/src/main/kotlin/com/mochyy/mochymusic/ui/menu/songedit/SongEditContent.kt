@@ -57,6 +57,7 @@ import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.viewmodels.LyricsMenuViewModel
 import java.util.Locale
 import kotlin.math.roundToInt
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 // the popup sheet pads its content by this much, the cover row and the artist row reach past it to the edges
 private val SheetSidePadding = 20.dp
@@ -76,7 +77,7 @@ internal fun SongEditContent(state: SongEditState, audioLab: AudioLabStore) {
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 12.dp),
+            .padding(top = sheetHandleRoom(), bottom = 12.dp),
     ) {
         Text(
             text = stringResource(R.string.edit_song),

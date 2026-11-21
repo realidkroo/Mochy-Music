@@ -56,6 +56,7 @@ import com.mochyy.mochymusic.lyrics.LyricsUtils
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import com.mochyy.mochymusic.ui.component.RemoteFocus
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 /** The slider and the typed value both stop here: 10 seconds either way, shown in ms. */
 private const val MaxOffsetMs = 10_000
@@ -115,6 +116,7 @@ fun LyricsOffsetSheet(onDismiss: () -> Unit) {
                 .weight(1f, fill = false)
                 // the full video mode's card is only as tall as the phone is wide, so this scrolls there
                 .verticalScroll(rememberScrollState())
+                .padding(top = sheetHandleRoom())
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp)
                 .padding(top = 16.dp, bottom = 24.dp)

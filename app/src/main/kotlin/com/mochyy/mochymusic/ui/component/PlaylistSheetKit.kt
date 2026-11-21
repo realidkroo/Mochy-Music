@@ -2,6 +2,7 @@
 
 package com.mochyy.mochymusic.ui.component
 
+import androidx.annotation.DrawableRes
 import androidx.compose.ui.unit.em
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import androidx.compose.foundation.background
@@ -45,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -102,45 +104,80 @@ internal fun SheetTextField(
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         visualTransformation = visualTransformation,
-        textStyle = TextStyle(
-            color = Color.White,
-            fontFamily = InterFontFamily,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium,
-            letterSpacing = (-0.03).em,
-        ),
+        textStyle = sheetFieldTextStyle(),
         cursorBrush = SolidColor(Color.White),
         modifier = modifier.fillMaxWidth(),
-        decorationBox = { inner ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = ControlMinHeight)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(MenuRowSurface)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            ) {
-                if (leading != null) {
-                    leading()
-                    Spacer(Modifier.width(12.dp))
-                }
-                Box(modifier = Modifier.weight(1f)) {
-                    if (value.isEmpty()) {
-                        Text(
-                            text = placeholder,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.White.copy(alpha = 0.4f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    inner()
-                }
-            }
-        },
+        decorationBox = { inner -> SheetFieldBox(value.isEmpty(), placeholder, leading, inner) },
     )
+}
+
+/** the same field holding a TextFieldValue, so text it opens with can start with the cursor at its end */
+@Composable
+internal fun SheetTextField(
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
+        textStyle = sheetFieldTextStyle(),
+        cursorBrush = SolidColor(Color.White),
+        modifier = modifier.fillMaxWidth(),
+        decorationBox = { inner -> SheetFieldBox(value.text.isEmpty(), placeholder, null, inner) },
+    )
+}
+
+// built each time, the app's font can change under it
+private fun sheetFieldTextStyle() = TextStyle(
+    color = Color.White,
+    fontFamily = InterFontFamily,
+    fontSize = 15.sp,
+    fontWeight = FontWeight.Medium,
+    letterSpacing = (-0.03).em,
+)
+
+// the rounded box round a sheet field's text, with the placeholder while it's empty
+@Composable
+private fun SheetFieldBox(
+    empty: Boolean,
+    placeholder: String,
+    leading: (@Composable () -> Unit)?,
+    inner: @Composable () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = ControlMinHeight)
+            .clip(RoundedCornerShape(18.dp))
+            .background(MenuRowSurface)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
+        if (leading != null) {
+            leading()
+            Spacer(Modifier.width(12.dp))
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            if (empty) {
+                Text(
+                    text = placeholder,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White.copy(alpha = 0.4f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            inner()
+        }
+    }
 }
 
 /**
@@ -306,19 +343,58 @@ internal fun SheetHeader(
     modifier: Modifier = Modifier,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.fillMaxWidth(),
-    ) {
+    SheetHeaderRow(title, subtitle, modifier, trailing) {
         AsyncImage(
             model = thumbnailUrl?.resize(240, 240),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(60.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .size(HeaderTileSize)
+                .clip(HeaderTileShape)
                 .background(MenuRowSurface),
         )
+    }
+}
+
+/** the same header with an icon on the tile where a cover would go, for a sheet about a setting rather than a song */
+@Composable
+internal fun SheetHeader(
+    @DrawableRes icon: Int,
+    title: String,
+    subtitle: String?,
+    modifier: Modifier = Modifier,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    SheetHeaderRow(title, subtitle, modifier, trailing) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(HeaderTileSize)
+                .clip(HeaderTileShape)
+                .background(MenuRowSurface),
+        ) {
+            SheetIcon(icon, size = 28.dp)
+        }
+    }
+}
+
+private val HeaderTileSize = 60.dp
+private val HeaderTileShape = RoundedCornerShape(16.dp)
+
+// the tile, then the title and its second line, then the trailing button
+@Composable
+private fun SheetHeaderRow(
+    title: String,
+    subtitle: String?,
+    modifier: Modifier,
+    trailing: (@Composable () -> Unit)?,
+    tile: @Composable () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        tile()
         Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(

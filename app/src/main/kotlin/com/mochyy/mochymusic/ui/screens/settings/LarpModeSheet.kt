@@ -50,6 +50,7 @@ import com.mochyy.mochymusic.ui.player.larpQualityText
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 private const val LarpAspect = 220f / 287f
 
@@ -81,7 +82,7 @@ private fun LarpSheetContent(picked: MutableState<LarpLevel>) {
             .fillMaxWidth()
             // the picture and four levels are taller than a small phone's sheet
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 12.dp),
+            .padding(top = sheetHandleRoom(), bottom = 12.dp),
     ) {
         Spacer(Modifier.height(16.dp))
         LarpPicture(

@@ -1452,14 +1452,14 @@ fun PlaylistTrackRow(
             modifier = Modifier
                 .size(39.dp)
                 .then(coverModifier)
-                .clip(coverShape)
-                .background(BoneColor)
+                .background(BoneColor, coverShape)
         ) {
             ItemThumbnail(
                 thumbnailUrl = thumbnailUrl,
                 isActive = isActive,
                 isPlaying = isPlaying,
                 shape = coverShape,
+                imageSizePx = 256,
                 modifier = Modifier.fillMaxSize(),
             )
         }

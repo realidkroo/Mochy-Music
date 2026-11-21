@@ -72,15 +72,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import com.mochyy.mochymusic.ui.component.backdropClick
+import com.mochyy.mochymusic.ui.component.PopupSheetHandleHeight
 
 private enum class ImportStep { Providers, ProviderSetup, WhatToSync, SyncOptions, Link }
-
-/**
- * The popup sheet's own handle row sits above the content. The onboarding pages leave room for a
- * handle of their own at their top, so they're lifted under this one instead of stacking a second
- * gap below it.
- */
-private val SheetHandleRow = 32.dp
 
 /** Opens the import sheet over whatever is showing: the onboarding's import pages, in one sheet. */
 fun PopupSheetState.showLibraryImportSheet() {
@@ -200,8 +194,8 @@ private fun LibraryImportFlow(onClose: () -> Unit) {
             .fillMaxWidth()
             .fillMaxHeight()
             .layout { measurable, constraints ->
-                // up under the popup sheet's handle row: see SheetHandleRow
-                val lift = SheetHandleRow.roundToPx()
+                // the onboarding pages leave room for a handle of their own, so they're lifted up under the sheet's handle row instead of a second gap below it
+                val lift = PopupSheetHandleHeight.roundToPx()
                 val maxHeight = if (constraints.hasBoundedHeight) constraints.maxHeight + lift else constraints.maxHeight
                 val placeable = measurable.measure(constraints.copy(minHeight = constraints.minHeight + lift, maxHeight = maxHeight))
                 layout(placeable.width, (placeable.height - lift).coerceAtLeast(0)) {

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.DataSaverOn
 import androidx.compose.material.icons.rounded.SignalCellularAlt
 import androidx.compose.material3.Text
@@ -32,6 +33,10 @@ import com.mochyy.mochymusic.constants.HideUpdateNoticeKey
 import com.mochyy.mochymusic.constants.LarpLevelKey
 import com.mochyy.mochymusic.constants.LarpModeKey
 import com.mochyy.mochymusic.constants.LocalSongAutoMetadataKey
+import com.mochyy.mochymusic.constants.LyricsOrderOverrideKey
+import com.mochyy.mochymusic.constants.LyricsProviderOrderKey
+import com.mochyy.mochymusic.constants.PreferredLyricsProvider
+import com.mochyy.mochymusic.constants.PreferredLyricsProviderKey
 import com.mochyy.mochymusic.constants.OfflineModeKey
 import com.mochyy.mochymusic.constants.PauseSearchHistoryKey
 import com.mochyy.mochymusic.constants.ProxyEnabledKey
@@ -41,6 +46,8 @@ import com.mochyy.mochymusic.constants.YtReportPlaysKey
 import com.mochyy.mochymusic.core.updater.saveUpdateNotificationsSetting
 import com.mochyy.mochymusic.i18n.AppLanguage
 import com.mochyy.mochymusic.i18n.activityOrNull
+import com.mochyy.mochymusic.lyrics.LyricsProviderRegistry
+import com.mochyy.mochymusic.lyrics.YouTubeCaptionsLyricsProvider
 import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 import com.mochyy.mochymusic.ui.component.SettingsItem
@@ -68,6 +75,7 @@ fun AppBehaviourSettingsScreen(navController: NavController) {
         SettingsSection(stringResource(R.string.general_app_settings), generalItems().matching(query))
         SettingsSection(stringResource(R.string.settings_section_network), networkItems(navController).matching(query))
         SettingsSection(stringResource(R.string.settings_section_library_privacy), libraryItems().matching(query))
+        SettingsSection(stringResource(R.string.settings_section_lyrics), lyricsItems().matching(query))
         SettingsSection(stringResource(R.string.settings_related), relatedItems(navController).matching(query))
         Spacer(Modifier.height(140.dp))
     }
@@ -262,6 +270,46 @@ private fun libraryItems(): List<SettingsItem> {
             icon = painterResource(R.drawable.trending_up),
             checked = reportPlays,
             onCheckedChange = onReportPlaysChange,
+        ),
+    )
+}
+
+// lyrics normally go to whoever has the most features, this lets the user's own provider order decide instead
+@Composable
+private fun lyricsItems(): List<SettingsItem> {
+    val (overridden, setOverridden) = rememberPreference(LyricsOrderOverrideKey, defaultValue = false)
+    val (savedOrder, setSavedOrder) = rememberPreference(LyricsProviderOrderKey, defaultValue = "")
+    val (preferred) = rememberEnumPreference(PreferredLyricsProviderKey, defaultValue = PreferredLyricsProvider.YOULYPLUS)
+    val overlay = LocalZoomOutOverlayState.current
+    // auto captions are only asked when nobody else has lyrics, so dragging them anywhere would change nothing
+    val order = remember(savedOrder, preferred) {
+        LyricsProviderRegistry.effectiveProviderOrder(savedOrder, preferred).filter { it != YouTubeCaptionsLyricsProvider.name }
+    }
+    val openSheet = {
+        overlay.showLyricsProviderSortSheet(order) { sorted ->
+            setSavedOrder(LyricsProviderRegistry.serializeProviderOrder(sorted))
+            setOverridden(true)
+        }
+    }
+    val title = stringResource(R.string.settings_lyrics_order_override)
+    return listOf(
+        // like larp mode: the row opens the sheet, turning the switch on asks for an order first, off just stops using it
+        SettingsItem(
+            title = { Text(title) },
+            highlightKey = "Override lyrics sorting",
+            searchText = title,
+            descriptionText = if (overridden) {
+                stringResource(R.string.settings_lyrics_order_override_on, LyricsProviderRegistry.getDisplayName(order.first()))
+            } else {
+                stringResource(R.string.settings_lyrics_order_override_desc)
+            },
+            detail = stringResource(R.string.settings_lyrics_order_override_detail),
+            icon = rememberVectorPainter(Icons.AutoMirrored.Rounded.Sort),
+            iconShape = CircleShape,
+            onClick = openSheet,
+            trailingContent = {
+                AppSwitch(checked = overridden, onCheckedChange = { on -> if (on) openSheet() else setOverridden(false) })
+            },
         ),
     )
 }

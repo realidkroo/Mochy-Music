@@ -64,6 +64,7 @@ import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.SheetIcon
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 /** "change playback": both volumes, then every output; picking one moves the song there, cast receivers play it themselves */
 @Composable
@@ -130,6 +131,7 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
             modifier =
                 Modifier
                     .verticalScroll(rememberScrollState())
+                    .padding(top = sheetHandleRoom())
                     .padding(horizontal = 20.dp)
                     .padding(top = 10.dp, bottom = 28.dp),
         ) {

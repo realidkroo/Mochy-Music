@@ -37,6 +37,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -50,6 +51,7 @@ import com.mochyy.mochymusic.ui.component.SongSwipeAction
 import com.mochyy.mochymusic.ui.component.SwipeAction
 import com.mochyy.mochymusic.ui.component.SwipePill
 import com.mochyy.mochymusic.ui.component.damageBoundary
+import com.mochyy.mochymusic.ui.component.drawSwipeWash
 import com.mochyy.mochymusic.ui.screens.audiolab.rememberLabTime
 import com.mochyy.mochymusic.ui.screens.audiolab.rememberOnScreen
 import com.mochyy.mochymusic.ui.screens.audiolab.rememberPicturesHeld
@@ -66,6 +68,24 @@ private const val ReturnSeconds = 0.7f
 
 // a freshly picked action starts pulling this soon, so the change is seen right away
 private const val PickLeadIn = 0.3f
+
+// the fired colour pours across the row as it heads back, then fades, like a real release
+private const val WashSpreadSeconds = 0.4f
+private const val WashHoldSeconds = 0.18f
+private const val WashFadeSeconds = 0.42f
+
+/** whether the demo's finger has let go and the row is on its way back, at [seconds] into the demo */
+private fun releasedAt(seconds: Float): Boolean = seconds.mod(LoopSeconds) in HoldUntil..(HoldUntil + ReturnSeconds)
+
+private fun washSpreadAt(seconds: Float): Float {
+    val since = seconds.mod(LoopSeconds) - HoldUntil
+    return if (since < 0f) 0f else FastOutSlowInEasing.transform((since / WashSpreadSeconds).coerceIn(0f, 1f))
+}
+
+private fun washAlphaAt(seconds: Float): Float {
+    val since = seconds.mod(LoopSeconds) - HoldUntil
+    return if (since < 0f) 0f else 1f - ((since - WashHoldSeconds) / WashFadeSeconds).coerceIn(0f, 1f)
+}
 
 /** how far out the row is, 0 at rest to 1 when the pill has fired its colour, at [seconds] into the demo */
 private fun pullAt(seconds: Float): Float {
@@ -103,6 +123,7 @@ fun SwipePreview(action: SongSwipeAction, toRight: Boolean, modifier: Modifier =
     val pull = { pullAt(time.value - origin.floatValue) }
     val out = { pull() * line }
     val armed by remember { derivedStateOf { pull() >= 1f } }
+    val released by remember { derivedStateOf { releasedAt(time.value - origin.floatValue) } }
 
     val swipeAction = SwipeAction(action.icon, action.color, stringResource(action.pillLabel)) {}
 
@@ -120,16 +141,22 @@ fun SwipePreview(action: SongSwipeAction, toRight: Boolean, modifier: Modifier =
             room = { (out() - pillRoom).coerceAtLeast(0f) },
             rowHeight = rowHeightPx,
             armed = armed,
-            fired = false,
+            fired = released,
             onNeed = { pillNeed = it },
         )
-        SampleRow(Modifier.graphicsLayer { translationX = if (toRight) out() else -out() })
+        SampleRow(
+            modifier = Modifier.graphicsLayer { translationX = if (toRight) out() else -out() },
+            wash = {
+                val seconds = time.value - origin.floatValue
+                drawSwipeWash(action.color, fromStart = toRight, spread = washSpreadAt(seconds), alpha = washAlphaAt(seconds))
+            },
+        )
     }
 }
 
 /** a stand-in song row: cover, two lines of text and the round button at the end, on its slab */
 @Composable
-private fun SampleRow(modifier: Modifier = Modifier) {
+private fun SampleRow(modifier: Modifier = Modifier, wash: DrawScope.() -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -142,6 +169,7 @@ private fun SampleRow(modifier: Modifier = Modifier) {
                     size = Size(size.width - inset * 2f, size.height),
                     cornerRadius = CornerRadius(size.height / 2f),
                 )
+                wash()
             }
             .padding(horizontal = SlabInset + 10.dp),
     ) {

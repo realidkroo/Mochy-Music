@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +33,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -67,6 +70,7 @@ internal fun PopupSheetState.showStoreWelcome(name: String, onNext: () -> Unit, 
     val scroll = ScrollState(0)
     sheet = showWithHandle(
         fullBleed = true,
+        topFade = false,
         surface = WelcomeSurface,
         onClosed = { if (!agreed) onNotNow() },
         buttonBar = {
@@ -170,6 +174,13 @@ private fun StoreTerms() {
 internal fun ForkNote(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     Column(modifier.fillMaxWidth().padding(top = 26.dp).clip(RoundedCornerShape(30.dp)).background(BrowserCard).padding(22.dp)) {
+        Icon(
+            painter = painterResource(R.drawable.warning),
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(48.dp),
+        )
+        Spacer(Modifier.height(14.dp))
         Text(stringResource(R.string.module_store_fork_title), color = Color.White, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 22.sp)
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.module_store_fork_body), color = BrowserSoft, fontFamily = InterFontFamily, fontSize = 14.sp, lineHeight = 20.sp)

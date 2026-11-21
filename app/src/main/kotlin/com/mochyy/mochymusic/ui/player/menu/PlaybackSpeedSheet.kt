@@ -52,6 +52,7 @@ import dagger.hilt.android.EntryPointAccessors
 import kotlin.math.abs
 import kotlin.math.log2
 import com.mochyy.mochymusic.ui.component.RemoteFocus
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 private val CardSurface = MenuRowSurface
 
@@ -112,6 +113,7 @@ fun PlaybackSpeedSheet(onDismiss: () -> Unit) {
                 .weight(1f, fill = false)
                 // the full video mode's card is only as tall as the phone is wide, so the sliders scroll there
                 .verticalScroll(rememberScrollState())
+                .padding(top = sheetHandleRoom())
                 .padding(horizontal = 24.dp)
                 .padding(top = 10.dp, bottom = 28.dp)
         ) {

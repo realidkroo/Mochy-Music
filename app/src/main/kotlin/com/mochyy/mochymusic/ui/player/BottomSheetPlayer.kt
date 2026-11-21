@@ -938,12 +938,14 @@ private fun PlayerSheet(
             }
         }
 
-        Box(
+        Spacer(
             modifier = Modifier
                 .fillMaxSize()
-                // behind the player while it's shrunk into a card or a box, too
-                .graphicsLayer { alpha = if (studio.engaged) 1f else menuReveal.floatValue }
-                .background(Color.Black)
+                // behind the player while it's shrunk into a card or a box, skipping draw when idle
+                .drawBehind {
+                    val alpha = if (studio.engaged) 1f else menuReveal.floatValue
+                    if (alpha > 0.001f) drawRect(Color.Black, alpha = alpha)
+                }
         )
 
         BottomSheet(
@@ -983,7 +985,6 @@ private fun PlayerSheet(
             dragsWhenOpen = { currentPlayerStyle != PlayerStyle.VIDEO },
             onTouchActivity = handleState::onTouchActivity,
             pureBlack = pureBlack,
-            background = {},
             sharedContent = {
                 MorphingCover(
                     progressProvider = progressProvider,

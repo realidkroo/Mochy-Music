@@ -186,6 +186,13 @@ class AudioLabStore @Inject constructor(
     private val _presets = MutableStateFlow(load<List<EqPreset>>("presets") ?: emptyList())
     val presets: StateFlow<List<EqPreset>> = _presets.asStateFlow()
 
+    private val _fxPresets = MutableStateFlow(load<List<FxPreset>>("fx_presets") ?: emptyList())
+    val fxPresets: StateFlow<List<FxPreset>> = _fxPresets.asStateFlow()
+
+    // the fx preset that's picked, every change on the page saves into it; null while none is
+    private val _fxPresetId = MutableStateFlow(prefs.getString("fx_preset_id", null)?.takeIf { id -> _fxPresets.value.any { it.id == id } })
+    val fxPresetId: StateFlow<String?> = _fxPresetId.asStateFlow()
+
     private val _loudness = MutableStateFlow(load("loudness") ?: LoudnessSettings())
     val loudness: StateFlow<LoudnessSettings> = _loudness.asStateFlow()
 
@@ -233,30 +240,35 @@ class AudioLabStore @Inject constructor(
     fun updateReverb(transform: (ReverbSettings) -> ReverbSettings) {
         _reverb.update(transform)
         pushFx()
+        saveIntoFxPreset()
         scheduleSave()
     }
 
     fun updateLoudness(transform: (LoudnessSettings) -> LoudnessSettings) {
         _loudness.update(transform)
         pushFx()
+        saveIntoFxPreset()
         scheduleSave()
     }
 
     fun updateSpatial(transform: (SpatialSettings) -> SpatialSettings) {
         _spatial.update(transform)
         pushFx()
+        saveIntoFxPreset()
         scheduleSave()
     }
 
     fun updateStage(transform: (StageSettings) -> StageSettings) {
         _stage.update(transform)
         pushFx()
+        saveIntoFxPreset()
         scheduleSave()
     }
 
     fun updateEightD(transform: (EightDSettings) -> EightDSettings) {
         _eightD.update { transform(it).normalized() }
         pushFx()
+        saveIntoFxPreset()
         scheduleSave()
     }
 
@@ -268,6 +280,7 @@ class AudioLabStore @Inject constructor(
 
     fun updatePlayback(transform: (PlaybackSettings) -> PlaybackSettings) {
         _playback.update { transform(it).let { s -> s.copy(speed = s.speed.coerceIn(MinSpeed, MaxSpeed)) } }
+        saveIntoFxPreset()
         scheduleSave()
     }
 
@@ -280,6 +293,7 @@ class AudioLabStore @Inject constructor(
     fun updateVolume(transform: (VolumeSettings) -> VolumeSettings) {
         _volume.update(transform)
         pushFx()
+        saveIntoFxPreset()
         scheduleSave()
     }
 
@@ -289,11 +303,99 @@ class AudioLabStore @Inject constructor(
         scheduleSave()
     }
 
+    // a hand change to the curve: it saves into the picked preset when that one is yours, and a built in one turns custom
+    fun editEqCurve(transform: (EqSettings) -> EqSettings) {
+        updateEq { s ->
+            val next = transform(s)
+            if (next == s) s else next.copy(presetId = s.presetId?.takeIf { id -> _presets.value.any { it.id == id } })
+        }
+        saveIntoEqPreset()
+    }
+
+    // the preamp rides along with your own presets too, a built in one stays picked since it never set it
+    fun setEqPreamp(db: Double) {
+        updateEq { it.copy(preamp = db) }
+        saveIntoEqPreset()
+    }
+
     fun savePreset(name: String) {
         val current = _eq.value
         val preset = EqPreset("user_${System.currentTimeMillis()}", name.trim(), current.nodes, current.preamp)
         _presets.update { it + preset }
         updateEq { it.copy(presetId = preset.id) }
+    }
+
+    fun renamePreset(id: String, name: String) {
+        _presets.update { list -> list.map { if (it.id == id) it.copy(name = name.trim()) else it } }
+        scheduleSave()
+    }
+
+    // keeps your picked preset in step with the curve, so a tweak never needs saving again
+    private fun saveIntoEqPreset() {
+        val eq = _eq.value
+        val id = eq.presetId ?: return
+        _presets.update { list -> list.map { if (it.id == id) it.copy(nodes = eq.nodes, preamp = eq.preamp) else it } }
+    }
+
+    // ---- audio fx presets ----------------------------------------------------------------------
+
+    // keeps what's playing now under a new name, and picks it so later changes go into it
+    fun saveFxPreset(name: String) {
+        val preset = currentFx("fx_${System.currentTimeMillis()}", name.trim())
+        _fxPresets.update { it + preset }
+        _fxPresetId.value = preset.id
+        scheduleSave()
+    }
+
+    fun applyFxPreset(id: String) {
+        val preset = _fxPresets.value.firstOrNull { it.id == id } ?: return
+        _reverb.value = preset.reverb
+        _eightD.value = preset.eightD.normalized()
+        _loudness.value = preset.loudness
+        _spatial.value = preset.spatial
+        _playback.value = preset.playback.let { it.copy(speed = it.speed.coerceIn(MinSpeed, MaxSpeed)) }
+        _volume.value = preset.volume
+        _stage.value = preset.stage.copy(outputKinds = _stage.value.outputKinds)
+        _fxPresetId.value = id
+        pushFx()
+        scheduleSave()
+    }
+
+    // lets go of the picked preset: the sound stays, changes just stop going into it
+    fun releaseFxPreset() {
+        if (_fxPresetId.value == null) return
+        _fxPresetId.value = null
+        scheduleSave()
+    }
+
+    fun renameFxPreset(id: String, name: String) {
+        _fxPresets.update { list -> list.map { if (it.id == id) it.copy(name = name.trim()) else it } }
+        scheduleSave()
+    }
+
+    fun deleteFxPreset(id: String) {
+        _fxPresets.update { list -> list.filterNot { it.id == id } }
+        if (_fxPresetId.value == id) _fxPresetId.value = null
+        scheduleSave()
+    }
+
+    // every effect on the audio fx page as it plays right now, under a preset's id and name
+    private fun currentFx(id: String, name: String) = FxPreset(
+        id = id,
+        name = name,
+        reverb = _reverb.value,
+        eightD = _eightD.value,
+        loudness = _loudness.value,
+        spatial = _spatial.value,
+        playback = _playback.value,
+        volume = _volume.value,
+        stage = _stage.value.copy(outputKinds = emptyMap()),
+    )
+
+    // a change while one of your fx presets is picked goes straight into it, so it never needs saving by hand
+    private fun saveIntoFxPreset() {
+        val id = _fxPresetId.value ?: return
+        _fxPresets.update { list -> list.map { if (it.id == id) currentFx(it.id, it.name) else it } }
     }
 
     // a song's own preset while it plays, null to go back to the user's curve; the headphone correction stays on either way
@@ -379,6 +481,12 @@ class AudioLabStore @Inject constructor(
                     "presets",
                     json.encodeToString(kotlinx.serialization.builtins.ListSerializer(EqPreset.serializer()), _presets.value),
                 )
+                putString(
+                    "fx_presets",
+                    json.encodeToString(kotlinx.serialization.builtins.ListSerializer(FxPreset.serializer()), _fxPresets.value),
+                )
+                val fxPresetId = _fxPresetId.value
+                if (fxPresetId != null) putString("fx_preset_id", fxPresetId) else remove("fx_preset_id")
             }
         }
     }

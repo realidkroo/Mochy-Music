@@ -68,6 +68,7 @@ import com.mochyy.mochymusic.ui.component.TopToaster
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 // pairs a new device both ways round: this phone shows its own code for another phone to type, and lists what's in pairing mode nearby
 fun PopupSheetState.showAddDevice(link: DevicesLink) {
@@ -103,7 +104,7 @@ private fun ColumnScope.AddDeviceContent(link: DevicesLink, sheets: PopupSheetSt
         (attempt.state as? PairUi.Done)?.let { TopToaster.show(context.getString(R.string.devices_paired_with, it.name), iconRes = R.drawable.cast_connected) }
     }
 
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(top = sheetHandleRoom())) {
         SheetTitle(stringResource(R.string.devices_add_title))
         Spacer(Modifier.height(14.dp))
         Box(

@@ -634,7 +634,14 @@ private fun QueueSongRow(
     onClick: () -> Unit,
     handle: (@Composable () -> Unit)?,
 ) {
-    val artwork = remember(item.artworkUri) { item.artworkUri?.toString()?.resize(RowArtPx, RowArtPx) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val artwork = remember(context, item.artworkUri) {
+        val url = item.artworkUri?.toString() ?: return@remember null
+        coil3.request.ImageRequest.Builder(context)
+            .data(url.resize(RowArtPx, RowArtPx))
+            .size(RowArtPx)
+            .build()
+    }
     val interactionSource = remember { MutableInteractionSource() }
 
     Row(

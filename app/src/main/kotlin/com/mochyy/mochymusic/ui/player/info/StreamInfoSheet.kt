@@ -64,6 +64,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
+import androidx.compose.foundation.layout.padding
 
 /** "stream info": where the playing song comes from, and its whole road to the speaker */
 @Composable
@@ -85,6 +87,7 @@ fun StreamInfoSheet(onDismiss: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
+                    .padding(top = sheetHandleRoom())
                     .navigationBarsPadding(),
             ) {
                 InfoColumn(modifier = Modifier.widthIn(max = 600.dp)) {

@@ -62,6 +62,7 @@ import com.mochyy.mochymusic.ui.screens.audiolab.LabSlider
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlin.math.roundToInt
 import com.mochyy.mochymusic.ui.component.RemoteFocus
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 // the picture, the background that moves under your fingers, and, for a video, the part of the song it plays
 internal fun PopupSheetState.showEditor(session: SongShareSession) {
@@ -164,7 +165,7 @@ internal fun PopupSheetState.showCardStyle(session: SongShareSession) {
     show(buttonBar = { SheetPillButton(text = stringResource(R.string.song_share_ok), onClick = popup::dismiss) }) {
         val context = LocalContext.current
         val live = popup.rememberIsFront()
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(top = sheetHandleRoom())) {
             ShareTitle(stringResource(R.string.song_share_card_title))
             CardCloseUp(session, live)
             Spacer(Modifier.height(20.dp))

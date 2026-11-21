@@ -8,8 +8,8 @@ import com.music.innertube.YouTube
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.apache.commons.lang3.RandomStringUtils
 import java.time.LocalDateTime
+import kotlin.random.Random
 
 @Immutable
 @Entity(tableName = "artist")
@@ -43,6 +43,8 @@ data class ArtistEntity(
     }
 
     companion object {
-        fun generateArtistId() = "LA" + RandomStringUtils.insecure().next(8, true, false)
+        private const val Letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+        fun generateArtistId() = "LA" + CharArray(8) { Letters[Random.nextInt(Letters.length)] }.concatToString()
     }
 }

@@ -178,7 +178,7 @@ fun BottomSheet(
     modifier: Modifier = Modifier,
     /** Added to [modifier] only while the sheet sits fully open (pill transition only). */
     expandedModifier: Modifier = Modifier,
-    background: @Composable (BoxScope.() -> Unit) = { },
+    background: (@Composable BoxScope.() -> Unit)? = null,
     onDismiss: (() -> Unit)? = null,
     collapsedContent: @Composable BoxScope.() -> Unit,
     isExpandable: Boolean = true,
@@ -212,7 +212,7 @@ fun BottomSheet(
     )
     val currentSwipeUpFollows by androidx.compose.runtime.rememberUpdatedState(swipeUpFollows)
 
-    if (!isPillTransition) {
+    if (!isPillTransition && background != null) {
         Box(
             modifier = modifier
                 .graphicsLayer {
@@ -697,7 +697,7 @@ fun BottomSheet(
                     val showBackground by remember { derivedStateOf { !state.isDismissed } }
                     val showControls by remember { derivedStateOf { !state.isDismissed } }
 
-                    if (showBackground) {
+                    if (showBackground && background != null) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()

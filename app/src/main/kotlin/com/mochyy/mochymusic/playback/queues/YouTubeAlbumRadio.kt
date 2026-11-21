@@ -14,6 +14,7 @@ class YouTubeAlbumRadio(
     private var playlistId: String,
 ) : Queue {
     override val preloadItem: MediaMetadata? = null
+    override val continuesAsRadio = true
 
     private val endpoint: WatchEndpoint
         get() = WatchEndpoint(

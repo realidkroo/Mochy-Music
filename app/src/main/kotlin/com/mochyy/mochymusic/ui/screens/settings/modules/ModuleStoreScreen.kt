@@ -151,6 +151,10 @@ fun ModuleStoreScreen(navController: NavController, post: String, viewModel: Mod
             ) {
                 StoreBannerArt(module?.banner ?: module?.icon)
             }
+            if (page is FeedResult.Unofficial) {
+                ForkNote(column)
+                return@Column
+            }
             if (module == null) {
                 Text(stringResource(R.string.module_store_gone), color = PageSoft, fontFamily = InterFontFamily, fontSize = 15.sp, modifier = column)
                 return@Column

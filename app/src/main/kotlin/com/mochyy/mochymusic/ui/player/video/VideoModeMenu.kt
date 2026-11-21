@@ -63,6 +63,7 @@ import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.ui.utils.resize
 import com.mochyy.mochymusic.utils.rememberEnumPreference
 import com.mochyy.mochymusic.ui.component.RemoteFocus
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 // the chevron's menu in the full video mode: a card floating over the video, and every sheet it opens floats the same way
 @Composable
@@ -109,6 +110,7 @@ internal fun VideoModeMenu(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
+                    .padding(top = sheetHandleRoom())
                     .padding(horizontal = 18.dp)
                     .padding(top = 6.dp, bottom = 18.dp),
             ) {
@@ -292,6 +294,7 @@ internal fun VideoQualitySheet(session: YouTubeVideoSession?, onDismiss: () -> U
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
+                .padding(top = sheetHandleRoom())
                 .padding(horizontal = 18.dp)
                 .padding(top = 4.dp, bottom = 18.dp),
         ) {

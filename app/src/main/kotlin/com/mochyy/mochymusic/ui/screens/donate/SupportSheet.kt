@@ -38,7 +38,7 @@ private const val BandEndsOnCharacter = 0.53f
 /** shows the support sheet, donate us! pushes the donate sheet on top of it */
 fun PopupSheetState.showSupportSheet() {
     val popup = this
-    show(fullBleed = true, buttonBar = { SupportButtons(popup) }) {
+    show(fullBleed = true, topFade = false, buttonBar = { SupportButtons(popup) }) {
         SupportSheetContent()
     }
 }

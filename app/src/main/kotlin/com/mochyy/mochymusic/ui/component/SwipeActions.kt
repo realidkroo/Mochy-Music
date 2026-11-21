@@ -35,6 +35,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -43,7 +44,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -51,6 +54,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.layout
@@ -150,6 +154,54 @@ private val SwipeLabelStyle = TextStyle(
     letterSpacing = (-0.02).em,
 )
 
+// how the fired colour pours across the row, then how long it lingers before it fades
+private val WashSpread = spring<Float>(dampingRatio = 0.9f, stiffness = 300f)
+private const val WashHoldMillis = 180
+private const val WashFadeMillis = 420
+
+/** the colour a fired swipe pours into the row it came from: it spreads across the slab from that side, then fades */
+@Stable
+private class SwipeWash {
+    var color by mutableStateOf(Color.Transparent)
+    var fromStart by mutableStateOf(true)
+    var spread by mutableFloatStateOf(0f)
+    var alpha by mutableFloatStateOf(0f)
+    private var job: Job? = null
+
+    fun play(scope: CoroutineScope, color: Color, fromStart: Boolean) {
+        job?.cancel()
+        this.color = color
+        this.fromStart = fromStart
+        spread = 0f
+        alpha = 1f
+        job = scope.launch {
+            launch { animate(0f, 1f, animationSpec = WashSpread) { value, _ -> spread = value } }
+            animate(1f, 0f, animationSpec = tween(WashFadeMillis, delayMillis = WashHoldMillis)) { value, _ -> alpha = value }
+        }
+    }
+
+    // a new drag starts clean, the old colour shouldn't still be fading under the finger
+    fun stop() {
+        job?.cancel()
+        alpha = 0f
+    }
+}
+
+/** draws a fired action's colour over the row's slab, grown [spread] of the way across from its side and faded to [alpha] */
+internal fun DrawScope.drawSwipeWash(color: Color, fromStart: Boolean, spread: Float, alpha: Float) {
+    if (alpha <= 0f) return
+    val inset = SlabInset.toPx()
+    val full = size.width - inset * 2f
+    val width = full * spread.coerceIn(0f, 1f)
+    if (width <= 0f) return
+    drawRoundRect(
+        color = color.copy(alpha = color.alpha * alpha),
+        topLeft = Offset(if (fromStart) inset else inset + full - width, 0f),
+        size = Size(width, size.height),
+        cornerRadius = CornerRadius(size.height / 2f),
+    )
+}
+
 /**
  * a row you can drag sideways, like Frame 117: the row slides on a dark rounded slab, and the
  * action for that side grows out of the edge into the gap it leaves, a dot first, then a circle,
@@ -182,6 +234,7 @@ fun SwipeActionsBox(
     var armed by remember { mutableIntStateOf(0) }
     var fired by remember { mutableIntStateOf(0) }
     val settle = remember { arrayOfNulls<Job>(1) }
+    val wash = remember { SwipeWash() }
     val startAction = remember { mutableStateOf<SwipeAction?>(null) }
     val endAction = remember { mutableStateOf<SwipeAction?>(null) }
 
@@ -270,6 +323,7 @@ fun SwipeActionsBox(
                     enabled = enabled,
                     onDragStarted = {
                         settle[0]?.cancel()
+                        wash.stop()
                         fired = 0
                         travel = unresisted(offset)
                     },
@@ -283,6 +337,8 @@ fun SwipeActionsBox(
                         if (action != null) {
                             fired = side
                             haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                            // a row that's its own card would hide the colour under itself, so only slab rows get it
+                            if (slab) wash.play(scope, action.color, fromStart = side == 1)
                             action.onTrigger()
                         }
                         armed = 0
@@ -343,6 +399,7 @@ fun SwipeActionsBox(
                                 cornerRadius = CornerRadius(size.height / 2f),
                             )
                         }
+                        drawSwipeWash(wash.color, wash.fromStart, wash.spread, wash.alpha)
                     },
             ) {
                 content()
@@ -351,12 +408,7 @@ fun SwipeActionsBox(
     }
 }
 
-/**
- * the action's pill. it only ever fills the gap the swipe has opened ([room]), so it never slides
- * under the row: a dot at first, a circle once there's room for one, then it stretches with the
- * finger through a stiff spring until it's as wide as its label needs. armed, it takes the
- * action's colour and the label slides out beside the icon.
- */
+/** the action's pill, only ever in the gap the swipe opened: a dot, a circle, then the whole gap, and past the line it takes the action's colour and springs up to the row's full height */
 @Composable
 internal fun BoxScope.SwipePill(
     action: SwipeAction,
@@ -376,10 +428,20 @@ internal fun BoxScope.SwipePill(
     val need = with(density) { (PillPadding * 2 + PillIconSize + PillLabelSpacing).toPx() } + labelWidth
     SideEffect { onNeed(need) }
 
-    val width by animateFloatAsState(
-        targetValue = room().coerceIn(0f, need),
-        animationSpec = spring(dampingRatio = 0.72f, stiffness = 1100f),
-        label = "swipePillWidth",
+    // chases the open gap from a coroutine, read in layout and draw, so a drag never recomposes the pill
+    val currentRoom by rememberUpdatedState(room)
+    val width = remember { Animatable(0f) }
+    LaunchedEffect(width) {
+        snapshotFlow { currentRoom() }.collect { target ->
+            // a fresh animateTo per frame keeps the running one's speed, the same way animateFloatAsState does
+            launch { width.animateTo(target, spring(dampingRatio = 0.72f, stiffness = 1100f)) }
+        }
+    }
+    // 0 a pill, 1 as tall as the row: it pops up past the line and stays up while the row springs home
+    val expand by animateFloatAsState(
+        targetValue = if (armed || fired) 1f else 0f,
+        animationSpec = spring(dampingRatio = 0.62f, stiffness = 520f),
+        label = "swipePillExpand",
     )
     val fill by animateColorAsState(
         targetValue = if (armed || fired) action.color else SwipePillIdle,
@@ -397,15 +459,27 @@ internal fun BoxScope.SwipePill(
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .align(if (atStart) Alignment.CenterStart else Alignment.CenterEnd)
+            // sized by the row, never the other way round, so a pill as tall as the row can't hold the row open
+            .matchParentSize()
             .padding(horizontal = PillEdgeInset)
-            .layout { measurable, _ ->
+            .layout { measurable, constraints ->
                 // the spring may lag or overshoot, but the pill is never wider than the gap
                 // that's actually open right now, so it can't overlap the row
-                val w = minOf(width, room()).coerceAtLeast(0f)
-                val h = minOf(w, pillHeight)
+                val w = minOf(width.value, room()).coerceAtLeast(0f)
+                // never taller than it is wide, so a closing gap shrinks it back to a circle and a dot
+                val small = minOf(w, pillHeight)
+                val h = minOf(small + (constraints.maxHeight - small) * expand.coerceIn(0f, 1f), w)
                 val placeable = measurable.measure(Constraints.fixed(w.roundToInt(), h.roundToInt()))
-                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    val x = if (atStart) 0 else constraints.maxWidth - placeable.width
+                    placeable.place(x, (constraints.maxHeight - placeable.height) / 2)
+                }
+            }
+            .graphicsLayer {
+                // the whole shape swells a touch with the icon's bump, so arming and firing land with a thud
+                val pop = 1f + (bump.value - 1f) * 0.12f
+                scaleX = pop
+                scaleY = pop
             }
             .clip(RoundedCornerShape(50))
             .background(fill),
@@ -422,7 +496,7 @@ internal fun BoxScope.SwipePill(
                     .size(PillIconSize)
                     .graphicsLayer {
                         // grows with the pill: tiny in the dot, full size once it's a circle
-                        val grown = (minOf(width, room()) / pillHeight).coerceIn(0f, 1f)
+                        val grown = (minOf(width.value, room()) / pillHeight).coerceIn(0f, 1f)
                         val scale = (0.35f + 0.65f * grown) * bump.value
                         scaleX = scale
                         scaleY = scale

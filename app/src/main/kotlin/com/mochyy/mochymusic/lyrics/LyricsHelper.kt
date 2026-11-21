@@ -4,6 +4,7 @@ package com.mochyy.mochymusic.lyrics
 
 import android.content.Context
 import android.util.LruCache
+import com.mochyy.mochymusic.constants.LyricsOrderOverrideKey
 import com.mochyy.mochymusic.constants.LyricsProviderOrderKey
 import com.mochyy.mochymusic.constants.PreferredLyricsProvider
 import com.mochyy.mochymusic.constants.PreferredLyricsProviderKey
@@ -37,19 +38,14 @@ constructor(
 
     private suspend fun resolveLyricsProviders(): List<LyricsProvider> {
         val preferences = context.dataStore.data.first()
-        val orderString = preferences[LyricsProviderOrderKey].orEmpty()
-
-        if (orderString.isNotBlank()) {
-            return LyricsProviderRegistry.getOrderedProviders(orderString)
-        }
-
-        val preferredEnum = preferences[PreferredLyricsProviderKey]
-            .toEnum(PreferredLyricsProvider.YOULYPLUS)
-        val preferredName = LyricsProviderRegistry.getProviderNameForEnum(preferredEnum)
-        val defaultOrder = LyricsProviderRegistry.getDefaultProviderOrder()
-        val migratedOrder = listOf(preferredName) + defaultOrder.filter { it != preferredName }
-        return migratedOrder.mapNotNull { LyricsProviderRegistry.getProviderByName(it) }
+        val preferred = preferences[PreferredLyricsProviderKey].toEnum(PreferredLyricsProvider.YOULYPLUS)
+        return LyricsProviderRegistry.effectiveProviderOrder(preferences[LyricsProviderOrderKey].orEmpty(), preferred)
+            .mapNotNull { LyricsProviderRegistry.getProviderByName(it) }
     }
+
+    // the app behaviour switch that lets the saved provider order beat the feature count
+    private suspend fun isOrderOverridden(): Boolean =
+        context.dataStore.data.first()[LyricsOrderOverrideKey] ?: false
 
     private val cache = LruCache<String, List<LyricsResult>>(MAX_CACHE_SIZE)
     private val bestCache = LruCache<String, LyricsWithProvider>(MAX_CACHE_SIZE)
@@ -65,9 +61,9 @@ constructor(
      * on provider order alone. Grading compares three things, in this order of importance:
      *
      *  1. **Original script.** Decided from evidence about the song; see [pickBest].
-     *  2. **Sync quality.** Word > line > plain. This is what "flowing lyrics" means.
-     *  3. **Voice tags.** Duet attribution, which drives left/right layout.
-     *  4. **Provider order.** Only breaks ties.
+     *  2. **Timed at all.** Line or word timing beats plain text.
+     *  3. **Features.** Duet, word timing and backing vocals; more of them wins, duet counts most.
+     *  4. **Provider order.** Only breaks ties, unless the user turned on the order override.
      *
      * All enabled providers are queried, since the script comparison needs the full candidate set.
      */
@@ -109,6 +105,7 @@ constructor(
         }
 
         val providers = resolveLyricsProviders()
+        val orderFirst = isOrderOverridden()
         // YouTube's auto captions only count when nothing else has lyrics (see [eligible]), so
         // they're only asked for then: asked every time, they cost every song YouTube requests
         // whose answer was nearly always thrown away.
@@ -116,10 +113,10 @@ constructor(
             .partition { it.value.name == YouTubeCaptionsLyricsProvider.name }
         var candidates = fetchIndexed(mediaMetadata, regular)
         // picking parses every candidate's lyrics, so it runs off the main thread the player calls from
-        var best = withContext(Dispatchers.Default) { pickBest(mediaMetadata, candidates, providers.size) }
+        var best = withContext(Dispatchers.Default) { pickBest(mediaMetadata, candidates, providers.size, orderFirst) }
         if (best == null && lastResort.isNotEmpty()) {
             candidates = candidates + fetchIndexed(mediaMetadata, lastResort)
-            best = withContext(Dispatchers.Default) { pickBest(mediaMetadata, candidates, providers.size) }
+            best = withContext(Dispatchers.Default) { pickBest(mediaMetadata, candidates, providers.size, orderFirst) }
         }
         if (best == null) return LyricsWithProvider(LYRICS_NOT_FOUND, "Unknown")
         val result = LyricsWithProvider(best.lyrics, best.providerName)
@@ -139,10 +136,11 @@ constructor(
         val script: LyricsUtils.Script,
         /** For Latin-script lyrics, the language when it can be told; see [LyricsUtils.latinLanguage]. */
         val language: String? = null,
-    ) {
-        /** Carries real left/right voice tags, which is what lays a duet out on both sides. */
-        val hasDuet: Boolean get() = LyricsUtils.hasDistinctVoices(lyrics)
-    }
+        // real left/right voices, worked out once off the main thread since the source picker reads it while composing
+        val hasDuet: Boolean = false,
+        // backing vocals the lyrics page draws under the lead line
+        val hasBackground: Boolean = false,
+    )
 
     /**
      * Asks every enabled provider at once. They used to be asked one after another, so a song
@@ -204,6 +202,8 @@ constructor(
             sync = LyricsUtils.syncKind(lyrics),
             script = LyricsUtils.lyricsScript(lyrics),
             language = LyricsUtils.latinLanguage(lyrics),
+            hasDuet = LyricsUtils.hasDistinctVoices(lyrics),
+            hasBackground = LyricsUtils.hasBackgroundVocals(lyrics),
         ).takeIf { it.sync != LyricsUtils.SyncKind.NONE }
     }
 
@@ -232,8 +232,9 @@ constructor(
      *     title is far more often a mismatched search hit than the original, and it used to win
      *     outright, which is how English and Indonesian songs ended up showing Chinese lyrics.
      *
-     * Then, among lyrics in the right language, sync quality (word > line > plain), then duet
-     * tags, then provider order.
+     * Then, among lyrics in the right language, timed beats plain, then the most features
+     * ([featureScore]), then provider order. With [orderFirst] the provider order comes before
+     * the features, so the user's sort decides, but never over the language or the timing.
      *
      * Not every source gets a say, though: the Chinese services and YouTube's auto captions only
      * do when the better sources have nothing - see [eligible]. Null when nothing is left to pick
@@ -243,6 +244,7 @@ constructor(
         mediaMetadata: MediaMetadata,
         candidates: List<ProviderCandidate>,
         providerCount: Int,
+        orderFirst: Boolean,
     ): ProviderCandidate? {
         val metadataScript = LyricsUtils.dominantScript(
             listOfNotNull(
@@ -323,28 +325,14 @@ constructor(
                 isNative(c.script) -> 0
                 else -> 1
             }
-            // Syllable-split payloads are word timings smeared across single letters; they
-            // render as gibberish word-by-word, so demote them to the level of line-synced.
-            val syncScore = if (c.sync == LyricsUtils.SyncKind.WORD && LyricsUtils.isSyllableSplit(c.lyrics)) {
-                LyricsUtils.SyncKind.LINE.ordinal
-            } else {
-                c.sync.ordinal
-            }
-            // Duet/voice tagging is strictly extra information: it is what lets the screen put
-            // one singer left and the answering singer right. Only BetterLyrics (from TTML's
-            // ttm:agent) and Paxsenix emit it — YouLyPlus never does. Without this term an
-            // agent-less result that ties on script and sync would win purely on provider order
-            // and the song would silently render flush-left with no way to tell why.
-            // Real two-sided voices count most; tags on every line with a single voice still beat
-            // none, as before.
-            val duetScore = when {
-                c.hasDuet -> 2
-                LyricsUtils.hasVoiceTags(c.lyrics) -> 1
-                else -> 0
-            }
+            val timedScore = if (c.sync >= LyricsUtils.SyncKind.LINE) 1 else 0
+            val base = scriptScore * ScriptWeight + timedScore * TimedWeight
+
+            // with the override on, the user's sort comes straight after the language and the timing
+            if (orderFirst) return@maxByOrNull base + providerCount - c.order
 
             // for hindi songs betterlyrics and lyricsplus beat youtube music whenever they have the song
-            val preferredBonus = if (hindiMatch && c.providerName in PreferredHindiProviders) SyncWeight * 3 else 0
+            val preferredBonus = if (hindiMatch && c.providerName in PreferredHindiProviders) HindiBonus else 0
 
             // The Chinese services are the strongest sources for Chinese songs, so for one they win
             // a tie outright, and among themselves the user's order decides
@@ -354,12 +342,17 @@ constructor(
                 providerCount - c.order
             }
 
-            scriptScore * ScriptWeight +
-                preferredBonus +
-                syncScore * SyncWeight +
-                duetScore * DuetWeight +
-                orderScore
+            base + preferredBonus + featureScore(c) * FeatureWeight + orderScore
         }?.value
+    }
+
+    // duet 4, word timing 3, backing vocals 2: two features always beat one, and among equals the duet wins
+    private fun featureScore(c: ProviderCandidate): Int {
+        // syllable-split word timings show as gibberish word by word, so they don't count as word timing
+        val wordTimed = c.sync == LyricsUtils.SyncKind.WORD && !LyricsUtils.isSyllableSplit(c.lyrics)
+        return (if (c.hasDuet) DuetPoints else 0) +
+            (if (wordTimed) WordPoints else 0) +
+            (if (c.hasBackground) BackgroundPoints else 0)
     }
 
     /**
@@ -581,11 +574,15 @@ constructor(
         /** Marks a language key as a Latin-script language: "latin:en", "latin:id". */
         private const val LatinPrefix = "latin:"
 
-        // Spread far enough apart that a script match always outranks any amount of sync
-        // quality, and sync quality always outranks provider order.
-        private const val DuetWeight = 100
-        private const val SyncWeight = 1_000
-        private const val ScriptWeight = 10_000
+        private const val DuetPoints = 4
+        private const val WordPoints = 3
+        private const val BackgroundPoints = 2
+
+        // spread so language beats timing, timing beats features, and features beat provider order
+        private const val FeatureWeight = 1_000
+        private const val HindiBonus = 10_000
+        private const val TimedWeight = 100_000
+        private const val ScriptWeight = 1_000_000
     }
 }
 

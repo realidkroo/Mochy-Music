@@ -73,6 +73,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 // the video pages come first and the still ones after; a pager shows one kind or the other
 private enum class BackgroundPage(@StringRes val label: Int, @StringRes val hint: Int?, val video: Boolean) {
@@ -177,7 +178,7 @@ private fun SongBackgroundContent(session: SongShareSession, popup: PopupSheetSt
     }
     val cardHeight = (LocalConfiguration.current.screenHeightDp * 0.4f).dp
 
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(top = sheetHandleRoom())) {
         Spacer(Modifier.height(10.dp))
         HorizontalPager(
             state = pager,

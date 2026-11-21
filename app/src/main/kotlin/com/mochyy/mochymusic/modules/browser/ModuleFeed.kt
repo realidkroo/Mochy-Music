@@ -111,27 +111,34 @@ class ModuleFeed @Inject constructor(
 
     val isSetUp: Boolean get() = FeedUrl.isNotBlank()
 
-    /** the page to sign in on; the check value is kept so only the sign-in started here is taken back */
-    fun signInUri(): Uri {
+    private fun isAllowed(): Boolean = StoreSignature.isOfficial(context) && !context.dataStore.get(SimulateForkKey, false)
+
+    /** the page to sign in on; the check value is kept so only the sign-in started here is taken back; null on unofficial builds */
+    fun signInUri(): Uri? {
+        if (!isSetUp || !isAllowed()) return null
         val state = ByteArray(24).also(SecureRandom()::nextBytes).joinToString("") { "%02x".format(it) }
-        prefs.edit { putString(StateKey, state) }
-        val login = Uri.parse("$FeedUrl/login").buildUpon().appendQueryParameter("state", state)
         // the sign-in page opens in a browser, so the build's signature rides along in the link instead of a header
-        StoreSignature.sign("GET", "/login", state)?.let { (time, signature) ->
-            login.appendQueryParameter("t", time).appendQueryParameter("sig", signature)
-        }
-        return login.build()
+        val (time, signature) = StoreSignature.sign(context, "GET", "/login", state) ?: return null
+        prefs.edit { putString(StateKey, state) }
+        return Uri.parse("$FeedUrl/login").buildUpon()
+            .appendQueryParameter("state", state)
+            .appendQueryParameter("t", time)
+            .appendQueryParameter("sig", signature)
+            .build()
     }
 
     /** back from the browser with mochy-modules://signed-in; true when it carried a session from the sign-in started here */
     fun finishSignIn(redirect: Uri): Boolean {
+        if (!isSetUp || !isAllowed()) {
+            prefs.edit { remove(StateKey) }
+            return false
+        }
+        if (redirect.scheme != "mochy-modules" || redirect.host != "signed-in") return false
         val expected = prefs.getString(StateKey, null) ?: return false
+        prefs.edit { remove(StateKey) }
         val session = redirect.getQueryParameter("session")?.takeIf { SessionPattern.matches(it) }
         if (redirect.getQueryParameter("state") != expected || session == null) return false
-        prefs.edit {
-            remove(StateKey)
-            putString(SessionKey, session)
-        }
+        prefs.edit { putString(SessionKey, session) }
         _session.value = session
         return true
     }
@@ -139,16 +146,16 @@ class ModuleFeed @Inject constructor(
     suspend fun signOut() = withContext(Dispatchers.IO) {
         val session = _session.value
         forgetSession()
-        if (session != null) runCatching { call(Request.Builder().url("$FeedUrl/signout").post(ByteArray(0).toRequestBody()), session).close() }
+        if (session != null) runCatching { call(Request.Builder().url("$FeedUrl/signout").post(ByteArray(0).toRequestBody()), session)?.close() }
     }
 
     suspend fun load(): FeedResult = withContext(Dispatchers.IO) {
         if (!isSetUp) return@withContext FeedResult.NotSetUp
-        // a build without the key would only be turned away, so it doesn't ask; experimental can pretend to be one, to see what a fork gets
-        if (!StoreSignature.isOfficial || context.dataStore.get(SimulateForkKey, false)) return@withContext FeedResult.Unofficial
+        // a build without the official key and signature would only be turned away, so it doesn't ask; experimental can pretend to be one, to see what a fork gets
+        if (!isAllowed()) return@withContext FeedResult.Unofficial
         val session = _session.value ?: return@withContext FeedResult.SignedOut
         val response = try {
-            call(Request.Builder().url("$FeedUrl/modules"), session)
+            call(Request.Builder().url("$FeedUrl/modules"), session) ?: return@withContext FeedResult.Unofficial
         } catch (e: IOException) {
             return@withContext FeedResult.Offline
         }
@@ -158,6 +165,7 @@ class ModuleFeed @Inject constructor(
                 200 -> modulesPage(body)
                 401 -> FeedResult.SignedOut.also { forgetSession() }
                 403 -> if (body.optString("error") == "unofficial_build") {
+                    forgetSession()
                     FeedResult.Unofficial
                 } else {
                     FeedResult.NotMember(personOf(body), body.optString("invite").takeIf { link -> link.startsWith("https://") })
@@ -170,26 +178,34 @@ class ModuleFeed @Inject constructor(
 
     /** the module's zip, or one of a pack's by its [item] id, into the cache, ready to be checked like a zip picked from the phone; null when it couldn't be fetched */
     suspend fun download(postId: String, item: String? = null): File? = withContext(Dispatchers.IO) {
+        if (!isSetUp || !isAllowed()) return@withContext null
+        if (!PostIdPattern.matches(postId) || (item != null && !ItemIdPattern.matches(item))) return@withContext null
         val session = _session.value ?: return@withContext null
         val folder = File(context.cacheDir, "module_browser").apply { mkdirs() }
         val file = File(folder, if (item != null) "$postId-$item.zip" else "$postId.zip")
         val url = if (item != null) "$FeedUrl/modules/$postId/zip?item=${Uri.encode(item)}" else "$FeedUrl/modules/$postId/zip"
         runCatching {
-            call(Request.Builder().url(url), session).use { response ->
-                if (!response.isSuccessful) return@use null
-                file.outputStream().use { out -> response.body.byteStream().copyTo(out) }
+            val response = call(Request.Builder().url(url), session) ?: return@runCatching null
+            response.use { res ->
+                if (res.code == 403) {
+                    val body = runCatching { JSONObject(res.body.string()) }.getOrNull()
+                    if (body?.optString("error") == "unofficial_build") forgetSession()
+                    return@use null
+                }
+                if (!res.isSuccessful) return@use null
+                file.outputStream().use { out -> res.body.byteStream().copyTo(out) }
                 file
             }
         }.getOrNull()
     }
 
-    // every call carries the build's signature over what it asks for, so the feed can tell an official build from a fork
-    private fun call(request: Request.Builder, session: String): Response {
+    // every call carries the build's native signature over what it asks for, and never goes out unsigned
+    private fun call(request: Request.Builder, session: String): Response? {
+        if (!isAllowed()) return null
         val built = request.header("Authorization", "Bearer $session").build()
-        val signed = StoreSignature.sign(built.method, built.url.encodedPath, session)?.let { (time, signature) ->
-            built.newBuilder().header("X-Mochy-Time", time).header("X-Mochy-Sign", signature).build()
-        }
-        return client.newCall(signed ?: built).execute()
+        val (time, signature) = StoreSignature.sign(context, built.method, built.url.encodedPath, session) ?: return null
+        val signed = built.newBuilder().header("X-Mochy-Time", time).header("X-Mochy-Sign", signature).build()
+        return client.newCall(signed).execute()
     }
 
     private fun forgetSession() {
@@ -278,5 +294,7 @@ class ModuleFeed @Inject constructor(
         private const val PrefsName = "module_browser"
         private const val StateKey = "state"
         private val SessionPattern = Regex("^[0-9a-f]{64}$")
+        private val PostIdPattern = Regex("^\\d+$")
+        private val ItemIdPattern = Regex("^[A-Za-z0-9_-]{1,128}$")
     }
 }

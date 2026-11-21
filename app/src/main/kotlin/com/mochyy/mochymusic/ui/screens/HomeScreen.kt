@@ -248,7 +248,11 @@ private fun <T> HomeCardRow(
         contentPadding = PaddingValues(horizontal = HomeContentInset),
         horizontalArrangement = Arrangement.spacedBy(HomeCardSpacing),
     ) {
-        itemsIndexed(items = items, key = { _, item -> key(item) }) { index, item ->
+        itemsIndexed(
+            items = items,
+            key = { _, item -> key(item) },
+            contentType = { _, _ -> rowKey },
+        ) { index, item ->
             Box(
                 modifier = Modifier.revealOnAppear(
                     key = "$rowKey/${key(item)}",
@@ -288,7 +292,11 @@ private fun <T> HomeTrackGrid(
             .fillMaxWidth()
             .height(homeRowHeight() * rows + rowSpacing * (rows - 1)),
     ) {
-        itemsIndexed(items = items, key = key) { index, item ->
+        itemsIndexed(
+            items = items,
+            key = key,
+            contentType = { _, _ -> "home_track_grid" },
+        ) { index, item ->
             Box(modifier = Modifier.width(columnWidth)) {
                 content(index, item)
             }
@@ -320,6 +328,17 @@ private fun HomeCompactTop(
     }
 }
 
+private val HomeCardShape = RoundedCornerShape(HomeCardCornerRadius)
+private val CommunityThumbShape = RoundedCornerShape(12.dp)
+private val CommunityCardScrim = Brush.verticalGradient(
+    colors = listOf(
+        Color.Transparent,
+        Color.Transparent,
+        Color.Black.copy(alpha = 0.7f),
+        Color.Black.copy(alpha = 0.9f),
+    )
+)
+
 @Composable
 fun CommunityPlaylistCard(
     item: CommunityPlaylistItem,
@@ -333,8 +352,8 @@ fun CommunityPlaylistCard(
             .width(276.dp)
             .height(344.dp)
             .containerTransformSource("playlist-${item.playlist.id}", coverUrl = item.playlist.thumbnail)
-            .clip(RoundedCornerShape(HomeCardCornerRadius)),
-        shape = RoundedCornerShape(HomeCardCornerRadius),
+            .clip(HomeCardShape),
+        shape = HomeCardShape,
         onClick = onClick
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -375,7 +394,7 @@ fun CommunityPlaylistCard(
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .size(84.dp)
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .clip(CommunityThumbShape)
                                 )
                             }
                         }
@@ -387,7 +406,7 @@ fun CommunityPlaylistCard(
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .size(84.dp)
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .clip(CommunityThumbShape)
                                 )
                             }
                         }
@@ -398,16 +417,7 @@ fun CommunityPlaylistCard(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.7f),
-                                Color.Black.copy(alpha = 0.9f)
-                            )
-                        )
-                    )
+                    .background(brush = CommunityCardScrim)
             )
 
             Column(

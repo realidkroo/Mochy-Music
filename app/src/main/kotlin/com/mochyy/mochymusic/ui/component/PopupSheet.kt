@@ -42,7 +42,6 @@ package com.mochyy.mochymusic.ui.component
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
@@ -66,12 +65,10 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -90,7 +87,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.FocusRequester
@@ -160,6 +156,8 @@ class PopupSheetState {
         val onClosed: (() -> Unit)?,
         /** The sheet's own colour, for a [fullBleed] sheet that paints a different one; null = [MenuSurface]. */
         val surface: Color?,
+        // false for a sheet whose art runs up to its top edge on purpose, the fade would only muddy it
+        val topFade: Boolean,
         val content: @Composable ColumnScope.() -> Unit,
     ) {
         /** Shown unlocked = keeps its handle row even while [locked], so locking can't shift the content. */
@@ -197,9 +195,10 @@ class PopupSheetState {
         fullBleed: Boolean = false,
         onClosed: (() -> Unit)? = null,
         surface: Color? = null,
+        topFade: Boolean = true,
         content: @Composable ColumnScope.() -> Unit,
     ) {
-        showWithHandle(locked, buttonBar, fullBleed, onClosed, surface, content)
+        showWithHandle(locked, buttonBar, fullBleed, onClosed, surface, topFade, content)
     }
 
     /**
@@ -214,6 +213,7 @@ class PopupSheetState {
         fullBleed: Boolean = false,
         onClosed: (() -> Unit)? = null,
         surface: Color? = null,
+        topFade: Boolean = true,
         content: @Composable ColumnScope.() -> Unit,
     ): PopupSheetHandle {
         // A frame already on its way out stays on top until it's gone, so the new one slides in
@@ -221,7 +221,7 @@ class PopupSheetState {
         var index = frames.size
         while (index > 0 && frames[index - 1].closing) index--
         val covered = frames.getOrNull(index - 1)
-        val frame = Frame(locked, buttonBar, fullBleed, covered?.heightPx ?: 0f, onClosed, surface, content)
+        val frame = Frame(locked, buttonBar, fullBleed, covered?.heightPx ?: 0f, onClosed, surface, topFade, content)
         frames.add(index, frame)
         return PopupSheetHandle(frame)
     }
@@ -312,6 +312,9 @@ private val PeekHeight = 24.dp
 
 private const val FlingCloseThreshold = 1200f
 private const val DragCloseThreshold = 0.35f
+
+// how far down a pull goes before the bar turns into an arrow, so a finger's wobble doesn't flicker it
+private const val ArrowAfterPull = 0.015f
 
 /**
  * Wraps the whole app. When any of [states] has a visible frame, [content] zooms out and dims
@@ -535,7 +538,26 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
 
     fun close(velocity: Float = 0f) = motion.exit(velocity) { state.remove(frame) }
 
+    // true while a finger pulls the sheet down, so its bar folds into an arrow; letting go settles it flat again
+    var pulling by remember(frame) { mutableStateOf(false) }
+
+    // a locked sheet can't be pulled away, so its bar just stays a line
+    val bend = rememberSheetGrabberBend {
+        !frame.locked && (frame.closing || (pulling && frame.offset > ArrowAfterPull))
+    }
+
+    // the sheet's colour, stepping up to the row gray as it recedes; the fade behind its bar matches it
+    val surfaceColor: () -> Color = remember(state, frame) {
+        {
+            val frames = state.frames
+            val index = frames.indexOf(frame)
+            val recede = if (index < 0) 0f else frames.depthAbove(index).coerceAtMost(1f)
+            lerp(frame.surface ?: MenuSurface, MenuRowSurface, recede)
+        }
+    }
+
     fun settle(velocityPx: Float) {
+        pulling = false
         if (!currentInteractive) {
             if (frame.offset > 0f) motion.animateTo(0f)
             return
@@ -583,6 +605,7 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
     val dragHandle = Modifier.draggable(
         state = rememberDraggableState { delta ->
             frame.offset = (frame.offset + delta / travelPx()).coerceIn(0f, 1f)
+            if (delta > 0f) pulling = true
         },
         orientation = Orientation.Vertical,
         enabled = interactive,
@@ -613,6 +636,7 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
                 }
                 motion.stop()
                 frame.offset = (frame.offset + available.y / travelPx()).coerceAtMost(1f)
+                pulling = true
                 return available
             }
 
@@ -662,10 +686,7 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
             .drawBehind {
                 // Steps up to the row gray as it recedes, so the strip peeking above the sheet in
                 // front reads as a separate layer against both that sheet and the dimmed app.
-                val frames = state.frames
-                val index = frames.indexOf(frame)
-                val recede = if (index < 0) 0f else frames.depthAbove(index).coerceAtMost(1f)
-                drawRect(lerp(frame.surface ?: MenuSurface, MenuRowSurface, recede))
+                drawRect(surfaceColor())
             }
             // The whole sheet is a touch target, not just the parts of its content that have one -
             // otherwise a tap on an empty patch (beside a row, around the button bar) fell
@@ -687,6 +708,8 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
             fillHeight = centred,
             minHeight = minHeight,
             dragHandle = dragHandle,
+            bend = remember(bend) { { bend.value } },
+            surfaceColor = surfaceColor,
             contentModifier = Modifier.nestedScroll(nestedScrollConnection),
         )
 
@@ -748,7 +771,7 @@ private val FloatingMargin = 18.dp
 private val FloatingMaxWidth = 380.dp
 private val FloatingCorner = 28.dp
 
-// how tall the handle row is, so a full-bleed sheet can paint its art up behind it
+// how tall the handle row is, so a full-bleed sheet can paint its art up behind it and a scroller can slide under it
 val PopupSheetHandleHeight = 32.dp
 
 /**
@@ -762,6 +785,8 @@ private fun SheetBody(
     fillHeight: Boolean,
     minHeight: Dp,
     dragHandle: Modifier,
+    bend: () -> Float,
+    surfaceColor: () -> Color,
     contentModifier: Modifier,
 ) {
     Column(
@@ -778,29 +803,15 @@ private fun SheetBody(
                 .weight(1f, fill = false)
         ) {
             if (frame.hasHandle) {
-                val handleAlpha = animateFloatAsState(
-                    targetValue = if (frame.locked) 0f else 1f,
-                    animationSpec = PopupSpring,
-                    label = "popupSheetHandle",
-                )
-                Box(
+                SheetHandleRow(
+                    bend = bend,
+                    fade = if (frame.topFade) surfaceColor else null,
                     modifier = Modifier
-                        // drawn after the content, so art painted up into this row stays under the handle
+                        // drawn after the content, so art painted up into this row and rows scrolled under it stay beneath the bar
                         .zIndex(1f)
-                        .fillMaxWidth()
                         .height(PopupSheetHandleHeight)
                         .then(dragHandle),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(36.dp)
-                            .height(4.dp)
-                            .graphicsLayer { alpha = handleAlpha.value }
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                    )
-                }
+                )
             } else {
                 Spacer(
                     Modifier
@@ -809,13 +820,18 @@ private fun SheetBody(
                 )
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(contentModifier)
-                    .then(if (frame.fullBleed) Modifier else Modifier.padding(horizontal = 20.dp)),
-                content = frame.content,
-            )
+            // a sheet shown locked has no handle row, so there's nothing for its scroller to slide under
+            val room = remember(frame) { if (frame.hasHandle) SheetHandleRoom(PopupSheetHandleHeight) else null }
+            CompositionLocalProvider(LocalSheetHandleRoom provides room) {
+                Column(
+                    modifier = Modifier
+                        .then(if (room != null) Modifier.underSheetHandle(room) else Modifier)
+                        .fillMaxWidth()
+                        .then(contentModifier)
+                        .then(if (frame.fullBleed) Modifier else Modifier.padding(horizontal = 20.dp)),
+                    content = frame.content,
+                )
+            }
         }
 
         frame.buttonBar?.let { bar ->

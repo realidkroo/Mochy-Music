@@ -74,6 +74,7 @@ import com.mochyy.mochymusic.utils.makeTimeString
 import com.music.innertube.YouTube
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 // the phone as a remote for the device it steers: what's on there, play and skip, the queue, and its settings
 fun PopupSheetState.showRemoteControl(link: DevicesLink) {
@@ -110,7 +111,7 @@ private fun ColumnScope.RemoteControlContent(link: DevicesLink, onClose: () -> U
         onDispose { link.remote.watch(false) }
     }
 
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(top = sheetHandleRoom())) {
         RemoteHeader(steered, now, reachable)
         Spacer(Modifier.height(16.dp))
         NowPlayingCard(

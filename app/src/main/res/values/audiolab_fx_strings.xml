@@ -89,4 +89,7 @@
     <string name="fx_width">Width</string>
     <string name="fx_pre_delay">Pre-delay</string>
     <string name="fx_low_cut">Low cut</string>
+    <string name="fx_presets">Presets</string>
+    <string name="fx_presets_place">Audio FX</string>
+    <string name="fx_preset_hint">Late night drive</string>
 </resources>

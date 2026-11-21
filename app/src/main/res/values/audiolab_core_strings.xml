@@ -31,4 +31,12 @@
     <string name="lab_fx_on">ON</string>
     <string name="lab_fx_position">%1$d of %2$d</string>
     <string name="lab_fx_and_other">and %1$d other</string>
+    <!-- the sheet a preset is named or edited on, in the equalizer and audio fx -->
+    <string name="preset_sheet_new">New preset</string>
+    <string name="preset_sheet_edit">Edit preset</string>
+    <string name="preset_sheet_name">Preset name</string>
+    <string name="preset_sheet_ok">OK</string>
+    <string name="preset_sheet_taken">You already have a preset with this name</string>
+    <string name="preset_sheet_delete">Delete preset</string>
+    <string name="preset_delete_body">It\'s gone for good, but the sound you have right now stays as it is.</string>
 </resources>

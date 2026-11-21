@@ -57,6 +57,7 @@ import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
 import com.mochyy.mochymusic.ui.screens.search.SearchColors
 import com.mochyy.mochymusic.viewmodels.ModulesViewModel
 import kotlinx.coroutines.launch
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 internal val ProblemColor = Color(0xFFFF8A80)
 
@@ -166,7 +167,7 @@ private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) ->
         Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 12.dp),
+            .padding(top = sheetHandleRoom(), bottom = 12.dp),
     ) {
         Text(stringResource(R.string.modules_find_more), color = SearchColors.Primary, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))

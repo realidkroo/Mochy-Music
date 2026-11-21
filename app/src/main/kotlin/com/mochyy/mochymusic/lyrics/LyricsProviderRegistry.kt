@@ -45,6 +45,13 @@ object LyricsProviderRegistry {
         return newModules + saved + getDefaultProviderOrder().filter { it !in saved && it !in newModules }
     }
 
+    // the order lyrics are really asked in: the saved one, or until someone sorts, the old single preferred pick first
+    fun effectiveProviderOrder(orderString: String, preferred: PreferredLyricsProvider): List<String> {
+        if (orderString.isNotBlank()) return deserializeProviderOrder(orderString)
+        val preferredName = getProviderNameForEnum(preferred)
+        return listOf(preferredName) + getDefaultProviderOrder().filter { it != preferredName }
+    }
+
     fun serializeProviderOrder(providers: List<String>): String =
         providers.filter { it in providerNames }.joinToString(",")
 
@@ -67,9 +74,6 @@ object LyricsProviderRegistry {
         "Kugou",
         "YouTubeCaptions",
     )
-
-    fun getOrderedProviders(orderString: String): List<LyricsProvider> =
-        deserializeProviderOrder(orderString).mapNotNull { getProviderByName(it) }
 
     fun getProviderNameForEnum(enum: PreferredLyricsProvider): String = when (enum) {
         PreferredLyricsProvider.LRCLIB        -> "LrcLib"

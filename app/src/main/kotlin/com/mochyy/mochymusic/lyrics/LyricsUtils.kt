@@ -1000,6 +1000,9 @@ object LyricsUtils {
     /** Whether a payload carries `{agent:…}` voice tags — i.e. can drive left/right duet layout. */
     fun hasVoiceTags(rawLyrics: String): Boolean = rawLyrics.contains("{agent:")
 
+    // lines tagged {bg} are the backing vocals the lyrics page draws small under the lead line
+    fun hasBackgroundVocals(rawLyrics: String): Boolean = rawLyrics.contains("{bg}")
+
     /**
      * Whether a payload would actually lay out on both sides: two or more voices among its lead
      * lines, counting untagged lines as the lead voice. Same rule as the lyrics screen. A provider

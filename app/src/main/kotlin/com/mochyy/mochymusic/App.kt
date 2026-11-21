@@ -341,9 +341,8 @@ class App : Application(), SingletonImageLoader.Factory {
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
-        val cacheSize = runBlocking {
-            dataStore.data.map { it[MaxImageCacheSizeKey] ?: 512 }.first()
-        }
+        // read from the already-warmed preferences cache so the first image never blocks the main thread
+        val cacheSize = com.mochyy.mochymusic.utils.PreferencesCache.current(dataStore)[MaxImageCacheSizeKey] ?: 512
         return ImageLoader.Builder(this).apply {
             components {
                 add(SvgDecoder.Factory())

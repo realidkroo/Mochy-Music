@@ -47,6 +47,7 @@ import com.mochyy.mochymusic.ui.component.TopToaster
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 // one paired device up close: what it is, whether it's around, and the switches for what this phone does with it
 fun PopupSheetState.showDeviceSheet(link: DevicesLink, deviceId: String) {
@@ -75,7 +76,7 @@ private fun ColumnScope.DeviceSheetContent(link: DevicesLink, deviceId: String, 
     val scope = rememberCoroutineScope()
 
     Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(top = sheetHandleRoom()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(6.dp))

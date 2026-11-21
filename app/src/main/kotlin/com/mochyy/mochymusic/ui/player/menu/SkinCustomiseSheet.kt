@@ -24,6 +24,7 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.modules.skin.ActiveSkin
 import com.mochyy.mochymusic.ui.screens.settings.modules.ModuleOptions
 import com.mochyy.mochymusic.viewmodels.ModulesViewModel
+import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 @Composable
 fun SkinCustomiseSheet(onDismiss: () -> Unit) {
@@ -42,6 +43,7 @@ fun SkinCustomiseSheet(onDismiss: () -> Unit) {
             modifier = Modifier
                 .weight(1f, fill = false)
                 .verticalScroll(rememberScrollState())
+                .padding(top = sheetHandleRoom())
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp)
                 .padding(top = 16.dp, bottom = 24.dp),

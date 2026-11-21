@@ -51,6 +51,7 @@ fun PopupSheetState.showPathChangeSheet(toNightly: Boolean, onConfirm: () -> Uni
     val popup = this
     show(
         fullBleed = true,
+        topFade = false,
         surface = PathSurface,
         buttonBar = {
             Column(Modifier.padding(horizontal = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

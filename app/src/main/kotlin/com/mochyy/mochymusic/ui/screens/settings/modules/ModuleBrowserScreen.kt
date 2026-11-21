@@ -126,8 +126,9 @@ fun ModuleBrowserScreen(
     BackHandler(enabled = searching) { closeSearch() }
 
     fun signIn() {
+        val uri = viewModel.signInUri() ?: return
         try {
-            context.startActivity(Intent(Intent.ACTION_VIEW, viewModel.signInUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (e: ActivityNotFoundException) {
             Toast.makeText(context, context.getString(R.string.module_browser_no_browser), Toast.LENGTH_LONG).show()
         }

@@ -48,11 +48,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.lerp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.mochyy.mochymusic.ui.component.BottomSheetState
+import com.mochyy.mochymusic.ui.component.drawBendingBar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -228,18 +228,7 @@ fun PlayerHandle(
                 val barHalf = (HandleLength - HandleThickness).toPx() / 2f
                 val chevronHalf = (ChevronLength - HandleThickness).toPx() / 2f
                 val depthPx = ChevronDepth.toPx()
-                onDrawBehind {
-                    val b = bend.value
-                    val half = lerp(barHalf, chevronHalf, b)
-                    val depth = depthPx * b
-                    val cx = size.width / 2f
-                    val cy = size.height / 2f
-                    path.reset()
-                    path.moveTo(cx - half, cy - depth / 2f)
-                    path.lineTo(cx, cy + depth / 2f)
-                    path.lineTo(cx + half, cy - depth / 2f)
-                    drawPath(path = path, color = color, style = stroke)
-                }
+                onDrawBehind { drawBendingBar(path, bend.value, barHalf, chevronHalf, depthPx, stroke, color) }
             },
     )
 }
