@@ -178,6 +178,11 @@ fun LocalPlaylistScreen(
     val playlistLength = remember(songs) { songs.fastSumBy { it.song.song.duration } }
     val (sortType, onSortTypeChange) = rememberEnumPreference(PlaylistSongSortTypeKey, PlaylistSongSortType.CUSTOM)
     val (sortDescending, onSortDescendingChange) = rememberPreference(PlaylistSongSortDescendingKey, true)
+    // Date added should start newest-first; the direction control can still switch it to ascending.
+    val selectSortType: (PlaylistSongSortType) -> Unit = { selected ->
+        onSortTypeChange(selected)
+        if (selected == PlaylistSongSortType.CREATE_DATE) onSortDescendingChange(true)
+    }
     var locked by rememberPreference(PlaylistEditLockKey, defaultValue = true)
     var showSortDialog by remember { mutableStateOf(false) }
     val (accountName) = rememberPreference(AccountNameKey, "")
@@ -606,7 +611,7 @@ fun LocalPlaylistScreen(
                             descending = sortDescending,
                             options = PlaylistSongSortType.entries,
                             label = { stringResource(playlistSortLabel(it)) },
-                            onSelect = onSortTypeChange,
+                            onSelect = selectSortType,
                             onToggleDirection = { onSortDescendingChange(!sortDescending) },
                             showDirection = { it != PlaylistSongSortType.CUSTOM },
                         )
@@ -908,7 +913,7 @@ fun LocalPlaylistScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    if (sortType == type) onSortDescendingChange(!sortDescending) else onSortTypeChange(type)
+                                    if (sortType != type) selectSortType(type)
                                     showSortDialog = false
                                 }
                                 .padding(vertical = 12.dp),
@@ -917,7 +922,7 @@ fun LocalPlaylistScreen(
                             RadioButton(
                                 selected = sortType == type,
                                 onClick = {
-                                    if (sortType == type) onSortDescendingChange(!sortDescending) else onSortTypeChange(type)
+                                    if (sortType != type) selectSortType(type)
                                     showSortDialog = false
                                 }
                             )
