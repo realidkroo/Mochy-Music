@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="larp_mode">Modo LARP</string>
+    <string name="larp_mode_desc">Encha sua barra de dopamina 67</string>
+    <string name="larp_mode_detail">Faz o player exibir especificações impressionantes: FLAC de até 768 kHz em DACs que você nem possui. Escolha o nível de ostentação. O som real não muda.</string>
+
+    <string name="larp_sheet_image">A ostentação não tem limites</string>
+    <string name="larp_sheet_title">Isso vai alterar algumas informações no player. Pronto para ostentar?</string>
+    <string name="larp_sheet_body">Não se esqueça de desativar depois :)</string>
+    <string name="larp_sheet_button">67</string>
+
+    <string name="larp_sheet_levels">Escolha seu nível</string>
+    <string name="larp_level_summary">Nível %1$d · %2$s · %3$s</string>
+
+    <string name="larp_quality">FLAC · %1$d bits · %2$d kHz</string>
+    <string name="larp_dac_detail">%1$s · %2$d kHz · %3$d bits · %4$s</string>
+
+    <string name="larp_card_format">.Flac</string>
+    <string name="larp_bit_depth">Profundidade de bits</string>
+    <string name="larp_bit_depth_value">%1$d bits</string>
+    <string name="larp_sample_rate">Taxa de amostragem</string>
+    <string name="larp_sample_rate_value">%1$d kHz</string>
+    <string name="larp_bitrate">Taxa de bits</string>
+    <string name="larp_bitrate_value">%1$s kbps</string>
+    <string name="larp_channels">Tipo de canal</string>
+    <string name="larp_source">Origem</string>
+
+    <string name="larp_card_decoder">Decodificador</string>
+    <string name="larp_decoder_name">Nome do decodificador</string>
+    <string name="larp_runs_on">Executado em</string>
+
+    <string name="larp_card_dsp">DSP</string>
+    <string name="larp_effects">Efeitos</string>
+    <string name="larp_hi_res">Caminho de alta resolução</string>
+
+    <string name="larp_card_output">Saída</string>
+    <string name="larp_device">Dispositivo</string>
+    <string name="larp_route">Rota</string>
+    <string name="larp_dac_mixer">Mixer do DAC</string>
+    <string name="larp_dac_mixer_value">Bit-perfect, %1$d kHz · %2$d bits</string>
+    <string name="larp_power">Potência</string>
+    <string name="larp_jitter">Jitter</string>
+    <string name="larp_buffer">Buffer</string>
+
+    <string name="larp_skibidi_title">Ostentador Skibidi</string>
+    <string name="larp_skibidi_dac">FiiO KA17</string>
+    <string name="larp_skibidi_lead">DAC USB, bit-perfect</string>
+    <string name="larp_skibidi_power">650 mW</string>
+    <string name="larp_skibidi_channels">Estéreo</string>
+    <string name="larp_skibidi_source">Master de estúdio em alta resolução</string>
+    <string name="larp_skibidi_decoder">libFLAC</string>
+    <string name="larp_skibidi_runs">CPU do próprio celular</string>
+    <string name="larp_skibidi_effects">Nenhum</string>
+    <string name="larp_skibidi_hires">24 bits, sem alterações</string>
+    <string name="larp_skibidi_route">Celular para o DAC USB, bit-perfect</string>
+    <string name="larp_skibidi_jitter">Abaixo de 100 ps</string>
+    <string name="larp_skibidi_buffer">40 ms</string>
+
+    <string name="larp_sixty_seven_title">Ostentador 67</string>
+    <string name="larp_sixty_seven_dac">Chord Mojo 2</string>
+    <string name="larp_sixty_seven_lead">DAC portátil, diretamente do Mochy</string>
+    <string name="larp_sixty_seven_power">600 mW</string>
+    <string name="larp_sixty_seven_channels">Estéreo, fase alinhada</string>
+    <string name="larp_sixty_seven_source">Master próprio da gravadora em alta resolução</string>
+    <string name="larp_sixty_seven_decoder">libFLAC, ajustado manualmente</string>
+    <string name="larp_sixty_seven_runs">Um núcleo de áudio dedicado</string>
+    <string name="larp_sixty_seven_effects">Nenhum, nem mesmo fade</string>
+    <string name="larp_sixty_seven_hires">Ponto flutuante de 32 bits, passagem direta</string>
+    <string name="larp_sixty_seven_route">Mochy para o DAC por USB assíncrono</string>
+    <string name="larp_sixty_seven_jitter">12 ps</string>
+    <string name="larp_sixty_seven_buffer">10 ms</string>
+
+    <string name="larp_brainrot_title">Ostentador Brainrot</string>
+    <string name="larp_brainrot_dac">Chord Hugo TT2</string>
+    <string name="larp_brainrot_lead">DAC de mesa, alimentado manualmente</string>
+    <string name="larp_brainrot_power">18 W</string>
+    <string name="larp_brainrot_channels">Estéreo, ajustado de ouvido</string>
+    <string name="larp_brainrot_source">Mesa de mixagem, ao vivo</string>
+    <string name="larp_brainrot_decoder">Nenhum, o Mochy lê FLAC fluentemente</string>
+    <string name="larp_brainrot_runs">Brainrot</string>
+    <string name="larp_brainrot_effects">Nenhum, o artista aprovou cada bit</string>
+    <string name="larp_brainrot_hires">Ponto flutuante de 64 bits, banhado a ouro</string>
+    <string name="larp_brainrot_route">Mochy para o DAC por um cabo de prata</string>
+    <string name="larp_brainrot_jitter">1 ps</string>
+    <string name="larp_brainrot_buffer">1 ms</string>
+
+    <string name="larp_maxxing_title">Ostentador supremo</string>
+    <string name="larp_maxxing_dac">Wadax Atlantis Reference</string>
+    <string name="larp_maxxing_lead">Direto do Mochy, sem decodificador</string>
+    <string name="larp_maxxing_power">1.000.000 W</string>
+    <string name="larp_maxxing_channels">Estéreo, ajustado manualmente</string>
+    <string name="larp_maxxing_source">A própria fita master do estúdio</string>
+    <string name="larp_maxxing_decoder">Nenhum, o Mochy transmite os dados brutos</string>
+    <string name="larp_maxxing_runs">Dopamina pura</string>
+    <string name="larp_maxxing_effects">Nenhum, cada bit chega como o artista imaginou</string>
+    <string name="larp_maxxing_hires">Ponto flutuante de 64 bits, passagem direta</string>
+    <string name="larp_maxxing_route">Mochy para o DAC, sem decodificador intermediário</string>
+    <string name="larp_maxxing_jitter">0 ps</string>
+    <string name="larp_maxxing_buffer">0 ms, começa a tocar antes de você apertar reproduzir</string>
+</resources>

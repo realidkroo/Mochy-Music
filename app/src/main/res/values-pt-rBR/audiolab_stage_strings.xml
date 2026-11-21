@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="stage_title_first">3D</string>
+    <string name="stage_title_second">Simulação</string>
+
+    <string name="stage_card_title">Simulação 3D</string>
+    <string name="stage_card_sub">Separa os elementos da música e posiciona cada um ao seu redor em uma sala que você pode moldar.</string>
+    <string name="stage_open">Abrir a sala</string>
+    <string name="stage_toggle_sub">Vocais, graves e o restante da mixagem, cada um na posição escolhida. Melhor experiência com fones.</string>
+    <string name="stage_room_hint">Arraste um ponto para movê-lo, use dois dedos para alterar a altura e arraste a sala para girá-la</string>
+    <string name="stage_reset_view">Redefinir visualização</string>
+
+    <string name="stage_source_vocal">Vocal</string>
+    <string name="stage_source_center">Centro</string>
+    <string name="stage_source_left">Esquerda</string>
+    <string name="stage_source_right">Direita</string>
+    <string name="stage_source_ambience">Ambiência</string>
+    <string name="stage_source_sub">Subgrave</string>
+    <string name="stage_source_numbered">%1$s %2$d</string>
+    <string name="stage_you">Você</string>
+    <string name="stage_add">Adicionar som</string>
+    <string name="stage_add_title">Adicionar à sala</string>
+    <string name="stage_add_count">%1$d de %2$d na sala</string>
+    <string name="stage_add_full">Todos os %1$d estão na sala</string>
+    <string name="stage_remove">Remover</string>
+    <string name="stage_mute">Silenciar</string>
+    <string name="stage_solo">Solo</string>
+
+    <string name="stage_axis_side">Esquerda para direita</string>
+    <string name="stage_axis_height">Altura</string>
+    <string name="stage_axis_depth">Frente para trás</string>
+    <string name="stage_level">Nível</string>
+    <string name="stage_width">Largura</string>
+    <string name="stage_facing">Direção</string>
+    <string name="stage_middle">Centro</string>
+    <string name="stage_meters_left">%1$s m à esquerda</string>
+    <string name="stage_meters_right">%1$s m à direita</string>
+    <string name="stage_meters_up">%1$s m acima</string>
+    <string name="stage_meters_front">%1$s m à frente</string>
+    <string name="stage_meters_back">%1$s m atrás</string>
+    <string name="stage_facing_ahead">Diretamente à frente</string>
+    <string name="stage_facing_left">%1$d° à esquerda</string>
+    <string name="stage_facing_right">%1$d° à direita</string>
+
+    <string name="stage_presets">Salas</string>
+    <string name="stage_preset_studio">Estúdio</string>
+    <string name="stage_preset_living">Sala de estar</string>
+    <string name="stage_preset_front_row">Primeira fila</string>
+    <string name="stage_preset_on_stage">No palco</string>
+    <string name="stage_preset_around">Ao redor</string>
+    <string name="stage_preset_hall">Salão</string>
+
+    <string name="stage_room">Sala</string>
+    <string name="stage_room_size">Tamanho</string>
+    <string name="stage_room_size_value">%1$s × %2$s m</string>
+    <string name="stage_walls_soft">Macia</string>
+    <string name="stage_walls_wood">Madeira</string>
+    <string name="stage_walls_concrete">Concreto</string>
+    <string name="stage_room_amount">Som da sala</string>
+    <string name="stage_output_level">Nível de saída</string>
+
+    <string name="stage_output">Reproduzindo em</string>
+    <string name="stage_output_phone">Alto-falante do celular</string>
+    <string name="stage_output_wired">Fones com fio</string>
+    <string name="stage_output_usb">Áudio USB</string>
+    <string name="stage_output_bluetooth">Bluetooth</string>
+    <string name="stage_output_hdmi">TV ou HDMI</string>
+    <string name="stage_kind_headphones">Fones de ouvido</string>
+    <string name="stage_kind_speaker">Alto-falante</string>
+    <string name="stage_output_guessed">O Mochy identificou esta saída pelo dispositivo. Está errado? Escolha a opção correta.</string>
+    <string name="stage_output_set">Você escolheu esta saída para o dispositivo.</string>
+    <string name="stage_output_reset">Deixar o Mochy identificar</string>
+    <string name="stage_on_speakers">Em alto-falantes</string>
+    <string name="stage_speakers_off">Desativado</string>
+    <string name="stage_speakers_stereo">Estéreo simples</string>
+    <string name="stage_speakers_3d">Manter 3D</string>
+    <string name="stage_speakers_note">O som 3D foi criado para dois ouvidos. Em um alto-falante, o estéreo simples mantém a disposição entre esquerda e direita, sem alterar a sala.</string>
+
+    <string name="stage_surround_note">Músicas surround e Atmos usam seus próprios canais como fontes sonoras, a partir da próxima música.</string>
+    <string name="stage_credit">Medições de ouvido do conjunto KEMAR do MIT Media Lab, por Bill Gardner e Keith Martin.</string>
+    <string name="stage_spatial_note">A Simulação 3D está ativada e posiciona o som no espaço.</string>
+</resources>
