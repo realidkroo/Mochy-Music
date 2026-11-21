@@ -100,8 +100,10 @@ fun UpdatePromptSheet(
     ) { _ ->
         Column(
             modifier = Modifier
-                .verticalScroll(rememberScrollState())
+                // Constrain the scroll viewport above the system navigation controls; insets
+                // applied inside the scrollable content can still leave actions underneath them.
                 .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
                 .padding(top = 12.dp, bottom = 24.dp)
                 .animateContentSize()
