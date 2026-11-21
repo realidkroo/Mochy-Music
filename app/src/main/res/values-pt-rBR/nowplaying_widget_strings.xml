@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="widget_np_2x2">Reproduzindo agora 2×2</string>
+    <string name="widget_np_4x1">Reproduzindo agora 4×1</string>
+    <string name="widget_np_4x2">Reproduzindo agora 4×2</string>
+    <string name="widget_np_description">Cartão de reprodução atual com controles de anterior, reproduzir e próxima</string>
+    <string name="widget_np_pill_description">Barra compacta de reprodução atual com controles de curtir, reprodução e repetição</string>
+    <string name="widget_np_preview_title">Título da música</string>
+    <string name="widget_np_preview_artist">Artista</string>
+    <string name="widget_np_preview_title_artist">Título da música - Artista</string>
+    <string name="widget_np_previous">Anterior</string>
+    <string name="widget_np_next">Próxima</string>
+    <string name="widget_np_repeat">Repetir</string>
+    <string name="widget_np_lyrics_unavailable">Letras indisponíveis</string>
+    <string name="widget_np_lyrics_loading">Procurando letras…</string>
+    <string name="widget_np_lyrics_not_synced">As letras desta música não estão sincronizadas</string>
+    <string name="widget_np_time_zero">00:00</string>
+</resources>

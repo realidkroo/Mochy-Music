@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- the new flagship player's bottom bar: where the sound is going -->
+    <string name="flagship_output_speaker">Alto-falante interno</string>
+    <string name="flagship_output_wired">Fones com fio</string>
+    <string name="flagship_output_usb">Áudio USB</string>
+    <string name="flagship_output_bluetooth">Bluetooth</string>
+    <string name="flagship_output_hdmi">HDMI</string>
+    <string name="flagship_output_change">Alterar a saída de áudio</string>
+
+    <!-- read out for the buttons that only show an icon -->
+    <string name="flagship_play">Reproduzir</string>
+    <string name="flagship_pause">Pausar</string>
+    <string name="flagship_next">Próxima música</string>
+    <string name="flagship_previous">Música anterior</string>
+    <string name="flagship_back_ten">Voltar 10 segundos</string>
+    <string name="flagship_forward_ten">Avançar 10 segundos</string>
+    <string name="flagship_lyrics">Letras</string>
+    <string name="flagship_queue">Fila</string>
+    <string name="flagship_repeat">Repetir</string>
+    <string name="flagship_volume">Volume</string>
+
+    <!-- the flagship's controls sheet in the player editor -->
+    <string name="flagship_layout_three">Voltar, reproduzir, avançar</string>
+    <string name="flagship_layout_three_caption">Três botões grandes, sem elementos ao redor</string>
+    <string name="flagship_layout_ten">Com saltos de 10 segundos</string>
+    <string name="flagship_layout_ten_caption">Avance ou volte 10 segundos; reprodução no centro</string>
+    <string name="flagship_layout_queue_repeat">Com fila e repetição</string>
+    <string name="flagship_layout_queue_repeat_caption">Fila e repetição nas laterais, reprodução no centro</string>
+</resources>

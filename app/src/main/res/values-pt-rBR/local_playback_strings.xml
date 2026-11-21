@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- Songs imported from the phone -->
+    <string name="local_already_on_phone">Esta música já está no seu celular</string>
+
+    <!-- Why a song imported from the phone couldn't play -->
+    <string name="local_error_file_gone">O arquivo desta música não está mais no seu celular. Talvez tenha sido movido ou excluído.</string>
+    <string name="local_error_access_lost">O Mochy não consegue mais abrir este arquivo. Adicione a pasta novamente pela Biblioteca para recuperá-lo.</string>
+    <string name="local_error_permission">O Mochy precisa de permissão para ler suas músicas e reproduzir esta faixa</string>
+    <string name="local_error_format">O Mochy ainda não consegue reproduzir este tipo de arquivo</string>
+    <string name="local_error_damaged">Este arquivo parece estar danificado e não pode ser reproduzido</string>
+
+    <!-- Local import -->
+    <plurals name="local_import_skipped_formats">
+        <item quantity="one">%1$d arquivo ignorado porque o Mochy ainda não consegue reproduzi-lo (WMA, AIFF, APE, WavPack ou DSD)</item>
+        <item quantity="other">%1$d arquivos ignorados porque o Mochy ainda não consegue reproduzi-los (WMA, AIFF, APE, WavPack ou DSD)</item>
+    </plurals>
+    <string name="local_import_folder_cap">Esta pasta tem mais de %1$d músicas, então apenas as primeiras %1$d foram importadas. Adicione as subpastas uma de cada vez para importar o restante.</string>
+    <string name="local_import_pick_folder_hint">Para tantas músicas, adicione a pasta inteira. O Android mantém o acesso a cerca de 500 arquivos individuais; depois disso, os mais antigos deixam de funcionar.</string>
+    <plurals name="local_missing_files">
+        <item quantity="one">O arquivo de %1$d música não está mais no seu celular</item>
+        <item quantity="other">Os arquivos de %1$d músicas não estão mais no seu celular</item>
+    </plurals>
+    <string name="local_missing_remove">Remover</string>
+</resources>

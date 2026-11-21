@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- Playback logs -->
+    <string name="playback_logs_clip_label">Registros de reprodução</string>
+
+    <!-- Manage downloads sheet -->
+    <string name="storage_manage_sort_by">Ordenar por - </string>
+    <string name="storage_manage_sort_size">tamanho</string>
+    <string name="storage_manage_sort_name">nome</string>
+    <string name="storage_manage_sort_recent">baixados recentemente</string>
+    <string name="storage_manage_sort_most_played">mais reproduzidos</string>
+    <string name="storage_manage_sort_least_played">menos reproduzidos</string>
+    <string name="storage_manage_done">Concluir</string>
+    <string name="storage_manage_remove_one">Remover 1 música · %1$s</string>
+    <string name="storage_manage_remove_many">Remover %1$d músicas · %2$s</string>
+    <string name="storage_manage_confirm_remove_one">Remover este download?</string>
+    <string name="storage_manage_confirm_remove_many">Remover %1$d downloads?</string>
+    <string name="storage_manage_confirm_message">Eles serão excluídos deste celular, mas continuarão na sua biblioteca e poderão ser transmitidos novamente quando você os reproduzir.</string>
+    <string name="storage_manage_confirm_action">Remover</string>
+    <string name="storage_manage_search_placeholder">Pesquisar seus downloads</string>
+    <string name="storage_manage_song_single">música</string>
+    <string name="storage_manage_song_plural">músicas</string>
+    <string name="storage_manage_empty_note">Ainda não há downloads. As músicas que você baixar aparecerão aqui.</string>
+    <string name="storage_manage_no_match">Nenhum download corresponde a \"%1$s\".</string>
+    <string name="storage_manage_shelf_biggest">Maiores</string>
+    <string name="storage_manage_shelf_less_listened">Menos ouvidas</string>
+    <string name="storage_manage_shelf_less_listened_sub">Baixadas há algum tempo e quase nunca reproduzidas</string>
+    <string name="storage_manage_all">Tudo</string>
+    <string name="storage_manage_unpick">Desmarcar</string>
+    <string name="storage_manage_pick_all">Selecionar tudo</string>
+
+    <!-- Playlist menu & sheets -->
+    <string name="sheet_label_recents">recentes</string>
+    <string name="sheet_label_results">resultados</string>
+    <string name="sheet_label_all">tudo</string>
+
+    <!-- Device output -->
+    <string name="ps_device_usb_audio">Áudio USB</string>
+    <string name="ps_device_usb_dac">DAC USB</string>
+</resources>

@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- the edit sheet -->
+    <string name="song_edit_menu">Editar informações da música</string>
+    <string name="song_edit_cover_custom">Personalizada</string>
+    <string name="song_edit_cover_current">Atual</string>
+    <string name="song_edit_cover_looking">Procurando mais capas…</string>
+    <string name="song_edit_cover_pick">Escolher uma imagem</string>
+    <string name="song_edit_name">Nome da música</string>
+    <string name="song_edit_name_hint">Qual é o nome desta música?</string>
+    <string name="song_edit_lyrics">Letra personalizada</string>
+    <string name="song_edit_lyrics_add">Adicionar letra</string>
+    <string name="song_edit_lyrics_add_hint">Um arquivo .lrc, .ttml ou .txt</string>
+    <plurals name="song_edit_lyrics_lines">
+        <item quantity="one">%1$s · %2$d linha</item>
+        <item quantity="other">%1$s · %2$d linhas</item>
+    </plurals>
+    <string name="song_edit_lyrics_remove">Remover esta letra</string>
+    <string name="lyrics_file_added">Usando seu arquivo de letras agora</string>
+    <string name="song_edit_lyrics_unreadable">Não foi possível ler esse arquivo. Tente um arquivo .lrc ou .txt.</string>
+    <string name="song_edit_lyrics_keep">Manter a letra atual</string>
+    <string name="song_edit_lyrics_source">%1$s · %2$s</string>
+    <string name="song_edit_lyrics_word">sincronizada por palavra</string>
+    <string name="song_edit_lyrics_line">sincronizada por linha</string>
+    <string name="song_edit_lyrics_plain">simples</string>
+    <string name="song_edit_lyrics_source_desc">Origem da letra</string>
+    <string name="song_edit_offset">Ajustar deslocamento da letra</string>
+    <string name="song_edit_offset_value">%1$s s</string>
+    <string name="song_edit_offset_reset">Redefinir o deslocamento da letra para zero</string>
+    <string name="song_edit_offset_min">-2 minutos</string>
+    <string name="song_edit_offset_max">+3 minutos</string>
+    <string name="song_edit_speed">Definir velocidade de reprodução</string>
+    <string name="song_edit_speed_value">%1$s×</string>
+    <string name="song_edit_speed_min">0,25×</string>
+    <string name="song_edit_speed_max">5×</string>
+    <string name="song_edit_speed_hint">Salvo junto com esta música, ela será reproduzida nesta velocidade sempre.</string>
+    <string name="song_edit_eq">Definir predefinição do equalizador</string>
+    <string name="song_edit_eq_none">Igual à de todas as outras músicas</string>
+    <string name="song_edit_eq_desc">Predefinição do equalizador para esta música</string>
+    <string name="song_edit_artist">Definir artista</string>
+    <string name="song_edit_artist_search">Pesquisar artistas</string>
+    <string name="song_edit_artist_new">Adicionar \"%1$s\"</string>
+    <string name="song_edit_artist_pick_one">Escolha pelo menos um artista.</string>
+    <string name="song_edit_more">Mais detalhes</string>
+    <string name="song_edit_album">Álbum</string>
+    <string name="song_edit_album_hint">Nome do álbum</string>
+    <string name="song_edit_year">Ano</string>
+    <string name="song_edit_year_hint">Ano de lançamento</string>
+    <string name="song_edit_video">Vídeo</string>
+    <string name="song_edit_video_auto">Encontrado pelo Mochy</string>
+    <string name="song_edit_video_picked">Escolhido por você</string>
+    <string name="song_edit_video_none">Nenhum vídeo</string>
+    <string name="song_edit_saving">Salvando…</string>
+    <string name="song_edit_failed">Não foi possível salvar suas alterações. Tente novamente.</string>
+
+    <!-- shown first when the song isn't in the library yet -->
+    <string name="song_edit_need_library">Você precisa adicionar esta música à sua biblioteca para editá-la.</string>
+    <string name="song_edit_add_to_library">Adicionar à biblioteca</string>
+    <string name="song_edit_not_now">Agora não</string>
+
+    <!-- select video -->
+    <string name="video_pick_title">Selecionar vídeo</string>
+    <string name="video_pick_subtitle">Vídeo errado? Ou não há nenhum?</string>
+    <string name="video_pick_search">Pesquisar vídeos no YouTube</string>
+    <string name="video_pick_auto">Deixar o Mochy encontrar</string>
+    <string name="video_pick_auto_desc">O videoclipe oficial, quando existir</string>
+    <string name="video_pick_none">Nenhum vídeo</string>
+    <string name="video_pick_none_desc">Esta música exibirá apenas a capa</string>
+    <string name="video_pick_nothing">Nada encontrado. Tente outras palavras.</string>
+    <string name="video_pick_next">Próximo</string>
+    <string name="video_wrong">Vídeo errado?</string>
+    <string name="video_find">Encontrar vídeo</string>
+</resources>

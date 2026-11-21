@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="supplemental_support_enjoying">Está gostando do Mochy Music?</string>
+    <string name="supplemental_support_title">Apoie o desenvolvimento do Mochy!</string>
+    <string name="supplemental_support_body">obrigado por experimentar! Ah, e o Mochy Music sempre será gratuito, para sempre! &lt;3\n\nSeria muito útil se você apoiasse o desenvolvedor, não importa o valor!! &lt;3\nDeixar uma estrela no repositório do Mochy já ajuda bastante. E obrigado novamente!</string>
+    <string name="supplemental_support_donate">Faça uma doação!</string>
+    <string name="supplemental_support_star">Deixe uma estrela no repositório!</string>
+    <string name="supplemental_support_dismiss">Tirem esses pedintes daqui, não!</string>
+    <string name="supplemental_coming_soon">Em breve</string>
+    <string name="supplemental_coming_soon_detail">%1$s ainda está em desenvolvimento.</string>
+    <string name="supplemental_adding">Adicionando…</string>
+    <string name="supplemental_search_all_songs">Pesquisar todas as músicas</string>
+    <string name="supplemental_playlist_recommended">Recomendadas para esta playlist</string>
+    <string name="supplemental_in_library">Na biblioteca</string>
+    <string name="supplemental_online_search_failed">Não foi possível pesquisar on-line. Verifique sua conexão e tente novamente.</string>
+    <string name="supplemental_search_nothing">Nada encontrado para “%1$s”.</string>
+    <string name="supplemental_playlist_suggestions_empty">Adicione algumas músicas primeiro para receber sugestões semelhantes.</string>
+    <string name="supplemental_playlist_suggestions_failed">Não há sugestões no momento. Verifique sua conexão ou pesquise uma música acima.</string>
+    <string name="supplemental_library_search_empty">Sua biblioteca está vazia. Pesquise acima para encontrar qualquer música.</string>
+    <string name="supplemental_add_songs_failed">Não foi possível adicionar essas músicas. Tente novamente.</string>
+    <string name="supplemental_update_personal">Atualização disponível, %1$s!</string>
+    <string name="supplemental_update_changes">O que mudou em %1$s</string>
+    <string name="supplemental_update_install_target">A ser instalado -</string>
+    <string name="supplemental_update_downloading">Baixando… %1$d%%</string>
+    <string name="supplemental_update_no_apk">Nenhum APK nesta versão</string>
+    <string name="supplemental_install_here">Instalar aqui</string>
+    <string name="supplemental_update_open_web">Abrir página na web</string>
+    <string name="supplemental_update_snooze">não, obrigado; lembre-me em 24 horas</string>
+    <string name="supplemental_install_permission">Permita \"Instalar apps desconhecidos\" para o Mochy e toque em Instalar aqui novamente.</string>
+    <string name="supplemental_featured_playlist">Playlist em destaque</string>
+    <string name="supplemental_featured_songs">Músicas em destaque</string>
+    <string name="supplemental_artist_new_releases">Novidades deste artista</string>
+    <string name="supplemental_nothing_here">Ainda não há nada para mostrar</string>
+    <string name="supplemental_start_of_line">INÍCIO DA FILA</string>
+    <plurals name="supplemental_add_song_count">
+        <item quantity="one">Adicionar %1$d música</item>
+        <item quantity="other">Adicionar %1$d músicas</item>
+    </plurals>
+    <string name="supplemental_artist_top_songs">%1$s músicas principais</string>
+    <string name="supplemental_artist_category">%1$s %2$s</string>
+    <string name="supplemental_kind_songs">músicas</string>
+    <string name="supplemental_kind_albums">álbuns</string>
+    <string name="supplemental_kind_videos">vídeos</string>
+    <string name="supplemental_kind_playlists">playlists</string>
+    <string name="supplemental_kind_artists">artistas</string>
+    <string name="supplemental_count_songs">%1$s músicas</string>
+    <string name="supplemental_count_albums">%1$s álbuns</string>
+    <string name="supplemental_count_videos">%1$s vídeos</string>
+    <string name="supplemental_count_playlists">%1$s playlists</string>
+    <string name="supplemental_count_artists">%1$s artistas</string>
+    <string name="supplemental_items_retry">Não foi possível carregar esta página. Toque para tentar novamente</string>
+    <plurals name="supplemental_song_count">
+        <item quantity="one">%1$d música</item>
+        <item quantity="other">%1$d músicas</item>
+    </plurals>
+</resources>
