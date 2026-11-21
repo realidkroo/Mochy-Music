@@ -116,7 +116,7 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 import java.util.UUID
 
-private val CoverRoutes = listOf("album/", "local_playlist/", "online_playlist/", "auto_playlist/")
+private val CoverRoutes = listOf("album/", "local_playlist/", "online_playlist/", "auto_playlist/", "module_store/")
 
 private fun String?.opensFromCover(): Boolean = this != null && CoverRoutes.any { startsWith(it) }
 
@@ -560,8 +560,27 @@ fun NavGraphBuilder.navigationBuilder(
     composable(com.mochyy.mochymusic.ui.screens.settings.modules.ModulesRoute) {
         com.mochyy.mochymusic.ui.screens.settings.modules.ModulesScreen(navController = navController)
     }
-    composable(com.mochyy.mochymusic.ui.screens.settings.modules.ModuleBrowserRoute) {
+    // a module's card grows into its store page like a playlist's cover, and the store recedes behind it
+    coverSourceComposable(com.mochyy.mochymusic.ui.screens.settings.modules.ModuleBrowserRoute) {
         com.mochyy.mochymusic.ui.screens.settings.modules.ModuleBrowserScreen(navController = navController)
+    }
+    composable(
+        route = com.mochyy.mochymusic.ui.screens.settings.modules.ModuleStoreRoutePattern,
+        arguments = listOf(navArgument("post") { type = NavType.StringType }),
+        enterTransition = { fadeIn(tween(300)) },
+        popExitTransition = {
+            scaleOut(animationSpec = tween(260), targetScale = 0.82f, transformOrigin = TransformOrigin(0.5f, 0.22f)) + fadeOut(tween(180))
+        },
+    ) { entry ->
+        // the store page borrows the browser's list, so opening a module never waits on the feed again
+        val browser = remember(entry) { navController.getBackStackEntry(com.mochyy.mochymusic.ui.screens.settings.modules.ModuleBrowserRoute) }
+        CompositionLocalProvider(LocalNavAnimatedContentScope provides this) {
+            com.mochyy.mochymusic.ui.screens.settings.modules.ModuleStoreScreen(
+                navController = navController,
+                post = entry.arguments?.getString("post").orEmpty(),
+                viewModel = hiltViewModel(browser),
+            )
+        }
     }
 
     composable(

@@ -6,7 +6,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mochyy.mochymusic.modules.ModuleRegistry
-import com.mochyy.mochymusic.modules.browser.FeedKind
+import com.mochyy.mochymusic.modules.browser.FeedInstall
 import com.mochyy.mochymusic.modules.browser.FeedModule
 import com.mochyy.mochymusic.modules.browser.FeedResult
 import com.mochyy.mochymusic.modules.browser.ModuleFeed
@@ -17,9 +17,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-/** which modules the chips show: every kind, one kind, or only the paid ones */
-enum class BrowserFilter { All, Looks, Players, Sources, Paid }
 
 @HiltViewModel
 class ModuleBrowserViewModel @Inject constructor(
@@ -55,28 +52,32 @@ class ModuleBrowserViewModel @Inject constructor(
         viewModelScope.launch { feed.signOut() }
     }
 
-    /** the module's zip, checked like one picked from the phone, for the add sheet to show before anything's added */
+    /** the module checked for the add sheet before anything's added: its zip like one picked from the phone, or its link like a pasted one */
     suspend fun fetch(module: FeedModule): ModuleRegistry.LinkCheck {
         _fetching.value = module.id
-        val file = feed.download(module.id)
-        val result = if (file == null) ModuleRegistry.LinkCheck.Unreachable else registry.checkZip(Uri.fromFile(file))
+        // a linked module is added from its link, so later updates come from there like any module added by link
+        val link = module.link.takeIf { module.install == FeedInstall.Link }
+        val result = if (link != null) registry.check(link) else checkZip(module.id)
         _fetching.value = null
         return result
     }
-}
 
-/** the modules a search and a chip leave, in the order the feed gave them */
-fun List<FeedModule>.matching(query: String, filter: BrowserFilter): List<FeedModule> {
-    val words = query.trim().lowercase().split(Regex("\\s+")).filter { it.isNotBlank() }
-    return filter { module ->
-        val kindFits = when (filter) {
-            BrowserFilter.All -> true
-            BrowserFilter.Looks -> module.kind == FeedKind.Look
-            BrowserFilter.Players -> module.kind == FeedKind.Player
-            BrowserFilter.Sources -> module.kind == FeedKind.Source
-            BrowserFilter.Paid -> module.paid
-        }
-        val text = "${module.name} ${module.author.orEmpty()} ${module.description}".lowercase()
-        kindFits && words.all { it in text }
+    private suspend fun checkZip(postId: String): ModuleRegistry.LinkCheck {
+        val file = feed.download(postId) ?: return ModuleRegistry.LinkCheck.Unreachable
+        return registry.checkZip(Uri.fromFile(file))
     }
 }
+
+/** the modules a search and a category chip leave, in the order the feed gave them; a null category is all of them */
+fun List<FeedModule>.matching(query: String, category: String?): List<FeedModule> {
+    val words = query.trim().lowercase().split(Regex("\\s+")).filter { it.isNotBlank() }
+    // a paid forum's modules carry no paid tag of their own, so the paid chip goes by the module instead
+    val paidChip = category != null && PaidWords.containsMatchIn(category)
+    return filter { module ->
+        val fits = category == null || category in module.tags || (paidChip && module.paid)
+        val text = "${module.name} ${module.author.orEmpty()} ${module.blurb} ${module.tags.joinToString(" ")}".lowercase()
+        fits && words.all { it in text }
+    }
+}
+
+private val PaidWords = Regex("paid|premium", RegexOption.IGNORE_CASE)

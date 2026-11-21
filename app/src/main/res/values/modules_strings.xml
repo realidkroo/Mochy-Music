@@ -15,7 +15,6 @@
     <string name="module_origin_web">From a link · v%1$s</string>
     <string name="module_origin_file">From a file · v%1$s</string>
     <string name="modules_find_more">Find more sources</string>
-    <string name="modules_bar">Find more modules on Mochy’s Bar &lt;3</string>
     <string name="modules_third_party">Modules are made by other people, so reports about a 3rd party module will be ignored. Want to make your own?</string>
     <string name="modules_third_party_docs">See the documentation</string>
     <string name="modules_looks">Look modules</string>
@@ -161,19 +160,13 @@
     <string name="module_updated">%1$s is up to date now.</string>
     <string name="module_update_failed">Couldn\'t update %1$s. %2$s</string>
     <string name="module_page_shader_problem">This page\'s shader didn\'t load, so it shows its fallback: %1$s</string>
-    <string name="module_browser_title">Module Browser</string>
-    <string name="module_browser_subtitle">this thing is unofficial pls</string>
     <string name="module_browser_search">Search</string>
     <string name="module_browser_all">All</string>
-    <string name="module_browser_looks">Looks</string>
-    <string name="module_browser_players">Players</string>
-    <string name="module_browser_sources">Source</string>
-    <string name="module_browser_paid">Paid Module</string>
-    <string name="module_browser_others">Other</string>
     <string name="module_browser_add">ADD</string>
     <string name="module_browser_update">UPDATE</string>
     <string name="module_browser_added">ADDED</string>
     <string name="module_browser_locked">LOCKED</string>
+    <string name="module_browser_open">OPEN</string>
     <string name="module_browser_by">by %1$s</string>
     <string name="module_browser_by_version">by %1$s · %2$s</string>
     <string name="module_browser_account">Signed in as %1$s</string>
@@ -194,6 +187,53 @@
     <string name="module_browser_fetch_failed">Couldn\'t download %1$s. Try again in a bit.</string>
     <string name="module_browser_locked_note">%1$s is a paid module. Get it on Mochy\'s Bar, then come back and add it.</string>
     <string name="module_browser_sign_out">Sign out of the browser</string>
+    <string name="module_store_best">Best from community</string>
+    <string name="module_store_categories">Categories</string>
+    <string name="module_store_close_search">Close search</string>
+    <string name="module_browser_get">Get</string>
+    <string name="settings_module_store">Module Store</string>
+    <string name="module_store_welcome_title">Welcome to Module Store!</string>
+    <string name="module_store_welcome_body">Hello %1$s, welcome! We want to make Mochy better and easier to use, so we made a place to find modules from the community. There\'s one catch: you\'ll need to be in our Discord to use it. Before you go on, have a read of the terms below, including what we take from your Discord account.</string>
+    <string name="module_store_welcome_there">there</string>
+    <string name="module_store_terms_intro">By using the Module Store, you agree to the following.</string>
+    <string-array name="module_store_terms">
+        <item>What we take from your Discord account</item>
+        <item>When you sign in, the store asks Discord for your user ID, your name and your avatar, whether you\'re in Mochy\'s Bar, and which roles you have there. That\'s all. We never see your messages, DMs, friends, email or password.</item>
+        <item>What we keep</item>
+        <item>The store\'s server keeps your Discord sign-in so it can check every few minutes that you\'re still in the server. Your phone only keeps a random session code. Signing out at the bottom of the store throws that session away.</item>
+        <item>Staying in Mochy\'s Bar</item>
+        <item>The store is for members of Mochy\'s Bar. If you leave the server or get removed, you lose access to the store. Modules you already added keep working.</item>
+        <item>Community modules</item>
+        <item>Modules are made by the community, not by Mochy. Only add modules you trust; Mochy isn\'t responsible for what a module does.</item>
+        <item>Paid modules</item>
+        <item>Paid modules are sold by their makers on Discord. You can download one once Discord says you have access to it.</item>
+        <item>Official builds only</item>
+        <item>The store only works in official builds of Mochy. Forks and changed copies can\'t use it.</item>
+        <item>Changes</item>
+        <item>These terms can change. If they do, we\'ll ask you again before your next visit.</item>
+    </string-array>
+    <string name="module_store_next">Next</string>
+    <string name="module_store_read_first">Read to the end to continue</string>
+    <string name="module_store_fork_title">You\'re using a fork</string>
+    <string name="module_store_fork_body">This copy of Mochy isn\'t an official build, so the Module Store turned it away.</string>
+    <string name="module_store_fork_users_title">What this means for you</string>
+    <string name="module_store_fork_users">You can\'t open the Module Store in this copy. Everything else works, including modules you add yourself. To use the store, get Mochy from its official releases.</string>
+    <string name="module_store_fork_devs_title">Building your own Mochy?</string>
+    <string name="module_store_fork_devs">The store only answers official builds, which carry a key that isn\'t in the public code. To take it out of your fork, set FeedUrl to an empty string in modules/browser/ModuleFeed.kt: the Module Store card leaves Settings and the store switches itself off. Or run your own module feed from github.com/ryukeicii/mochy-modulebot.</string>
+    <string name="module_store_fork_get">Get official Mochy</string>
+    <string name="module_store_update_title">There\'s an update</string>
+    <string name="module_store_update_versions">%1$s → %2$s</string>
+    <string name="module_store_update_newer">A newer version was posted since you added it.</string>
+    <string name="module_store_about">About this module</string>
+    <string name="module_store_no_about">Its maker hasn\'t written anything about it yet.</string>
+    <string name="module_store_updated">Date updated</string>
+    <string name="module_store_install_zip">.Zip</string>
+    <string name="module_store_install_link">Link</string>
+    <string name="module_store_install_web">Web</string>
+    <string name="module_store_previews">Preview</string>
+    <string name="module_store_preview">A preview of %1$s</string>
+    <string name="module_store_open_post">Open its post on Discord</string>
+    <string name="module_store_gone">This module isn\'t in the store any more.</string>
     <!-- buttons and notes on a module's own pages, and on pages a module shows in place of Mochy's -->
     <string name="module_page_play">Play</string>
     <string name="module_page_shuffle">Shuffle</string>

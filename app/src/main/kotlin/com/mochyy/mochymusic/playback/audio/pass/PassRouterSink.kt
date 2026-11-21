@@ -78,13 +78,7 @@ class PassRouterSink(
     override fun handleBuffer(buffer: ByteBuffer, presentationTimeUs: Long, encodedAccessUnitCount: Int): Boolean {
         // an effect, the switch or the dac changed mid-song: the song carries on wherever it may go now
         if (decidedAt != pass.generation && retiring == null) lastFormat?.let { route(it, fresh = false) }
-        retiring?.let { old ->
-            old.playToEndOfStream()
-            if (!old.isEnded) return false
-            old.reset()
-            retiring = null
-            if (playing) active.play()
-        }
+        if (!finishRetiring()) return false
         if (active !== exclusive) {
             // straight after the direct driver, android hasn't got the dac back yet
             if (pass.holdsNormal()) return false
@@ -96,6 +90,28 @@ class PassRouterSink(
             fallBack(failure)
             false
         }
+    }
+
+    // true once the old sink has played out and let go of the dac; one that fails while finishing (unplugged, taken over) has nothing left to wait for, and must not stop the next song
+    private fun finishRetiring(): Boolean {
+        val old = retiring ?: return true
+        val ended = try {
+            old.playToEndOfStream()
+            old.isEnded
+        } catch (failure: PassFailure) {
+            Timber.tag("AudioPass").i("the old output failed while finishing: ${failure.message}")
+            true
+        }
+        if (!ended) return false
+        runCatching { old.reset() }
+        retiring = null
+        if (!playing) return true
+        try {
+            active.play()
+        } catch (failure: PassFailure) {
+            fallBack(failure)
+        }
+        return true
     }
 
     /** the exclusive output failed: the song goes on the normal way from this buffer, with no error shown */
@@ -112,13 +128,7 @@ class PassRouterSink(
     }
 
     override fun playToEndOfStream() {
-        retiring?.let { old ->
-            old.playToEndOfStream()
-            if (!old.isEnded) return
-            old.reset()
-            retiring = null
-            if (playing) active.play()
-        }
+        if (!finishRetiring()) return
         try {
             active.playToEndOfStream()
         } catch (failure: PassFailure) {

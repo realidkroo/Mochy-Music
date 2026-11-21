@@ -136,6 +136,7 @@
     <string name="pc_like_mixing">Mixxing…</string>
     <string name="pc_no_lyrics_found">No lyrics found</string>
     <string name="pc_lyrics_source">Source</string>
+    <string name="pc_lyrics_submitted_by">Submitted by</string>
     <string name="pc_lyrics_song_file">Song file</string>
     <string name="pc_lyrics_your_edit">Your edit</string>
     <string name="pc_lyrics_switch">Switch</string>

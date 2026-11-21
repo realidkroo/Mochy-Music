@@ -771,13 +771,15 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>progress</code></td><td>where the song is, tap or drag to seek</td><td><code>style</code>: line, thick, pill (line) · <code>color</code> (ink) · <code>track</code> (chip) · <code>times</code> show the times (true) · <code>seek</code> (true)</td></tr>
 <tr><td><code>controls</code></td><td>previous, play/pause and next together</td><td><code>size</code> 28–96 (48) · <code>style</code>: circles or plain · <code>color</code> the circles' fill · <code>icon</code> the icons' colour</td></tr>
 <tr><td><code>bottomBar</code></td><td>the bar under the controls that opens the lyrics and the queue: two cards (the sung line, and what's next with its cover), two pills, or mochy's own volume bar with its lyrics and queue buttons</td><td><code>style</code>: cards, pills, volume (cards) · <code>height</code> 36–160 (76, pills 48) · <code>corner</code> 0–80 (22) · <code>glass</code> true or a blur, frosted over your backdrop · <code>fill</code> or <code>colors</code> · <code>color</code> its words and icons (ink) · <code>gap</code> 0–40 (10). the volume style keeps mochy's own look</td></tr>
+<tr><td><code>queue</code></td><td>the upcoming songs right inside your player, each row tapping to play that song or open the full queue</td><td><code>limit</code> 1–20 (4) · <code>covers</code> (true) · <code>coverSize</code> 24–72 (40) · <code>corner</code> 0–36 (10) · <code>gap</code> 0–32 (10) · text fields (14, semibold, ink) · <code>artistColor</code> (inkSoft) · <code>times</code> show each length (false) · <code>numbers</code> (false) · <code>tap</code>: play, queue, none (play) · <code>height</code> 60–600 to scroll inside a fixed box · <code>empty</code> words when nothing is next</td></tr>
+<tr><td><code>volume</code></td><td>the phone's music volume as a draggable bar, following the volume keys too</td><td><code>style</code>: line, thick, pill (line) · <code>color</code> (ink) · <code>track</code> (chip) · <code>icons</code> quiet and loud speakers (true)</td></tr>
 <tr><td><code>button</code></td><td>one control, or a custom action, in a circle</td><td><code>action</code> or <code>link</code>/<code>page</code>/<code>search</code> · <code>size</code> 24–96 (44) · <code>color</code> icon colour · <code>fill</code> circle colour · <code>image</code> your own icon · <code>imageOn</code> your icon while it's on. <a href="#modules-player-custom">all the actions</a></td></tr>
 </table></div>
 <h2>Decoration</h2>
 <div class="tbl"><table>
 <tr><th>type</th><th>what it shows</th><th>fields</th></tr>
 <tr><td><code>text</code></td><td>your own words, with the song and your settings filled in</td><td><code>text</code> (up to 200 characters) · text fields (14, medium, inkSoft). see <a href="#modules-player-blocks">placeholders</a></td></tr>
-<tr><td><code>image</code></td><td>your picture</td><td><code>image</code> · <code>height</code> 8–600 (120) · <code>width</code> (full width) · <code>corner</code> 0–80 (12) · <code>fit</code>: crop or fit (crop) · <code>tint</code> recolours it, for one-colour icons</td></tr>
+<tr><td><code>image</code></td><td>your picture, or a song's cover (<code>"{cover}"</code>, <code>"{nextCover}"</code>…<code>"{next10Cover}"</code>, <code>"{prevCover}"</code>)</td><td><code>image</code> · <code>fallback</code> picture when a song has no cover · <code>height</code> 8–600 (120) · <code>width</code> (full width) · <code>corner</code> 0–80 (12) · <code>fit</code>: crop or fit (crop) · <code>tint</code> recolours it, for one-colour icons</td></tr>
 <tr><td><code>shape</code></td><td>a box, a circle, a pill or a line</td><td><code>shape</code>: rect, circle, pill, line · <code>width</code> (full) · <code>height</code> 1–600 (2) · <code>color</code>, or <code>colors</code> for a gradient · <code>corner</code> 0–300 · <code>stroke</code> 0.5–40 to only outline it</td></tr>
 <tr><td><code>path</code></td><td>any shape you can write as svg path data</td><td><a href="#modules-player-panels">panels, shapes &amp; blur</a></td></tr>
 <tr><td><code>visualizer</code></td><td>bars, a wave, dots or a ring that follow the music</td><td><a href="#modules-player-motion">animation basics</a></td></tr>
@@ -885,6 +887,7 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>stroke</code>, <code>strokeColor</code></td><td>a border, 0.5–20 dp, in any colour</td><td>white at 18%</td></tr>
 <tr><td><code>width</code>, <code>height</code></td><td>8–600 and 8–800. without a width it fills the row or the screen</td><td></td></tr>
 <tr><td><code>shadow</code></td><td>a soft shadow under it</td><td>false</td></tr>
+<tr><td><code>action</code>, <code>link</code>, <code>page</code>, <code>search</code></td><td>makes the whole box tappable, with any <a href="#modules-player-custom">button action</a> (like <code>"action": "queue"</code> on your own up-next card)</td><td>none</td></tr>
 </table></div>
 <div class="note">how the glass works: mochy captures your player's background (everything under <code>background</code>, layers and shader included) and blurs the part behind each glass box, past its edges so nothing bright smears in. it doesn't blur other blocks, and with the <code>tones</code> background there's nothing to blur, so the box shows its tint. in the small preview in the style picker it's a soft panel. blur needs android 12+, older phones get the tint.</div>
 
@@ -1132,10 +1135,12 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><th>condition</th><th>holds while…</th></tr>
 <tr><td><code>@playing</code>, <code>@paused</code></td><td>the song plays, or doesn't</td></tr>
 <tr><td><code>@liked</code></td><td>the song is liked</td></tr>
-<tr><td><code>@shuffle</code>, <code>@repeat</code></td><td>shuffle or repeat is on</td></tr>
+<tr><td><code>@shuffle</code>, <code>@repeat</code>, <code>@repeatOne</code></td><td>shuffle, repeat, or repeat-one is on</td></tr>
 <tr><td><code>@lyrics</code></td><td>the song has synced lyrics</td></tr>
 <tr><td><code>@landscape</code></td><td>the phone is sideways</td></tr>
 <tr><td><code>@singing</code></td><td>a line is being sung right now, not a gap between lines</td></tr>
+<tr><td><code>@hasNext</code>, <code>@hasPrev</code></td><td>there is a song coming up next, or one before this one in the queue (<code>@next</code> and <code>@prev</code> work too)</td></tr>
+<tr><td><code>@lossless</code></td><td>the stream playing now is lossless</td></tr>
 </table></div>
 <div class="tbl"><table>
 <tr><th>you write</th><th>holds while…</th></tr>
@@ -1191,6 +1196,7 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>open</code></td><td>the player opens</td></tr>
 <tr><td><code>beat</code></td><td>a kick in the bass, as it's heard. it waits for the bass to drop again before the next one counts</td></tr>
 <tr><td><code>line</code></td><td>a new lyric line starts being sung</td></tr>
+<tr><td><code>queue</code></td><td>the queue changes (a song is added, moved or skipped)</td></tr>
 </table></div>
 <p>an event animation should start and end at rest (leave the first and last frame's values out, or set them to rest), because it's added on top of everything else for its duration and then it's gone.</p>
 
@@ -1262,6 +1268,10 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>like</code></td><td>likes the song, filled while liked</td></tr>
 <tr><td><code>shuffle</code>, <code>repeat</code></td><td>toggle them, brighter while on</td></tr>
 <tr><td><code>lyrics</code></td><td>opens the full lyrics</td></tr>
+<tr><td><code>queue</code></td><td>opens the full queue</td></tr>
+<tr><td><code>forward</code>, <code>rewind</code></td><td>jumps forward or back 10 seconds (<code>forward10</code> and <code>back10</code> work too)</td></tr>
+<tr><td><code>otherMenu</code></td><td>opens mochy's full ••• song menu (<code>more</code> works too)</td></tr>
+<tr><td><code>artist</code>, <code>album</code></td><td>opens the playing song's artist or album page</td></tr>
 <tr><td><code>menu</code></td><td>opens the chevron menu</td></tr>
 <tr><td><code>customise</code></td><td>opens your customise sheet</td></tr>
 <tr><td><code>close</code></td><td>folds the player down to the mini player</td></tr>
@@ -1452,10 +1462,21 @@ half4 main(float2 p) {
 <tr><td><code>{translation}</code></td><td>the sung line's translation, when the song has one</td></tr>
 <tr><td><code>{elapsed}</code>, <code>{remaining}</code>, <code>{length}</code></td><td>how far in, how long left (with a minus), how long it is: 1:23</td></tr>
 <tr><td><code>{percent}</code></td><td>how far in, 0–100</td></tr>
-<tr><td><code>{next}</code>, <code>{nextArtist}</code></td><td>the next song in the queue</td></tr>
+<tr><td><code>{next}</code>, <code>{nextArtist}</code>, <code>{nextLength}</code></td><td>the next song in the queue: its title, artist and length. add a number up to 10 (<code>{next2}</code>, <code>{next2Artist}</code>, <code>{next3Length}</code>…) to look further ahead</td></tr>
+<tr><td><code>{prev}</code>, <code>{prevArtist}</code>, <code>{prevLength}</code></td><td>the song before this one in the queue</td></tr>
 <tr><td><code>{queue}</code>, <code>{queuePosition}</code>, <code>{queueSize}</code></td><td>"3 / 12", or the two numbers on their own</td></tr>
+<tr><td><code>{queueLeft}</code>, <code>{queueTitle}</code></td><td>how many songs are left after this one, and the queue's name (the playlist or album it came from)</td></tr>
 </table></div>
-<p>a text block only redraws when what it shows changes: a new line, a new second, a new song next.</p>
+<p>a text block only redraws when what it shows changes: a new line, a new second, a new song next. an <code>image</code> block can read covers the same way with <code>"{cover}"</code>, <code>"{prevCover}"</code> and <code>"{nextCover}"</code> through <code>"{next10Cover}"</code>, so you can build your own up-next card on a tappable <code>box</code>:</p>
+<pre><code class="json">{ "type": "box", "glass": 24, "direction": "row", "action": "queue", "when": "@hasNext",
+  "blocks": [
+    { "type": "image", "image": "{nextCover}", "width": 44, "height": 44, "corner": 10 },
+    { "type": "column", "gap": 2, "blocks": [
+      { "type": "text", "text": "up next · {queue}", "size": 11, "upper": true, "align": "start" },
+      { "type": "text", "text": "{next}", "size": 14, "weight": "semibold", "color": "ink", "align": "start" },
+      { "type": "text", "text": "{nextArtist} · {nextLength}", "size": 12, "align": "start" }
+    ]}
+  ] }</code></pre>
 <h2>In your shaders</h2>
 <p>every player shader (backgrounds, shader blocks, lyrics shaders) can declare these on top of the <a href="#modules-player-shaders">usual ones</a>:</p>
 <div class="tbl"><table>
@@ -2532,8 +2553,20 @@ module.exports = {
 <p class="sub">get it to other people</p>
 <div class="cards">
   <a class="press" href="#modules-github"><b>GitHub releases</b><span>publish a zip named <code>*mochyymodule*</code>, people paste your project's link, and every new release reaches them as an update button</span></a>
-  <a class="press" href="https://discord.gg/NTmqVphbRY"><b>Mochy's Bar</b><span>post the zip or the link on discord, thats where people find modules. the card at the top of the modules page goes there</span></a>
+  <a class="press" href="https://discord.gg/NTmqVphbRY"><b>Mochy's Bar</b><span>post the zip in the module forum and run /publish, then it's in the module browser at the top of the modules page</span></a>
 </div>
+<h2>The module browser</h2>
+<p>the browser lists the posts in mochy's bar's module forum that their makers published. post the <code>.zip</code> (or a link) with a picture of it, then run these in discord. each one takes a message's link (copy it from the message's menu), or just its id when you run it inside your post:</p>
+<ul>
+  <li><code>/publish</code>: puts the post in the store. the message needs the zip and at least one picture; the first picture is the store banner and the message's words its description. the name is the post's title, so renaming the post renames it. you get the publisher role too.</li>
+  <li><code>/publishlink</code>: for a module people add by link, like a github project. the message needs the link and a picture, and the store adds it from that link, so its updates come from there too.</li>
+  <li><code>/publishweb</code>: for a module that lives on a web page. the message needs the page's link and a picture, and the store's button opens it.</li>
+  <li><code>/update</code>: that message's zip becomes the module straight away, and a picture next to it the new banner. posting a newer zip in the post also takes over within 10 minutes.</li>
+  <li><code>/preview</code>: the message's pictures (up to 8) are the screenshots on the store page.</li>
+  <li><code>/banner</code> and <code>/icon</code>: the message's first picture is the store page's banner, or the store icon in place of the zip's own.</li>
+  <li><code>/whatis</code>: a link to this guide, for anyone asking. <code>/src</code> links the bot's own code, and <code>/help</code> lists every command.</li>
+</ul>
+<p>pictures can be up to 8 MB each. when a command works the bot says so in your post; if something's off, only you see why. your post's words keep discord's formatting on the store page, so bold, links and emoji all show. only official mochy builds can open the store.</p>
 <h2>The catalog</h2>
 <p><b>settings → modules → add a module</b> lists the modules in <code>catalog.json</code>, read straight from github, so the list grows without an app update. to get listed, open a pull request adding an entry:</p>
 <pre><code class="json">{ "modules": [ {

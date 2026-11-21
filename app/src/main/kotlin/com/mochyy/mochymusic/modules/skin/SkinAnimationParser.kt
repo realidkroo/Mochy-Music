@@ -198,6 +198,7 @@ internal object SkinAnimationParser {
         "open", "show" -> SkinEvent.Open
         "beat", "kick" -> SkinEvent.Beat
         "line", "lyric" -> SkinEvent.Line
+        "queue" -> SkinEvent.Queue
         else -> null
     }
 

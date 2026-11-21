@@ -54,6 +54,7 @@ internal class SkinLive {
     var liked by mutableStateOf(false)
     var shuffle by mutableStateOf(false)
     var repeat by mutableStateOf(false)
+    var repeatOne by mutableStateOf(false)
     var singing by mutableStateOf(false)
 }
 
@@ -67,10 +68,11 @@ internal fun rememberSkinLive(flags: Set<SkinFlag>, preview: Boolean, clock: Lyr
             playing = transport?.isPlaying == true
             shuffle = transport?.shuffleModeEnabled == true
             repeat = transport != null && transport.repeatMode != Player.REPEAT_MODE_OFF
+            repeatOne = transport?.repeatMode == Player.REPEAT_MODE_ONE
             liked = connection?.uiState?.trackInfo?.value?.liked == true
         }
     }
-    val needsTransport = flags.any { it == SkinFlag.Playing || it == SkinFlag.Paused || it == SkinFlag.Shuffle || it == SkinFlag.Repeat }
+    val needsTransport = flags.any { it == SkinFlag.Playing || it == SkinFlag.Paused || it == SkinFlag.Shuffle || it == SkinFlag.Repeat || it == SkinFlag.RepeatOne }
     val needsLike = SkinFlag.Liked in flags
     val needsSinging = SkinFlag.Singing in flags
     // the clock reads the position every frame, but the flag only changes when a line starts or ends
@@ -86,6 +88,7 @@ internal fun rememberSkinLive(flags: Set<SkinFlag>, preview: Boolean, clock: Lyr
                     live.playing = it.isPlaying
                     live.shuffle = it.shuffleModeEnabled
                     live.repeat = it.repeatMode != Player.REPEAT_MODE_OFF
+                    live.repeatOne = it.repeatMode == Player.REPEAT_MODE_ONE
                 }
             }
             if (needsLike) launch { connection.uiState.trackInfo.collect { live.liked = it.liked } }
@@ -121,6 +124,9 @@ internal fun rememberSkinEvents(events: Set<SkinEvent>, pulse: SkinPulse, previe
             if (connection == null) return@coroutineScope
             if (SkinEvent.Song in events) launch {
                 connection.mediaMetadata.map { it?.id }.distinctUntilChanged().drop(1).collect { hub.flow.tryEmit(SkinEvent.Song) }
+            }
+            if (SkinEvent.Queue in events) launch {
+                connection.queueSnapshot.drop(1).collect { hub.flow.tryEmit(SkinEvent.Queue) }
             }
             if (SkinEvent.Play in events || SkinEvent.Pause in events) launch {
                 connection.uiState.transportState.map { it.isPlaying }.distinctUntilChanged().drop(1)

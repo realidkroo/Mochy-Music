@@ -12,6 +12,7 @@
     <string name="storage_legend_cache">Cache</string>
     <string name="storage_legend_downloads">Downloaded music &amp; local</string>
     <string name="storage_legend_database">Database</string>
+    <string name="storage_legend_local_covers">Local song covers</string>
     <string name="storage_legend_app_data">App data</string>
 
     <!-- cutting the junk -->
@@ -33,6 +34,11 @@
     <string name="storage_clear_cache_title">Clear the cache?</string>
     <string name="storage_clear_cache_message">Songs kept from streaming and saved cover pictures are deleted. They come back as you play and browse. Your library and your downloads stay as they are.</string>
     <string name="storage_clear_cache_action">Clear cache</string>
+    <string name="storage_clear_local_covers">Clear local song covers</string>
+    <string name="storage_local_covers_detail">%1$s of pictures saved from your music files</string>
+    <string name="storage_clear_local_covers_title">Clear local song covers?</string>
+    <string name="storage_clear_local_covers_message">The pictures Mochy saved from your music files are deleted. Your songs and the original files are not touched. A song gets its picture back when you play it, and Library → Local → Re-scan brings back all of them.</string>
+    <string name="storage_clear_local_covers_action">Clear covers</string>
     <string name="storage_manage_downloads">Manage downloads</string>
 
     <!-- where things are saved, and exporting songs -->

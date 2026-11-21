@@ -91,7 +91,7 @@ fun StorageScreen(navController: NavController, viewModel: StorageViewModel = hi
             appliesLater = cacheLimit != startingLimit,
         )
         Spacer(Modifier.height(10.dp))
-        ClearButtons(viewModel, downloadCount = downloads?.size ?: 0)
+        ClearButtons(viewModel, downloadCount = downloads?.size ?: 0, usage = usage)
 
         Spacer(Modifier.height(26.dp))
         SectionText(stringResource(R.string.storage_or))
@@ -168,6 +168,7 @@ private fun BreakdownCard(usage: StorageUsage?) {
                 BarPart(CacheOrange, usage?.cache ?: 0),
                 BarPart(MochyGreen, usage?.downloads ?: 0),
                 BarPart(DatabaseRed, usage?.database ?: 0),
+                BarPart(CoversYellow, usage?.localCovers ?: 0),
                 BarPart(AppDataBlue, usage?.appData ?: 0),
             ),
             total = usage?.mochy ?: 0,
@@ -177,6 +178,7 @@ private fun BreakdownCard(usage: StorageUsage?) {
             LegendRow(CacheOrange, stringResource(R.string.storage_legend_cache), usage?.let { formatSize(it.cache) })
             LegendRow(MochyGreen, stringResource(R.string.storage_legend_downloads), usage?.let { formatSize(it.downloads) })
             LegendRow(DatabaseRed, stringResource(R.string.storage_legend_database), usage?.let { formatSize(it.database) })
+            LegendRow(CoversYellow, stringResource(R.string.storage_legend_local_covers), usage?.let { formatSize(it.localCovers) })
             LegendRow(AppDataBlue, stringResource(R.string.storage_legend_app_data), usage?.let { formatSize(it.appData) })
         }
     }
@@ -248,7 +250,7 @@ private fun cacheLimitLabel(megabytes: Int): String = when {
 }
 
 @Composable
-private fun ClearButtons(viewModel: StorageViewModel, downloadCount: Int) {
+private fun ClearButtons(viewModel: StorageViewModel, downloadCount: Int, usage: StorageUsage?) {
     val busy by viewModel.busy.collectAsState()
     val menuState = LocalMenuState.current
     val removeTitle = stringResource(R.string.storage_remove_downloads_title)
@@ -257,6 +259,9 @@ private fun ClearButtons(viewModel: StorageViewModel, downloadCount: Int) {
     val clearTitle = stringResource(R.string.storage_clear_cache_title)
     val clearMessage = stringResource(R.string.storage_clear_cache_message)
     val clearAction = stringResource(R.string.storage_clear_cache_action)
+    val coversTitle = stringResource(R.string.storage_clear_local_covers_title)
+    val coversMessage = stringResource(R.string.storage_clear_local_covers_message)
+    val coversAction = stringResource(R.string.storage_clear_local_covers_action)
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val gifRefresh = remember { androidx.compose.runtime.mutableIntStateOf(0) }
@@ -279,6 +284,13 @@ private fun ClearButtons(viewModel: StorageViewModel, downloadCount: Int) {
             danger = true,
             enabled = !busy,
             onClick = { menuState.showConfirm(clearTitle, clearMessage, clearAction, viewModel::clearCaches) },
+        )
+        StorageActionButton(
+            label = stringResource(R.string.storage_clear_local_covers),
+            detail = usage?.let { stringResource(R.string.storage_local_covers_detail, formatSize(it.localCovers)) },
+            danger = true,
+            enabled = !busy && (usage?.localCovers ?: 0L) > 0L,
+            onClick = { menuState.showConfirm(coversTitle, coversMessage, coversAction, viewModel::clearLocalCovers) },
         )
         StorageActionButton(
             label = stringResource(R.string.storage_clear_canvas_gifs),

@@ -28,7 +28,7 @@ extensions.configure<ApplicationExtension> {
         minSdk = 24
         targetSdk = 37
         versionCode = 73
-        versionName = "8.4.3 build#1280"
+        versionName = "8.4.3 build#1285"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -39,6 +39,14 @@ extensions.configure<ApplicationExtension> {
 
         buildConfigField("String", "LASTFM_API_KEY", "\"$lastFmKey\"")
         buildConfigField("String", "LASTFM_SECRET", "\"$lastFmSecret\"")
+
+        // the module store only answers builds with this key: local.properties here, a github secret on ci, never git, so forks build without it
+        val storeKey = localProperties.getProperty("MODULE_STORE_KEY") ?: System.getenv("MODULE_STORE_KEY") ?: ""
+        // scrambled the same way StoreSignature undoes it, so the key isn't plain text in the apk
+        val storeMask = "mochy-module-store"
+        val scrambledStoreKey = storeKey.toByteArray().mapIndexed { i, b -> (b.toInt() xor storeMask[i % storeMask.length].code) and 0xff }
+            .joinToString("") { "%02x".format(it) }
+        buildConfigField("String", "MODULE_STORE_KEY", "\"$scrambledStoreKey\"")
 
         // Libre.fm the same way. It takes any 32-character key and never checks the secret, so a
         // build without its own (a fork, a CI run with no secrets) gets one made from the app id

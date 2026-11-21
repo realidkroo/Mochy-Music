@@ -79,6 +79,7 @@ import com.mochyy.mochymusic.modules.skin.SkinBlock
 import com.mochyy.mochymusic.modules.skin.SkinColor
 import com.mochyy.mochymusic.modules.skin.SkinCondition
 import com.mochyy.mochymusic.modules.skin.SkinFlag
+import com.mochyy.mochymusic.modules.skin.SkinPictureSource
 import com.mochyy.mochymusic.modules.skin.SkinPlayer
 import com.mochyy.mochymusic.modules.skin.SkinText
 import com.mochyy.mochymusic.modules.skin.StackAlign
@@ -127,6 +128,8 @@ internal class SkinContext(
     val glass: GlassState?,
     /** the stream's words for {codec}, {kbps} and friends, null when no text names them */
     val audio: SkinAudio? = null,
+    /** the live queue snapshot, null when nothing in the layout reads upcoming songs */
+    val queue: SkinQueue? = null,
     /** where the lyrics are this frame, for the lyrics placeholders, clocks, events and shaders */
     val lyricClock: LyricClock,
     /** how much bigger than mochy's own dp the blocks are drawn */
@@ -170,9 +173,13 @@ internal class SkinContext(
         SkinFlag.Liked -> live.liked
         SkinFlag.Shuffle -> live.shuffle
         SkinFlag.Repeat -> live.repeat
+        SkinFlag.RepeatOne -> live.repeatOne
         SkinFlag.Lyrics -> lyrics.lines.isNotEmpty()
         SkinFlag.Landscape -> landscape
         SkinFlag.Singing -> live.singing
+        SkinFlag.HasNext -> queue?.hasNext == true
+        SkinFlag.HasPrev -> queue?.hasPrev == true
+        SkinFlag.Lossless -> audio?.isLossless == true
     }
 }
 
@@ -274,13 +281,14 @@ internal fun rememberSkinContext(
     // a frosted box blurs the player's own backdrop, captured only when one asks and never in the small preview
     val glass = if (layout.frosted && !preview) remember { GlassState() } else null
     val audio = rememberSkinAudio(needed = layout.audio, preview = preview)
+    val queue = rememberSkinQueue(needed = layout.queue, preview = preview)
     val scale = layout.size.factor(LocalConfiguration.current.screenWidthDp.toFloat(), values)
     return SkinContext(
         style, skin, layout, tones, track, position, lyricsPosition, duration, carousel, lyrics, preview,
         cover = LocalArtworkColor.current, accent = MaterialTheme.colorScheme.primary,
         values = values, pulse = pulse, actions = actions,
         openMenu = openMenu, openCustomise = openCustomise,
-        live = live, events = events, landscape = landscape, glass = glass, audio = audio,
+        live = live, events = events, landscape = landscape, glass = glass, audio = audio, queue = queue,
         lyricClock = lyricClock, scale = scale, editor = editor,
     )
 }
@@ -415,9 +423,11 @@ private fun Block(block: SkinBlock, context: SkinContext, modifier: Modifier, in
         is SkinBlock.Label -> SkinLabel(block, context, modifier, inRow)
         is SkinBlock.Picture -> SkinPicture(block, context, modifier)
         is SkinBlock.Progress -> SkinProgress(block, context, modifier)
+        is SkinBlock.Volume -> SkinVolume(block, context, modifier)
         is SkinBlock.Controls -> SkinControls(block, context, modifier)
         is SkinBlock.Lyrics -> SkinLyrics(block, context, modifier)
         is SkinBlock.BottomBar -> SkinBottomBar(block, context, modifier)
+        is SkinBlock.QueueList -> SkinQueueList(block, context, modifier)
         is SkinBlock.Row -> Row(
             modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(block.gap),
@@ -535,15 +545,25 @@ private fun fillSong(text: String, track: StyleTrack): String = text
 
 @Composable
 private fun SkinPicture(block: SkinBlock.Picture, context: SkinContext, modifier: Modifier) {
+    val model = when (val source = block.source) {
+        is SkinPictureSource.Asset -> context.skin.resolve(source.path)
+        SkinPictureSource.CurrentCover -> context.track.artwork ?: block.fallback?.let(context.skin::resolve)
+        is SkinPictureSource.QueueCover -> context.queue?.itemAt(source.offset)?.artworkUri ?: block.fallback?.let(context.skin::resolve)
+    }
+    val box = modifier
+        .then(block.width?.let { Modifier.width(it) } ?: Modifier.fillMaxWidth())
+        .height(block.height)
+        .clip(RoundedCornerShape(block.corner))
+    if (model == null) {
+        Box(box.background(context.tones.chip))
+        return
+    }
     AsyncImage(
-        model = context.skin.resolve(block.image),
+        model = model,
         contentDescription = null,
         contentScale = if (block.fit) ContentScale.Fit else ContentScale.Crop,
         colorFilter = block.tint?.let { ColorFilter.tint(context.color(it)) },
-        modifier = modifier
-            .then(block.width?.let { Modifier.width(it) } ?: Modifier.fillMaxWidth())
-            .height(block.height)
-            .clip(RoundedCornerShape(block.corner)),
+        modifier = box,
     )
 }
 
@@ -684,9 +704,9 @@ private val SkinBlock.plain: SkinBlock get() = if (this is SkinBlock.Styled) inn
 private val SkinBlock.stretches: Boolean
     get() = (this is SkinBlock.Title && !text.wrap) || (this is SkinBlock.Artist && !text.wrap) || (this is SkinBlock.Album && !text.wrap) ||
         (this is SkinBlock.Label && !text.wrap) || (this is SkinBlock.Time && !text.wrap) ||
-        this is SkinBlock.Progress || this is SkinBlock.Lyrics || this is SkinBlock.Column || this is SkinBlock.Stack ||
+        this is SkinBlock.Progress || this is SkinBlock.Volume || this is SkinBlock.Lyrics || this is SkinBlock.Column || this is SkinBlock.Stack ||
         this is SkinBlock.Visualizer || (this is SkinBlock.Shape && width == null) ||
-        (this is SkinBlock.Shader && width == null) || (this is SkinBlock.Box && width == null) || this is SkinBlock.BottomBar
+        (this is SkinBlock.Shader && width == null) || (this is SkinBlock.Box && width == null) || this is SkinBlock.BottomBar || this is SkinBlock.QueueList
 
 internal val SkinAlign.horizontal: Alignment.Horizontal
     get() = when (this) {

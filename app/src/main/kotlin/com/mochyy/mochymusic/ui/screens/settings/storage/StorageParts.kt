@@ -72,6 +72,7 @@ internal val MochyGreen = Color(0xFF86EF7F)
 internal val OthersGrey = Color(0xFF6E6E73)
 internal val CacheOrange = Color(0xFFF5B26B)
 internal val DatabaseRed = Color(0xFFEE6E5E)
+internal val CoversYellow = Color(0xFFE9D86A)
 internal val AppDataBlue = Color(0xFF6878F0)
 
 private val Emphasized = CubicBezierEasing(0.2f, 0f, 0f, 1f)

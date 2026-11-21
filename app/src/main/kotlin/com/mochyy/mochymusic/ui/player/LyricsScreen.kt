@@ -840,6 +840,7 @@ fun LyricsScreen(
                             LyricsSourceFooter(
                                 provider = provider,
                                 onSwitchSource = onSwitchSource,
+                                rawLyrics = lyricsEntity?.lyrics,
                                 modifier = Modifier
                                     .graphicsLayer {
                                         translationY = stagger.lagOf(rows.size)

@@ -380,18 +380,25 @@ internal class CanvasGif(
             val dh = (vh * k).roundToInt().coerceAtLeast(size)
             // as many workers as the phone can feed, each has its own retriever (not thread safe) and takes every nth frame
             val workers = (Runtime.getRuntime().availableProcessors() - 1).coerceIn(2, 6)
-            val slots = arrayOfNulls<IntArray>(count)
+            // frames wait for the palette as 15-bit colours, half of what full pixels take; 360 full frames at 240 px ran a 256 MB heap out
+            val frames = arrayOfNulls<ShortArray>(count)
+            val samples = arrayOfNulls<IntArray>(count)
             val cut = AtomicInteger(0)
             coroutineScope {
                 (0 until workers).map { w ->
                     async {
                         val r = MediaMetadataRetriever()
+                        val pixels = IntArray(size * size)
                         try {
                             r.setDataSource(file.absolutePath)
                             for (i in w until count step workers) {
                                 // microseconds, frame i sits exactly at i * (length / count)
                                 val raw = frameAt(r, ms * 1000L * i / count, dw, dh)
-                                if (raw != null) slots[i] = squarePixels(raw, size)
+                                if (raw != null) {
+                                    squarePixels(raw, size, pixels)
+                                    samples[i] = IntArray(pixels.size / 32) { pixels[it * 32] }
+                                    frames[i] = ShortArray(pixels.size) { SpinningArtwork.Palette.keyOf(pixels[it]).toShort() }
+                                }
                                 CanvasGifProgress.update(Stage.FRAMES, cut.incrementAndGet().toFloat() / count)
                             }
                         } finally {
@@ -400,33 +407,36 @@ internal class CanvasGif(
                     }
                 }.awaitAll()
             }
-            val frames = slots.filterNotNull()
-            check(frames.size >= MinFrames) { "couldn't read enough frames" }
-            // video changes colours between frames, so the palette comes from a bit of every frame
-            val sample = IntArray(frames.sumOf { it.size / 32 })
+            val kept = frames.count { it != null }
+            check(kept >= MinFrames) { "couldn't read enough frames" }
+            // video changes colours between frames, so the palette comes from a bit of every frame, taken at full colour
+            val sample = IntArray(samples.sumOf { it?.size ?: 0 })
             var at = 0
-            for (f in frames) for (p in f.indices step 32) sample[at++] = f[p]
+            for (s in samples) {
+                if (s == null) continue
+                s.copyInto(sample, at)
+                at += s.size
+            }
             val palette = SpinningArtwork.Palette.of(sample)
             // every frame goes to palette indexes once, the size retries below reuse them (before it redid all of it every retry)
-            val indexed = arrayOfNulls<ByteArray>(frames.size)
+            val indexed = arrayOfNulls<ByteArray>(count)
             val mapped = AtomicInteger(0)
             coroutineScope {
                 (0 until workers).map { w ->
                     async(Dispatchers.Default) {
-                        // own palette per worker so the lookups dont wait on each other, same colours or we fall back to the shared one
-                        val pal = if (w == 0) palette else SpinningArtwork.Palette.of(sample)
-                            .takeIf { java.util.Objects.deepEquals(it.colors, palette.colors) } ?: palette
-                        for (i in w until frames.size step workers) {
-                            val f = frames[i]
-                            val b = ByteArray(size * size)
-                            synchronized(pal) { for (p in f.indices) b[p] = pal.indexOf(f[p]).toByte() }
-                            indexed[i] = b
-                            CanvasGifProgress.update(Stage.ENCODE, 0.6f * mapped.incrementAndGet() / frames.size)
+                        // own lookup per worker so they dont wait on each other, the colours are the same
+                        val pal = SpinningArtwork.Palette(palette.colors)
+                        for (i in w until count step workers) {
+                            val keys = frames[i] ?: continue
+                            indexed[i] = ByteArray(keys.size) { pal.indexOfKey(keys[it].toInt()).toByte() }
+                            // let go of it right away so both copies of every frame never sit in memory together
+                            frames[i] = null
+                            CanvasGifProgress.update(Stage.ENCODE, 0.6f * mapped.incrementAndGet() / kept)
                         }
                     }
                 }.awaitAll()
             }
-            val bytes = indexed.requireNoNulls()
+            val bytes = indexed.filterNotNull()
             // a gif delay is whole centiseconds (30fps is 3.33) so they alternate, the total still matches the video
             val totalCentis = ms / 10.0
             fun encode(list: List<ByteArray>): ByteArray {
@@ -442,29 +452,27 @@ internal class CanvasGif(
             }
             // discord can turn a huge gif down, so when its too big every other frame goes, the length stays the same
             var step = 1
-            var gif = encode(bytes.asList())
+            var gif = encode(bytes)
             while (gif.size > MaxGifBytes && step < 8) {
                 step *= 2
                 gif = encode(bytes.filterIndexed { i, _ -> i % step == 0 })
             }
-            Timber.tag(LogTag).i("canvas gif ready: ${frames.size / step} of ${frames.size} frames, ${gif.size / 1024} KB")
+            Timber.tag(LogTag).i("canvas gif ready: ${bytes.size / step} of ${bytes.size} frames, ${gif.size / 1024} KB")
             gif
         } finally {
             runCatching { retriever.release() }
         }
     }
 
-    // the middle square of the frame, scaled to size
-    private fun squarePixels(raw: Bitmap, size: Int): IntArray {
+    // the middle square of the frame, scaled to size, written into the worker's own pixel buffer
+    private fun squarePixels(raw: Bitmap, size: Int, into: IntArray) {
         val out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val side = minOf(raw.width, raw.height)
         val src = Rect((raw.width - side) / 2, (raw.height - side) / 2, (raw.width + side) / 2, (raw.height + side) / 2)
         Canvas(out).drawBitmap(raw, src, RectF(0f, 0f, size.toFloat(), size.toFloat()), Paint(Paint.FILTER_BITMAP_FLAG))
-        val pixels = IntArray(size * size)
-        out.getPixels(pixels, 0, size, 0, 0, size, size)
+        out.getPixels(into, 0, size, 0, 0, size, size)
         out.recycle()
         raw.recycle()
-        return pixels
     }
 
     companion object {

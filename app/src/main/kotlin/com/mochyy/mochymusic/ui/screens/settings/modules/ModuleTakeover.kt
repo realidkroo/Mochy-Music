@@ -80,6 +80,6 @@ private fun TakeoverPage(
 
 // pages no module can take over: the modules' own, so a broken one can always be turned off, settings itself, and the first-run setup
 private val Protected = setOf(
-    "settings", SettingsListRoute, ModulesRoute, takeoverName(ModuleRoutePattern), takeoverName(ModulePageRoutePattern), ModuleBrowserRoute,
+    "settings", SettingsListRoute, ModulesRoute, takeoverName(ModuleRoutePattern), takeoverName(ModulePageRoutePattern), ModuleBrowserRoute, takeoverName(ModuleStoreRoutePattern),
     "setup", "onboarding", "update",
 )

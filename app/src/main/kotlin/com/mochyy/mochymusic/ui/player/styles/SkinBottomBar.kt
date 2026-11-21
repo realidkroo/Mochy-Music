@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -38,7 +37,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.modules.skin.BottomBarKind
 import com.mochyy.mochymusic.modules.skin.SkinBlock
@@ -96,8 +94,7 @@ private fun RowScope.LyricsCard(block: SkinBlock.BottomBar, context: SkinContext
 /** the next song in the queue with its cover, or a note that nothing's queued */
 @Composable
 private fun RowScope.NextCard(block: SkinBlock.BottomBar, context: SkinContext, onClick: () -> Unit) {
-    val queue = LocalPlayerConnection.current?.queueSnapshot?.collectAsState()?.value
-    val next = queue?.items?.getOrNull(queue.currentIndex + 1)
+    val next = context.queue?.itemAt(1)
     BarSurface(block, context, Modifier.weight(1f).fillMaxHeight(), onClick) {
         Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             if (next?.artworkUri != null) {

@@ -48,6 +48,9 @@ internal class SkinAudio(initial: Map<String, String> = emptyMap()) {
     var fields by mutableStateOf(initial)
         internal set
 
+    /** true when the stream playing right now is flac, alac or pcm */
+    val isLossless: Boolean get() = fields["codec"] in Lossless
+
     // a value mochy doesn't know yet shows as a dash, so the layout never jumps around an empty gap
     fun fill(text: String): String = SkinAudioField.replace(text) { fields[it.groupValues[1].lowercase()] ?: Unknown }
 }

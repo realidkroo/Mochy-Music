@@ -73,6 +73,7 @@ import com.mochyy.mochymusic.ui.utils.stableStatusBars
 private val PageBackdrop = Color(0xFF141416)
 private val SheetColor = Color.Black
 private val SheetCorner = 40.dp
+private val SheetShape = RoundedCornerShape(topStart = SheetCorner, topEnd = SheetCorner)
 
 /** past this the sheet's content stops widening, so a tablet reads like a wide phone */
 private val ContentMaxWidth = 680.dp
@@ -155,8 +156,8 @@ fun AudioLabPage(
                                 .fillMaxWidth()
                                 // black to the bottom even when there's little on the page
                                 .heightIn(min = viewport - headerDp + SheetCorner)
-                                .clip(RoundedCornerShape(topStart = SheetCorner, topEnd = SheetCorner))
-                                .background(SheetColor),
+                                // drawn round, never clipped: a two-corner clip is a path, and compose drops every touch past 8192 px down a path
+                                .background(SheetColor, SheetShape),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Column(

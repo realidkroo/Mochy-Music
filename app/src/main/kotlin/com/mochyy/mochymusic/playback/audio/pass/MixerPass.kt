@@ -86,7 +86,12 @@ internal class MixerPass private constructor(
         runCatching { track.removeOnRoutingChangedListener(routing) }
         runCatching { audio.removeOnPreferredMixerAttributesChangedListener(mixerChanged) }
         runCatching { track.release() }
-        runCatching { audio.clearPreferredMixerAttributes(AudioOutputs.MediaAttributes, device) }
+        // the next song may have set its own mixer for this dac already, and that one isn't ours to clear
+        runCatching {
+            if (audio.getPreferredMixerAttributes(AudioOutputs.MediaAttributes, device) == mixer) {
+                audio.clearPreferredMixerAttributes(AudioOutputs.MediaAttributes, device)
+            }
+        }
     }
 
     private fun check() {

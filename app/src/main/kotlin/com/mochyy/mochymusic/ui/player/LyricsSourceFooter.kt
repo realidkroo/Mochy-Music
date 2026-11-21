@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.lyrics.EmbeddedLyrics
 import com.mochyy.mochymusic.lyrics.LyricsProviderRegistry
+import com.mochyy.mochymusic.lyrics.UnisonLyricsProvider
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.ui.utils.safeOpenUri
 import com.mochyy.mochymusic.viewmodels.LyricsMenuViewModel
@@ -79,23 +80,37 @@ internal fun LyricsSourceFooter(
     provider: String,
     onSwitchSource: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    rawLyrics: String? = null,
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val project = remember(provider) { LyricsProviderRegistry.getProject(provider) }
     val website = remember(provider) { LyricsProviderRegistry.getWebsite(provider) }
+    // unison's license asks for both the song page and the submitter's profile to be linked here
+    val unisonCredit = remember(provider, rawLyrics) {
+        if (provider == UnisonLyricsProvider.name) UnisonLyricsProvider.parseCredit(rawLyrics) else null
+    }
+    val sourceUrl = unisonCredit?.songUrl ?: website
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             LabeledText(
                 label = stringResource(R.string.pc_lyrics_source),
                 value = sourceName(provider),
-                onValueClick = website?.let { url -> { uriHandler.safeOpenUri(context, url) } },
+                onValueClick = sourceUrl?.let { url -> { uriHandler.safeOpenUri(context, url) } },
             )
             if (onSwitchSource != null) {
                 Spacer(modifier = Modifier.width(10.dp))
                 SwitchSourceButton(onClick = onSwitchSource)
             }
+        }
+        val submitterName = unisonCredit?.submitterName
+        if (submitterName != null) {
+            LabeledText(
+                label = stringResource(R.string.pc_lyrics_submitted_by),
+                value = submitterName,
+                onValueClick = unisonCredit.submitterUrl?.let { url -> { uriHandler.safeOpenUri(context, url) } },
+            )
         }
         if (project != null) {
             Row(verticalAlignment = Alignment.CenterVertically) {

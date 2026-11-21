@@ -1959,6 +1959,19 @@ interface DatabaseDao {
     )
     fun thumbnailUsers(url: String): Int
 
+    // lets go of every cover link that starts with prefix, for clearing the saved local covers in one go
+    @Query("UPDATE song SET thumbnailUrl = NULL WHERE thumbnailUrl LIKE :prefix || '%'")
+    fun forgetSongCovers(prefix: String)
+
+    @Query("UPDATE album SET thumbnailUrl = NULL WHERE thumbnailUrl LIKE :prefix || '%'")
+    fun forgetAlbumCovers(prefix: String)
+
+    @Query("UPDATE playlist SET thumbnailUrl = NULL WHERE thumbnailUrl LIKE :prefix || '%'")
+    fun forgetPlaylistCovers(prefix: String)
+
+    @Query("UPDATE artist SET thumbnailUrl = NULL WHERE thumbnailUrl LIKE :prefix || '%'")
+    fun forgetArtistCovers(prefix: String)
+
     // the songs and albums that still name an artist, so a name that got split into its artists only goes once nothing uses it
     @Query(
         "SELECT (SELECT COUNT(*) FROM song_artist_map WHERE artistId = :artistId) + " +

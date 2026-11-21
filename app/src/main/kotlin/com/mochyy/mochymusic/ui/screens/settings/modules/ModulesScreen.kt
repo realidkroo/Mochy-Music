@@ -4,7 +4,6 @@ package com.mochyy.mochymusic.ui.screens.settings.modules
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -34,9 +33,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -95,9 +92,6 @@ fun ModulesScreen(navController: NavController, viewModel: ModulesViewModel = hi
             sortingSources = false
         }
         ThirdPartyCard { context.openDevUrl(ModuleDocsUrl) }
-        Spacer(Modifier.height(14.dp))
-        // mochy's bar is where people share modules, so its browser sits right up top
-        ModulesBarBanner { navController.navigate(ModuleBrowserRoute) }
         Spacer(Modifier.height(22.dp))
         Box(Modifier.fillMaxWidth().padding(horizontal = 2.dp).height(1.dp).background(Color.White.copy(alpha = 0.28f)))
         Spacer(Modifier.height(28.dp))
@@ -191,33 +185,5 @@ private fun TwoPhones(modifier: Modifier) {
             drawRoundRect(color = Color(0xFF161618), topLeft = Offset(left, 0f), size = phone, cornerRadius = corner)
             drawRoundRect(color = Color.White.copy(alpha = 0.16f), topLeft = Offset(left, 0f), size = phone, cornerRadius = corner, style = outline)
         }
-    }
-}
-
-/** mochy peeking up from the bottom of the card, leading to the discord server where people share modules */
-@Composable
-private fun ModulesBarBanner(onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(112.dp)
-            .clip(CardShape)
-            .background(LabColors.Card)
-            .clickable(onClick = onClick)
-            .padding(start = 24.dp, end = 18.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // the drawing ends at her jacket, so sitting on the card's bottom edge cuts her off there like the design
-        Image(
-            painterResource(R.drawable.modules_bar_mochy), null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.align(Alignment.Bottom).padding(top = 10.dp).fillMaxHeight(),
-        )
-        Spacer(Modifier.width(22.dp))
-        Text(
-            stringResource(R.string.modules_bar),
-            fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 21.sp, lineHeight = 24.sp,
-            letterSpacing = (-0.7).sp, color = Color.White, modifier = Modifier.weight(1f),
-        )
     }
 }

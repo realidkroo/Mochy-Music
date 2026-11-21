@@ -8,11 +8,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.lyrics.LyricsEntry
 import com.mochyy.mochymusic.lyrics.LyricsUtils
 import com.mochyy.mochymusic.modules.skin.SkinLyricField
 import com.mochyy.mochymusic.modules.skin.SkinPlayerField
+import com.mochyy.mochymusic.modules.skin.SkinQueueField
 import com.mochyy.mochymusic.utils.makeTimeString
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -116,30 +116,58 @@ private fun fillLyrics(text: String, context: SkinContext): String {
 
 @Composable
 private fun fillPlayer(text: String, context: SkinContext): String {
-    val position = context.position
-    val duration = context.duration
-    // whole seconds, so the words change once a second and not every frame
-    val second by remember(position) { derivedStateOf { position.positionMs() / 1000L } }
     var filled = text
-        .replace("{elapsed}", makeTimeString(second * 1000L), ignoreCase = true)
-        .replace("{remaining}", "-" + makeTimeString((duration - second * 1000L).coerceAtLeast(0L)), ignoreCase = true)
-        .replace("{length}", makeTimeString(duration), ignoreCase = true)
-        .replace("{percent}", (if (duration > 0) (second * 100_000L / duration).coerceIn(0L, 100L) else 0L).toString(), ignoreCase = true)
-    if (QueueField.containsMatchIn(filled)) {
-        val queue = LocalPlayerConnection.current?.queueSnapshot?.collectAsState()?.value
-        val next = queue?.items?.getOrNull(queue.currentIndex + 1)
-        val at = (queue?.currentIndex ?: -1) + 1
-        val size = queue?.items?.size ?: 0
+    if (TimeField.containsMatchIn(filled)) {
+        val position = context.position
+        val duration = context.duration
+        // whole seconds, so the words change once a second and not every frame, and skipped for queue-only labels
+        val second by remember(position) { derivedStateOf { position.positionMs() / 1000L } }
         filled = filled
-            .replace("{nextArtist}", next?.artist.orEmpty(), ignoreCase = true)
-            .replace("{next}", next?.title.orEmpty(), ignoreCase = true)
-            .replace("{queuePosition}", at.coerceAtLeast(0).toString(), ignoreCase = true)
-            .replace("{queueSize}", size.toString(), ignoreCase = true)
-            .replace("{queue}", if (size > 0 && at > 0) "$at / $size" else "", ignoreCase = true)
+            .replace("{elapsed}", makeTimeString(second * 1000L), ignoreCase = true)
+            .replace("{remaining}", "-" + makeTimeString((duration - second * 1000L).coerceAtLeast(0L)), ignoreCase = true)
+            .replace("{length}", makeTimeString(duration), ignoreCase = true)
+            .replace("{percent}", (if (duration > 0) (second * 100_000L / duration).coerceIn(0L, 100L) else 0L).toString(), ignoreCase = true)
+    }
+    if (SkinQueueField.containsMatchIn(filled)) {
+        val queue = context.queue ?: return filled
+        val state = queue.state
+        val at = state.currentIndex + 1
+        val size = state.items.size
+        val left = (size - at).coerceAtLeast(0)
+        filled = SkinQueueField.replace(filled) { match ->
+            val key = match.groupValues[1].lowercase()
+            when (key) {
+                "queue" -> if (size > 0 && at > 0) "$at / $size" else ""
+                "queueposition" -> at.coerceAtLeast(0).toString()
+                "queuesize" -> size.toString()
+                "queueleft" -> left.toString()
+                "queuetitle" -> state.title
+                "prev" -> queue.itemAt(-1)?.title.orEmpty()
+                "prevartist" -> queue.itemAt(-1)?.artist.orEmpty()
+                "prevlength" -> queue.itemAt(-1)?.duration?.takeIf { it > 0L }?.let(::makeTimeString).orEmpty()
+                else -> fillNextToken(key, queue)
+            }
+        }
     }
     return filled
 }
 
+private fun fillNextToken(key: String, queue: SkinQueue): String {
+    val body = key.removePrefix("next")
+    val field = when {
+        body.endsWith("artist") -> "artist"
+        body.endsWith("length") -> "length"
+        else -> "title"
+    }
+    val offset = body.removeSuffix("artist").removeSuffix("length").toIntOrNull() ?: 1
+    val item = queue.itemAt(offset) ?: return ""
+    return when (field) {
+        "artist" -> item.artist
+        "length" -> if (item.duration > 0L) makeTimeString(item.duration) else ""
+        else -> item.title
+    }
+}
+
 private val NoTranslation = MutableStateFlow<String?>(null)
 // android's regex engine refuses a bare closing brace, so it's escaped or the player crashes on open
-private val QueueField = Regex("""\{(next|nextartist|queue|queuesize|queueposition)\}""", RegexOption.IGNORE_CASE)
+private val TimeField = Regex("""\{(elapsed|remaining|length|percent)\}""", RegexOption.IGNORE_CASE)

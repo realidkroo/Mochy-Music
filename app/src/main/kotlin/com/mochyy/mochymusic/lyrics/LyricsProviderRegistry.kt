@@ -4,12 +4,14 @@ package com.mochyy.mochymusic.lyrics
 
 import com.mochyy.mochymusic.constants.PreferredLyricsProvider
 import com.music.directlyrics.LrcRed
+import com.music.directlyrics.Unison
 
 object LyricsProviderRegistry {
     private val providerMap = mapOf(
         "YouLyPlus"       to YouLyPlusLyricsProvider,
         "Paxsenix"        to PaxSenixLyricsProvider,
         "BetterLyrics"    to BetterLyricsProvider,
+        "Unison"          to UnisonLyricsProvider,
         "SimpMusic"       to SimpMusicLyricsProvider,
         "LrcLib"          to LrcLibLyricsProvider,
         "Kugou"           to KuGouLyricsProvider,
@@ -51,6 +53,7 @@ object LyricsProviderRegistry {
     // timing. YouTube's auto captions last of all - they are speech recognition.
     fun getDefaultProviderOrder(): List<String> = moduleProviders.keys.toList() + listOf(
         "BetterLyrics",
+        "Unison",
         "YouLyPlus",
         "Paxsenix",
         "LrcRed",
@@ -81,6 +84,7 @@ object LyricsProviderRegistry {
         "YouLyPlus"       -> "YouLyPlus"
         "Paxsenix"        -> "PaxSenix"
         "BetterLyrics"    -> "Apple Music"
+        "Unison"          -> "Unison"
         "SimpMusic"       -> "SimpMusic"
         "LrcLib"          -> "LrcLib"
         "Kugou"           -> "KuGou"
@@ -103,14 +107,16 @@ object LyricsProviderRegistry {
     fun getProject(name: String): LyricsProject? = when (name) {
         "YouLyPlus"    -> LyricsProject("LyricsPlus", "https://github.com/ibratabian17/LyricsPlus")
         "BetterLyrics" -> LyricsProject("Better Lyrics", "https://github.com/better-lyrics/better-lyrics")
+        "Unison"       -> LyricsProject("Unison", Unison.RepoUrl)
         "LrcLib"       -> LyricsProject("LRCLIB", "https://github.com/tranxuanthang/lrclib")
         "SimpMusic"    -> LyricsProject("SimpMusic", "https://github.com/maxrave-dev/SimpMusic")
         else           -> null
     }
 
-    // lrc.red lets anyone use its lyrics as long as the app links back to it wherever they show
+    // lrc.red and unison require linking back wherever their lyrics are shown
     fun getWebsite(name: String): String? = when (name) {
         "LrcRed" -> LrcRed.BaseUrl
+        "Unison" -> Unison.BaseUrl
         else     -> null
     }
 }

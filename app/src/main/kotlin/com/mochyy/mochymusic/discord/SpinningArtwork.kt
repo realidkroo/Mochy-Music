@@ -139,7 +139,7 @@ internal class SpinningArtwork(
 
         fun indexOf(argb: Int): Int {
             if (argb ushr 24 < 128) return GifEncoder.Transparent
-            val key = (argb shr 9 and 0x7C00) or (argb shr 6 and 0x3E0) or (argb shr 3 and 0x1F)
+            val key = keyOf(argb)
             val known = nearest[key]
             if (known >= 0) return known
             val r = argb shr 16 and 0xFF
@@ -162,11 +162,24 @@ internal class SpinningArtwork(
             return best
         }
 
+        // same as indexOf for an opaque colour already cut down to its key, worked out from the middle of the key's colour cube
+        fun indexOfKey(key: Int): Int {
+            val known = nearest[key]
+            if (known >= 0) return known
+            return indexOf(0xFF040404.toInt() or (key shl 9 and 0xF80000) or (key shl 6 and 0xF800) or (key shl 3 and 0xF8))
+        }
+
         companion object {
+            // the 5-bit-per-channel cube a colour falls in, 15 bits so it fits in a short
+            fun keyOf(argb: Int): Int = (argb shr 9 and 0x7C00) or (argb shr 6 and 0x3E0) or (argb shr 3 and 0x1F)
+
             fun of(pixels: IntArray): Palette {
-                val opaque = pixels.filter { it ushr 24 >= 128 }.toIntArray()
-                if (opaque.isEmpty()) return Palette(intArrayOf(0))
-                val boxes = mutableListOf(opaque)
+                // plain ints all the way, a canvas sample is over half a million pixels and boxing them ran the heap out
+                var count = 0
+                val opaque = IntArray(pixels.size)
+                for (c in pixels) if (c ushr 24 >= 128) opaque[count++] = c
+                if (count == 0) return Palette(intArrayOf(0))
+                val boxes = mutableListOf(opaque.copyOf(count))
                 while (boxes.size < GifEncoder.Transparent) {
                     val widest = boxes.withIndex().filter { it.value.size > 1 }.maxByOrNull { spread(it.value) } ?: break
                     if (spread(widest.value) == 0) break
@@ -192,11 +205,16 @@ internal class SpinningArtwork(
 
             private fun spread(box: IntArray) = maxOf(range(box, 0), range(box, 1), range(box, 2))
 
+            // a counting sort on the widest channel, the same order sortedBy gave without boxing every pixel
             private fun split(box: IntArray): Pair<IntArray, IntArray> {
                 val which = (0..2).maxBy { range(box, it) }
-                val sorted = box.sortedBy { channel(it, which) }
+                val starts = IntArray(257)
+                for (c in box) starts[channel(c, which) + 1]++
+                for (v in 1..256) starts[v] += starts[v - 1]
+                val sorted = IntArray(box.size)
+                for (c in box) sorted[starts[channel(c, which)]++] = c
                 val middle = sorted.size / 2
-                return sorted.subList(0, middle).toIntArray() to sorted.subList(middle, sorted.size).toIntArray()
+                return sorted.copyOfRange(0, middle) to sorted.copyOfRange(middle, sorted.size)
             }
 
             private fun average(box: IntArray): Int {

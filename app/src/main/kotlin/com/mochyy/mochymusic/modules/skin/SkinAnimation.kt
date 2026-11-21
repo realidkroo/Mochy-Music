@@ -71,7 +71,7 @@ data class SkinState(val condition: SkinCondition, val values: Map<PoseProp, Flo
 data class SkinTransition(val durationMs: Int, val easing: Easing, val spring: Boolean)
 
 /** what can set off a one-shot animation on a block */
-enum class SkinEvent { Song, Play, Pause, Like, Unlike, Open, Beat, Line }
+enum class SkinEvent { Song, Play, Pause, Like, Unlike, Open, Beat, Line, Queue }
 
 /** a one-shot animation a block plays each time [event] happens */
 @Immutable
@@ -81,9 +81,24 @@ data class SkinTrigger(val event: SkinEvent, val timeline: SkinTimeline)
 enum class SkinFlag(val key: String) {
     Playing("@playing"), Paused("@paused"), Liked("@liked"), Shuffle("@shuffle"), Repeat("@repeat"), Lyrics("@lyrics"), Landscape("@landscape"),
     /** a line is being sung right now, not a gap between them */
-    Singing("@singing");
+    Singing("@singing"),
+    /** there is another song coming up after this one in the queue */
+    HasNext("@hasNext"),
+    /** there is a song before this one in the queue */
+    HasPrev("@hasPrev"),
+    /** repeat is set to loop this one song */
+    RepeatOne("@repeatOne"),
+    /** the stream playing now is lossless */
+    Lossless("@lossless");
 
     companion object {
-        fun of(key: String): SkinFlag? = entries.firstOrNull { it.key.equals(key.trim(), ignoreCase = true) }
+        fun of(key: String): SkinFlag? {
+            val clean = key.trim()
+            return entries.firstOrNull { it.key.equals(clean, ignoreCase = true) } ?: when (clean.lowercase()) {
+                "@next" -> HasNext
+                "@prev", "@previous" -> HasPrev
+                else -> null
+            }
+        }
     }
 }

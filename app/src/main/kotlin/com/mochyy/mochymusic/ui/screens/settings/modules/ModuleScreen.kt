@@ -99,7 +99,7 @@ fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesVie
                 Spacer(Modifier.height(BannerHeight))
                 return@Column
             }
-            ModuleBanner(entry)
+            ModuleBanner(entry.banner, entry.icon)
             Column(Modifier.padding(horizontal = 20.dp)) {
                 ModuleHeader(entry)
                 Spacer(Modifier.height(20.dp))
@@ -157,7 +157,7 @@ fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesVie
 
 /** the module's banner, or its icon blown up and blurred when it has none, fading into the page */
 @Composable
-private fun ModuleBanner(entry: ModuleEntry) {
+internal fun ModuleBanner(banner: String?, icon: String?) {
     val fade = Brush.verticalGradient(0f to Color.Black, 0.55f to Color.Black, 1f to Color.Transparent)
     Box(
         Modifier
@@ -170,8 +170,6 @@ private fun ModuleBanner(entry: ModuleEntry) {
                 drawRect(fade, blendMode = BlendMode.DstIn)
             },
     ) {
-        val banner = entry.banner
-        val icon = entry.icon
         when {
             banner != null -> AsyncImage(
                 model = artModel(banner), contentDescription = null, contentScale = ContentScale.Crop,
@@ -212,14 +210,14 @@ private fun ModuleHeader(entry: ModuleEntry) {
 }
 
 // lays its content [by] higher than it would sit and takes that much less room, so it overlaps what's above
-private fun Modifier.pullUp(by: Dp): Modifier = layout { measurable, constraints ->
+internal fun Modifier.pullUp(by: Dp): Modifier = layout { measurable, constraints ->
     val placeable = measurable.measure(constraints)
     val lift = by.roundToPx()
     layout(placeable.width, (placeable.height - lift).coerceAtLeast(0)) { placeable.place(0, -lift) }
 }
 
 @Composable
-private fun BackButton(onClick: () -> Unit) {
+internal fun BackButton(onClick: () -> Unit) {
     val top = WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding()
     Box(
         modifier = Modifier

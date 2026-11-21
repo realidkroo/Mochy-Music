@@ -94,6 +94,8 @@ data class ModuleEntry(
     val values: Map<String, String> = emptyMap(),
     /** when it was added, null for built-in ones and ones added before mochy kept the date */
     val addedAt: Long? = null,
+    /** when this copy went in: every update moves it, unlike [addedAt], so the store can tell a newer zip from this one */
+    val installedAt: Long? = null,
     /** the github project or link it can update from, null for one added from a file */
     val source: ModuleSource? = null,
     /** a newer copy waiting at [source] */
@@ -232,6 +234,8 @@ class ModuleRegistry @Inject constructor(
                 fields = runCatching { (module as? ModuleFields)?.fields }.getOrNull().orEmpty(),
                 values = valuesFor(module),
                 addedAt = prefs.getLong("added_$id", 0L).takeIf { it > 0L },
+                // copies from before this was kept count from when they were first added
+                installedAt = prefs.getLong("installed_$id", 0L).takeIf { it > 0L } ?: prefs.getLong("added_$id", 0L).takeIf { it > 0L },
                 source = updates.source(id),
                 update = updates.update(id),
                 checkedAt = updates.checkedAt(id),
@@ -462,6 +466,7 @@ class ModuleRegistry @Inject constructor(
                 prefs.edit { putString(LocalModulesKey, JSONArray(saved + entry).toString()) }
             }
             if (!prefs.contains("added_$id")) prefs.edit { putLong("added_$id", System.currentTimeMillis()) }
+            prefs.edit { putLong("installed_$id", System.currentTimeMillis()) }
             module.attach(hostFor(module))
             handValues(module)
             loaded = modules.filter { it.first.info.id != id } + (module to origin)
@@ -484,6 +489,7 @@ class ModuleRegistry @Inject constructor(
             // the old copy's folder goes on the next start, its code may still be finishing a call
             (module(id) as? BridgedModule)?.close()
             if (!prefs.contains("added_$id")) prefs.edit { putLong("added_$id", System.currentTimeMillis()) }
+            prefs.edit { putLong("installed_$id", System.currentTimeMillis()) }
             fresh.attach(hostFor(fresh))
             handValues(fresh)
             loaded = modules.filter { it.first.info.id != id } + (fresh to ModuleOrigin.Code(ready.from))
@@ -542,6 +548,7 @@ class ModuleRegistry @Inject constructor(
                 }
                 remove("enabled_$id")
                 remove("added_$id")
+                remove("installed_$id")
                 module.choices.forEach { remove("pick_${id}_${it.id}") }
                 runCatching { (module as? ModuleFields)?.fields }.getOrNull().orEmpty().forEach { remove("field_${id}_${it.id}") }
             }

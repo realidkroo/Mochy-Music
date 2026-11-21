@@ -448,4 +448,75 @@ class SkinParserTest {
         assertEquals(SkinBackground.Tones, mini.background)
         assertTrue(skin.restyles)
     }
+
+    @Test
+    fun `custom queue cards, dynamic covers, tappable boxes, volume and extra controls`() {
+        val text = """
+            { "id": "p", "name": "P",
+              "player": {
+                "keyframes": { "pop": { "from": { "scale": 0.9 }, "to": { "scale": 1 } } },
+                "blocks": [
+                  { "type": "box", "glass": true, "direction": "row", "action": "queue", "when": "@hasNext", "on": { "queue": "pop" },
+                    "blocks": [
+                      { "type": "image", "image": "{nextCover}", "fallback": "fallback.png", "width": 44, "height": 44 },
+                      { "type": "image", "image": "{next3Cover}", "width": 32, "height": 32 },
+                      { "type": "image", "image": "{prevCover}", "width": 32, "height": 32 },
+                      { "type": "image", "image": "{cover}", "width": 32, "height": 32 },
+                      { "type": "text", "text": "{next} · {next2Artist} · {next2Length} · {prev} · {queueLeft} · {queueTitle}" }
+                    ] },
+                  { "type": "queue", "limit": 99, "covers": true, "coverSize": 100, "times": true, "numbers": true, "tap": "queue", "height": 220, "empty": "All done" },
+                  { "type": "volume", "style": "pill", "icons": false },
+                  { "type": "button", "action": "queue" },
+                  { "type": "button", "action": "forward10" },
+                  { "type": "button", "action": "rewind" },
+                  { "type": "button", "action": "more" },
+                  { "type": "button", "action": "artist" },
+                  { "type": "button", "action": "album" },
+                  { "type": "text", "text": "hi-res", "when": "@lossless" },
+                  { "type": "text", "text": "loop one", "when": "@repeatOne" },
+                  { "type": "text", "text": "back", "when": "@prev" }
+                ] } }
+        """
+        val player = skin(text)!!.player!!
+        val card = player.blocks[0] as SkinBlock.Styled
+        val box = card.inner as SkinBlock.Box
+        assertEquals(SkinTarget.Control(ButtonKind.Queue), box.target)
+        assertEquals(SkinPictureSource.QueueCover(1), (box.blocks[0] as SkinBlock.Picture).source)
+        assertEquals("fallback.png", (box.blocks[0] as SkinBlock.Picture).fallback)
+        assertEquals(SkinPictureSource.QueueCover(3), (box.blocks[1] as SkinBlock.Picture).source)
+        assertEquals(SkinPictureSource.QueueCover(-1), (box.blocks[2] as SkinBlock.Picture).source)
+        assertEquals(SkinPictureSource.CurrentCover, (box.blocks[3] as SkinBlock.Picture).source)
+        assertTrue(player.queue)
+        assertTrue(player.audio)
+        assertTrue(player.playerFields)
+        assertEquals(setOf(SkinEvent.Queue), player.events)
+        assertEquals(setOf(SkinFlag.HasNext, SkinFlag.HasPrev, SkinFlag.RepeatOne, SkinFlag.Lossless), player.flags)
+
+        val queue = player.blocks[1] as SkinBlock.QueueList
+        assertEquals(20, queue.limit)
+        assertEquals(72.dp, queue.coverSize)
+        assertTrue(queue.times)
+        assertTrue(queue.numbers)
+        assertEquals(QueueTap.Queue, queue.tap)
+        assertEquals(220.dp, queue.height)
+        assertEquals("All done", queue.empty)
+
+        val volume = player.blocks[2] as SkinBlock.Volume
+        assertEquals(ProgressStyle.Pill, volume.style)
+        assertFalse(volume.icons)
+
+        assertEquals(
+            listOf(ButtonKind.Queue, ButtonKind.Forward, ButtonKind.Rewind, ButtonKind.OtherMenu, ButtonKind.Artist, ButtonKind.Album),
+            (3..8).map { ((player.blocks[it] as SkinBlock.Button).target as SkinTarget.Control).kind },
+        )
+    }
+
+    @Test
+    fun `a plain layout without queue or lossless fields doesn't subscribe to them`() {
+        val player = skin("""{ "id": "p", "name": "P", "player": { "blocks": [ { "type": "title" }, { "type": "image", "image": "pic.png" } ] } }""")!!.player!!
+        assertFalse(player.queue)
+        assertFalse(player.audio)
+        assertFalse(player.playerFields)
+        assertEquals(SkinPictureSource.Asset("pic.png"), (player.blocks[1] as SkinBlock.Picture).source)
+    }
 }

@@ -24,11 +24,13 @@ import kotlin.math.roundToInt
 /** covers taken out of local audio files, kept in the app's files folder because android and phone cleaners empty the cache folder */
 object LocalArtwork {
     private const val FOLDER = "local_artwork"
-    // a cover past this on its long side is scaled down to it: still sharper than any phone shows it full screen, at a fraction of a 3000 px original's size
-    private const val MaxCoverPx = 2000
-    private const val CoverQuality = 92
-    // left in the folder once the old per-song covers have been shared out and shrunk, so that only happens once
-    private const val CompactedMarker = ".compacted-1"
+    // a cover past this on its long side is scaled down to it: as wide as the widest phone screen, at a fraction of a 3000 px original's size
+    private const val MaxCoverPx = 1440
+    private const val CoverQuality = 86
+    // a picture heavier than this is saved again as a jpeg even when it's small, since big pngs are the covers that fill the phone
+    private const val HeavyCoverBytes = 300_000
+    // left in the folder once the covers have been shared out and shrunk to the current size, so that only happens once
+    private const val CompactedMarker = ".compacted-2"
 
     /** saves bytes as a cover and returns the file's uri, or null if it couldn't be written; songs with the same picture share one file */
     fun save(context: Context, bytes: ByteArray): String? = runCatching {
@@ -88,12 +90,42 @@ object LocalArtwork {
                 }
                 // a cover that's gone for good is cleared so the song shows the placeholder, and playing it tries the file again
                 if (newUrl != current && (newUrl != null || current != null)) {
-                    database.query { update(song.copy(thumbnailUrl = newUrl)) }
+                    database.query {
+                        update(song.copy(thumbnailUrl = newUrl))
+                        // an album that lost its cover in a clear gets it from its first song back
+                        if (newUrl != null && song.albumId != null) refreshLocalAlbum(song.albumId, newUrl, null)
+                    }
                     if (newUrl != null) fixed++
                 }
             }
             fixed
         }
+
+    /** how much room the saved covers take, a cover shared by a whole album is one file under several names and counts once */
+    suspend fun sizeOnDisk(context: Context): Long = withContext(Dispatchers.IO) {
+        val counted = HashSet<Long>()
+        folder(context).listFiles().orEmpty().filter { it.isFile }.sumOf { file ->
+            val stat = runCatching { Os.lstat(file.path) }.getOrNull()
+            when {
+                stat == null -> file.length()
+                stat.st_nlink > 1 && !counted.add(stat.st_ino) -> 0L
+                else -> stat.st_size
+            }
+        }
+    }
+
+    /** deletes every saved cover and lets go of the links to them, so the app doesn't read them all back from the audio files at the next start; a song gets its cover back when it plays, Re-scan brings back the rest */
+    suspend fun clearAll(context: Context, database: MusicDatabase) = withContext(Dispatchers.IO) {
+        val prefix = Uri.fromFile(folder(context)).toString() + "/"
+        database.transaction {
+            forgetSongCovers(prefix)
+            forgetAlbumCovers(prefix)
+            forgetPlaylistCovers(prefix)
+            forgetArtistCovers(prefix)
+        }
+        // the marker file stays, new covers are already saved at the current size
+        folder(context).listFiles().orEmpty().filter { !it.name.startsWith(".") }.forEach { it.delete() }
+    }
 
     /** deletes a cover once nothing shows it: songs share cover files, so it stays until its last song, album, playlist or artist has gone */
     suspend fun deleteIfUnused(context: Context, database: MusicDatabase, thumbnailUrl: String?): Unit = withContext(Dispatchers.IO) {
@@ -102,7 +134,7 @@ object LocalArtwork {
         if (database.thumbnailUsers(url) == 0) file.delete()
     }
 
-    /** once: the same picture saved for every song of an album becomes one file, and covers past MaxCoverPx shrink, without changing any song's link */
+    /** once per size change: the same picture saved for every song of an album becomes one file, and big covers shrink, without changing any song's link */
     suspend fun compact(context: Context): Unit = withContext(Dispatchers.IO) {
         val folder = folder(context)
         val marker = File(folder, CompactedMarker)
@@ -161,12 +193,12 @@ object LocalArtwork {
         }
     }
 
-    // a picture past MaxCoverPx comes back as a smaller jpeg; a smaller, see-through or unreadable one comes back as it was
+    // a picture past MaxCoverPx or HeavyCoverBytes comes back as a smaller jpeg; a light, see-through or unreadable one comes back as it was
     private fun shrunk(bytes: ByteArray): ByteArray = runCatching {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
         val longSide = max(bounds.outWidth, bounds.outHeight)
-        if (longSide <= MaxCoverPx) return@runCatching bytes
+        if (longSide <= MaxCoverPx && bytes.size <= HeavyCoverBytes) return@runCatching bytes
         var sample = 1
         while (longSide / (sample * 2) >= MaxCoverPx) sample *= 2
         val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })

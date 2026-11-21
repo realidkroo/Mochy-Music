@@ -187,8 +187,8 @@ data class SkinPlayer(
     /** where each editable part sits: the part's id to the blocks marked with it */
     val partIds: Set<String> by lazy { all.mapNotNull { (it as? SkinBlock.Styled)?.part }.toSet() }
 
-    /** some words name the stream or the phone ({codec}, {kbps}, {device}...), so mochy only gathers them for players that show them */
-    val audio: Boolean by lazy { all.any { it is SkinBlock.Label && SkinAudioField.containsMatchIn(it.value) } }
+    /** some words name the stream or the phone, or a condition checks lossless, so mochy only gathers stream details for players that use them */
+    val audio: Boolean by lazy { SkinFlag.Lossless in flags || all.any { it is SkinBlock.Label && SkinAudioField.containsMatchIn(it.value) } }
 
     /** lyrics show somewhere or something moves with them, so the player fetches and parses them */
     val lyrics: Boolean by lazy {
@@ -201,6 +201,16 @@ data class SkinPlayer(
 
     /** some words name the time, the queue or what plays next, so mochy follows those for this player */
     val playerFields: Boolean by lazy { all.any { it is SkinBlock.Label && SkinPlayerField.containsMatchIn(it.value) } }
+
+    /** anything in the layout reads what is coming up or before in the queue, so we only collect the queue snapshot when needed */
+    val queue: Boolean by lazy {
+        SkinFlag.HasNext in flags || SkinFlag.HasPrev in flags || all.any { block ->
+            block is SkinBlock.QueueList ||
+                (block is SkinBlock.BottomBar && block.kind == BottomBarKind.Cards) ||
+                (block is SkinBlock.Picture && block.source is SkinPictureSource.QueueCover) ||
+                (block is SkinBlock.Label && SkinQueueField.containsMatchIn(block.value))
+        }
+    }
 }
 
 /** one part of the player editor: its [title], a setting whose options are offered side by side ([choose]), more [settings] under them, and a slider a [hold] drags */
@@ -219,8 +229,11 @@ val SkinAudioField = Regex("""\{(codec|khz|kbps|bits|size|quality|device|volume|
 /** the lyrics placeholders: the line being sung, the ones around it, its translation and the word */
 val SkinLyricField = Regex("""\{(line|nextline|prevline|translation|word)\}""", RegexOption.IGNORE_CASE)
 
+/** the queue placeholders: what's coming up, what played before, where we are and the queue's name */
+val SkinQueueField = Regex("""\{(next(?:[1-9]|10)?(?:artist|length)?|prev(?:artist|length)?|queue(?:size|position|left|title)?)\}""", RegexOption.IGNORE_CASE)
+
 /** the clock and queue placeholders: how far in, how long, what's next and where in the queue */
-val SkinPlayerField = Regex("""\{(elapsed|remaining|length|percent|next|nextartist|queue|queuesize|queueposition)\}""", RegexOption.IGNORE_CASE)
+val SkinPlayerField = Regex("""\{(elapsed|remaining|length|percent|next(?:[1-9]|10)?(?:artist|length)?|prev(?:artist|length)?|queue(?:size|position|left|title)?)\}""", RegexOption.IGNORE_CASE)
 
 @Immutable
 data class SkinCustomise(val title: String?, val keys: List<String>)
@@ -286,11 +299,22 @@ enum class ProgressStyle { Line, Thick, Pill }
 
 enum class VisualizerStyle { Bars, Mirror, Wave, Dots, Ring }
 
-enum class ButtonKind { PlayPause, Previous, Next, Like, Shuffle, Repeat, Lyrics, Menu, Customise, Close, Editor }
+enum class ButtonKind { PlayPause, Previous, Next, Like, Shuffle, Repeat, Lyrics, Queue, Forward, Rewind, OtherMenu, Artist, Album, Menu, Customise, Close, Editor }
 
 enum class ShapeKind { Rect, Circle, Pill, Line }
 
 enum class TimeKind { Elapsed, Remaining, Length }
+
+/** what a tap on a song inside a custom queue block does */
+enum class QueueTap { Play, Queue, None }
+
+/** where an image block's picture comes from: a file or link of the module's own, the playing song's cover, or a queued song's cover */
+@Immutable
+sealed interface SkinPictureSource {
+    data class Asset(val path: String) : SkinPictureSource
+    data object CurrentCover : SkinPictureSource
+    data class QueueCover(val offset: Int) : SkinPictureSource
+}
 
 /** the player's bottom bar as a block: two cards (the sung line and what's next), two pills, or mochy's own volume bar */
 enum class BottomBarKind { Cards, Pills, Volume }
@@ -308,9 +332,20 @@ sealed interface SkinBlock {
     data class Album(val text: SkinText) : SkinBlock
     /** words of the module's own; {title}, {artist} and {album} fill in the song, {$key} one of its settings */
     data class Label(val value: String, val text: SkinText) : SkinBlock
-    /** [tint] recolours every pixel, for an icon drawn in one colour */
-    data class Picture(val image: String, val width: Dp?, val height: Dp, val corner: Dp, val fit: Boolean = false, val tint: SkinColor? = null) : SkinBlock
+    /** [tint] recolours every pixel, for an icon drawn in one colour; [source] also reads {cover}, {nextCover}..{next10Cover} and {prevCover} */
+    data class Picture(
+        val image: String,
+        val width: Dp?,
+        val height: Dp,
+        val corner: Dp,
+        val fit: Boolean = false,
+        val tint: SkinColor? = null,
+        val source: SkinPictureSource = SkinPictureSource.Asset(image),
+        val fallback: String? = null,
+    ) : SkinBlock
     data class Progress(val style: ProgressStyle, val color: SkinColor, val track: SkinColor, val times: Boolean, val seek: Boolean) : SkinBlock
+    /** the phone's music volume as a draggable bar, with optional quiet and loud speaker icons */
+    data class Volume(val style: ProgressStyle, val color: SkinColor, val track: SkinColor, val icons: Boolean) : SkinBlock
     data class Controls(val size: Dp, val plain: Boolean, val color: SkinColor?, val icon: SkinColor?) : SkinBlock
     /** [flow] swaps the big sung-through lyrics for a few small lines rolling up, the current one in [active] after [prefix] */
     data class Lyrics(
@@ -348,7 +383,22 @@ sealed interface SkinBlock {
         val color: SkinColor?,
         val gap: Dp,
     ) : SkinBlock
-    /** a panel holding blocks in a column (or a row): a fill, a gradient or frosted glass of [glass] dp behind them, a border, round corners */
+    /** upcoming songs straight inside the player, each row tapping to jump there, open the queue, or just read */
+    data class QueueList(
+        val limit: Int,
+        val covers: Boolean,
+        val coverSize: Dp,
+        val corner: Dp,
+        val gap: Dp,
+        val text: SkinText,
+        val artistColor: SkinColor,
+        val times: Boolean,
+        val numbers: Boolean,
+        val tap: QueueTap,
+        val height: Dp?,
+        val empty: String?,
+    ) : SkinBlock
+    /** a panel holding blocks in a column (or a row): a fill, a gradient or frosted glass of [glass] dp behind them, a border, round corners, and an optional tap [target] */
     data class Box(
         val blocks: List<SkinBlock>,
         val row: Boolean,
@@ -363,6 +413,7 @@ sealed interface SkinBlock {
         val width: Dp?,
         val height: Dp?,
         val shadow: Boolean,
+        val target: SkinTarget? = null,
     ) : SkinBlock
     /** a shape drawn from svg path data, scaled from its [viewWidth] by [viewHeight] box into its own */
     data class Vector(

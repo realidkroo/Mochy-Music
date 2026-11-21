@@ -5,33 +5,47 @@ package com.mochyy.mochymusic.ui.player.styles
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.extensions.toggleRepeatMode
 import com.mochyy.mochymusic.modules.skin.ButtonKind
+import com.mochyy.mochymusic.modules.skin.ProgressStyle
 import com.mochyy.mochymusic.modules.skin.ShapeKind
 import com.mochyy.mochymusic.modules.skin.SkinBlock
 import com.mochyy.mochymusic.modules.skin.SkinTarget
 import com.mochyy.mochymusic.modules.skin.TimeKind
 import com.mochyy.mochymusic.playback.PlayerConnection
 import com.mochyy.mochymusic.ui.player.menu.openModuleTarget
+import com.mochyy.mochymusic.ui.player.rememberMusicVolume
 import com.mochyy.mochymusic.ui.screens.settings.modules.modulePageRoute
 import com.mochyy.mochymusic.utils.makeTimeString
 import androidx.media3.common.Player
@@ -132,9 +146,83 @@ private fun rememberTargetOn(target: SkinTarget): Boolean {
     }
 }
 
-/** what a tap on a button or a chevron item does */
+/** the phone's music volume as a draggable line, reading its level in draw so drags never recompose the bar */
 @Composable
-private fun rememberTargetRunner(context: SkinContext): (SkinTarget) -> Unit {
+internal fun SkinVolume(block: SkinBlock.Volume, context: SkinContext, modifier: Modifier) {
+    val volume = rememberMusicVolume(listening = !context.preview)
+    val interactive = LocalStyleInteractive.current
+    val filled = context.color(block.color)
+    val rest = context.color(block.track)
+    val thickness = when (block.style) {
+        ProgressStyle.Line -> 3.dp
+        ProgressStyle.Thick -> 7.dp
+        ProgressStyle.Pill -> 14.dp
+    }
+    val muted by remember(volume) { derivedStateOf { volume.shown <= 0f } }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        if (block.icons) {
+            Icon(
+                painter = painterResource(if (muted) R.drawable.volume_off else R.drawable.volume_down),
+                contentDescription = null,
+                tint = filled.copy(alpha = filled.alpha * 0.75f),
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        Box(
+            Modifier
+                .weight(1f)
+                .height(thickness + 20.dp)
+                .then(
+                    if (context.preview) Modifier else Modifier
+                        .pointerInput(volume) {
+                            whileStyleInteractive(interactive) {
+                                detectTapGestures { offset ->
+                                    volume.drag((offset.x / size.width).coerceIn(0f, 1f))
+                                    volume.release()
+                                }
+                            }
+                        }
+                        .pointerInput(volume) {
+                            whileStyleInteractive(interactive) {
+                                detectHorizontalDragGestures(
+                                    onDragStart = { volume.drag((it.x / size.width).coerceIn(0f, 1f)) },
+                                    onDragEnd = { volume.release() },
+                                    onDragCancel = { volume.release() },
+                                ) { change, _ ->
+                                    change.consume()
+                                    volume.drag((change.position.x / size.width).coerceIn(0f, 1f))
+                                }
+                            }
+                        },
+                )
+                .drawBehind {
+                    val fraction = (if (context.preview) 0.6f else volume.shown).coerceIn(0f, 1f)
+                    val stroke = thickness.toPx()
+                    val y = size.height / 2f
+                    val start = stroke / 2f
+                    val end = size.width - stroke / 2f
+                    drawLine(rest, Offset(start, y), Offset(end, y), stroke, StrokeCap.Round)
+                    if (fraction > 0f) drawLine(filled, Offset(start, y), Offset(start + (end - start) * fraction, y), stroke, StrokeCap.Round)
+                },
+        )
+        if (block.icons) {
+            Icon(
+                painter = painterResource(R.drawable.volume_up),
+                contentDescription = null,
+                tint = filled.copy(alpha = filled.alpha * 0.75f),
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+}
+
+/** what a tap on a button, a tappable box or a chevron item does */
+@Composable
+internal fun rememberTargetRunner(context: SkinContext): (SkinTarget) -> Unit {
     val connection = LocalPlayerConnection.current
     val android = LocalContext.current
     return remember(connection, android, context.actions, context.skin) {
@@ -156,6 +244,15 @@ private fun runControl(kind: ButtonKind, connection: PlayerConnection, context: 
         ButtonKind.Shuffle -> connection.player.shuffleModeEnabled = !connection.player.shuffleModeEnabled
         ButtonKind.Repeat -> connection.player.toggleRepeatMode()
         ButtonKind.Lyrics -> context.actions.onLyrics?.invoke()
+        ButtonKind.Queue -> context.actions.onQueue?.invoke()
+        ButtonKind.Forward -> {
+            val end = context.duration.takeIf { it > 0L } ?: Long.MAX_VALUE
+            connection.seekTo((context.position.positionMs() + SeekStepMs).coerceAtMost(end))
+        }
+        ButtonKind.Rewind -> connection.seekTo((context.position.positionMs() - SeekStepMs).coerceAtLeast(0L))
+        ButtonKind.OtherMenu -> context.actions.onOtherMenu()
+        ButtonKind.Artist -> connection.mediaMetadata.value?.artists?.firstOrNull()?.id?.let(context.actions.onOpenArtist)
+        ButtonKind.Album -> connection.mediaMetadata.value?.album?.id?.let(context.actions.onOpenAlbum)
         ButtonKind.Menu -> context.openMenu()
         ButtonKind.Customise -> context.openCustomise()
         ButtonKind.Close -> context.actions.onClose()
@@ -173,6 +270,12 @@ private fun iconFor(target: SkinTarget, on: Boolean): Int = when ((target as? Sk
     ButtonKind.Shuffle -> if (on) R.drawable.shuffle_on else R.drawable.shuffle
     ButtonKind.Repeat -> if (on) R.drawable.repeat_on else R.drawable.repeat
     ButtonKind.Lyrics -> R.drawable.lyrics
+    ButtonKind.Queue -> R.drawable.queue_music
+    ButtonKind.Forward -> R.drawable.forward
+    ButtonKind.Rewind -> R.drawable.replay
+    ButtonKind.OtherMenu -> R.drawable.more_vert
+    ButtonKind.Artist -> R.drawable.artist
+    ButtonKind.Album -> R.drawable.album
     ButtonKind.Menu -> R.drawable.more_horiz
     ButtonKind.Customise -> R.drawable.tune
     ButtonKind.Close -> R.drawable.expand_more
@@ -181,3 +284,4 @@ private fun iconFor(target: SkinTarget, on: Boolean): Int = when ((target as? Sk
 }
 
 private val Toggles = setOf(ButtonKind.Like, ButtonKind.Shuffle, ButtonKind.Repeat, ButtonKind.PlayPause)
+private const val SeekStepMs = 10_000L
