@@ -39,18 +39,18 @@ class SongVideo(
 
 object YouTubeVideoUrlCache {
     private const val maxSize = 64
-    private val map = LinkedHashMap<String, OfficialMusicVideo?>(maxSize, 0.75f, true)
+    private val map = LinkedHashMap<String, OfficialMusicVideo>(maxSize, 0.75f, true)
 
-    // a miss stays a miss, but a found video whose links ran out has to be looked up again
+    // only resolved streams are cached: a lookup miss can be a temporary network failure, not a song with no video
     @Synchronized
     fun contains(mediaId: String): Boolean =
-        map.containsKey(mediaId) && map[mediaId]?.streams?.isExpired != true
+        map[mediaId]?.streams?.isExpired == false
 
     @Synchronized
     fun get(mediaId: String): OfficialMusicVideo? = map[mediaId]
 
     @Synchronized
-    fun put(mediaId: String, video: OfficialMusicVideo?) {
+    fun put(mediaId: String, video: OfficialMusicVideo) {
         if (mediaId.isBlank()) return
         map[mediaId] = video
         while (map.size > maxSize) {
@@ -71,6 +71,17 @@ suspend fun findOfficialMusicVideo(title: String, artist: String): OfficialMusic
     return OfficialMusicVideo(videoId = videoId, streams = streams)
 }
 
+private val ArtistNameSeparators = Regex(
+    """\s*(?:,|&|×|\bx\b|\bfeat\.?|\bft\.?|\bfeaturing\b|\bwith\b)\s*""",
+    RegexOption.IGNORE_CASE,
+)
+
+// keep every credited artist: the YouTube result can list the same collaborators in another order
+private fun normalizedArtistNames(raw: String): List<String> =
+    raw.split(ArtistNameSeparators)
+        .map(::normalizeCanvasArtistName)
+        .filter { it.isNotBlank() }
+
 // a track that is a video itself plays its own stream, which lines up with the audio exactly
 suspend fun ownMusicVideo(mediaId: String): OfficialMusicVideo? =
     YTPlayerUtils.resolveVideoStreams(mediaId).getOrNull()?.let { OfficialMusicVideo(mediaId, it) }
@@ -85,16 +96,20 @@ suspend fun findOfficialMusicVideoId(title: String, artist: String): String? {
         .getOrElse { return null }.items
 
     val normalizedTitle = normalizeCanvasSongTitle(title)
-    val normalizedArtist = normalizeCanvasArtistName(artist)
+    val normalizedArtists = normalizedArtistNames(artist)
 
     val match = results
         .filterIsInstance<SongItem>()
         .filter { it.musicVideoType == MUSIC_VIDEO_TYPE_OMV }
         .firstOrNull { candidate ->
             val candidateTitle = normalizeCanvasSongTitle(candidate.title)
-            val candidateArtist = normalizeCanvasArtistName(candidate.artists.joinToString { it.name })
+            val candidateArtists = candidate.artists.flatMap { normalizedArtistNames(it.name) }
             (candidateTitle.contains(normalizedTitle, ignoreCase = true) || normalizedTitle.contains(candidateTitle, ignoreCase = true)) &&
-                (candidateArtist.contains(normalizedArtist, ignoreCase = true) || normalizedArtist.contains(candidateArtist, ignoreCase = true))
+                normalizedArtists.any { normalizedArtist ->
+                    candidateArtists.any { candidateArtist ->
+                        candidateArtist.contains(normalizedArtist, ignoreCase = true) || normalizedArtist.contains(candidateArtist, ignoreCase = true)
+                    }
+                }
         }
     OfficialVideoIdCache.put(key, match?.id)
     return match?.id
@@ -209,7 +224,7 @@ internal suspend fun lookUpVideo(mediaId: String, title: String, artist: String,
             isVideoSong -> ownMusicVideo(mediaId)
             else -> findOfficialMusicVideo(title, artist)
         }
-        YouTubeVideoUrlCache.put(key, resolved)
+        resolved?.let { YouTubeVideoUrlCache.put(key, it) }
         resolved
     }
 
