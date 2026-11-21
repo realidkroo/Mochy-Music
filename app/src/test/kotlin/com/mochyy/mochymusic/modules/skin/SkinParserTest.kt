@@ -424,6 +424,35 @@ class SkinParserTest {
     }
 
     @Test
+    fun `a cover takes its own size, ratio and moving media, and a live cover background sits on the blurred cover`() {
+        val text = """
+            { "id": "p", "name": "P",
+              "player": {
+                "background": { "type": "liveCover", "media": ["video", "loops/rain.mp4"] },
+                "blocks": [
+                  { "type": "cover", "aspect": "16:9", "width": 9000, "fit": "fit", "media": ["video", "Animated", "loops/idle.webp", "notes.txt", "auto"] },
+                  { "type": "cover", "height": 200, "aspect": 0.01 },
+                  { "type": "cover" }
+                ] } }
+        """
+        val player = skin(text)!!.player!!
+        val wide = player.blocks[0] as SkinBlock.Cover
+        assertEquals(16f / 9f, wide.aspect)
+        assertEquals(600.dp, wide.width)
+        assertTrue(wide.fit)
+        // a text file isn't something a cover can play, so it's dropped and the rest keep their order
+        assertEquals(listOf(CoverMedia.Video, CoverMedia.Animated, CoverMedia.Loop("loops/idle.webp"), CoverMedia.Auto), wide.media)
+        val tall = player.blocks[1] as SkinBlock.Cover
+        assertEquals(200.dp, tall.height)
+        assertEquals(0.25f, tall.aspect)
+        val plain = player.blocks[2] as SkinBlock.Cover
+        assertEquals(1f, plain.aspect)
+        assertTrue(plain.media.isEmpty())
+        val live = SkinBackground.Live(listOf(CoverMedia.Video, CoverMedia.Loop("loops/rain.mp4")), SkinBackground.Player(PlayerBackgroundStyle.APPLE_MUSIC))
+        assertEquals(live, player.background)
+    }
+
+    @Test
     fun `editor parts, the bottom bar and a mini player`() {
         val text = """
             { "id": "p", "name": "P",

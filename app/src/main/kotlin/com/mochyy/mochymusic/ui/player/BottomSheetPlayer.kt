@@ -1144,23 +1144,55 @@ private fun PlayerSheet(
                 val landscapeOpen by remember(state) {
                     derivedStateOf { state.isExpanded || (state.isExpandedOrExpanding && state.progress > 0.9f) }
                 }
+                // root reference for the player studio so edit tiles and camera moves work in landscape too
+                Spacer(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .onGloballyPositioned { studioAnchors.root = it },
+                )
                 FlagshipLandscape(
                     pages = transition,
                     turntable = isTurntable,
+                    coverStyle = shownCoverStyle,
+                    backgroundStyle = backgroundStyle,
+                    ambient = if (isFlagship || backgroundStyle == PlayerBackgroundStyle.AMBIENT) ambient else null,
+                    pureBlack = pureBlack,
+                    editMode = studioEngaged,
                     sheetShowing = sheetShowing,
-                    interactive = remember(state) { { landscapeOpen } },
+                    interactive = remember(state) { { landscapeOpen && !studio.engaged } },
                     expanded = remember(state) { { state.isExpanded } },
                     likeBurst = likeBurst,
                     onChevron = { showExpandMenu = !showExpandMenu },
                     onChevronPlaced = { chevronButtonRect = it },
                     onSongInfo = { if (!studioEngaged) showSongDetails = true },
                     onSwitchLyricsSource = { showLyricsSource = true },
+                    onDoubleTapCover = { position ->
+                        if (!studioEngaged) {
+                            likeBurst.likeFromDoubleTap(position, trackInfo.liked, playerConnection::toggleLike)
+                        }
+                    },
+                    studioParts = if (playerStyle.hasFullEditor) studioParts else null,
+                    studioAnchors = if (playerStyle.hasFullEditor) studioAnchors else null,
+                    studioPieces = if (playerStyle.hasFullEditor) studioPieces else null,
                     transport = { transportModifier ->
                         if (isFlagship) {
                             FlagshipTransportRow(
                                 layout = transportLayout,
                                 queueOpen = showQueue,
                                 onQueue = { if (showQueue) transition.close() else transition.open(PlayerPage.QUEUE) },
+                                modifier = transportModifier,
+                            )
+                        } else {
+                            PlayerTransportRow(modifier = transportModifier, flagshipGlyph = isTurntable)
+                        }
+                    },
+                    compactTransport = { transportModifier ->
+                        if (isFlagship) {
+                            FlagshipTransportRow(
+                                layout = transportLayout,
+                                queueOpen = showQueue,
+                                onQueue = { if (showQueue) transition.close() else transition.open(PlayerPage.QUEUE) },
+                                compact = true,
                                 modifier = transportModifier,
                             )
                         } else {
@@ -1174,13 +1206,19 @@ private fun PlayerSheet(
                                 isActive = ::menuActionActive,
                                 onAction = onMenuAction,
                                 pages = transition,
-                                modifier = barModifier,
+                                modifier = barModifier
+                                    .studioAnchor(studioAnchors) { it.volumeBar }
+                                    .studioBarLayer(studioParts) { it.volumeBar }
+                                    .studioPiece(studioPieces, com.mochyy.mochymusic.ui.player.studio.StudioPieces.VOLUME_BAR),
                             )
                             showVolumeBar -> PlayerVolumeBar(
                                 progressProvider = progressProvider,
                                 isActive = ::menuActionActive,
                                 onAction = onMenuAction,
-                                modifier = barModifier,
+                                modifier = barModifier
+                                    .studioAnchor(studioAnchors) { it.volumeBar }
+                                    .studioBarLayer(studioParts) { it.volumeBar }
+                                    .studioPiece(studioPieces, com.mochyy.mochymusic.ui.player.studio.StudioPieces.VOLUME_BAR),
                             )
                             showDeck -> PlayerBottomCardStack(
                                 glassState = morphingGlassState,
@@ -1191,7 +1229,10 @@ private fun PlayerSheet(
                                 onOpen = { transition.open(it) },
                                 onLongPress = holdToStudio,
                                 look = cardLook,
-                                modifier = barModifier,
+                                modifier = barModifier
+                                    .studioAnchor(studioAnchors) { it.card }
+                                    .studioBarLayer(studioParts) { it.card }
+                                    .studioPiece(studioPieces, com.mochyy.mochymusic.ui.player.studio.StudioPieces.CARD_STACK),
                             )
                         }
                     },
@@ -1205,6 +1246,7 @@ private fun PlayerSheet(
                             }
                         },
                 )
+                if (playerStyle.hasFullEditor) EditTiles(studioParts)
                 // a tv closes its player with the back button, it has no handle to drag
                 if (!onTv) PlayerHandle(
                     state = handleState,

@@ -135,6 +135,8 @@ fun CanvasArtworkPlayer(
     onFrameColors: ((List<androidx.compose.ui.graphics.Color>) -> Unit)? = null,
     // told the short side of the picture playing, and 0 once it's gone, so the player's menu can say what it shows
     onPlayingSize: ((Int) -> Unit)? = null,
+    // shows the whole picture with room round it instead of zooming past the box, for a module's cover that isn't the video's shape
+    fit: Boolean = false,
 ) {
     val context = LocalContext.current
     val primary = primaryUrl?.takeIf { it.isNotBlank() }
@@ -292,6 +294,7 @@ fun CanvasArtworkPlayer(
             frame.apply { if (childCount == 0) addView(aspectRatioFrameLayout) }
         },
         update = { view ->
+            aspectRatioFrameLayout.resizeMode = if (fit) AspectRatioFrameLayout.RESIZE_MODE_FIT else AspectRatioFrameLayout.RESIZE_MODE_ZOOM
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 view.setRenderEffect(
@@ -312,6 +315,8 @@ internal fun canvasMimeType(url: String, isFallback: Boolean = false): String {
     return when {
         lower.contains(".m3u8") || lower.split('?').first().endsWith(".m3u8") -> MimeTypes.APPLICATION_M3U8
         lower.contains(".mp4") -> MimeTypes.VIDEO_MP4
+        // a module's own loop can be webm, which isn't a playlist either
+        lower.contains(".webm") -> MimeTypes.VIDEO_WEBM
         isFallback -> MimeTypes.VIDEO_MP4
         else -> MimeTypes.APPLICATION_M3U8
     }

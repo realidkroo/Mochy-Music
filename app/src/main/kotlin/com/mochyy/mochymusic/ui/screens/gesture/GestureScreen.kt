@@ -9,17 +9,26 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -103,8 +112,9 @@ import kotlinx.coroutines.flow.filter
 
 private val CardPadding = 20.dp
 
-// past this the page stops widening, so a tablet reads like a wide phone
+// past this the page stops widening, so a tablet reads like a wide phone; landscape spreads into two columns
 private val PageMaxWidth = 680.dp
+private val LandscapePageMaxWidth = 1080.dp
 
 private val PageTitleStyle = TextStyle(
     fontFamily = InterFontFamily,
@@ -122,7 +132,7 @@ private enum class CustomiseSection(@StringRes val titleRes: Int, val keys: List
     ICONS(R.string.customise_icons, listOf("Icons", "App icon"), "icon icons app launcher home screen mochy outline anime material you white black dark transparent"),
     ROUNDING(R.string.customise_cover_rounding, listOf("Cover rounding"), "cover rounding corner radius square rounded art"),
     PLAYLIST(R.string.customise_playlist_styles, listOf("Playlist styles"), "playlist styles flow classic minimal header"),
-    PLAYER(R.string.customise_player_styles, listOf("Player styles"), "player styles flagship turntable ipod poster timeline lyrics editor customize landscape sideways full cover square"),
+    PLAYER(R.string.customise_player_styles, listOf("Player styles"), "player styles flagship turntable ipod poster timeline lyrics editor customize"),
     HOME(R.string.customise_home_styles, listOf("Home styles"), "home styles mochyy listen now hop in hero"),
     BLUR(R.string.appearance_blur, listOf("Blur", "Progressive blur", "Blur quality", "Blur strength"), "blur glass frosted progressive flat quality low high strength px"),
     ELEMENT_BLUR(R.string.customise_element_blur, listOf("Element blur"), "element blur lyrics lines cover zoom titles menus page swipes"),
@@ -144,40 +154,71 @@ private enum class CustomiseSection(@StringRes val titleRes: Int, val keys: List
     }
 }
 
-// settings > customisation: cover rounding, style pickers, blur, animation, lyrics, the player's top and bottom bars and song swipe gestures
+// settings > customisation: adapts cleanly into a two-column layout with safe cutout insets in landscape
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CustomisationScreen(navController: NavController) {
     var query by remember { mutableStateOf("") }
     val statusTop = WindowInsets.stableStatusBars.asPaddingValues().calculateTopPadding()
     val bottomInset = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
+    val direction = LocalLayoutDirection.current
+    val sideInsets = WindowInsets.navigationBarsIgnoringVisibility.union(WindowInsets.displayCutout).asPaddingValues()
+    val startInset = sideInsets.calculateStartPadding(direction)
+    val endInset = sideInsets.calculateEndPadding(direction)
     val titles = CustomiseSection.entries.associateWith { stringResource(it.titleRes) }
     val shown = CustomiseSection.entries.filter { it.available && it.matches(query, titles.getValue(it)) }
     val scroll = rememberScrollState()
-    // nothing stays pinned over this page, so a highlighted section lands just under the status bar
     val settingsScroll = remember(scroll, statusTop) { SettingsScroll(scroll, statusTop + 16.dp) }
 
-    // a plain black page like the mock: back button, the title, the search, then the cards
     CompositionLocalProvider(LocalSettingsScroll provides settingsScroll) {
-        Box(
+        BoxWithConstraints(
             contentAlignment = Alignment.TopCenter,
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
                 .verticalScroll(scroll),
         ) {
+            val landscape = maxWidth > maxHeight && maxWidth >= 600.dp
             Column(
                 modifier = Modifier
-                    .widthIn(max = PageMaxWidth)
+                    .widthIn(max = if (landscape) LandscapePageMaxWidth else PageMaxWidth)
                     .fillMaxWidth()
-                    .padding(horizontal = CustomisePageMargin)
-                    .padding(top = statusTop + 18.dp, bottom = bottomInset + 32.dp),
+                    .padding(
+                        start = startInset + CustomisePageMargin,
+                        end = endInset + CustomisePageMargin,
+                        top = statusTop + if (landscape) 12.dp else 18.dp,
+                        bottom = bottomInset + 32.dp,
+                    ),
             ) {
-                LabBackButton(onBack = { navController.navigateUp() })
-                Spacer(Modifier.height(14.dp))
-                Text(text = stringResource(R.string.customise_title), style = PageTitleStyle, color = Color.White)
-                Spacer(Modifier.height(16.dp))
-                SubSettingsSearchBar(query = query, onQueryChange = { query = it })
-                Spacer(Modifier.height(18.dp))
+                if (landscape) {
+                    // compact top bar in landscape so the search box sits beside the title instead of eating vertical space
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        LabBackButton(onBack = { navController.navigateUp() })
+                        Text(
+                            text = stringResource(R.string.customise_title),
+                            style = PageTitleStyle.copy(fontSize = 26.sp, lineHeight = 30.sp),
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.weight(1f))
+                        Box(Modifier.widthIn(max = 320.dp).fillMaxWidth()) {
+                            SubSettingsSearchBar(query = query, onQueryChange = { query = it })
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                } else {
+                    LabBackButton(onBack = { navController.navigateUp() })
+                    Spacer(Modifier.height(14.dp))
+                    Text(text = stringResource(R.string.customise_title), style = PageTitleStyle, color = Color.White)
+                    Spacer(Modifier.height(16.dp))
+                    SubSettingsSearchBar(query = query, onQueryChange = { query = it })
+                    Spacer(Modifier.height(18.dp))
+                }
 
                 if (shown.isEmpty()) {
                     Text(
@@ -187,11 +228,38 @@ fun CustomisationScreen(navController: NavController) {
                         color = Color.White.copy(alpha = 0.6f),
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
                     )
-                }
-                shown.forEachIndexed { index, section ->
-                    if (index > 0) SectionRule()
-                    Box(Modifier.highlightTarget(section.keys)) {
-                        CustomiseSectionContent(section)
+                } else if (landscape && shown.size > 1) {
+                    // two balanced columns in landscape so cards use the wide screen cleanly without crowding
+                    val left = shown.filterIndexed { index, _ -> index % 2 == 0 }
+                    val right = shown.filterIndexed { index, _ -> index % 2 == 1 }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(20.dp),
+                        verticalAlignment = Alignment.Top,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            left.forEachIndexed { index, section ->
+                                if (index > 0) SectionRule()
+                                Box(Modifier.highlightTarget(section.keys)) {
+                                    CustomiseSectionContent(section, bleedPager = false)
+                                }
+                            }
+                        }
+                        Column(Modifier.weight(1f)) {
+                            right.forEachIndexed { index, section ->
+                                if (index > 0) SectionRule()
+                                Box(Modifier.highlightTarget(section.keys)) {
+                                    CustomiseSectionContent(section, bleedPager = false)
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    shown.forEachIndexed { index, section ->
+                        if (index > 0) SectionRule()
+                        Box(Modifier.highlightTarget(section.keys)) {
+                            CustomiseSectionContent(section, bleedPager = !landscape)
+                        }
                     }
                 }
             }
@@ -200,8 +268,8 @@ fun CustomisationScreen(navController: NavController) {
 }
 
 @Composable
-private fun CustomiseSectionContent(section: CustomiseSection) {
-    val pagerBleed = Modifier.bleedHorizontally(CustomisePageMargin)
+private fun CustomiseSectionContent(section: CustomiseSection, bleedPager: Boolean = true) {
+    val pagerBleed = if (bleedPager) Modifier.bleedHorizontally(CustomisePageMargin) else Modifier
     when (section) {
         CustomiseSection.ICONS -> IconsSection()
         CustomiseSection.ROUNDING -> {
@@ -249,7 +317,7 @@ private fun CustomiseSectionContent(section: CustomiseSection) {
     }
 }
 
-// the player has its own editor, so its card opens that on the player itself
+// the player has its own editor (covering both portrait and landscape cover styles), so this card opens it directly
 @Composable
 private fun PlayerSection() {
     val context = LocalContext.current
@@ -257,7 +325,6 @@ private fun PlayerSection() {
     val playerSheetState = LocalPlayerBottomSheetState.current
     val playerStyle by rememberEnumPreference(PlayerStyleKey, defaultValue = PlayerStyle.FLAGSHIP)
     val playFirst = stringResource(R.string.customise_play_first)
-    Column {
     PlayerStyleCard(
         selected = playerStyle,
         onOpenEditor = {
@@ -270,40 +337,6 @@ private fun PlayerSection() {
             }
         },
     )
-    Spacer(Modifier.height(16.dp))
-    LandscapePlayerCard()
-    }
-}
-
-// the flagship turned sideways: a rounded square beside the controls, or the whole cover melting into them
-@Composable
-private fun LandscapePlayerCard() {
-    val (fullCover, setFullCover) = rememberPreference(com.mochyy.mochymusic.constants.LandscapeFullCoverKey, defaultValue = false)
-    LabCard(padding = CardPadding) {
-        Text(
-            stringResource(R.string.customise_landscape_player),
-            fontFamily = InterFontFamily,
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
-            letterSpacing = (-0.02).em,
-            color = LabColors.Primary,
-        )
-        Text(
-            stringResource(R.string.customise_landscape_player_desc),
-            fontFamily = InterFontFamily,
-            fontWeight = FontWeight.Medium,
-            fontSize = 13.sp,
-            color = LabColors.Secondary,
-            modifier = Modifier.padding(top = 2.dp),
-        )
-        Spacer(Modifier.height(14.dp))
-        LabToggleRow(
-            title = stringResource(R.string.customise_landscape_full_cover),
-            subtitle = stringResource(R.string.customise_landscape_full_cover_desc),
-            checked = fullCover,
-            onCheckedChange = setFullCover,
-        )
-    }
 }
 
 @Composable

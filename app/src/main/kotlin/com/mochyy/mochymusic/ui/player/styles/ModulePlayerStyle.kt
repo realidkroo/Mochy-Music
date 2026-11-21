@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -445,7 +446,7 @@ private fun Block(block: SkinBlock, context: SkinContext, modifier: Modifier, in
 
 // ---- blocks ----------------------------------------------------------------------------------
 
-/** the cover in its shape, riding the row of songs, turning like a record while it plays when the layout asks */
+/** the cover in its shape and size, riding the row of songs, turning like a record while it plays when the layout asks, its video or animated cover over it */
 @Composable
 private fun SkinCover(block: SkinBlock.Cover, context: SkinContext, modifier: Modifier) {
     val shape = when (block.shape) {
@@ -456,9 +457,8 @@ private fun SkinCover(block: SkinBlock.Cover, context: SkinContext, modifier: Mo
     val turn = if (block.spin) rememberRecordTurn(context.preview, block.spinSpeed) else null
     Box(
         modifier = modifier
-            .fillMaxWidth(block.size)
-            .aspectRatio(1f)
-            // a turning cover redraws every frame, so it's kept to its own square and nothing else repaints with it
+            .coverSize(block)
+            // a turning cover redraws every frame, so it's kept to its own box and nothing else repaints with it
             .then(if (turn != null) Modifier.damageBoundary() else Modifier),
     ) {
         CarouselPictures(
@@ -473,8 +473,19 @@ private fun SkinCover(block: SkinBlock.Cover, context: SkinContext, modifier: Mo
             AsyncImage(
                 model = url,
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentScale = if (block.fit) ContentScale.Fit else ContentScale.Crop,
                 modifier = pictureModifier.then(if (turn != null) Modifier.graphicsLayer { rotationZ = turn() } else Modifier),
+            )
+        }
+        // a video plays every frame, so only its own box repaints with it
+        if (block.media.isNotEmpty()) {
+            SkinCoverMedia(
+                media = block.media,
+                context = context,
+                fit = block.fit,
+                rides = true,
+                turn = turn,
+                modifier = Modifier.matchParentSize().damageBoundary().clip(shape),
             )
         }
         // the frame holds still over the turning cover, like a record player's rim
@@ -486,6 +497,18 @@ private fun SkinCover(block: SkinBlock.Cover, context: SkinContext, modifier: Mo
                 modifier = Modifier.fillMaxSize(),
             )
         }
+    }
+}
+
+// fixed in dp when the layout gives a width or height, else its share of the width, always at its own ratio
+private fun Modifier.coverSize(block: SkinBlock.Cover): Modifier {
+    val fixedWidth = block.width
+    val fixedHeight = block.height
+    return when {
+        fixedWidth != null && fixedHeight != null -> size(fixedWidth, fixedHeight)
+        fixedWidth != null -> width(fixedWidth).aspectRatio(block.aspect)
+        fixedHeight != null -> height(fixedHeight).aspectRatio(block.aspect, matchHeightConstraintsFirst = true)
+        else -> fillMaxWidth(block.size).aspectRatio(block.aspect)
     }
 }
 
@@ -558,13 +581,17 @@ private fun SkinPicture(block: SkinBlock.Picture, context: SkinContext, modifier
         Box(box.background(context.tones.chip))
         return
     }
-    AsyncImage(
-        model = model,
-        contentDescription = null,
-        contentScale = if (block.fit) ContentScale.Fit else ContentScale.Crop,
-        colorFilter = block.tint?.let { ColorFilter.tint(context.color(it)) },
-        modifier = box,
-    )
+    val scale = if (block.fit) ContentScale.Fit else ContentScale.Crop
+    val tint = block.tint?.let { ColorFilter.tint(context.color(it)) }
+    if (block.source !is SkinPictureSource.Asset || !isMovingPicture(model)) {
+        AsyncImage(model = model, contentDescription = null, contentScale = scale, colorFilter = tint, modifier = box)
+        return
+    }
+    // the module's gif or webp: its first frame at once, the loop over it while the player is open
+    Box(box) {
+        AsyncImage(model = model, contentDescription = null, contentScale = scale, colorFilter = tint, modifier = Modifier.matchParentSize())
+        MovingPictureOverlay(model, context, scale, tint, Modifier.matchParentSize())
+    }
 }
 
 /** a bar the song plays along, drawn off the frame's clock so it never recomposes, tapped or dragged to seek */

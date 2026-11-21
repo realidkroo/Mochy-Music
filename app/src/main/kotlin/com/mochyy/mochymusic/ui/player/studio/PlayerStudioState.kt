@@ -455,6 +455,57 @@ fun tileLayout(
     val margin = TileMargin.toPx()
     val pad = TilePadding.toPx()
     val gap = 8.dp.toPx()
+    val landscape = width > height
+    if (landscape) {
+        val cover = anchors.cover.value.takeIf { it.width > 0f }
+            ?: Rect(margin, height * 0.14f, width * 0.42f, height * 0.86f)
+        val middle = anchors.middle.takeIf { it.width > 0f }
+            ?: Rect(width * 0.48f, height * 0.2f, width * 0.9f, height * 0.52f)
+        val transport = anchors.transport.value.takeIf { it.width > 0f }
+            ?: Rect(width * 0.48f, height * 0.56f, width * 0.9f, height * 0.76f)
+        val bar = anchors.bar(barStyle).value.takeIf { it.width > 0f }
+
+        val coverTile = if (fullCover) {
+            Rect(0f, margin, cover.right.coerceAtMost(width * 0.5f), height - margin)
+        } else {
+            Rect(
+                (cover.left - pad).coerceAtLeast(margin),
+                (cover.top - pad).coerceAtLeast(margin),
+                cover.right + pad,
+                (cover.bottom + pad).coerceAtMost(height - margin),
+            )
+        }
+        // confine right-side tiles cleanly to the controls column so they never overlap the cover or edge buttons
+        val rightLeft = maxOf(coverTile.right + gap, minOf(middle.left, transport.left) - pad)
+        val rightRight = maxOf(
+            rightLeft + 80.dp.toPx(),
+            minOf(width - margin, maxOf(middle.right, transport.right, bar?.right ?: 0f) + pad),
+        )
+        var middleTile = Rect(rightLeft, (middle.top - pad).coerceAtLeast(margin), rightRight, middle.bottom + pad)
+        var controlsTile = Rect(rightLeft, transport.top - pad, rightRight, transport.bottom + pad)
+        var barTile = bar?.let {
+            val bottom = if (barStyle == PlayerBottomBarStyle.STACK) height + TileCorner.toPx() * 2f else (it.bottom + pad).coerceAtMost(height - margin)
+            Rect(rightLeft, it.top - pad, rightRight, bottom)
+        }
+        if (middleTile.bottom + gap > controlsTile.top) {
+            val split = (middle.bottom + transport.top) / 2f
+            middleTile = middleTile.copy(bottom = split - gap / 2f)
+            controlsTile = controlsTile.copy(top = split + gap / 2f)
+        }
+        if (bar != null && barTile != null && controlsTile.bottom + gap > barTile.top) {
+            val split = (transport.bottom + bar.top) / 2f
+            controlsTile = controlsTile.copy(bottom = split - gap / 2f)
+            barTile = barTile.copy(top = split + gap / 2f)
+        }
+        return@with TileLayout(
+            coverTile = coverTile,
+            middleTile = middleTile,
+            controlsTile = controlsTile,
+            barTile = barTile,
+            fullCover = fullCover,
+        )
+    }
+
     val cover = anchors.cover.value.takeIf { it.width > 0f } ?: Rect(margin, height * 0.1f, width - margin, height * 0.5f)
     val middle = anchors.middle.takeIf { it.width > 0f } ?: Rect(0f, height * 0.62f, width, height * 0.74f)
     val transport = anchors.transport.value.takeIf { it.width > 0f } ?: Rect(0f, height * 0.78f, width, height * 0.86f)

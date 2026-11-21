@@ -168,7 +168,44 @@ internal object SkinPlayerParser {
                 val fallback = (o["fallback"] as? JsonObject)?.takeIf { it.string("type")?.lowercase() != "shader" }?.let(::background) ?: Ambient
                 shader(o)?.let { SkinBackground.Shader(it, fallback) } ?: fallback
             }
+            // the song's video or animated cover across the whole screen, over the blurred cover unless it names another fallback
+            "livecover" -> {
+                val fallback = (o["fallback"] as? JsonObject)?.takeIf { it.string("type")?.lowercase() != "livecover" }?.let(::background)
+                SkinBackground.Live(coverMedia(o["media"]).ifEmpty { listOf(CoverMedia.Auto) }, fallback ?: BlurredCover)
+            }
             else -> Ambient
+        }
+
+        // "media": "video", or a list tried in order: video, animated, auto, and loops of the module's own
+        fun coverMedia(element: JsonElement?): List<CoverMedia> {
+            val names = when (element) {
+                is JsonArray -> element.mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
+                is JsonPrimitive -> listOfNotNull(element.contentOrNull)
+                else -> emptyList()
+            }
+            return names.mapNotNull { raw ->
+                val name = raw.trim()
+                when (name.lowercase()) {
+                    "animated", "canvas" -> CoverMedia.Animated
+                    "video", "youtube" -> CoverMedia.Video
+                    "auto", "true" -> CoverMedia.Auto
+                    else -> name.takeIf { LoopFile.containsMatchIn(it.substringBefore('?')) }?.let(CoverMedia::Loop)
+                }
+            }.distinct().take(MaxMedia)
+        }
+
+        // "16:9", "9:16" or a plain number, always width over height
+        private fun aspect(element: JsonElement?): Float? {
+            val raw = (element as? JsonPrimitive)?.contentOrNull?.trim() ?: return null
+            val sides = raw.split(':', '/')
+            val ratio = if (sides.size == 2) {
+                val w = sides[0].trim().toFloatOrNull()
+                val h = sides[1].trim().toFloatOrNull()
+                if (w != null && h != null && h > 0f) w / h else null
+            } else {
+                raw.toFloatOrNull()
+            }
+            return ratio?.takeIf { it.isFinite() && it > 0f }?.coerceIn(0.25f, 4f)
         }
 
         fun blocks(element: JsonElement?, depth: Int): List<SkinBlock> =
@@ -262,6 +299,11 @@ internal object SkinPlayerParser {
                 frame = o.string("frame"),
                 shadow = o.bool("shadow") ?: false,
                 spinSpeed = (o.float("spinSpeed") ?: 1f).coerceIn(0.1f, 4f),
+                width = o.float("width")?.coerceIn(16f, 600f)?.dp,
+                height = o.float("height")?.coerceIn(16f, 800f)?.dp,
+                aspect = aspect(o["aspect"]) ?: 1f,
+                fit = o.string("fit")?.lowercase() == "fit",
+                media = coverMedia(o["media"]),
             )
             "title" -> SkinBlock.Title(textOf(o, 24f, FontWeight.Bold, SkinColor.Ink))
             "artist" -> SkinBlock.Artist(textOf(o, 16f, FontWeight.Medium, SkinColor.InkSoft))
@@ -610,7 +652,11 @@ internal object SkinPlayerParser {
     }
 
     private val Ambient = SkinBackground.Player(PlayerBackgroundStyle.AMBIENT)
+    private val BlurredCover = SkinBackground.Player(PlayerBackgroundStyle.APPLE_MUSIC)
     private val ShaderKinds = listOf(".agsl", ".sksl")
+    // the loops a cover can play: videos mochy streams itself, and pictures android animates
+    private val LoopFile = Regex("""\.(mp4|webm|m3u8|gif|webp)$""", RegexOption.IGNORE_CASE)
+    private const val MaxMedia = 4
     private const val MaxBlocks = 40
     private const val MaxDepth = 4
     private const val MaxLoops = 4

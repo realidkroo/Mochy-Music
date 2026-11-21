@@ -33,6 +33,8 @@ fun YouTubeVideoBackground(
     onFrameColors: ((List<androidx.compose.ui.graphics.Color>) -> Unit)? = null,
     // told when the video's picture is up over the cover, and when it's gone again
     onShowingChange: ((Boolean) -> Unit)? = null,
+    // 0 zooms the video to fill, 1 shows all of it with room round it
+    fit: () -> Float = { 0f },
 ) {
     if (video == null) return
     // a decoder for every song skipped past ran memory past a gigabyte and got the app killed, so the video waits for the song to stay
@@ -53,6 +55,7 @@ fun YouTubeVideoBackground(
             glassState = glassState,
             glassActive = { playing },
             onFrameColors = onFrameColors,
+            fit = fit,
             modifier = Modifier.fillMaxSize(),
         )
         // the cover shows until the first picture, so only a picture that froze mid-song gets a loader

@@ -758,7 +758,7 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <h2>The song</h2>
 <div class="tbl"><table>
 <tr><th>type</th><th>what it shows</th><th>fields</th></tr>
-<tr><td><code>cover</code></td><td>the song's cover, riding the swipe between songs</td><td><code>shape</code>: rounded, circle, square (rounded) · <code>corner</code> 0–80 (18) · <code>size</code> share of the width 0.1–1 (0.8) · <code>spin</code> turns like a record while playing (false) · <code>spinSpeed</code> 0.1–4 (1) · <code>frame</code> a picture over it that stays still while it spins · <code>shadow</code> (false)</td></tr>
+<tr><td><code>cover</code></td><td>the song's cover, riding the swipe between songs. it can play the song's video or animated cover too</td><td><code>shape</code>: rounded, circle, square (rounded) · <code>corner</code> 0–80 (18) · <code>size</code> share of the width 0.1–1 (0.8) · <code>width</code> 16–600 and <code>height</code> 16–800 in dp, instead of <code>size</code> · <code>aspect</code> width over height, <code>"16:9"</code> or a number 0.25–4 (1) · <code>fit</code>: crop or fit (crop) · <code>media</code> what moves over it, see <a href="#modules-player-covers">covers that move</a> · <code>spin</code> turns like a record while playing (false) · <code>spinSpeed</code> 0.1–4 (1) · <code>frame</code> a picture over it that stays still while it spins · <code>shadow</code> (false)</td></tr>
 <tr><td><code>title</code></td><td>the song's title</td><td><a href="#modules-player-blocks">text fields</a> (24, bold, ink)</td></tr>
 <tr><td><code>artist</code></td><td>every artist</td><td>text fields (16, medium, inkSoft)</td></tr>
 <tr><td><code>album</code></td><td>the album</td><td>text fields (14, medium, inkSoft)</td></tr>
@@ -779,7 +779,7 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <div class="tbl"><table>
 <tr><th>type</th><th>what it shows</th><th>fields</th></tr>
 <tr><td><code>text</code></td><td>your own words, with the song and your settings filled in</td><td><code>text</code> (up to 200 characters) · text fields (14, medium, inkSoft). see <a href="#modules-player-blocks">placeholders</a></td></tr>
-<tr><td><code>image</code></td><td>your picture, or a song's cover (<code>"{cover}"</code>, <code>"{nextCover}"</code>…<code>"{next10Cover}"</code>, <code>"{prevCover}"</code>)</td><td><code>image</code> · <code>fallback</code> picture when a song has no cover · <code>height</code> 8–600 (120) · <code>width</code> (full width) · <code>corner</code> 0–80 (12) · <code>fit</code>: crop or fit (crop) · <code>tint</code> recolours it, for one-colour icons</td></tr>
+<tr><td><code>image</code></td><td>your picture, or a song's cover (<code>"{cover}"</code>, <code>"{nextCover}"</code>…<code>"{next10Cover}"</code>, <code>"{prevCover}"</code>). a gif or animated webp of yours plays as a loop (android 9+)</td><td><code>image</code> · <code>fallback</code> picture when a song has no cover · <code>height</code> 8–600 (120) · <code>width</code> (full width) · <code>corner</code> 0–80 (12) · <code>fit</code>: crop or fit (crop) · <code>tint</code> recolours it, for one-colour icons</td></tr>
 <tr><td><code>shape</code></td><td>a box, a circle, a pill or a line</td><td><code>shape</code>: rect, circle, pill, line · <code>width</code> (full) · <code>height</code> 1–600 (2) · <code>color</code>, or <code>colors</code> for a gradient · <code>corner</code> 0–300 · <code>stroke</code> 0.5–40 to only outline it</td></tr>
 <tr><td><code>path</code></td><td>any shape you can write as svg path data</td><td><a href="#modules-player-panels">panels, shapes &amp; blur</a></td></tr>
 <tr><td><code>visualizer</code></td><td>bars, a wave, dots or a ring that follow the music</td><td><a href="#modules-player-motion">animation basics</a></td></tr>
@@ -938,7 +938,8 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>tones</code></td><td>the song's two tones, split where the song is (like timeline)</td><td></td></tr>
 <tr><td><code>color</code></td><td>one colour</td><td><code>color</code></td></tr>
 <tr><td><code>gradient</code></td><td>top to bottom</td><td><code>colors</code>: 2 to 6 colours</td></tr>
-<tr><td><code>image</code></td><td>your picture, cropped to fill</td><td><code>image</code> · <code>blur</code> 0–60 dp, android 12+, blurred once and kept</td></tr>
+<tr><td><code>image</code></td><td>your picture, cropped to fill. a gif or animated webp plays as a loop when it isn't blurred</td><td><code>image</code> · <code>blur</code> 0–60 dp, android 12+, blurred once and kept</td></tr>
+<tr><td><code>liveCover</code></td><td>the song's video or animated cover across the whole screen (<a href="#modules-player-covers">covers that move</a>)</td><td><code>media</code> (auto) · <code>fallback</code>: what's under it until it starts and for songs with nothing moving (blurredCover)</td></tr>
 <tr><td><code>shader</code></td><td>your own gpu code, android 13+, zip only</td><td><code>shader</code> · <code>uniforms</code> · <code>fallback</code>: another background for older phones (<a href="#modules-player-shaders">shader code</a>)</td></tr>
 </table></div>
 <h2>Stacking backgrounds</h2>
@@ -950,6 +951,45 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 ],
 "dim": 0.3</code></pre>
 <p><code>dim</code> goes over all of them, so the blocks stay readable however busy the layers get. a layer that drifts or zooms is drawn a little bigger than the screen, so its edge never shows. a blurred picture is blurred once and kept, so it costs nothing while the song plays. and everything here is what a <a href="#modules-player-panels">glass box</a> blurs behind it.</p>
+</article>
+
+<article class="page" id="modules-player-covers" data-group="Your own player" data-title="Covers that move">
+<h1>Covers that move</h1>
+<p class="sub">the song's video, its animated cover, your own loops, any size</p>
+<p>a <code>cover</code> block shows the still picture by default. give it <code>media</code> and it can play something over that picture instead: the song's youtube video, its animated cover (the looping art apple music, tidal and spotify have for some songs), or a loop you bring yourself. the picture stays underneath, so it shows while the video loads and for songs that have nothing moving.</p>
+<pre><code class="json">{ "type": "cover", "corner": 24, "media": ["video", "animated"] }</code></pre>
+<p><code>media</code> is one word or a list. mochy goes down the list and plays the first one the song has. while one higher up is still being looked for, nothing plays yet, so a lower one never flashes in first.</p>
+<div class="tbl"><table>
+<tr><th>value</th><th>what plays</th></tr>
+<tr><td><code>"video"</code></td><td>the song's youtube music video, kept in time with the song (it pauses and seeks with it). a song that is a video plays its own. a video picked in "select video" wins, and "no video" turns it off for that song</td></tr>
+<tr><td><code>"animated"</code></td><td>the song's animated cover, from the sources and order picked in mochy's settings. it loops while the player is open</td></tr>
+<tr><td><code>"auto"</code></td><td>whatever the person turned on for mochy's own player: the video when video covers are on (or the song is a video), then the animated cover</td></tr>
+<tr><td><code>"loops/idle.mp4"</code></td><td>a loop of your own, from your zip or a link, the same for every song. <code>.mp4</code>, <code>.webm</code> and <code>.m3u8</code> play as video; <code>.gif</code> and animated <code>.webp</code> as moving pictures (android 9+, older phones show the first frame). put it last as a fallback, or alone to always play it</td></tr>
+</table></div>
+<pre><code class="json">{ "type": "cover", "shape": "circle", "spin": true, "media": ["animated", "loops/vinyl.webp"] }</code></pre>
+<p>a turning cover turns its video with it, and the video slides with its song when you swipe, just like the picture.</p>
+
+<h2>Any size</h2>
+<p>covers don't have to be square anymore. <code>size</code> is still the share of the width, and <code>aspect</code> sets the shape: <code>"16:9"</code> for a wide video, <code>"9:16"</code> or <code>"3:4"</code> for a tall one, or a plain number (width over height). or give it <code>width</code> and <code>height</code> in dp. with only one of them, the other comes from <code>aspect</code>.</p>
+<pre><code class="json">{ "type": "cover", "aspect": "16:9", "size": 1, "corner": 18, "media": "video" },
+{ "type": "cover", "width": 220, "height": 300, "corner": 28, "media": "auto" },
+{ "type": "cover", "height": 120, "aspect": "1:1", "shape": "circle" }</code></pre>
+<p><code>"fit": "fit"</code> shows all of the picture or video instead of cropping it to the cover's shape. a fitted video sits on black, so the picture doesn't peek round its edges. a circle that isn't square turns into a pill.</p>
+
+<h2>A moving background</h2>
+<p>the <code>liveCover</code> background plays the same things across the whole screen, behind every block. put <code>dim</code> on the player so your words stay readable over it.</p>
+<pre><code class="json">"background": { "type": "liveCover", "media": ["video", "animated"], "fallback": { "type": "blurredCover" } },
+"dim": 0.35</code></pre>
+<p>it's cropped to fill the screen and isn't blurred. frosted boxes still blur it, like they blur any background.</p>
+
+<h2>What the person decides</h2>
+<ul>
+  <li><b>data saver</b> stops the video, the animated covers and loops from links. loops in your zip still play, they don't cost data.</li>
+  <li><b>"enable animated canvas"</b> off skips <code>"animated"</code>, and with <b>"canvas on wi-fi only"</b> it waits for wi-fi.</li>
+  <li><code>"video"</code> plays even when <b>"always enable youtube background"</b> is off, because your player asked for it. <code>"auto"</code> follows that setting.</li>
+  <li>nothing is looked up or played in the style picker's preview, or while the player is closed.</li>
+</ul>
+<div class="note">play the video in one place per screen. a cover and a <code>liveCover</code> background can't both show the same youtube video; the second one just keeps its picture. the soft glow trick from <a href="#modules-player-panels">panels &amp; blur</a> works best with a still cover behind and the moving one on top.</div>
 </article>
 
 <article class="page" id="modules-player-motion" data-group="Your own player" data-title="Animation basics">

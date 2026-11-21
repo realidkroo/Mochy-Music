@@ -98,23 +98,28 @@ private class MiddleStage(
 
     init {
         with(density) {
+            val landscape = w > h
             val button = chevron.height.takeIf { it > 0f } ?: 34.dp.toPx()
-            zoom = (0.165f * w / button).coerceIn(1.6f, 2.4f)
+            zoom = if (landscape) {
+                (0.11f * h / button).coerceIn(1.1f, 1.55f)
+            } else {
+                (0.165f * w / button).coerceIn(1.6f, 2.4f)
+            }
             val c = zoom * button
-            val pad = 0.42f * c
+            val pad = (if (landscape) 0.30f else 0.42f) * c
             val right = 0.5f * w
             val tileRight = right + pad
-            labelX = tileRight + 0.07f * w
+            labelX = tileRight + (if (landscape) 0.04f else 0.07f) * w
 
             val menusH = c + pad * 2f
             val seekH = zoom * 8.dp.toPx() + pad * 2f
             val endH = zoom * end.height.coerceAtLeast(1f) + pad * 2f
-            var menusY = 0.592f * h
-            var seekY = menusY + menusH / 2f + 0.037f * h + seekH / 2f
-            var endY = seekY + seekH / 2f + 0.02f * h + endH / 2f
-            val overflow = (endY + endH / 2f) - (h - navBottom - 24.dp.toPx())
+            var menusY = (if (landscape) 0.36f else 0.592f) * h
+            var seekY = menusY + menusH / 2f + (if (landscape) 0.045f else 0.037f) * h + seekH / 2f
+            var endY = seekY + seekH / 2f + (if (landscape) 0.035f else 0.02f) * h + endH / 2f
+            val overflow = (endY + endH / 2f) - (h - navBottom - (if (landscape) 14.dp else 24.dp).toPx())
             if (overflow > 0f) {
-                val room = (menusY - menusH / 2f) - (statusTop + 100.dp.toPx())
+                val room = (menusY - menusH / 2f) - (statusTop + (if (landscape) 64.dp else 100.dp).toPx())
                 val up = overflow.coerceAtMost(room.coerceAtLeast(0f))
                 menusY -= up
                 seekY -= up
@@ -125,7 +130,9 @@ private class MiddleStage(
             target = Offset(right, seekY)
 
             chevronTo = Offset(right - c / 2f, menusY)
-            sideTo = Offset(chevronTo.x - (chevron.center.x - side.center.x) * zoom, menusY)
+            // in landscape like sits vertically above chevron, so place side cleanly beside chevron in the menus tile
+            val sideDx = if (landscape) c * 1.45f else (chevron.center.x - side.center.x) * zoom
+            sideTo = Offset(chevronTo.x - sideDx, menusY)
             seekTo = Offset(right - seek.width * zoom / 2f, seekY)
             endTo = Offset(right - end.width * zoom / 2f, endY)
             menusTile = Rect(sideTo.x - c / 2f - 0.32f * c, menusY - menusH / 2f, tileRight, menusY + menusH / 2f)
@@ -135,9 +142,9 @@ private class MiddleStage(
             // the menu: its items and the side button, one row each, stacked over the chevron
             var mz = zoom
             var cm = mz * button
-            var rowH = cm * 1.84f
-            val bottomEdge = h - navBottom - 0.045f * h
-            val topLimit = statusTop + 80.dp.toPx()
+            var rowH = cm * (if (landscape) 1.55f else 1.84f)
+            val bottomEdge = h - navBottom - (if (landscape) 0.03f else 0.045f) * h
+            val topLimit = statusTop + (if (landscape) 58.dp else 80.dp).toPx()
             val needed = (slots + 1) * rowH
             if (needed > bottomEdge - topLimit) {
                 mz *= (bottomEdge - topLimit) / needed

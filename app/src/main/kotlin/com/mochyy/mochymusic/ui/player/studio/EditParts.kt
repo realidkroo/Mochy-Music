@@ -359,25 +359,43 @@ internal fun DrawScope.drawTiles(parts: StudioParts) {
     val a = e * fade
     if (a <= 0.01f) return
 
-    // the cover's tile always fades out toward its bottom; the full-bleed one has no top edge at all
+    // the cover's tile fades toward its open seam (bottom in portrait, right edge in landscape full cover)
     val r = l.coverTile
-    val brush = Brush.verticalGradient(
-        0f to Color.White.copy(alpha = ink.top * a),
-        0.62f to Color.White.copy(alpha = ink.bottom * 0.9f * a),
-        1f to Color.Transparent,
-        startY = r.top,
-        endY = r.bottom,
-    )
-    if (l.fullCover) {
+    val landscape = parts.width > parts.height
+    if (l.fullCover && landscape) {
+        val hBrush = Brush.horizontalGradient(
+            0f to Color.White.copy(alpha = ink.top * a),
+            0.65f to Color.White.copy(alpha = ink.bottom * 0.9f * a),
+            1f to Color.Transparent,
+            startX = r.left,
+            endX = r.right,
+        )
         val path = Path().apply {
             moveTo(r.left, r.top)
-            lineTo(r.left, r.bottom)
-            moveTo(r.right, r.top)
+            lineTo(r.right, r.top)
+            moveTo(r.left, r.bottom)
             lineTo(r.right, r.bottom)
         }
-        drawPath(path, brush, style = Stroke(width = stroke, cap = StrokeCap.Round))
+        drawPath(path, hBrush, style = Stroke(width = stroke, cap = StrokeCap.Round))
     } else {
-        drawRoundRect(brush, r.topLeft, r.size, CornerRadius(corner), style = Stroke(width = stroke))
+        val brush = Brush.verticalGradient(
+            0f to Color.White.copy(alpha = ink.top * a),
+            0.62f to Color.White.copy(alpha = ink.bottom * 0.9f * a),
+            1f to Color.Transparent,
+            startY = r.top,
+            endY = r.bottom,
+        )
+        if (l.fullCover) {
+            val path = Path().apply {
+                moveTo(r.left, r.top)
+                lineTo(r.left, r.bottom)
+                moveTo(r.right, r.top)
+                lineTo(r.right, r.bottom)
+            }
+            drawPath(path, brush, style = Stroke(width = stroke, cap = StrokeCap.Round))
+        } else {
+            drawRoundRect(brush, r.topLeft, r.size, CornerRadius(corner), style = Stroke(width = stroke))
+        }
     }
     drawTileOutline(l.middleTile, a, ink)
     drawTileOutline(l.controlsTile, a, ink)

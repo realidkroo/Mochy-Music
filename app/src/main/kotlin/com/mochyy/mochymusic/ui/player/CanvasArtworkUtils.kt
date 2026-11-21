@@ -111,6 +111,14 @@ internal suspend fun findCanvas(
     }
 }
 
+// the song's animated cover from the cache, else from the sources, kept for next time; the names are cleaned off the main thread
+internal suspend fun findCanvasCached(context: Context, mediaId: String, title: String, artist: String, durationSec: Int?): CanvasArtwork? {
+    CanvasArtworkPlaybackCache.get(mediaId)?.let { return it }
+    val (cleanTitle, cleanArtist) = withContext(Dispatchers.Default) { normalizeCanvasSongTitle(title) to normalizeCanvasArtistName(artist) }
+    if (cleanTitle.length < 2 || cleanArtist.length < 2) return null
+    return findCanvas(context, cleanTitle, cleanArtist, durationSec = durationSec)?.also { CanvasArtworkPlaybackCache.put(mediaId, it) }
+}
+
 internal fun normalizeCanvasSongTitle(raw: String): String {
     val stripped =
         raw
