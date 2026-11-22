@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- integraciones: copias de seguridad -->
+    <string name="integration_backup_name">Copia de seguridad</string>
+    <string name="integration_backup_desc">Mantén tu biblioteca y estadísticas a salvo en tu nube</string>
+    <string name="backup_page_subtitle">Tus listas, me gusta, estadísticas de escucha, recap, perfil y ajustes en tu nube personal.</string>
+
+    <!-- destino de las copias -->
+    <string name="backup_group_where">Guardar copia en</string>
+    <string name="backup_dropbox_desc">Iniciar sesión con tu cuenta de Dropbox</string>
+    <string name="backup_onedrive_desc">Iniciar sesión con tu cuenta de Microsoft</string>
+    <string name="backup_webdav_desc">Nextcloud, pCloud, Koofr, un NAS y más</string>
+    <string name="backup_not_set_up">No disponible en esta compilación</string>
+    <string name="backup_signed_in_as">Sesión iniciada como %1$s</string>
+    <string name="backup_webdav_connected">Guardando copias en %1$s</string>
+    <string name="backup_waiting_browser">Completa el inicio de sesión en tu navegador</string>
+    <string name="backup_finishing_sign_in">Iniciando sesión…</string>
+    <string name="backup_no_browser">No hay navegador instalado en este teléfono.</string>
+    <string name="backup_dropbox_notice">Copia en Dropbox en fase de pruebas. Si Dropbox no te permite entrar, WebDAV no tiene límite.</string>
+    <string name="backup_disconnect">Desconectar</string>
+    <string name="backup_disconnect_desc">Dejar de guardar copias en %1$s.</string>
+    <string name="backup_connected_toast">Conectado. Tus copias se guardarán en %1$s ahora.</string>
+
+    <!-- respaldar y restaurar -->
+    <string name="backup_group_backups">Copias de seguridad</string>
+    <string name="backup_now">Respaldar ahora</string>
+    <string name="backup_last">Última copia %1$s · %2$s</string>
+    <string name="backup_never">Sin copias de seguridad aún</string>
+    <string name="backup_connect_first">Conecta una nube primero arriba</string>
+    <string name="backup_packing">Empaquetando… %1$d%%</string>
+    <string name="backup_uploading">Subiendo… %1$d%%</string>
+    <string name="backup_downloading">Descargando… %1$d%%</string>
+    <string name="backup_unpacking">Desempaquetando… %1$d%%</string>
+    <string name="backup_restored">Restaurado con éxito. Mochy se está reiniciando…</string>
+    <string name="backup_done_toast">Copia de seguridad guardada en %1$s</string>
+    <string name="backup_last_failed">La última copia automática no pudo completarse. %1$s</string>
+    <string name="backup_restore_title">Restaurar una copia de seguridad</string>
+    <string name="backup_restore_desc">Recupera tu biblioteca, estadísticas y ajustes desde la nube</string>
+
+    <!-- programación -->
+    <string name="backup_auto_title">Respaldar automáticamente</string>
+    <string name="backup_auto_desc">Se ejecuta en segundo plano cuando hay conexión</string>
+    <string name="backup_every">Frecuencia</string>
+    <string name="backup_keep">Conservar en la nube</string>
+    <string name="backup_keep_note">Tras cada copia, las más antiguas de este teléfono se eliminan para conservar esta cantidad.</string>
+    <plurals name="backup_every_minutes">
+        <item quantity="one">Cada minuto</item>
+        <item quantity="many">Cada %d minutos</item>
+        <item quantity="other">Cada %d minutos</item>
+    </plurals>
+    <plurals name="backup_every_hours">
+        <item quantity="one">Cada hora</item>
+        <item quantity="many">Cada %d horas</item>
+        <item quantity="other">Cada %d horas</item>
+    </plurals>
+    <plurals name="backup_every_days">
+        <item quantity="one">Cada día</item>
+        <item quantity="many">Cada %d días</item>
+        <item quantity="other">Cada %d días</item>
+    </plurals>
+    <plurals name="backup_every_weeks">
+        <item quantity="one">Cada semana</item>
+        <item quantity="many">Cada %d semanas</item>
+        <item quantity="other">Cada %d semanas</item>
+    </plurals>
+    <plurals name="backup_keep_count">
+        <item quantity="one">%d copia</item>
+        <item quantity="many">%d copias</item>
+        <item quantity="other">%d copias</item>
+    </plurals>
+
+    <!-- hoja de restauración -->
+    <string name="backup_restore_body">Elige una copia. Tu biblioteca, estadísticas y ajustes se reemplazarán por los de la copia.</string>
+    <string name="backup_restore_loading">Buscando en tu nube…</string>
+    <string name="backup_restore_empty">Aún no hay copias de seguridad allí.</string>
+    <string name="backup_restore_item">%1$s · %2$s</string>
+    <string name="backup_restore_this">Restaurar y reiniciar</string>
+    <string name="backup_try_again">Reintentar</string>
+
+    <!-- hoja webdav -->
+    <string name="webdav_title">Conectar un servidor WebDAV</string>
+    <string name="webdav_body">Las copias irán a una carpeta Mochy Backups en esta dirección.</string>
+    <string name="webdav_address">Dirección del servidor</string>
+    <string name="webdav_address_hint">https://cloud.ejemplo.com/remote.php/dav/files/usuario/</string>
+    <string name="webdav_username_hint">Tu usuario</string>
+    <string name="webdav_password_hint">Tu contraseña o contraseña de aplicación</string>
+    <string name="webdav_connect">Conectar</string>
+    <string name="webdav_connecting">Comprobando…</string>
+
+    <!-- errores -->
+    <string name="cloud_problem_offline">No se pudo acceder a la nube. Revisa tu conexión.</string>
+    <string name="cloud_problem_signed_out">Mochy ya no tiene la sesión iniciada allí.</string>
+    <string name="cloud_problem_wrong_login">El servidor rechazó ese usuario o contraseña.</string>
+    <string name="cloud_problem_bad_address">Esa dirección no parece válida.</string>
+    <string name="cloud_problem_not_found">No se pudo encontrar la carpeta en el servidor.</string>
+    <string name="cloud_problem_not_webdav">La dirección no responde como un servidor WebDAV.</string>
+    <string name="cloud_problem_full">Tu almacenamiento en la nube está lleno.</string>
+    <string name="cloud_problem_no_room">No se pudo empaquetar la copia. Asegúrate de tener espacio suficiente.</string>
+    <string name="cloud_problem_busy">La nube está ocupada en este momento.</string>
+    <string name="cloud_problem_denied">Cancelaste el acceso en la página de inicio de sesión.</string>
+    <string name="cloud_problem_expired">El enlace de inicio de sesión ha expirado.</string>
+</resources>

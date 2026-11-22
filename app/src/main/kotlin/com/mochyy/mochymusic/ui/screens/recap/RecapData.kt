@@ -5,7 +5,9 @@
 
 package com.mochyy.mochymusic.ui.screens.recap
 
+import android.content.Context
 import androidx.compose.runtime.Immutable
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.db.MusicDatabase
 import com.mochyy.mochymusic.db.RecapEventRow
 import com.mochyy.mochymusic.db.entities.Song
@@ -129,8 +131,8 @@ class ListeningStats(
 sealed interface RecapAvailability {
     data class Ready(val stats: ListeningStats, val monthProgressPercent: Int) : RecapAvailability
 
-    /** Not unlocked yet; [comeBack] finishes "come back later ...". */
-    data class NotYet(val comeBack: String) : RecapAvailability
+    /** Not unlocked yet; [comeBackText] finishes "come back later ...". */
+    class NotYet(val comeBackText: (Context) -> String) : RecapAvailability
 }
 
 internal object RecapRepository {
@@ -164,7 +166,7 @@ internal object RecapRepository {
             val stats = load(db, range)
             if (stats.songCount > 0) return RecapAvailability.Ready(stats, progressOf(range, today))
         }
-        return RecapAvailability.NotYet("once you've played a song")
+        return RecapAvailability.NotYet { context -> context.getString(R.string.recap_not_yet_single) }
     }
 
     private fun progressOf(range: StatsRange, today: LocalDate): Int = when {
@@ -182,10 +184,14 @@ internal object RecapRepository {
             val stats = load(db, previous)
             if (stats.songCount >= RecapMinSongs) return RecapAvailability.Ready(stats, 100)
             val unlock = today.withDayOfMonth(RecapFirstDay)
-            return RecapAvailability.NotYet(
-                "on ${unlock.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} $RecapFirstDay, " +
-                    "once you've played $RecapMinSongs songs",
-            )
+            return RecapAvailability.NotYet { context ->
+                context.getString(
+                    R.string.recap_not_yet_date,
+                    unlock.month.getDisplayName(TextStyle.FULL, Locale.getDefault()),
+                    RecapFirstDay,
+                    RecapMinSongs,
+                )
+            }
         }
         val stats = load(db, thisMonth)
         if (stats.songCount >= RecapMinSongs) {
@@ -193,9 +199,10 @@ internal object RecapRepository {
             return RecapAvailability.Ready(stats, percent)
         }
         val missing = RecapMinSongs - stats.songCount
-        return RecapAvailability.NotYet(
-            "when you've played $missing more ${if (missing == 1) "song" else "songs"} this month",
-        )
+        return RecapAvailability.NotYet { context ->
+            val word = if (missing == 1) context.getString(R.string.recap_song_singular) else context.getString(R.string.recap_song_plural)
+            context.getString(R.string.recap_not_yet_missing, missing, word)
+        }
     }
 
     /** First day anything was played, for the Stats timeline and as a fallback join date. */

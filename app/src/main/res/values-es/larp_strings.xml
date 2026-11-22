@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="larp_mode">Modo Larp</string>
+    <string name="larp_mode_desc">Aumenta tus niveles de dopamina musical</string>
+    <string name="larp_mode_detail">Hace que el reproductor muestre datos de alta resolución simulados: FLAC hasta 768 kHz en DACs extremos.</string>
+
+    <string name="larp_sheet_image">Sin límites para el modo larp</string>
+    <string name="larp_sheet_title">Esto cambiará algunas estadísticas del reproductor. ¿Listo?</string>
+    <string name="larp_sheet_body">No olvides desactivarlo luego :)</string>
+    <string name="larp_sheet_button">67</string>
+
+    <string name="larp_sheet_levels">Elige tu nivel</string>
+    <string name="larp_level_summary">Nivel %1$d · %2$s · %3$s</string>
+
+    <string name="larp_quality">FLAC · %1$d bits · %2$d kHz</string>
+    <string name="larp_dac_detail">%1$s · %2$d kHz · %3$d-bit · %4$s</string>
+
+    <string name="larp_card_format">.Flac</string>
+    <string name="larp_bit_depth">Profundidad de bits</string>
+    <string name="larp_bit_depth_value">%1$d bits</string>
+    <string name="larp_sample_rate">Frecuencia de muestreo</string>
+    <string name="larp_sample_rate_value">%1$d kHz</string>
+    <string name="larp_bitrate">Tasa de bits</string>
+    <string name="larp_bitrate_value">%1$s kbps</string>
+    <string name="larp_channels">Tipo de canal</string>
+    <string name="larp_source">Fuente</string>
+
+    <string name="larp_card_decoder">Decodificador</string>
+    <string name="larp_decoder_name">Nombre del decodificador</string>
+    <string name="larp_runs_on">Ejecuta en</string>
+
+    <string name="larp_card_dsp">DSP</string>
+    <string name="larp_effects">Efectos</string>
+    <string name="larp_hi_res">Ruta Hi-res</string>
+
+    <string name="larp_card_output">Salida</string>
+    <string name="larp_device">Dispositivo</string>
+    <string name="larp_route">Ruta</string>
+    <string name="larp_dac_mixer">Mezclador DAC</string>
+    <string name="larp_dac_mixer_value">Bit-perfect, %1$d kHz · %2$d-bit</string>
+    <string name="larp_power">Alimentación</string>
+    <string name="larp_jitter">Jitter</string>
+    <string name="larp_buffer">Búfer</string>
+
+    <string name="larp_skibidi_title">Larper Skibidi</string>
+    <string name="larp_skibidi_dac">FiiO KA17</string>
+    <string name="larp_skibidi_lead">DAC USB, bit-perfect</string>
+    <string name="larp_skibidi_power">650 mW</string>
+    <string name="larp_skibidi_channels">Estéreo</string>
+    <string name="larp_skibidi_source">Master de estudio Hi-res</string>
+    <string name="larp_skibidi_decoder">libFLAC</string>
+    <string name="larp_skibidi_runs">CPU propia del teléfono</string>
+    <string name="larp_skibidi_effects">Ninguno</string>
+    <string name="larp_skibidi_hires">24-bit, sin modificaciones</string>
+    <string name="larp_skibidi_route">Teléfono a DAC USB, bit-perfect</string>
+    <string name="larp_skibidi_jitter">Bajo 100 ps</string>
+    <string name="larp_skibidi_buffer">40 ms</string>
+
+    <string name="larp_sixty_seven_title">Larper 67</string>
+    <string name="larp_sixty_seven_dac">Chord Mojo 2</string>
+    <string name="larp_sixty_seven_lead">DAC portátil, directo desde Mochy</string>
+    <string name="larp_sixty_seven_power">600 mW</string>
+    <string name="larp_sixty_seven_channels">Estéreo, fases alineadas</string>
+    <string name="larp_sixty_seven_source">Master propio de la discográfica</string>
+    <string name="larp_sixty_seven_decoder">libFLAC, ajustado a mano</string>
+    <string name="larp_sixty_seven_runs">Núcleo de audio dedicado</string>
+    <string name="larp_sixty_seven_effects">Ninguno</string>
+    <string name="larp_sixty_seven_hires">32-bit flotante, directo</string>
+    <string name="larp_sixty_seven_route">Mochy al DAC por USB asíncrono</string>
+    <string name="larp_sixty_seven_jitter">12 ps</string>
+    <string name="larp_sixty_seven_buffer">10 ms</string>
+
+    <string name="larp_brainrot_title">Larper Brainrot</string>
+    <string name="larp_brainrot_dac">Chord Hugo TT2</string>
+    <string name="larp_brainrot_lead">DAC de escritorio</string>
+    <string name="larp_brainrot_power">18 W</string>
+    <string name="larp_brainrot_channels">Estéreo, sintonizado de oído</string>
+    <string name="larp_brainrot_source">Mesa de mezcla, en vivo</string>
+    <string name="larp_brainrot_decoder">Ninguno, Mochy lee FLAC fluido</string>
+    <string name="larp_brainrot_runs">Brainrot</string>
+    <string name="larp_brainrot_effects">Ninguno</string>
+    <string name="larp_brainrot_hires">64-bit flotante, chapado en oro</string>
+    <string name="larp_brainrot_route">Mochy al DAC sobre cable de plata</string>
+    <string name="larp_brainrot_jitter">1 ps</string>
+    <string name="larp_brainrot_buffer">1 ms</string>
+
+    <string name="larp_maxxing_title">Larper Maxxing</string>
+    <string name="larp_maxxing_dac">Wadax Atlantis Reference</string>
+    <string name="larp_maxxing_lead">Directo desde Mochy</string>
+    <string name="larp_maxxing_power">1,000,000 W</string>
+    <string name="larp_maxxing_channels">Estéreo, calibrado a mano</string>
+    <string name="larp_maxxing_source">Cinta master original del estudio</string>
+    <string name="larp_maxxing_decoder">Ninguno, transmisión cruda</string>
+    <string name="larp_maxxing_runs">Pura dopamina</string>
+    <string name="larp_maxxing_effects">Ninguno</string>
+    <string name="larp_maxxing_hires">64-bit flotante, directo</string>
+    <string name="larp_maxxing_route">Mochy al DAC sin decodificador intermedio</string>
+    <string name="larp_maxxing_jitter">0 ps</string>
+    <string name="larp_maxxing_buffer">0 ms, suena antes de presionar play</string>
+</resources>

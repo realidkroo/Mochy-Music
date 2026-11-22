@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="origin_card_queue_empty">Nada en cola</string>
+    <string name="origin_card_queue_empty_hint">Reproduce algo en Mochy</string>
+    <string name="origin_card_liked_empty">Sin canciones que te gusten aún</string>
+    <string name="origin_card_liked_empty_hint">Las canciones que te gusten en Mochy aparecerán aquí</string>
+    <string name="origin_card_local_empty">Sin descargas aún</string>
+    <string name="origin_card_local_empty_hint">Las canciones que descargues en Mochy aparecerán aquí</string>
+</resources>

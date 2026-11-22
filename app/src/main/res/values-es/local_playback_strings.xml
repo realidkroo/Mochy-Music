@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- canciones importadas del teléfono -->
+    <string name="local_already_on_phone">Esta canción ya está en tu teléfono</string>
+
+    <!-- errores de reproducción local -->
+    <string name="local_error_file_gone">El archivo de esta canción ya no está en tu teléfono. Pudo haber sido movido o eliminado.</string>
+    <string name="local_error_access_lost">Mochy ya no puede abrir este archivo. Añade su carpeta de nuevo desde la Biblioteca.</string>
+    <string name="local_error_permission">Mochy necesita permiso para leer tu música y reproducir esta canción</string>
+    <string name="local_error_format">Mochy no puede reproducir este tipo de archivo aún</string>
+    <string name="local_error_damaged">Este archivo parece estar dañado y no se puede reproducir</string>
+
+    <!-- importación local -->
+    <plurals name="local_import_skipped_formats">
+        <item quantity="one">Se omitió %1$d archivo que Mochy no puede reproducir aún (WMA, AIFF, APE, WavPack o DSD)</item>
+        <item quantity="many">Se omitieron %1$d archivos que Mochy no puede reproducir aún (WMA, AIFF, APE, WavPack o DSD)</item>
+        <item quantity="other">Se omitieron %1$d archivos que Mochy no puede reproducir aún (WMA, AIFF, APE, WavPack o DSD)</item>
+    </plurals>
+    <string name="local_import_folder_cap">Esa carpeta tiene más de %1$d canciones. Solo se añadieron las primeras %1$d.</string>
+    <string name="local_import_pick_folder_hint">Para esta cantidad de canciones, añade la carpeta completa.</string>
+    <plurals name="local_missing_files">
+        <item quantity="one">El archivo de %1$d canción ya no está en tu teléfono</item>
+        <item quantity="many">Los archivos de %1$d canciones ya no están en tu teléfono</item>
+        <item quantity="other">Los archivos de %1$d canciones ya no están en tu teléfono</item>
+    </plurals>
+    <string name="local_missing_remove">Quitar</string>
+</resources>

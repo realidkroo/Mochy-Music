@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="builtin_module_apple_description">Reproduce tu suscripción de Apple Music en Mochy, en AAC 256, con todos los efectos de Audio Lab</string>
+    <string name="builtin_module_monochrome_description">FLAC sin pérdida para cada canción que Monochrome disponga, sin necesidad de cuenta</string>
+    <string name="builtin_module_jiosaavn_description">Catálogo de JioSaavn en AAC hasta 320 kbps, sin necesidad de cuenta</string>
+    <string name="builtin_module_stream">Transmisión</string>
+    <string name="builtin_module_apple_aac_description">Transmisión estéreo estándar de Apple Music</string>
+    <string name="builtin_module_apple_he_description">Un cuarto del uso de datos, para redes lentas o de uso medido</string>
+    <string name="builtin_module_saavn_320_description">Lo mejor de JioSaavn, 160 para las canciones que no lo tengan</string>
+    <string name="builtin_module_saavn_160_description">La mitad de datos, manteniendo claridad</string>
+    <string name="builtin_module_saavn_96_description">Para redes lentas o de uso medido</string>
+    <string name="builtin_module_region">Región</string>
+    <string name="builtin_module_account_region">De tu cuenta</string>
+    <string name="builtin_module_account_region_description">Busca en el catálogo del país de tu cuenta de Apple</string>
+    <string name="builtin_module_region_description">Busca en el catálogo de %1$s.</string>
+</resources>

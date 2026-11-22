@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- comandos de voz -->
+    <string name="voice_nothing_found">No se pudo encontrar nada para “%1$s”. Intenta decirlo de otra forma.</string>
+    <string name="voice_nothing_to_play">Nada para reproducir aún. Pide una canción, un artista o una lista.</string>
+    <string name="voice_offline">No se pudo acceder a YouTube Music. Revisa tu conexión.</string>
+</resources>

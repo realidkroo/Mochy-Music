@@ -754,7 +754,7 @@ fun ProfileScreen(navController: NavController) {
                             )
                             if (invalid) {
                                 Text(
-                                    text = (recap as? RecapAvailability.NotYet)?.comeBack.orEmpty(),
+                                    text = (recap as? RecapAvailability.NotYet)?.comeBackText?.invoke(context).orEmpty(),
                                     style = PageTitle.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, color = Color.White.copy(alpha = 0.6f)),
                                     modifier = Modifier.padding(top = 6.dp),
                                 )
@@ -1127,7 +1127,7 @@ private fun VersionCard(
  */
 @Composable
 private fun VersionCapsule(update: Boolean, onAbout: () -> Unit) {
-    val shown = if (update) "Update" else stringResource(R.string.profile_capsule_about)
+    val shown = if (update) stringResource(R.string.profile_capsule_update) else stringResource(R.string.profile_capsule_about)
 
     // the pop: a quick squash, then a spring that carries past full size and settles
     val pop = remember { Animatable(1f) }

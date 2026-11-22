@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pantalla de estadísticas -->
+    <string name="rc_stats_done">Listo</string>
+    <string name="rc_stats_title">Estadísticas</string>
+    <string name="rc_stats_year_recap_link">"Resumen de %1$d  &gt;"</string>
+    <string name="rc_stats_year_recap">Resumen de %1$d</string>
+    <string name="rc_stats_collapse_all">Contraer todo</string>
+    <string name="rc_stats_expand_all">Expandir todo</string>
+    <string name="rc_stats_empty_title">Nada reproducido en %1$s todavía.</string>
+    <string name="rc_stats_empty_hint">Reproduce unas cuantas canciones y esto se completará solo.</string>
+    <string name="rc_stats_often">Veamos con qué frecuencia te gusta escuchar música</string>
+    <string name="rc_stats_privacy">Todo se recopila por tu uso local en esta app y NUNCA SERÁ ENVIADO a un servidor externo.</string>
+    <string name="rc_stats_cd_profile">Perfil</string>
+    <string name="rc_stats_cd_collapse">Contraer</string>
+    <string name="rc_stats_cd_expand">Expandir</string>
+
+    <string name="rc_stats_total_month">Este mes, has estado escuchando durante</string>
+    <string name="rc_stats_total_year">Este año, has estado escuchando durante</string>
+    <string name="rc_stats_every_day">Cada día de %1$s</string>
+    <string name="rc_stats_every_month">Cada mes de %1$d</string>
+    <plurals name="rc_stats_fact_songs">
+        <item quantity="one">%1$d Canción</item>
+        <item quantity="many">%1$d Canciones</item>
+        <item quantity="other">%1$d Canciones</item>
+    </plurals>
+    <plurals name="rc_stats_fact_artists">
+        <item quantity="one">%1$d Artista</item>
+        <item quantity="many">%1$d Artistas</item>
+        <item quantity="other">%1$d Artistas</item>
+    </plurals>
+    <plurals name="rc_stats_fact_albums">
+        <item quantity="one">%1$d Álbum</item>
+        <item quantity="many">%1$d Álbumes</item>
+        <item quantity="other">%1$d Álbumes</item>
+    </plurals>
+    <plurals name="rc_stats_fact_plays">
+        <item quantity="one">%1$d reproducción</item>
+        <item quantity="many">%1$d reproducciones</item>
+        <item quantity="other">%1$d reproducciones</item>
+    </plurals>
+
+    <string name="rc_stats_dominant_genre">Género dominante</string>
+    <string name="rc_stats_genre_loading">Clasificando tus géneros…</string>
+    <string name="rc_stats_genre_unavailable">No se pudieron obtener tus géneros en este momento.</string>
+
+    <string name="rc_stats_artist_love">De verdad te encanta escuchar a este artista</string>
+    <plurals name="rc_stats_artist_row">
+        <item quantity="one">%1$s · %2$d reproducción</item>
+        <item quantity="many">%1$s · %2$d reproducciones</item>
+        <item quantity="other">%1$s · %2$d reproducciones</item>
+    </plurals>
+    <plurals name="rc_stats_artist_summary">
+        <item quantity="one">%1$s de escucha y %2$d reproducción de %3$s</item>
+        <item quantity="many">%1$s de escucha y %2$d reproducciones de %3$s</item>
+        <item quantity="other">%1$s de escucha y %2$d reproducciones de %3$s</item>
+    </plurals>
+
+    <string name="rc_stats_song_number_one">Y sin darte cuenta, esta canción es tu #1</string>
+    <plurals name="rc_stats_song_row">
+        <item quantity="one">%1$s · %2$d reproducción · %3$s</item>
+        <item quantity="many">%1$s · %2$d reproducciones · %3$s</item>
+        <item quantity="other">%1$s · %2$d reproducciones · %3$s</item>
+    </plurals>
+    <string name="rc_stats_song_from">%1$s de %2$s</string>
+    <plurals name="rc_stats_song_summary">
+        <item quantity="one">%1$s de tiempo de escucha y %2$d reproducción</item>
+        <item quantity="many">%1$s de tiempo de escucha y %2$d reproducciones</item>
+        <item quantity="other">%1$s de tiempo de escucha y %2$d reproducciones</item>
+    </plurals>
+
+    <string name="rc_stats_weekday_month">Este mes, te gusta escuchar música los</string>
+    <string name="rc_stats_weekday_year">Este año, te gusta escuchar música los</string>
+    <string name="rc_stats_totaling_hours">sumando un total de %1$s horas</string>
+    <string name="rc_stats_hour_morning">Y te encanta escuchar por la mañana alrededor de las</string>
+    <string name="rc_stats_hour_afternoon">Y te encanta escuchar por la tarde alrededor de las</string>
+    <string name="rc_stats_hour_evening">Y te encanta escuchar al atardecer alrededor de las</string>
+    <string name="rc_stats_hour_night">Y te encanta escuchar por la noche alrededor de las</string>
+    <string name="rc_stats_totaling_hours_time">¡sumando un total de %1$s horas en este horario!</string>
+
+    <string name="rc_stats_vs_more">↑ %1$d%% más que en %2$s</string>
+    <string name="rc_stats_vs_less">↓ %1$d%% menos que en %2$s</string>
+    <string name="rc_stats_vs_same">Casi lo mismo que en %1$s</string>
+    <string name="rc_stats_vs_more_so_far">↑ %1$d%% más que en %2$s hasta la fecha</string>
+    <string name="rc_stats_vs_less_so_far">↓ %1$d%% menos que en %2$s hasta la fecha</string>
+    <string name="rc_stats_vs_same_so_far">Casi lo mismo que en %1$s hasta la fecha</string>
+
+    <string name="rc_stats_repeat_title">No podías parar de reproducir esta canción</string>
+    <plurals name="rc_stats_repeat_times">
+        <item quantity="one">%1$d vez en %2$s</item>
+        <item quantity="many">%1$d veces en %2$s</item>
+        <item quantity="other">%1$d veces en %2$s</item>
+    </plurals>
+
+    <string name="rc_stats_new_title">Descubriste nueva música en el camino</string>
+    <plurals name="rc_stats_new_songs">
+        <item quantity="one">%1$d canción nueva</item>
+        <item quantity="many">%1$d canciones nuevas</item>
+        <item quantity="other">%1$d canciones nuevas</item>
+    </plurals>
+    <string name="rc_stats_new_share">El %1$d%% de lo que escuchaste fue música nueva para ti</string>
+    <string name="rc_stats_new_best">Mejor nuevo descubrimiento</string>
+
+    <string name="rc_stats_habits_title">Tus hábitos de escucha</string>
+    <string name="rc_stats_habit_days">Días que escuchaste música</string>
+    <string name="rc_stats_habit_days_value">%1$d de %2$d</string>
+    <string name="rc_stats_habit_days_average">Alrededor de %1$s al día</string>
+    <string name="rc_stats_habit_streak">Racha más larga</string>
+    <plurals name="rc_stats_habit_streak_value">
+        <item quantity="one">%1$d día</item>
+        <item quantity="many">%1$d días</item>
+        <item quantity="other">%1$d días</item>
+    </plurals>
+    <string name="rc_stats_habit_streak_hint">Días seguidos escuchando música</string>
+    <string name="rc_stats_habit_session">Sesión más larga de escucha</string>
+    <string name="rc_stats_habit_biggest">Día con mayor escucha</string>
+    <string name="rc_stats_date_at_time">%1$s a las %2$s</string>
+
+    <string name="rc_stats_show_by">Mostrar por</string>
+    <string name="rc_stats_kind_month">Mes</string>
+    <string name="rc_stats_kind_year">Año</string>
+    <string name="rc_stats_selected">Seleccionado</string>
+    <string name="rc_stats_what_year">¿Qué año?</string>
+    <string name="rc_stats_what_month">¿Qué mes?</string>
+    <string name="rc_stats_this_month_tag">(este mes)</string>
+
+    <!-- Historia del recap -->
+    <string name="rc_story_hey">¡hola, %1$s!</string>
+    <string name="rc_story_journey_started">%1$s comenzaste tu camino en Mochy el</string>
+    <string name="rc_story_journey_listening">y has estado escuchando música por un tiempo total de</string>
+    <string name="rc_story_journey_bye">¡hasta pronto!</string>
+    <string name="rc_story_tap">¡TOCA!</string>
+    <string name="rc_story_month_is">%1$s es</string>
+    <string name="rc_story_out_of_100" formatted="false">de un 100%</string>
+    <string name="rc_story_weekday_at_this_time">y a esta hora,</string>
+    <string name="rc_story_weekday_favourite">es tu día favorito para escuchar música</string>
+    <plurals name="rc_story_hours">
+        <item quantity="one">hora</item>
+        <item quantity="many">horas</item>
+        <item quantity="other">horas</item>
+    </plurals>
+    <plurals name="rc_story_minutes">
+        <item quantity="one">minuto</item>
+        <item quantity="many">minutos</item>
+        <item quantity="other">minutos</item>
+    </plurals>
+    <string name="rc_story_more_than_second">¡más que tu segundo lugar!</string>
+    <string name="rc_story_nothing_close">¡ninguno otro se le acerca!</string>
+    <string name="rc_story_again">Una\ny\notra vez</string>
+    <string name="rc_story_this_artist">este\nartista..</string>
+    <string name="rc_story_recognize_artist">¿Reconoces\na este artista?</string>
+    <string name="rc_story_favorite_artist">¡es tu favorito este mes!</string>
+    <plurals name="rc_story_plays">
+        <item quantity="one">%1$d reproducción</item>
+        <item quantity="many">%1$d reproducciones</item>
+        <item quantity="other">%1$d reproducciones</item>
+    </plurals>
+    <string name="rc_story_x_plays">x Reproducciones</string>
+    <string name="rc_story_plays_bang">¡Reproducciones!</string>
+    <string name="rc_story_might_recognize">¡Podrías\nreconocer esto!</string>
+    <string name="rc_story_which_one">mmm, cuál de todas…</string>
+    <string name="rc_story_hear_melody">Escucha la\nmelodía..</string>
+    <string name="rc_story_title_by">%1$s por\n%2$s</string>
+    <string name="rc_story_favourite_song">¡¡¡Tu canción favorita\neste mes!!!</string>
+    <string name="rc_story_bill">Revisemos tu recibo musical</string>
+    <string name="rc_story_receipt_recap">Resumen de %1$s</string>
+    <string name="rc_story_receipt_printed">impreso el %1$s/%2$s</string>
+    <string name="rc_story_receipt_top_artist">Artista principal</string>
+    <string name="rc_story_receipt_top_music">Música principal</string>
+    <string name="rc_story_receipt_total">Total : %1$s de reproducción</string>
+    <string name="rc_story_receipt_counts">%1$d reproducciones · %2$d canciones · %3$d artistas</string>
+    <string name="rc_story_receipt_end">FIN DE LÍNEA</string>
+    <string name="rc_story_there_you_go">Ahí lo tienes</string>
+    <string name="rc_story_thats_your">¡Ese es tu\nresumen de %1$s!</string>
+    <string name="rc_story_tap_finish">TOCA PARA FINALIZAR</string>
+
+    <!-- Stamps -->
+    <string name="recap_stamp_verified">VERIFICADO</string>
+    <string name="recap_stamp_invalid">NO VÁLIDO</string>
+
+    <!-- Recap Not Yet -->
+    <string name="recap_not_yet_single">una vez que hayas reproducido una canción</string>
+    <string name="recap_not_yet_date">el %2$d de %1$s, cuando hayas reproducido %3$d canciones</string>
+    <string name="recap_not_yet_missing">cuando hayas reproducido %1$d %2$s más este mes</string>
+    <string name="recap_song_singular">canción</string>
+    <string name="recap_song_plural">canciones</string>
+</resources>

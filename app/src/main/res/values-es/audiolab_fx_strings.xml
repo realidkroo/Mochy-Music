@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fx_title_audio">Audio</string>
+
+    <string name="fx_loudness_title">Sonoridad (Loudness)</string>
+    <string name="fx_loudness_sub">Más potente y cuerpo completo sin distorsión</string>
+    <string name="fx_loudness_gentle">Suave</string>
+    <string name="fx_loudness_punchy">Impactante</string>
+    <string name="fx_loudness_night">Modo nocturno</string>
+    <string name="fx_loudness_max">Máximo</string>
+    <string name="fx_boost">Realce</string>
+    <string name="fx_compression">Compresión</string>
+    <string name="fx_compression_note">La compresión eleva los pasajes suaves hacia los más fuertes.</string>
+    <string name="fx_even_out">Nivelar canciones</string>
+    <string name="fx_even_out_sub">Reproduce cada canción al mismo volumen</string>
+    <string name="fx_replaygain">REPLAYGAIN</string>
+    <string name="fx_rg_track">Pista</string>
+    <string name="fx_rg_album">Álbum</string>
+    <string name="fx_preamp">Preamplificador</string>
+    <string name="fx_replaygain_note">Ajusta el nivel de sonoridad según los metadatos de ReplayGain.</string>
+
+    <string name="fx_spatial_title">Audio espacial</string>
+    <string name="fx_spatial_sub">Proyecta el sonido estéreo frente a ti en lugar de dentro de tus oídos</string>
+    <string name="fx_mode_crossfeed">Mezcla cruzada (Crossfeed)</string>
+    <string name="fx_mode_speakers">Altavoces virtuales</string>
+    <string name="fx_xf_light">Ligero</string>
+    <string name="fx_xf_natural">Natural</string>
+    <string name="fx_xf_strong">Fuerte</string>
+    <string name="fx_head_shadow">Sombra de cabeza</string>
+    <string name="fx_amount">Intensidad</string>
+    <string name="fx_speaker_angle">Ángulo de altavoces</string>
+    <string name="fx_speakers_note">Modela dos altavoces virtuales frente a la cabeza.</string>
+
+    <string name="fx_mono_title">Audio mono</string>
+    <string name="fx_mono_sub">Ambos oídos escuchan la mezcla completa</string>
+
+    <string name="fx_atmos_title">Dolby Atmos y envolvente</string>
+    <string name="fx_atmos_sub">Reproduce fuentes 5.1, 7.1 y Atmos como sonido 3D en audífonos.</string>
+    <string name="fx_atmos_decoder">Decodificador Atmos</string>
+    <string name="fx_atmos_spatializer">Espacializador de Android</string>
+    <string name="fx_atmos_yes">Sí</string>
+    <string name="fx_atmos_not_on_phone">No disponible en este teléfono</string>
+    <string name="fx_atmos_needs_android">Android 12L+</string>
+    <string name="fx_state_not_available">No disponible</string>
+    <string name="fx_state_on">Activado</string>
+    <string name="fx_state_off">Desactivado</string>
+    <string name="fx_state_unknown">Desconocido</string>
+
+    <string name="fx_speed_normal">Normal</string>
+    <string name="fx_speed_slowed">Lento</string>
+    <string name="fx_speed_slowed_reverb">Lento + reverberación</string>
+    <string name="fx_speed_nightcore">Nightcore</string>
+    <string name="fx_speed_title">Velocidad de reproducción</string>
+    <string name="fx_pitch_stays">El tono se mantiene</string>
+    <string name="fx_pitch_follows">El tono varía según la velocidad</string>
+    <string name="fx_speed">Velocidad</string>
+    <string name="fx_preserve_pitch">Preservar tono</string>
+    <string name="fx_preserve_pitch_sub">Mantener la afinación original al cambiar la velocidad</string>
+    <string name="fx_pitch">Tono</string>
+    <string name="fx_semitones">%1$s semitonos</string>
+    <string name="fx_reset">Restablecer</string>
+
+    <string name="fx_volume_title">Volumen exponencial</string>
+    <string name="fx_volume_sub">Curva logarítmica para mayor precisión a bajo volumen</string>
+    <string name="fx_curve_gentle">Suave</string>
+    <string name="fx_curve_exponential">Exponencial</string>
+    <string name="fx_curve_steep">Pronunciada</string>
+    <string name="fx_curve">Curva</string>
+    <string name="fx_volume_limit">Límite de volumen</string>
+    <string name="fx_volume_note">Ajusta la curva de volumen del reproductor.</string>
+
+    <string name="fx_reverb_title">Reverberación</string>
+    <string name="fx_reverb_sub">Añade efecto de reverberación a la música</string>
+    <string name="fx_reverb_room">Habitación</string>
+    <string name="fx_reverb_studio">Estudio</string>
+    <string name="fx_reverb_bathroom">Baño</string>
+    <string name="fx_reverb_plate">Placa</string>
+    <string name="fx_reverb_hall">Sala</string>
+    <string name="fx_reverb_cathedral">Catedral</string>
+    <string name="fx_reverb_stadium">Estadio</string>
+    <string name="fx_reverb_dream">De Ensueño</string>
+    <string name="fx_reverb_custom">Personalizado</string>
+    <string name="fx_mix">Mezcla</string>
+    <string name="fx_room_size">Tamaño de sala</string>
+    <string name="fx_damping">Amortiguación</string>
+    <string name="fx_wet">Señal procesada (Wet)</string>
+    <string name="fx_fine_tune">AJUSTE FINO</string>
+    <string name="fx_dry">Señal original (Dry)</string>
+    <string name="fx_width">Anchura</string>
+    <string name="fx_pre_delay">Pre-retardo</string>
+    <string name="fx_low_cut">Corte de graves</string>
+    <string name="fx_presets">Ajustes predefinidos</string>
+    <string name="fx_presets_place">Efectos de audio (FX)</string>
+    <string name="fx_preset_hint">Conducción nocturna</string>
+</resources>

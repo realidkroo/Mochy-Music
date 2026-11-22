@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="xmix_title">Fundido cruzado (Crossfade)</string>
+    <string name="xmix_back">Laboratorio de audio</string>
+    <string name="xmix_off">Desactivado</string>
+    <string name="xmix_off_desc">Sin mezclas entre canciones</string>
+    <string name="xmix_auto">Fundido cruzado automático</string>
+    <string name="xmix_auto_desc">Una mezcla suave de %1$d segundos entre cada canción</string>
+    <string name="xmix_manual">Fundido cruzado manual</string>
+    <string name="xmix_manual_desc">Configurar tiempo de fundido personalizable</string>
+    <string name="xmix_length">Duración</string>
+    <string name="xmix_crossmix">CrossMix</string>
+    <string name="xmix_crossmix_desc">Estilo DJ: analiza tempo, ritmos, tono y energía de cada canción para aplicar la transición óptima</string>
+    <string name="xmix_crossmix_desc_unavailable">Aún en optimización. Mezclas estilo DJ que analizan tempo, ritmo y voces de las canciones</string>
+    <string name="xmix_gapless">Mantener álbumes sin pausas intactos</string>
+    <string name="xmix_gapless_desc">Pistas continuas de álbumes se reproducirán sin mezcla intercalada</string>
+    <string name="xmix_in_progress">En curso</string>
+    <string name="xmix_transport_title">Transición en pausa, reproducción y saltos</string>
+    <string name="xmix_fade_enable">Habilitar desvanecimiento</string>
+    <string name="xmix_fade_enable_desc">Atenúa suavemente la música al pausar o saltar y la eleva al reanudar</string>
+    <string name="xmix_layered_effect">Efecto en capas</string>
+    <string name="xmix_layered_effect_desc">Efecto CrossMix sobre el desvanecimiento, como eco o frenado de vinilo</string>
+    <string name="xmix_choose_effect">Elegir un efecto</string>
+    <string name="xmix_effect_none">Ninguno</string>
+    <string name="xmix_effect_echo">Eco</string>
+    <string name="xmix_effect_rewind">Rebobinar</string>
+    <string name="xmix_effect_tape_stop">Freno de cinta</string>
+    <string name="xmix_effect_far_away">Desvanecer al fondo</string>
+    <string name="xmix_effect_reverb">Bañado en reverberación</string>
+    <string name="xmix_effect_filter">Barrido de filtro</string>
+    <string name="xmix_status_title">Estado de Crossmix</string>
+    <string name="xmix_status_empty">Nada por ahora. Reproduce una canción con otra en cola</string>
+    <string name="xmix_test_title">Probar en esta canción</string>
+    <string name="xmix_test_desc">Mezcla hacia la siguiente canción</string>
+    <string name="xmix_test_detail">Planifica la mezcla y salta unos segundos antes de que comience</string>
+</resources>

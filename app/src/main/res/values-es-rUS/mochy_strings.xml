@@ -637,4 +637,21 @@
     <string name="discord_activity_name_description">Nombre personalizado para la actividad (déjelo vacío para usar el nombre predeterminado)</string>
     <string name="discord_advanced_mode">Modo avanzado</string>
     <string name="discord_advanced_mode_description">Mostrar opciones de personalización adicionales para la Presencia Enriquecida</string>
+    <string name="recently_played">Escuchado recientemente</string>
+    <string name="home_history">Historial</string>
+    <string name="your_library">Tu biblioteca</string>
+    <string name="downloaded">Descargado</string>
+    <string name="uploaded">Subido</string>
+    <string name="dont_forget_these_songs">No olvides estas canciones</string>
+    <string name="artist_list">Lista de artistas</string>
+    <string name="music_videos_for_you">Videos musicales para ti</string>
+    <string name="live_shows">Conciertos en vivo</string>
+    <string name="home_because_you_like">Porque te gusta</string>
+    <string name="home_more_like">Más como</string>
+    <string name="home_because_you_listen_to">Porque escuchas a</string>
+    <string name="home_try_something_new">Prueba algo nuevo</string>
+    <string name="home_new_from_your_artists">Lo nuevo de tus artistas</string>
+    <string name="all_time_hits">Éxitos de todos los tiempos</string>
+    <string name="most_played_genre">Lo más escuchado de %1$s</string>
+    <string name="add_music">Añadir música</string>
 </resources>
