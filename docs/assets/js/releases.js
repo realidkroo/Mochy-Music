@@ -32,7 +32,7 @@
           entry.target.classList.add("in");
           revealIO.unobserve(entry.target);
         });
-      }, { rootMargin: "0px 0px -6% 0px", threshold: 0.05 });
+      }, { rootMargin: "0px 0px -10% 0px", threshold: 0.08 });
     }
     Array.prototype.forEach.call(document.querySelectorAll(REVEAL), function (el) {
       if (!el.classList.contains("in")) revealIO.observe(el);

@@ -164,7 +164,7 @@ button.rel-chip:hover { background: var(--rel-panel); border-color: var(--rel-ac
 .rel-motion .rel-page .rel-sections > *,
 .rel-motion .rel-page .rel-older,
 .rel-motion .rel-page .rel-timeline > article,
-.rel-motion .rel-page .rel-bottom { opacity: 0; transform: translateY(16px); transition: opacity 0.45s ease, transform 0.5s var(--rel-ease); }
+.rel-motion .rel-page .rel-bottom { opacity: 0; transform: translateY(12px); transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
 .rel-motion .rel-page .rel-head > *.in,
 .rel-motion .rel-page .rel-grid > *.in,
 .rel-motion .rel-page .rel-cta.in,

@@ -37,6 +37,10 @@ img { max-width: 100%; display: block; }
 a { color: inherit; }
 :focus-visible { outline: 1px solid var(--yellow); outline-offset: 3px; border-radius: 10px; }
 
+/* one entrance for the whole page, without transforming body itself */
+@keyframes page-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+body > * { animation: page-in 0.45s cubic-bezier(0.32, 0.72, 0, 1) both; }
+
 /* the concept's dotted ground, drawn once by the gpu as a repeating gradient */
 .dots {
   background-color: var(--bg);
