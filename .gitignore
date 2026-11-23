@@ -93,6 +93,7 @@ app/persistent-debug.keystore
 *.py
 !scripts/*.py
 !tools/stage/*.py
+!tools/fx/*.py
 .env
 output-metadata.json
 vcs.xml
