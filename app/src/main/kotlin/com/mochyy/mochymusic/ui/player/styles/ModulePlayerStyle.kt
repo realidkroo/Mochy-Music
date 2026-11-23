@@ -417,6 +417,7 @@ private fun Block(block: SkinBlock, context: SkinContext, modifier: Modifier, in
         is SkinBlock.Shape -> SkinShape(block, context, modifier)
         is SkinBlock.Time -> SkinTime(block, context, modifier)
         is SkinBlock.Shader -> SkinShaderBlock(block, context, modifier)
+        is SkinBlock.Surface -> SkinSurface(block, context, modifier)
         is SkinBlock.Cover -> SkinCover(block, context, modifier)
         is SkinBlock.Title -> SongText(block.text, context, modifier, inRow) { it.title }
         is SkinBlock.Artist -> SongText(block.text, context, modifier, inRow) { it.artist }
@@ -733,7 +734,8 @@ private val SkinBlock.stretches: Boolean
         (this is SkinBlock.Label && !text.wrap) || (this is SkinBlock.Time && !text.wrap) ||
         this is SkinBlock.Progress || this is SkinBlock.Volume || this is SkinBlock.Lyrics || this is SkinBlock.Column || this is SkinBlock.Stack ||
         this is SkinBlock.Visualizer || (this is SkinBlock.Shape && width == null) ||
-        (this is SkinBlock.Shader && width == null) || (this is SkinBlock.Box && width == null) || this is SkinBlock.BottomBar || this is SkinBlock.QueueList
+        (this is SkinBlock.Shader && width == null) || (this is SkinBlock.Surface && width == null) ||
+        (this is SkinBlock.Box && width == null) || this is SkinBlock.BottomBar || this is SkinBlock.QueueList
 
 internal val SkinAlign.horizontal: Alignment.Horizontal
     get() = when (this) {
