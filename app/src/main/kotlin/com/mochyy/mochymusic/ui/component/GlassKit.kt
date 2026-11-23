@@ -47,6 +47,17 @@ class GlassState {
      */
     var renderNode by mutableStateOf<Any?>(null)
     var rootPosition by mutableStateOf(Offset.Zero)
+
+    // drops the recorded screen display list when the window hides so gpu textures can be reclaimed
+    fun discard() {
+        val node = renderNode ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) glassNodeDiscard(node)
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.Q)
+private fun glassNodeDiscard(node: Any) {
+    (node as RenderNode).discardDisplayList()
 }
 
 /*

@@ -50,8 +50,8 @@ class YouTubePlayReporter(
 
     fun onSongStart(metadata: MediaMetadata?, durationMs: Long) {
         onSongStop()
-        // local files have nothing on youtube to count against
-        if (!isEnabled || metadata == null || metadata.localUri != null) return
+        // local files have nothing on youtube to count against, and reporting requires a signed-in account
+        if (!isEnabled || metadata == null || metadata.localUri != null || YouTube.cookie.isNullOrBlank()) return
         val lengthMs = if (durationMs > 0) durationMs else metadata.duration * 1000L
         listen = Listen(metadata.id, lengthMs, trackingFor(metadata.id))
         resume()

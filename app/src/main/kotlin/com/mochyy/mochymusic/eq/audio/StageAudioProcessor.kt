@@ -54,23 +54,32 @@ class StageAudioProcessor(private val service: AudioFxService) : AudioProcessor 
     override fun queueInput(inputBuffer: ByteBuffer) {
         val bytes = inputBuffer.remaining()
         if (bytes == 0) return
-        if (handle == 0L || channels == 0) {
+        if (channels == 0) {
             inputBuffer.position(inputBuffer.limit())
             return
         }
         val params = service.stage
-        if (params !== pushed) {
-            StageNative.setParams(handle, params.values)
-            pushed = params
-        }
-        val frames = bytes / (2 * channels)
+        // skip allocating the c++ room engine (2-7 mb) while 3d stage is off and already settled dry
         if (channels == 2 && idle && !params.enabled) {
+            if (handle != 0L) release()
             val out = replaceOutputBuffer(bytes)
             out.put(inputBuffer)
             out.flip()
             return
         }
-
+        if (handle == 0L) {
+            handle = StageNative.create(sampleRate, channels)
+            pushed = null
+            if (handle == 0L) {
+                inputBuffer.position(inputBuffer.limit())
+                return
+            }
+        }
+        if (params !== pushed) {
+            StageNative.setParams(handle, params.values)
+            pushed = params
+        }
+        val frames = bytes / (2 * channels)
         val source = if (inputBuffer.isDirect) inputBuffer else copyToDirect(inputBuffer)
         val out = replaceOutputBuffer(frames * 4)
         idle = StageNative.process(handle, source, source.position(), out, frames)
@@ -78,6 +87,7 @@ class StageAudioProcessor(private val service: AudioFxService) : AudioProcessor 
         out.limit(frames * 4)
         inputBuffer.position(inputBuffer.limit())
         if (!idle) StageNative.levels(handle, service.stageLevels)
+        else if (!params.enabled && channels == 2) release()
     }
 
     private fun copyToDirect(input: ByteBuffer): ByteBuffer {
@@ -117,13 +127,17 @@ class StageAudioProcessor(private val service: AudioFxService) : AudioProcessor 
         inputEnded = false
         val format = pendingFormat
         if (format == AudioProcessor.AudioFormat.NOT_SET) return
-        if (handle == 0L || format.sampleRate != sampleRate || format.channelCount != channels) {
+        if (format.sampleRate != sampleRate || format.channelCount != channels) {
             release()
             sampleRate = format.sampleRate
             channels = format.channelCount
-            handle = StageNative.create(sampleRate, channels)
-        } else {
-            StageNative.clear(handle)
+        }
+        // only spin up the native room engine when stage is enabled or decoding surround
+        if (service.stage.enabled || channels > 2) {
+            if (handle == 0L) handle = StageNative.create(sampleRate, channels)
+            else StageNative.clear(handle)
+        } else if (handle != 0L) {
+            release()
         }
         pushed = null
         idle = true

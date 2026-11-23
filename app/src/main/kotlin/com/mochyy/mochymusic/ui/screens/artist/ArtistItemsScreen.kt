@@ -76,7 +76,9 @@ import com.mochyy.mochymusic.ui.menu.YouTubeArtistMenu
 import com.mochyy.mochymusic.ui.menu.YouTubePlaylistMenu
 import com.mochyy.mochymusic.ui.menu.YouTubeSongMenu
 import com.mochyy.mochymusic.ui.screens.library.LibraryIndexRail
+import com.mochyy.mochymusic.ui.screens.library.indexLandingUnderBar
 import com.mochyy.mochymusic.ui.screens.library.indexSections
+import com.mochyy.mochymusic.ui.screens.library.rememberIndexGlide
 import com.mochyy.mochymusic.ui.utils.backToMain
 import com.mochyy.mochymusic.utils.ArtistVideos
 import com.mochyy.mochymusic.utils.makeTimeString
@@ -87,7 +89,6 @@ import com.music.innertube.models.PlaylistItem
 import com.music.innertube.models.SongItem
 import com.music.innertube.models.WatchEndpoint
 import com.music.innertube.models.YTItem
-import kotlinx.coroutines.launch
 
 /** what a shelf's page holds, read off its items: YouTube's titles are in the account's language */
 private enum class ItemsKind(val labelRes: Int, val countRes: Int) {
@@ -153,6 +154,7 @@ fun ArtistItemsScreen(
     val gridMode = isGrid ?: (kind == ItemsKind.Albums || kind == ItemsKind.Playlists || kind == ItemsKind.Artists)
 
     val lazyListState = rememberLazyListState()
+    val glide = rememberIndexGlide(lazyListState, landing = indexLandingUnderBar())
     val revealSeen = rememberRevealSeenState()
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 
@@ -236,7 +238,7 @@ fun ArtistItemsScreen(
                 LibraryIndexRail(
                     sections = indexed.map { it.first },
                     onSectionSelected = { key ->
-                        sectionStarts[key]?.let { index -> coroutineScope.launch { lazyListState.animateScrollToItem(index) } }
+                        sectionStarts[key]?.let(glide::glideTo)
                     },
                     modifier = Modifier.fillMaxSize(),
                 )

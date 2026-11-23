@@ -53,11 +53,16 @@ import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.SheetLabel
 import com.mochyy.mochymusic.ui.component.SheetPillButton
 import com.mochyy.mochymusic.ui.component.SheetSearchField
+import com.mochyy.mochymusic.extensions.isUserLoggedIn
+import com.mochyy.mochymusic.importer.PlaylistAddedHere
 import com.mochyy.mochymusic.viewmodels.PlaylistsViewModel
 import com.music.innertube.YouTube
+import com.music.innertube.utils.completed
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.text.Collator
 import java.time.LocalDateTime
 import java.util.Locale
@@ -108,7 +113,8 @@ internal fun announceAddedToPlaylist(
     }
 }
 
-// a playlist that mirrors youtube keeps what's added here on top through its syncs, and youtube gets the songs too
+// a playlist that mirrors youtube keeps unconfirmed local additions pending until youtube confirms them,
+// saves the returned setVideoId so subsequent removes/moves reach youtube immediately, and cleans up pending state on success
 internal suspend fun addToPlaylistKeepingSync(
     context: android.content.Context,
     database: com.mochyy.mochymusic.db.MusicDatabase,
@@ -118,13 +124,71 @@ internal suspend fun addToPlaylistKeepingSync(
     if (ids.isEmpty()) return
     val browseId = playlist.playlist.browseId
     if (browseId != null) {
-        com.mochyy.mochymusic.importer.PlaylistAddedHere.add(context, playlist.id, ids)
+        PlaylistAddedHere.add(context, playlist.id, ids)
         database.addSongsToPlaylistTop(playlist, ids)
     } else {
         database.addSongToPlaylist(playlist, ids)
     }
     announceAddedToPlaylist(database, playlist, ids, context)
-    browseId?.let { ids.forEach { id -> YouTube.addToPlaylist(it, id) } }
+
+    if (browseId == null || !playlist.playlist.isEditable || !context.isUserLoggedIn()) return
+
+    val nonLocalIds = database.getSongsByIds(ids).filterNot { it.song.isLocal }.map { it.id }.ifEmpty { ids }
+    if (nonLocalIds.isEmpty()) return
+
+    YouTube.addVideosToPlaylistWithSetVideoIds(browseId, nonLocalIds)
+        .onSuccess { addedPairs ->
+            PlaylistAddedHere.confirmAdded(context, playlist.id, nonLocalIds)
+            if (addedPairs.isNotEmpty()) {
+                val queues = addedPairs.groupBy({ it.first }, { it.second }).mapValues { ArrayDeque(it.value) }
+                val maps = database.playlistSongs(playlist.id).first().map { it.map }.sortedBy { it.position }
+                database.withTransaction {
+                    maps.forEach { map ->
+                        if (map.setVideoId == null) {
+                            queues[map.songId]?.removeFirstOrNull()?.let { svid ->
+                                update(map.copy(setVideoId = svid))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .onFailure { e ->
+            Timber.w(e, "Failed to push playlist additions to YouTube ($browseId); kept pending for next sync")
+        }
+}
+
+// removes a song from a synced playlist locally and on youtube; if setVideoId wasn't stored locally yet,
+// fetches it from youtube first, and if offline/failed keeps the removal pending for the next sync
+internal suspend fun removeFromPlaylistKeepingSync(
+    context: android.content.Context,
+    database: com.mochyy.mochymusic.db.MusicDatabase,
+    playlistId: String,
+    browseId: String?,
+    songId: String,
+    setVideoId: String?,
+) {
+    if (browseId == null) return
+    PlaylistAddedHere.addRemoval(context, playlistId, listOf(songId))
+    if (!context.isUserLoggedIn()) return
+
+    val resolvedSetVideoId = setVideoId
+        ?: database.getSetVideoId(songId)?.setVideoId
+        ?: YouTube.playlist(browseId).completed().getOrNull()
+            ?.songs?.firstOrNull { it.id == songId && it.setVideoId != null }?.setVideoId
+
+    if (resolvedSetVideoId == null) {
+        Timber.w("removeFromPlaylistKeepingSync: No setVideoId found for song=$songId in playlist=$browseId; kept pending")
+        return
+    }
+
+    YouTube.removeFromPlaylist(browseId, songId, resolvedSetVideoId)
+        .onSuccess {
+            PlaylistAddedHere.confirmRemoved(context, playlistId, listOf(songId))
+        }
+        .onFailure { e ->
+            Timber.w(e, "Failed to remove song=$songId from YouTube playlist=$browseId; kept pending")
+        }
 }
 
 @Composable

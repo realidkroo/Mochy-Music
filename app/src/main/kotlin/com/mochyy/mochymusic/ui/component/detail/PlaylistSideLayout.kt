@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
@@ -18,27 +17,17 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.withFrameNanos
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.LocalPinnableContainer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -62,33 +51,15 @@ private val SideCoverMax = 560.dp
 // the room the back button's row keeps above the first song
 private val SideListTop = 62.dp
 
-// the title block on its side sits on the cover at the left; the header item hands it here so the songs get the whole right side
-@Stable
-internal class PlaylistSideHeader {
-    var content by mutableStateOf<(@Composable () -> Unit)?>(null)
-}
+// tells the header item it's on its side, where it heads the songs at the right with no cover band of its own
+internal val LocalPlaylistSideBySide = staticCompositionLocalOf { false }
 
-internal val LocalPlaylistSideHeader = staticCompositionLocalOf<PlaylistSideHeader?> { null }
-
-// called by the header item on its side: keeps the item alive while it's scrolled away, so the block on the cover never goes stale
-@Composable
-internal fun PublishSideHeader(side: PlaylistSideHeader, body: @Composable () -> Unit) {
-    val pinnable = LocalPinnableContainer.current
-    DisposableEffect(pinnable) {
-        val handle = pinnable?.pin()
-        onDispose { handle?.release() }
-    }
-    SideEffect { side.content = body }
-    DisposableEffect(side) { onDispose { side.content = null } }
-}
-
-// a playlist on its side: the cover down the left with the title on it, fading into the page, the songs scrolling on the right
+// a playlist on its side: the cover down the left fading into the page, the title and the songs scrolling on the right
 @Composable
 internal fun PlaylistSideBySide(
     sharedElementKey: String?,
     coverUrl: String?,
     cover: (@Composable (Modifier) -> Unit)?,
-    framedCover: (@Composable (Modifier) -> Unit)?,
     background: State<Color>,
     lazyListState: LazyListState,
     contentPadding: PaddingValues,
@@ -101,7 +72,6 @@ internal fun PlaylistSideBySide(
     overlay: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit,
     content: LazyListScope.() -> Unit,
 ) {
-    val side = remember { PlaylistSideHeader() }
     val glassState = remember { GlassState() }
     val scope = rememberCoroutineScope()
     val direction = LocalLayoutDirection.current
@@ -113,23 +83,7 @@ internal fun PlaylistSideBySide(
     val overrideBarHeightPx = remember { mutableIntStateOf(0) }
     val overrideBarHeight = with(density) { overrideBarHeightPx.intValue.toDp() }
 
-    // turned sideways while scrolled down, the header item was never built: a visit to the top for two frames builds it
-    // (and pins it, so it stays), then the list goes back where it was
-    LaunchedEffect(Unit) {
-        withFrameNanos { }
-        if (side.content != null || lazyListState.firstVisibleItemIndex == 0) return@LaunchedEffect
-        val index = lazyListState.firstVisibleItemIndex
-        val offset = lazyListState.firstVisibleItemScrollOffset
-        lazyListState.scrollToItem(0)
-        withFrameNanos { }
-        withFrameNanos { }
-        lazyListState.scrollToItem(index, offset)
-    }
-
-    CompositionLocalProvider(
-        LocalPlaylistSideHeader provides side,
-        LocalPlaylistFramedCover provides framedCover,
-    ) {
+    CompositionLocalProvider(LocalPlaylistSideBySide provides true) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
@@ -158,15 +112,6 @@ internal fun PlaylistSideBySide(
                     content = content,
                 )
             }
-
-            // the title, who made it and the buttons, on the cover just above the bottom bar
-            SideHeaderHost(
-                side = side,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .width(coverWidth)
-                    .padding(start = sides.calculateStartPadding(direction), bottom = bottomInset + 4.dp),
-            )
 
             if (topBarOverride != null) {
                 Box(
@@ -197,15 +142,7 @@ internal fun PlaylistSideBySide(
     }
 }
 
-// its own scope: the header item hands over a fresh block on every recomposition, and read in the page's scope that recomposed the cover and the list with it
-@Composable
-private fun SideHeaderHost(side: PlaylistSideHeader, modifier: Modifier) {
-    Box(modifier = modifier) {
-        side.content?.invoke()
-    }
-}
-
-// the cover filling the left side, its right edge sinking into the page and its foot darkened under the title
+// the cover filling the left side, its right edge and its foot under the bottom bar sinking into the page
 @Composable
 private fun SideCover(
     coverUrl: String?,

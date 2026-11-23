@@ -95,8 +95,13 @@ private fun VideoPartContent(session: SongShareSession) {
                     lengthMs = length.coerceIn(1L, minOf(OwnVideoLongestMs, own.durationMs)),
                 )
                 session.lastOwnVideo = moved
-                val dim = (session.background as? SongBackground.Video)?.dim ?: 0.85f
-                session.setVideo(SongBackground.Video(moved, dim))
+                if (session.isCardOnly) {
+                    session.cardOnlyBgTouched = true
+                    session.cardOnlyBg = CardOnlyBackground.Video(moved)
+                } else {
+                    val dim = (session.background as? SongBackground.Video)?.dim ?: 0.85f
+                    session.setVideo(SongBackground.Video(moved, dim))
+                }
             },
             drawStrip = { timeToX -> drawVideoFrames(frames, own.durationMs, timeToX) },
         )

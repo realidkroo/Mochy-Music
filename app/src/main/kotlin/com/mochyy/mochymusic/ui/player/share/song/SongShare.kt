@@ -149,9 +149,9 @@ private fun SongShareDialog(
             snapshotFlow { ((session.background as? SongBackground.Still)?.background as? ShareBackground.Picture)?.uri }
                 .collect { uri -> if (uri != null) loadPictureArt(context, session, uri) }
         }
-        // lining the music video up means listening to both; it only happens once the music video is picked
+        // lining the music video up means listening to both; it only happens once the music video is picked (full canvas or card only)
         LaunchedEffect(session) {
-            snapshotFlow { (session.background as? SongBackground.Video)?.source == ShareVideoSource.MusicVideo }.first { it }
+            snapshotFlow { session.activeVideoSource == ShareVideoSource.MusicVideo }.first { it }
             matchMusicVideo(session, playerConnection?.service)
         }
         MovesThePlayhead(session)

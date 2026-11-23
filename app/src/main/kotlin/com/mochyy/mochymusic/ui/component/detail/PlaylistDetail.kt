@@ -412,13 +412,12 @@ fun PlaylistDetailScaffold(
     // before the bar collapses
     val pillNeedsGlass = rememberUpdatedState(modeBar is PlaylistModeBar.EditOrder)
 
-    // on its side the cover stays at the left with the title on it, and the songs take the right
+    // on its side the cover stays at the left, and the title and the songs take the right
     if (com.mochyy.mochymusic.ui.utils.isLandscapeLayout()) {
         PlaylistSideBySide(
             sharedElementKey = sharedElementKey,
             coverUrl = coverUrl,
             cover = cover,
-            framedCover = framedCover,
             background = background,
             lazyListState = lazyListState,
             contentPadding = contentPadding,
@@ -988,10 +987,10 @@ fun PlaylistHeader(
 ) {
     val playlistStyle by rememberEnumPreference(PlaylistStyleKey, defaultValue = PlaylistStyle.FLOW)
     val framedCover = LocalPlaylistFramedCover.current
-    // on its side the block sits on the cover at the left, so it never draws a framed cover of its own
-    val side = LocalPlaylistSideHeader.current
-    val useMinimal = compact || (side == null && playlistStyle == PlaylistStyle.MINIMAL)
-    val useClassic = side == null && !compact && playlistStyle == PlaylistStyle.CLASSIC
+    // on its side the cover is already at the left, so the block heads the songs without a band or a framed cover of its own
+    val sideBySide = LocalPlaylistSideBySide.current
+    val useMinimal = compact || (!sideBySide && playlistStyle == PlaylistStyle.MINIMAL)
+    val useClassic = !sideBySide && !compact && playlistStyle == PlaylistStyle.CLASSIC
 
     val body: @Composable () -> Unit = {
         Column(
@@ -1087,8 +1086,9 @@ fun PlaylistHeader(
         }
     }
 
-    if (side != null) {
-        PublishSideHeader(side, body)
+    if (sideBySide) {
+        // the list already starts under the back button on its side, so the block needs no gap above it
+        Column(modifier = modifier.fillMaxWidth()) { body() }
     } else if (useMinimal || useClassic) {
         Column(
             modifier = modifier

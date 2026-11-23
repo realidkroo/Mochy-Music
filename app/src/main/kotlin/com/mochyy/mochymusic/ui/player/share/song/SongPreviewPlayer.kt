@@ -62,8 +62,13 @@ internal class SongPreviewPlayer(context: Context, dataSourceFactory: DataSource
     init {
         val appContext = context.applicationContext
         handler.post {
+            val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+                .setBufferDurationsMs(4_000, 10_000, 500, 1_000)
+                .setTargetBufferBytes(2 * 1024 * 1024)
+                .build()
             player = ExoPlayer.Builder(appContext)
                 .setLooper(handler.looper)
+                .setLoadControl(loadControl)
                 .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
                 .build()
                 .apply {

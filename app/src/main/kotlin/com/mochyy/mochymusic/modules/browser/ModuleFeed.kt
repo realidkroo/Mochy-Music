@@ -101,7 +101,12 @@ class ModuleFeed @Inject constructor(
 ) {
     private val prefs = context.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
     private val client by lazy {
-        OkHttpClient.Builder().connectTimeout(12, TimeUnit.SECONDS).readTimeout(30, TimeUnit.SECONDS).build()
+        OkHttpClient.Builder()
+            .dispatcher(com.mochyy.mochymusic.utils.AppProxy.dispatcher)
+            .connectionPool(com.mochyy.mochymusic.utils.AppProxy.connectionPool)
+            .connectTimeout(12, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
     }
 
     private val _session = MutableStateFlow(prefs.getString(SessionKey, null))

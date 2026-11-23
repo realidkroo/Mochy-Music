@@ -86,6 +86,7 @@ private suspend fun readCoverTint(context: Context, thumbnails: List<String>): L
             .data(thumbnail)
             .size(100, 100)
             .allowHardware(false)
+            .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
             .build()
         val bitmap = context.imageLoader.execute(request).image?.toBitmap() ?: continue
         val palette = Palette.from(bitmap)

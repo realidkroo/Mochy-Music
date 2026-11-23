@@ -39,11 +39,8 @@ class MochyWidgetManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val database: MusicDatabase
 ) {
-    private val imageLoader by lazy {
-        ImageLoader.Builder(context)
-            .crossfade(false)
-            .build()
-    }
+    // share the app's singleton image loader instead of keeping a second untrimmed coil memory cache
+    private val imageLoader: ImageLoader get() = coil3.SingletonImageLoader.get(context)
 
     private var cachedArtworkUri: String? = null
     private var cachedAlbumArt: Bitmap? = null
@@ -517,7 +514,8 @@ class MochyWidgetManager @Inject constructor(
                     .data(artworkUri)
                     .size(size, size)
                     .allowHardware(false)
-                    .crossfade(300)
+                    .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
+                    .crossfade(false)
                     .build()
                 val result = imageLoader.execute(request)
                 result.image?.toBitmap()

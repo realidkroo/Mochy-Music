@@ -40,18 +40,15 @@ object SyncUndo {
 
     /** replaces the saved state with what the phone holds right now, before a sync touches it */
     suspend fun begin(context: Context, database: MusicDatabase) {
+        // read bare columns instead of full song and playlist joins so auto-sync stays light on ram and sqlite
+        val syncedIds = database.syncedPlaylistIds()
+        val entriesByPlaylist = database.syncedPlaylistEntries().groupBy { it.playlistId }
         val journal = Journal(
-            likedSongs = database.likedSongsByNameAsc().first().associate { it.id to it.song.likedDate?.toString() },
-            librarySongs = database.songsByNameAsc().first()
-                .mapNotNull { song -> song.song.inLibrary?.let { song.id to it.toString() } }
-                .toMap(),
-            playlists = database.playlistsByNameAsc().first()
-                .filter { it.playlist.browseId != null }
-                .associate { playlist ->
-                    playlist.playlist.id to database.playlistSongs(playlist.playlist.id).first()
-                        .sortedBy { it.map.position }
-                        .map { Entry(it.map.songId, it.map.setVideoId) }
-                },
+            likedSongs = database.likedSongSnapshots().associate { it.id to it.likedDate?.toString() },
+            librarySongs = database.librarySongSnapshots().associate { it.id to it.inLibrary.toString() },
+            playlists = syncedIds.associateWith { id ->
+                entriesByPlaylist[id].orEmpty().map { Entry(it.songId, it.setVideoId) }
+            },
         )
         synchronized(lock) { write(context, journal) }
     }

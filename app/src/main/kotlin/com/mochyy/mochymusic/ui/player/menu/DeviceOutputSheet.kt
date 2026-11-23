@@ -87,10 +87,8 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
                 audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat() / maxVolume,
             )
         }
-    val musicVolume =
-        remember {
-            mutableFloatStateOf(playerConnection?.player?.volume ?: 1f)
-        }
+    // the service's saved volume, not the player's: every song change set the player back to it
+    val musicVolume by remember(service) { service?.playerVolume ?: MutableStateFlow(1f) }.collectAsState()
 
     val devices by remember { service?.audioOutputs?.devices ?: MutableStateFlow(emptyList()) }.collectAsState()
     val cast = service?.castConnectionHandler
@@ -98,6 +96,7 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
     val castingTo by remember { cast?.castDeviceName ?: MutableStateFlow(null) }.collectAsState()
     val isCasting by remember { cast?.isCasting ?: MutableStateFlow(false) }.collectAsState()
     val isConnecting by remember { cast?.isConnecting ?: MutableStateFlow(false) }.collectAsState()
+    val castVolume by remember { cast?.castVolume ?: MutableStateFlow(1f) }.collectAsState()
     // the receiver tapped last, so its row can say it's connecting (a tv launching its player takes a few seconds)
     var tappedTarget by remember { mutableStateOf<String?>(null) }
     val (passthrough) = rememberPreference(UsbPassthroughKey, false)
@@ -137,31 +136,37 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
         ) {
             SectionLabel(stringResource(R.string.ps_device_change_playback))
 
-            VolumeCard(
-                icon = R.drawable.volume_up,
-                title = android.os.Build.MODEL ?: stringResource(R.string.ps_device_this_device),
-                value = deviceVolume.floatValue,
-                onValueChange = { next ->
-                    deviceVolume.floatValue = next
-                    audioManager.setStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        (next * maxVolume).toInt(),
-                        0,
-                    )
-                },
-            )
+            if (isCasting) {
+                VolumeCard(
+                    icon = R.drawable.volume_up,
+                    title = castingTo ?: stringResource(R.string.ps_device_cast_device),
+                    value = castVolume,
+                    onValueChange = { next -> cast?.setVolume(next) },
+                )
+            } else {
+                VolumeCard(
+                    icon = R.drawable.volume_up,
+                    title = android.os.Build.MODEL ?: stringResource(R.string.ps_device_this_device),
+                    value = deviceVolume.floatValue,
+                    onValueChange = { next ->
+                        deviceVolume.floatValue = next
+                        audioManager.setStreamVolume(
+                            AudioManager.STREAM_MUSIC,
+                            (next * maxVolume).toInt(),
+                            0,
+                        )
+                    },
+                )
 
-            Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-            VolumeCard(
-                icon = R.drawable.music_note,
-                title = stringResource(R.string.ps_device_music_volume),
-                value = musicVolume.floatValue,
-                onValueChange = { next ->
-                    musicVolume.floatValue = next
-                    playerConnection?.player?.volume = next
-                },
-            )
+                VolumeCard(
+                    icon = R.drawable.music_note,
+                    title = stringResource(R.string.ps_device_music_volume),
+                    value = musicVolume,
+                    onValueChange = { next -> service?.playerVolume?.value = next },
+                )
+            }
 
             Spacer(modifier = Modifier.height(22.dp))
             SectionLabel(stringResource(R.string.ps_device_play_on))
@@ -172,7 +177,10 @@ fun DeviceOutputSheet(onDismiss: () -> Unit) {
                     detail = stringResource(R.string.ps_device_automatic_desc),
                     icon = Icons.Rounded.AutoMode,
                     selected = !anyChosen && !isCasting,
-                    onClick = { service?.setPreferredAudioDevice(null) },
+                    onClick = {
+                        if (isCasting) cast?.disconnect()
+                        service?.setPreferredAudioDevice(null)
+                    },
                 )
                 devices.forEach { device ->
                     val larpRow = larping && device.isActive && !isCasting

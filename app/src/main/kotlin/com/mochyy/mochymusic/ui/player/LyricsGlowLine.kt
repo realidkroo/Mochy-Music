@@ -831,7 +831,7 @@ private const val SwellReleaseFraction = 0.12f
  * line dropping - was sliced off at the edge, and only while the bloom was on, so the cut flickered
  * in and out with held notes.
  */
-private val MotionBleed = 10.dp
+internal val MotionBleed = 10.dp
 
 /** Room around a row for its zoom, lift and glow, so the row's damage boundary never cuts them. */
 private val DamageBleed = 24.dp
@@ -1555,12 +1555,14 @@ private var sharedLegacyShader: Any? = null
 /** Style 1: the bloom pass. Skipped (no render effect at all) whenever nothing is glowing. */
 @Suppress("NewApi")
 @Composable
-private fun rememberBloomModifier(
+internal fun rememberBloomModifier(
     layoutHolder: Array<TextLayoutResult?>,
     head: KaraokeHead,
     textLength: Int,
     amplitudeProvider: () -> Float,
     highBloom: Boolean,
+    bleed: androidx.compose.ui.unit.Dp = MotionBleed,
+    pixelScale: Float = 1f,
 ): Modifier {
     val shader = remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -1571,7 +1573,7 @@ private fun rememberBloomModifier(
     }
     if (shader == null) return Modifier
 
-    val cache = remember { WaveEffectCache() }
+    val cache = remember(highBloom, pixelScale) { WaveEffectCache() }
 
     return Modifier.graphicsLayer {
         val layout = layoutHolder[0]
@@ -1598,8 +1600,8 @@ private fun rememberBloomModifier(
             LyricsFontSize.toPx() * 0.5f
         }
 
-        // The layer is [MotionBleed] bigger than the text on every side; the text starts at o.
-        val o = MotionBleed.roundToPx().toFloat()
+        // The layer is [bleed] bigger than the text on every side; the text starts at o.
+        val o = bleed.roundToPx().toFloat()
         shader.setAgslUniform("layerSize", size.width, size.height)
         shader.setAgslUniform("headX", headX + o)
         shader.setAgslUniform("lineTop", layout.getLineTop(headLine) + o)
@@ -1607,7 +1609,7 @@ private fun rememberBloomModifier(
         shader.setAgslUniform("lineStart", layout.lineStartX(headLine, rtl) + o)
         shader.setAgslUniform("flowDir", if (rtl) -1f else 1f)
         shader.setAgslUniform("bloom", bloom)
-        shader.setAgslUniform("bloomR", BloomRadiusPx)
+        shader.setAgslUniform("bloomR", BloomRadiusPx * pixelScale)
         shader.setAgslUniform("bloomLag", charWidth * BloomLagChars)
         shader.setAgslUniform("bloomSpan", charWidth * BloomSpanChars)
         shader.setAgslUniform("highQuality", if (highBloom) 1f else 0f)
@@ -1688,7 +1690,7 @@ internal fun Modifier.sweepBloom(highBloom: Boolean, head: androidx.compose.ui.u
 /** Style 2: the original wave - a lift-and-zoom bell that follows the head across the letters. */
 @Suppress("NewApi")
 @Composable
-private fun rememberLegacyWaveModifier(
+internal fun rememberLegacyWaveModifier(
     layoutHolder: Array<TextLayoutResult?>,
     head: KaraokeHead,
     textLength: Int,
@@ -1696,6 +1698,8 @@ private fun rememberLegacyWaveModifier(
     amplitudeProvider: () -> Float,
 
     highBloom: Boolean,
+    bleed: androidx.compose.ui.unit.Dp = MotionBleed,
+    pixelScale: Float = 1f,
 ): Modifier {
 
     val shader = remember {
@@ -1707,7 +1711,7 @@ private fun rememberLegacyWaveModifier(
     }
     if (shader == null) return Modifier
 
-    val cache = remember { WaveEffectCache() }
+    val cache = remember(highBloom, pixelScale) { WaveEffectCache() }
 
     return Modifier.graphicsLayer {
         val layout = layoutHolder[0]
@@ -1735,20 +1739,20 @@ private fun rememberLegacyWaveModifier(
             LyricsFontSize.toPx() * 0.5f
         }
 
-        // The layer is [MotionBleed] bigger than the text on every side; the text starts at o.
+        // The layer is [bleed] bigger than the text on every side; the text starts at o.
         // Only the coordinates move - the shader and its look are untouched.
-        val o = MotionBleed.roundToPx().toFloat()
+        val o = bleed.roundToPx().toFloat()
         shader.setAgslUniform("layerSize", size.width, size.height)
         shader.setAgslUniform("headX", headX + o)
         shader.setAgslUniform("spanBehind", charWidth * WaveCharsBehind)
         shader.setAgslUniform("spanAhead", charWidth * WaveCharsAhead)
-        shader.setAgslUniform("liftPx", LegacyWaveLiftPx * amp)
+        shader.setAgslUniform("liftPx", LegacyWaveLiftPx * amp * pixelScale)
         shader.setAgslUniform("zoomAmt", LegacyWaveZoom * amp)
         shader.setAgslUniform("baseY", layout.getLineBaseline(headLine) + o)
         shader.setAgslUniform("lineTop", layout.getLineTop(headLine) + o)
         shader.setAgslUniform("lineBottom", layout.getLineBottom(headLine) + o)
         shader.setAgslUniform("bloom", BloomStrength * head.glow.floatValue * amp)
-        shader.setAgslUniform("bloomR", BloomRadiusPx)
+        shader.setAgslUniform("bloomR", BloomRadiusPx * pixelScale)
         shader.setAgslUniform("bloomLag", charWidth * BloomLagChars)
         shader.setAgslUniform("bloomSpan", charWidth * BloomSpanChars)
         shader.setAgslUniform("highQuality", if (highBloom) 1f else 0f)
@@ -2447,6 +2451,7 @@ internal fun rememberWordMotionModifier(
     riseAmplitudeProvider: () -> Float,
     fakeGlowProvider: () -> Float,
     motionScale: Float = 1f,
+    bleed: androidx.compose.ui.unit.Dp = MotionBleed,
 ): Modifier {
     val cache = remember(head) { MotionLayoutCache() }
     val textLayer = rememberGraphicsLayer()
@@ -2458,7 +2463,7 @@ internal fun rememberWordMotionModifier(
             drawContent()
             return@drawWithContent
         }
-        val m = cache.layoutFor(layout, head, MotionBleed.toPx())
+        val m = cache.layoutFor(layout, head, bleed.toPx())
         val n = m.count
         if (n == 0) {
             drawContent()

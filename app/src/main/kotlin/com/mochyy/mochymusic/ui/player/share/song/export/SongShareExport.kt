@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -16,9 +17,12 @@ import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.OverlaySettings
@@ -56,12 +60,15 @@ import com.mochyy.mochymusic.ui.player.share.song.MaxCardBlur
 import com.mochyy.mochymusic.ui.player.share.song.ShareLayers
 import com.mochyy.mochymusic.ui.player.share.song.ShareVideoSource
 import com.mochyy.mochymusic.ui.player.share.song.SongBackground
+import com.mochyy.mochymusic.ui.player.share.song.SongShareCardOnly
 import com.mochyy.mochymusic.ui.player.share.song.SongSharePicture
 import com.mochyy.mochymusic.ui.player.share.song.SongShareSession
 import com.mochyy.mochymusic.ui.player.share.song.cardCornerOf
+import com.mochyy.mochymusic.ui.player.share.song.cardWidthOf
 import com.mochyy.mochymusic.ui.player.share.song.clippedItem
 import com.mochyy.mochymusic.ui.player.share.song.found
 import com.mochyy.mochymusic.ui.player.share.song.freshMusicVideo
+import com.mochyy.mochymusic.ui.player.share.song.isTextureVideo
 import com.mochyy.mochymusic.ui.player.share.song.trackFor
 import com.mochyy.mochymusic.utils.followAppProxy
 import kotlinx.coroutines.Dispatchers
@@ -121,7 +128,43 @@ private fun ExportPicture(
     }
 }
 
-// one picture of the share at the window's start; cropped to the card for a story sticker
+// card-only picture drawn at export width: the card fills the full width at exact density, with rounded corners for PNG and square edges for MP4
+@Composable
+private fun ExportCardOnly(
+    session: SongShareSession,
+    theme: ShareTheme,
+    widthPx: Int,
+    positionMs: () -> Long,
+    layers: ShareLayers,
+    moving: Boolean,
+    corner: Dp,
+) {
+    val cardWidthDp = cardWidthOf(session.kind)
+    MaterialTheme(colorScheme = theme.colors, typography = theme.typography) {
+        CompositionLocalProvider(
+            LocalDensity provides Density(widthPx / cardWidthDp.value, fontScale = 1f),
+            LocalContentColor provides Color.White,
+            LocalBlurQuality provides BlurQuality.HIGH,
+        ) {
+            SongShareCardOnly(
+                session = session,
+                positionMs = positionMs,
+                layers = layers,
+                moving = moving,
+                corner = corner,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+// card-only video width: multiple of 16, small enough that even the tallest 25-word card stays inside quality.height
+private fun cardOnlyVideoWidth(quality: ShareQuality): Int = when (quality) {
+    ShareQuality.UltraHd -> 2048
+    ShareQuality.FullHd -> 1024
+}
+
+// one picture of the share at the window's start; cropped to the card for a story sticker or Card only mode
 internal suspend fun exportStill(
     context: Context,
     session: SongShareSession,
@@ -131,14 +174,21 @@ internal suspend fun exportStill(
     cropToCard: Boolean = false,
 ): File {
     val host = checkNotNull(session.offscreenHost) { "The share isn't on screen" }
-    val frames = OffscreenFrames(host, quality.width, quality.height) {
-        ExportPicture(session, theme, quality.width, { session.windowStartMs }, layers, moving = false)
+    val cardOnly = session.isCardOnly
+    val frames = if (cardOnly) {
+        OffscreenFrames(host, quality.width, quality.height * 2, wrapHeight = true) {
+            ExportCardOnly(session, theme, quality.width, { session.windowStartMs }, layers, moving = false, corner = cardCornerOf(session.kind))
+        }
+    } else {
+        OffscreenFrames(host, quality.width, quality.height) {
+            ExportPicture(session, theme, quality.width, { session.windowStartMs }, layers, moving = false)
+        }
     }
     try {
         frames.warmUp(WarmUpFrames)
         val frame = frames.capture()
         // cinematic words have no card to crop to: the sticker is the whole picture, see-through round the words
-        val bounds = session.cardBounds.takeIf { cropToCard && session.hasCard }
+        val bounds = if (cardOnly) null else session.cardBounds.takeIf { cropToCard && session.hasCard }
         val picture = if (bounds != null) {
             val left = (bounds.left * frame.width).toInt().coerceIn(0, frame.width - 1)
             val top = (bounds.top * frame.height).toInt().coerceIn(0, frame.height - 1)
@@ -169,9 +219,12 @@ internal suspend fun exportVideo(
 ): File {
     val host = checkNotNull(session.offscreenHost) { "The share isn't on screen" }
     val fps = ShareEncoders.frameRateFor(quality)
-    val width = quality.width
-    val height = quality.height
-    val video = (session.background as? SongBackground.Video)?.takeIf { layers.background }
+    val cardOnly = session.isCardOnly
+    val activeSource = session.activeVideoSource?.takeIf { layers.background && it.isTextureVideo }
+    val video = activeSource?.let { src ->
+        val dim = if (cardOnly) session.cardOnlyDim else (session.background as? SongBackground.Video)?.dim ?: 0.85f
+        SongBackground.Video(src, dim = dim)
+    }
     val background = video?.let { videoBackground(session, it) }
     // over a video the card is drawn alone and its blur is done on the video itself; otherwise compose draws all of it
     val composeLayers = when {
@@ -179,16 +232,34 @@ internal suspend fun exportVideo(
         layers.card -> ShareLayers.CardOverVideo
         else -> null
     }
+    val exportWidth = if (cardOnly) cardOnlyVideoWidth(quality) else quality.width
     val playhead = mutableLongStateOf(session.windowStartMs)
     val frames = composeLayers?.let { picked ->
-        OffscreenFrames(host, width, height) { ExportPicture(session, theme, width, { playhead.longValue }, picked, moving = true) }
+        if (cardOnly) {
+            OffscreenFrames(host, exportWidth, quality.height, wrapHeight = true, roundHeightTo = 16) {
+                ExportCardOnly(session, theme, exportWidth, { playhead.longValue }, picked, moving = true, corner = 0.dp)
+            }
+        } else {
+            OffscreenFrames(host, exportWidth, quality.height) {
+                ExportPicture(session, theme, exportWidth, { playhead.longValue }, picked, moving = true)
+            }
+        }
     }
     val totalFrames = (session.windowLengthMs * fps / 1000L).coerceAtLeast(1L)
     val source = frames?.let { ExportFrames(it, playhead, session.windowStartMs, job, totalFrames) }
+    var finalWidth = exportWidth
+    var finalHeight = quality.height
     try {
         frames?.warmUp(WarmUpFrames)
+        frames?.lockSize()
+        if (frames != null) {
+            finalWidth = frames.width
+            finalHeight = frames.height
+        }
+        val width = finalWidth
+        val height = finalHeight
         val foreground = source?.let { listOf(ForegroundEffect(it::frameAt)) }.orEmpty()
-        val frost = if (background != null && layers.card && layers.glass) cardFrost(session, width, height) else null
+        val frost = if (!cardOnly && background != null && layers.card && layers.glass) cardFrost(session, width, height) else null
 
         val carrier = EditedMediaItem.Builder(
             MediaItem.Builder().setUri(Uri.fromFile(carrierImage(context))).setImageDurationMs(session.windowLengthMs).build(),
@@ -212,7 +283,7 @@ internal suspend fun exportVideo(
             if (background != null) {
                 val moving = EditedMediaItem.Builder(background.item)
                     .setRemoveAudio(true)
-                    .setEffects(Effects(emptyList(), backgroundEffects(session, video!!.dim, width, height)))
+                    .setEffects(Effects(emptyList(), backgroundEffects(session, video.dim, width, height, applyPanZoom = !cardOnly)))
                     .build()
                 add(EditedMediaItemSequence.Builder(moving).setIsLooping(true).build())
             }
@@ -237,7 +308,7 @@ internal suspend fun exportVideo(
         return out
     } finally {
         // kept in release builds, so a phone where the card goes missing can say why
-        frames?.let { Log.i(Tag, "Share video ${width}x$height at $fps fps: ${it.summary()}, ${source?.summary()}") }
+        frames?.let { Log.i(Tag, "Share video ${finalWidth}x$finalHeight at $fps fps: ${it.summary()}, ${source?.summary()}") }
         frames?.release()
     }
 }
@@ -247,6 +318,7 @@ private class VideoBackground(val item: MediaItem, val headers: Map<String, Stri
 
 private suspend fun videoBackground(session: SongShareSession, video: SongBackground.Video): VideoBackground? =
     when (val source = video.source) {
+        ShareVideoSource.LiquidCover -> null
         is ShareVideoSource.Own -> VideoBackground(clippedItem(MediaItem.Builder().setUri(source.uri), source.startMs, source.lengthMs), emptyMap())
         ShareVideoSource.AnimatedCover -> session.animatedCover.found?.let { url ->
             VideoBackground(MediaItem.Builder().setUri(url).setMimeType(canvasMimeType(url)).build(), emptyMap())
@@ -264,17 +336,21 @@ private suspend fun videoBackground(session: SongShareSession, video: SongBackgr
     }
 
 // cropped to fill, moved and zoomed the way the editor shows it, and dimmed toward black
-private fun backgroundEffects(session: SongShareSession, dim: Float, width: Int, height: Int) = listOf(
-    Presentation.createForWidthAndHeight(width, height, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP),
-    // gl's y points up, the editor's points down
-    MatrixTransformation {
-        Matrix().apply {
-            setScale(session.bgZoom, session.bgZoom)
-            postTranslate(2f * session.bgOffsetX, -2f * session.bgOffsetY)
-        }
-    },
-    RgbMatrix { _, _ -> floatArrayOf(dim, 0f, 0f, 0f, 0f, dim, 0f, 0f, 0f, 0f, dim, 0f, 0f, 0f, 0f, 1f) },
-)
+private fun backgroundEffects(session: SongShareSession, dim: Float, width: Int, height: Int, applyPanZoom: Boolean = true) = buildList {
+    add(Presentation.createForWidthAndHeight(width, height, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP))
+    if (applyPanZoom) {
+        // gl's y points up, the editor's points down
+        add(
+            MatrixTransformation {
+                Matrix().apply {
+                    setScale(session.bgZoom, session.bgZoom)
+                    postTranslate(2f * session.bgOffsetX, -2f * session.bgOffsetY)
+                }
+            },
+        )
+    }
+    add(RgbMatrix { _, _ -> floatArrayOf(dim, 0f, 0f, 0f, 0f, dim, 0f, 0f, 0f, 0f, dim, 0f, 0f, 0f, 0f, 1f) })
+}
 
 private fun cardFrost(session: SongShareSession, width: Int, height: Int): CardFrost? {
     val bounds = session.cardBounds?.takeIf { session.hasCard } ?: return null
@@ -318,7 +394,7 @@ private fun newExportFile(context: Context, extension: String): File {
 }
 
 private fun webSources(context: Context, headers: Map<String, String>): MediaSource.Factory {
-    val http = OkHttpDataSource.Factory(OkHttpClient.Builder().followAppProxy().build()).setDefaultRequestProperties(headers)
+    val http = OkHttpDataSource.Factory(com.mochyy.mochymusic.utils.AppProxy.sharedClient).setDefaultRequestProperties(headers)
     return DefaultMediaSourceFactory(DefaultDataSource.Factory(context, http))
 }
 

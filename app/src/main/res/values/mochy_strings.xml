@@ -1089,7 +1089,7 @@
     <string name="song_share_type_title">Type</string>
     <string name="song_share_type_subtitle">Select background type</string>
     <string name="song_share_type_video">Video</string>
-    <string name="song_share_type_video_hint">Your own, the music video or the moving cover</string>
+    <string name="song_share_type_video_hint">Flowing cover, your own, the music video or the moving cover</string>
     <string name="song_share_type_still">Static</string>
     <string name="song_share_type_still_hint">A picture, the music\'s colours or a plain colour</string>
     <string name="song_share_type_link">Copy link</string>
@@ -1105,6 +1105,18 @@
     <string name="song_share_card_opacity">Opacity</string>
     <string name="song_share_card_blur">Blur</string>
     <string name="song_share_card_blur_note">Blur goes away when you share straight to Instagram or Facebook, where the card turns into a sticker</string>
+    <string name="song_share_card_only">Card only</string>
+    <string name="song_share_card_only_hint">Remove the background and share just the card</string>
+    <string name="song_share_editor_hint_card_only">Tap the card to style its look or background</string>
+    <string name="song_share_card_bg">Card background</string>
+    <string name="song_share_card_bg_colour">Colour</string>
+    <string name="song_share_card_bg_blurred">Blurred cover</string>
+    <string name="song_share_card_bg_liquid">Flowing cover</string>
+    <string name="song_share_card_bg_moving">Moving cover</string>
+    <string name="song_share_card_bg_music_video">Music video</string>
+    <string name="song_share_card_bg_own_video">Your video</string>
+    <string name="song_share_bg_liquid_cover">Flowing cover</string>
+    <string name="song_share_bg_liquid_cover_hint">The cover swirling and warping softly in motion</string>
     <string name="song_share_bg_own_video">Add your own video</string>
     <string name="song_share_bg_own_video_hint">Tap the circle to pick a video from your phone</string>
     <string name="song_share_bg_music_video">The music video</string>

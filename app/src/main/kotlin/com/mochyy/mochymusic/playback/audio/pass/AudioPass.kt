@@ -66,7 +66,7 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
     private val failed = HashSet<String>()
     @Volatile private var directReleasedAt = 0L
     private val remembered = HashMap<String, Double>()
-    private val volumeWork = Executors.newSingleThreadExecutor { Thread(it, "AudioPassVolume") }
+    private val volumeWork = Executors.newSingleThreadExecutor { Thread(it, "AudioPassVolume").apply { isDaemon = true } }
     private val pendingVolume = AtomicReference<Double?>(null)
     private val volumeListeners = mutableListOf<WeakReference<() -> Unit>>()
 
@@ -76,7 +76,10 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
 
     fun start() = usb.start()
 
-    fun release() = usb.stop()
+    fun release() {
+        usb.stop()
+        volumeWork.shutdown()
+    }
 
     /** the switch, the mode and whether anything shapes the sound, from the service whenever one changes */
     @Synchronized

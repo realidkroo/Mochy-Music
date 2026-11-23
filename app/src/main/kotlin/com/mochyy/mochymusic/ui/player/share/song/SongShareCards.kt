@@ -4,6 +4,7 @@ package com.mochyy.mochymusic.ui.player.share.song
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +27,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
@@ -40,12 +42,20 @@ import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.lyrics.LyricsEntry
 import com.mochyy.mochymusic.lyrics.LyricsUtils
 import com.mochyy.mochymusic.ui.player.share.MochyMark
-import com.mochyy.mochymusic.ui.player.share.SweptText
-import com.mochyy.mochymusic.ui.player.share.timedPieces
+import com.mochyy.mochymusic.ui.player.share.ShareKaraokeLineSpec
+import com.mochyy.mochymusic.ui.player.share.ShareKaraokeText
+import com.mochyy.mochymusic.ui.player.share.rememberShareKaraokeState
+import com.mochyy.mochymusic.ui.player.share.waitingInkOf
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 
 private val MusicCardWidth = 172.dp
 private val LyricsCardWidth = 296.dp
+private val CardLineGap = 4.dp
+
+internal fun cardWidthOf(kind: SongShareKind): Dp = when (kind) {
+    SongShareKind.MusicOnly -> MusicCardWidth
+    SongShareKind.Lyrics -> LyricsCardWidth
+}
 
 // a still lyrics card shows at most this many lines of its moment
 private const val StillLines = 5
@@ -137,45 +147,98 @@ private fun ClipProgress(session: SongShareSession, positionMs: () -> Long, ink:
             .drawBehind {
                 val radius = CornerRadius(size.height / 2f)
                 drawRoundRect(ink.copy(alpha = 0.22f), cornerRadius = radius)
-                val done = ((positionMs() - session.windowStartMs).toFloat() / session.windowLengthMs).coerceIn(0f, 1f)
+                val done = ((positionMs() - session.windowStartMs).toFloat() / session.windowLengthMs.coerceAtLeast(1L)).coerceIn(0f, 1f)
                 if (done > 0f) drawRoundRect(ink, size = Size(size.width * done, size.height), cornerRadius = radius)
             },
     )
 }
 
-// the card's lines, the same in a picture and a video: plain bold lines with their reading and translation under them; a video lights each word as it's sung
+// the card's lines, the same in a picture and a video: plain bold lines with their reading and translation under them;
+// a video animates every line with the regular lyrics view's karaoke engine (AGSL zoom/bloom, word rise & swell)
 @Composable
 private fun CardLyrics(session: SongShareSession, ink: Color, sung: Boolean, positionMs: () -> Long) {
     val pick = session.pick
     val lines = session.lyrics.found.orEmpty()
     val start = session.windowStartMs + session.lyricsOffsetMs
     val end = session.windowEndMs + session.lyricsOffsetMs
-    // the picked lines, or without a pick the ones sung in the share's moment
-    val entries = remember(pick?.range, lines, start, end) {
-        pick?.let { p -> p.range?.mapNotNull { p.entries.getOrNull(it) }.orEmpty() } ?: linesInWindow(lines, start, end)
+    // the picked lines (with their real next-line timestamp from the song), or without a pick the ones sung in the share's moment
+    val entriesWithNext = remember(pick?.range, lines, start, end) {
+        if (pick != null) {
+            pick.range?.mapNotNull { idx ->
+                val entry = pick.entries.getOrNull(idx) ?: return@mapNotNull null
+                entry to pick.entries.getOrNull(idx + 1)?.time
+            }.orEmpty()
+        } else {
+            val allSung = lines.filter { it.text.isNotBlank() && !it.isBackground }
+            val picked = linesInWindow(lines, start, end)
+            picked.map { entry ->
+                val fullIdx = allSung.indexOf(entry)
+                entry to (if (fullIdx >= 0) allSung.getOrNull(fullIdx + 1)?.time else null)
+            }
+        }
     }
     val choice = session.readingChoice
     val readings = session.lineReadings
     val translations = session.lineTranslations
-    val shown = remember(entries, choice, readings, translations) { entries.map { session.cardLine(it) } }
+    val shown = remember(entriesWithNext, choice, readings, translations) {
+        entriesWithNext.map { (entry, nextMs) -> session.cardLine(entry) to nextMs }
+    }
     if (shown.isEmpty()) {
         Text(" ", style = stillText(StillTextSize, ink))
         return
     }
-    val size = rememberCardTextSize(shown)
+    val size = rememberCardTextSize(shown.map { it.first })
+    val look = session.lyricsLook
     val lyricsPosition = remember(session, positionMs) { { positionMs() + session.lyricsOffsetMs } }
-    Column {
-        shown.forEachIndexed { index, line ->
+    val karaoke = if (sung) {
+        val specs = remember(shown, end) {
+            shown.map { (line, nextMs) ->
+                ShareKaraokeLineSpec(line.entry.text.trim(), line.entry, nextMs ?: end)
+            }
+        }
+        rememberShareKaraokeState(specs, lyricsPosition, look.motionStyle.risesWords)
+    } else {
+        null
+    }
+    val waitingInk = waitingInkOf(ink)
+    Column(verticalArrangement = Arrangement.spacedBy(CardLineGap)) {
+        shown.forEachIndexed { index, (line, _) ->
             key(index) {
                 val text = line.entry.text.trim()
-                if (sung) {
-                    val next = entries.getOrNull(index + 1)?.time ?: end
-                    val timing = remember(line.entry, text, next) { timedPieces(line.entry, text, next) }
-                    SweptText({ AnnotatedString(text) }, ink, stillText(size, ink), timing.ranges, timing.times, lyricsPosition)
-                } else {
-                    Text(text, style = stillText(size, ink))
+                val karaokeLine = karaoke?.lines?.getOrNull(index)
+                Column {
+                    if (karaokeLine != null) {
+                        val waiting = remember(text, waitingInk) {
+                            AnnotatedString(text, spanStyle = androidx.compose.ui.text.SpanStyle(color = waitingInk))
+                        }
+                        val lit = remember(text, ink) {
+                            AnnotatedString(text, spanStyle = androidx.compose.ui.text.SpanStyle(color = ink))
+                        }
+                        ShareKaraokeText(
+                            line = karaokeLine,
+                            waitingText = waiting,
+                            litText = lit,
+                            waitingColor = waitingInk,
+                            style = stillText(size, ink),
+                            baseTextSizeSp = size,
+                            motionStyle = look.motionStyle,
+                            highBloom = look.highBloom,
+                        )
+                    } else {
+                        Text(text, style = stillText(size, ink))
+                    }
+                    line.under.forEach { under ->
+                        Text(
+                            under,
+                            style = underText(size, ink),
+                            modifier = if (karaokeLine != null) {
+                                Modifier.graphicsLayer { alpha = 0.6f + 0.4f * karaokeLine.activeZoom.floatValue }
+                            } else {
+                                Modifier
+                            },
+                        )
+                    }
                 }
-                line.under.forEach { Text(it, style = underText(size, ink)) }
             }
         }
     }
@@ -198,10 +261,11 @@ private fun rememberCardTextSize(lines: List<ShareLine>): Float {
     return remember(lines, density) {
         val constraints = Constraints(maxWidth = with(density) { LyricsColumnWidth.roundToPx() })
         val room = with(density) { LyricsRoom.toPx() }
+        val gapPx = with(density) { CardLineGap.toPx() }
         fun heightAt(size: Float) = lines.sumOf { line ->
             measurer.measure(line.entry.text.trim(), stillText(size, Color.White), constraints = constraints).size.height +
                 line.under.sumOf { measurer.measure(it, underText(size, Color.White), constraints = constraints).size.height }
-        }
+        } + gapPx * (lines.size - 1).coerceAtLeast(0)
         var size = StillTextSize
         while (size > SmallestStillText && heightAt(size) > room) size -= 1f
         size

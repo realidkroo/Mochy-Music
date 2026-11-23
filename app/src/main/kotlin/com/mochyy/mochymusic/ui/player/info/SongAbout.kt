@@ -83,6 +83,10 @@ object SongAboutLoader {
     // kept for the run, so closing and opening the sheet again is instant
     private val cache = ConcurrentHashMap<String, SongAbout>()
 
+    fun trimMemory() {
+        cache.clear()
+    }
+
     fun load(song: MediaMetadata, database: MusicDatabase, context: Context): Flow<SongAbout> = channelFlow {
         // here rather than at app start: it reads its saved key from disk, which belongs off the main thread
         Musixmatch.init(context)

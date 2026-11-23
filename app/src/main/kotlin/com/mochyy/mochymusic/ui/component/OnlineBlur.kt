@@ -32,6 +32,7 @@ fun OnlineBlur(
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(thumbnailUrl.resize(48, 48))
+                    .size(48, 48)
                     .allowHardware(false)
                     .transformations(BackdropBlurTransformation(radiusPx = 4))
                     .build(),

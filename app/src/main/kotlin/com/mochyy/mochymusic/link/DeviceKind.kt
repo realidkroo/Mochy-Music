@@ -13,6 +13,8 @@ enum class DeviceKind(val wire: String) {
     Tablet("tablet"),
     Tv("tv"),
     Car("car"),
+    // mochy on a mac, windows or linux; it pairs and steers like a phone but never runs this app, so of() never says it
+    Desktop("desktop"),
     ;
 
     // a tv mirrors a phone's library and is steered by it; the others are all phones of some size

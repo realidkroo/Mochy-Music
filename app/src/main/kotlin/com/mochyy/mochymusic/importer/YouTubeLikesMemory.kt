@@ -49,6 +49,25 @@ object YouTubeLikesMemory {
         write(context, read(context).copy(seen = ids.toList()))
     }
 
+    /** Records a single song as known-liked on YouTube after a local like was pushed up. */
+    fun markSeen(context: Context, id: String) = synchronized(fileLock) {
+        val memory = read(context)
+        val updated = (memory.seen.orEmpty() + id).distinct()
+        write(context, memory.copy(seen = updated, removed = memory.removed - id))
+    }
+
+    /** Removes a song from known-liked on YouTube after a local unlike was pushed up. */
+    fun unmarkSeen(context: Context, id: String) = synchronized(fileLock) {
+        val memory = read(context)
+        val seen = memory.seen ?: return@synchronized
+        write(context, memory.copy(seen = seen.filterNot { it == id }))
+    }
+
+    /** Clears all remembered state (called on sign-out so a new account starts clean). */
+    fun clear(context: Context) = synchronized(fileLock) {
+        runCatching { file(context).delete() }
+    }
+
     // with the like date each song had, so bringing it back puts it where it was
     fun recordRemoved(context: Context, songs: Map<String, LocalDateTime?>) {
         if (songs.isEmpty()) return

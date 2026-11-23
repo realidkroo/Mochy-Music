@@ -39,6 +39,7 @@ object CoverThemeColor {
                     .data(url)
                     .size(112, 112)
                     .allowHardware(false)
+                    .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
                     .build()
                 val bitmap = context.imageLoader.execute(request).image?.toBitmap() ?: return@withContext null
                 val argb = withContext(Dispatchers.Default) {

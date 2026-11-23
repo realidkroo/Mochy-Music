@@ -17,13 +17,16 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
@@ -73,6 +76,46 @@ internal fun SharePictureFit(modifier: Modifier, corner: Dp = 26.dp, fill: Boole
     }
 }
 
+// fits the card-only view into the available box by adjusting density (not post-scale) so text and shaders stay razor sharp
+@Composable
+internal fun ShareCardOnlyFit(
+    session: SongShareSession,
+    positionMs: () -> Long,
+    moving: Boolean,
+    playing: Boolean,
+    modifier: Modifier = Modifier,
+    maxScale: Float = 1.3f,
+    onCardTap: (() -> Unit)? = null,
+) {
+    val cardWidth = cardWidthOf(session.kind)
+    // Remember measured height/width ratio so tall lyrics cards scale smoothly to fit inside the preview box
+    var aspect by remember(session.kind) {
+        mutableFloatStateOf(if (session.kind == SongShareKind.MusicOnly) 1.55f else 0.9f)
+    }
+    BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
+        val k = min(maxWidth / cardWidth, maxHeight / (cardWidth * aspect)).coerceIn(0.35f, maxScale)
+        val density = LocalDensity.current
+        Box(Modifier.damageBoundary()) {
+            CompositionLocalProvider(LocalDensity provides Density(density.density * k, fontScale = 1f)) {
+                SongShareCardOnly(
+                    session = session,
+                    positionMs = positionMs,
+                    layers = ShareLayers.Everything,
+                    moving = moving,
+                    onCardTap = onCardTap,
+                    video = { ShareVideoLayer(session, playing = playing, source = session.activeVideoSource) },
+                    modifier = Modifier.onSizeChanged { sz ->
+                        if (sz.width > 0 && sz.height > 0) {
+                            val measured = sz.height.toFloat() / sz.width.toFloat()
+                            if (kotlin.math.abs(measured - aspect) > 0.01f) aspect = measured
+                        }
+                    },
+                )
+            }
+        }
+    }
+}
+
 // the editor's live picture: drag or pinch to move the background, tap the card to style it; only the front page's picture moves
 @Composable
 internal fun SongSharePreview(
@@ -85,6 +128,17 @@ internal fun SongSharePreview(
     overlay: (@Composable BoxScope.() -> Unit)? = null,
 ) {
     val resting = remember(session) { { session.windowStartMs } }
+    if (session.isCardOnly) {
+        ShareCardOnlyFit(
+            session = session,
+            positionMs = if (live) session.playheadMs else resting,
+            moving = live && session.isVideo,
+            playing = live && session.previewPlays,
+            modifier = modifier,
+            onCardTap = onCardTap,
+        )
+        return
+    }
     SharePictureFit(modifier) {
         Box {
             SongSharePicture(
@@ -117,11 +171,11 @@ internal fun ShareVideoLayer(
     session: SongShareSession,
     playing: Boolean,
     modifier: Modifier = Modifier.fillMaxSize(),
-    source: ShareVideoSource? = (session.background as? SongBackground.Video)?.source,
+    source: ShareVideoSource? = session.activeVideoSource,
 ) {
     val loops = session.preview?.loops ?: 0
     when (source) {
-        null -> Unit
+        null, ShareVideoSource.LiquidCover -> Unit
         ShareVideoSource.AnimatedCover -> session.animatedCover.found?.let { url ->
             CanvasArtworkPlayer(primaryUrl = url, fallbackUrl = null, isPlaying = playing, modifier = modifier)
         }
@@ -166,7 +220,7 @@ internal fun ShareMusicVideo.trackFor(maxShortSide: Int): VideoTrack? {
 private fun LoopingVideo(item: MediaItem, headers: Map<String, String>, playing: Boolean, restartKey: Int, modifier: Modifier) {
     val context = LocalContext.current
     val factory = remember(headers) {
-        val http = OkHttpDataSource.Factory(OkHttpClient.Builder().followAppProxy().build())
+        val http = OkHttpDataSource.Factory(com.mochyy.mochymusic.utils.AppProxy.sharedClient)
             .setDefaultRequestProperties(headers)
         DefaultMediaSourceFactory(DefaultDataSource.Factory(context, http))
     }

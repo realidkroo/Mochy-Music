@@ -92,7 +92,7 @@ class CastConnectionHandler(
                                        playerState == MediaStatus.PLAYER_STATE_LOADING
                 _castIsBuffering.value = playerState == MediaStatus.PLAYER_STATE_BUFFERING ||
                                          playerState == MediaStatus.PLAYER_STATE_LOADING
-                _castDuration.value = client.streamDuration
+                if (client.streamDuration > 0L) _castDuration.value = client.streamDuration
 
                 val currentItemId = mediaStatus?.currentItemId ?: -1
                 if (currentItemId != -1 && currentItemId != lastCastItemId && lastCastItemId != -1 && !isReloadingQueue && mediaStatus != null) {
@@ -469,7 +469,7 @@ class CastConnectionHandler(
     }
 
     private suspend fun buildMediaInfo(metadata: AppMediaMetadata): MediaInfo? {
-        val streamUrl = musicService.getStreamUrl(metadata.id) ?: return null
+        val stream = musicService.getCastStream(metadata.id, preferMp4 = true) ?: return null
 
         val castMetadata = MediaMetadata(MediaMetadata.MEDIA_TYPE_MUSIC_TRACK).apply {
             putString(MediaMetadata.KEY_TITLE, metadata.title)
@@ -482,9 +482,13 @@ class CastConnectionHandler(
             }
         }
 
-        return MediaInfo.Builder(streamUrl)
+        return MediaInfo.Builder(stream.url)
             .setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
-            .setContentType("audio/mp4")
+            .setContentType(stream.mimeType)
+            .apply {
+                val durationMs = metadata.duration.toLong().coerceAtLeast(0L) * 1000L
+                if (durationMs > 0L) setStreamDuration(durationMs)
+            }
             .setMetadata(castMetadata)
             .setCustomData(org.json.JSONObject().put("mediaId", metadata.id))
             .build()
@@ -550,10 +554,13 @@ class CastConnectionHandler(
                 }
 
                 val startPosition = if (player.currentMediaItem?.mediaId == metadata.id) {
-                    player.currentPosition
+                    player.currentPosition.coerceAtLeast(0L)
                 } else {
                     0L
                 }
+                _castPosition.value = startPosition
+                val knownDuration = metadata.duration.toLong().coerceAtLeast(0L) * 1000L
+                if (knownDuration > 0L) _castDuration.value = knownDuration
 
                 Timber.d("Loading Cast queue: ${queueItems.size} items, startIndex=$startIndex, shuffle=$shuffleEnabled")
 
@@ -591,9 +598,19 @@ class CastConnectionHandler(
         remoteMediaClient?.pause()
     }
 
+    fun currentPositionNow(): Long {
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            val approx = remoteMediaClient?.approximateStreamPosition
+            if (approx != null && approx >= 0L) return approx
+        }
+        return _castPosition.value
+    }
+
     fun seekTo(position: Long) {
+        val target = position.coerceAtLeast(0L)
+        _castPosition.value = target
         val seekOptions = MediaSeekOptions.Builder()
-            .setPosition(position)
+            .setPosition(target)
             .build()
         remoteMediaClient?.seek(seekOptions)
     }

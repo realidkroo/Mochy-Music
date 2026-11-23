@@ -10,7 +10,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +23,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -51,7 +49,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -102,7 +99,6 @@ data class CollectionEntry(
 
 private const val GridColumns = 3
 private val TileShape = RoundedCornerShape(14.dp)
-private val RailLandingGap = 64.dp
 
 private sealed interface CollectionRow<out T> {
     val key: String
@@ -200,10 +196,8 @@ fun <T> LibraryCollectionPage(
     val searchFocus = remember { FocusRequester() }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    // a letter picked on the rail lands just under the collapsed bar instead of hidden behind it
-    val barPx = with(LocalDensity.current) {
-        (WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + RailLandingGap).toPx()
-    }
+    // a letter picked on the rail glides in just under the collapsed bar instead of hiding behind it
+    val glide = rememberIndexGlide(listState, landing = indexLandingUnderBar())
 
     val layout by produceState<CollectionLayout<T>?>(null, items, query.text, grid) {
         value = withContext(Dispatchers.Default) { layoutOf(items, toEntry, query.text, grid, secondsOf) }
@@ -243,12 +237,7 @@ fun <T> LibraryCollectionPage(
                     sections = shown.sections,
                     onSectionSelected = { key ->
                         // +1 for the header above the rows
-                        shown.firstRowOf[key]?.let { row ->
-                            scope.launch {
-                                listState.scrollToItem(row + 1)
-                                listState.scrollBy(-barPx)
-                            }
-                        }
+                        shown.firstRowOf[key]?.let { row -> glide.glideTo(row + 1) }
                     },
                     modifier = Modifier.fillMaxSize(),
                 )

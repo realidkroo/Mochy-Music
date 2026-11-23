@@ -18,10 +18,13 @@ import com.mochyy.mochymusic.utils.dataStore
 import com.mochyy.mochymusic.utils.get
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -33,49 +36,47 @@ class CachePlaylistViewModel @Inject constructor(
     @DownloadCache private val downloadCache: SimpleCache
 ) : ViewModel() {
 
-    private val _cachedSongs = MutableStateFlow<List<Song>>(emptyList())
-    val cachedSongs: StateFlow<List<Song>> = _cachedSongs
+    // polls only while the cache playlist screen is visible and off the main thread
+    val cachedSongs: StateFlow<List<Song>> = flow {
+        while (true) {
+            val hideExplicit = context.dataStore.get(HideExplicitKey, false)
+            val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
+            val cachedIds = playerCache.keys.toSet()
+            val downloadedIds = downloadCache.keys.toSet()
+            val pureCacheIds = cachedIds.subtract(downloadedIds)
 
-    init {
-        viewModelScope.launch {
-            while (true) {
-                val hideExplicit = context.dataStore.get(HideExplicitKey, false)
-                val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
-                val cachedIds = playerCache.keys.toSet()
-                val downloadedIds = downloadCache.keys.toSet()
-                val pureCacheIds = cachedIds.subtract(downloadedIds)
+            val songs = if (pureCacheIds.isNotEmpty()) {
+                database.getSongsByIds(pureCacheIds.toList())
+            } else {
+                emptyList()
+            }
 
-                val songs = if (pureCacheIds.isNotEmpty()) {
-                    database.getSongsByIds(pureCacheIds.toList())
-                } else {
-                    emptyList()
-                }
+            val completeSongs = songs.filter {
+                val contentLength = it.format?.contentLength
+                contentLength != null && playerCache.isCached(it.song.id, 0, contentLength)
+            }
 
-                val completeSongs = songs.filter {
-                    val contentLength = it.format?.contentLength
-                    contentLength != null && playerCache.isCached(it.song.id, 0, contentLength)
-                }
-
-                if (completeSongs.isNotEmpty()) {
-                    database.query {
-                        completeSongs.forEach {
-                            if (it.song.dateDownload == null) {
-                                update(it.song.copy(dateDownload = LocalDateTime.now()))
-                            }
+            if (completeSongs.isNotEmpty()) {
+                database.query {
+                    completeSongs.forEach {
+                        if (it.song.dateDownload == null) {
+                            update(it.song.copy(dateDownload = LocalDateTime.now()))
                         }
                     }
                 }
+            }
 
-                _cachedSongs.value = completeSongs
+            emit(
+                completeSongs
                     .filter { it.song.dateDownload != null }
                     .sortedByDescending { it.song.dateDownload }
                     .filterExplicit(hideExplicit)
-                    .filterVideoSongs(hideVideoSongs)
+                    .filterVideoSongs(hideVideoSongs),
+            )
 
-                delay(1000)
-            }
+            delay(3000)
         }
-    }
+    }.flowOn(Dispatchers.IO).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun removeSongFromCache(songId: String) {
         playerCache.removeResource(songId)

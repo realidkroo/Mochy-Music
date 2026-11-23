@@ -3,9 +3,18 @@
 package com.mochyy.mochymusic.ui.player.flagship
 
 import android.graphics.Bitmap
+import android.graphics.ComposeShader
+import android.graphics.LinearGradient
+import android.graphics.PorterDuff
 import android.graphics.Shader
+import android.os.Build
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +34,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.union
@@ -37,8 +47,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,31 +61,38 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
 import coil3.imageLoader
 import coil3.request.ImageRequest
@@ -85,11 +105,18 @@ import com.mochyy.mochymusic.LocalAppContentObscured
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.BlurQuality
+import com.mochyy.mochymusic.constants.BlurStrengthPxKey
 import com.mochyy.mochymusic.constants.PlayerBackgroundStyle
 import com.mochyy.mochymusic.constants.PlayerCoverStyle
 import com.mochyy.mochymusic.ui.component.BlurEffectCache
 import com.mochyy.mochymusic.ui.component.DownscaledBlur
+import com.mochyy.mochymusic.ui.component.GlassState
 import com.mochyy.mochymusic.ui.component.LocalBlurQuality
+import com.mochyy.mochymusic.ui.component.drawGlassNode
+import com.mochyy.mochymusic.ui.component.glassNodeHasContent
+import com.mochyy.mochymusic.ui.component.glassRoot
+import com.mochyy.mochymusic.ui.component.rememberCoverBlurAvailable
+import com.mochyy.mochymusic.ui.component.rememberProgressiveBlur
 import com.mochyy.mochymusic.ui.player.BackdropBlurTransformation
 import com.mochyy.mochymusic.ui.player.CarouselCrossfade
 import com.mochyy.mochymusic.ui.player.CarouselPictures
@@ -110,6 +137,7 @@ import com.mochyy.mochymusic.ui.player.customize.DiscCoverStack
 import com.mochyy.mochymusic.ui.player.customize.PlayerBackgroundContent
 import com.mochyy.mochymusic.ui.player.customize.isDisc
 import com.mochyy.mochymusic.ui.player.customize.rememberWarpShader
+import com.mochyy.mochymusic.ui.player.letTouchesThroughWhenHidden
 import com.mochyy.mochymusic.ui.player.likeButtonTarget
 import com.mochyy.mochymusic.ui.player.rememberTextSlots
 import com.mochyy.mochymusic.ui.player.studio.StudioAnchors
@@ -123,6 +151,7 @@ import com.mochyy.mochymusic.ui.player.studio.studioTransportLayer
 import com.mochyy.mochymusic.ui.player.styles.styleSongSwipe
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.ui.utils.resize
+import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.math.max
@@ -133,16 +162,26 @@ internal const val LandscapeFullCoverWidthShare = 0.48f
 internal const val LandscapeFullCoverAspect = 1.12f
 private const val CoverFadeShare = 0.24f
 
+// horizontal progressive frost across the cover-to-backdrop seam, matching portrait's CoverFrost radius
+private val LandscapeFrostRadius = 40.dp
+private const val LandscapeFrostLead = 0.16f
+private const val LandscapeFrostOvershoot = 0.14f
+
 // a tv is watched from across the room: the cover melts away over much more of its width, and at the bottom too
 private const val TvCoverFadeShare = 0.45f
 private const val TvCoverFadeDownFrom = 0.62f
 private val TvTitleInset = 48.dp
 
-// with lyrics or queue open on full cover, the cover's lower half softens under compact controls
-private const val LyricsBandShare = 0.52f
+// with lyrics or queue open on full cover, the cover's lower half softens under compact controls and fades past the seam
+private const val LyricsBandShare = 0.54f
+private const val LyricsBandWidthFactor = 1.10f
+private const val LyricsOverlayHeightShare = 0.64f
+private const val LyricsOverlayWidthFactor = 1.22f
 private const val LyricsBandRadius = 30f
+private const val LandscapeControlsIdleMs = 3_500L
 
-private val PanelGutter = 22.dp
+// aligns title, playback seek bar, volume bar and card deck along one vertical rail (8dp bottom padding + 18dp BarInset)
+private val PanelGutter = 26.dp
 private val CoverGutter = 20.dp
 
 // the like and the menu chevron, stacked cleanly in their own column at the bottom right
@@ -224,6 +263,7 @@ internal fun FlagshipLandscape(
     studioAnchors: StudioAnchors? = null,
     studioPieces: StudioPieces? = null,
     onDoubleTapCover: ((Offset) -> Unit)? = null,
+    bottomFlush: Boolean = false,
 ) {
     val connection = LocalPlayerConnection.current ?: return
     val track by connection.uiState.trackInfo.collectAsState()
@@ -239,9 +279,13 @@ internal fun FlagshipLandscape(
         coverStyle.isDisc -> CoverLook.DISC
         else -> CoverLook.SQUARE
     }
-    val handedToBar = androidx.compose.animation.core.animateFloatAsState(
+    val coverBlurAvailable = rememberCoverBlurAvailable()
+    val useCoverFrost = look == CoverLook.FULL && !onTv && coverBlurAvailable
+    val seamGlass = remember { GlassState() }
+
+    val handedToBar = animateFloatAsState(
         if (onTv && com.mochyy.mochymusic.ui.player.TvPlayerRemote.controlsShown) 1f else 0f,
-        androidx.compose.animation.core.tween(420),
+        tween(420),
         label = "handedToBar",
     )
     val direction = LocalLayoutDirection.current
@@ -261,6 +305,36 @@ internal fun FlagshipLandscape(
     }
     val pageMounted = lyricsMounted || queueMounted
     val panelInfoShown by remember(pages) { derivedStateOf { pages.lyricsProgress < 0.999f && pages.queueProgress < 0.999f } }
+    val lyricsActive by remember(pages) { derivedStateOf { pages.page == PlayerPage.LYRICS } }
+
+    // auto-retracting player controls on the landscape lyrics page: seekbar and transport tuck down while title & artist glide to bottom-left
+    var controlsRetracted by remember { mutableStateOf(false) }
+    var controlsTouching by remember { mutableStateOf(false) }
+    var controlsInteractionTick by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(lyricsActive) {
+        controlsRetracted = false
+        controlsInteractionTick++
+    }
+    LaunchedEffect(lyricsActive, controlsRetracted, controlsTouching, controlsInteractionTick, editMode) {
+        if (lyricsActive && !controlsRetracted && !controlsTouching && !editMode) {
+            delay(LandscapeControlsIdleMs)
+            controlsRetracted = true
+        }
+    }
+    val controlsRetract = animateFloatAsState(
+        targetValue = if (lyricsActive && controlsRetracted && !editMode) 1f else 0f,
+        animationSpec = tween(durationMillis = 420, easing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)),
+        label = "landscapeControlsRetract",
+    )
+    val controlsActive by remember { derivedStateOf { controlsRetract.value < 0.99f } }
+    val currentOnSongInfo by androidx.compose.runtime.rememberUpdatedState(onSongInfo)
+    // tapping the cover returns from lyrics/queue back to cover view; on cover view it still opens song info
+    val onCoverTap: () -> Unit = remember(pages) {
+        { if (pages.page != PlayerPage.NONE) pages.close() else currentOnSongInfo() }
+    }
+    val onDiscCoverTap: () -> Unit = remember(pages) {
+        { if (pages.page != PlayerPage.NONE) pages.close() }
+    }
 
     // shared paced backdrop clock for ambient and cover-gradient styles
     val warpTime = remember { mutableFloatStateOf(0f) }
@@ -295,20 +369,6 @@ internal fun FlagshipLandscape(
             CoverLook.RECORD -> startInset + recordBox + PanelGap / 2
         }
 
-        // same flagship background color and style as portrait, shared across squared and full cover
-        LandscapeBackdrop(
-            ambient = ambient,
-            backgroundStyle = backgroundStyle,
-            thumbnailUrl = track.thumbnailUrl,
-            pureBlack = pureBlack,
-            warpTime = { warpTime.floatValue },
-            animate = backdropRunning,
-            onTv = onTv,
-            fullCover = look == CoverLook.FULL,
-            coverWidth = leftColWidth,
-            fadeShare = fadeShare,
-        )
-
         val coverStudioModifier = Modifier
             .then(if (studioAnchors != null) Modifier.studioAnchor(studioAnchors) { it.cover } else Modifier)
             .then(Modifier.studioCoverLayer(studioParts))
@@ -319,60 +379,99 @@ internal fun FlagshipLandscape(
             (leftColWidth - startInset - 36.dp).coerceAtLeast(92.dp),
         )
 
-        when (look) {
-            CoverLook.SQUARE -> PhoneSquareCover(
-                restSide = squareSide,
-                restStart = squareStart,
-                compactSide = compactSide,
-                leftColWidth = leftColWidth,
-                startInset = startInset,
-                pageProgress = if (showLeftCompactControls) pageProgress else { { 0f } },
+        // backdrop and cover share one glassRoot when full-cover blur is enabled so progressive seam frost and lyrics frost sample them once
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(if (useCoverFrost) Modifier.glassRoot(seamGlass, isActive = { sheetShowing }) else Modifier),
+        ) {
+            LandscapeBackdrop(
+                ambient = ambient,
+                backgroundStyle = backgroundStyle,
                 thumbnailUrl = track.thumbnailUrl,
-                interactive = interactive,
-                editMode = editMode,
-                onTap = onSongInfo,
-                onDoubleTap = onDoubleTapCover,
-                studioModifier = coverStudioModifier,
-            )
-            CoverLook.DISC -> LandscapeDiscCover(
-                style = coverStyle,
-                restSide = squareSide,
-                restStart = squareStart,
-                compactSide = compactSide,
-                leftColWidth = leftColWidth,
-                startInset = startInset,
-                pageProgress = pageProgress,
-                thumbnailUrl = track.thumbnailUrl,
-                mediaId = track.mediaId,
-                isPlaying = transportState.isPlaying,
-                spinActive = expanded() && sheetShowing && !editMode,
-                editMode = editMode,
-                interactive = interactive,
-                studioModifier = coverStudioModifier,
-            )
-            CoverLook.RECORD -> LandscapeRecord(
-                width = recordBox,
-                start = startInset,
-                thumbnailUrl = track.thumbnailUrl,
-                mediaId = track.mediaId,
-                interactive = interactive,
-                expanded = expanded,
-                sheetShowing = sheetShowing && !editMode,
-                studioModifier = coverStudioModifier,
-            )
-            CoverLook.FULL, CoverLook.TV_SQUARE -> LandscapeCover(
+                pureBlack = pureBlack,
+                warpTime = { warpTime.floatValue },
+                animate = backdropRunning,
+                onTv = onTv,
+                fullCover = look == CoverLook.FULL,
                 coverWidth = leftColWidth,
-                thumbnailUrl = track.thumbnailUrl,
-                interactive = interactive,
-                pageProgress = pageProgress,
                 fadeShare = fadeShare,
-                fadeDownFrom = if (onTv && look == CoverLook.FULL) TvCoverFadeDownFrom else null,
-                square = look == CoverLook.TV_SQUARE,
-                band = !onTv,
-                editMode = editMode,
-                onTap = onSongInfo,
-                onDoubleTap = onDoubleTapCover,
-                studioModifier = coverStudioModifier,
+            )
+
+            when (look) {
+                CoverLook.SQUARE -> PhoneSquareCover(
+                    restSide = squareSide,
+                    restStart = squareStart,
+                    compactSide = compactSide,
+                    leftColWidth = leftColWidth,
+                    startInset = startInset,
+                    pageProgress = if (showLeftCompactControls) pageProgress else { { 0f } },
+                    thumbnailUrl = track.thumbnailUrl,
+                    interactive = interactive,
+                    editMode = editMode,
+                    onTap = onCoverTap,
+                    onDoubleTap = onDoubleTapCover,
+                    studioModifier = coverStudioModifier,
+                )
+                CoverLook.DISC -> LandscapeDiscCover(
+                    style = coverStyle,
+                    restSide = squareSide,
+                    restStart = squareStart,
+                    compactSide = compactSide,
+                    leftColWidth = leftColWidth,
+                    startInset = startInset,
+                    pageProgress = pageProgress,
+                    thumbnailUrl = track.thumbnailUrl,
+                    mediaId = track.mediaId,
+                    isPlaying = transportState.isPlaying,
+                    spinActive = expanded() && sheetShowing && !editMode,
+                    editMode = editMode,
+                    interactive = interactive,
+                    onTap = onDiscCoverTap,
+                    studioModifier = coverStudioModifier,
+                )
+                CoverLook.RECORD -> LandscapeRecord(
+                    width = recordBox,
+                    start = startInset,
+                    thumbnailUrl = track.thumbnailUrl,
+                    mediaId = track.mediaId,
+                    interactive = interactive,
+                    expanded = expanded,
+                    sheetShowing = sheetShowing && !editMode,
+                    studioModifier = coverStudioModifier,
+                )
+                CoverLook.FULL, CoverLook.TV_SQUARE -> LandscapeCover(
+                    coverWidth = leftColWidth,
+                    thumbnailUrl = track.thumbnailUrl,
+                    interactive = interactive,
+                    fadeShare = fadeShare,
+                    fadeDownFrom = if (onTv && look == CoverLook.FULL) TvCoverFadeDownFrom else null,
+                    square = look == CoverLook.TV_SQUARE,
+                    editMode = editMode,
+                    onTap = onCoverTap,
+                    onDoubleTap = onDoubleTapCover,
+                    studioModifier = coverStudioModifier,
+                )
+            }
+        }
+
+        // progressive horizontal frost across the cover-to-bg transition when blur is enabled, matching portrait's CoverFrost
+        if (useCoverFrost) {
+            LandscapeCoverFrost(
+                glassState = seamGlass,
+                coverWidth = leftColWidth,
+                fadeShare = fadeShare,
+                visible = { sheetShowing },
+            )
+        }
+
+        // smooth edge-less frost and dark overlay under left-side controls/title while lyrics or queue are open
+        if (pageMounted && look == CoverLook.FULL && !onTv) {
+            LyricsBand(
+                coverWidth = leftColWidth,
+                glassState = if (useCoverFrost) seamGlass else null,
+                pageProgress = pageProgress,
+                retractProgress = { controlsRetract.value },
             )
         }
 
@@ -407,13 +506,14 @@ internal fun FlagshipLandscape(
                         translationY = (1f - p) * 18.dp.toPx()
                     },
             ) {
-                PlayerProgressSlider(active = sheetShowing && !panelInfoShown)
+                PlayerProgressSlider(active = sheetShowing && !panelInfoShown, horizontalPadding = 8.dp)
                 Spacer(Modifier.height(2.dp))
                 compactTransport(Modifier.fillMaxWidth())
             }
         }
 
-        // full cover with lyrics or queue open: title, seek bar and compact transport stack cleanly over the softened lower cover
+        // full cover with lyrics or queue open: title, seek bar and compact transport stack cleanly over the softened lower cover;
+        // on lyrics, controls auto-retract downward while title & artist glide to the bottom-left over the dark overlay
         if (pageMounted && look == CoverLook.FULL) {
             if (onTv) {
                 Column(
@@ -431,6 +531,7 @@ internal fun FlagshipLandscape(
                     SongTitles(title = track.title, artist = track.artist, onClick = onSongInfo)
                 }
             } else {
+                var controlsHeightPx by remember { mutableFloatStateOf(0f) }
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -440,16 +541,65 @@ internal fun FlagshipLandscape(
                             end = CoverGutter + 10.dp,
                             bottom = bottomInset + 8.dp,
                         )
+                        .pointerInput(Unit) {
+                            awaitEachGesture {
+                                awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                                controlsTouching = true
+                                controlsInteractionTick++
+                                do {
+                                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                                } while (event.changes.any { it.pressed })
+                                controlsTouching = false
+                                controlsInteractionTick++
+                            }
+                        }
                         .graphicsLayer {
                             val p = pageProgress()
                             alpha = p
                             translationY = (1f - p) * 20.dp.toPx()
                         },
                 ) {
-                    SongTitles(title = track.title, artist = track.artist, onClick = onSongInfo, compact = true)
-                    Spacer(Modifier.height(4.dp))
-                    PlayerProgressSlider(active = sheetShowing && !panelInfoShown)
-                    compactTransport(Modifier.fillMaxWidth())
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .zIndex(1f)
+                            .graphicsLayer {
+                                val r = controlsRetract.value
+                                translationY = r * (controlsHeightPx - 6.dp.toPx()).coerceAtLeast(0f)
+                            },
+                    ) {
+                        SongTitles(
+                            title = track.title,
+                            artist = track.artist,
+                            onClick = {
+                                if (controlsRetracted) {
+                                    controlsRetracted = false
+                                    controlsInteractionTick++
+                                } else {
+                                    onSongInfo()
+                                }
+                            },
+                            compact = true,
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onSizeChanged { controlsHeightPx = it.height.toFloat() }
+                            .graphicsLayer {
+                                val r = controlsRetract.value
+                                alpha = (1f - r * 1.35f).coerceIn(0f, 1f)
+                                translationY = r * (controlsHeightPx + 24.dp.toPx())
+                                letTouchesThroughWhenHidden()
+                            },
+                    ) {
+                        Spacer(Modifier.height(4.dp))
+                        PlayerProgressSlider(
+                            active = sheetShowing && !panelInfoShown && controlsActive,
+                            horizontalPadding = 0.dp,
+                        )
+                        compactTransport(Modifier.fillMaxWidth())
+                    }
                 }
             }
         }
@@ -474,7 +624,7 @@ internal fun FlagshipLandscape(
             modifier = Modifier
                 .fillMaxHeight()
                 .padding(start = leftColWidth, end = endInset + if (onTv) 0.dp else SideButtonsRoom)
-                .padding(bottom = bottomInset),
+                .padding(bottom = if (bottomFlush) 0.dp else bottomInset),
         ) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (panelInfoShown) {
@@ -502,7 +652,6 @@ internal fun FlagshipLandscape(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = PanelGutter - 12.dp)
                                 .then(if (studioAnchors != null) Modifier.studioAnchor(studioAnchors) { it.slider } else Modifier)
                                 .then(Modifier.studioMiddleLayer(studioParts) { it.slider }),
                         ) {
@@ -516,6 +665,7 @@ internal fun FlagshipLandscape(
                                 },
                                 seekBarModifier = if (studioPieces != null) Modifier.studioPiece(studioPieces, StudioPieces.SEEK_BAR) else Modifier,
                                 endTimeModifier = if (studioPieces != null) Modifier.studioPiece(studioPieces, StudioPieces.END_TIME) else Modifier,
+                                horizontalPadding = PanelGutter,
                             )
                         }
                         if (!onTv) {
@@ -536,6 +686,16 @@ internal fun FlagshipLandscape(
                         onClose = { pages.close() },
                         screenHeight = screenHeight,
                         contentBottomInset = 0.dp,
+                        onImmersiveChange = { immersive ->
+                            if (lyricsActive) {
+                                if (immersive && !controlsTouching) {
+                                    controlsRetracted = true
+                                } else if (!immersive) {
+                                    controlsRetracted = false
+                                    controlsInteractionTick++
+                                }
+                            }
+                        },
                         onSwitchSource = onSwitchLyricsSource,
                         showHeader = false,
                         onCoverBackdrop = true,
@@ -848,6 +1008,7 @@ private fun BoxScope.LandscapeDiscCover(
     spinActive: Boolean,
     editMode: Boolean,
     interactive: () -> Boolean,
+    onTap: () -> Unit,
     studioModifier: Modifier,
 ) {
     val connection = LocalPlayerConnection.current
@@ -874,6 +1035,11 @@ private fun BoxScope.LandscapeDiscCover(
                 }
             }
             .then(studioModifier)
+            .then(
+                if (editMode) Modifier else Modifier.pointerInput(onTap) {
+                    detectTapGestures(onTap = { onTap() })
+                },
+            )
             .styleSongSwipe(interactive, carousel) { connection?.player },
     ) {
         DiscCoverStack(
@@ -929,11 +1095,9 @@ private fun BoxScope.LandscapeCover(
     coverWidth: Dp,
     thumbnailUrl: String?,
     interactive: () -> Boolean,
-    pageProgress: () -> Float,
     fadeShare: Float,
     fadeDownFrom: Float?,
     square: Boolean = false,
-    band: Boolean = true,
     editMode: Boolean = false,
     onTap: () -> Unit = {},
     onDoubleTap: ((Offset) -> Unit)? = null,
@@ -945,8 +1109,6 @@ private fun BoxScope.LandscapeCover(
         SquareCover(coverWidth = coverWidth, thumbnailUrl = thumbnailUrl, interactive = interactive)
         return
     }
-    val coverLayer = rememberGraphicsLayer()
-    val bandShown by remember { derivedStateOf { pageProgress() > 0.001f } }
     val coords = remember { arrayOfNulls<LayoutCoordinates>(1) }
     Box(
         modifier = Modifier
@@ -967,42 +1129,34 @@ private fun BoxScope.LandscapeCover(
             )
             .styleSongSwipe(interactive, carousel) { connection?.player }
             .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-            .drawWithContent {
-                if (band) {
-                    coverLayer.record { this@drawWithContent.drawContent() }
-                    drawLayer(coverLayer)
-                } else {
-                    drawContent()
-                }
+            .drawWithCache {
                 val from = size.width * (1f - fadeShare)
-                // smoothstep mask so the right edge melts seamlessly into the horizontal blurred mirror and backdrop
-                drawRect(
-                    Brush.horizontalGradient(
-                        0f to Color.Transparent,
-                        0.25f to Color.Black.copy(alpha = 0.08f),
-                        0.55f to Color.Black.copy(alpha = 0.45f),
-                        0.82f to Color.Black.copy(alpha = 0.85f),
-                        1f to Color.Black,
-                        startX = from,
-                        endX = size.width,
-                    ),
-                    topLeft = Offset(from, 0f),
-                    blendMode = BlendMode.DstOut,
+                val rightFade = Brush.horizontalGradient(
+                    0f to Color.Transparent,
+                    0.25f to Color.Black.copy(alpha = 0.08f),
+                    0.55f to Color.Black.copy(alpha = 0.45f),
+                    0.82f to Color.Black.copy(alpha = 0.85f),
+                    1f to Color.Black,
+                    startX = from,
+                    endX = size.width,
                 )
-                if (fadeDownFrom != null) {
-                    val top = size.height * fadeDownFrom
-                    drawRect(
-                        Brush.verticalGradient(
-                            0f to Color.Transparent,
-                            0.35f to Color.Black.copy(alpha = 0.15f),
-                            0.7f to Color.Black.copy(alpha = 0.6f),
-                            1f to Color.Black,
-                            startY = top,
-                            endY = size.height,
-                        ),
-                        topLeft = Offset(0f, top),
-                        blendMode = BlendMode.DstOut,
+                val downFade = fadeDownFrom?.let { start ->
+                    val top = size.height * start
+                    top to Brush.verticalGradient(
+                        0f to Color.Transparent,
+                        0.35f to Color.Black.copy(alpha = 0.15f),
+                        0.7f to Color.Black.copy(alpha = 0.6f),
+                        1f to Color.Black,
+                        startY = top,
+                        endY = size.height,
                     )
+                }
+                onDrawWithContent {
+                    drawContent()
+                    drawRect(rightFade, topLeft = Offset(from, 0f), blendMode = BlendMode.DstOut)
+                    downFade?.let { (top, brush) ->
+                        drawRect(brush, topLeft = Offset(0f, top), blendMode = BlendMode.DstOut)
+                    }
                 }
             },
     ) {
@@ -1015,44 +1169,190 @@ private fun BoxScope.LandscapeCover(
             )
         }
     }
-    if (bandShown && band) {
-        LyricsBand(coverWidth = coverWidth, coverLayer = coverLayer, pageProgress = pageProgress)
+}
+
+// progressive horizontal blur across the cover-to-bg transition when blur is enabled, matching portrait's CoverFrost
+private val LandscapeFrostProgressiveMask = Brush.horizontalGradient(
+    0f to Color.Transparent,
+    0.06f to Color.Black,
+    0.76f to Color.Black,
+    0.84f to Color.Black.copy(alpha = 0.72f),
+    0.92f to Color.Black.copy(alpha = 0.28f),
+    1f to Color.Transparent,
+)
+
+private val LandscapeFrostFlatMask = Brush.horizontalGradient(
+    *Array(9) { i ->
+        val t = i / 8f
+        t * 0.52f to Color.Black.copy(alpha = t * t * (3f - 2f * t))
+    },
+    0.76f to Color.Black,
+    0.84f to Color.Black.copy(alpha = 0.72f),
+    0.92f to Color.Black.copy(alpha = 0.28f),
+    1f to Color.Transparent,
+)
+
+@Composable
+private fun BoxScope.LandscapeCoverFrost(
+    glassState: GlassState,
+    coverWidth: Dp,
+    fadeShare: Float,
+    visible: () -> Boolean,
+) {
+    val drawn by remember { derivedStateOf { visible() } }
+    if (!drawn) return
+    val progressiveEnabled = rememberProgressiveBlur()
+    val (blurStrengthPx) = rememberPreference(BlurStrengthPxKey, defaultValue = 25f)
+    val smooth = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        LocalBlurQuality.current == BlurQuality.HIGH &&
+        progressiveEnabled
+    val radiusPx = with(LocalDensity.current) { LandscapeFrostRadius.toPx() }
+    val frostStart = (coverWidth * (1f - fadeShare - LandscapeFrostLead)).coerceAtLeast(0.dp)
+    val frostEnd = coverWidth * (1f + LandscapeFrostOvershoot)
+    val frostWidth = (frostEnd - frostStart).coerceAtLeast(1.dp)
+    val ramp = ((coverWidth - frostStart) / frostWidth).coerceIn(0.2f, 0.95f)
+    var position by remember { mutableStateOf(Offset.Zero) }
+
+    DownscaledBlur(
+        radius = { BlurEffectCache.effectiveRadius(radiusPx * (blurStrengthPx / 25f)) },
+        tileMode = Shader.TileMode.CLAMP,
+        mask = if (smooth) LandscapeFrostProgressiveMask else LandscapeFrostFlatMask,
+        growDown = if (smooth) true else null,
+        growAcross = smooth,
+        growRamp = ramp,
+        modifier = Modifier
+            .align(Alignment.TopStart)
+            .offset { IntOffset(frostStart.roundToPx(), 0) }
+            .width(frostWidth)
+            .fillMaxHeight()
+            .onGloballyPositioned { position = it.positionInWindow() },
+    ) { _ ->
+        val node = glassState.renderNode
+        if (node != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && glassNodeHasContent(node)) {
+            val relX = position.x - glassState.rootPosition.x
+            val relY = position.y - glassState.rootPosition.y
+            translate(left = -relX, top = -relY) {
+                drawIntoCanvas { it.nativeCanvas.drawGlassNode(node) }
+            }
+        }
     }
 }
 
-// soft bottom frost over the full cover while lyrics or queue are open so compact title and controls read cleanly
+// 2D smoothstep vertical + horizontal fade: eliminates both top and right seams in a single GPU pass with zero offscreen layers
+private class SoftCornerFadeBrush(
+    private val verticalStops: FloatArray,
+    private val verticalAlphas: FloatArray,
+    private val horizontalFadeStart: Float,
+    private val tint: Color,
+) : ShaderBrush() {
+    override fun createShader(size: Size): Shader {
+        val w = size.width.coerceAtLeast(1f)
+        val h = size.height.coerceAtLeast(1f)
+        val vColors = IntArray(verticalAlphas.size) { i ->
+            tint.copy(alpha = verticalAlphas[i]).toArgb()
+        }
+        val vertical = LinearGradient(0f, 0f, 0f, h, vColors, verticalStops, Shader.TileMode.CLAMP)
+        val steps = 8
+        val hPositions = FloatArray(steps + 2)
+        val hColors = IntArray(steps + 2)
+        hPositions[0] = 0f
+        hColors[0] = android.graphics.Color.WHITE
+        for (i in 0..steps) {
+            val t = i / steps.toFloat()
+            val eased = t * t * (3f - 2f * t)
+            hPositions[i + 1] = horizontalFadeStart + (1f - horizontalFadeStart) * t
+            hColors[i + 1] = android.graphics.Color.argb(((1f - eased) * 255f).roundToInt().coerceIn(0, 255), 255, 255, 255)
+        }
+        val horizontal = LinearGradient(0f, 0f, w, 0f, hColors, hPositions, Shader.TileMode.CLAMP)
+        return ComposeShader(vertical, horizontal, PorterDuff.Mode.DST_IN)
+    }
+}
+
+private fun smoothCornerFadeBrush(
+    verticalStart: Float,
+    maxAlpha: Float,
+    horizontalFadeStart: Float,
+    tint: Color = Color.Black,
+): ShaderBrush {
+    val steps = 8
+    val hasPrefix = verticalStart > 0f
+    val count = (if (hasPrefix) 1 else 0) + steps + 1
+    val stops = FloatArray(count)
+    val alphas = FloatArray(count)
+    var idx = 0
+    if (hasPrefix) {
+        stops[idx] = 0f
+        alphas[idx] = 0f
+        idx++
+    }
+    for (i in 0..steps) {
+        val t = i / steps.toFloat()
+        val eased = t * t * (3f - 2f * t)
+        stops[idx] = verticalStart + (1f - verticalStart) * t
+        alphas[idx] = maxAlpha * eased
+        idx++
+    }
+    return SoftCornerFadeBrush(stops, alphas, horizontalFadeStart, tint)
+}
+
+// cached top-level brushes so DownscaledBlur's RenderEffect cache and drawBehind reuse the exact same instances
+private val LyricsBlurMaskBrush = smoothCornerFadeBrush(verticalStart = 0f, maxAlpha = 1f, horizontalFadeStart = 0.58f)
+private val LyricsExpandedShadeBrush = smoothCornerFadeBrush(verticalStart = 0f, maxAlpha = 0.62f, horizontalFadeStart = 0.56f)
+private val LyricsRetractedShadeBrush = smoothCornerFadeBrush(verticalStart = 0.48f, maxAlpha = 0.58f, horizontalFadeStart = 0.56f)
+
+// soft bottom-left frost + edge-less dark gradient over the full cover while lyrics or queue are open;
+// as controls retract, the frost fades out (zero GPU work when hidden) and the dark gradient lowers behind the title & artist
 @Composable
 private fun BoxScope.LyricsBand(
     coverWidth: Dp,
-    coverLayer: androidx.compose.ui.graphics.layer.GraphicsLayer,
+    glassState: GlassState?,
     pageProgress: () -> Float,
+    retractProgress: () -> Float,
 ) {
-    val mask = remember {
-        Brush.verticalGradient(0f to Color.Transparent, 0.45f to Color.Black.copy(alpha = 0.85f), 1f to Color.Black)
+    val blurShown by remember { derivedStateOf { glassState != null && pageProgress() > 0.001f && retractProgress() < 0.995f } }
+    if (blurShown && glassState != null) {
+        val smooth = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            LocalBlurQuality.current == BlurQuality.HIGH &&
+            rememberProgressiveBlur()
+        var position by remember { mutableStateOf(Offset.Zero) }
+        DownscaledBlur(
+            radius = { BlurEffectCache.effectiveRadius(LyricsBandRadius) },
+            tileMode = Shader.TileMode.CLAMP,
+            mask = LyricsBlurMaskBrush,
+            growDown = if (smooth) true else null,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .width(coverWidth * LyricsBandWidthFactor)
+                .fillMaxHeight(LyricsBandShare)
+                .onGloballyPositioned { position = it.positionInWindow() }
+                .graphicsLayer {
+                    alpha = pageProgress().coerceIn(0f, 1f) * (1f - retractProgress().coerceIn(0f, 1f))
+                    compositingStrategy = CompositingStrategy.ModulateAlpha
+                },
+        ) { _ ->
+            val node = glassState.renderNode
+            if (node != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && glassNodeHasContent(node)) {
+                val relX = position.x - glassState.rootPosition.x
+                val relY = position.y - glassState.rootPosition.y
+                translate(left = -relX, top = -relY) {
+                    drawIntoCanvas { it.nativeCanvas.drawGlassNode(node) }
+                }
+            }
+        }
     }
-    val smooth = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
-        LocalBlurQuality.current == BlurQuality.HIGH
-    DownscaledBlur(
-        radius = { BlurEffectCache.effectiveRadius(LyricsBandRadius) },
-        tileMode = Shader.TileMode.CLAMP,
-        mask = mask,
-        growDown = if (smooth) true else null,
+    Spacer(
         modifier = Modifier
             .align(Alignment.BottomStart)
-            .width(coverWidth)
-            .fillMaxHeight(LyricsBandShare)
-            .graphicsLayer { alpha = pageProgress() },
-    ) { fullSize ->
-        translate(top = fullSize.height - coverLayer.size.height.toFloat()) { drawLayer(coverLayer) }
-    }
-    Box(
-        modifier = Modifier
-            .align(Alignment.BottomStart)
-            .width(coverWidth)
-            .fillMaxHeight(LyricsBandShare)
-            .graphicsLayer { alpha = pageProgress() }
+            .width(coverWidth * LyricsOverlayWidthFactor)
+            .fillMaxHeight(LyricsOverlayHeightShare)
             .drawBehind {
-                drawRect(Brush.verticalGradient(0f to Color.Transparent, 0.5f to Color.Black.copy(alpha = 0.35f), 1f to Color.Black.copy(alpha = 0.6f)))
+                val p = pageProgress().coerceIn(0f, 1f)
+                if (p <= 0.004f) return@drawBehind
+                val r = retractProgress().coerceIn(0f, 1f)
+                val expandedAlpha = p * (1f - r)
+                if (expandedAlpha > 0.004f) drawRect(LyricsExpandedShadeBrush, alpha = expandedAlpha)
+                val retractedAlpha = p * r
+                if (retractedAlpha > 0.004f) drawRect(LyricsRetractedShadeBrush, alpha = retractedAlpha)
             },
     )
 }

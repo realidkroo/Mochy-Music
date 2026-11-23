@@ -225,7 +225,7 @@ private fun SendContent(send: SendState, live: Boolean) {
             ShareAsVideoRow(session, enabled = !send.working)
         }
         Divider()
-        val stickers = ShareApp.entries.any { it.takesSticker(context) }
+        val stickers = !session.isCardOnly && ShareApp.entries.any { it.takesSticker(context) }
         Caption(stringResource(if (stickers) R.string.song_share_send_apps_sticker else R.string.song_share_send_apps))
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {

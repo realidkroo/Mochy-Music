@@ -129,6 +129,7 @@ private object HomeGlowColor {
                     .data(url)
                     .size(64)
                     .allowHardware(false)
+                    .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
                     .build()
                 val bitmap = context.imageLoader.execute(request).image?.toBitmap() ?: return@withContext null
                 val argb = withContext(Dispatchers.Default) { glowTone(bitmap) } ?: return@withContext null

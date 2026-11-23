@@ -27,6 +27,7 @@ import com.music.innertube.models.getContinuation
 import com.music.innertube.models.getItems
 import com.music.innertube.models.oddElements
 import com.music.innertube.models.response.AccountMenuResponse
+import com.music.innertube.models.response.AddItemYouTubePlaylistResponse
 import com.music.innertube.models.response.BrowseResponse
 import com.music.innertube.models.response.CreatePlaylistResponse
 import com.music.innertube.models.response.EditPlaylistResponse
@@ -127,6 +128,10 @@ object YouTube {
         set(value) {
             innerTube.ipVersion = value
         }
+
+    fun configureSharedPool(connectionPool: okhttp3.ConnectionPool, dispatcher: okhttp3.Dispatcher) {
+        innerTube.configureSharedPool(connectionPool, dispatcher)
+    }
 
     suspend fun refreshVisitorData(): Result<String> = visitorData().onSuccess {
         visitorData = it
@@ -562,9 +567,10 @@ object YouTube {
     }
 
     suspend fun playlist(playlistId: String): Result<PlaylistPage> = runCatching {
+        val cleanId = playlistId.removePrefix("VL")
         val response = innerTube.browse(
             client = WEB_REMIX,
-            browseId = "VL$playlistId",
+            browseId = "VL$cleanId",
             setLogin = true
         ).body<BrowseResponse>()
         val base = response.contents?.twoColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
@@ -572,6 +578,11 @@ object YouTube {
 
         val editable = base?.musicEditablePlaylistDetailHeaderRenderer != null
         val secondarySectionList = response.contents?.twoColumnBrowseResultsRenderer?.secondaryContents?.sectionListRenderer
+        val playlistShelf = secondarySectionList?.contents
+            ?.firstNotNullOfOrNull { it.musicPlaylistShelfRenderer }
+            ?: response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+                ?.tabRenderer?.content?.sectionListRenderer?.contents
+                ?.firstNotNullOfOrNull { it.musicPlaylistShelfRenderer }
 
         var related = secondarySectionList?.contents?.let { parseRelatedItems(it.drop(1)) }
 
@@ -594,34 +605,30 @@ object YouTube {
 
         PlaylistPage(
             playlist = PlaylistItem(
-                id = playlistId,
-                title = header?.title?.runs?.firstOrNull()?.text!!,
-                author = header.straplineTextOne?.runs?.firstOrNull()?.let {
+                id = cleanId,
+                title = header?.title?.runs?.firstOrNull()?.text ?: cleanId,
+                author = header?.straplineTextOne?.runs?.firstOrNull()?.let {
                     Artist(
                         name = it.text,
                         id = it.navigationEndpoint?.browseEndpoint?.browseId
                     )
                 },
-                songCountText = header.secondSubtitle?.runs?.firstOrNull()?.text,
+                songCountText = header?.secondSubtitle?.runs?.firstOrNull()?.text,
                 // both optional: Liked music's header can come without them, and the songs still count
-                thumbnail = header.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.lastOrNull()?.url,
+                thumbnail = header?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.lastOrNull()?.url,
                 playEndpoint = null,
-                shuffleEndpoint = header.buttons.lastOrNull()?.menuRenderer?.items?.firstOrNull()?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint,
-                radioEndpoint = header.buttons.getOrNull(2)?.menuRenderer?.items?.find {
+                shuffleEndpoint = header?.buttons?.lastOrNull()?.menuRenderer?.items?.firstOrNull()?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint,
+                radioEndpoint = header?.buttons?.getOrNull(2)?.menuRenderer?.items?.find {
                     it.menuNavigationItemRenderer?.icon?.iconType == "MIX"
                 }?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint,
                 isEditable = editable
             ),
-            songs = response.contents?.twoColumnBrowseResultsRenderer?.secondaryContents?.sectionListRenderer
-                ?.contents?.firstOrNull()?.musicPlaylistShelfRenderer?.contents?.getItems()?.mapNotNull {
-                    PlaylistPage.fromMusicResponsiveListItemRenderer(it)
-                } ?: emptyList(),
-            songsContinuation = response.contents?.twoColumnBrowseResultsRenderer?.secondaryContents?.sectionListRenderer
-                ?.contents?.firstOrNull()?.musicPlaylistShelfRenderer?.contents?.getContinuation()
-                ?: response.contents?.twoColumnBrowseResultsRenderer?.secondaryContents?.sectionListRenderer
-                    ?.contents?.firstOrNull()?.musicPlaylistShelfRenderer?.continuations?.getContinuation(),
-            continuation = response.contents?.twoColumnBrowseResultsRenderer?.secondaryContents?.sectionListRenderer
-                ?.continuations?.getContinuation(),
+            songs = playlistShelf?.contents?.getItems()?.mapNotNull {
+                PlaylistPage.fromMusicResponsiveListItemRenderer(it)
+            } ?: emptyList(),
+            songsContinuation = playlistShelf?.contents?.getContinuation()
+                ?: playlistShelf?.continuations?.getContinuation(),
+            continuation = secondarySectionList?.continuations?.getContinuation(),
             related = related?.ifEmpty { null }
         )
     }
@@ -652,9 +659,7 @@ object YouTube {
             response.continuationContents?.musicPlaylistShelfContinuation?.contents ?: emptyList()
 
         val appendedContents: List<MusicShelfRenderer.Content> = response.onResponseReceivedActions
-            ?.firstOrNull()
-            ?.appendContinuationItemsAction
-            ?.continuationItems
+            ?.flatMap { it.appendContinuationItemsAction?.continuationItems.orEmpty() }
             .orEmpty()
 
         val allContents = mainContents + shelfContents + appendedContents
@@ -676,11 +681,7 @@ object YouTube {
                     ?.musicShelfContinuation
                     ?.continuations
                     ?.getContinuation()
-                ?: response.onResponseReceivedActions
-                    ?.firstOrNull()
-                    ?.appendContinuationItemsAction
-                    ?.continuationItems
-                    ?.getContinuation()
+                ?: appendedContents.getContinuation()
         }
 
         PlaylistContinuationPage(
@@ -787,7 +788,6 @@ object YouTube {
     }
 
     suspend fun library(browseId: String, tabIndex: Int = 0): Result<LibraryPage> {
-        println("[UPLOAD_DEBUG] library() called with browseId=$browseId, tabIndex=$tabIndex")
         return runCatching {
             val response = innerTube.browse(
                 client = WEB_REMIX,
@@ -796,40 +796,20 @@ object YouTube {
             ).body<BrowseResponse>()
 
             val tabs = response.contents?.singleColumnBrowseResultsRenderer?.tabs
-            println("[UPLOAD_DEBUG] tabs count: ${tabs?.size ?: 0}")
 
-            if (browseId == "FEmusic_library_privately_owned_tracks") {
-                println("[UPLOAD_DEBUG] Raw response.contents: ${response.contents}")
-                tabs?.forEachIndexed { idx, tab ->
-                    println("[UPLOAD_DEBUG] Tab $idx: tabRenderer.content null? ${tab.tabRenderer.content == null}")
-                    println("[UPLOAD_DEBUG] Tab $idx: sectionListRenderer null? ${tab.tabRenderer.content?.sectionListRenderer == null}")
-                    println("[UPLOAD_DEBUG] Tab $idx: sectionListRenderer.contents size: ${tab.tabRenderer.content?.sectionListRenderer?.contents?.size ?: 0}")
-                    tab.tabRenderer.content?.sectionListRenderer?.contents?.forEachIndexed { cIdx, content ->
-                        println("[UPLOAD_DEBUG] Tab $idx Content $cIdx: gridRenderer=${content.gridRenderer != null}, musicShelfRenderer=${content.musicShelfRenderer != null}")
-                    }
-                }
-            }
-
-            val contents = if (tabs != null && tabs.size >= tabIndex) {
-                tabs[tabIndex].tabRenderer.content?.sectionListRenderer?.contents?.firstOrNull()
-            }
-            else {
-                println("[UPLOAD_DEBUG] No tabs or tabIndex out of range")
+            val sectionContents = if (tabs != null && tabIndex in tabs.indices) {
+                tabs[tabIndex].tabRenderer.content?.sectionListRenderer?.contents
+            } else {
                 null
             }
-
-            println("[UPLOAD_DEBUG] contents null? ${contents == null}")
-            println("[UPLOAD_DEBUG] gridRenderer null? ${contents?.gridRenderer == null}")
-            println("[UPLOAD_DEBUG] musicShelfRenderer null? ${contents?.musicShelfRenderer == null}")
+            val contents = sectionContents?.firstOrNull { it.gridRenderer != null || it.musicShelfRenderer != null }
+                ?: sectionContents?.firstOrNull()
 
             when {
                 contents?.gridRenderer != null -> {
                     val gridItems = contents.gridRenderer.items
-                    println("[UPLOAD_DEBUG] gridRenderer items count: ${gridItems.size}")
                     val twoRowItems = gridItems.mapNotNull(GridRenderer.Item::musicTwoRowItemRenderer)
-                    println("[UPLOAD_DEBUG] musicTwoRowItemRenderer count: ${twoRowItems.size}")
                     val parsedItems = twoRowItems.mapNotNull { LibraryPage.fromMusicTwoRowItemRenderer(it) }
-                    println("[UPLOAD_DEBUG] Successfully parsed items: ${parsedItems.size}")
                     LibraryPage(
                         items = parsedItems,
                         continuation = contents.gridRenderer.continuations?.getContinuation()
@@ -838,34 +818,10 @@ object YouTube {
 
                 else -> {
                     val shelfContents = contents?.musicShelfRenderer?.contents
-                    println("[UPLOAD_DEBUG] musicShelfRenderer contents count: ${shelfContents?.size ?: 0}")
-                    if (shelfContents == null) {
-                        println("[UPLOAD_DEBUG] ERROR: musicShelfRenderer contents is null!")
-                        throw IllegalStateException("No content found for browseId=$browseId")
-                    }
+                        ?: throw IllegalStateException("No content found for browseId=$browseId")
                     val listItemRenderers = shelfContents.mapNotNull(MusicShelfRenderer.Content::musicResponsiveListItemRenderer)
-                    println("[UPLOAD_DEBUG] musicResponsiveListItemRenderer count: ${listItemRenderers.size}")
-
-                    listItemRenderers.forEachIndexed { index, renderer ->
-                        println("[UPLOAD_DEBUG] Item $index: isSong=${renderer.isSong}, isArtist=${renderer.isArtist}, isAlbum=${renderer.isAlbum}, isPlaylist=${renderer.isPlaylist}")
-                        println("[UPLOAD_DEBUG] Item $index: playlistItemData=${renderer.playlistItemData}")
-                        println("[UPLOAD_DEBUG] Item $index: flexColumns count=${renderer.flexColumns.size}")
-                        renderer.flexColumns.forEachIndexed { colIdx, col ->
-                            println("[UPLOAD_DEBUG] Item $index flexColumn $colIdx: ${col.musicResponsiveListItemFlexColumnRenderer.text?.runs?.map { it.text }}")
-                        }
-                        println("[UPLOAD_DEBUG] Item $index: thumbnail=${renderer.thumbnail?.musicThumbnailRenderer?.thumbnail}")
-                    }
-
                     val parsedItems = listItemRenderers.mapNotNull { renderer ->
-                        val result = LibraryPage.fromMusicResponsiveListItemRenderer(renderer)
-                        if (result == null) {
-                            println("[UPLOAD_DEBUG] Failed to parse renderer: videoId=${renderer.playlistItemData?.videoId}")
-                        }
-                        result
-                    }
-                    println("[UPLOAD_DEBUG] Successfully parsed items: ${parsedItems.size}")
-                    parsedItems.filterIsInstance<SongItem>().forEach { song ->
-                        println("[UPLOAD_DEBUG] Parsed song: id=${song.id}, title=${song.title}, artists=${song.artists.map { it.name }}")
+                        LibraryPage.fromMusicResponsiveListItemRenderer(renderer)
                     }
                     LibraryPage(
                         items = parsedItems,
@@ -873,9 +829,6 @@ object YouTube {
                     )
                 }
             }
-        }.onFailure { e ->
-            println("[UPLOAD_DEBUG] library() EXCEPTION for browseId=$browseId: ${e::class.simpleName}: ${e.message}")
-            e.printStackTrace()
         }
     }
 
@@ -1211,12 +1164,45 @@ object YouTube {
         innerTube.addToPlaylist(WEB_REMIX, playlistId, videoId)
     }
 
+    /** Adds a single video and extracts the newly created setVideoId if YouTube returned it. */
+    suspend fun addToPlaylistWithSetVideoId(playlistId: String, videoId: String): Result<String?> = runCatching {
+        val response = innerTube.addToPlaylist(WEB_REMIX, playlistId, videoId)
+        check(response.status.value in 200..299) { "edit_playlist failed with HTTP ${response.status.value}" }
+        runCatching { response.body<AddItemYouTubePlaylistResponse>() }.getOrNull()
+            ?.playlistEditResults
+            ?.firstNotNullOfOrNull { it.playlistEditVideoAddedResultData?.setVideoId }
+    }
+
     /** adds the videos in batches of batchSize, one edit_playlist call each instead of one per song */
     suspend fun addVideosToPlaylist(playlistId: String, videoIds: List<String>, batchSize: Int = 50) = runCatching {
         videoIds.chunked(batchSize).forEach { batch ->
             val response = innerTube.addVideosToPlaylist(WEB_REMIX, playlistId, batch)
             check(response.status.value in 200..299) { "edit_playlist failed with HTTP ${response.status.value}" }
         }
+    }
+
+    /** Adds videos in batches and returns each (videoId, setVideoId) pair returned by YouTube. */
+    suspend fun addVideosToPlaylistWithSetVideoIds(
+        playlistId: String,
+        videoIds: List<String>,
+        batchSize: Int = 50,
+    ): Result<List<Pair<String, String>>> = runCatching {
+        val added = mutableListOf<Pair<String, String>>()
+        videoIds.chunked(batchSize).forEach { batch ->
+            val response = innerTube.addVideosToPlaylist(WEB_REMIX, playlistId, batch)
+            check(response.status.value in 200..299) { "edit_playlist failed with HTTP ${response.status.value}" }
+            runCatching { response.body<AddItemYouTubePlaylistResponse>() }.getOrNull()
+                ?.playlistEditResults
+                ?.forEach { entry ->
+                    val data = entry.playlistEditVideoAddedResultData
+                    val vid = data?.videoId
+                    val svid = data?.setVideoId
+                    if (!vid.isNullOrBlank() && !svid.isNullOrBlank()) {
+                        added += vid to svid
+                    }
+                }
+        }
+        added
     }
 
     suspend fun addPlaylistToPlaylist(playlistId: String, addPlaylistId: String) = runCatching {
@@ -1483,10 +1469,11 @@ object YouTube {
     }
 
     suspend fun accountInfo(): Result<AccountInfo> = runCatching {
-        innerTube.accountMenu(WEB_REMIX).body<AccountMenuResponse>()
+        val menu = innerTube.accountMenu(WEB_REMIX).body<AccountMenuResponse>()
             .actions[0].openPopupAction.popup.multiPageMenuRenderer
-            .header?.activeAccountHeaderRenderer
-            ?.toAccountInfo()!!
+        val isPremium = menu.detectPremium()
+        menu.header?.activeAccountHeaderRenderer
+            ?.toAccountInfo(isPremium = isPremium)!!
     }
 
     suspend fun feedback(tokens: List<String>): Result<Boolean> = runCatching {

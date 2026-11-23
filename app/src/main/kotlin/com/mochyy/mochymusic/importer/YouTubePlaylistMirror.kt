@@ -23,8 +23,20 @@ object YouTubePlaylistMirror {
             .filterNot { it.song.song.isLocal }
             .map { it.map.songId }
         if (ids.isEmpty()) return true
-        if (YouTube.addVideosToPlaylist(newBrowseId, ids).isFailure) return false
-        attachSetVideoIds(database, playlistId, newBrowseId)
+        val addedPairs = YouTube.addVideosToPlaylistWithSetVideoIds(newBrowseId, ids).getOrNull() ?: return false
+        if (addedPairs.isNotEmpty()) {
+            val queues = addedPairs.groupBy({ it.first }, { it.second }).mapValues { ArrayDeque(it.value) }
+            val maps = database.playlistSongs(playlistId).first().map { it.map }.sortedBy { it.position }
+            database.withTransaction {
+                maps.forEach { map ->
+                    if (map.setVideoId == null) {
+                        queues[map.songId]?.removeFirstOrNull()?.let { update(map.copy(setVideoId = it)) }
+                    }
+                }
+            }
+        } else {
+            attachSetVideoIds(database, playlistId, newBrowseId)
+        }
         return true
     }
 

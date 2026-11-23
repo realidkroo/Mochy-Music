@@ -66,7 +66,7 @@ private val ShareRequest.cardMoves: Boolean
 
 internal suspend fun ShareRequest.sendTo(app: ShareApp) {
     val target = app.installedPackage(context) ?: return
-    if (app.takesSticker(context) && openStory(app, target)) return
+    if (!session.isCardOnly && app.takesSticker(context) && openStory(app, target)) return
     val baked = export(ShareLayers.Everything)
     val send = Intent(Intent.ACTION_SEND).apply {
         type = baked.mimeType

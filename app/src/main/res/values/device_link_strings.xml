@@ -2,8 +2,8 @@
 <resources>
     <!-- device integration: the sheet that lists paired devices -->
     <string name="devices_title">Device integration</string>
-    <string name="devices_row_detail">Link your TV, another phone or a tablet on the same Wi-Fi</string>
-    <string name="devices_hero">Connect up to 10 devices on your Wi-Fi: your other phone, tablet, TV, car head unit and more.</string>
+    <string name="devices_row_detail">Link your TV, computer, another phone or a tablet on the same Wi-Fi</string>
+    <string name="devices_hero">Connect up to 10 devices on your Wi-Fi: your other phone, tablet, computer, TV, car head unit and more.</string>
     <string name="devices_mine">My devices</string>
     <string name="devices_add_more">Add more devices here</string>
     <string name="devices_full">That\'s 10 devices, the most one phone keeps. Unlink one to add another.</string>
@@ -23,12 +23,14 @@
     <string name="devices_kind_tablet">Tablet</string>
     <string name="devices_kind_tv">TV</string>
     <string name="devices_kind_car">Car</string>
+    <string name="devices_kind_computer">Computer</string>
 
     <!-- one device's own sheet -->
     <string name="devices_ok">OK</string>
     <string name="devices_remote_control">Enable remote control</string>
     <string name="devices_remote_control_tv_detail">Play, skip and change its settings from this phone</string>
     <string name="devices_remote_control_phone_detail">Play, skip and change settings on each other from either phone</string>
+    <string name="devices_remote_control_computer_detail">Play, skip and change settings on each other from this phone or the computer</string>
     <string name="devices_auto_control">Take control when it connects</string>
     <string name="devices_auto_control_detail">As soon as Mochy opens on it, this phone becomes its remote</string>
     <string name="devices_stream_local">Stream local from this device</string>
@@ -44,7 +46,7 @@
     <string name="devices_pairing_code">Pairing mode code</string>
     <string name="devices_detected">Detected</string>
     <string name="devices_looking">Looking for devices…</string>
-    <string name="devices_looking_detail">Open Add device on your other phone, or the phone page in Mochy on your TV</string>
+    <string name="devices_looking_detail">Open Add device on your other phone or in Mochy\'s Device integration on your computer, or the phone page in Mochy on your TV</string>
     <string name="devices_connect">Connect</string>
     <string name="devices_or">Or</string>
     <string name="devices_enter_code">Enter code</string>

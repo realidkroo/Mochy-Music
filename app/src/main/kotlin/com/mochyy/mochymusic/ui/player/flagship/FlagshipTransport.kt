@@ -159,8 +159,7 @@ fun FlagshipTransportRow(
                             forward = false,
                             iconSize = DpSize(unit * TenIconWidth, unit * TenIconHeight),
                             onClick = {
-                                val player = playerConnection.player
-                                playerConnection.seekTo((player.currentPosition - TenSecondsMs).coerceAtLeast(0L))
+                                playerConnection.seekTo((playerConnection.effectivePositionMs - TenSecondsMs).coerceAtLeast(0L))
                             },
                             description = stringResource(R.string.flagship_back_ten),
                             touch = fiveOuterTouch,
@@ -204,9 +203,8 @@ fun FlagshipTransportRow(
                             forward = true,
                             iconSize = DpSize(unit * TenIconWidth, unit * TenIconHeight),
                             onClick = {
-                                val player = playerConnection.player
-                                val duration = player.duration.takeIf { it > 0L } ?: Long.MAX_VALUE
-                                playerConnection.seekTo((player.currentPosition + TenSecondsMs).coerceAtMost(duration))
+                                val duration = playerConnection.effectiveDurationMs.takeIf { it > 0L } ?: Long.MAX_VALUE
+                                playerConnection.seekTo((playerConnection.effectivePositionMs + TenSecondsMs).coerceAtMost(duration))
                             },
                             description = stringResource(R.string.flagship_forward_ten),
                             touch = fiveOuterTouch,

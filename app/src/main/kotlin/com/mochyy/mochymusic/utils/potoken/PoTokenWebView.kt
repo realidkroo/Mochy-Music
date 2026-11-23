@@ -312,9 +312,9 @@ class PoTokenWebView private constructor(
         /** Warm path: the engine is already up, so minting one token should be quick. */
         private const val MINT_TIMEOUT_MS = 10_000L
 
-        private val httpClient = OkHttpClient.Builder()
-            .proxy(YouTube.proxy)
-            .build()
+        private val httpClient by lazy {
+            com.mochyy.mochymusic.utils.AppProxy.sharedClient.newBuilder().build()
+        }
 
         /**
          * Booting BotGuard is the step that can silently never finish - the WebView simply

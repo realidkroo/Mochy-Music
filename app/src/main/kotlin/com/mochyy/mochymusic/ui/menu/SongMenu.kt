@@ -170,14 +170,7 @@ fun SongMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onGetSong = { playlist ->
-            coroutineScope.launch(Dispatchers.IO) {
-                playlist.playlist.browseId?.let { browseId ->
-                    YouTube.addToPlaylist(browseId, song.id)
-                }
-            }
-            listOf(song.id)
-        },
+        onGetSong = { listOf(song.id) },
         onDismiss = {
             showChoosePlaylistDialog = false
         },
@@ -589,24 +582,24 @@ fun SongMenu(
                                     )
                                 },
                                 onClick = {
+                                    val appContext = context.applicationContext
                                     database.transaction {
-                                        coroutineScope.launch {
-                                            playlistBrowseId?.let { playlistId ->
-                                                if (playlistSong.map.setVideoId != null) {
-                                                    YouTube.removeFromPlaylist(
-                                                        playlistId,
-                                                        playlistSong.map.songId,
-                                                        playlistSong.map.setVideoId
-                                                    )
-                                                }
-                                            }
-                                        }
                                         move(
                                             playlistSong.map.playlistId,
                                             playlistSong.map.position,
                                             Int.MAX_VALUE
                                         )
                                         delete(playlistSong.map.copy(position = Int.MAX_VALUE))
+                                    }
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        removeFromPlaylistKeepingSync(
+                                            context = appContext,
+                                            database = database,
+                                            playlistId = playlistSong.map.playlistId,
+                                            browseId = playlistBrowseId,
+                                            songId = playlistSong.map.songId,
+                                            setVideoId = playlistSong.map.setVideoId,
+                                        )
                                     }
                                     onDismiss()
                                 }

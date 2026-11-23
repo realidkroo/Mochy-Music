@@ -24,6 +24,17 @@ object EjsNTransformSolver {
     private const val TAG = "mochy_EjsNSolver"
 
     private var solverWebView: SolverWebView? = null
+    private val idleHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val idleCloseRunnable = Runnable {
+        solverWebView?.close()
+        solverWebView = null
+    }
+    private const val IdleCloseMs = 60_000L
+
+    private fun scheduleIdleClose() {
+        idleHandler.removeCallbacks(idleCloseRunnable)
+        idleHandler.postDelayed(idleCloseRunnable, IdleCloseMs)
+    }
 
     suspend fun transformNParamInUrl(url: String): String {
         val nMatch = Regex("[?&]n=([^&]+)").find(url)
@@ -47,6 +58,7 @@ object EjsNTransformSolver {
 
             try {
                 val transformed = solver.transformN(nValue)
+                scheduleIdleClose()
                 Timber.tag(TAG).d("SABR n-param transformed: $nValue -> $transformed")
                 url.replaceFirst(
                     Regex("([?&])n=[^&]+"),
@@ -85,6 +97,7 @@ object EjsNTransformSolver {
     }
 
     suspend fun close() {
+        idleHandler.removeCallbacks(idleCloseRunnable)
         withContext(Dispatchers.Main) {
             solverWebView?.close()
         }
@@ -93,7 +106,6 @@ object EjsNTransformSolver {
 
     class SolverWebView private constructor(
         context: Context,
-        private val playerJs: String,
         private val initContinuation: Continuation<SolverWebView>,
     ) {
         private val webView = WebView(context)
@@ -125,7 +137,7 @@ object EjsNTransformSolver {
             }
         }
 
-        private fun loadSolverAndPlayer() {
+        private fun loadSolverAndPlayer(playerJs: String) {
             val cacheDir = File(webView.context.cacheDir, "ejs_solver")
             cacheDir.mkdirs()
 
@@ -288,8 +300,8 @@ function transformN(nValue) {
             suspend fun create(context: Context, playerJs: String): SolverWebView {
                 return withContext(Dispatchers.Main) {
                     suspendCancellableCoroutine { cont ->
-                        val sv = SolverWebView(context, playerJs, cont)
-                        sv.loadSolverAndPlayer()
+                        val sv = SolverWebView(context, cont)
+                        sv.loadSolverAndPlayer(playerJs)
                     }
                 }
             }

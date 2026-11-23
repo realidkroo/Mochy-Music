@@ -349,7 +349,6 @@ fun PlayerSelectorOverlay(
                         // card, which mustn't be built in the frame it has to cover the player
                         when (style) {
                             PlayerStyle.FLAGSHIP -> FlagshipPreview(flagship = true)
-                            PlayerStyle.CLASSIC -> FlagshipPreview()
                             PlayerStyle.TURNTABLE -> FlagshipPreview(turntable = true)
                             // each module card draws its own module style, the one at its place among them
                             PlayerStyle.MODULE -> CompositionLocalProvider(LocalModuleStyle provides moduleStyleAt(styles, index)) {

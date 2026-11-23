@@ -152,9 +152,9 @@ private fun VideoModeScreen(actions: StyleActions, modifier: Modifier) {
     val sheetShowing by remember(sheet) { derivedStateOf { sheet == null || sheet.progress > 0f } }
     val running = transport.isPlaying && sheetShowing
     val lyricClock = remember(connection) {
-        PlaybackClock({ connection.player }, { connection.lyricsOffsetMs.value.toLong() })
+        PlaybackClock(connection) { connection.lyricsOffsetMs.value.toLong() }
     }
-    val seekClock = remember(connection) { PlaybackClock({ connection.player }) }
+    val seekClock = remember(connection) { PlaybackClock(connection) }
     val lyrics = rememberVideoLyrics()
     val look = rememberVideoLyricLook()
     val glass = remember { GlassState() }
@@ -323,10 +323,10 @@ private fun VideoModeLayout(
                     frame = frame,
                     onCollapse = { sheet?.collapseSoft() },
                     onSeek = { forward ->
-                        val player = connection?.player ?: return@videoGestures
-                        val duration = player.duration.takeIf { it > 0L } ?: Long.MAX_VALUE
-                        val to = (player.currentPosition + if (forward) SeekStepMs else -SeekStepMs).coerceIn(0L, duration)
-                        connection.seekTo(to)
+                        val conn = connection ?: return@videoGestures
+                        val duration = conn.effectiveDurationMs.takeIf { it > 0L } ?: Long.MAX_VALUE
+                        val to = (conn.effectivePositionMs + if (forward) SeekStepMs else -SeekStepMs).coerceIn(0L, duration)
+                        conn.seekTo(to)
                         state.flashSeek(forward)
                     },
                 ),

@@ -152,6 +152,8 @@ val YtSyncSourcesTaggedKey = booleanPreferencesKey("ytSyncSourcesTagged")
 val YtExcludeImportsKey = booleanPreferencesKey("ytExcludeImports")
 /** Set by an undo: YouTube pulls wait until the user runs Sync now, so the undo isn't written back. */
 val YtSyncHoldKey = booleanPreferencesKey("ytSyncHold")
+/** Whether the signed-in YouTube account has YouTube Music Premium (unlocks 256 kbps AAC/Opus streams). */
+val YtAccountIsPremiumKey = booleanPreferencesKey("ytAccountIsPremium")
 
 /** The profile ID card's "USR#" number and join date (epoch day), fixed when onboarding finishes. */
 val ProfileCardNumberKey = stringPreferencesKey("profileCardNumber")
@@ -438,7 +440,7 @@ val LastArtistSyncKey = longPreferencesKey("last_artist_sync")
 val LastPlaylistSyncKey = longPreferencesKey("last_playlist_sync")
 val LastFullSyncKey = longPreferencesKey("last_full_sync")
 
-const val SYNC_COOLDOWN = 30 * 60L
+const val SYNC_COOLDOWN = 5 * 60L
 
 val ArtistViewTypeKey = stringPreferencesKey("artistViewType")
 val AlbumViewTypeKey = stringPreferencesKey("albumViewType")
@@ -699,8 +701,6 @@ enum class PlayerCoverStyle {
 enum class PlayerStyle(val displayName: String, val selectorName: String) {
     // the flagship as it is now: frosted cover fade, moving cover colours, the new buttons and bottom bar
     FLAGSHIP("Flagship", "Flagship"),
-    // the flagship before its layout refresh, kept as a variant under it in the selector
-    CLASSIC("Classic", "Classic"),
     /** the flagship with a record player for its cover, whose arm is the seek bar */
     TURNTABLE("Turntable", "Turntable"),
     // the song's youtube video across the whole screen, turned sideways, with its lyrics in a pane
@@ -717,16 +717,16 @@ enum class PlayerStyle(val displayName: String, val selectorName: String) {
     // a look module's own player, drawn from its layout; kept last so the others keep their places, and only offered while such a module is on
     MODULE("Module", "Module");
 
-    val editable: Boolean get() = this == FLAGSHIP || this == CLASSIC || this == TURNTABLE || this == POSTER || this == IPOD || isBedside
+    val editable: Boolean get() = this == FLAGSHIP || this == TURNTABLE || this == POSTER || this == IPOD || isBedside
 
     // the two nightstand styles share their sheet, their night look and their lock screen rules
     val isBedside: Boolean get() = this == BEDSIDE || this == BEDSIDE_TILES
 
     /** drawn by the flagship's own player (cover, controls, card), not a design of its own */
-    val flagshipFamily: Boolean get() = this == FLAGSHIP || this == CLASSIC || this == TURNTABLE
+    val flagshipFamily: Boolean get() = this == FLAGSHIP || this == TURNTABLE
 
-    // the two flagships the full editor works on: cover, middle part, controls and bottom bar
-    val hasFullEditor: Boolean get() = this == FLAGSHIP || this == CLASSIC
+    // the flagship the full editor works on: cover, middle part, controls and bottom bar
+    val hasFullEditor: Boolean get() = this == FLAGSHIP
 
     // the styles whose menu has a rotate button, each with a landscape layout of its own to turn into
     val turnable: Boolean get() = this == TURNTABLE || this == POSTER || this == TIMELINE || this == LYRICS || this == MODULE || isBedside
@@ -742,21 +742,21 @@ enum class PlayerStyle(val displayName: String, val selectorName: String) {
         fun fromStored(name: String?): PlayerStyle? = when (name) {
             "SIMPLE", "SIMPLE_COMPACT" -> TIMELINE
             "LYRICS_ABSTRACT" -> LYRICS
-            // everyone on the old flagship moves to the new one once; picking classic later sticks
-            "DEFAULT" -> FLAGSHIP
+            // everyone on the old default or removed classic moves to flagship
+            "DEFAULT", "CLASSIC" -> FLAGSHIP
             else -> null
         }
 
         // the selector's columns, each look with its variants stacked under it, a swipe down away
         val selectorColumns: List<List<PlayerStyle>> = listOf(
-            listOf(FLAGSHIP, CLASSIC),
+            listOf(FLAGSHIP),
             listOf(TURNTABLE),
             listOf(VIDEO),
             listOf(IPOD),
             // the tiles first, the single big clock a swipe down under them
             listOf(BEDSIDE_TILES, BEDSIDE),
             listOf(POSTER),
-            // the lyrics stage sits under the timeline, the way the classic sits under the flagship
+            // the lyrics stage sits under the timeline
             listOf(TIMELINE, LYRICS),
         )
     }

@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.boundsInParent
@@ -56,6 +57,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import coil3.compose.AsyncImage
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.constants.LyricsMotionStyle
+import com.mochyy.mochymusic.ui.player.MotionBleed
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.ui.utils.resize
 import kotlin.math.sqrt
@@ -146,8 +149,10 @@ internal fun CinematicLayout(
     regions: ShareRegions?,
     ink: Color,
     cover: ImageBitmap? = null,
-    // in a video the words light up as they're sung; null keeps them all lit for a picture
-    flow: CinematicFlow? = null,
+    // in a video the words animate with the regular lyrics view's karaoke engine; null keeps them all lit for a picture
+    positionMs: (() -> Long)? = null,
+    motionStyle: LyricsMotionStyle = LyricsMotionStyle.MOTION,
+    highBloom: Boolean = true,
     // the reading and the translation under each picked line, as the share's switches want them
     readings: List<List<String>> = emptyList(),
 ) {
@@ -157,6 +162,21 @@ internal fun CinematicLayout(
         spring(dampingRatio = 0.8f, stiffness = 240f),
         label = "cinematicHeader",
     )
+    val chosen = session.chosen
+    val looksSnapshot = session.looks.toMap()
+    val karaoke = if (positionMs != null) {
+        val specs = remember(chosen, looksSnapshot) {
+            chosen.map { (line, text) ->
+                val entry = session.entries.getOrNull(line) ?: com.mochyy.mochymusic.lyrics.LyricsEntry(0L, text)
+                val rendered = cinematicLine(session, line, text, Color.White).text
+                val nextMs = session.entries.getOrNull(line + 1)?.time
+                ShareKaraokeLineSpec(rendered, entry, nextMs)
+            }
+        }
+        rememberShareKaraokeState(specs, positionMs, motionStyle.risesWords)
+    } else {
+        null
+    }
     Layout(
         contents = listOf(
             {
@@ -174,15 +194,44 @@ internal fun CinematicLayout(
                     verticalArrangement = Arrangement.spacedBy(CinematicLineGap),
                     modifier = if (regions != null) Modifier.onGloballyPositioned { regions.words = it.boundsInParent() } else Modifier,
                 ) {
-                    session.chosen.forEachIndexed { i, (line, text) ->
+                    val waitingInk = waitingInkOf(ink)
+                    chosen.forEachIndexed { i, (line, text) ->
                         val style = shareText(textSize, color = ink, tracking = -1f)
-                        if (flow == null) {
+                        val karaokeLine = karaoke?.lines?.getOrNull(i)
+                        if (karaokeLine == null) {
                             Text(cinematicLine(session, line, text, ink, textSize), style = style)
                         } else {
-                            SungLine(session, line, text, ink, textSize, style, flow)
+                            val hasGlow = remember(line, text, looksSnapshot) {
+                                wordsOf(text).indices.any { w -> session.look(WordKey(line, w)).glow }
+                            }
+                            val waiting = remember(line, text, waitingInk, textSize, looksSnapshot) {
+                                cinematicLine(session, line, text, waitingInk, textSize)
+                            }
+                            val lit = remember(line, text, ink, textSize, looksSnapshot) {
+                                cinematicLine(session, line, text, ink, textSize)
+                            }
+                            ShareKaraokeText(
+                                line = karaokeLine,
+                                waitingText = waiting,
+                                litText = lit,
+                                waitingColor = waitingInk,
+                                style = style,
+                                baseTextSizeSp = textSize,
+                                motionStyle = motionStyle,
+                                highBloom = highBloom,
+                                bleed = if (hasGlow) 18.dp else MotionBleed,
+                            )
                         }
                         readings.getOrNull(i)?.forEach { reading ->
-                            Text(reading, style = readingText(textSize, ink))
+                            Text(
+                                reading,
+                                style = readingText(textSize, ink),
+                                modifier = if (karaokeLine != null) {
+                                    Modifier.graphicsLayer { alpha = 0.6f + 0.4f * karaokeLine.activeZoom.floatValue }
+                                } else {
+                                    Modifier
+                                },
+                            )
                         }
                     }
                 }
@@ -274,6 +323,7 @@ internal fun cinematicLine(
     }
 
 internal fun wordSpan(look: WordLook, ink: Color, base: Float = CinematicTextSize): SpanStyle = SpanStyle(
+    color = ink,
     fontSize = if (look.big) (base * 2.1f).sp else base.sp,
     fontWeight = if (look.big) FontWeight.ExtraBold else FontWeight.Bold,
     letterSpacing = if (look.big) (-2.6).sp else (-1).sp,

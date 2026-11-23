@@ -132,7 +132,7 @@ class HomeViewModel @Inject constructor(
     val libraryArtists = database.artists(com.mochyy.mochymusic.constants.ArtistSortType.CREATE_DATE, true)
         .map { artists -> artists.filter { it.artist.isYouTubeArtist }.take(5) }
         .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Lazily, emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), emptyList())
     val homePage = MutableStateFlow<HomePage?>(null)
     val explorePage = MutableStateFlow<ExplorePage?>(null)
     val communityPlaylists = MutableStateFlow<List<CommunityPlaylistItem>?>(null)
@@ -217,13 +217,13 @@ class HomeViewModel @Inject constructor(
     val lastPlayedSong = database.recentEvents(1)
         .map { it.firstOrNull()?.song?.toMediaMetadata() }
         .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), null)
 
     // what you pinned, the same pins Library shows; Home lists them in their own row
     val pinnedItems: StateFlow<List<YTItem>> = database.speedDialDao.getAll()
         .map { pinned -> pinned.map { it.toYTItem() } }
         .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), emptyList())
 
     // youtube's own speed dial shelf, pulled out of the feed so it can live behind the hero
     private val youTubeSpeedDial = homePage
@@ -314,7 +314,7 @@ class HomeViewModel @Inject constructor(
             }
 
             filled
-        }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), emptyList())
 
     val accountName = MutableStateFlow("Guest")
     val accountImageUrl = MutableStateFlow<String?>(null)
@@ -335,15 +335,14 @@ class HomeViewModel @Inject constructor(
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
         val hideExplicit = context.dataStore.get(HideExplicitKey, false)
 
-        val playEvents = database.events().first()
+        // read bounded recent/top plays plus bare song ids instead of loading every joined event row into ram
+        val recent = database.recentEvents(100).first().map { it.song }.distinctBy { it.id }
+        val mostPlayed = database.mostPlayedSongs(0L, limit = 20).first()
         val likedSongs = database.likedSongsByCreateDateAsc().first()
-        val recent = playEvents.map { it.song }.distinctBy { it.id }
         if (recent.isEmpty() && likedSongs.isEmpty()) return
 
         // seeds from three directions, so the cards don't all orbit one song: something you liked,
         // something you play all the time, something you played just now. one seed per artist.
-        val playCounts = playEvents.groupingBy { it.song.id }.eachCount()
-        val mostPlayed = recent.sortedByDescending { playCounts[it.id] ?: 0 }
         val hidden = NotRecommended.songs
         val seeds = buildList<Song> {
             fun takeFrom(songs: List<Song>, count: Int) {
@@ -363,7 +362,7 @@ class HomeViewModel @Inject constructor(
         }
 
         // anything you've already heard isn't much of a discovery
-        val heard = recent.mapTo(HashSet()) { it.id }
+        val heard = database.allPlayedSongIds().toHashSet()
         val hideAi = hidesAi()
         val items = java.util.Collections.synchronizedList(mutableListOf<DailyDiscoverItem>())
 
@@ -1000,13 +999,18 @@ class HomeViewModel @Inject constructor(
         isLoading.value = false
 
         val offlineMode = context.dataStore.get(OfflineModeKey, false)
-        if (!offlineMode) {
-            // set the cookie here rather than trusting the account collector to have run first;
-            // when it lost that race the account playlists were silently skipped
-            context.dataStore.get(InnerTubeCookieKey, "").takeIf { it.isNotEmpty() }?.let { YouTube.cookie = it }
-            loadNetworkDataPhase()
-        } else if (starterSongs.value == null) {
-            starterSongs.value = emptyList()
+        try {
+            if (!offlineMode) {
+                // set the cookie here rather than trusting the account collector to have run first;
+                // when it lost that race the account playlists were silently skipped
+                context.dataStore.get(InnerTubeCookieKey, "").takeIf { it.isNotEmpty() }?.let { YouTube.cookie = it }
+                loadNetworkDataPhase()
+            } else if (starterSongs.value == null) {
+                starterSongs.value = emptyList()
+            }
+        } finally {
+            // drop raw artist pages once the rows built from them are published
+            artistPages.clear()
         }
         lastLoadAt = SystemClock.elapsedRealtime()
     }
@@ -1126,12 +1130,28 @@ class HomeViewModel @Inject constructor(
                 launchSafely { loadArtistVideos() }
             }
         } finally {
+            artistPages.clear()
             listeningRefresh.unlock()
         }
     }
 
     private var listening: Job? = null
     private var listeningTo: PlayerConnection? = null
+    private val unregisterMemoryTrim = com.mochyy.mochymusic.utils.AppMemory.register { level ->
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
+            artistPages.clear()
+            if (selectedChip.value == null) previousHomePage.value = null
+        }
+    }
+
+    override fun onCleared() {
+        unregisterMemoryTrim()
+        artistPages.clear()
+        listening?.cancel()
+        listening = null
+        listeningTo = null
+        super.onCleared()
+    }
 
     /** follows the player to tell skips from songs played through; see [ListeningSignals] */
     fun attachPlayer(connection: PlayerConnection) {

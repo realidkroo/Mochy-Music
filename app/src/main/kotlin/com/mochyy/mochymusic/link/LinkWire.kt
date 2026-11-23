@@ -50,6 +50,8 @@ object LinkWire {
     // a lan is fast and a phone that's gone should be noticed quickly, so short waits
     val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dispatcher(com.mochyy.mochymusic.utils.AppProxy.dispatcher)
+            .connectionPool(com.mochyy.mochymusic.utils.AppProxy.connectionPool)
             .connectTimeout(4, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .retryOnConnectionFailure(false)

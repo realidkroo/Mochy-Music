@@ -19,7 +19,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -39,10 +38,11 @@ import com.mochyy.mochymusic.ui.component.rememberRevealSeenState
 import com.mochyy.mochymusic.ui.component.revealOnAppear
 import com.mochyy.mochymusic.ui.menu.AlbumMenu
 import com.mochyy.mochymusic.ui.screens.library.LibraryIndexRail
+import com.mochyy.mochymusic.ui.screens.library.indexLandingUnderBar
 import com.mochyy.mochymusic.ui.screens.library.indexSections
+import com.mochyy.mochymusic.ui.screens.library.rememberIndexGlide
 import com.mochyy.mochymusic.ui.utils.backToMain
 import com.mochyy.mochymusic.viewmodels.ArtistAlbumsViewModel
-import kotlinx.coroutines.launch
 
 /** the artist's albums in your library: big squares two up, or an A-Z list with the rail */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,11 +57,11 @@ fun ArtistAlbumsScreen(
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
 
     val artist by viewModel.artist.collectAsState()
     val albums by viewModel.albums.collectAsState()
     val lazyListState = rememberLazyListState()
+    val glide = rememberIndexGlide(lazyListState, landing = indexLandingUnderBar())
     val revealSeen = rememberRevealSeenState()
     var isGrid by rememberSaveable { mutableStateOf(true) }
 
@@ -99,7 +99,7 @@ fun ArtistAlbumsScreen(
                 LibraryIndexRail(
                     sections = indexed.map { it.first },
                     onSectionSelected = { key ->
-                        sectionStarts[key]?.let { index -> coroutineScope.launch { lazyListState.animateScrollToItem(index) } }
+                        sectionStarts[key]?.let(glide::glideTo)
                     },
                     modifier = Modifier.fillMaxSize(),
                 )

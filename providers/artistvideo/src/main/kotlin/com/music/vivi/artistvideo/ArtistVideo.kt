@@ -36,6 +36,10 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import okhttp3.OkHttpClient
 import java.util.Locale
 
+private object ArtistVideoHttp {
+    val client: OkHttpClient by lazy { OkHttpClient.Builder().build() }
+}
+
 @Composable
 fun ArtistVideo(
     videoUrl: String,
@@ -45,7 +49,7 @@ fun ArtistVideo(
     val context = LocalContext.current
     var isVideoReady by remember(videoUrl) { mutableStateOf(false) }
 
-    val okHttpClient = remember { OkHttpClient.Builder().build() }
+    val okHttpClient = ArtistVideoHttp.client
     val mediaSourceFactory =
         remember(okHttpClient) {
             DefaultMediaSourceFactory(
@@ -57,7 +61,12 @@ fun ArtistVideo(
         }
     val exoPlayer =
         remember(videoUrl) {
+            val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+                .setBufferDurationsMs(2_000, 6_000, 500, 1_000)
+                .setTargetBufferBytes(4 * 1024 * 1024)
+                .build()
             ExoPlayer.Builder(context)
+                .setLoadControl(loadControl)
                 .setMediaSourceFactory(mediaSourceFactory)
                 .build()
                 .apply {

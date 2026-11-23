@@ -36,7 +36,7 @@ import javax.net.ssl.SSLSocket
 import javax.net.ssl.X509TrustManager
 
 /** a chromecast, google tv or nest speaker driven over the cast protocol itself, no play services (docs/notes/cast.md) */
-class ChromecastRenderer(private val host: String, private val port: Int) : RemoteRenderer {
+class ChromecastRenderer(val host: String, private val port: Int) : RemoteRenderer {
 
     private val _state = MutableStateFlow(RemoteState())
     override val state: StateFlow<RemoteState> = _state.asStateFlow()
@@ -55,6 +55,8 @@ class ChromecastRenderer(private val host: String, private val port: Int) : Remo
 
     // when the last status came in, so the position can run on between them
     @Volatile private var statusAt = 0L
+    @Volatile private var seekTargetMs = -1L
+    @Volatile private var seekGuardUntil = 0L
 
     override suspend fun connect() = withContext(Dispatchers.IO) {
         val tls = SSLContext.getInstance("TLS").apply { init(null, arrayOf(AnyCertificate), SecureRandom()) }
@@ -76,6 +78,17 @@ class ChromecastRenderer(private val host: String, private val port: Int) : Remo
         send(ReceiverId, NsReceiver, request("LAUNCH").put("appId", DefaultMediaReceiver))
         val transport = withTimeout(LaunchTimeoutMs) { appReady.await() }
         send(transport, NsConnection, JSONObject().put("type", "CONNECT"))
+        // periodically re-anchor our clock to the receiver so long songs stay in sync
+        io.launch {
+            while (isActive) {
+                delay(StatusSyncMs)
+                val s = _state.value
+                if (s.playing && !s.buffering && mediaSessionId != null) {
+                    runCatching { send(transport, NsMedia, request("GET_STATUS")) }
+                }
+            }
+        }
+        Unit
     }
 
     override suspend fun load(media: RemoteMedia, startMs: Long) = withContext(Dispatchers.IO) {
@@ -88,31 +101,51 @@ class ChromecastRenderer(private val host: String, private val port: Int) : Remo
                 media.album?.let { put("albumName", it) }
                 media.artworkUrl?.let { put("images", JSONArray().put(JSONObject().put("url", it))) }
             }
+        val mediaObj = JSONObject()
+            .put("contentId", media.url)
+            .put("contentType", media.mimeType)
+            .put("streamType", "BUFFERED")
+            .put("metadata", metadata)
+            .apply {
+                if (media.durationMs > 0L) put("duration", media.durationMs / 1000.0)
+            }
         val load = request("LOAD")
             .put("sessionId", sessionId)
-            .put(
-                "media",
-                JSONObject()
-                    .put("contentId", media.url)
-                    .put("contentType", media.mimeType)
-                    .put("streamType", "BUFFERED")
-                    .put("metadata", metadata),
-            )
+            .put("media", mediaObj)
             .put("autoplay", true)
             .put("currentTime", startMs / 1000.0)
         mediaSessionId = null
-        _state.update { it.copy(buffering = true, finished = false, failed = false, positionMs = startMs, durationMs = media.durationMs) }
+        seekTargetMs = -1L
+        seekGuardUntil = 0L
         statusAt = SystemClock.elapsedRealtime()
+        _state.update {
+            it.copy(
+                playing = true,
+                buffering = true,
+                finished = false,
+                failed = false,
+                positionMs = startMs,
+                durationMs = media.durationMs,
+            )
+        }
         send(transport, NsMedia, load)
     }
 
     override suspend fun play() = mediaCommand("PLAY")
 
-    override suspend fun pause() = mediaCommand("PAUSE")
+    override suspend fun pause() {
+        val current = positionNow()
+        statusAt = SystemClock.elapsedRealtime()
+        _state.update { it.copy(playing = false, positionMs = current) }
+        mediaCommand("PAUSE")
+    }
 
     override suspend fun seek(positionMs: Long) {
+        val now = SystemClock.elapsedRealtime()
+        seekTargetMs = positionMs
+        seekGuardUntil = now + SeekGuardMs
+        statusAt = now
         _state.update { it.copy(positionMs = positionMs) }
-        statusAt = SystemClock.elapsedRealtime()
         mediaCommand("SEEK") { put("currentTime", positionMs / 1000.0) }
     }
 
@@ -184,8 +217,10 @@ class ChromecastRenderer(private val host: String, private val port: Int) : Remo
             NsReceiver -> if (payload.optString("type") == "RECEIVER_STATUS") onReceiverStatus(payload.getJSONObject("status"))
             NsMedia -> when (payload.optString("type")) {
                 "MEDIA_STATUS" -> payload.optJSONArray("status")?.optJSONObject(0)?.let(::onMediaStatus)
-                "LOAD_FAILED", "LOAD_CANCELLED", "INVALID_REQUEST" ->
+                "LOAD_FAILED", "LOAD_CANCELLED", "INVALID_REQUEST" -> {
+                    Timber.w("Chromecast rejected media: ${payload.optString("type")} reason=${payload.optString("reason")} code=${payload.optInt("detailedErrorCode")}")
                     _state.update { it.copy(failed = true, playing = false, buffering = false) }
+                }
             }
             NsConnection -> if (payload.optString("type") == "CLOSE" && message.source != ReceiverId) {
                 // the media app hung up on us: someone else cast to it, or it was closed on the tv
@@ -220,12 +255,27 @@ class ChromecastRenderer(private val host: String, private val port: Int) : Remo
         val idleReason = status.optString("idleReason")
         val seconds = status.optDouble("currentTime")
         val duration = status.optJSONObject("media")?.optDouble("duration")
-        statusAt = SystemClock.elapsedRealtime()
+        val reportedPosMs = if (seconds.isNaN()) null else (seconds * 1000.0).toLong()
+        val nowMs = SystemClock.elapsedRealtime()
+        val keepSeekTarget = reportedPosMs != null && seekTargetMs >= 0L && nowMs < seekGuardUntil &&
+            kotlin.math.abs(reportedPosMs - seekTargetMs) > SeekLandedToleranceMs
+        if (reportedPosMs != null && seekTargetMs >= 0L && kotlin.math.abs(reportedPosMs - seekTargetMs) <= SeekLandedToleranceMs) {
+            seekTargetMs = -1L
+        }
+        if (!keepSeekTarget) statusAt = nowMs
+        val isBuffering = playerState == "BUFFERING" || playerState == "LOADING"
+        if (playerState == "IDLE" && idleReason == "ERROR") {
+            Timber.w("Chromecast playback error (idleReason=ERROR)")
+        }
         _state.update { now ->
             now.copy(
-                playing = playerState == "PLAYING" || playerState == "BUFFERING",
-                buffering = playerState == "BUFFERING",
-                positionMs = if (seconds.isNaN()) now.positionMs else (seconds * 1000).toLong(),
+                playing = playerState == "PLAYING" || isBuffering,
+                buffering = isBuffering,
+                positionMs = when {
+                    keepSeekTarget -> now.positionMs
+                    reportedPosMs != null -> reportedPosMs
+                    else -> now.positionMs
+                },
                 durationMs = duration?.takeIf { !it.isNaN() && it > 0 }?.let { (it * 1000).toLong() } ?: now.durationMs,
                 finished = playerState == "IDLE" && idleReason == "FINISHED",
                 failed = playerState == "IDLE" && idleReason == "ERROR",
@@ -246,6 +296,9 @@ class ChromecastRenderer(private val host: String, private val port: Int) : Remo
         const val ConnectTimeoutMs = 5000
         const val LaunchTimeoutMs = 12_000L
         const val HeartbeatMs = 5000L
+        const val StatusSyncMs = 10_000L
+        const val SeekGuardMs = 2000L
+        const val SeekLandedToleranceMs = 2000L
         const val MaxMessageBytes = 64 * 1024
     }
 }

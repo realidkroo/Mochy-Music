@@ -294,16 +294,14 @@ fun AudioDeviceBottomSheet(onDismiss: () -> Unit, modifier: Modifier = Modifier)
         handler.postDelayed(batteryPollingRunnable, 30000)
 
         onDispose {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && audioDeviceCallback != null) {
-                    audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
-                }
-                context.unregisterReceiver(volumeChangeReceiver)
-                context.unregisterReceiver(audioDeviceReceiver)
-                context.unregisterReceiver(bluetoothReceiver)
-                handler.removeCallbacksAndMessages(null)
-            } catch (e: IllegalArgumentException) {
+            // isolate each cleanup so one unregistered receiver never skips the rest or leaves the 30s poll running
+            handler.removeCallbacksAndMessages(null)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && audioDeviceCallback != null) {
+                runCatching { audioManager.unregisterAudioDeviceCallback(audioDeviceCallback) }
             }
+            runCatching { context.unregisterReceiver(volumeChangeReceiver) }
+            runCatching { context.unregisterReceiver(audioDeviceReceiver) }
+            runCatching { context.unregisterReceiver(bluetoothReceiver) }
         }
     }
 

@@ -30,7 +30,8 @@ class CrossmixAnalysisRepository(
     private val context: Context,
     private val dataSourceFactory: () -> DataSource.Factory,
 ) {
-    private val memory = ConcurrentHashMap<String, TrackAnalysis>()
+    // bounded memory cache because every analysis is already persisted on disk
+    private val memory = android.util.LruCache<String, TrackAnalysis>(16)
     private val inFlight = ConcurrentHashMap<String, Deferred<TrackAnalysis?>>()
     private val failures = ConcurrentHashMap<String, String>()
     private val cacheDir = File(context.cacheDir, "crossmix-analysis-v2").also { it.mkdirs() }
@@ -41,12 +42,25 @@ class CrossmixAnalysisRepository(
     }.asCoroutineDispatcher()
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
+    // stops the background analysis thread when the service destroys
+    fun release() {
+        scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+        dispatcher.close()
+        memory.evictAll()
+    }
+
+    // keeps a few nearby track analyses hot in ram and drops older ones that are already saved on disk
+    fun trimMemory() {
+        memory.trimToSize(4)
+        failures.clear()
+    }
+
     /** wholeTrack is the song that's playing, whose ending we mix out of; otherwise only the first HeadMs are read, the next song is entered early */
     suspend fun analyze(item: MediaItem, wholeTrack: Boolean): TrackAnalysis? {
         val uri = item.localConfiguration?.uri ?: return null
         val mediaId = item.mediaId.ifBlank { uri.toString() }
         val cacheKey = item.localConfiguration?.customCacheKey?.takeIf { it.isNotBlank() } ?: mediaId
-        usable(memory[mediaId], wholeTrack)?.let { return it }
+        usable(memory.get(mediaId), wholeTrack)?.let { return it }
 
         val key = "$mediaId|$wholeTrack"
         // start only once it's in the map, so a quick finish can't remove itself first and leave a stale result for later callers
@@ -55,7 +69,7 @@ class CrossmixAnalysisRepository(
                 val progress = Progress()
                 val timeoutMs = if (wholeTrack) 60_000L else 40_000L
                 try {
-                    usable(read(mediaId), wholeTrack)?.also { memory[mediaId] = it; failures.remove(mediaId) }
+                    usable(read(mediaId), wholeTrack)?.also { memory.put(mediaId, it); failures.remove(mediaId) }
                         ?: (
                             withTimeoutOrNull(timeoutMs) { decodeAndAnalyze(uri, cacheKey, wholeTrack, progress) }
                                 ?: null.also {
@@ -71,8 +85,8 @@ class CrossmixAnalysisRepository(
                                     "bpm ${analysis.bpm}, ${analysis.beatsMs.size} beats, complete=${analysis.complete}",
                             )
                             // a whole-track result answers head requests too; never overwrite it with less
-                            if (memory[mediaId]?.complete != true || analysis.complete) {
-                                memory[mediaId] = analysis
+                            if (memory.get(mediaId)?.complete != true || analysis.complete) {
+                                memory.put(mediaId, analysis)
                                 write(mediaId, analysis)
                             }
                         }
@@ -89,7 +103,7 @@ class CrossmixAnalysisRepository(
     }
 
     /** what's already known, without decoding anything */
-    fun cached(mediaId: String): TrackAnalysis? = memory[mediaId]
+    fun cached(mediaId: String): TrackAnalysis? = memory.get(mediaId)
 
     /** why the last analysis of mediaId came back empty, if it did */
     fun lastFailure(mediaId: String): String? = failures[mediaId]

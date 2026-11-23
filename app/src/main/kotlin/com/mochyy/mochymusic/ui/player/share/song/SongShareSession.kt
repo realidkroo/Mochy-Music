@@ -41,7 +41,20 @@ internal const val ShareMaxZoom = 4f
 
 internal enum class SongShareKind { MusicOnly, Lyrics }
 
+// what fills the card itself when "Card only" removes the outer story background
+internal sealed interface CardOnlyBackground {
+    data object Colour : CardOnlyBackground
+
+    data object BlurredCover : CardOnlyBackground
+
+    // any video background works inside Card only too: flowing cover, moving cover, music video, or your own video
+    data class Video(val source: ShareVideoSource) : CardOnlyBackground
+}
+
 internal sealed interface ShareVideoSource {
+    // the song's blurred cover swirling and liquid-warping like Apple Music's animated backdrop
+    data object LiquidCover : ShareVideoSource
+
     // a clip from the phone: where the picked part starts, how long it runs, and how long the whole video is
     data class Own(val uri: Uri, val startMs: Long, val lengthMs: Long, val durationMs: Long) : ShareVideoSource
 
@@ -51,6 +64,10 @@ internal sealed interface ShareVideoSource {
     // the album's looping animated cover
     data object AnimatedCover : ShareVideoSource
 }
+
+// true when the video comes from an external decoder/TextureView rather than Compose itself
+internal val ShareVideoSource.isTextureVideo: Boolean
+    get() = this !is ShareVideoSource.LiquidCover
 
 internal sealed interface SongBackground {
     data class Still(val background: ShareBackground) : SongBackground
@@ -135,8 +152,47 @@ internal class SongShareSession(val song: MediaMetadata) {
     // a still background makes a picture; this makes it a video with the song playing instead
     var shareAsVideo by mutableStateOf(false)
 
-    val hasVideoBackground: Boolean get() = background is SongBackground.Video
+    // cut away the outer 9:16 background and share just the card itself
+    var cardOnly by mutableStateOf(false)
+    var cardOnlyBg by mutableStateOf<CardOnlyBackground>(CardOnlyBackground.Colour)
+    var cardOnlyBgTouched = false
+    var cardOnlyDim by mutableFloatStateOf(0.78f)
+
+    // music only and the lyrics card have a card; cinematic words sit straight on the background
+    val cinematic: Boolean get() = kind == SongShareKind.Lyrics && pick?.style == ShareStyle.Cinematic
+    val hasCard: Boolean get() = !cinematic
+    val isCardOnly: Boolean get() = hasCard && cardOnly
+
+    // the active video background, whether on the full canvas or inside Card only
+    val activeVideoSource: ShareVideoSource?
+        get() = if (isCardOnly) {
+            when (val bg = cardOnlyBg) {
+                is CardOnlyBackground.Video -> when (bg.source) {
+                    ShareVideoSource.LiquidCover -> ShareVideoSource.LiquidCover
+                    ShareVideoSource.AnimatedCover -> ShareVideoSource.AnimatedCover.takeIf { animatedCover is Fetched.Found }
+                    ShareVideoSource.MusicVideo -> ShareVideoSource.MusicVideo.takeIf { musicVideo is Fetched.Found }
+                    is ShareVideoSource.Own -> bg.source
+                }
+                else -> null
+            }
+        } else {
+            (background as? SongBackground.Video)?.source
+        }
+
+    val hasVideoBackground: Boolean get() = activeVideoSource != null
+
     val isVideo: Boolean get() = hasVideoBackground || shareAsVideo
+
+    fun toggleCardOnly(on: Boolean) {
+        if (on && !cardOnly && !cardOnlyBgTouched) {
+            // Carry an already-chosen video background straight into Card only on first toggle
+            (background as? SongBackground.Video)?.let { v ->
+                cardOnlyBg = CardOnlyBackground.Video(v.source)
+                cardOnlyDim = v.dim
+            }
+        }
+        cardOnly = on
+    }
 
     // only a video share has a song to hear; a picture stays quiet and leaves the app's own music alone
     val previewPlays: Boolean get() = isVideo && previewWanted && onScreen
@@ -186,18 +242,20 @@ internal class SongShareSession(val song: MediaMetadata) {
 
     // the lyrics have line timing, so they can flow with the song
     val lyricsSynced: Boolean
-        get() = lyrics.found?.let { lines -> lines.size > 1 && lines.any { it.time > 0L } } == true
-
-    val cinematic: Boolean get() = kind == SongShareKind.Lyrics && pick?.style == ShareStyle.Cinematic
-
-    // music only and the lyrics card have a card; cinematic words sit straight on the background
-    val hasCard: Boolean get() = !cinematic
+        get() = lyrics.found?.let { lines ->
+            lines.size > 1 && lines.any { it.time > 0L || !it.words.isNullOrEmpty() || !it.syllables.isNullOrEmpty() }
+        } == true
 
     val cardTint: Color get() = cardColor ?: palette.firstOrNull() ?: Color(0xFF3A3A3C)
 
-    // dark words on a light card, white everywhere else
+    // dark words on a light solid/opaque card, white over blurred/animated covers and dark cards
     val cardInk: Color
-        get() = if (cardOpacity > 0.5f && cardTint.luminance() > 0.55f) Color(0xFF111111) else Color.White
+        get() = when {
+            isCardOnly && cardOnlyBg != CardOnlyBackground.Colour -> Color.White
+            isCardOnly -> if (cardTint.luminance() > 0.55f) Color(0xFF111111) else Color.White
+            cardOpacity > 0.5f && cardTint.luminance() > 0.55f -> Color(0xFF111111)
+            else -> Color.White
+        }
 
     // the cinematic words: dark on a light plain colour, white on everything else
     val wordsInk: Color
@@ -224,11 +282,19 @@ internal class SongShareSession(val song: MediaMetadata) {
         val range = pick.range ?: return
         val first = pick.entries.getOrNull(range.first) ?: return
         val last = pick.entries.getOrNull(range.last) ?: return
-        val end = last.words?.lastOrNull()?.let { (it.endTime * 1000).toLong() }?.takeIf { it > last.time }
+        val firstStart = (first.syllables ?: first.words)
+            ?.firstOrNull { it.text.isNotBlank() }
+            ?.let { (it.startTime * 1000).toLong() }
+            ?.takeIf { it in 0L..first.time }
+            ?: first.time
+        val end = (last.syllables ?: last.words)
+            ?.lastOrNull { it.text.isNotBlank() }
+            ?.let { (it.endTime * 1000).toLong() }
+            ?.takeIf { it > last.time }
             ?: pick.entries.getOrNull(range.last + 1)?.time?.takeIf { it > last.time }
             ?: (last.time + 4_000L)
         // the lyrics run ahead of the song by the lyrics offset
-        setWindow(first.time - lyricsOffsetMs - LeadInMs, end - first.time + LeadInMs + LeadOutMs)
+        setWindow(firstStart - lyricsOffsetMs - LeadInMs, end - firstStart + LeadInMs + LeadOutMs)
     }
 
     // pan and zoom kept so the background always covers the whole picture

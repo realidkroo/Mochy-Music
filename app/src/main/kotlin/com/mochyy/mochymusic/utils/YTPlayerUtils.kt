@@ -56,7 +56,7 @@ object YTPlayerUtils {
     private const val logTag = "YTPlayerUtils"
     private const val TAG = "YTPlayerUtils"
 
-    private val httpClient: OkHttpClient = OkHttpClient.Builder()
+    private val httpClient: OkHttpClient = AppProxy.sharedClient.newBuilder()
         .dns(object : Dns {
             override fun lookup(hostname: String): List<InetAddress> {
                 val addresses = Dns.SYSTEM.lookup(hostname)
@@ -90,7 +90,55 @@ object YTPlayerUtils {
     @Volatile
     var backend: StreamBackend = StreamBackend.INNERTUBEX
 
+    // null = not checked yet on this signed-in account, true = Music Premium (256kbps AAC/Opus), false = free account
+    @Volatile
+    var accountIsPremium: Boolean? = null
+
+    // called when live playback responses confirm or rule out YouTube Music Premium so App can persist it
+    @Volatile
+    var onPremiumDetected: ((Boolean) -> Unit)? = null
+
+    internal val PREMIUM_AUDIO_ITAGS = setOf(141, 774, 327, 328, 380, 256, 258)
+    internal const val PREMIUM_BITRATE_THRESHOLD = 220_000
+
+    internal fun isPremiumStream(itag: Int, bitrate: Int?, audioQuality: String? = null): Boolean =
+        itag in PREMIUM_AUDIO_ITAGS ||
+            audioQuality == "AUDIO_QUALITY_HIGH" ||
+            (bitrate != null && bitrate >= PREMIUM_BITRATE_THRESHOLD)
+
+    internal fun PlayerResponse.StreamingData.Format.isPremiumAudioFormat(): Boolean =
+        isAudio && isPremiumStream(itag, bitrate, audioQuality)
+
+    internal fun notifyPremiumStatus(isPremium: Boolean) {
+        if (accountIsPremium == isPremium) return
+        accountIsPremium = isPremium
+        onPremiumDetected?.invoke(isPremium)
+    }
+
+    internal fun isHighQualityRequested(audioQuality: AudioQuality, networkMetered: Boolean): Boolean {
+        if (DataSaver.isActive(networkMetered)) return false
+        return when (audioQuality) {
+            AudioQuality.HIGH,
+            AudioQuality.LOSSLESS,
+            AudioQuality.HI_RES_LOSSLESS,
+            AudioQuality.DOLBY_ATMOS -> true
+            AudioQuality.AUTO -> !networkMetered
+            AudioQuality.MEDIUM, AudioQuality.LOW -> false
+        }
+    }
+
     private val innerTubeX = InnerTubeXStreams(httpClient) { videoId, sessionId -> poTokenGenerator.poTokenFor(videoId, sessionId) }
+
+    // releases the potoken webview when the ui hides so chromium doesn't stay pinned in ram
+    suspend fun releaseWebViews() {
+        poTokenGenerator.releaseWebView()
+    }
+
+    // frees innertubex's parsed player ast and caps session studio lookups in the background; rebuilt lazily on the next stream
+    fun trimMemory() {
+        innerTubeX.release()
+        if (studioIds.size > 128) studioIds.clear()
+    }
 
     // compiles youtube's player script before the first song needs it; nothing to do on the classic backend
     suspend fun preWarmInnerTubeX() {
@@ -236,12 +284,14 @@ object YTPlayerUtils {
         connectivityManager: ConnectivityManager,
         // a music video plays its song's studio upload when there is one, without the video's skits and sound effects
         preferStudio: Boolean = false,
+        // cast receivers (especially samsung / dlna tvs) play aac in mp4 universally and reject opus/webm
+        preferMp4: Boolean = false,
     ): Result<PlaybackData> {
-        val firstAttempt = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager)
-            .orStandIn(videoId, audioQuality, connectivityManager)
+        val firstAttempt = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager, preferMp4)
+            .orStandIn(videoId, audioQuality, connectivityManager, preferMp4)
         if (preferStudio) {
             firstAttempt.getOrNull()?.let { data ->
-                studioVersionOf(videoId, data, audioQuality, connectivityManager)?.let { return Result.success(it) }
+                studioVersionOf(videoId, data, audioQuality, connectivityManager, preferMp4)?.let { return Result.success(it) }
             }
         }
 
@@ -255,7 +305,7 @@ object YTPlayerUtils {
             Timber.tag(TAG).w("Playback failed for guest. Rotating session and retrying...")
             PlaybackLogManager.log(PlaybackLogLevel.BOT, "Playback failed for guest", "Triggering bot detection mitigation (rotating guest session)")
             BotDetectionMitigator.rotateGuestSession()
-            val retryResult = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager)
+            val retryResult = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager, preferMp4)
             retryResult.onSuccess { BotDetectionMitigator.notifyPlaybackSuccess() }
             return retryResult.unwrapRefusal()
         }
@@ -269,6 +319,7 @@ object YTPlayerUtils {
         videoId: String,
         audioQuality: AudioQuality,
         connectivityManager: ConnectivityManager,
+        preferMp4: Boolean = false,
     ): Result<PlaybackData> {
         val details = (exceptionOrNull() as? UploadRefusedException)?.videoDetails ?: return this
         val title = details.title ?: return this
@@ -276,7 +327,7 @@ object YTPlayerUtils {
         val length = details.lengthSeconds.toIntOrNull() ?: return this
 
         for (standIn in SongVersions.otherUploads(videoId, title, artist, length).take(MAX_STAND_INS)) {
-            val attempt = resolvePlaybackData(standIn.id, null, audioQuality, connectivityManager)
+            val attempt = resolvePlaybackData(standIn.id, null, audioQuality, connectivityManager, preferMp4)
             if (attempt.exceptionOrNull() is YouTubeRateLimitedException) return attempt
             val data = attempt.getOrNull() ?: continue
             Timber.tag(logTag).i("YouTube refused $videoId, playing its other upload ${standIn.id}")
@@ -298,6 +349,7 @@ object YTPlayerUtils {
         data: PlaybackData,
         audioQuality: AudioQuality,
         connectivityManager: ConnectivityManager,
+        preferMp4: Boolean = false,
     ): PlaybackData? {
         val details = data.videoDetails ?: return null
         val type = details.musicVideoType ?: return null
@@ -309,7 +361,7 @@ object YTPlayerUtils {
         val studioId = if (known != null) known.takeIf { it.isNotEmpty() } else {
             (SongVersions.songVersionId(title, artist)?.takeIf { it != videoId }).also { studioIds[videoId] = it.orEmpty() }
         } ?: return null
-        val studio = resolvePlaybackData(studioId, null, audioQuality, connectivityManager).getOrNull() ?: return null
+        val studio = resolvePlaybackData(studioId, null, audioQuality, connectivityManager, preferMp4).getOrNull() ?: return null
         Timber.tag(logTag).i("$videoId is a music video, playing its studio version $studioId")
         return studio.copy(videoDetails = details, playbackTracking = null, fromStudio = true)
     }
@@ -324,9 +376,11 @@ object YTPlayerUtils {
         playlistId: String?,
         audioQuality: AudioQuality,
         connectivityManager: ConnectivityManager,
+        preferMp4: Boolean = false,
+        preferAuthenticatedPremium: Boolean = false,
     ): PlaybackData? {
         val found = try {
-            innerTubeX.resolve(videoId, playlistId, audioQuality, connectivityManager)
+            innerTubeX.resolve(videoId, playlistId, audioQuality, connectivityManager, preferMp4, preferAuthenticatedPremium)
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -351,15 +405,14 @@ object YTPlayerUtils {
         playlistId: String? = null,
         audioQuality: AudioQuality,
         connectivityManager: ConnectivityManager,
+        preferMp4: Boolean = false,
     ): Result<PlaybackData> = runCatching {
         Timber.tag(logTag).d("Fetching player response for videoId: $videoId, playlistId: $playlistId")
         PlaybackLogManager.log(PlaybackLogLevel.INFO, "Resolving playback data", "Video: $videoId")
 
-        println("[PLAYBACK_DEBUG] playerResponseForPlayback called: videoId=$videoId, playlistId=$playlistId")
-
         val isUploadedTrack = playlistId == "MLPT" || playlistId?.contains("MLPT") == true
 
-        val isLoggedIn = YouTube.cookie != null
+        val isLoggedIn = !YouTube.cookie.isNullOrBlank()
         Timber.tag(logTag).d("Session authentication status: ${if (isLoggedIn) "Logged in" else "Not logged in"}")
 
         // the web clients need the web player's visitor id, and the app only fetches one in the background at startup
@@ -369,9 +422,31 @@ object YTPlayerUtils {
                 .onFailure { Timber.tag(logTag).w(it, "Could not fetch visitorData: ${it.message}") }
         }
 
-        // innertubex goes first; whatever it can't find goes on to the walk below exactly as before
+        val wantsPremiumAudio = isLoggedIn &&
+            !preferMp4 &&
+            isHighQualityRequested(audioQuality, connectivityManager.isActiveNetworkMetered) &&
+            accountIsPremium != false
+
+        // innertubex goes first; whatever it can't find goes on to the walk below.
+        // If we know the account has Premium and InnerTubeX fell back to a non-premium stream, keep it as a guaranteed backup while we check authenticated clients for 256kbps.
+        var nonPremiumBackup: PlaybackData? = null
         if (backend == StreamBackend.INNERTUBEX) {
-            innerTubeXFirst(videoId, playlistId, audioQuality, connectivityManager)?.let { return@runCatching it }
+            val found = innerTubeXFirst(
+                videoId = videoId,
+                playlistId = playlistId,
+                audioQuality = audioQuality,
+                connectivityManager = connectivityManager,
+                preferMp4 = preferMp4,
+                preferAuthenticatedPremium = wantsPremiumAudio,
+            )
+            if (found != null) {
+                val gotPremium = isPremiumStream(found.format.itag, found.format.bitrate, found.format.audioQuality)
+                if (!wantsPremiumAudio || gotPremium || accountIsPremium == false) {
+                    return@runCatching found
+                }
+                Timber.tag(logTag).d("InnerTubeX returned standard stream (${found.format.itag}@${found.format.bitrate}) for Premium account; checking authenticated clients for 256kbps")
+                nonPremiumBackup = found
+            }
         }
 
         // NewPipe's signature-timestamp lookup is a blocking network round trip, and it is only
@@ -511,15 +586,39 @@ object YTPlayerUtils {
 
         val isPrivateTrack = mainPlayerResponse?.videoDetails?.musicVideoType == "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK"
 
-        // the main client's answer is reused at index -1, so it isn't asked again as a fallback, and signed in the
-        // account's clients come first when it couldn't serve: they're what plays age-restricted and premium-only songs
+        // signed in with Premium (or probing once), prioritize authenticated clients that serve 256kbps (itag 141 / 774)
+        // before unauthenticated VISIONOS, reusing the WEB_REMIX metadataResponse we already fetched.
+        val metadataHasAudio = metadataResponse?.playabilityStatus?.status == "OK" &&
+            metadataResponse.streamingData?.adaptiveFormats?.any { it.isAudio } == true
+        val metadataHasPremiumAudio = metadataHasAudio &&
+            metadataResponse?.streamingData?.adaptiveFormats?.any { it.isPremiumAudioFormat() } == true
+        if (wantsPremiumAudio) {
+            if (metadataHasPremiumAudio) {
+                notifyPremiumStatus(true)
+            } else if (metadataHasAudio && accountIsPremium == null) {
+                notifyPremiumStatus(false)
+            }
+        }
+        val preferAuthenticatedFirst = wantsPremiumAudio && (metadataHasPremiumAudio || accountIsPremium == true)
+
+        // the main client's answer is reused at index -1, so it isn't asked again as a fallback.
+        // Signed in: authenticated clients come first when seeking Premium 256kbps or when MAIN_CLIENT couldn't serve.
         val mainServed = currentStatus == "OK"
         val fallbackClients: List<YouTubeClient> = buildList {
-            if (isLoggedIn && !mainServed) addAll(ACCOUNT_CLIENTS)
-            STREAM_FALLBACK_CLIENTS.filterTo(this) { it != MAIN_CLIENT }
+            if (preferAuthenticatedFirst) {
+                add(METADATA_CLIENT)
+                addAll(ACCOUNT_CLIENTS)
+                add(TVHTML5)
+                add(ANDROID_CREATOR)
+                if (mainServed && mainPlayerResponse != null) add(MAIN_CLIENT)
+                STREAM_FALLBACK_CLIENTS.filterTo(this) { it !in this }
+            } else {
+                if (isLoggedIn && !mainServed) addAll(ACCOUNT_CLIENTS)
+                STREAM_FALLBACK_CLIENTS.filterTo(this) { it != MAIN_CLIENT && it !in this }
+            }
         }
 
-        val startIndex = if (mainPlayerResponse == null || isPrivateTrack || isAgeRestricted) 0 else -1
+        val startIndex = if (preferAuthenticatedFirst || mainPlayerResponse == null || isPrivateTrack || isAgeRestricted) 0 else -1
 
         for (clientIndex in (startIndex until fallbackClients.size)) {
 
@@ -545,32 +644,39 @@ object YTPlayerUtils {
                     continue
                 }
 
-                if (client.useWebPoTokens && poToken == null && sessionId != null) {
-                    Timber.tag(logTag).d("Lazily generating PoToken for fallback web client: ${client.clientName}")
-                    try {
-                        poToken = poTokenGenerator.poTokenFor(videoId, sessionId)
-                    } catch (e: Exception) {
-                        Timber.tag(logTag).e(e, "Lazy PoToken generation failed")
+                // Reuse responses we already fetched above instead of issuing duplicate network requests.
+                if (client == METADATA_CLIENT && metadataResponse != null) {
+                    streamPlayerResponse = metadataResponse
+                } else if (client == MAIN_CLIENT && mainPlayerResponse != null) {
+                    streamPlayerResponse = retryMainPlayerResponse ?: mainPlayerResponse
+                } else {
+                    if (client.useWebPoTokens && poToken == null && sessionId != null) {
+                        Timber.tag(logTag).d("Lazily generating PoToken for fallback web client: ${client.clientName}")
+                        try {
+                            poToken = poTokenGenerator.poTokenFor(videoId, sessionId)
+                        } catch (e: Exception) {
+                            Timber.tag(logTag).e(e, "Lazy PoToken generation failed")
+                        }
                     }
-                }
 
-                Timber.tag(logTag).d("Fetching player response for fallback client: ${client.clientName}")
+                    Timber.tag(logTag).d("Fetching player response for fallback client: ${client.clientName}")
 
-                val clientPoToken = if (client.useWebPoTokens) poToken?.playerRequestPoToken else null
+                    val clientPoToken = if (client.useWebPoTokens) poToken?.playerRequestPoToken else null
 
-                val clientSigTimestamp =
-                    if (wasOriginallyAgeRestricted || !client.useSignatureTimestamp) {
-                        null
-                    } else {
-                        signatureTimestamp.timestamp
+                    val clientSigTimestamp =
+                        if (wasOriginallyAgeRestricted || !client.useSignatureTimestamp) {
+                            null
+                        } else {
+                            signatureTimestamp.timestamp
+                        }
+                    val result = YouTube.player(videoId, playlistId, client, clientSigTimestamp, clientPoToken)
+                    result.exceptionOrNull()?.let { e ->
+                        // every client asks the same host: the rest would be refused too
+                        if (e.isRateLimit()) throw YouTubeRateLimitedException()
+                        failures += "${client.clientName}: ${e.shortReason()}"
                     }
-                val result = YouTube.player(videoId, playlistId, client, clientSigTimestamp, clientPoToken)
-                result.exceptionOrNull()?.let { e ->
-                    // every client asks the same host: the rest would be refused too
-                    if (e.isRateLimit()) throw YouTubeRateLimitedException()
-                    failures += "${client.clientName}: ${e.shortReason()}"
+                    streamPlayerResponse = result.getOrNull()
                 }
-                streamPlayerResponse = result.getOrNull()
             }
 
             if (streamPlayerResponse?.playabilityStatus?.status == "OK") {
@@ -594,6 +700,7 @@ object YTPlayerUtils {
                     responseToUse,
                     audioQuality,
                     connectivityManager.isActiveNetworkMetered,
+                    preferMp4 = preferMp4,
                 )
 
                 if (formatCandidates.isEmpty()) {
@@ -731,6 +838,10 @@ object YTPlayerUtils {
         // request failing outright came out as "Bad stream player response" - so the reason the
         // song couldn't play (VISIONOS refused it, the others cut off) never reached the user.
         if (successClient == null) {
+            if (nonPremiumBackup != null) {
+                Timber.tag(logTag).w("Authenticated Premium clients didn't yield a validated stream; using InnerTubeX backup (${nonPremiumBackup.streamClient})")
+                return@runCatching nonPremiumBackup
+            }
             Timber.tag(logTag).e("All clients failed for $videoId: ${failures.joinToString(" | ")}")
             if (isUploadedTrack) {
                 println("[PLAYBACK_DEBUG] FAILURE: All clients failed for uploaded track videoId=$videoId")
@@ -913,10 +1024,10 @@ object YTPlayerUtils {
 
     // the play links for a song another source plays, asked for the way the stream lookup asks, or youtube ignored the plays and history stayed empty
     suspend fun playbackTrackingFor(videoId: String): PlayerResponse.PlaybackTracking? {
-        val isLoggedIn = YouTube.cookie != null
+        val isLoggedIn = !YouTube.cookie.isNullOrBlank()
         if (!isLoggedIn && YouTube.visitorData.isNullOrEmpty()) YouTube.refreshVisitorData()
         val client = if (isLoggedIn) METADATA_CLIENT else MAIN_CLIENT
-        val sessionId = if (isLoggedIn) YouTube.dataSyncId else YouTube.visitorData
+        val sessionId = (if (isLoggedIn) YouTube.dataSyncId else null) ?: YouTube.visitorData
         val poToken = if (client.useWebPoTokens && sessionId != null) {
             try {
                 poTokenGenerator.poTokenFor(videoId, sessionId)
@@ -958,8 +1069,9 @@ object YTPlayerUtils {
         playerResponse: PlayerResponse,
         audioQuality: AudioQuality,
         networkMetered: Boolean,
+        preferMp4: Boolean = false,
     ): List<PlayerResponse.StreamingData.Format> {
-        Timber.tag(logTag).d("Finding format with audioQuality: $audioQuality, network metered: $networkMetered")
+        Timber.tag(logTag).d("Finding format with audioQuality: $audioQuality, network metered: $networkMetered, preferMp4: $preferMp4")
 
         val audioFormats = playerResponse.streamingData?.adaptiveFormats
             ?.filter { it.isAudio && it.bitrate > 0 }
@@ -1005,11 +1117,15 @@ object YTPlayerUtils {
             else -> 0
         }
 
-        val preferHigher = compareByDescending<PlayerResponse.StreamingData.Format> { !it.url.isNullOrEmpty() }
-            .thenByDescending { qualityRank(it) }
+        // For HIGH quality, rank quality tier and bitrate BEFORE direct-vs-cipher so YouTube Premium's
+        // 256kbps streams (itag 141 AAC / itag 774 Opus, often ciphered on WEB_REMIX/TVHTML5) are always
+        // tried ahead of 128kbps direct URLs; findUrlOrNull walks candidates if deobfuscation ever fails.
+        val preferHigher = compareByDescending<PlayerResponse.StreamingData.Format> { qualityRank(it) }
+            .thenByDescending { it.isPremiumAudioFormat() }
             .thenByDescending { it.audioChannels ?: 2 }
             .thenByDescending { it.bitrate }
             .thenByDescending { codecRank(extractCodec(it.mimeType)) }
+            .thenByDescending { !it.url.isNullOrEmpty() }
             .thenByDescending { it.audioSampleRate ?: 0 }
 
         val preferLowerAboveTarget = compareByDescending<PlayerResponse.StreamingData.Format> { !it.url.isNullOrEmpty() }
@@ -1017,12 +1133,27 @@ object YTPlayerUtils {
             .thenByDescending { codecRank(extractCodec(it.mimeType)) }
             .thenByDescending { it.audioSampleRate ?: 0 }
 
-        val candidates = if (targetBitrateBps == null) {
-            usableFormats.sortedWith(preferHigher)
+        fun sortPool(pool: List<PlayerResponse.StreamingData.Format>): List<PlayerResponse.StreamingData.Format> =
+            if (targetBitrateBps == null) {
+                pool.sortedWith(preferHigher)
+            } else {
+                // Best stream at or below the target, then the cheapest one above it.
+                pool.filter { it.bitrate <= targetBitrateBps }.sortedWith(preferHigher) +
+                    pool.filter { it.bitrate > targetBitrateBps }.sortedWith(preferLowerAboveTarget)
+            }
+
+        val candidates = if (preferMp4) {
+            // Stereo AAC-LC in MP4 plays on every Chromecast and DLNA TV (Samsung, LG, Sonos);
+            // non-MP4 (Opus/WebM) stays only as a last resort when no MP4 stream exists.
+            val (mp4, other) = usableFormats.partition { it.mimeType.contains("mp4", ignoreCase = true) }
+            val preferStereoAac = compareByDescending<PlayerResponse.StreamingData.Format> { !it.url.isNullOrEmpty() }
+                .thenByDescending { (it.audioChannels ?: 2) <= 2 }
+                .thenByDescending { extractCodec(it.mimeType)?.startsWith("mp4a.40.2", ignoreCase = true) == true }
+                .thenByDescending { it.bitrate }
+                .thenByDescending { it.audioSampleRate ?: 0 }
+            mp4.sortedWith(preferStereoAac) + sortPool(other)
         } else {
-            // Best stream at or below the target, then the cheapest one above it.
-            usableFormats.filter { it.bitrate <= targetBitrateBps }.sortedWith(preferHigher) +
-                usableFormats.filter { it.bitrate > targetBitrateBps }.sortedWith(preferLowerAboveTarget)
+            sortPool(usableFormats)
         }
 
         Timber.tag(logTag).d(

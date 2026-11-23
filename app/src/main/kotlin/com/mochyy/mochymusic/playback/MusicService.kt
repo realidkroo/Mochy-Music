@@ -228,6 +228,7 @@ import android.os.VibratorManager
 import android.os.VibrationEffect
 import com.mochyy.mochymusic.playback.queues.EmptyQueue
 import com.mochyy.mochymusic.playback.queues.ListQueue
+import kotlinx.coroutines.cancel
 import com.mochyy.mochymusic.playback.queues.Queue
 import com.mochyy.mochymusic.playback.queues.YouTubeQueue
 import com.mochyy.mochymusic.playback.queues.filterExplicit
@@ -399,6 +400,7 @@ class MusicService :
                 failed.removeListener(this)
                 playerCrossmixProcessors.remove(failed)
                 playerSilenceProcessors.remove(failed)
+                playerReplayGain.remove(failed)
                 unregisterEqualizer(failed)
                 failed.release()
             }
@@ -586,7 +588,9 @@ class MusicService :
     private var loudnessEnhancerSessionId = C.AUDIO_SESSION_ID_UNSET
     // set while Crossmix replays the song-change hooks for the song it just handed over to
     private var promotingCrossmix = false
+    private var crossmixAnalysisInit = false
     private val crossmixAnalysisRepository by lazy {
+        crossmixAnalysisInit = true
         CrossmixAnalysisRepository(applicationContext) { createDataSourceFactory() }
     }
     private val crossmixDirector by lazy { CrossmixDirector(scope, CrossmixHost(), crossmixAnalysisRepository) }
@@ -607,7 +611,9 @@ class MusicService :
     private val listeningOnlyStreams: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
 
     // matches a song's recording against its music video's, for the video background and for a music video's lyrics
+    private var videoAudioSyncInit = false
     private val videoAudioSync by lazy {
+        videoAudioSyncInit = true
         com.mochyy.mochymusic.lyrics.VideoAudioSync({ createDataSourceFactory() }, listeningOnlyStreams)
     }
 
@@ -625,7 +631,9 @@ class MusicService :
     }
 
     /** Lyrics auto offset; the lyrics offset sheet starts it and shows how it's going. */
+    private var lyricsAutoSyncInit = false
     val lyricsAutoSync by lazy {
+        lyricsAutoSyncInit = true
         com.mochyy.mochymusic.lyrics.LyricsAutoSync(
             dataSourceFactory = { createDataSourceFactory() },
             saveOffset = { songId, offsetMs -> database.query { updateLyricsOffset(songId, offsetMs) } },
@@ -751,6 +759,41 @@ class MusicService :
 
     var castConnectionHandler: CastConnectionHandler? = null
         private set
+
+    private var selfControllerFuture: com.google.common.util.concurrent.ListenableFuture<MediaController>? = null
+    private var unregisterMemoryTrim: (() -> Unit)? = null
+
+    private fun trimServiceCaches() {
+        val now = System.currentTimeMillis()
+        val keepIds = HashSet<String>(4)
+        runCatching {
+            player.currentMediaItem?.mediaId?.let(keepIds::add)
+            val next = player.nextMediaItemIndex
+            if (next in 0 until player.mediaItemCount) {
+                keepIds.add(player.getMediaItemAt(next).mediaId)
+            }
+        }
+        synchronized(songUrlCache) {
+            songUrlCache.entries.removeIf { (id, entry) -> id !in keepIds && entry.second <= now }
+            if (songUrlCache.size > 64) {
+                songUrlCache.keys.retainAll(keepIds)
+            }
+        }
+        songStreamHeaders.keys.retainAll(keepIds)
+        moduleStreamHeaders.keys.removeIf { key -> keepIds.none { key.endsWith("|$it") || key == it } }
+        resolvedStreamSources.keys.retainAll(keepIds)
+        resolvedSourceIds.keys.retainAll(keepIds)
+        failedSources.keys.retainAll(keepIds)
+        failedSourcesAt.keys.retainAll(keepIds)
+        decoderNotices.keys.retainAll(keepIds)
+        playingStreams.keys.retainAll(keepIds)
+        recoveredSongs.retainAll(keepIds)
+        currentMediaIdRetryCount.keys.retainAll(keepIds)
+        if (usedInfiniteSeeds.size > 64) usedInfiniteSeeds.clear()
+        if (failedInfiniteSeeds.size > 64) failedInfiniteSeeds.clear()
+        streamFacts.update { all -> all.filterKeys { it in keepIds } }
+        if (crossmixAnalysisInit) crossmixAnalysisRepository.trimMemory()
+    }
 
     private val audioDeviceCallback = object : AudioDeviceCallback() {
         override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
@@ -902,7 +945,15 @@ class MusicService :
 
         val sessionToken = SessionToken(this, ComponentName(this, MusicService::class.java))
         val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
-        controllerFuture.addListener({ controllerFuture.get() }, MoreExecutors.directExecutor())
+        selfControllerFuture = controllerFuture
+        controllerFuture.addListener({ runCatching { controllerFuture.get() } }, MoreExecutors.directExecutor())
+
+        // prune unbounded per-track caches when the ui hides while leaving playback and dac intact
+        unregisterMemoryTrim = com.mochyy.mochymusic.utils.AppMemory.register { level ->
+            if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
+                scope.launch { trimServiceCaches() }
+            }
+        }
 
         connectivityManager = getSystemService()!!
         connectivityObserver = NetworkConnectivityObserver(this)
@@ -1422,7 +1473,15 @@ class MusicService :
             silenceProcessor.instantModeEnabled = skipSilence && instantSkip
         }
 
+        // 15-25 s instead of media3's 50 s, and time wins over the 6 mb cap so a 24/192 dac stream still keeps its full 15 s instead of stopping at ~8
+        val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+            .setBufferDurationsMs(15_000, 25_000, 1_500, 3_000)
+            .setTargetBufferBytes(6 * 1024 * 1024)
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+
         val player = ExoPlayer.Builder(this)
+            .setLoadControl(loadControl)
             .setMediaSourceFactory(createMediaSourceFactory())
             .setRenderersFactory(createRenderersFactory(eqProcessor, fxProcessors, silenceProcessor, hapticAudioProcessor, crossmixProcessor, replayGain, spectrum, inspector))
             .setHandleAudioBecomingNoisy(true)
@@ -3808,6 +3867,22 @@ class MusicService :
         }
     }
 
+    // one shared okhttp client for every track, prefetch and analyzer instead of spawning a new pool per song
+    private val streamHttpClient: OkHttpClient by lazy {
+        com.mochyy.mochymusic.utils.AppProxy.sharedClient.newBuilder()
+            .dns(object : Dns {
+                override fun lookup(hostname: String): List<InetAddress> {
+                    val addresses = Dns.SYSTEM.lookup(hostname)
+                    return when (this@MusicService.ipVersion) {
+                        IpVersion.IPV4 -> addresses.filter { it is Inet4Address }.ifEmpty { addresses }
+                        IpVersion.IPV6 -> addresses.filter { it is Inet6Address }.ifEmpty { addresses }
+                        IpVersion.AUTO -> addresses
+                    }
+                }
+            })
+            .build()
+    }
+
     private fun createCacheDataSource(): CacheDataSource.Factory =
         CacheDataSource
             .Factory()
@@ -3819,22 +3894,7 @@ class MusicService :
                     .setUpstreamDataSourceFactory(
                         DefaultDataSource.Factory(
                             this,
-                            OkHttpDataSource.Factory(
-                                OkHttpClient
-                                    .Builder()
-                                    .dns(object : Dns {
-                                        override fun lookup(hostname: String): List<InetAddress> {
-                                            val addresses = Dns.SYSTEM.lookup(hostname)
-                                            return when (this@MusicService.ipVersion) {
-                                                IpVersion.IPV4 -> addresses.filter { it is Inet4Address }.ifEmpty { addresses }
-                                                IpVersion.IPV6 -> addresses.filter { it is Inet6Address }.ifEmpty { addresses }
-                                                IpVersion.AUTO -> addresses
-                                            }
-                                        }
-                                    })
-                                    .followAppProxy()
-                                    .build(),
-                            ),
+                            OkHttpDataSource.Factory(streamHttpClient),
                         ),
                     ),
             ).setCacheWriteDataSinkFactory(null)
@@ -4551,6 +4611,10 @@ class MusicService :
 
     override fun onDestroy() {
         isRunning = false
+        unregisterMemoryTrim?.invoke()
+        unregisterMemoryTrim = null
+        selfControllerFuture?.let { MediaController.releaseFuture(it) }
+        selfControllerFuture = null
 
         audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
         audioOutputs.release()
@@ -4575,10 +4639,30 @@ class MusicService :
         floatingLyrics?.stop()
         floatingLyrics = null
         mediaSession.release()
+        mediaLibrarySessionCallback.release()
+        secondaryPlayer?.let { sec ->
+            sec.removeListener(secondaryPlayerListener)
+            unregisterEqualizer(sec)
+            runCatching { sec.release() }
+        }
+        secondaryPlayer = null
+        fadingPlayer?.let { fading ->
+            unregisterEqualizer(fading)
+            runCatching { fading.release() }
+        }
+        fadingPlayer = null
         player.removeListener(this)
         player.removeListener(sleepTimer)
-        playerSilenceProcessors.remove(player)
-        playerReplayGain.remove(player)
+        unregisterEqualizer(player)
+        playerSilenceProcessors.clear()
+        playerReplayGain.clear()
+        playerCrossmixProcessors.clear()
+        playerEqProcessors.clear()
+        playerSpectra.clear()
+        if (crossmixAnalysisInit) crossmixAnalysisRepository.release()
+        if (videoAudioSyncInit) videoAudioSync.release()
+        if (lyricsAutoSyncInit) lyricsAutoSync.release()
+        scope.cancel()
 
         player.release()
         super.onDestroy()
@@ -4737,18 +4821,31 @@ class MusicService :
         }
     }
 
-    /** a song's stream for a cast receiver: the link it fetches itself, and the kind of file behind it */
-    data class CastStream(val url: String, val mimeType: String)
+    /** a song's stream for a cast receiver: the link it fetches (or the proxy relays), its mime type, and any upstream headers it needs */
+    data class CastStream(
+        val url: String,
+        val mimeType: String,
+        val headers: Map<String, String> = emptyMap(),
+        val contentLength: Long = -1L,
+        val client: String = "",
+    )
 
-    // the receiver fetches the song itself, so it needs to be told what it is: an opus stream sent as mp4 won't play on most tvs
-    suspend fun getCastStream(mediaId: String): CastStream? = withContext(Dispatchers.IO) {
+    // receivers (especially samsung and other dlna tvs) reject opus/webm, so cast asks for stereo aac in mp4 first
+    suspend fun getCastStream(mediaId: String, preferMp4: Boolean = true): CastStream? = withContext(Dispatchers.IO) {
         try {
             YTPlayerUtils.playerResponseForPlayback(
                 videoId = mediaId,
                 audioQuality = audioQuality,
                 connectivityManager = connectivityManager,
+                preferMp4 = preferMp4,
             ).getOrNull()?.let { data ->
-                CastStream(data.streamUrl, data.format.mimeType.substringBefore(';').trim().ifBlank { "audio/mp4" })
+                CastStream(
+                    url = data.streamUrl,
+                    mimeType = data.format.mimeType.substringBefore(';').trim().ifBlank { "audio/mp4" },
+                    headers = data.streamHeaders,
+                    contentLength = data.format.contentLength ?: -1L,
+                    client = data.streamClient,
+                )
             }
         } catch (e: Exception) {
             timber.log.Timber.e(e, "Failed to get a stream for casting")
@@ -5167,6 +5264,7 @@ class MusicService :
         fadingPlayer?.release()
         fadingPlayer?.let(playerCrossmixProcessors::remove)
         fadingPlayer?.let(playerSilenceProcessors::remove)
+        fadingPlayer?.let(playerReplayGain::remove)
         fadingPlayer?.let(::unregisterEqualizer)
         fadingPlayer = null
         fadingLoudnessEnhancer?.runCatching { release() }

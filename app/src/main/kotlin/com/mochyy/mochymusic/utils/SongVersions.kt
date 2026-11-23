@@ -38,10 +38,15 @@ object SongVersions {
     private val gate = Semaphore(4)
 
     private val client by lazy {
-        OkHttpClient.Builder()
+        AppProxy.sharedClient.newBuilder()
             .connectTimeout(8, TimeUnit.SECONDS)
             .readTimeout(8, TimeUnit.SECONDS)
             .build()
+    }
+
+    // drops cached video-to-song lookups when the ui hides so session maps stay bounded
+    fun trimMemory() {
+        resolved.clear()
     }
 
     suspend fun preferSongs(items: List<YTItem>): List<YTItem> = coroutineScope {

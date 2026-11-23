@@ -1515,6 +1515,7 @@ private suspend fun gachaTint(context: Context, url: String): GachaTint? = withC
         .data(url)
         .size(64)
         .allowHardware(false)
+        .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
         .build()
     val bitmap = context.imageLoader.execute(request).image?.toBitmap() ?: return@withContext null
     val palette = Palette.from(bitmap).maximumColorCount(12).generate()

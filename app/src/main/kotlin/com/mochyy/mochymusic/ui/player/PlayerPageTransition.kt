@@ -455,7 +455,7 @@ internal fun ExpandingCardSurface(
     transition: PlayerPageTransition,
     morph: CardMorphState,
     modifier: Modifier = Modifier,
-    look: PlayerCardLook = ClassicCardLook,
+    look: PlayerCardLook = FlagshipCardLook,
 ) {
     val active by remember {
         derivedStateOf {
@@ -505,7 +505,7 @@ internal fun Modifier.pageTransitionLayer(
     page: PlayerPage,
     transition: PlayerPageTransition,
     morph: CardMorphState,
-    look: PlayerCardLook = ClassicCardLook,
+    look: PlayerCardLook = FlagshipCardLook,
     // the fade goes onto each row instead of one buffer, which would cut soft-lit lyrics off from the background
     modulateAlpha: Boolean = false,
     crossfadeProgress: () -> Float,

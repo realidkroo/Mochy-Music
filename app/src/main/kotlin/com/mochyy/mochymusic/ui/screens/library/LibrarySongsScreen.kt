@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.only
@@ -62,8 +63,13 @@ private sealed interface SongRow {
     }
 }
 
-// the rows a to z under their letters, and the songs in that same order for play and shuffle
-private class SongLayout(val rows: List<SongRow>, val ordered: List<Song>)
+// the rows a to z under their letters, the songs in that same order for play and shuffle, and the row each letter on the rail starts at
+private class SongLayout(
+    val rows: List<SongRow>,
+    val ordered: List<Song>,
+    val sections: List<IndexSection>,
+    val firstRowOf: Map<String, Int>,
+)
 
 private fun songLayout(songs: List<Song>, query: String): SongLayout {
     val q = query.trim()
@@ -74,7 +80,11 @@ private fun songLayout(songs: List<Song>, query: String): SongLayout {
     }
     val rows = ArrayList<SongRow>(visible.size + 30)
     val ordered = ArrayList<Song>(visible.size)
+    val sections = ArrayList<IndexSection>()
+    val firstRowOf = HashMap<String, Int>()
     indexSections(visible) { it.song.title }.forEach { (section, entries) ->
+        sections += section
+        firstRowOf[section.key] = rows.size
         rows += SongRow.Heading("h_${section.key}", section.label)
         entries.forEach { song ->
             val subtitle = listOfNotNull(
@@ -85,7 +95,7 @@ private fun songLayout(songs: List<Song>, query: String): SongLayout {
             ordered += song
         }
     }
-    return SongLayout(rows, ordered)
+    return SongLayout(rows, ordered, sections, firstRowOf)
 }
 
 // every song in the library, a to z, laid out like Recently added
@@ -106,6 +116,7 @@ fun LibrarySongsScreen(
 
     var query by remember { mutableStateOf(TextFieldValue()) }
     val listState = rememberLazyListState()
+    val glide = rememberIndexGlide(listState, landing = indexLandingUnderBar())
     // sorting thousands of titles waits off the main thread, so the page opens straight away
     val layout by produceState<SongLayout?>(null, songs, query.text) {
         value = withContext(Dispatchers.Default) { songLayout(songs, query.text) }
@@ -146,6 +157,17 @@ fun LibrarySongsScreen(
         searchPlaceholder = stringResource(R.string.lib_songs_search),
         onBackClick = { navController.navigateUp() },
         onBackLongClick = { navController.backToMain() },
+        overlay = {
+            val shown = layout
+            if (shown != null && shown.sections.size > 1 && query.text.isBlank()) {
+                LibraryIndexRail(
+                    sections = shown.sections,
+                    // +1 for the header above the rows
+                    onSectionSelected = { key -> shown.firstRowOf[key]?.let { row -> glide.glideTo(row + 1) } },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        },
     ) {
         val shown = layout
         if (shown == null) {

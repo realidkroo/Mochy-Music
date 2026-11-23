@@ -225,9 +225,8 @@ internal fun rememberBedsideProgress(visible: () -> Boolean): BedsideProgress {
                     return@collectLatest
                 }
                 while (true) {
-                    val player = connection.player
-                    progress.positionMs = player.currentPosition
-                    progress.durationMs = player.duration.coerceAtLeast(0L)
+                    progress.positionMs = connection.effectivePositionMs
+                    progress.durationMs = connection.effectiveDurationMs
                     delay(ProgressTickMs)
                 }
             }

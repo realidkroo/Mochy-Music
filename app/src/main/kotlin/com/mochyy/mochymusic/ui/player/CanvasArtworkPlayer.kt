@@ -74,11 +74,10 @@ private const val CanvasSettleMs = 700L
 private const val CanvasSamplePx = 32
 private const val CanvasSampleMs = 1_500L
 
-// one shared client for every animated cover so song changes don't pile up connection pools
+// one shared client for every animated cover riding the app's shared dispatcher and connection pool
 private val CanvasHttpClient: OkHttpClient by lazy {
-    OkHttpClient
-        .Builder()
-        .followAppProxy()
+    com.mochyy.mochymusic.utils.AppProxy.sharedClient
+        .newBuilder()
         .addInterceptor { chain ->
             val request = chain.request()
             val host = request.url.host
@@ -150,9 +149,10 @@ fun CanvasArtworkPlayer(
     val currentOnPlayingSize by rememberUpdatedState(onPlayingSize)
     // data saver keeps covers on the light version even with the sharpest one picked
     val bestQuality = rememberPreference(CanvasBestQualityKey, defaultValue = true).value && !rememberDataSaverActive()
-    // nothing to show with the app in the background, and a looping canvas kept decoding there for nobody
+    // release the canvas decoder and texture surface while the app is backgrounded so media codecs and gl buffers drop to zero
     val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
-    val shouldPlay = isPlaying && lifecycle.isAtLeast(Lifecycle.State.STARTED)
+    if (!lifecycle.isAtLeast(Lifecycle.State.STARTED)) return
+    val shouldPlay = isPlaying
     LaunchedEffect(isVideoReady) { currentOnReadyChange?.invoke(isVideoReady) }
     LaunchedEffect(isVideoReady, playingSide) { currentOnPlayingSize?.invoke(if (isVideoReady) playingSide else 0) }
     DisposableEffect(Unit) {
@@ -344,8 +344,14 @@ internal class CanvasVideoSession(
 
     init {
         handler.post {
+            // looping canvas clips are a few seconds long, so cap buffers instead of claiming media3's default 131 mb video budget
+            val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+                .setBufferDurationsMs(2_000, 6_000, 500, 1_000)
+                .setTargetBufferBytes(4 * 1024 * 1024)
+                .build()
             player = ExoPlayer.Builder(context)
                 .setLooper(handler.looper)
+                .setLoadControl(loadControl)
                 .setMediaSourceFactory(mediaSourceFactory)
                 .build()
                 .apply {

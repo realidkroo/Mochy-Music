@@ -63,4 +63,12 @@ object ArtistPageCache {
     fun putPicks(artistId: String, group: ArtistGroup) {
         picks[artistId] = group
     }
+
+    // drops cached artist page trees when the ui hides so they don't stay pinned in background ram
+    fun clear() {
+        pages.clear()
+        headers.clear()
+        picks.clear()
+        bannerLooks.clear()
+    }
 }

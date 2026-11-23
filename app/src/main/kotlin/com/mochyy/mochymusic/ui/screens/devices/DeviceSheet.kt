@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.link.DeviceKind
 import com.mochyy.mochymusic.link.phone.PairedDevice
 import com.mochyy.mochymusic.ui.component.DefaultDialog
 import com.mochyy.mochymusic.ui.component.PopupSheetHandle
@@ -106,7 +107,13 @@ private fun ColumnScope.DeviceSheetContent(link: DevicesLink, deviceId: String, 
             ToggleRow(
                 icon = Icons.Rounded.SettingsRemote,
                 title = stringResource(R.string.devices_remote_control),
-                detail = stringResource(if (device.kind.isTv) R.string.devices_remote_control_tv_detail else R.string.devices_remote_control_phone_detail),
+                detail = stringResource(
+                    when {
+                        device.kind.isTv -> R.string.devices_remote_control_tv_detail
+                        device.kind == DeviceKind.Desktop -> R.string.devices_remote_control_computer_detail
+                        else -> R.string.devices_remote_control_phone_detail
+                    },
+                ),
                 checked = device.remoteControl,
             ) { on -> link.host.update(deviceId) { it.copy(remoteControl = on, autoControl = it.autoControl && on) } }
             ToggleRow(

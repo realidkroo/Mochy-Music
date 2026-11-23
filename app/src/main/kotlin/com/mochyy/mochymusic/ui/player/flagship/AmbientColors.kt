@@ -180,6 +180,7 @@ suspend fun pictureTones(context: Context, url: String): List<Color>? {
                 .data(url.resize(PicturePx * 2, PicturePx * 2))
                 .size(PicturePx, PicturePx)
                 .allowHardware(false)
+                .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
                 .build()
             context.imageLoader.execute(request).image?.toBitmap()
         }.getOrNull()

@@ -5,6 +5,7 @@ package com.mochyy.mochymusic.ui.player
 import android.view.animation.AnimationUtils
 import androidx.compose.runtime.Stable
 import androidx.media3.common.Player
+import com.mochyy.mochymusic.playback.PlayerConnection
 import kotlin.math.abs
 import kotlin.math.exp
 
@@ -23,9 +24,34 @@ private const val CarryMaxMs = 2000L
 // the playback position for the frame on screen, so lyrics and the seek bar glide every frame instead of stepping with the 66ms poller
 @Stable
 class PlaybackClock(
-    private val player: () -> Player?,
+    private val readPositionMs: () -> Long,
+    private val readIsPlaying: () -> Boolean,
+    private val readSpeed: () -> Float = { 1f },
     private val offsetMs: () -> Long = { 0L },
+    private val hasSource: () -> Boolean = { true },
 ) : () -> Long {
+    constructor(
+        player: () -> Player?,
+        offsetMs: () -> Long = { 0L },
+    ) : this(
+        readPositionMs = { player()?.currentPosition?.coerceAtLeast(0L) ?: 0L },
+        readIsPlaying = { player()?.isPlaying == true },
+        readSpeed = { player()?.playbackParameters?.speed ?: 1f },
+        offsetMs = offsetMs,
+        hasSource = { player() != null },
+    )
+
+    constructor(
+        connection: PlayerConnection?,
+        offsetMs: () -> Long = { 0L },
+    ) : this(
+        readPositionMs = { connection?.effectivePositionMs ?: 0L },
+        readIsPlaying = { connection?.isEffectivelyPlayingNow == true },
+        readSpeed = { connection?.effectivePlaybackSpeed ?: 1f },
+        offsetMs = offsetMs,
+        hasSource = { connection != null },
+    )
+
     private var frameMs = Long.MIN_VALUE
     private var smoothed = 0.0
 
@@ -41,13 +67,13 @@ class PlaybackClock(
     }
 
     private fun advance(now: Long) {
-        val p = player() ?: return
-        val playing = p.isPlaying
-        val speed = p.playbackParameters.speed
+        if (!hasSource()) return
+        val playing = readIsPlaying()
+        val speed = readSpeed()
         val fresh = frameMs == Long.MIN_VALUE || now - frameMs !in 1..StaleMs
         val elapsed = (now - frameMs).toDouble()
         frameMs = now
-        val heard = carried(p.currentPosition.coerceAtLeast(0L), now, elapsed, fresh, playing, speed)
+        val heard = carried(readPositionMs().coerceAtLeast(0L), now, elapsed, fresh, playing, speed)
         if (fresh) {
             smoothed = heard
             return

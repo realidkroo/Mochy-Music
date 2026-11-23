@@ -13,6 +13,8 @@ import com.metrolist.innertubex.extraction.TokenProvider
 import com.metrolist.innertubex.extraction.TokenProviderCapabilities
 import com.metrolist.innertubex.extraction.YtConfigParserImpl
 import com.metrolist.innertubex.extraction.generateClientPlaybackNonce
+import com.metrolist.innertubex.extraction.strategy.AuthenticationPolicy
+import com.metrolist.innertubex.extraction.strategy.PlaybackClientCatalog
 import com.metrolist.innertubex.extraction.strategy.PoTokenProviderKind
 import com.mochyy.mochymusic.constants.AudioQuality
 import com.mochyy.mochymusic.utils.potoken.PoTokenResult
@@ -38,7 +40,7 @@ internal class InnerTubeXStreams(
     private val okHttp: OkHttpClient,
     private val mintToken: suspend (videoId: String, sessionId: String) -> PoTokenResult?,
 ) {
-    private class Engine(val innerTube: InnerTubeX, val extractor: InnerTubeExtractor)
+    private class Engine(val http: HttpClient, val innerTube: InnerTubeX, val extractor: InnerTubeExtractor)
 
     // mochy's sign-in, guest id and region as innertubex last saw them
     private data class Session(
@@ -51,9 +53,25 @@ internal class InnerTubeXStreams(
     )
 
     @Volatile private var mirrored: Session? = null
+    @Volatile private var engineInstance: Engine? = null
+    private val engineLock = Any()
 
-    // built on the first song, not at launch, so a phone on the classic backend never pays for it
-    private val engine: Engine by lazy { build() }
+    // built on demand and dropped in the background so quackjs's parsed player ast doesn't sit in heap forever
+    private fun getOrBuildEngine(): Engine =
+        engineInstance ?: synchronized(engineLock) {
+            engineInstance ?: build().also { engineInstance = it }
+        }
+
+    // lets background memory trims drop the parsed player script and close ktor's scope cleanly
+    fun release() {
+        val old = synchronized(engineLock) {
+            val current = engineInstance
+            engineInstance = null
+            mirrored = null
+            current
+        }
+        old?.let { runCatching { it.http.close() } }
+    }
 
     // the same webview tokens the walk mints, so both backends share one botguard session
     private val tokens = object : TokenProvider {
@@ -98,14 +116,27 @@ internal class InnerTubeXStreams(
             tokenProvider = tokens,
             logger = logger,
         )
-        return Engine(innerTube, extractor)
+        return Engine(http, innerTube, extractor)
     }
 
     // fetches and compiles the player script ahead of the first song
     suspend fun prewarm() {
-        val engine = engine
+        val engine = getOrBuildEngine()
         mirrorSession(engine.innerTube)
         engine.extractor.prewarm()
+    }
+
+    // manifest IDs that cannot authenticate: excluded on the first pass when fetching YouTube Music Premium 256kbps streams
+    private val unauthenticatedManifestIds: Set<String> by lazy {
+        PlaybackClientCatalog.manifests
+            .filter { it.authentication == AuthenticationPolicy.UNSUPPORTED || !it.client.loginSupported }
+            .mapTo(HashSet()) { it.id }
+    }
+
+    private val unauthenticatedClientNames: Set<String> by lazy {
+        PlaybackClientCatalog.manifests
+            .filter { it.authentication == AuthenticationPolicy.UNSUPPORTED || !it.client.loginSupported }
+            .mapTo(HashSet()) { it.client.clientName }
     }
 
     /** a playable stream for [videoId], or null when innertubex has none and the walk should try */
@@ -114,23 +145,56 @@ internal class InnerTubeXStreams(
         playlistId: String?,
         audioQuality: AudioQuality,
         connectivityManager: ConnectivityManager,
+        preferMp4: Boolean = false,
+        preferAuthenticatedPremium: Boolean = false,
     ): YTPlayerUtils.PlaybackData? {
-        val engine = engine
+        val engine = getOrBuildEngine()
         mirrorSession(engine.innerTube)
+        val isSignedIn = !YouTube.cookie.isNullOrBlank()
+        val requestedQuality = if (preferMp4) XAudioQuality.MP4 else audioQuality.toInnerTubeX(connectivityManager)
         val hints = ContentHints(isUploaded = playlistId?.contains("MLPT") == true)
+            .withPremium(isSignedIn && (preferAuthenticatedPremium || YTPlayerUtils.accountIsPremium == true))
             // only plain links the player can read straight through: no hls or sabr, and none that need small byte ranges
             .withStreamCapabilities(allowHls = false, allowSabr = false, allowBoundedRange = false)
+
+        if (isSignedIn && preferAuthenticatedPremium && requestedQuality == XAudioQuality.HIGH) {
+            val authStream = withTimeoutOrNull(GiveUpMs) {
+                engine.extractor.extract(
+                    videoId = videoId,
+                    hints = hints,
+                    excludedClients = unauthenticatedManifestIds,
+                    audioQuality = requestedQuality,
+                    clientPlaybackNonce = generateClientPlaybackNonce(),
+                )
+            }
+            if (authStream != null && authStream.sabrBootstrap == null && authStream.audioUrl.isNotBlank()) {
+                val isPremiumQuality = YTPlayerUtils.isPremiumStream(authStream.itag, authStream.bitrate)
+                if (isPremiumQuality) {
+                    YTPlayerUtils.notifyPremiumStatus(true)
+                } else if (YTPlayerUtils.accountIsPremium == null) {
+                    YTPlayerUtils.notifyPremiumStatus(false)
+                }
+                return authStream.toPlaybackData(authenticatedTracking = true)
+            }
+        }
+
         val stream = withTimeoutOrNull(GiveUpMs) {
             engine.extractor.extract(
                 videoId = videoId,
                 hints = hints,
                 excludedClients = emptySet(),
-                audioQuality = audioQuality.toInnerTubeX(connectivityManager),
+                audioQuality = requestedQuality,
                 clientPlaybackNonce = generateClientPlaybackNonce(),
             )
         } ?: return null
         if (stream.sabrBootstrap != null || stream.audioUrl.isBlank()) return null
-        return stream.toPlaybackData()
+        // cast receivers (especially samsung and other dlna tvs) reject opus/webm, so fall through to the client walk if innertubex still handed out non-mp4
+        if (preferMp4 && stream.mimeType?.contains("mp4", ignoreCase = true) != true) return null
+        if (isSignedIn && YTPlayerUtils.isPremiumStream(stream.itag, stream.bitrate)) {
+            YTPlayerUtils.notifyPremiumStatus(true)
+        }
+        val wasAuthenticatedClient = isSignedIn && stream.clientName !in unauthenticatedClientNames
+        return stream.toPlaybackData(authenticatedTracking = wasAuthenticatedClient)
     }
 
     // copied over only when something changed, since every change starts innertubex's per-session caches again
@@ -171,7 +235,7 @@ internal class InnerTubeXStreams(
     }
 
     @OptIn(kotlin.time.ExperimentalTime::class)
-    private fun ExtractedStream.toPlaybackData(): YTPlayerUtils.PlaybackData {
+    private fun ExtractedStream.toPlaybackData(authenticatedTracking: Boolean): YTPlayerUtils.PlaybackData {
         val metadata = mediaMetadata
         val fullMimeType = if (codecs.isNullOrBlank()) mimeType.orEmpty() else "${mimeType.orEmpty()}; codecs=\"$codecs\""
         val expiresIn = expiresAt
@@ -196,12 +260,18 @@ internal class InnerTubeXStreams(
                     thumbnail = Thumbnails(it.thumbnails.map { thumb -> Thumbnail(thumb.url, thumb.width, thumb.height) }),
                 )
             },
-            playbackTracking = playbackTracking?.let {
-                PlayerResponse.PlaybackTracking(
-                    videostatsPlaybackUrl = it.playbackUrl?.let(PlayerResponse.PlaybackTracking::VideostatsPlaybackUrl),
-                    videostatsWatchtimeUrl = it.watchtimeUrl?.let(PlayerResponse.PlaybackTracking::VideostatsWatchtimeUrl),
-                    atrUrl = null,
-                )
+            // signed in, only authenticated tracking URLs update the user's YouTube watch history;
+            // returning null for anonymous clients lets YouTubePlayReporter fetch authenticated WEB_REMIX tracking.
+            playbackTracking = if (authenticatedTracking || YouTube.cookie.isNullOrBlank()) {
+                playbackTracking?.let {
+                    PlayerResponse.PlaybackTracking(
+                        videostatsPlaybackUrl = it.playbackUrl?.let(PlayerResponse.PlaybackTracking::VideostatsPlaybackUrl),
+                        videostatsWatchtimeUrl = it.watchtimeUrl?.let(PlayerResponse.PlaybackTracking::VideostatsWatchtimeUrl),
+                        atrUrl = null,
+                    )
+                }
+            } else {
+                null
             },
             format = PlayerResponse.StreamingData.Format(
                 itag = itag,

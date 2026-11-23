@@ -4,17 +4,17 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class AddItemYouTubePlaylistResponse(
-    val status: String,
-    val playlistEditResults: List<PlaylistEditResult>
+    val status: String? = null,
+    val playlistEditResults: List<PlaylistEditResult>? = null,
 ) {
     @Serializable
     data class PlaylistEditResult(
-        val playlistEditVideoAddedResultData: PlaylistEditVideoAddedResultData,
+        val playlistEditVideoAddedResultData: PlaylistEditVideoAddedResultData? = null,
     ) {
         @Serializable
         data class PlaylistEditVideoAddedResultData(
-            val setVideoId: String,
-            val videoId: String
+            val setVideoId: String? = null,
+            val videoId: String? = null,
         )
     }
 }

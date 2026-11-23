@@ -50,6 +50,7 @@ fun DetailCoverBackground(
                     .data(thumbnailUrl)
                     .size(100, 100)
                     .allowHardware(false)
+                    .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
                     .build()
                 val bitmap = context.imageLoader.execute(request).image?.toBitmap()
                 if (bitmap != null) {

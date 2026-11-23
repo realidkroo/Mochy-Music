@@ -27,7 +27,12 @@ data class CatalogModule(
 @Singleton
 class ModuleCatalog @Inject constructor() {
     private val client by lazy {
-        OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS).readTimeout(15, TimeUnit.SECONDS).build()
+        OkHttpClient.Builder()
+            .dispatcher(com.mochyy.mochymusic.utils.AppProxy.dispatcher)
+            .connectionPool(com.mochyy.mochymusic.utils.AppProxy.connectionPool)
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .build()
     }
 
     suspend fun load(): Result<List<CatalogModule>> = withContext(Dispatchers.IO) {

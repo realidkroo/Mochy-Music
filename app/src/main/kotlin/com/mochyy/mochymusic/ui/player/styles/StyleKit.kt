@@ -218,7 +218,7 @@ fun rememberLivePosition(animated: Boolean = true): LivePosition {
     }
     return remember(connection) {
         // the player's own position only moves every 10 ms or so, which judders at 120 hz; this one moves on the frame's time
-        val clock = com.mochyy.mochymusic.ui.player.PlaybackClock({ connection?.player })
+        val clock = com.mochyy.mochymusic.ui.player.PlaybackClock(connection)
         LivePosition(read = clock, tick = { tick.longValue })
     }
 }

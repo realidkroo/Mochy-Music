@@ -37,6 +37,11 @@ class VideoAudioSync(
     // one recording at a time, so two requests for the same pair share the work instead of doubling it
     private val listening = Mutex()
 
+    fun release() {
+        dispatcher.close()
+        prints.evictAll()
+    }
+
     // null when the two don't share a recording (a live version, a cover) or one of them couldn't be read
     suspend fun match(song: Source, video: Source): SongVideoMap? {
         val key = "${song.key}>${video.key}"

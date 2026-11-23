@@ -20,6 +20,24 @@ object CipherDeobfuscator {
 
     private var cipherWebView: CipherWebView? = null
     private var currentPlayerHash: String? = null
+    private val idleHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val idleCloseRunnable = Runnable {
+        cipherWebView?.close()
+        cipherWebView = null
+        currentPlayerHash = null
+    }
+    private const val IdleCloseMs = 60_000L
+
+    // drops the hidden cipher webview when the app goes to the background or sits idle
+    suspend fun releaseWebView() {
+        idleHandler.removeCallbacks(idleCloseRunnable)
+        closeWebView()
+    }
+
+    private fun scheduleIdleClose() {
+        idleHandler.removeCallbacks(idleCloseRunnable)
+        idleHandler.postDelayed(idleCloseRunnable, IdleCloseMs)
+    }
 
     suspend fun deobfuscateStreamUrl(signatureCipher: String, videoId: String): String? {
         return try {
@@ -138,6 +156,7 @@ object CipherDeobfuscator {
 
         cipherWebView = webView
         currentPlayerHash = hash
+        scheduleIdleClose()
         return webView
     }
 

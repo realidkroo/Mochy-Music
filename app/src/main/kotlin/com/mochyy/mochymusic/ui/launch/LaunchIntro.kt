@@ -368,39 +368,49 @@ fun LaunchIntroOverlay(state: LaunchIntroState, essentialsReady: Boolean) {
             )
         }
 
-        // the mark, on a layer just big enough for it so the blur stays cheap at every size
+        // fixed-size layer scaled by graphicsLayer so skia reuses one fbo instead of allocating ~50 scratch render targets across the flight
         Spacer(
             modifier = Modifier
                 .layout { measurable, constraints ->
                     val placement = placementAt(state, IntSize(constraints.maxWidth, constraints.maxHeight))
-                    val left = floor(placement.origin.x + LayerBounds.left * placement.unit).toInt()
-                    val top = floor(placement.origin.y + LayerBounds.top * placement.unit).toInt()
-                    val right = ceil(placement.origin.x + LayerBounds.right * placement.unit).toInt()
-                    val bottom = ceil(placement.origin.y + LayerBounds.bottom * placement.unit).toInt()
+                    val baseUnit = SplashIconSize.toPx() / SplashViewport
+                    val baseW = ceil(LayerBounds.width() * baseUnit).toInt().coerceAtLeast(1)
+                    val baseH = ceil(LayerBounds.height() * baseUnit).toInt().coerceAtLeast(1)
                     frame.origin = placement.origin
                     frame.unit = placement.unit
-                    frame.layerTopLeft = Offset(left.toFloat(), top.toFloat())
-                    val placeable = measurable.measure(Constraints.fixed(right - left, bottom - top))
+                    frame.layerTopLeft = Offset(
+                        placement.origin.x + LayerBounds.left * placement.unit,
+                        placement.origin.y + LayerBounds.top * placement.unit,
+                    )
+                    val placeable = measurable.measure(Constraints.fixed(baseW, baseH))
                     layout(constraints.maxWidth, constraints.maxHeight) {
-                        placeable.place(left, top)
+                        placeable.place(0, 0)
                     }
                 }
                 .graphicsLayer {
+                    val baseUnit = SplashIconSize.toPx() / SplashViewport
+                    val ratio = frame.unit / baseUnit
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
+                    translationX = frame.layerTopLeft.x
+                    translationY = frame.layerTopLeft.y
+                    scaleX = ratio
+                    scaleY = ratio
                     val p = state.prelude.value
                     val blur = if (p < 1f) preludeLook(p).blur else BlurPeak * bell((state.flight.value - 0.04f) / 0.76f)
-                    renderEffect = BlurEffectCache.element(blur * frame.unit)
+                    renderEffect = BlurEffectCache.element(blur * baseUnit)
                 }
                 .drawBehind {
                     val t = state.flight.value
                     if (state.landed) return@drawBehind
+                    val baseUnit = SplashIconSize.toPx() / SplashViewport
                     val p = state.prelude.value
                     if (p < 1f && iconArt != null) {
                         val look = preludeLook(p)
                         drawIntoCanvas { canvas ->
                             val native = canvas.nativeCanvas
                             native.save()
-                            native.translate(frame.origin.x - frame.layerTopLeft.x, frame.origin.y - frame.layerTopLeft.y)
-                            native.scale(frame.unit, frame.unit)
+                            native.translate(-LayerBounds.left * baseUnit, -LayerBounds.top * baseUnit)
+                            native.scale(baseUnit, baseUnit)
                             iconArt.draw(native, look.iconAlpha, look.iconScale)
                             art.draw(native, look.markAlpha, 0f, look.markScale)
                             native.restore()
@@ -413,9 +423,8 @@ fun LaunchIntroOverlay(state: LaunchIntroState, essentialsReady: Boolean) {
                     drawIntoCanvas { canvas ->
                         val native = canvas.nativeCanvas
                         native.save()
-                        // the layer starts at the art's top left, rounded down to a whole pixel
-                        native.translate(frame.origin.x - frame.layerTopLeft.x, frame.origin.y - frame.layerTopLeft.y)
-                        native.scale(frame.unit, frame.unit)
+                        native.translate(-LayerBounds.left * baseUnit, -LayerBounds.top * baseUnit)
+                        native.scale(baseUnit, baseUnit)
                         art.draw(native, filledAlpha, outlineAlpha)
                         native.restore()
                     }

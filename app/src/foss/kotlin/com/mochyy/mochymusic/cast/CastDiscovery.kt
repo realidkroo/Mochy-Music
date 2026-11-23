@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,6 +49,7 @@ sealed interface FoundReceiver {
         override val detail: String,
         val avTransportUrl: String,
         val renderingControlUrl: String?,
+        val connectionManagerUrl: String? = null,
     ) : FoundReceiver
 }
 
@@ -105,6 +107,17 @@ class CastDiscovery(context: Context) {
         }
         ssdpJob?.cancel()
         ssdpJob = null
+        // clear pending look-ups so reopening the sheet starts fresh without holding stale entries
+        describing.clear()
+        toResolve.clear()
+        resolving = false
+    }
+
+    // cancels the discovery coroutine scope when the music service tears down
+    @Synchronized
+    fun release() {
+        stop()
+        scope.cancel()
     }
 
     @Synchronized
@@ -201,6 +214,7 @@ class CastDiscovery(context: Context) {
                 var serviceType: String? = null
                 var avTransport: String? = null
                 var renderingControl: String? = null
+                var connectionManager: String? = null
                 var text = ""
                 while (parser.next() != XmlPullParser.END_DOCUMENT) {
                     when (parser.eventType) {
@@ -215,6 +229,7 @@ class CastDiscovery(context: Context) {
                             "controlURL" -> when {
                                 serviceType?.contains(":AVTransport:") == true && avTransport == null -> avTransport = text
                                 serviceType?.contains(":RenderingControl:") == true && renderingControl == null -> renderingControl = text
+                                serviceType?.contains(":ConnectionManager:") == true && connectionManager == null -> connectionManager = text
                             }
                         }
                     }
@@ -228,6 +243,7 @@ class CastDiscovery(context: Context) {
                     detail = model?.takeIf { it.isNotBlank() } ?: "DLNA",
                     avTransportUrl = URL(root, transport).toString(),
                     renderingControlUrl = renderingControl?.let { URL(root, it).toString() },
+                    connectionManagerUrl = connectionManager?.let { URL(root, it).toString() },
                 )
                 publish()
             }

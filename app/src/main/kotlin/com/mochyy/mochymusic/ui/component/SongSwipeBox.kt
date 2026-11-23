@@ -60,14 +60,9 @@ fun SongSwipeBox(
         val scope = rememberCoroutineScope()
         AddToPlaylistDialog(
             isVisible = true,
-            onGetSong = { playlist ->
+            onGetSong = {
                 target.metadata?.let { meta ->
                     database.withTransaction { insert(meta) }
-                }
-                scope.launch(Dispatchers.IO) {
-                    playlist.playlist.browseId?.let { browseId ->
-                        YouTube.addToPlaylist(browseId, target.mediaId)
-                    }
                 }
                 listOf(target.mediaId)
             },

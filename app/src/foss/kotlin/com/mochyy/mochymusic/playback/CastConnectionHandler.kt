@@ -4,8 +4,10 @@ package com.mochyy.mochymusic.playback
 
 import android.content.Context
 import androidx.compose.runtime.Stable
+import androidx.media3.common.Player
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.cast.CastDiscovery
+import com.mochyy.mochymusic.cast.CastMediaProxy
 import com.mochyy.mochymusic.cast.ChromecastRenderer
 import com.mochyy.mochymusic.cast.DlnaRenderer
 import com.mochyy.mochymusic.cast.FoundReceiver
@@ -19,14 +21,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.io.File
 import com.mochyy.mochymusic.models.MediaMetadata as AppMediaMetadata
 
 /** casting without google play services: chromecasts over the cast protocol and dlna renderers over upnp (docs/notes/cast.md) */
@@ -68,17 +71,31 @@ class CastConnectionHandler(
     data class CastTarget(val id: String, val name: String, val detail: String?)
 
     private val discovery = CastDiscovery(context)
+    // defer proxy and http client setup until the user actually casts to a receiver
+    @Volatile private var mediaProxyInit = false
+    private val mediaProxy by lazy {
+        mediaProxyInit = true
+        CastMediaProxy(File(context.cacheDir, "cast"))
+    }
 
     val targets: StateFlow<List<CastTarget>> = discovery.found
         .map { found -> found.map { CastTarget(it.id, it.name, it.detail) } }
-        .stateIn(scope, SharingStarted.Eagerly, emptyList())
+        .stateIn(scope, SharingStarted.WhileSubscribed(5_000L), emptyList())
 
     private var renderer: RemoteRenderer? = null
     private var watchJob: Job? = null
     private var positionJob: Job? = null
+    private var loadJob: Job? = null
     private var currentMediaId: String? = null
+    private var lastLoadedMetadata: AppMediaMetadata? = null
+    private var lastLoadedStream: MusicService.CastStream? = null
+    private var lastLoadedViaProxy: Boolean = false
+    private var lastLoadStartMs: Long = 0L
 
     fun initialize(): Boolean = true
+
+    /** Live millisecond-accurate position on the active cast receiver (for smooth 60/120fps seekbars & lyrics). */
+    fun currentPositionNow(): Long = renderer?.positionNow() ?: _castPosition.value
 
     // only while the device sheet is open: searching keeps the wifi radio busy
     fun startDiscovery() = discovery.start()
@@ -92,7 +109,11 @@ class CastConnectionHandler(
             _isConnecting.value = true
             val next: RemoteRenderer = when (receiver) {
                 is FoundReceiver.Chromecast -> ChromecastRenderer(receiver.host, receiver.port)
-                is FoundReceiver.Dlna -> DlnaRenderer(receiver.avTransportUrl, receiver.renderingControlUrl)
+                is FoundReceiver.Dlna -> DlnaRenderer(
+                    avTransportUrl = receiver.avTransportUrl,
+                    renderingControlUrl = receiver.renderingControlUrl,
+                    connectionManagerUrl = receiver.connectionManagerUrl,
+                )
             }
             try {
                 next.connect()
@@ -125,31 +146,101 @@ class CastConnectionHandler(
     fun loadMedia(metadata: AppMediaMetadata) {
         val target = renderer ?: return
         currentMediaId = metadata.id
-        scope.launch {
+        loadJob?.cancel()
+        loadJob = scope.launch {
             _castIsBuffering.value = true
             val player = musicService.player
-            val start = if (player.currentMediaItem?.mediaId == metadata.id) player.currentPosition else 0L
+            val start = if (player.currentMediaItem?.mediaId == metadata.id) player.currentPosition.coerceAtLeast(0L) else 0L
+            val knownDuration = metadata.duration.toLong().coerceAtLeast(0L) * 1000L
+            _castPosition.value = start
+            if (knownDuration > 0L) _castDuration.value = knownDuration
             // the receiver plays it now, so the phone stays quiet
             player.pause()
-            val stream = musicService.getCastStream(metadata.id)
+
+            val stream = musicService.getCastStream(metadata.id, preferMp4 = true)
             if (stream == null || renderer !== target || currentMediaId != metadata.id) {
-                if (stream == null) {
+                if (stream == null && renderer === target && currentMediaId == metadata.id) {
                     _castIsBuffering.value = false
                     TopToaster.error(context.getString(R.string.cast_song_failed, _castDeviceName.value ?: ""))
                 }
                 return@launch
             }
-            val media = RemoteMedia(
-                url = stream.url,
-                mimeType = stream.mimeType,
-                title = metadata.title,
-                artist = metadata.artists.joinToString(", ") { it.name },
-                album = metadata.album?.title,
-                artworkUrl = metadata.thumbnailUrl?.resize(1080, 1080),
-                durationMs = metadata.duration.toLong().coerceAtLeast(0L) * 1000L,
-            )
-            runCatching { target.load(media, start) }.onFailure { Timber.w(it, "Couldn't load the song on the receiver") }
+            lastLoadedMetadata = metadata
+            lastLoadedStream = stream
+            lastLoadStartMs = start
+            sendToRenderer(target, metadata, stream, start, forceProxy = false)
         }
+    }
+
+    private suspend fun sendToRenderer(
+        target: RemoteRenderer,
+        metadata: AppMediaMetadata,
+        stream: MusicService.CastStream,
+        startMs: Long,
+        forceProxy: Boolean,
+    ) {
+        val durationMs = metadata.duration.toLong().coerceAtLeast(0L) * 1000L
+        val useProxy = forceProxy || target is DlnaRenderer || needsHeaderProxy(stream)
+
+        var url = stream.url
+        var mimeType = stream.mimeType
+        var contentLength = stream.contentLength
+        var dlnaFeatures = CastMediaProxy.DefaultDlnaFeatures
+
+        if (target is DlnaRenderer) {
+            val (negotiatedMime, negotiatedFeatures) = target.negotiateProfile(mimeType)
+            mimeType = negotiatedMime
+            dlnaFeatures = negotiatedFeatures
+        }
+
+        var proxied = false
+        if (useProxy) {
+            val host = when (target) {
+                is DlnaRenderer -> target.host
+                is ChromecastRenderer -> target.host
+                else -> ""
+            }
+            if (host.isNotBlank()) {
+                val served = mediaProxy.prepare(
+                    receiverHost = host,
+                    upstreamUrl = stream.url,
+                    mimeType = mimeType,
+                    headers = stream.headers,
+                    contentLength = contentLength,
+                    dlnaFeatures = dlnaFeatures,
+                    // Samsung & DLNA TVs (and forced proxy retries on Chromecast) need plain faststart M4A, not DASH fMP4
+                    remuxMp4 = true,
+                )
+                if (served != null) {
+                    url = served.url
+                    mimeType = served.mimeType
+                    contentLength = served.contentLength
+                    dlnaFeatures = served.dlnaFeatures
+                    proxied = true
+                }
+            }
+        }
+
+        if (renderer !== target || currentMediaId != metadata.id) return
+        lastLoadedViaProxy = proxied
+
+        val media = RemoteMedia(
+            url = url,
+            mimeType = mimeType,
+            title = metadata.title,
+            artist = metadata.artists.joinToString(", ") { it.name },
+            album = metadata.album?.title,
+            artworkUrl = metadata.thumbnailUrl?.resize(1080, 1080),
+            durationMs = durationMs,
+            contentLength = contentLength,
+            dlnaFeatures = dlnaFeatures,
+        )
+        runCatching { target.load(media, startMs) }.onFailure { Timber.w(it, "Couldn't load the song on the receiver") }
+    }
+
+    private fun needsHeaderProxy(stream: MusicService.CastStream): Boolean {
+        val c = stream.client.uppercase()
+        return c.contains("WEB_REMIX") || c.contains("WEB_CREATOR") || c.endsWith("WEB")
     }
 
     fun play() = command { it.play() }
@@ -157,8 +248,13 @@ class CastConnectionHandler(
     fun pause() = command { it.pause() }
 
     fun seekTo(position: Long) {
-        _castPosition.value = position
-        command { it.seek(position) }
+        val clamped = position.coerceAtLeast(0L)
+        _castPosition.value = clamped
+        val target = renderer ?: return
+        // UNDISPATCHED so renderer updates its local positionMs synchronously before hopping to IO
+        scope.launch(start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED) {
+            runCatching { target.seek(clamped) }.onFailure { Timber.w(it, "The receiver didn't take that seek") }
+        }
     }
 
     fun setVolume(volume: Float) {
@@ -186,9 +282,11 @@ class CastConnectionHandler(
     fun navigateToMediaIfInQueue(mediaId: String): Boolean = false
 
     fun release() {
-        discovery.stop()
+        discovery.release()
+        loadJob?.cancel()
         watchJob?.cancel()
         positionJob?.cancel()
+        if (mediaProxyInit) mediaProxy.stop()
         val last = renderer ?: return
         renderer = null
         // the service is going away with its scope, so the receiver is let go of on a scope of its own
@@ -220,13 +318,30 @@ class CastConnectionHandler(
                 }
                 if (state.failed && !failedHandled) {
                     failedHandled = true
-                    TopToaster.error(context.getString(R.string.cast_song_failed, _castDeviceName.value ?: ""))
+                    // If a direct Chromecast URL was rejected (header check or fMP4 quirk), retry once via the local proxy.
+                    val retryMeta = lastLoadedMetadata
+                    val retryStream = lastLoadedStream
+                    if (!lastLoadedViaProxy && target is ChromecastRenderer && retryMeta != null && retryStream != null && retryMeta.id == currentMediaId) {
+                        Timber.i("Chromecast rejected direct stream, retrying via local proxy")
+                        loadJob?.cancel()
+                        loadJob = scope.launch {
+                            sendToRenderer(target, retryMeta, retryStream, lastLoadStartMs, forceProxy = true)
+                        }
+                    } else {
+                        TopToaster.error(context.getString(R.string.cast_song_failed, _castDeviceName.value ?: ""))
+                    }
                 }
                 if (!state.failed) failedHandled = false
                 // the song played to its end on the receiver: the phone steps on, and the service loads the next one there
                 if (state.finished && !finishedHandled) {
                     finishedHandled = true
-                    if (musicService.player.hasNextMediaItem()) skipToNext()
+                    val player = musicService.player
+                    when {
+                        player.repeatMode == Player.REPEAT_MODE_ONE -> {
+                            lastLoadedMetadata?.let { loadMedia(it) }
+                        }
+                        player.hasNextMediaItem() -> skipToNext()
+                    }
                 }
                 if (!state.finished) finishedHandled = false
             }
@@ -243,10 +358,12 @@ class CastConnectionHandler(
     private suspend fun endSession(stopReceiver: Boolean) {
         val last = renderer ?: return
         renderer = null
+        loadJob?.cancel()
         watchJob?.cancel()
         positionJob?.cancel()
         val position = last.positionNow()
         runCatching { last.close(stopPlayback = stopReceiver) }
+        if (mediaProxyInit) mediaProxy.stop()
         _isCasting.value = false
         _isConnecting.value = false
         _castDeviceName.value = null

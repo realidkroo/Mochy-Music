@@ -41,12 +41,12 @@ internal fun LinkPicture(modifier: Modifier, scale: Float = 1f, centered: Boolea
     }
 }
 
-// one device drawn large, the way the device sheet opens: a tv on its stand, or a phone, tablet or car screen
+// one device drawn large, the way the device sheet opens: a tv or a computer's screen on its stand, or a phone, tablet or car screen
 @Composable
 internal fun DevicePicture(kind: DeviceKind, modifier: Modifier) {
     Canvas(modifier) {
         when (kind) {
-            DeviceKind.Tv -> {
+            DeviceKind.Tv, DeviceKind.Desktop -> {
                 val screen = Size(size.width * 0.8f, size.height * 0.78f)
                 drawTv(Offset((size.width - screen.width) / 2, 0f), screen)
             }

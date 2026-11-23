@@ -216,7 +216,7 @@ internal fun MiniLyricsTicker(
     val rowPx = with(LocalDensity.current) { PlayerCardHeight.roundToPx() }
     // frame-accurate, so the card's sweep and gap dots glide instead of stepping with the poller
     val positionProvider = remember(playerConnection) {
-        PlaybackClock({ playerConnection.player }, { playerConnection.lyricsOffsetMs.value.toLong() })
+        PlaybackClock(playerConnection) { playerConnection.lyricsOffsetMs.value.toLong() }
     }
     val slot by remember(lines, playerConnection) {
         combine(playerConnection.progressState, playerConnection.lyricsOffsetMs) { progress, offsetMs ->

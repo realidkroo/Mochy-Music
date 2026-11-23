@@ -22,15 +22,13 @@ class PoTokenGenerator {
 
     private companion object {
         const val MINT_COOLDOWN_MS = 5 * 60 * 1000L
+        const val IDLE_CLOSE_MS = 60_000L
     }
 
     private val webViewSupported by lazy { runCatching { CookieManager.getInstance() }.isSuccess }
     private var webViewBadImpl = false
 
-    /**
-     * After a failed mint we stop trying for a while. A cold start costs up to 45 seconds, and
-     * paying that on every single track turns a broken BotGuard into a player that looks frozen.
-     */
+    // after a failed mint we stop trying for a while, or a broken botguard costs up to 45 s on every track and the player looks frozen
     @Volatile
     private var mintCooldownUntilMs = 0L
 
@@ -38,10 +36,38 @@ class PoTokenGenerator {
     private var webPoTokenSessionId: String? = null
     private var webPoTokenStreamingPot: String? = null
     private var webPoTokenGenerator: PoTokenWebView? = null
+    private val idleHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val idleCloseRunnable = Runnable { releaseWebViewSync() }
 
     /** True once a session token has been minted, so diagnostics can show the real state. */
     val hasSessionToken: Boolean
         get() = webPoTokenStreamingPot != null && webPoTokenGenerator?.isExpired == false
+
+    // closes the chromium webview while idle or in the background so its renderer process isn't pinned in ram
+    suspend fun releaseWebView() {
+        webPoTokenGenLock.withLock {
+            idleHandler.removeCallbacks(idleCloseRunnable)
+            val current = webPoTokenGenerator ?: return
+            webPoTokenGenerator = null
+            withContext(Dispatchers.Main) { runCatching { current.close() } }
+        }
+    }
+
+    private fun releaseWebViewSync() {
+        if (!webPoTokenGenLock.tryLock()) return
+        try {
+            val current = webPoTokenGenerator ?: return
+            webPoTokenGenerator = null
+            runCatching { current.close() }
+        } finally {
+            webPoTokenGenLock.unlock()
+        }
+    }
+
+    private fun scheduleIdleClose() {
+        idleHandler.removeCallbacks(idleCloseRunnable)
+        idleHandler.postDelayed(idleCloseRunnable, IDLE_CLOSE_MS)
+    }
 
     /**
      * Boot the BotGuard engine ahead of playback.
@@ -160,6 +186,7 @@ class PoTokenGenerator {
         }
 
         Timber.tag(TAG).d("poToken generated: session=${streamingPot.take(20)}... video=${playerPot.take(20)}...")
+        scheduleIdleClose()
 
         // Session token in the player request, video token on the stream url - see PoTokenResult.
         return PoTokenResult(

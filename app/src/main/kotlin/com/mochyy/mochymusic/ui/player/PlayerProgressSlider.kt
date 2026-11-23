@@ -95,6 +95,8 @@ fun PlayerProgressSlider(
     /** On the bar and the end time themselves: the editor lifts them off to edit them. */
     seekBarModifier: Modifier = Modifier,
     endTimeModifier: Modifier = Modifier,
+    /** Horizontal inset for the track and timestamps; defaults to portrait's [PlayerHorizontalPadding]. */
+    horizontalPadding: androidx.compose.ui.unit.Dp = PlayerHorizontalPadding,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val endTimestamp by com.mochyy.mochymusic.utils.rememberEnumPreference(
@@ -189,7 +191,7 @@ fun PlayerProgressSlider(
     }
 
     // the fill glides to wherever it's sent (a tap, a seek, a new song) and moves with the music every frame
-    val clock = remember(playerConnection) { PlaybackClock({ playerConnection.player }) }
+    val clock = remember(playerConnection) { PlaybackClock(playerConnection) }
     val fill = remember { SeekFill() }
     LaunchedEffect(active, fill, clock) {
         if (!active) return@LaunchedEffect
@@ -244,7 +246,7 @@ fun PlayerProgressSlider(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(28.dp)
-                .padding(horizontal = PlayerHorizontalPadding)
+                .padding(horizontal = horizontalPadding)
                 .onSizeChanged { fill.widthPx = it.width.toFloat() }
                 .then(onSeekBarPlaced?.let { Modifier.onGloballyPositioned(it) } ?: Modifier)
                 // outside the failure overlay's offscreen layer, which cut the stretched ends off at the bar's own edges
@@ -259,7 +261,7 @@ fun PlayerProgressSlider(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = PlayerHorizontalPadding + 4.dp)
+            .padding(horizontal = horizontalPadding + 4.dp)
     ) {
         val timeStyle = MaterialTheme.typography.labelMedium
         val restColor = Color.White.copy(alpha = TimeRestAlpha)

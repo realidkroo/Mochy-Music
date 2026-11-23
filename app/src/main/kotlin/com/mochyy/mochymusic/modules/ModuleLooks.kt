@@ -136,7 +136,7 @@ internal class ModuleLooks(private val context: Context) {
         fun number(raw: String, range: ClosedFloatingPointRange<Float>): Float? = raw.trim().toFloatOrNull()?.takeIf { it in range }
 
         val Settings: Map<String, Setting<*>> = mapOf(
-            LookSetting.PLAYER_STYLE to Setting(PlayerStyleKey) { enumName<PlayerStyle>(it) },
+            LookSetting.PLAYER_STYLE to Setting(PlayerStyleKey) { PlayerStyle.fromStored(it.trim().uppercase())?.name ?: enumName<PlayerStyle>(it) },
             LookSetting.HOME_STYLE to Setting(HomeStyleKey) { enumName<HomeStyle>(it) },
             LookSetting.PLAYLIST_STYLE to Setting(PlaylistStyleKey) { enumName<PlaylistStyle>(it) },
             LookSetting.COVER_ROUNDING to Setting(ThumbnailCornerRadiusKey) { number(it, 0f..45f) },

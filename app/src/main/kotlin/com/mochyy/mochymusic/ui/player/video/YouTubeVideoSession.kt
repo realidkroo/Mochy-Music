@@ -67,13 +67,9 @@ private object YouTubeVideoThread {
     val handler: Handler by lazy { Handler(HandlerThread("YouTubeVideo").apply { start() }.looper) }
 }
 
-// one http client for every video, through the same proxy as the music
+// one http client for every video, through the shared proxy pool and dispatcher
 private object YouTubeVideoHttp {
-    val client: OkHttpClient by lazy {
-        OkHttpClient.Builder()
-            .followAppProxy()
-            .build()
-    }
+    val client: OkHttpClient get() = com.mochyy.mochymusic.utils.AppProxy.sharedClient
 }
 
 // one youtube video playing without sound, kept in step with the song; the main thread only reads its state and posts to it
@@ -388,5 +384,21 @@ object YouTubeVideoSessions {
         }
         entry.pendingRelease = drop
         main.postDelayed(drop, LingerMs)
+    }
+
+    // frees lingering video players straight away when the ui hides instead of waiting out the hand-over window
+    fun releaseIdle() {
+        main.post {
+            entries.entries.removeAll { (_, entry) ->
+                val idle = entry.users <= 0
+                if (idle) {
+                    entry.pendingRelease?.let(main::removeCallbacks)
+                    entry.pendingRelease = null
+                    if (showing === entry.session) showing = null
+                    entry.session.release()
+                }
+                idle
+            }
+        }
     }
 }

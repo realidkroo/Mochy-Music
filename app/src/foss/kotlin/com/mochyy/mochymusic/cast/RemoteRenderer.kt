@@ -28,6 +28,8 @@ data class RemoteMedia(
     val album: String?,
     val artworkUrl: String?,
     val durationMs: Long,
+    val contentLength: Long = -1L,
+    val dlnaFeatures: String = CastMediaProxy.DefaultDlnaFeatures,
 )
 
 /** a cast receiver mochy drives itself, without google play services: a chromecast or a dlna renderer */

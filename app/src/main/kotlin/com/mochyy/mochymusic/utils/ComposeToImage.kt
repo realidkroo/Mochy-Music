@@ -26,7 +26,6 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toBitmap
 import androidx.palette.graphics.Palette
-import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.toBitmap
@@ -72,13 +71,14 @@ object ComposeToImage {
         var coverArtBitmap: Bitmap? = null
         if (coverArtUrl != null) {
             try {
-                val imageLoader = ImageLoader(context)
+                // reuse the singleton image loader so exports never leak a fresh coil instance and callbacks
                 val request = ImageRequest.Builder(context)
                     .data(coverArtUrl)
                     .size(1024)
                     .allowHardware(false)
+                    .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
                     .build()
-                val result = imageLoader.execute(request)
+                val result = coil3.SingletonImageLoader.get(context).execute(request)
                 coverArtBitmap = result.image?.toBitmap()
             } catch (_: Exception) {}
         }

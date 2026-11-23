@@ -44,6 +44,7 @@ constructor(
             .map { it[HideVideoSongsKey] ?: false }
             .distinctUntilChanged()
             .flatMapLatest { hideVideoSongs ->
+                // all of it, not just the newest plays: the search, the totals and play all cover the whole history
                 database
                     .events()
                     .map { events ->
@@ -57,7 +58,7 @@ constructor(
                             }
                     }
             // null until the first read, so a page can tell loading from never played
-            }.flowOn(Dispatchers.Default).stateIn<Map<LocalDate, List<com.mochyy.mochymusic.db.entities.EventWithSong>>?>(viewModelScope, SharingStarted.Lazily, null)
+            }.flowOn(Dispatchers.Default).stateIn<Map<LocalDate, List<com.mochyy.mochymusic.db.entities.EventWithSong>>?>(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {
         fetchRemoteHistory()

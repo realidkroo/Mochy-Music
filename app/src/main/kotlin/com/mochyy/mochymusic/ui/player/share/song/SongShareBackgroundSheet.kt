@@ -10,6 +10,12 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -60,6 +66,7 @@ import com.mochyy.mochymusic.ui.component.SheetPillButton
 import com.mochyy.mochymusic.ui.player.share.AddCircle
 import com.mochyy.mochymusic.ui.player.share.BackdropOf
 import com.mochyy.mochymusic.ui.player.share.ColourBackgroundControls
+import com.mochyy.mochymusic.ui.player.share.LiquidCoverBackdrop
 import com.mochyy.mochymusic.ui.player.share.PictureBackgroundControls
 import com.mochyy.mochymusic.ui.player.share.ShareBackground
 import com.mochyy.mochymusic.ui.player.share.ShareBasicColours
@@ -77,6 +84,7 @@ import com.mochyy.mochymusic.ui.component.sheetHandleRoom
 
 // the video pages come first and the still ones after; a pager shows one kind or the other
 private enum class BackgroundPage(@StringRes val label: Int, @StringRes val hint: Int?, val video: Boolean) {
+    LiquidCover(R.string.song_share_bg_liquid_cover, R.string.song_share_bg_liquid_cover_hint, video = true),
     AnimatedCover(R.string.song_share_bg_animated_cover, R.string.song_share_bg_animated_cover_hint, video = true),
     MusicVideo(R.string.song_share_bg_music_video, R.string.song_share_bg_music_video_hint, video = true),
     OwnVideo(R.string.song_share_bg_own_video, R.string.song_share_bg_own_video_hint, video = true),
@@ -100,6 +108,7 @@ internal fun PopupSheetState.showBackgroundPager(session: SongShareSession, vide
 
 private fun pageOf(background: SongBackground): BackgroundPage = when (background) {
     is SongBackground.Video -> when (background.source) {
+        ShareVideoSource.LiquidCover -> BackgroundPage.LiquidCover
         is ShareVideoSource.Own -> BackgroundPage.OwnVideo
         ShareVideoSource.MusicVideo -> BackgroundPage.MusicVideo
         ShareVideoSource.AnimatedCover -> BackgroundPage.AnimatedCover
@@ -139,6 +148,7 @@ private fun SongBackgroundContent(session: SongShareSession, popup: PopupSheetSt
     // the page you land on is used straight away, the one it opens on included, so picking a kind shows it at once
     fun applyPage(page: Int) {
         when (pages.getOrNull(page) ?: return) {
+            BackgroundPage.LiquidCover -> session.setVideo(SongBackground.Video(ShareVideoSource.LiquidCover, dim))
             BackgroundPage.OwnVideo -> session.lastOwnVideo?.let { session.setVideo(SongBackground.Video(it, dim)) }
             BackgroundPage.MusicVideo -> session.setVideo(SongBackground.Video(ShareVideoSource.MusicVideo, dim))
             BackgroundPage.AnimatedCover -> session.setVideo(SongBackground.Video(ShareVideoSource.AnimatedCover, dim))
@@ -190,6 +200,24 @@ private fun SongBackgroundContent(session: SongShareSession, popup: PopupSheetSt
                 // only the page in the middle plays its video, so swiping never runs three decoders at once
                 val current = pager.settledPage == page
                 when (pages[page]) {
+                    BackgroundPage.LiquidCover -> {
+                        val clock = if (current) {
+                            rememberInfiniteTransition(label = "liquidPreview").animateFloat(
+                                initialValue = 0f,
+                                targetValue = 24f,
+                                animationSpec = infiniteRepeatable(tween(24_000, easing = LinearEasing), RepeatMode.Restart),
+                                label = "liquidPreviewSec",
+                            )
+                        } else {
+                            null
+                        }
+                        LiquidCoverBackdrop(
+                            coverBlur = session.art.coverBlur,
+                            palette = session.palette,
+                            dim = dim,
+                            timeSec = { clock?.value ?: 1.5f },
+                        )
+                    }
                     BackgroundPage.OwnVideo -> {
                         val own = session.lastOwnVideo
                         if (own != null) {
@@ -244,7 +272,7 @@ private fun SongBackgroundContent(session: SongShareSession, popup: PopupSheetSt
                             }
                         }
                     }
-                    BackgroundPage.MusicVideo, BackgroundPage.AnimatedCover -> {
+                    BackgroundPage.LiquidCover, BackgroundPage.MusicVideo, BackgroundPage.AnimatedCover -> {
                         page.hint?.let { ShareHint(stringResource(it)) }
                         Spacer(Modifier.height(12.dp))
                         DimCard(dim, setDim) {}

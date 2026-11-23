@@ -115,4 +115,10 @@ object BlurEffectCache {
             android.graphics.RenderEffect.createBlurEffect(r, r, tileMode)
         }
     }
+
+    // drops cached native render effects when the ui hides so skia filters aren't pinned in ram
+    fun clear() {
+        composeCache.clear()
+        nativeCache.clear()
+    }
 }

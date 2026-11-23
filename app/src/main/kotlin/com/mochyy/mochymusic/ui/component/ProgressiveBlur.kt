@@ -194,9 +194,11 @@ internal fun ProgressiveBlurBands(
     val currentOffscreen by rememberUpdatedState(offscreen)
     val currentDraw by rememberUpdatedState(draw)
     val low = LocalBlurQuality.current == com.mochyy.mochymusic.constants.BlurQuality.LOW
-    val layers = arrayOf(rememberGraphicsLayer(), rememberGraphicsLayer(), rememberGraphicsLayer())
-    // hwui hands the clip a blurred layer is drawn under to its filter, which then reads nothing past it: each band's blur sits in a frame of its own, and only the frame is clipped
-    val frames = arrayOf(rememberGraphicsLayer(), rememberGraphicsLayer(), rememberGraphicsLayer())
+    // low quality only ever uses one band, so skip allocating four idle graphics layers
+    val layer0 = rememberGraphicsLayer()
+    val frame0 = rememberGraphicsLayer()
+    val layers = if (low) arrayOf(layer0) else arrayOf(layer0, rememberGraphicsLayer(), rememberGraphicsLayer())
+    val frames = if (low) arrayOf(frame0) else arrayOf(frame0, rememberGraphicsLayer(), rememberGraphicsLayer())
     val plan = remember { BandPlan() }
     val effects = remember { Array(MaxBands) { BandEffect() } }
 

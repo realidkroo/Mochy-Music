@@ -49,7 +49,12 @@ internal class RecapSnippetPlayer(private val context: Context, private val scop
                 .setDefaultRequestProperties(data.streamHeaders)
                 .setAllowCrossProtocolRedirects(true)
             data.streamHeaders["User-Agent"]?.let { http.setUserAgent(it) }
+            val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+                .setBufferDurationsMs(4_000, 10_000, 500, 1_000)
+                .setTargetBufferBytes(2 * 1024 * 1024)
+                .build()
             val exo = ExoPlayer.Builder(context)
+                .setLoadControl(loadControl)
                 .setMediaSourceFactory(DefaultMediaSourceFactory(http))
                 .build()
                 .apply {

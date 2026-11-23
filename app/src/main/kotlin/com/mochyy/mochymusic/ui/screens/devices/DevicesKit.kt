@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Computer
 import androidx.compose.material.icons.rounded.DirectionsCar
 import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material.icons.rounded.TabletAndroid
@@ -88,6 +89,7 @@ internal val DeviceKind.icon: ImageVector
         DeviceKind.Tablet -> Icons.Rounded.TabletAndroid
         DeviceKind.Tv -> Icons.Rounded.Tv
         DeviceKind.Car -> Icons.Rounded.DirectionsCar
+        DeviceKind.Desktop -> Icons.Rounded.Computer
     }
 
 @Composable
@@ -97,6 +99,7 @@ internal fun DeviceKind.label(): String = stringResource(
         DeviceKind.Tablet -> R.string.devices_kind_tablet
         DeviceKind.Tv -> R.string.devices_kind_tv
         DeviceKind.Car -> R.string.devices_kind_car
+        DeviceKind.Desktop -> R.string.devices_kind_computer
     },
 )
 

@@ -9,6 +9,7 @@ import android.net.Uri
 import androidx.core.graphics.createBitmap
 import androidx.media3.common.util.BitmapLoader
 import coil3.imageLoader
+import coil3.request.CachePolicy
 import coil3.request.ErrorResult
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
@@ -45,8 +46,17 @@ class CoilBitmapLoader(
     override fun decodeBitmap(data: ByteArray): ListenableFuture<Bitmap> =
         scope.future(Dispatchers.IO) {
             try {
-                val bitmap = BitmapFactory.decodeByteArray(data, 0, data.size)
-                bitmap?.copyIfNeeded() ?: createFallbackBitmap()
+                // cap notification artwork to 512px instead of decoding multi-megapixel embedded covers whole
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeByteArray(data, 0, data.size, bounds)
+                var sample = 1
+                while (bounds.outWidth / (sample * 2) >= MaxArtworkPx && bounds.outHeight / (sample * 2) >= MaxArtworkPx) {
+                    sample *= 2
+                }
+                val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+                val bitmap = BitmapFactory.decodeByteArray(data, 0, data.size, opts)
+                if (bitmap == null) createFallbackBitmap()
+                else bitmap.copyIfNeeded().also { if (it !== bitmap) bitmap.recycle() }
             } catch (e: Exception) {
                 Timber.tag("CoilBitmapLoader").w(e, "Failed to decode bitmap data")
                 createFallbackBitmap()
@@ -57,7 +67,9 @@ class CoilBitmapLoader(
         scope.future(Dispatchers.IO) {
             val request = ImageRequest.Builder(context)
                 .data(uri)
+                .size(MaxArtworkPx, MaxArtworkPx)
                 .allowHardware(false)
+                .memoryCachePolicy(CachePolicy.DISABLED)
                 .build()
 
             val result = context.imageLoader.execute(request)
@@ -77,4 +89,8 @@ class CoilBitmapLoader(
                 }
             }
         }
+
+    private companion object {
+        const val MaxArtworkPx = 512
+    }
 }

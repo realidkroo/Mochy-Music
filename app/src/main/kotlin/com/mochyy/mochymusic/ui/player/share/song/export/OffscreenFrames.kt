@@ -44,9 +44,16 @@ internal class FrameImage(val bitmap: Bitmap, val width: Int, val height: Int)
 internal class OffscreenFrames(
     private val host: ViewGroup,
     val width: Int,
-    val height: Int,
+    initialHeight: Int,
+    private val wrapHeight: Boolean = false,
+    private val roundHeightTo: Int = 1,
     content: @Composable () -> Unit,
 ) {
+    private val maxHeight: Int = initialHeight
+    var height: Int = initialHeight
+        private set
+    private var sizeLocked: Boolean = !wrapHeight
+
     private val clock = BroadcastFrameClock()
     private val main = Handler(Looper.getMainLooper())
     val scope = CoroutineScope(Dispatchers.Main.immediate + clock + SupervisorJob())
@@ -132,7 +139,26 @@ internal class OffscreenFrames(
         scope.cancel()
     }
 
+    // locks the measured height after warm-up so a video export never changes dimensions mid-stream
+    fun lockSize() {
+        sizeLocked = true
+    }
+
     private fun layOut() {
+        if (!sizeLocked) {
+            view.measure(
+                View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(maxHeight, View.MeasureSpec.AT_MOST),
+            )
+            val measured = view.measuredHeight.coerceIn(64, maxHeight)
+            val aligned = if (roundHeightTo > 1) {
+                val maxAligned = (maxHeight / roundHeightTo) * roundHeightTo
+                (((measured + roundHeightTo / 2) / roundHeightTo) * roundHeightTo).coerceIn(roundHeightTo, maxAligned)
+            } else {
+                measured
+            }
+            height = aligned
+        }
         view.measure(
             View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
             View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY),
@@ -172,8 +198,13 @@ internal class OffscreenFrames(
     }
 
     private fun captureInSoftware(): FrameImage? {
-        val bitmap = softwareFrames[softwareTurn]
-            ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { softwareFrames[softwareTurn] = it }
+        val existing = softwareFrames[softwareTurn]
+        val bitmap = if (existing != null && existing.width == width && existing.height == height) {
+            existing
+        } else {
+            existing?.recycle()
+            Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { softwareFrames[softwareTurn] = it }
+        }
         val frame = runCatching {
             bitmap.eraseColor(Color.TRANSPARENT)
             view.draw(Canvas(bitmap))

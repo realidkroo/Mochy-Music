@@ -96,9 +96,9 @@ internal class IpodController(
     }
 
     override fun scan(forward: Boolean) {
-        val player = connection?.player ?: return
-        val end = player.duration.takeIf { it > 0 } ?: Long.MAX_VALUE
-        player.seekTo((player.currentPosition + if (forward) ScanStepMs else -ScanStepMs).coerceIn(0L, end))
+        val conn = connection ?: return
+        val end = conn.effectiveDurationMs.takeIf { it > 0 } ?: Long.MAX_VALUE
+        conn.seekTo((conn.effectivePositionMs + if (forward) ScanStepMs else -ScanStepMs).coerceIn(0L, end))
     }
 
     // a tap on a line of the screen highlights it and picks it, the way pressing the middle button would
@@ -244,9 +244,9 @@ internal class IpodController(
     }
 
     private fun scrub(steps: Int): Boolean {
-        val player = connection?.player ?: return false
-        val duration = player.duration.takeIf { it > 0 } ?: return false
-        val from = if (nowPlaying.scrubMs >= 0) nowPlaying.scrubMs else player.currentPosition
+        val conn = connection ?: return false
+        val duration = conn.effectiveDurationMs.takeIf { it > 0 } ?: return false
+        val from = if (nowPlaying.scrubMs >= 0) nowPlaying.scrubMs else conn.effectivePositionMs
         val step = (duration / 100L).coerceIn(1_000L, 10_000L)
         val target = (from + steps * step).coerceIn(0L, duration)
         touch()
@@ -256,7 +256,7 @@ internal class IpodController(
         seekJob?.cancel()
         seekJob = scope.launch {
             delay(ScrubSettleMs)
-            player.seekTo(target)
+            conn.seekTo(target)
             nowPlaying.scrubMs = -1L
         }
         return true

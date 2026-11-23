@@ -146,6 +146,7 @@ private fun AppleMusicBackground(thumbnailUrl: String?, animate: Boolean, modifi
                     .data(thumbnailUrl)
                     .size(100, 100)
                     .allowHardware(false)
+                    .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
                     .build()
                 val bitmap = context.imageLoader.execute(request).image?.toBitmap()
                     ?: return@runCatching

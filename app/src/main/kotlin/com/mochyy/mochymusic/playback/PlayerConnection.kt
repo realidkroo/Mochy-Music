@@ -74,6 +74,8 @@ class PlayerConnection(
         CoroutineScope(parentScope.coroutineContext + SupervisorJob(parentScope.coroutineContext[Job]))
 
     val service = binder.service
+    // mainactivity turns this off while the app is hidden, the poll and lyric warmers below rest then instead of working for nobody
+    val isUiVisible = MutableStateFlow(true)
     private val playerReadinessFlow = service.isPlayerReady
 
     private fun getPlayerSafe(): ExoPlayer {
@@ -144,6 +146,58 @@ class PlayerConnection(
         player.playbackState != STATE_ENDED && player.playWhenReady
     )
 
+    val effectivePlaybackState: StateFlow<Int> = combine(
+        playbackState,
+        service.castConnectionHandler?.isCasting ?: MutableStateFlow(false),
+        service.castConnectionHandler?.castIsBuffering ?: MutableStateFlow(false),
+    ) { localState, casting, castBuffering ->
+        if (casting) {
+            if (castBuffering) Player.STATE_BUFFERING else Player.STATE_READY
+        } else {
+            localState
+        }
+    }.stateIn(scope, SharingStarted.Lazily, player.playbackState)
+
+    /** Current playback position in ms, following the cast receiver while casting. */
+    val effectivePositionMs: Long
+        get() {
+            val cast = service.castConnectionHandler
+            if (cast?.isCasting?.value == true) return cast.currentPositionNow().coerceAtLeast(0L)
+            return attachedPlayer?.currentPosition?.coerceAtLeast(0L) ?: 0L
+        }
+
+    /** Current track duration in ms, following the cast receiver (or track metadata) while casting. */
+    val effectiveDurationMs: Long
+        get() {
+            val cast = service.castConnectionHandler
+            if (cast?.isCasting?.value == true) {
+                val castDur = cast.castDuration.value
+                if (castDur > 0L) return castDur
+                val metaDur = mediaMetadata.value?.duration?.toLong()?.times(1000L) ?: 0L
+                if (metaDur > 0L) return metaDur
+            }
+            val localDur = attachedPlayer?.duration ?: C.TIME_UNSET
+            if (localDur != C.TIME_UNSET && localDur > 0L) return localDur
+            return (mediaMetadata.value?.duration?.toLong()?.times(1000L) ?: 0L).coerceAtLeast(0L)
+        }
+
+    /** Whether playback is actively advancing right now (not paused, not buffering). */
+    val isEffectivelyPlayingNow: Boolean
+        get() {
+            val cast = service.castConnectionHandler
+            if (cast?.isCasting?.value == true) {
+                return cast.castIsPlaying.value && !cast.castIsBuffering.value
+            }
+            return attachedPlayer?.isPlaying == true
+        }
+
+    val effectivePlaybackSpeed: Float
+        get() {
+            val cast = service.castConnectionHandler
+            if (cast?.isCasting?.value == true) return 1f
+            return attachedPlayer?.playbackParameters?.speed ?: 1f
+        }
+
     // the queue's own copy of the playing song, before the hand edits from its edit sheet go over it
     @Volatile private var queueMetadata: MediaMetadata? = player.currentMetadata
     val mediaMetadata = MutableStateFlow(queueMetadata?.let(SongEdits::applyTo))
@@ -177,14 +231,21 @@ class PlayerConnection(
     }
 
     init {
-        // parse off the main thread, or the first frames of opening the player pay for it
+        // parse off the main thread only while the ui is visible, so background song changes stay quiet
         scope.launch(kotlinx.coroutines.Dispatchers.Default) {
-            currentLyrics.map { it?.lyrics }.distinctUntilChanged().collect(LyricsUtils::warmParsedLyrics)
+            isUiVisible
+                .flatMapLatest { visible ->
+                    if (visible) currentLyrics.map { it?.lyrics }.distinctUntilChanged() else kotlinx.coroutines.flow.emptyFlow()
+                }
+                .collect(LyricsUtils::warmParsedLyrics)
         }
         // a music video shows its lyrics straight away, then they move onto the video's own timing once it's been listened to
         scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            combine(mediaMetadata, currentLyrics) { metadata, lyrics -> metadata to lyrics }
-                .distinctUntilChanged()
+            isUiVisible
+                .flatMapLatest { visible ->
+                    if (visible) combine(mediaMetadata, currentLyrics) { metadata, lyrics -> metadata to lyrics }.distinctUntilChanged()
+                    else kotlinx.coroutines.flow.emptyFlow()
+                }
                 .collectLatest { (metadata, lyrics) ->
                     if (metadata == null || lyrics == null) return@collectLatest
                     // a song skipped straight past never asks youtube anything
@@ -226,10 +287,6 @@ class PlayerConnection(
     val currentMediaItemIndex = MutableStateFlow(-1)
     val currentWindowIndex = MutableStateFlow(-1)
 
-    val queueItems: kotlinx.coroutines.flow.StateFlow<List<com.mochyy.mochymusic.ui.player.models.QueueItemData>> = queueWindows.map { windows ->
-        windows.map(::toQueueItem)
-    }.distinctUntilChanged().stateIn(scope, SharingStarted.Lazily, emptyList())
-
     /**
      * The queue's items and the current song's position in them, published as one value from the
      * same player callback. queueItems and currentWindowIndex arrive separately (one goes through
@@ -237,6 +294,11 @@ class PlayerConnection(
      * list for a frame whenever both changed at once - clearing history, toggling shuffle.
      */
     val queueSnapshot = MutableStateFlow(com.mochyy.mochymusic.ui.player.models.QueueState())
+    // reuse snapshot items instead of mapping a second copy of the whole queue
+    val queueItems: kotlinx.coroutines.flow.StateFlow<List<com.mochyy.mochymusic.ui.player.models.QueueItemData>> = queueSnapshot
+        .map { it.items }
+        .distinctUntilChanged()
+        .stateIn(scope, SharingStarted.WhileSubscribed(5_000L), emptyList())
     private var snapshotWindows: List<Timeline.Window>? = null
     private var snapshotItems: List<com.mochyy.mochymusic.ui.player.models.QueueItemData> = emptyList()
 
@@ -268,8 +330,6 @@ class PlayerConnection(
         )
     }
 
-    // mainactivity turns this off while the app is hidden, the poll below rests then instead of recomposing the player for nobody
-    val isUiVisible = MutableStateFlow(true)
     // nudged by player callbacks so the position poller sleeps with zero wakeups while paused
     private val progressNudge = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
@@ -279,18 +339,32 @@ class PlayerConnection(
                 isUiVisible.first { it }
                 var moving = false
                 try {
-                    val p = attachedPlayer
-                    if (p != null) {
-                        val position = p.currentPosition.coerceAtLeast(0L)
-                        val duration = p.duration.coerceAtLeast(0L)
-                        moving = p.isPlaying || p.playbackState == Player.STATE_BUFFERING
+                    val cast = service.castConnectionHandler
+                    if (cast?.isCasting?.value == true) {
+                        val position = cast.currentPositionNow().coerceAtLeast(0L)
+                        val duration = effectiveDurationMs
+                        moving = cast.castIsPlaying.value || cast.castIsBuffering.value
                         trySend(
                             com.mochyy.mochymusic.ui.player.models.ProgressState(
                                 position = position,
                                 duration = duration,
-                                percentage = if (duration > 0L) position.toFloat() / duration else 0f,
+                                percentage = if (duration > 0L) (position.toFloat() / duration).coerceIn(0f, 1f) else 0f,
                             )
                         )
+                    } else {
+                        val p = attachedPlayer
+                        if (p != null) {
+                            val position = p.currentPosition.coerceAtLeast(0L)
+                            val duration = p.duration.coerceAtLeast(0L)
+                            moving = p.isPlaying || p.playbackState == Player.STATE_BUFFERING
+                            trySend(
+                                com.mochyy.mochymusic.ui.player.models.ProgressState(
+                                    position = position,
+                                    duration = duration,
+                                    percentage = if (duration > 0L) position.toFloat() / duration else 0f,
+                                )
+                            )
+                        }
                     }
                 } catch (_: Exception) {}
                 if (moving) {
@@ -352,6 +426,21 @@ class PlayerConnection(
 
             if (attachedPlayer == null && service.isPlayerReady.value) {
                  updateAttachedPlayer(player)
+            }
+
+            // wake the progress poller whenever cast playback starts, pauses, buffers, seeks or changes duration
+            service.castConnectionHandler?.let { cast ->
+                scope.launch {
+                    combine(
+                        cast.isCasting,
+                        cast.castIsPlaying,
+                        cast.castIsBuffering,
+                        cast.castDuration,
+                        cast.castPosition,
+                    ) { _, _, _, _, _ -> }.collect {
+                        progressNudge.tryEmit(Unit)
+                    }
+                }
             }
 
             Timber.tag(TAG).d("PlayerConnection flow observer registered")
@@ -693,7 +782,13 @@ class PlayerConnection(
 
             val castHandler = service.castConnectionHandler
             if (castHandler?.isCasting?.value == true) {
-                castHandler.skipToPrevious()
+                if (effectivePositionMs > 3000L || !player.hasPreviousMediaItem()) {
+                    castHandler.seekTo(0L)
+                    progressNudge.tryEmit(Unit)
+                    onRestartSong?.invoke()
+                } else {
+                    castHandler.skipToPrevious()
+                }
                 return
             }
 

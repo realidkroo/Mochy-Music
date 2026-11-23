@@ -16,7 +16,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
@@ -26,7 +25,6 @@ import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.ui.component.GlassState
 import com.mochyy.mochymusic.ui.screens.search.rememberCollapseProgress
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 
 /** A flattened row: either a section header or an item. */
 private sealed interface IndexedRow<out T> {
@@ -63,7 +61,7 @@ fun <T> LibraryEntityListScreen(
     val listState = rememberLazyListState()
     val glassState = remember { GlassState() }
     val collapse = rememberCollapseProgress(listState)
-    val scope = rememberCoroutineScope()
+    val glide = rememberIndexGlide(listState)
     val bottomInset = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
 
     val playerConnection = LocalPlayerConnection.current
@@ -165,9 +163,7 @@ fun <T> LibraryEntityListScreen(
             LibraryIndexRail(
                 sections = sections.map { it.first },
                 onSectionSelected = { key ->
-                    sectionIndex[key]?.let { index ->
-                        scope.launch { listState.animateScrollToItem(index) }
-                    }
+                    sectionIndex[key]?.let(glide::glideTo)
                 },
                 modifier = Modifier.fillMaxSize(),
             )

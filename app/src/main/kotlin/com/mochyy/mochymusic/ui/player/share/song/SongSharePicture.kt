@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TransformOrigin
@@ -40,10 +41,11 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.ui.component.DownscaledBlur
-import com.mochyy.mochymusic.ui.player.share.CinematicFlow
 import com.mochyy.mochymusic.ui.player.share.CinematicLayout
+import com.mochyy.mochymusic.ui.player.share.LiquidCoverBackdrop
 import com.mochyy.mochymusic.ui.player.share.LyricsShareSession
 import com.mochyy.mochymusic.ui.player.share.MusicCloudsRestPhase
 import com.mochyy.mochymusic.ui.player.share.ShareBackground
@@ -51,11 +53,13 @@ import com.mochyy.mochymusic.ui.player.share.ShareHeight
 import com.mochyy.mochymusic.ui.player.share.ShareRegions
 import com.mochyy.mochymusic.ui.player.share.ShareStyle
 import com.mochyy.mochymusic.ui.player.share.ShareWidth
-import com.mochyy.mochymusic.ui.player.share.cinematicTimings
 import com.mochyy.mochymusic.ui.player.share.drawMusicClouds
 import kotlin.math.PI
 import kotlin.math.ceil
 import com.mochyy.mochymusic.ui.component.RemoteFocus
+
+// subtle dark scrim over blurred/animated card-only covers so white lyrics always pop crisply
+private val CardCoverScrim = Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.14f), Color.Black.copy(alpha = 0.38f)))
 
 // the card's blur at full strength, in the picture's own units
 internal val MaxCardBlur = 26.dp
@@ -97,22 +101,36 @@ internal fun SongSharePicture(
     // the preview's live video, drawn as the background when the background is a video
     video: (@Composable () -> Unit)? = null,
 ) {
-    val backdrop = rememberGraphicsLayer()
+    val pick = session.pick
+    val isCinematic = kind == SongShareKind.Lyrics && style == ShareStyle.Cinematic && pick != null
+    // Only record the backdrop into an offscreen layer when a frosted card will actually blur it
+    // (Cinematic has no card, TextureView videos aren't captured by Compose layers, and opaque/blur=0 cards don't show it;
+    // LiquidCover IS drawn by Compose so it gets real frosted glass!)
+    val hasTextureVideo = (session.background as? SongBackground.Video)?.source?.isTextureVideo == true
+    val needsGlass = layers.glass && layers.background && layers.card && !isCinematic &&
+        !hasTextureVideo &&
+        session.cardBlur > 0.005f && session.cardOpacity < 0.995f
+    val backdrop = if (needsGlass) rememberGraphicsLayer() else null
     Box(modifier.size(ShareWidth, ShareHeight).clipToBounds()) {
         if (layers.background) {
             Box(
                 Modifier
                     .fillMaxSize()
-                    .drawWithContent {
-                        backdrop.record { this@drawWithContent.drawContent() }
-                        drawLayer(backdrop)
-                    },
+                    .then(
+                        if (backdrop != null) {
+                            Modifier.drawWithContent {
+                                backdrop.record { this@drawWithContent.drawContent() }
+                                drawLayer(backdrop)
+                            }
+                        } else {
+                            Modifier
+                        },
+                    ),
             ) {
                 SongShareBackdrop(session, positionMs, moving, video)
             }
         }
-        val pick = session.pick
-        if (layers.card && kind == SongShareKind.Lyrics && style == ShareStyle.Cinematic && pick != null) {
+        if (layers.card && isCinematic) {
             CinematicWords(session, pick, positionMs, moving, regions)
         } else if (layers.card) {
             CardSlot(
@@ -120,7 +138,7 @@ internal fun SongSharePicture(
                 kind = kind,
                 positionMs = positionMs,
                 moving = moving,
-                backdrop = if (layers.glass && layers.background) backdrop else null,
+                backdrop = backdrop,
                 reportsCard = reportsCard,
                 onCardTap = onCardTap,
             )
@@ -128,7 +146,93 @@ internal fun SongSharePicture(
     }
 }
 
-// the cinematic words straight on the picture; in a video each word lights up as it's sung
+// just the card itself, with the outer 9:16 story background removed: solid colour, blurred cover, or moving cover
+@Composable
+internal fun SongShareCardOnly(
+    session: SongShareSession,
+    positionMs: () -> Long,
+    layers: ShareLayers,
+    moving: Boolean,
+    modifier: Modifier = Modifier,
+    kind: SongShareKind = session.kind,
+    corner: Dp = cardCornerOf(kind),
+    onCardTap: (() -> Unit)? = null,
+    video: (@Composable () -> Unit)? = null,
+) {
+    val shape = RoundedCornerShape(corner)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .then(if (corner > 0.dp) Modifier.clip(shape) else Modifier.clipToBounds())
+            .then(
+                if (onCardTap != null) {
+                    Modifier.clickable(remember { MutableInteractionSource() }, indication = RemoteFocus, onClick = onCardTap)
+                } else {
+                    Modifier
+                },
+            ),
+    ) {
+        if (layers.background) {
+            when (val bg = session.cardOnlyBg) {
+                CardOnlyBackground.Colour -> {
+                    Spacer(Modifier.matchParentSize().background(session.cardTint))
+                }
+                CardOnlyBackground.BlurredCover -> {
+                    Box(Modifier.matchParentSize().background(Color.Black)) {
+                        val coverBlur = session.art.coverBlur
+                        if (coverBlur != null) {
+                            Image(
+                                coverBlur,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.matchParentSize().graphicsLayer { alpha = session.cardOnlyDim },
+                            )
+                        } else {
+                            Spacer(Modifier.matchParentSize().background(session.cardTint))
+                        }
+                    }
+                }
+                is CardOnlyBackground.Video -> {
+                    Box(Modifier.matchParentSize().background(Color.Black)) {
+                        if (bg.source == ShareVideoSource.LiquidCover) {
+                            LiquidCoverBackdrop(
+                                coverBlur = session.art.coverBlur,
+                                palette = session.palette,
+                                dim = session.cardOnlyDim,
+                                timeSec = {
+                                    if (moving) (positionMs() - session.windowStartMs) / 1000f else 1.5f
+                                },
+                                modifier = Modifier.matchParentSize(),
+                            )
+                        } else if (video != null) {
+                            Box(Modifier.matchParentSize().graphicsLayer { alpha = session.cardOnlyDim }) { video() }
+                        } else {
+                            session.art.coverBlur?.let { coverBlur ->
+                                Image(
+                                    coverBlur,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.matchParentSize().graphicsLayer { alpha = session.cardOnlyDim },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (layers.card) {
+            if (session.cardOnlyBg != CardOnlyBackground.Colour) {
+                Spacer(Modifier.matchParentSize().background(CardCoverScrim))
+            }
+            when (kind) {
+                SongShareKind.MusicOnly -> MusicOnlyCard(session, positionMs, moving)
+                SongShareKind.Lyrics -> LyricsCard(session, positionMs, moving)
+            }
+        }
+    }
+}
+
+// the cinematic words straight on the picture; in a video each word animates with the regular lyrics view's karaoke engine
 @Composable
 private fun CinematicWords(
     session: SongShareSession,
@@ -137,14 +241,21 @@ private fun CinematicWords(
     moving: Boolean,
     regions: ShareRegions?,
 ) {
-    val flow = if (moving) {
-        val timings = remember(pick.chosen) { cinematicTimings(pick) }
-        remember(timings, positionMs, session) { CinematicFlow({ positionMs() + session.lyricsOffsetMs }, timings) }
-    } else {
-        null
+    val lyricsPosition = remember(session, positionMs) { { positionMs() + session.lyricsOffsetMs } }
+    val readings = remember(pick.chosen, session.readingChoice, session.lineReadings, session.lineTranslations) {
+        pick.chosen.map { (line, _) -> pick.entries.getOrNull(line)?.let(session::cinematicUnder).orEmpty() }
     }
-    val readings = pick.chosen.map { (line, _) -> pick.entries.getOrNull(line)?.let(session::cinematicUnder).orEmpty() }
-    CinematicLayout(pick, regions, ink = session.wordsInk, cover = session.art.cover, flow = flow, readings = readings)
+    val look = session.lyricsLook
+    CinematicLayout(
+        session = pick,
+        regions = regions,
+        ink = session.wordsInk,
+        cover = session.art.cover,
+        positionMs = if (moving && session.lyricsSynced) lyricsPosition else null,
+        motionStyle = look.motionStyle,
+        highBloom = look.highBloom,
+        readings = readings,
+    )
 }
 
 @Composable
@@ -256,7 +367,15 @@ private fun SongShareBackdrop(
         ) {
             when (val background = session.background) {
                 is SongBackground.Still -> StillBackdrop(session, background.background, positionMs, moving)
-                is SongBackground.Video -> if (video != null) {
+                is SongBackground.Video -> if (background.source == ShareVideoSource.LiquidCover) {
+                    LiquidCoverBackdrop(
+                        coverBlur = session.art.coverBlur,
+                        palette = session.palette,
+                        dim = background.dim,
+                        timeSec = { if (moving) (positionMs() - session.windowStartMs) / 1000f else 1.5f },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else if (video != null) {
                     Box(Modifier.fillMaxSize().graphicsLayer { alpha = background.dim }) { video() }
                 }
             }

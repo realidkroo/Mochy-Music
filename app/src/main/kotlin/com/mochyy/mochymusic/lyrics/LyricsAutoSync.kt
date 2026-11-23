@@ -69,6 +69,13 @@ class LyricsAutoSync(
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private var job: Job? = null
 
+    fun release() {
+        job?.cancel()
+        scope.coroutineContext[Job]?.cancel()
+        dispatcher.close()
+        heard.clear()
+    }
+
     // what the last few songs sounded like, so trying again (after picking other lyrics) is instant
     private val heard = object : LinkedHashMap<String, VocalActivity>(4, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, VocalActivity>?) = size > 3

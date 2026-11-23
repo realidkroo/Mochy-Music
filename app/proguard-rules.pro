@@ -112,9 +112,8 @@
 -dontwarn java.beans.Introspector
 -dontwarn java.beans.PropertyDescriptor
 
-# keep only kuromoji's dictionary and tokenizer packages so resource loading works while unused helpers shrink
--keep class com.atilika.kuromoji.ipadic.Tokenizer { *; }
--keep class com.atilika.kuromoji.ipadic.dict.** { *; }
+# Keep all classes within the kuromoji package so Japanese kanji tokenization and dictionary loading work in release builds
+-keep class com.atilika.kuromoji.** { *; }
 
 ## Queue Persistence Rules
 # Keep queue-related classes to prevent serialization issues in release builds
