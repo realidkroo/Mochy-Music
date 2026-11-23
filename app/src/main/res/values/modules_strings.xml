@@ -269,4 +269,23 @@
     <string name="module_script_blocked_reasons">What got caught</string>
     <string name="modules_confirm_code_note">Heads up: this module runs its own code. You\'ll see a security check before it gets added.</string>
     <string name="module_items_blocked">Blocked for security: this tried to access private Mochy data or local network addresses.</string>
+
+    <!-- interactive live surface player block -->
+    <string name="skin_surface_preview_title">PLAY</string>
+    <string name="skin_surface_preview_sub">Open player to run</string>
+    <string name="skin_surface_loading">Starting…</string>
+    <string name="skin_surface_missing_asset">Data file not found in this module</string>
+    <string name="skin_surface_engine_missing">This surface block needs its signed code APK (module.apk)</string>
+    <string name="skin_surface_other_loaded">Another surface engine is already running. Restart Mochy to switch.</string>
+    <string name="skin_surface_error">Couldn\'t start surface: %1$s</string>
+    <string name="skin_surface_btn_menu">ESC</string>
+    <string name="skin_surface_btn_map">MAP</string>
+    <string name="skin_surface_btn_run">RUN</string>
+    <string name="skin_surface_btn_yes">Y</string>
+    <string name="skin_surface_btn_strafe_l">SL</string>
+    <string name="skin_surface_btn_strafe_r">SR</string>
+    <string name="skin_surface_btn_action">ACT</string>
+    <string name="skin_surface_btn_use">USE</string>
+    <string name="skin_surface_btn_enter">OK</string>
+    <string name="skin_surface_btn_slot">S%1$d</string>
 </resources>

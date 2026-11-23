@@ -31,6 +31,7 @@ import com.mochyy.mochymusic.module.bridge.BridgedModule
 import com.mochyy.mochymusic.module.jiosaavn.JioSaavnModule
 import com.mochyy.mochymusic.module.monochrome.MonochromeModule
 import com.mochyy.mochymusic.modules.code.CodeModules
+import com.mochyy.mochymusic.modules.code.CodeSkinModule
 import com.mochyy.mochymusic.modules.local.LocalModule
 import com.mochyy.mochymusic.modules.security.ModuleSanitizer
 import com.mochyy.mochymusic.modules.security.ModuleUrlGuard
@@ -406,7 +407,7 @@ class ModuleRegistry @Inject constructor(
 
     private fun checkCode(uri: Uri, text: String, root: String, manifest: WebModuleManifest, code: String): LinkCheck {
         val cleanCode = code.trimStart('/')
-        if (cleanCode.isBlank() || '\\' in cleanCode || ".." in cleanCode.split('/')) return LinkCheck.NotAModule
+        if (cleanCode.isBlank() || '\\' in cleanCode || '\u0000' in cleanCode || cleanCode.split('/').any { it.isEmpty() || it == "." || it == ".." }) return LinkCheck.NotAModule
         val apk = CodeModules.extract(context, uri, root + cleanCode) ?: return LinkCheck.NotAModule
         if (!CodeModules.signedLikeMochy(context, apk)) return LinkCheck.NotSigned
         val adds = buildSet {
@@ -495,15 +496,22 @@ class ModuleRegistry @Inject constructor(
     }
 
     private fun installCode(ready: LinkCheck.Ready, apk: File, expectedId: String? = null): String? {
-        val key = WebModuleManifest.parse(ready.manifestText)?.id?.ifBlank { null } ?: ready.name
+        val manifest = WebModuleManifest.parse(ready.manifestText)
+        val key = manifest?.id?.ifBlank { null } ?: ready.name
         val installed = CodeModules.install(context, key, apk, expectedId = expectedId) ?: return null
-        val fresh = installed.module
-        val id = fresh.info.id
+        val id = installed.module.info.id
+        // unpack pictures, fonts, shaders and surface data files sitting beside module.apk in the zip
+        val files = ready.zip?.let { SkinFiles.unpack(context, it, id, ready.zipRoot) }
+        val fresh = CodeSkinModule.wrap(installed.module, manifest, files)
         synchronized(this) {
             val saved = savedCodeModules().filter { it.optString("id") != id }
-            val entry = JSONObject().put("id", id).put("folder", installed.folder).put("file", ready.from)
+            val entry = JSONObject()
+                .put("id", id)
+                .put("folder", installed.folder)
+                .put("file", ready.from)
+                .put("manifest", ready.manifestText)
             prefs.edit { putString(CodeModulesKey, JSONArray(saved + entry).toString()) }
-            (module(id) as? BridgedModule)?.close()
+            closeCodeModule(module(id))
             if (!prefs.contains("added_$id")) prefs.edit { putLong("added_$id", System.currentTimeMillis()) }
             prefs.edit { putLong("installed_$id", System.currentTimeMillis()) }
             fresh.attach(hostFor(fresh))
@@ -513,6 +521,13 @@ class ModuleRegistry @Inject constructor(
         updates.installed(id, ready.source)
         refresh()
         return id
+    }
+
+    private fun closeCodeModule(module: MochyModule?) {
+        when (module) {
+            is BridgedModule -> module.close()
+            is AutoCloseable -> module.close()
+        }
     }
 
     // ---- updates --------------------------------------------------------------------------------
@@ -551,7 +566,7 @@ class ModuleRegistry @Inject constructor(
             codeFolder?.let { CodeModules.delete(context, it) }
         }
         module.signOut()
-        (module as? BridgedModule)?.close()
+        closeCodeModule(module)
         updates.forget(id)
         synchronized(this) {
             prefs.edit {
@@ -592,7 +607,11 @@ class ModuleRegistry @Inject constructor(
         val savedCode = savedCodeModules()
         CodeModules.tidy(context, savedCode.map { it.optString("folder") }.toSet())
         val code = savedCode.mapNotNull { saved ->
-            CodeModules.load(context, saved.optString("folder"))?.let { it.module to ModuleOrigin.Code(saved.optString("file")) }
+            CodeModules.load(context, saved.optString("folder"))?.let { loadedCode ->
+                val manifest = saved.optString("manifest").takeIf { it.isNotBlank() }?.let(WebModuleManifest::parse)
+                val wrapped = CodeSkinModule.wrap(loadedCode.module, manifest, filesFor(loadedCode.module.info.id))
+                wrapped to ModuleOrigin.Code(saved.optString("file"))
+            }
         }
         // sites that got in as modules before they were turned away; they never played a song, so they go
         val (sites, kept) = savedWebModules().partition { WebModuleManifest.isWebsite(it.optString("manifest")) }

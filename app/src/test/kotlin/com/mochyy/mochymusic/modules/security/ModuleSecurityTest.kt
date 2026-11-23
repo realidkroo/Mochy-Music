@@ -216,4 +216,15 @@ class ModuleSecurityTest {
         }.toByteArray()
         assertEquals(ScriptVerdict.Blocked, ScriptSecurityScanner.scanBytes("bad.zip", badZip).verdict)
     }
+
+    @Test
+    fun surfaceSessionClampsDimensionsAndRedactsErrors() {
+        SecretGuard.register("test_webdav", "SuperSecretPass2026")
+        assertEquals(640 to 480, com.mochyy.mochymusic.ui.player.styles.SurfaceSession.clampDimensions(99999, 99999))
+        assertEquals(64 to 64, com.mochyy.mochymusic.ui.player.styles.SurfaceSession.clampDimensions(-5, 0))
+        val error = com.mochyy.mochymusic.ui.player.styles.SurfaceSession.sanitizeError("failed reading SuperSecretPass2026\n\r\t" + "x".repeat(300))
+        assertFalse(error.contains("SuperSecretPass2026"))
+        assertFalse(error.contains("\n"))
+        assertTrue(error.length <= 200)
+    }
 }
