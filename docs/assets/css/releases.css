@@ -36,17 +36,20 @@
 .rel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
 .rel-card { background: var(--rel-surface); border: 1px solid var(--rel-line); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 12px; min-width: 0; transition: border-color 0.25s ease, background-color 0.25s ease, transform 0.25s var(--rel-ease); }
 .rel-card:hover { transform: translateY(-2px); }
-/* padding drops by 1px so the thicker picked border does not grow the card */
-.rel-card.picked { border: 2px solid var(--rel-accent); padding: 27px; }
 .rel-card.outline { background: transparent; border-color: var(--rel-accent); }
-button.rel-card { width: 100%; text-align: left; color: inherit; font: inherit; cursor: pointer; }
+button.rel-card { width: 100%; text-align: left; color: inherit; font: inherit; cursor: pointer; padding: 14px 16px; border-radius: 12px; gap: 8px; }
 button.rel-card:hover { background: var(--rel-panel); }
+button.rel-card.picked { background: var(--rel-panel); box-shadow: inset 3px 0 var(--rel-accent); }
 .rel-card .rel-name { margin: 0; font: 700 28px/1.2 var(--rel-display); }
 .rel-card h4 { margin: 0; font: 700 26px/1.2 var(--rel-display); letter-spacing: -0.01em; }
 .rel-card-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .rel-blurb { display: block; color: var(--rel-soft); min-height: 72px; }
 .rel-file, .rel-sub { display: block; font: 400 13px/1.5 var(--rel-mono); word-break: break-all; }
 .rel-sub { color: var(--rel-soft); }
+button.rel-card .rel-name { font-size: 20px; }
+button.rel-card .rel-blurb { font-size: 13px; min-height: 0; }
+button.rel-card .rel-file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.rel-card .rel-sub { font-size: 12px; }
 
 .rel-cta { margin-top: 24px; border: 1px solid var(--rel-line); border-radius: 20px; background: var(--rel-surface); padding: 28px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; }
 .rel-cta-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -87,15 +90,13 @@ button.rel-card:hover { background: var(--rel-panel); }
 .rel-ver { font: 700 24px/1.2 var(--rel-display); }
 .rel-ver.dim { color: var(--rel-soft); }
 .rel-row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.rel-chip { font-size: 14px; font-weight: 600; color: var(--rel-fg); text-decoration: none; border: 1px solid var(--rel-line); border-radius: 999px; padding: 8px 18px; transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s var(--rel-ease); }
-a.rel-chip { display: inline-flex; align-items: center; gap: 8px; }
-a.rel-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--rel-faint); flex: none; transition: background-color 0.2s ease, transform 0.2s var(--rel-ease); }
-.rel-chip.notes { color: var(--rel-accent); border-color: rgba(245, 226, 122, 0.45); }
-.rel-chip.notes::before { background: var(--rel-accent); }
-.rel-chip.apk::before { background: var(--rel-soft); }
-.rel-chip:hover { background: var(--rel-panel); border-color: var(--rel-accent); color: var(--rel-fg); transform: translateY(-1px); }
-.rel-chip:hover::before { transform: scale(1.35); }
-button.rel-chip { background: transparent; cursor: pointer; font: 600 14px "Inter", sans-serif; }
+.rel-chip { font-size: 14px; font-weight: 600; color: var(--rel-fg); text-decoration: none; }
+a.rel-chip { display: inline-flex; align-items: center; gap: 4px; }
+a.rel-chip.apk::after { content: "↗"; font-size: 0.85em; color: var(--rel-faint); }
+a.rel-chip.notes { color: var(--rel-accent); }
+a.rel-chip:hover { text-decoration: underline; text-underline-offset: 3px; }
+button.rel-chip { background: transparent; border: 1px solid var(--rel-line); border-radius: 999px; padding: 8px 18px; cursor: pointer; font: 600 14px "Inter", sans-serif; transition: background-color 0.2s ease, border-color 0.2s ease; }
+button.rel-chip:hover { background: var(--rel-panel); border-color: var(--rel-accent); }
 .rel-more { padding: 24px 0 64px; display: flex; justify-content: center; }
 
 /* changelog timeline */
@@ -117,10 +118,10 @@ button.rel-chip { background: transparent; cursor: pointer; font: 600 14px "Inte
 .rel-body a.rel-user:hover { border-bottom-color: var(--rel-accent); }
 .rel-body.clamped { max-height: 220px; overflow: hidden; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
 .rel-show-all { align-self: flex-start; background: none; border: 0; padding: 0; color: var(--rel-accent); font: 600 14px "Inter", sans-serif; cursor: pointer; }
-.rel-body-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 8px; }
-.rel-body-chips .rel-chip { font: 500 12px/1.4 var(--rel-mono); padding: 7px 12px 7px 10px; background: var(--rel-bg); }
-.rel-body-chips .rel-chip.mono { font-family: var(--rel-mono); }
-.rel-body-chips .rel-chip.notes { font-family: "Inter", var(--font); font-weight: 600; }
+.rel-body-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding-top: 8px; }
+.rel-body-chips a.rel-chip { font: 500 12px/1.4 var(--rel-mono); }
+.rel-body-chips a.rel-chip.mono { font-family: var(--rel-mono); }
+.rel-body-chips a.rel-chip.notes { font-family: "Inter", var(--font); font-weight: 600; }
 .rel-bottom { border-top: 1px solid var(--rel-line); padding: 24px 0 48px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; }
 .rel-bottom a { font-weight: 600; text-decoration: none; }
 .rel-bottom small { font: 400 12px/1.5 var(--rel-mono); color: var(--rel-soft); }
@@ -203,6 +204,6 @@ button.rel-chip { background: transparent; cursor: pointer; font: 600 14px "Inte
   .cmp-grid .cmp-head { display: none; }
   .cmp-grid > div.cmp-row-label { font-weight: 700; font-family: var(--rel-display); font-size: 18px; padding-top: 16px; }
   .cmp-grid .cmp-cell::before { display: block; content: attr(data-label); font-size: 12px; color: var(--rel-soft); text-transform: uppercase; letter-spacing: 0.06em; }
-  .rel-chip { padding: 7px 14px; }
+  button.rel-chip { padding: 7px 14px; }
   .rel-btn { padding: 13px 22px; }
 }
