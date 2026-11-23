@@ -12,8 +12,10 @@ import com.mochyy.mochymusic.constants.PlaylistSongSortType
 import com.mochyy.mochymusic.constants.PlaylistSongSortTypeKey
 import com.mochyy.mochymusic.db.MusicDatabase
 import com.mochyy.mochymusic.db.entities.PlaylistSong
+import com.mochyy.mochymusic.db.entities.PlaylistTransition
 import com.mochyy.mochymusic.extensions.reversed
 import com.mochyy.mochymusic.extensions.toEnum
+import com.mochyy.mochymusic.mixit.MixItFallbackMode
 import com.mochyy.mochymusic.playlistcover.PlaylistCovers
 import com.mochyy.mochymusic.utils.SyncUtils
 import com.mochyy.mochymusic.utils.dataStore
@@ -39,15 +41,36 @@ class LocalPlaylistViewModel
 @Inject
 constructor(
     @ApplicationContext context: Context,
-    database: MusicDatabase,
+    private val database: MusicDatabase,
     private val syncUtils: SyncUtils,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     val playlistId = savedStateHandle.get<String>("playlistId")!!
+    val startInMixIt: Boolean = savedStateHandle.get<Boolean>("mixIt") ?: false
     val playlist =
         database
             .playlist(playlistId)
             .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    /** Custom Mix It transitions saved for consecutive song pairs in this playlist. */
+    val transitions: StateFlow<Map<Pair<String, String>, PlaylistTransition>> =
+        database
+            .playlistTransitions(playlistId)
+            .map { list -> list.associateBy { it.fromSongId to it.toSongId } }
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
+
+    fun setMixItEnabled(enabled: Boolean) {
+        database.query { setPlaylistMixItEnabled(playlistId, enabled) }
+    }
+
+    fun setMixItFallback(fallback: MixItFallbackMode) {
+        val stored = if (fallback == MixItFallbackMode.APP_DEFAULT) null else fallback.name
+        database.query { setPlaylistMixItFallback(playlistId, stored) }
+    }
+
+    fun clearAllTransitions() {
+        database.query { clearPlaylistTransitions(playlistId) }
+    }
 
     // where an imported playlist came from, for crediting whoever made it there
     val imported =

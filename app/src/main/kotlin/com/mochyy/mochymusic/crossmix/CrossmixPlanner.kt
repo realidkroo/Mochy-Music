@@ -2,6 +2,7 @@ package com.mochyy.mochymusic.crossmix
 
 import com.mochyy.mochymusic.constants.CrossmixLength
 import com.mochyy.mochymusic.lyrics.LyricsUtils
+import com.mochyy.mochymusic.mixit.MixItSpec
 import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.max
@@ -29,9 +30,27 @@ data class CrossmixPlan(
     val inStartBeat: Float,
     /** 0..1 how much the two voices would overlap, and so how far they're given bands of their own */
     val yieldAmount: Float = 0f,
+    /** non-null when this plan was built from a user's Mix It custom transition */
+    val mixIt: MixItSpec? = null,
+    /** fractional beat length for custom Mix It windows so exact millisecond lengths are preserved */
+    val exactLengthBeats: Float? = null,
+    /** fractional swap beat for custom Mix It transitions */
+    val exactSwapBeat: Float? = null,
 ) {
+    /** length in beats used by the audio renderer */
+    val effectiveLengthBeats: Float get() = exactLengthBeats ?: lengthBeats.toFloat()
+
+    /** swap beat used by the audio renderer */
+    val effectiveSwapBeat: Float get() = exactSwapBeat ?: swapBeat.toFloat()
+
+    /** beats of ringing tail after the hand-over */
+    val effectiveTailBeats: Int get() = mixIt?.tailBeats ?: style.tailBeats
+
+    /** display name for logs and status */
+    val displayLabel: String get() = mixIt?.label ?: style.label
+
     /** incoming media time heard at a transition beat */
-    fun inMediaAt(beat: Float): Double = inCueMs + (beat - swapBeat) * inMediaPerBeat
+    fun inMediaAt(beat: Float): Double = inCueMs + (beat - effectiveSwapBeat) * inMediaPerBeat
 
     /** where the incoming player starts */
     val inStartMs: Long get() = inMediaAt(inStartBeat).toLong().coerceAtLeast(0L)
@@ -40,10 +59,10 @@ data class CrossmixPlan(
     fun outMediaAt(beat: Float): Double = outStartMs + beat * outBeatMs
 
     /** the outgoing player can be let go after this (tails included) */
-    val outReleaseMs: Long get() = outMediaAt(lengthBeats + style.tailBeats + 1f).toLong()
+    val outReleaseMs: Long get() = outMediaAt(effectiveLengthBeats + effectiveTailBeats + 1f).toLong()
 
     /** after this beat the incoming song is untouched */
-    val inSettledBeat: Float get() = lengthBeats + 8f
+    val inSettledBeat: Float get() = effectiveLengthBeats + 8f
 }
 
 /** what the planner sees of each song; durationMs 0 when it isn't known yet */

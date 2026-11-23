@@ -33,6 +33,7 @@ import com.mochyy.mochymusic.db.entities.ImportedSong
 import com.mochyy.mochymusic.db.entities.PlaylistEvent
 import com.mochyy.mochymusic.db.entities.PlaylistSongMap
 import com.mochyy.mochymusic.db.entities.PlaylistSongMapPreview
+import com.mochyy.mochymusic.db.entities.PlaylistTransition
 import com.mochyy.mochymusic.db.entities.RecognitionHistory
 import com.mochyy.mochymusic.db.entities.RelatedSongMap
 import com.mochyy.mochymusic.db.entities.SearchHistory
@@ -107,7 +108,7 @@ class MusicDatabase(
 }
 
 // bump this with every schema change and add its migration to AllMigrations, the import checks old exports against it too
-const val MusicDatabaseVersion = 45
+const val MusicDatabaseVersion = 47
 
 @Database(
     entities = [
@@ -135,6 +136,7 @@ const val MusicDatabaseVersion = 45
         ImportedPlaylist::class,
         ImportedPlaylistTrack::class,
         SongEdit::class,
+        PlaylistTransition::class,
     ],
     views = [
         SortedSongArtistMap::class,
@@ -202,6 +204,8 @@ val AllMigrations: Array<Migration>
         MIGRATION_42_43,
         MIGRATION_43_44,
         MIGRATION_44_45,
+        MIGRATION_45_46,
+        MIGRATION_46_47,
     )
 
 val MIGRATION_1_2 =
@@ -901,5 +905,68 @@ val MIGRATION_44_45 =
             db.execSQL("ALTER TABLE `imported_playlist` ADD COLUMN `authorName` TEXT")
             db.execSQL("ALTER TABLE `imported_playlist` ADD COLUMN `authorAvatarUrl` TEXT")
             db.execSQL("ALTER TABLE `imported_playlist` ADD COLUMN `authorUrl` TEXT")
+        }
+    }
+
+val MIGRATION_45_46 =
+    object : Migration(45, 46) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Mix It: per-playlist toggle, fallback mode for unconfigured pairs, and user-crafted transitions
+            val columns = db.query("PRAGMA table_info(`playlist`)").use { cursor ->
+                val name = cursor.getColumnIndex("name")
+                buildSet { while (cursor.moveToNext()) add(cursor.getString(name)) }
+            }
+            if ("mixItEnabled" !in columns) {
+                db.execSQL("ALTER TABLE `playlist` ADD COLUMN `mixItEnabled` INTEGER NOT NULL DEFAULT 0")
+            }
+            if ("mixItFallback" !in columns) {
+                db.execSQL("ALTER TABLE `playlist` ADD COLUMN `mixItFallback` TEXT")
+            }
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `playlist_transition` (" +
+                    "`playlistId` TEXT NOT NULL, " +
+                    "`fromSongId` TEXT NOT NULL, " +
+                    "`toSongId` TEXT NOT NULL, " +
+                    "`outStartMs` INTEGER NOT NULL, " +
+                    "`inStartMs` INTEGER NOT NULL, " +
+                    "`durationMs` INTEGER NOT NULL, " +
+                    "`outEffect` TEXT NOT NULL, " +
+                    "`inEffect` TEXT NOT NULL, " +
+                    "`outFadeStart` REAL NOT NULL, " +
+                    "`outFadeEnd` REAL NOT NULL, " +
+                    "`inFadeStart` REAL NOT NULL, " +
+                    "`inFadeEnd` REAL NOT NULL, " +
+                    "`beatMatchMode` TEXT NOT NULL, " +
+                    "`snapToBeat` INTEGER NOT NULL, " +
+                    "`bassSwap` INTEGER NOT NULL, " +
+                    "`swapFrac` REAL NOT NULL, " +
+                    "`beatNudgeMs` INTEGER NOT NULL, " +
+                    "`customSpeedRatio` REAL NOT NULL, " +
+                    "`presetName` TEXT, " +
+                    "`updatedAt` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`playlistId`, `fromSongId`, `toSongId`), " +
+                    "FOREIGN KEY(`playlistId`) REFERENCES `playlist`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE" +
+                    ")",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_playlist_transition_playlistId` ON `playlist_transition` (`playlistId`)")
+        }
+    }
+
+val MIGRATION_46_47 =
+    object : Migration(46, 47) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Mix It per-track voice / bass / instrument mix sliders
+            val columns = db.query("PRAGMA table_info(`playlist_transition`)").use { cursor ->
+                val name = cursor.getColumnIndex("name")
+                buildSet { while (cursor.moveToNext()) add(cursor.getString(name)) }
+            }
+            for (col in listOf(
+                "outVoiceLevel", "outBassLevel", "outInstrumentLevel",
+                "inVoiceLevel", "inBassLevel", "inInstrumentLevel",
+            )) {
+                if (col !in columns) {
+                    db.execSQL("ALTER TABLE `playlist_transition` ADD COLUMN `$col` REAL NOT NULL DEFAULT 1.0")
+                }
+            }
         }
     }

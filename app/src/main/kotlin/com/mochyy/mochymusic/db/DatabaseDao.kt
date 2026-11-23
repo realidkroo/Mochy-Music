@@ -46,6 +46,7 @@ import com.mochyy.mochymusic.db.entities.ImportedSourceCount
 import com.mochyy.mochymusic.db.entities.PlaylistEvent
 import com.mochyy.mochymusic.db.entities.PlaylistSong
 import com.mochyy.mochymusic.db.entities.PlaylistSongMap
+import com.mochyy.mochymusic.db.entities.PlaylistTransition
 import com.mochyy.mochymusic.db.entities.RecognitionHistory
 import com.mochyy.mochymusic.db.entities.RelatedSongMap
 import com.mochyy.mochymusic.db.entities.SearchHistory
@@ -1754,6 +1755,32 @@ interface DatabaseDao {
 
     @Upsert
     fun upsert(edit: SongEdit)
+
+    // ---- Mix It custom playlist transitions ----
+
+    @Query("SELECT * FROM playlist_transition WHERE playlistId = :playlistId")
+    fun playlistTransitions(playlistId: String): Flow<List<PlaylistTransition>>
+
+    @Query("SELECT * FROM playlist_transition WHERE playlistId = :playlistId AND fromSongId = :fromSongId AND toSongId = :toSongId")
+    fun playlistTransitionBlocking(playlistId: String, fromSongId: String, toSongId: String): PlaylistTransition?
+
+    @Query("SELECT * FROM playlist WHERE id = :playlistId")
+    fun playlistEntityBlocking(playlistId: String): PlaylistEntity?
+
+    @Upsert
+    fun upsert(transition: PlaylistTransition)
+
+    @Query("DELETE FROM playlist_transition WHERE playlistId = :playlistId AND fromSongId = :fromSongId AND toSongId = :toSongId")
+    fun deletePlaylistTransition(playlistId: String, fromSongId: String, toSongId: String)
+
+    @Query("DELETE FROM playlist_transition WHERE playlistId = :playlistId")
+    fun clearPlaylistTransitions(playlistId: String)
+
+    @Query("UPDATE playlist SET mixItEnabled = :enabled WHERE id = :playlistId")
+    fun setPlaylistMixItEnabled(playlistId: String, enabled: Boolean)
+
+    @Query("UPDATE playlist SET mixItFallback = :fallback WHERE id = :playlistId")
+    fun setPlaylistMixItFallback(playlistId: String, fallback: String?)
 
     // ---- imported music ----
 

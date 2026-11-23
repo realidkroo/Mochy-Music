@@ -32,10 +32,72 @@ data class TrackAnalysis(
     val brightness: FloatArray,
     val vibe: Vibe,
     val vocal: FloatArray = FloatArray(0),
+    /** 32 Hz (~31 ms bucket) high-resolution amplitude envelope (0..1) for crisp real waveform rendering in Mix It. */
+    val waveform: FloatArray = FloatArray(0),
 ) {
     val beatMs: Float? get() = bpm?.let { 60_000f / it }
 
     val isBeatReliable: Boolean get() = bpm != null && bpmConfidence >= 0.35f && beatsMs.size >= 16
+
+    /** Waveform amplitude (0..1) at [ms], linearly interpolated from [waveform] or falling back to per-second energy. */
+    fun waveformAt(ms: Long): Float {
+        if (ms < 0L) return 0f
+        if (waveform.isNotEmpty()) {
+            val pos = (ms / 1_000f) * WaveformRateHz
+            val idx = pos.toInt()
+            if (idx >= waveform.lastIndex) return waveform.last()
+            val frac = pos - idx
+            return waveform[idx] + (waveform[idx + 1] - waveform[idx]) * frac
+        }
+        if (energy.isNotEmpty()) {
+            val sec = (ms / 1_000f).coerceIn(0f, energy.lastIndex.toFloat())
+            val idx = sec.toInt()
+            if (idx >= energy.lastIndex) return energy.last()
+            val frac = sec - idx
+            return energy[idx] + (energy[idx + 1] - energy[idx]) * frac
+        }
+        return 0f
+    }
+
+    /**
+     * Returns `(peak, body)` over `[startMs, endMs]` so each drawn waveform bar catches every
+     * kick/snare transient without aliasing and can render a brighter inner RMS core.
+     */
+    fun waveformSlice(startMs: Long, endMs: Long): Pair<Float, Float> {
+        val out = FloatArray(2)
+        waveformSliceInto(startMs, endMs, out)
+        return out[0] to out[1]
+    }
+
+    /**
+     * Zero-allocation variant of [waveformSlice] writing `(peak, body)` into `out[0]` and `out[1]`
+     * for 120 Hz canvas drawing without per-bar boxing.
+     */
+    fun waveformSliceInto(startMs: Long, endMs: Long, out: FloatArray) {
+        if (endMs <= 0L) {
+            out[0] = 0f
+            out[1] = 0f
+            return
+        }
+        if (waveform.isNotEmpty()) {
+            val from = ((startMs.coerceAtLeast(0L) / 1_000f) * WaveformRateHz).toInt().coerceIn(0, waveform.lastIndex)
+            val to = ((endMs.coerceAtLeast(startMs) / 1_000f) * WaveformRateHz).toInt().coerceIn(from, waveform.lastIndex)
+            var peak = 0f
+            var sum = 0f
+            val count = to - from + 1
+            for (i in from..to) {
+                val v = waveform[i]
+                if (v > peak) peak = v
+                sum += v
+            }
+            out[0] = peak
+            out[1] = sum / count
+            return
+        }
+        val v = waveformAt((startMs + endMs) / 2L)
+        out[0] = v
+        out[1] = v * 0.7f
+    }
 
     /** the beats that start a bar, in order */
     fun barStartsMs(): LongArray = LongArray(barBeats.size) { beatsMs[barBeats[it]] }
@@ -106,6 +168,7 @@ data class TrackAnalysis(
 
 // loudness above which a second counts as music: about 16 db under the song's loudest, on the 24 db scale of energy
 private const val AudibleEnergy = 0.35f
+const val WaveformRateHz = 32f
 
 /** a stretch of steady beats: beat n of the stretch falls at firstBeatMs + n * periodMs */
 data class LocalGrid(val firstBeatMs: Double, val periodMs: Double, val firstIndex: Int) {
@@ -189,6 +252,7 @@ class StreamingTrackAnalyzer {
         val silence = silenceBounds(rmsArray)
         val perSecond = perSecondCurves(rmsArray, lowArray, centroidArray)
         val vocal = vocalCurve(lead.toArray(), leadShare.toArray(), tonality.toArray(), rmsArray)
+        val waveform = waveformEnvelope(rmsArray)
 
         val vibe = Vibe(
             energy = overallEnergy(rmsArray, onset),
@@ -215,7 +279,43 @@ class StreamingTrackAnalyzer {
             brightness = perSecond.third,
             vibe = vibe,
             vocal = vocal,
+            waveform = waveform,
         )
+    }
+
+    /** 32 Hz high-contrast peak envelope (0..1) preserving sharp drum transients, vocal phrases, and drops. */
+    private fun waveformEnvelope(rms: FloatArray): FloatArray {
+        if (rms.isEmpty()) return FloatArray(0)
+        val buckets = ((rms.size / FramesPerSecondF) * WaveformRateHz).toInt().coerceAtLeast(1)
+        val framesPerBucket = FramesPerSecondF / WaveformRateHz
+        val raw = FloatArray(buckets)
+        var maxVal = 0f
+        for (b in 0 until buckets) {
+            val from = (b * framesPerBucket).toInt().coerceIn(0, rms.lastIndex)
+            val to = ((b + 1) * framesPerBucket).toInt().coerceIn(from + 1, rms.size)
+            var peak = 0f
+            var sumSq = 0.0
+            for (f in from until to) {
+                val v = rms[f]
+                if (v > peak) peak = v
+                sumSq += v * v
+            }
+            val avg = sqrt(sumSq / max(1, to - from)).toFloat()
+            // Favor local peak (85%) so kick/snare transients stand out crisply like a studio DAW wave
+            val blended = peak * 0.85f + avg * 0.15f
+            raw[b] = blended
+            if (blended > maxVal) maxVal = blended
+        }
+        if (maxVal <= 1e-6f) return FloatArray(buckets)
+        val sorted = raw.sortedArray()
+        val floor = sorted[(sorted.size * 0.05f).toInt().coerceAtMost(sorted.lastIndex)]
+        val ceiling = sorted[(sorted.size * 0.985f).toInt().coerceAtMost(sorted.lastIndex)].coerceAtLeast(maxVal * 0.4f)
+        val span = (ceiling - floor).coerceAtLeast(1e-6f)
+        return FloatArray(buckets) { i ->
+            val norm = ((raw[i] - floor) / span).coerceIn(0f, 1f)
+            // Keep strong dynamic contrast (near-linear) instead of flattening with sqrt
+            if (norm < 0.015f) 0f else Math.pow(norm.toDouble(), 0.85).toFloat().coerceIn(0f, 1f)
+        }
     }
 
     private fun vocalCurve(lead: FloatArray, share: FloatArray, tonal: FloatArray, rms: FloatArray): FloatArray {

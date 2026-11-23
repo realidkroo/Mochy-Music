@@ -33,6 +33,11 @@ data class PlaylistEntity(
     val isAutoSync: Boolean = false,
     /** Free text the owner wrote about the playlist. Local only - never sent to YouTube. */
     val description: String? = null,
+    /** Whether Mix It custom transitions are active for this playlist. */
+    @ColumnInfo(name = "mixItEnabled", defaultValue = "0")
+    val mixItEnabled: Boolean = false,
+    /** What unconfigured pairs use when Mix It is on: null follows the app transition setting. */
+    val mixItFallback: String? = null,
 ) {
     companion object {
         const val LIKED_PLAYLIST_ID = "LP_LIKED"

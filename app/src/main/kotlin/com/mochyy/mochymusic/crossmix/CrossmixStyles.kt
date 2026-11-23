@@ -18,6 +18,10 @@ class FxParams {
     var lowBand = 1f
     var midBand = 1f
     var highBand = 1f
+    /** 0 untouched, 1 strips centered vocal energy in the mid-band while preserving stereo instruments */
+    var vocalCenterCut = 0f
+    /** 0 untouched, 1 strips wide stereo instrument accompaniment in the mid-band while preserving center voice */
+    var sideCut = 0f
     /** 0 the bass is there, 1 it's gone behind a steep cut at 200 hz: the side that doesn't own the low end */
     var bassCut = 0f
     var echoSend = 0f
@@ -52,7 +56,7 @@ class FxParams {
 
     fun reset() {
         gain = 1f; lowCutHz = 0f; highCutHz = OpenHz; resonance = 0.707f
-        lowBand = 1f; midBand = 1f; highBand = 1f; bassCut = 0f
+        lowBand = 1f; midBand = 1f; highBand = 1f; vocalCenterCut = 0f; sideCut = 0f; bassCut = 0f
         echoSend = 0f; echoBeats = 0.75f; echoFeedback = 0.45f; echoTone = 0.6f; echoPingPong = false
         reverbSend = 0f; reverbSize = 0.84f; reverbFreeze = 0f
         gateDepth = 0f; gateDivision = 4f; gateDuty = 0.5f

@@ -36,8 +36,8 @@ class CrossmixAnalysisRepository(
     private val failures = ConcurrentHashMap<String, String>()
     private val cacheDir = File(context.cacheDir, "crossmix-analysis-v2").also { it.mkdirs() }
 
-    // one quiet thread: analysis must never compete with decoding the song that's playing
-    private val dispatcher = Executors.newSingleThreadExecutor { runnable ->
+    // two quiet low-priority threads so Song 1 & Song 2 decode in parallel for Mix It without competing with playback
+    private val dispatcher = Executors.newFixedThreadPool(2) { runnable ->
         Thread(runnable, "crossmix-analysis").apply { priority = Thread.MIN_PRIORITY; isDaemon = true }
     }.asCoroutineDispatcher()
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
@@ -102,8 +102,12 @@ class CrossmixAnalysisRepository(
         return job.await()
     }
 
-    /** what's already known, without decoding anything */
+    /** what's already known in memory, without decoding or disk IO */
     fun cached(mediaId: String): TrackAnalysis? = memory.get(mediaId)
+
+    /** checks memory, then disk cache without triggering a new decode (useful for showing BPM chips in playlists) */
+    fun cachedFromDisk(mediaId: String): TrackAnalysis? =
+        memory.get(mediaId) ?: read(mediaId)?.also { memory.put(mediaId, it) }
 
     /** why the last analysis of mediaId came back empty, if it did */
     fun lastFailure(mediaId: String): String? = failures[mediaId]
@@ -163,6 +167,7 @@ class CrossmixAnalysisRepository(
                     minor = input.readBoolean(),
                 ),
                 vocal = input.readFloatArray(),
+                waveform = input.readFloatArray(),
             ).takeIf { analysis -> analysis.barBeats.all { it in analysis.beatsMs.indices } }
         }
     }.getOrNull()
@@ -192,6 +197,7 @@ class CrossmixAnalysisRepository(
             out.writeFloat(analysis.vibe.bassWeight)
             out.writeBoolean(analysis.vibe.minor)
             out.writeFloatArray(analysis.vocal)
+            out.writeFloatArray(analysis.waveform)
         }
         // written whole, then swapped in: a crash mid-write can't leave a half file to misread
         temp.renameTo(target)
@@ -222,8 +228,8 @@ class CrossmixAnalysisRepository(
     }
 
     private companion object {
-        // 3: analyses cut short by a one-chunk stream were stored as whole ones. 4: the voice curve. 5: bars from chords and drums, and section starts
-        const val CacheVersion = 5
+        // 3: one-chunk streams. 4: voice curve. 5: bars & sections. 6: 8 Hz waveform. 7: 32 Hz high-contrast waveform for Mix It
+        const val CacheVersion = 7
         const val MaxCachedArray = 200_000
         /** the next song: two minutes of possible entry points plus room for the blend after one */
         const val HeadMs = 150_000L

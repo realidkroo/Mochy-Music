@@ -4,6 +4,9 @@ package com.mochyy.mochymusic.ui.menu
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -22,11 +26,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.LocalDatabase
 import com.mochyy.mochymusic.R
@@ -68,6 +77,11 @@ fun LocalPlaylistMenu(
     onShowSortDialog: () -> Unit = {},
     onSearch: () -> Unit = {},
     onPlayNext: () -> Unit = {},
+    /** Mix It DJ transition customization for this playlist */
+    mixItEnabled: Boolean = false,
+    mixItCustomCount: Int = 0,
+    mixItFallbackLabel: String = "CrossMix",
+    onMixIt: (() -> Unit)? = null,
     /** Lets Re-sync open a service's sign-in page; without it, it can only run the ones that need none. */
     navController: NavController? = null,
 ) {
@@ -145,6 +159,52 @@ fun LocalPlaylistMenu(
 
         Material3MenuGroup(
             items = listOfNotNull(
+                if (onMixIt != null) {
+                    val gold = Color(0xFFF5D64B)
+                    Material3MenuItemData(
+                        title = { Text(stringResource(R.string.mixit_title)) },
+                        description = {
+                            Text(
+                                when {
+                                    songs.size < 2 -> stringResource(R.string.mixit_need_two_songs)
+                                    mixItEnabled && mixItCustomCount > 0 -> stringResource(R.string.mixit_menu_active_desc, mixItCustomCount)
+                                    mixItEnabled -> stringResource(R.string.mixit_menu_active_default_desc, mixItFallbackLabel)
+                                    else -> stringResource(R.string.mixit_menu_desc)
+                                }
+                            )
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_mix_it),
+                                contentDescription = null,
+                                tint = gold,
+                            )
+                        },
+                        trailingContent = {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(if (mixItEnabled) gold.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.08f))
+                                    .border(1.dp, if (mixItEnabled) gold else gold.copy(alpha = 0.5f), CircleShape)
+                                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                            ) {
+                                Text(
+                                    text = if (mixItEnabled) "ON" else stringResource(R.string.mixit_beta),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = gold,
+                                )
+                            }
+                        },
+                        onClick = if (songs.size >= 2) {
+                            {
+                                onDismiss()
+                                onMixIt()
+                            }
+                        } else null,
+                    )
+                } else null,
                 Material3MenuItemData(
                     title = { Text(stringResource(R.string.play_next)) },
                     icon = {

@@ -76,6 +76,13 @@ sealed interface PlaylistModeBar {
         val onMore: (() -> Unit)?,
         val onDone: () -> Unit,
     ) : PlaylistModeBar
+
+    /** Mix It DJ transition editing mode for a playlist */
+    class MixIt(
+        val customCount: Int,
+        val onOptions: () -> Unit,
+        val onDone: () -> Unit,
+    ) : PlaylistModeBar
 }
 
 private val ModeButtonFill = Color.White.copy(alpha = 0.24f)
@@ -113,7 +120,13 @@ internal fun PlaylistModeBarRow(
             }
 
             is PlaylistModeBar.EditOrder -> {
-                EditOrderPill(glassState = glassState, coverUrl = coverUrl, cover = cover, tint = tint)
+                EditOrderPill(
+                    glassState = glassState,
+                    coverUrl = coverUrl,
+                    cover = cover,
+                    tint = tint,
+                    label = stringResource(R.string.pc_mode_edit_order),
+                )
                 Spacer(Modifier.weight(1f))
                 if (mode.onMore != null) {
                     ModeCircleButton(
@@ -123,6 +136,34 @@ internal fun PlaylistModeBarRow(
                     )
                     Spacer(Modifier.width(8.dp))
                 }
+                ModeCircleButton(
+                    icon = R.drawable.check,
+                    contentDescription = stringResource(R.string.done),
+                    filled = true,
+                    onClick = mode.onDone,
+                )
+            }
+
+            is PlaylistModeBar.MixIt -> {
+                EditOrderPill(
+                    glassState = glassState,
+                    coverUrl = coverUrl,
+                    cover = cover,
+                    tint = tint,
+                    label = if (mode.customCount > 0) {
+                        "${stringResource(R.string.mixit_title)} · ${mode.customCount}"
+                    } else {
+                        stringResource(R.string.mixit_title)
+                    },
+                    accentDot = Color(0xFFF5D64B),
+                )
+                Spacer(Modifier.weight(1f))
+                ModeCircleButton(
+                    icon = R.drawable.tune,
+                    contentDescription = stringResource(R.string.mixit_playlist_settings_title),
+                    onClick = mode.onOptions,
+                )
+                Spacer(Modifier.width(8.dp))
                 ModeCircleButton(
                     icon = R.drawable.check,
                     contentDescription = stringResource(R.string.done),
@@ -252,6 +293,8 @@ private fun EditOrderPill(
     coverUrl: String?,
     cover: (@Composable (Modifier) -> Unit)?,
     tint: State<Color>,
+    label: String = stringResource(R.string.pc_mode_edit_order),
+    accentDot: Color? = null,
 ) {
     Box(modifier = Modifier.height(47.dp)) {
         EditOrderGlass(glassState = glassState, tint = tint)
@@ -273,12 +316,21 @@ private fun EditOrderPill(
                     modifier = miniModifier,
                 )
             }
+            if (accentDot != null) {
+                Box(
+                    modifier = Modifier
+                        .padding(start = 9.dp)
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(accentDot),
+                )
+            }
             Text(
-                text = stringResource(R.string.pc_mode_edit_order),
+                text = label,
                 style = PillLabelStyle,
                 color = Color.White,
                 maxLines = 1,
-                modifier = Modifier.padding(start = 9.dp),
+                modifier = Modifier.padding(start = if (accentDot != null) 6.dp else 9.dp),
             )
         }
     }
