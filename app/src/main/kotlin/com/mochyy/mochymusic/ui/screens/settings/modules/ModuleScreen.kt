@@ -105,7 +105,23 @@ fun ModuleScreen(navController: NavController, id: String, viewModel: ModulesVie
                 Spacer(Modifier.height(20.dp))
                 Box(Modifier.fillMaxWidth().padding(horizontal = 4.dp).height(1.dp).background(Color.White.copy(alpha = 0.3f)))
                 Spacer(Modifier.height(20.dp))
-                EnableCard(entry) { viewModel.setEnabled(id, it) }
+                EnableCard(entry) { turningOn ->
+                    val needsWarn = turningOn &&
+                        (entry.origin is com.mochyy.mochymusic.modules.ModuleOrigin.Code || entry.module is ItemListModule) &&
+                        !viewModel.hasAcknowledgedScriptWarning(id)
+                    if (needsWarn) {
+                        overlay.showScriptWarningSheet(
+                            targetName = entry.module.info.name,
+                            isCodeModule = entry.origin is com.mochyy.mochymusic.modules.ModuleOrigin.Code,
+                            onContinue = {
+                                viewModel.acknowledgeScriptWarning(id)
+                                viewModel.setEnabled(id, true)
+                            },
+                        )
+                    } else {
+                        viewModel.setEnabled(id, turningOn)
+                    }
+                }
                 Spacer(Modifier.height(10.dp))
                 InfoCard(entry, onRaise = { viewModel.raise(id) })
                 UpdateCard(

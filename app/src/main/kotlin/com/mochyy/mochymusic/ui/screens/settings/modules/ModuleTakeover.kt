@@ -16,7 +16,6 @@ import androidx.navigation.NavController
 import com.mochyy.mochymusic.di.ModulesEntryPoint
 import com.mochyy.mochymusic.modules.skin.ActiveSkin
 import com.mochyy.mochymusic.modules.skin.Takeover
-import com.mochyy.mochymusic.ui.screens.settings.SettingsListRoute
 import dagger.hilt.android.EntryPointAccessors
 
 /** the name a route goes by for a takeover: its path without arguments, so album/{albumId} is album and library/songs stays library/songs */
@@ -31,8 +30,7 @@ val LocalModuleNavController = staticCompositionLocalOf<NavController?> { null }
 internal fun ModuleTakeover(route: String, entry: NavBackStackEntry, original: @Composable () -> Unit) {
     val name = remember(route) { takeoverName(route) }
     val navController = LocalModuleNavController.current
-    // reading the takeovers is one map lookup, so every page can ask without slowing down
-    val takeover = if (name in Protected) null else pickTakeover(ActiveSkin.takeovers, name)
+    val takeover = if (name !in AllowedTakeovers) null else pickTakeover(ActiveSkin.takeovers, name)
     // mochy's own page, once someone asked for it from the module's; kept while the page stays on the stack
     var showOriginal by rememberSaveable { mutableStateOf(false) }
     if (takeover == null || showOriginal || navController == null) {
@@ -78,8 +76,13 @@ private fun TakeoverPage(
     ModulePage(takeover.page, module, takeover.skin, registry::setField, navController, subject, onOriginal = onOriginal, backLabel = null)
 }
 
-// pages no module can take over: the modules' own, so a broken one can always be turned off, settings itself, and the first-run setup
-private val Protected = setOf(
-    "settings", SettingsListRoute, ModulesRoute, takeoverName(ModuleRoutePattern), takeoverName(ModulePageRoutePattern), ModuleBrowserRoute, takeoverName(ModuleStoreRoutePattern),
-    "setup", "onboarding", "update",
+// strict allowlist so no look module can ever hijack login, backup, settings, or module pages
+private val AllowedTakeovers = setOf(
+    "home", "history", "stats", "section_detail", "coming_soon",
+    "search", "search_input", "explore", "mood_and_genres", "new_release",
+    "library", "library/songs", "library/playlists", "library/added", "local_genre",
+    "library/local/added", "library/local/albums", "library/local/artists", "library/local/playlists",
+    "library/cached/added", "library/cached/albums", "library/cached/artists", "library/cached/playlists",
+    "library/imported", "library/imported/playlists", "library/imported/albums",
+    "album", "artist", "playlist", "local_playlist", "online_playlist", "auto_playlist", "top_playlist", "cache_playlist",
 )

@@ -249,7 +249,11 @@ fun CaptureWebContent(
     val currentOnLoadingChange by rememberUpdatedState(onLoadingChange)
     var mainWebView by remember { mutableStateOf<WebView?>(null) }
     var popupWebView by remember { mutableStateOf<WebView?>(null) }
-    val bridge = remember { CaptureBridge { name, value, url -> currentOnHeader(name, value, url) } }
+    val bridge = remember(playerOrigins) {
+        CaptureBridge { name, value, url ->
+            if (playerOrigins.isEmpty() || isPlayerPage(url, playerOrigins)) currentOnHeader(name, value, url)
+        }
+    }
     val documentStartSupported = remember { WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT) }
 
     fun WebView.configure(isPopup: Boolean) {
@@ -257,6 +261,13 @@ fun CaptureWebContent(
         layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
+        // lock down file/content urls so a sketchy sign-in page can't read local app files
+        settings.allowFileAccess = false
+        settings.allowContentAccess = false
+        @Suppress("DEPRECATION")
+        settings.allowFileAccessFromFileURLs = false
+        @Suppress("DEPRECATION")
+        settings.allowUniversalAccessFromFileURLs = false
         settings.javaScriptCanOpenWindowsAutomatically = true
         settings.setSupportMultipleWindows(true)
         settings.useWideViewPort = true
@@ -304,9 +315,9 @@ fun CaptureWebContent(
                 if (request.isForMainFrame) Timber.tag(LOG_TAG).w("page answered HTTP %s: %s", response.statusCode, request.url?.host)
             }
 
-            // a second way to see request headers, for requests the page hook misses
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
                 val url = request.url?.toString().orEmpty()
+                if (playerOrigins.isNotEmpty() && !isPlayerPage(url, playerOrigins)) return null
                 request.requestHeaders?.forEach { (name, value) ->
                     if (name.lowercase() in SESSION_HEADERS) currentOnHeader(name, value, url)
                 }
@@ -435,8 +446,27 @@ fun WebLoginHeader(title: String, subtitle: String, onBack: () -> Unit) {
     }
 }
 
-private fun isPlayerPage(url: String?, playerOrigins: Set<String>): Boolean =
-    url != null && playerOrigins.any { url.startsWith(it) }
+// exact origin check so "https://music.apple.com.evil.com" never matches "https://music.apple.com"
+private fun isPlayerPage(url: String?, playerOrigins: Set<String>): Boolean {
+    if (url.isNullOrBlank()) return false
+    val target = runCatching { java.net.URI(url) }.getOrNull() ?: return false
+    val tScheme = target.scheme?.lowercase() ?: return false
+    val tHost = target.host?.lowercase() ?: return false
+    val tPort = if (target.port > 0) target.port else defaultPort(tScheme)
+    return playerOrigins.any { raw ->
+        val allowed = runCatching { java.net.URI(raw) }.getOrNull() ?: return@any false
+        val aScheme = allowed.scheme?.lowercase() ?: return@any false
+        val aHost = allowed.host?.lowercase() ?: return@any false
+        val aPort = if (allowed.port > 0) allowed.port else defaultPort(aScheme)
+        tScheme == aScheme && tHost == aHost && tPort == aPort
+    }
+}
+
+private fun defaultPort(scheme: String): Int = when (scheme) {
+    "https" -> 443
+    "http" -> 80
+    else -> -1
+}
 
 private const val LOG_TAG = "SignInWeb"
 

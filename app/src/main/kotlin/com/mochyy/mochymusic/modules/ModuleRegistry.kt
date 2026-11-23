@@ -165,8 +165,13 @@ class ModuleRegistry @Inject constructor(
 
     fun all(): List<MochyModule> = modules.map { it.first }
 
-    // youtube starts on, modules start off until they're turned on (or signed in to)
     fun isEnabled(id: String): Boolean = prefs.getBoolean("enabled_$id", id == SourceModules.YouTubeId)
+
+    fun hasAcknowledgedScriptWarning(id: String): Boolean = prefs.getBoolean("script_warn_ack_$id", false)
+
+    fun acknowledgeScriptWarning(id: String) {
+        prefs.edit { putBoolean("script_warn_ack_$id", true) }
+    }
 
     fun setEnabled(id: String, on: Boolean) {
         val module = module(id)
@@ -547,6 +552,7 @@ class ModuleRegistry @Inject constructor(
                     else -> putString(LocalModulesKey, JSONArray(savedLocalModules().filter { it.optString("id") != id }).toString())
                 }
                 remove("enabled_$id")
+                remove("script_warn_ack_$id")
                 remove("added_$id")
                 remove("installed_$id")
                 module.choices.forEach { remove("pick_${id}_${it.id}") }

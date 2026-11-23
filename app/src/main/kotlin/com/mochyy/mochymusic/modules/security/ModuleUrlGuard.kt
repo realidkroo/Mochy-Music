@@ -282,7 +282,11 @@ internal object ModuleUrlGuard {
         val now = System.currentTimeMillis()
         val queue = rateWindows.computeIfAbsent(moduleId) { ArrayDeque() }
         synchronized(queue) {
-            while (queue.isNotEmpty() && now - queue.peekFirst() > RateWindowMs) queue.removeFirst()
+            while (queue.isNotEmpty()) {
+                val oldest = queue.peekFirst() ?: break
+                if (now - oldest <= RateWindowMs) break
+                queue.removeFirst()
+            }
             if (queue.size >= MaxRequestsPerWindow) return false
             queue.addLast(now)
             return true

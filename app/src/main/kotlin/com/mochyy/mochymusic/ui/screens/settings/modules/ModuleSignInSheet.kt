@@ -23,6 +23,7 @@ import com.mochyy.mochymusic.module.AccountState
 import com.mochyy.mochymusic.module.MochyModule
 import com.mochyy.mochymusic.module.SignInSpec
 import com.mochyy.mochymusic.module.applemusic.AppleMusicModule
+import com.mochyy.mochymusic.modules.security.ModuleUrlGuard
 import com.mochyy.mochymusic.ui.component.PopupSheetHandle
 import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.screens.settings.importsync.CaptureWebContent
@@ -34,9 +35,29 @@ import com.mochyy.mochymusic.viewmodels.ModulesViewModel
 // the import browser's own grey, so both sign-ins look the same
 private val BrowserSurface = Color(0xFF1C1C1C)
 
+// domains belonging to mochy's own logins that a third-party module can't hijack via shared webview cookies
+private val ProtectedSignInHosts = setOf(
+    "google.com", "youtube.com", "googleapis.com", "discord.com", "discordapp.com",
+    "spotify.com", "dropbox.com", "onedrive.live.com", "live.com", "microsoftonline.com",
+    "last.fm", "libre.fm", "mochy-module-feed.mochyy.workers.dev",
+)
+
+private fun isAllowedSignInUrl(url: String, builtIn: Boolean): Boolean {
+    if (!url.startsWith("https://", ignoreCase = true)) return false
+    if (!ModuleUrlGuard.isSafeRemoteUrl(url)) return false
+    if (builtIn) return true
+    val host = runCatching { java.net.URI(url).host?.lowercase()?.trimEnd('.') }.getOrNull() ?: return false
+    return ProtectedSignInHosts.none { blocked -> host == blocked || host.endsWith(".$blocked") }
+}
+
 /** opens the module's sign-in; [onDone] hears how it went once the account is in, the sheet closes itself */
 fun PopupSheetState.showModuleSignInSheet(module: MochyModule, viewModel: ModulesViewModel, onDone: (AccountState) -> Unit) {
     val spec = module.signIn ?: return
+    val builtIn = module.info.id == AppleMusicModule.Id
+    if (!isAllowedSignInUrl(spec.startUrl, builtIn) || spec.sessionOrigins.any { !isAllowedSignInUrl(it, builtIn) }) {
+        onDone(AccountState.Expired("lol nice try"))
+        return
+    }
     var sheet: PopupSheetHandle? = null
     sheet = showWithHandle(fullBleed = true, surface = BrowserSurface) {
         ModuleSignInContent(

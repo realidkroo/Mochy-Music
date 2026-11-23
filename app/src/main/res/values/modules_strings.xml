@@ -251,4 +251,22 @@
     <string name="skin_bar_up_next">Up next</string>
     <string name="skin_bar_nothing_next">Nothing queued yet</string>
     <string name="skin_bar_no_lyrics">No lyrics for this song</string>
+
+    <!-- script and code module security warning sheets -->
+    <string name="module_script_warn_title">Heads up: third-party script</string>
+    <string name="module_script_warn_code_title">Heads up: code module</string>
+    <string name="module_script_warn_body">Scripts run third-party code made by other people, not Mochy. Make sure you trust where this came from before adding it.</string>
+    <string name="module_script_warn_code_body">This module carries its own executable code (like a JS script runner). Only install it if you trust where it came from.</string>
+    <string name="module_script_sandbox_title">What Mochy locks down</string>
+    <string name="module_script_sandbox_body">Your YouTube login, WebDAV and cloud backup passwords, Discord session, API keys, local network, and private app files are sealed off. Anything trying to extract them gets blocked.</string>
+    <string name="module_script_risks_title">Keep in mind</string>
+    <string name="module_script_risks_body">A script can see the songs you search and play through it, and can talk to external servers on the internet. Remove it any time from its page.</string>
+    <string name="module_script_files_title">Inside this package</string>
+    <string name="module_script_flags_title">Things to double-check</string>
+    <string name="module_script_warn_continue">I understand, continue</string>
+    <string name="module_script_blocked_title">Blocked — nice try</string>
+    <string name="module_script_blocked_body">Mochy stopped this before it could run because it tried to reach protected data, local network addresses, or app internals.</string>
+    <string name="module_script_blocked_reasons">What got caught</string>
+    <string name="modules_confirm_code_note">Heads up: this module runs its own code. You\'ll see a security check before it gets added.</string>
+    <string name="module_items_blocked">Blocked for security: this tried to access private Mochy data or local network addresses.</string>
 </resources>

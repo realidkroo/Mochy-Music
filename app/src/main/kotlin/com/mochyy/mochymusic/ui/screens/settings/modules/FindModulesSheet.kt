@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.modules.CatalogModule
 import com.mochyy.mochymusic.modules.ModuleRegistry.LinkCheck
+import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 import com.mochyy.mochymusic.ui.component.PopupSheetHandle
 import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.SheetLabel
@@ -94,21 +95,33 @@ fun PopupSheetState.showAddCheckedSheet(ready: LinkCheck.Ready, viewModel: Modul
 @Composable
 private fun AddCheckedContent(ready: LinkCheck.Ready, viewModel: ModulesViewModel, onAdded: (String) -> Unit, onCancel: () -> Unit) {
     val context = LocalContext.current
+    val overlay = LocalZoomOutOverlayState.current
     val scope = rememberCoroutineScope()
     var adding by remember { mutableStateOf(false) }
     var problem by remember { mutableStateOf<String?>(null) }
+
+    fun doInstall() {
+        adding = true
+        scope.launch {
+            val id = viewModel.install(ready)
+            if (id != null) {
+                if (ready.code != null) viewModel.acknowledgeScriptWarning(id)
+                return@launch onAdded(id)
+            }
+            adding = false
+            problem = context.getString(R.string.modules_code_broken)
+        }
+    }
+
     Column(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
         ConfirmAdd(
             ready = ready,
             adding = adding,
             onAdd = {
-                adding = true
-                scope.launch {
-                    val id = viewModel.install(ready)
-                    if (id != null) return@launch onAdded(id)
-                    // only a zip's own code can fail here
-                    adding = false
-                    problem = context.getString(R.string.modules_code_broken)
+                if (ready.code != null) {
+                    overlay.showScriptWarningSheet(targetName = ready.name, isCodeModule = true, onContinue = ::doInstall)
+                } else {
+                    doInstall()
                 }
             },
             onCancel = onCancel,
@@ -120,6 +133,7 @@ private fun AddCheckedContent(ready: LinkCheck.Ready, viewModel: ModulesViewMode
 @Composable
 private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) -> Unit) {
     val context = LocalContext.current
+    val overlay = LocalZoomOutOverlayState.current
     val scope = rememberCoroutineScope()
     val keyboard = LocalSoftwareKeyboardController.current
     var link by rememberSaveable { mutableStateOf("") }
@@ -176,19 +190,28 @@ private fun FindModulesContent(viewModel: ModulesViewModel, onAdded: (String) ->
 
         val confirming = ready
         if (confirming != null) {
+            fun doInstall() {
+                checking = true
+                scope.launch {
+                    val id = viewModel.install(confirming)
+                    if (id != null) {
+                        if (confirming.code != null) viewModel.acknowledgeScriptWarning(id)
+                        return@launch onAdded(id)
+                    }
+                    checking = false
+                    ready = null
+                    problemFromFile = true
+                    problem = context.getString(R.string.modules_code_broken)
+                }
+            }
             ConfirmAdd(
                 ready = confirming,
                 adding = checking,
                 onAdd = {
-                    checking = true
-                    scope.launch {
-                        val id = viewModel.install(confirming)
-                        if (id != null) return@launch onAdded(id)
-                        // only a zip's own code can fail here, so the problem shows under the file button
-                        checking = false
-                        ready = null
-                        problemFromFile = true
-                        problem = context.getString(R.string.modules_code_broken)
+                    if (confirming.code != null) {
+                        overlay.showScriptWarningSheet(targetName = confirming.name, isCodeModule = true, onContinue = ::doInstall)
+                    } else {
+                        doInstall()
                     }
                 },
                 onCancel = { ready = null },
@@ -327,6 +350,15 @@ private fun ConfirmAdd(ready: LinkCheck.Ready, adding: Boolean, onAdd: () -> Uni
             fontSize = 13.sp,
             lineHeight = 18.sp,
         )
+        if (ready.code != null) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                stringResource(R.string.modules_confirm_code_note),
+                color = Color(0xFFFFB340),
+                fontSize = 12.5.sp,
+                lineHeight = 17.sp,
+            )
+        }
     }
     Spacer(Modifier.height(16.dp))
     SheetPillButton(text = stringResource(if (adding) R.string.modules_adding else R.string.modules_add, ready.name), onClick = onAdd, enabled = !adding)

@@ -39,7 +39,13 @@ internal fun devText(
 internal fun devFigureSp(dp: Float): TextUnit = with(LocalDensity.current) { dp.dp.toSp() }
 
 internal fun Context.openDevUrl(url: String) {
+    val clean = url.trim()
+    val parsed = runCatching { Uri.parse(clean) }.getOrNull() ?: return
+    val scheme = parsed.scheme?.lowercase()
+    // never let a module or bad link fire intent://, file://, or javascript:
+    if (scheme != "https" && scheme != "http") return
+    if (parsed.host.isNullOrBlank()) return
     runCatching {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        startActivity(Intent(Intent.ACTION_VIEW, parsed).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 }

@@ -288,13 +288,13 @@ private fun PageBlockView(block: PageBlock, page: PageContext) {
             connection?.playQueue(YouTubeQueue(WatchEndpoint(videoId = block.id)))
         }
         is PageBlock.Playlist -> PageRow(R.drawable.queue_music, block.title, block.subtitle) {
-            navController.navigate("online_playlist/${block.id}")
+            navController.navigate("online_playlist/${Uri.encode(block.id)}")
         }
         is PageBlock.Album -> PageRow(R.drawable.album, block.title, block.subtitle) {
-            navController.navigate("album/${block.id}")
+            navController.navigate("album/${Uri.encode(block.id)}")
         }
         is PageBlock.Artist -> PageRow(R.drawable.person, block.title, null) {
-            navController.navigate("artist/${block.id}")
+            navController.navigate("artist/${Uri.encode(block.id)}")
         }
         is PageBlock.Search -> PageRow(R.drawable.search_filled, block.title, block.query.takeIf { it != block.title }) {
             navController.navigate(searchRoute(block.query))

@@ -4,6 +4,8 @@ package com.mochyy.mochymusic.modules.skin
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.mochyy.mochymusic.modules.security.ModuleSanitizer
+import com.mochyy.mochymusic.modules.security.ModuleUrlGuard
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -125,18 +127,17 @@ internal object SkinParser {
         "image" -> o.string("image")?.let {
             PageBlock.Picture(it, (o.float("height") ?: 160f).coerceIn(40f, 400f).dp, (o.float("corner") ?: 16f).coerceIn(0f, 80f).dp)
         }
-        // only a web link: a page can send someone to a site, never into another app's scheme
         "button" -> {
-            val link = o.string("link")?.takeIf { it.startsWith("https://") || it.startsWith("http://") }
+            val link = o.string("link")?.takeIf { ModuleUrlGuard.isSafeRemoteUrl(it) }
             val text = o.string("text")?.take(60)
             if (link != null && text != null) PageBlock.Button(text, link) else null
         }
         "divider" -> PageBlock.Divider
         "space" -> PageBlock.Space((o.float("size") ?: 16f).coerceIn(0f, 120f).dp)
-        "song" -> o.string("id")?.let { PageBlock.Song(it, o.string("title")?.take(80) ?: it, o.string("artist")?.take(80)) }
-        "playlist" -> o.string("id")?.let { PageBlock.Playlist(it, o.string("title")?.take(80) ?: it, o.string("subtitle")?.take(80)) }
-        "album" -> o.string("id")?.let { PageBlock.Album(it, o.string("title")?.take(80) ?: it, o.string("subtitle")?.take(80)) }
-        "artist" -> o.string("id")?.let { PageBlock.Artist(it, o.string("title")?.take(80) ?: it) }
+        "song" -> ModuleSanitizer.safeNavArg(o.string("id"))?.let { PageBlock.Song(it, o.string("title")?.take(80) ?: it, o.string("artist")?.take(80)) }
+        "playlist" -> ModuleSanitizer.safeNavArg(o.string("id"))?.let { PageBlock.Playlist(it, o.string("title")?.take(80) ?: it, o.string("subtitle")?.take(80)) }
+        "album" -> ModuleSanitizer.safeNavArg(o.string("id"))?.let { PageBlock.Album(it, o.string("title")?.take(80) ?: it, o.string("subtitle")?.take(80)) }
+        "artist" -> ModuleSanitizer.safeNavArg(o.string("id"))?.let { PageBlock.Artist(it, o.string("title")?.take(80) ?: it) }
         "search" -> o.string("query")?.take(120)?.let { PageBlock.Search(it, o.string("title")?.take(80) ?: it) }
         "setting" -> o.string("key")?.take(60)?.let(PageBlock::Setting)
         // a card holds plain blocks, never another card
@@ -203,9 +204,8 @@ internal object SkinParser {
         return actionTarget(o)?.let { SkinAction(title, o.string("icon"), it) }
     }
 
-    /** a "link" (only to the web, never another app's scheme), a "page" by its id, or a "search" */
     fun actionTarget(o: JsonObject): ActionTarget? =
-        o.string("link")?.takeIf { it.startsWith("https://") || it.startsWith("http://") }?.let(ActionTarget::Link)
+        o.string("link")?.takeIf { ModuleUrlGuard.isSafeRemoteUrl(it.replace(Regex("\\{[a-z]+}"), "x")) }?.let(ActionTarget::Link)
             ?: o.string("page")?.lowercase()?.takeIf { PageId.matches(it) }?.let(ActionTarget::Page)
             ?: o.string("search")?.take(120)?.let(ActionTarget::Search)
 

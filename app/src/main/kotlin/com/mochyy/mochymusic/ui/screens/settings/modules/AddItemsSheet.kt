@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.module.ItemProblem
+import com.mochyy.mochymusic.modules.security.ScriptVerdict
+import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 import com.mochyy.mochymusic.ui.component.PopupSheetHandle
 import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.SheetLabel
@@ -53,18 +55,23 @@ fun PopupSheetState.showAddItemsSheet(id: String, name: String, viewModel: Modul
 @Composable
 private fun AddItemsContent(id: String, name: String, viewModel: ModulesViewModel, onAdded: () -> Unit) {
     val context = LocalContext.current
+    val overlay = LocalZoomOutOverlayState.current
     val scope = rememberCoroutineScope()
     val keyboard = LocalSoftwareKeyboardController.current
     var link by rememberSaveable { mutableStateOf("") }
     var adding by remember { mutableStateOf(false) }
     var problem by remember { mutableStateOf<String?>(null) }
-    // which of the two, the file or the link, the last try came from: its button says adding, its problem shows under it
     var problemFromFile by remember { mutableStateOf(false) }
 
     fun show(outcome: ItemsOutcome) {
         val message = when (outcome) {
             is ItemsOutcome.Added -> context.getString(R.string.module_items_added, outcome.names.joinToString(", "))
             is ItemsOutcome.AddedAsModule -> context.getString(R.string.module_items_added_as_module, outcome.name)
+            is ItemsOutcome.Blocked -> {
+                problem = context.getString(R.string.module_items_blocked)
+                overlay.showScriptBlockedSheet(outcome.name, outcome.scan)
+                return
+            }
             is ItemsOutcome.Problem -> {
                 problem = context.getString(problemText(outcome.problem), name)
                 return
@@ -74,7 +81,7 @@ private fun AddItemsContent(id: String, name: String, viewModel: ModulesViewMode
         onAdded()
     }
 
-    fun add(fromFile: Boolean, work: suspend () -> ItemsOutcome) {
+    fun runCommit(fromFile: Boolean, work: suspend () -> ItemsOutcome) {
         if (adding) return
         keyboard?.hide()
         adding = true
@@ -87,12 +94,56 @@ private fun AddItemsContent(id: String, name: String, viewModel: ModulesViewMode
         }
     }
 
+    fun pickZip(uri: Uri) {
+        if (adding) return
+        keyboard?.hide()
+        adding = true
+        problem = null
+        problemFromFile = true
+        scope.launch {
+            val prepared = viewModel.prepareItemsZip(uri).getOrElse { e ->
+                adding = false
+                val p = runCatching { ItemProblem.valueOf(e.message.orEmpty()) }.getOrDefault(ItemProblem.NotAZip)
+                problem = context.getString(problemText(p), name)
+                return@launch
+            }
+            adding = false
+            if (prepared.scan.verdict == ScriptVerdict.Blocked) {
+                problem = context.getString(R.string.module_items_blocked)
+                overlay.showScriptBlockedSheet(prepared.fileName, prepared.scan)
+                return@launch
+            }
+            overlay.showScriptWarningSheet(
+                targetName = prepared.fileName,
+                isCodeModule = false,
+                scan = prepared.scan,
+                onContinue = { runCommit(fromFile = true) { viewModel.commitItemsZip(id, prepared) } },
+            )
+        }
+    }
+
     fun addLink() {
-        if (link.isNotBlank()) add(fromFile = false) { viewModel.addItemsLink(id, link) }
+        val raw = link.trim()
+        if (raw.isBlank() || adding) return
+        keyboard?.hide()
+        problem = null
+        problemFromFile = false
+        val scan = viewModel.scanItemsLink(raw)
+        if (scan.verdict == ScriptVerdict.Blocked) {
+            problem = context.getString(R.string.module_items_blocked)
+            overlay.showScriptBlockedSheet(raw, scan)
+            return
+        }
+        overlay.showScriptWarningSheet(
+            targetName = raw.substringAfter("://").take(60),
+            isCodeModule = false,
+            scan = scan,
+            onContinue = { runCommit(fromFile = false) { viewModel.addItemsLink(id, raw) } },
+        )
     }
 
     val zipPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-        if (uri != null) add(fromFile = true) { viewModel.addItemsZip(id, uri) }
+        if (uri != null) pickZip(uri)
     }
 
     Column(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
