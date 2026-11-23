@@ -3,6 +3,7 @@
 package com.mochyy.mochymusic.modules.web
 
 import com.mochyy.mochymusic.module.ModuleField
+import com.mochyy.mochymusic.modules.security.ModuleUrlGuard
 import com.mochyy.mochymusic.modules.skin.SkinGlass
 import java.io.File
 
@@ -43,14 +44,20 @@ internal interface FieldRanges {
     val ranges: Map<String, FieldRange>
 }
 
-/** a picture or font a module names: a link as it is, a path from the module's zip, or a path next to a link module's manifest */
 internal fun resolveModulePath(path: String?, files: File?, base: String?): Any? {
     val name = path?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-    if (name.startsWith("https://") || name.startsWith("http://")) return name
-    // plain string work, no disk: this runs while things draw, and a path can't climb out of the module's folder
-    val inside = name.trimStart('/').takeIf { ".." !in it.split('/') } ?: return null
-    if (files != null) return File(files, inside)
-    return base?.let { "$it/$inside" }
+    if (name.startsWith("https://") || name.startsWith("http://")) {
+        return name.takeIf { ModuleUrlGuard.isSafeRemoteUrl(it) }
+    }
+    if ('\\' in name || '\u0000' in name) return null
+    val inside = name.trimStart('/').takeIf { p -> p.isNotEmpty() && p.split('/').none { it == ".." || it == "." || it.isEmpty() } } ?: return null
+    if (files != null) {
+        val candidate = File(files, inside)
+        val rootPath = runCatching { files.canonicalPath }.getOrNull() ?: return null
+        val targetPath = runCatching { candidate.canonicalPath }.getOrNull() ?: return null
+        return candidate.takeIf { targetPath.startsWith(rootPath.trimEnd(File.separatorChar) + File.separatorChar) }
+    }
+    return base?.let { "$it/$inside" }?.takeIf { ModuleUrlGuard.isSafeRemoteUrl(it) }
 }
 
 /** the same as text, the way the module api carries a picture: a link, or a file's own path */

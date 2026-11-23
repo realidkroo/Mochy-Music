@@ -433,10 +433,14 @@ class ModulesViewModel @Inject constructor(
      */
     @androidx.annotation.OptIn(UnstableApi::class)
     private suspend fun checkPlayback(stream: com.mochyy.mochymusic.module.SourceStream): String {
-        val drm = stream.drm as? StreamDrm.Widevine
-        val factory = androidx.media3.exoplayer.source.DefaultMediaSourceFactory(
-            androidx.media3.datasource.DefaultDataSource.Factory(context)
-        )
+        val safe = com.mochyy.mochymusic.modules.security.ModuleUrlGuard.sanitizeStream(stream)
+            ?: throw java.io.IOException("Blocked unsafe stream URL")
+        val drm = safe.drm as? StreamDrm.Widevine
+        // http-only datasource so a module can't trick exoplayer into opening file:// or content://
+        val httpFactory = androidx.media3.datasource.DefaultHttpDataSource.Factory()
+            .setAllowCrossProtocolRedirects(false)
+            .setDefaultRequestProperties(safe.headers)
+        val factory = androidx.media3.exoplayer.source.DefaultMediaSourceFactory(httpFactory)
         if (drm != null) factory.setDrmSessionManagerProvider { WidevineDrm.sessionManager(drm.license) }
         val player = androidx.media3.exoplayer.ExoPlayer.Builder(context).setMediaSourceFactory(factory).build()
         var error: androidx.media3.common.PlaybackException? = null
@@ -448,9 +452,9 @@ class ModulesViewModel @Inject constructor(
                 }
             })
             val item = androidx.media3.common.MediaItem.Builder()
-                .setUri(stream.url)
+                .setUri(safe.url)
                 .apply {
-                    if (stream.format == com.mochyy.mochymusic.module.StreamFormat.Hls) setMimeType(androidx.media3.common.MimeTypes.APPLICATION_M3U8)
+                    if (safe.format == com.mochyy.mochymusic.module.StreamFormat.Hls) setMimeType(androidx.media3.common.MimeTypes.APPLICATION_M3U8)
                     if (drm != null) setDrmConfiguration(
                         androidx.media3.common.MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setMultiSession(true).build()
                     )
@@ -465,7 +469,7 @@ class ModulesViewModel @Inject constructor(
                     android.util.Log.w("ModuleTest", "Test playback failed", e)
                     throw java.io.IOException(generateSequence<Throwable>(e) { it.cause }.last().message ?: e.errorCodeName)
                 }
-                if (player.currentPosition >= 2_000) return "Decoded ${player.currentPosition / 1000} s here (${stream.qualityLabel})"
+                if (player.currentPosition >= 2_000) return "Decoded ${player.currentPosition / 1000} s here (${safe.qualityLabel})"
                 kotlinx.coroutines.delay(200)
             }
             throw java.io.IOException("Didn't start playing within 20 s")

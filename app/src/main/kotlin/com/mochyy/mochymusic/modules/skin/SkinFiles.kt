@@ -4,13 +4,14 @@ package com.mochyy.mochymusic.modules.skin
 
 import android.content.Context
 import android.net.Uri
+import com.mochyy.mochymusic.modules.security.ModuleSanitizer
 import java.io.File
 import java.util.zip.ZipInputStream
 
 internal object SkinFiles {
 
     fun folderFor(context: Context, moduleId: String): File =
-        File(context.filesDir, "module_files/" + moduleId.replace(Regex("[^a-z0-9._-]"), "-"))
+        File(context.filesDir, "module_files/" + ModuleSanitizer.safeSegment(moduleId))
 
     /** unpacks the pictures and fonts under [root], the manifest's folder in the zip; null when nothing was kept */
     fun unpack(context: Context, uri: Uri, moduleId: String, root: String): File? {

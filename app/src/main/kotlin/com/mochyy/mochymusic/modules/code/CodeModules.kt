@@ -14,6 +14,7 @@ import com.mochyy.mochymusic.module.bridge.BridgeOnlyParent
 import com.mochyy.mochymusic.module.bridge.BridgedModule
 import com.mochyy.mochymusic.module.bridge.shared.ModuleBridge
 import com.mochyy.mochymusic.modules.ModuleRegistry
+import com.mochyy.mochymusic.modules.security.ModuleSanitizer
 import dalvik.system.DexClassLoader
 import timber.log.Timber
 import java.io.File
@@ -47,27 +48,32 @@ internal object CodeModules {
     fun signedLikeMochy(context: Context, apk: File): Boolean =
         signedLikeMochy(context, context.packageManager.getPackageArchiveInfo(apk.path, SignatureFlags))
 
-    /** puts a checked apk in place under [key] and starts it; null when its code can't run in this mochy */
-    fun install(context: Context, key: String, apk: File): Loaded? {
-        // each copy gets a folder of its own, since a native library stays open in the class loader that loaded it and one path can't be loaded twice
-        val folder = "${safe(key)}/${System.currentTimeMillis()}"
-        val target = File(root(context), "$folder/$ApkName")
+    fun install(context: Context, key: String, apk: File, expectedId: String? = null): Loaded? {
+        val stamp = System.currentTimeMillis().toString()
+        val segment = safe(key)
+        val folder = "$segment/$stamp"
+        val dir = ModuleSanitizer.safeChild(root(context), segment, stamp) ?: return null
+        val target = File(dir, ApkName)
         target.parentFile?.mkdirs()
         if (!apk.renameTo(target)) {
             apk.copyTo(target, overwrite = true)
             apk.delete()
         }
         val loaded = load(context, folder)
-        if (loaded == null) File(root(context), folder).deleteRecursively()
+        if (loaded == null || (expectedId != null && loaded.module.info.id != expectedId)) {
+            loaded?.module?.close()
+            dir.deleteRecursively()
+            return null
+        }
         return loaded
     }
 
-    /** starts the module in [folder], checking its signature again first since a restored backup can bring any file back; null when it can't run here */
     fun load(context: Context, folder: String): Loaded? = runCatching {
-        val dir = File(root(context), folder)
+        val parts = folder.split('/')
+        if (parts.size != 2) return null
+        val dir = ModuleSanitizer.safeChild(root(context), parts[0], parts[1]) ?: return null
         val apk = File(dir, ApkName)
         if (!apk.isFile) return null
-        // android 14 refuses to load code from a file the app could still write to
         apk.setReadOnly()
         val info = context.packageManager.getPackageArchiveInfo(apk.path, SignatureFlags or PackageManager.GET_META_DATA)
         if (!signedLikeMochy(context, info)) {
@@ -78,10 +84,14 @@ internal object CodeModules {
         val optimized = File(context.codeCacheDir, "code_modules").apply { mkdirs() }
         val loader = DexClassLoader(apk.path, optimized.path, nativeLibs(apk, dir)?.path, BridgeOnlyParent(CodeModules::class.java.classLoader!!))
         val bridge = loader.loadClass(BridgedModule.ModuleSideClass).getDeclaredConstructor().newInstance() as ModuleBridge
-        Loaded(BridgedModule.open(bridge, entry), folder)
+        val opened = BridgedModule.open(bridge, entry)
+        if (!ModuleSanitizer.isValidModuleId(opened.info.id)) {
+            opened.close()
+            return null
+        }
+        Loaded(opened, folder)
     }.onFailure { Timber.tag(Tag).w(it, "Couldn't start the module in $folder") }.getOrNull()
 
-    /** deletes every copy but the ones in [keep]: the ones updates replaced and modules that were removed */
     fun tidy(context: Context, keep: Set<String>) {
         root(context).listFiles()?.forEach { key ->
             key.listFiles()?.forEach { copy -> if ("${key.name}/${copy.name}" !in keep) copy.deleteRecursively() }
@@ -89,14 +99,14 @@ internal object CodeModules {
         }
     }
 
-    /** takes a removed module's code away; a copy still running keeps what it already opened */
     fun delete(context: Context, folder: String) {
-        File(root(context), folder.substringBefore('/')).deleteRecursively()
+        val key = folder.substringBefore('/')
+        ModuleSanitizer.safeChild(root(context), key)?.deleteRecursively()
     }
 
     private fun root(context: Context) = File(context.filesDir, "code_modules")
 
-    private fun safe(key: String) = key.lowercase().replace(Regex("[^a-z0-9._-]"), "-").ifBlank { "module" }
+    private fun safe(key: String) = ModuleSanitizer.safeSegment(key)
 
     private fun signedLikeMochy(context: Context, theirs: PackageInfo?): Boolean {
         val own = signers(context.packageManager.getPackageInfo(context.packageName, SignatureFlags))
@@ -132,8 +142,10 @@ internal object CodeModules {
             mkdirs()
         }
         names.filter { it.startsWith("lib/$abi/") }.forEach { name ->
-            val library = File(staging, name.substringAfterLast('/'))
-            zip.getInputStream(zip.getEntry(name)).use { input -> library.outputStream().use { input.copyTo(it) } }
+            val libName = name.substringAfterLast('/')
+            val library = ModuleSanitizer.safeChild(staging, libName) ?: return@forEach
+            val ok = zip.getInputStream(zip.getEntry(name)).use { input -> copyCapped(input, library) }
+            if (!ok) return null
             library.setReadOnly()
         }
         target.takeIf { staging.renameTo(it) }

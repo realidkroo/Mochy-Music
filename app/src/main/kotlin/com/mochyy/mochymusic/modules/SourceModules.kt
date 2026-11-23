@@ -13,6 +13,7 @@ import com.mochyy.mochymusic.module.StreamFormat
 import com.mochyy.mochymusic.module.TrackQuery
 import com.mochyy.mochymusic.module.applemusic.AppleMusicModule
 import com.mochyy.mochymusic.module.monochrome.MonochromeModule
+import com.mochyy.mochymusic.modules.security.ModuleUrlGuard
 import com.mochyy.mochymusic.utils.DataSaver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -180,9 +181,10 @@ class SourceModules @Inject constructor(
                 if (result == null && answer.isActive) android.util.Log.i(Tag, "$id took longer than ${ModuleTimeoutMs / 1000} s for ${track?.title}, moving on")
                 when (result) {
                     is ResolveResult.Found -> {
-                        if (!accept(id, result.stream)) continue
-                        android.util.Log.i(Tag, "$id: ${track?.title} -> ${result.stream.matched.title} (${result.stream.qualityLabel})")
-                        return@withContext Route.Module(module, result.stream)
+                        val safe = ModuleUrlGuard.sanitizeStream(result.stream) ?: continue
+                        if (!accept(id, safe)) continue
+                        android.util.Log.i(Tag, "$id: ${track?.title} -> ${safe.matched.title} (${safe.qualityLabel})")
+                        return@withContext Route.Module(module, safe)
                     }
                     is ResolveResult.NotFound -> android.util.Log.i(Tag, "$id: ${track?.title}: ${result.reason}")
                     is ResolveResult.Unavailable -> android.util.Log.i(Tag, "$id unavailable for ${track?.title}: ${result.reason}")

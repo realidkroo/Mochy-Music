@@ -5461,11 +5461,11 @@ class MusicService :
         )
     }
 
-    /** one ask of [module] for the song, passing over a stream this phone has no decoder for */
     private suspend fun resolveWith(module: com.mochyy.mochymusic.module.SourceModule, mediaId: String): com.mochyy.mochymusic.module.SourceStream? {
         val track = trackQueryOf(mediaId) ?: return null
         val result = module.resolve(track, sourceModules.picks(module.info.id))
         return (result as? com.mochyy.mochymusic.module.ResolveResult.Found)?.stream
+            ?.let(com.mochyy.mochymusic.modules.security.ModuleUrlGuard::sanitizeStream)
             ?.takeIf { com.mochyy.mochymusic.modules.DeviceDecoders.canPlay(it) }
     }
 

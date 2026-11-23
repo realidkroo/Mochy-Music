@@ -4,9 +4,9 @@ package com.mochyy.mochymusic.modules
 
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.mochyy.mochymusic.modules.security.ModuleUrlGuard
 import com.mochyy.mochymusic.modules.web.WebModuleManifest
 import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.json.JSONObject
 import java.security.MessageDigest
 
@@ -97,12 +97,7 @@ internal class ModuleUpdates(private val prefs: SharedPreferences, private val c
     }
 
     private fun newerManifest(source: ModuleSource.Link, installedVersion: String): Result<ModuleUpdate?>? {
-        val text = runCatching {
-            client.newCall(Request.Builder().url("${source.base}/manifest.json").header("Accept", "application/json").build()).execute().use { response ->
-                if (!response.isSuccessful) return null
-                response.body.string()
-            }
-        }.getOrNull() ?: return null
+        val text = runCatching { ModuleUrlGuard.fetchCappedText(client, "${source.base}/manifest.json", 256 * 1024) }.getOrNull() ?: return null
         if (fingerprint(text) == source.fingerprint) return Result.success(null)
         val manifest = WebModuleManifest.parse(text) ?: return null
         return Result.success(ModuleUpdate(manifest.version.takeIf { it.isNotBlank() && it != installedVersion }))
