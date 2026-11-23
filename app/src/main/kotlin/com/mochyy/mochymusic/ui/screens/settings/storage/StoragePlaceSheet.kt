@@ -173,14 +173,18 @@ private fun PlaceSheetContent(viewModel: StorageViewModel, kind: StoredKind, pic
             Spacer(Modifier.height(140.dp))
             return@Column
         }
-        // this phone, where it's saved now if that's somewhere else, and a folder just picked
-        val phone = choice.places.first()
-        val rows = listOfNotNull(phone, choice.current.takeIf { !it.isPhone }, pick.picked?.takeIf { it.root != choice.current.root && !it.isPhone })
+        // this phone, every mounted memory card (no extra permissions needed), plus the current or picked custom folder
+        val rows = buildList {
+            addAll(choice.places)
+            if (none { it.root == choice.current.root }) add(choice.current)
+            pick.picked?.let { picked -> if (none { it.root == picked.root }) add(picked) }
+        }
+        val activePlace = pick.picked ?: choice.current
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             rows.forEach { place ->
                 PlaceRow(
                     place = place,
-                    selected = (pick.picked ?: choice.current).root == place.root,
+                    selected = activePlace.root == place.root,
                     isCurrent = place.root == choice.current.root,
                     fits = place.root == choice.current.root || pick.fits(place),
                     onClick = { pick.picked = place },
@@ -193,8 +197,8 @@ private fun PlaceSheetContent(viewModel: StorageViewModel, kind: StoredKind, pic
         val note = when {
             failed -> stringResource(R.string.storage_move_failed)
             problem != null -> stringResource(problem!!)
-            choice.current.isPhone || choice.current.isFolder -> stringResource(R.string.storage_place_folder_note)
-            else -> stringResource(R.string.storage_place_card_note)
+            !activePlace.isPhone && !activePlace.isFolder -> stringResource(R.string.storage_place_card_note)
+            else -> stringResource(R.string.storage_place_folder_note)
         }
         Text(
             note,

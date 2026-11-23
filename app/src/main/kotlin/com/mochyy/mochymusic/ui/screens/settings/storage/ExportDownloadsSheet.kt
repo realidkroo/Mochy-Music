@@ -17,11 +17,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -41,6 +44,7 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.playback.ExportChoice
 import com.mochyy.mochymusic.playback.ExportLayout
 import com.mochyy.mochymusic.playback.ExportStep
+import com.mochyy.mochymusic.playback.StoragePlace
 import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.RemoteFocus
@@ -55,6 +59,9 @@ private class ExportOptions {
     var layout by mutableStateOf(ExportLayout.Playlists)
     var covers by mutableStateOf(true)
     var lyrics by mutableStateOf(true)
+    var sdCards by mutableStateOf<List<StoragePlace>>(emptyList())
+    // non-null when exporting directly to a detected SD card; null opens the folder picker
+    var targetCard by mutableStateOf<StoragePlace?>(null)
 
     fun choice() = ExportChoice(layout, covers, lyrics)
 }
@@ -70,14 +77,22 @@ fun PopupSheetState.showExportDownloadsSheet(viewModel: StorageViewModel) {
                 if (tree != null) viewModel.export(tree, options.choice())
             }
             val working = step as? ExportStep.Working
+            val card = options.targetCard
             SheetPillButton(
                 text = when {
+                    working == null && card != null -> stringResource(R.string.storage_export_to_card, card.label)
                     working == null -> stringResource(R.string.storage_export_pick)
                     working.total == 0 -> stringResource(R.string.storage_export_starting)
                     else -> stringResource(R.string.storage_export_progress, working.done + 1, working.total)
                 },
                 enabled = working == null,
-                onClick = { picker.launch(null) },
+                onClick = {
+                    if (card != null) {
+                        viewModel.exportToFolder(card.root, options.choice())
+                    } else {
+                        picker.launch(null)
+                    }
+                },
             )
         },
     ) {
@@ -87,9 +102,10 @@ fun PopupSheetState.showExportDownloadsSheet(viewModel: StorageViewModel) {
 
 @Composable
 private fun ExportSheetContent(viewModel: StorageViewModel, options: ExportOptions) {
+    LaunchedEffect(Unit) { options.sdCards = viewModel.sdCards() }
     val step by viewModel.exportStep.collectAsState()
     val locked = step is ExportStep.Working
-    Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 8.dp)) {
         SheetLabel(stringResource(R.string.storage_export_sheet_title))
         Text(
             stringResource(R.string.storage_export_note),
@@ -124,6 +140,33 @@ private fun ExportSheetContent(viewModel: StorageViewModel, options: ExportOptio
         ) {
             SwitchRow(R.drawable.image, stringResource(R.string.storage_export_covers), options.covers, !locked) { options.covers = it }
             SwitchRow(R.drawable.lyrics, stringResource(R.string.storage_export_lyrics), options.lyrics, !locked) { options.lyrics = it }
+        }
+        if (options.sdCards.isNotEmpty()) {
+            Text(
+                stringResource(R.string.storage_export_destination),
+                style = storageText(13f, FontWeight.SemiBold, StorageMuted, -0.1f),
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp, start = 4.dp),
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                options.sdCards.forEach { card ->
+                    LayoutCard(
+                        icon = R.drawable.sd_card,
+                        title = card.label,
+                        detail = stringResource(R.string.storage_export_card_detail),
+                        selected = options.targetCard?.root == card.root,
+                        enabled = !locked,
+                        onClick = { options.targetCard = card },
+                    )
+                }
+                LayoutCard(
+                    icon = R.drawable.storage,
+                    title = stringResource(R.string.storage_export_pick_folder),
+                    detail = stringResource(R.string.storage_export_pick_folder_detail),
+                    selected = options.targetCard == null,
+                    enabled = !locked,
+                    onClick = { options.targetCard = null },
+                )
+            }
         }
         ExportStatus(step)
     }

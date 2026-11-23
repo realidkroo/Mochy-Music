@@ -144,8 +144,15 @@ object StoragePlaces {
         return listOf(phone) + drives
     }
 
+    // mounted memory cards that give mochy its own writable folder with no extra permission
+    fun sdCards(context: Context): List<StoragePlace> = places(context).drop(1)
+
     private fun describe(root: File, label: String?, isPhone: Boolean, storage: StorageManager?, context: Context): StoragePlace {
-        val stat = runCatching { StatFs(root.path) }.getOrNull()
+        // create the app folder on a freshly inserted card before StatFs, otherwise StatFs fails and reports 0 free bytes
+        if (!root.exists()) runCatching { root.mkdirs() }
+        var existing: File? = root
+        while (existing != null && !existing.exists()) existing = existing.parentFile
+        val stat = runCatching { StatFs((existing ?: root).path) }.getOrNull()
         val name = label
             ?: runCatching { storage?.getStorageVolume(root)?.getDescription(context) }.getOrNull()
             ?: context.getString(R.string.storage_place_card)
@@ -164,6 +171,12 @@ object StoragePlaces {
         val marker = markerOf(context, kind)
         if (place.isPhone) marker.delete() else marker.writeText(place.root.path)
         if (oldDir != File(place.root, kind.folder)) addLeftover(context, kind, oldDir)
+    }
+
+    // points [kind] at a card root during a restore without scheduling the target for cleanup
+    fun pointToRoot(context: Context, kind: StoredKind, root: File) {
+        val marker = markerOf(context, kind)
+        if (root == context.filesDir) marker.delete() else marker.writeText(root.path)
     }
 
     // an import brings its downloads back onto the phone, so whatever lived on a card is left behind

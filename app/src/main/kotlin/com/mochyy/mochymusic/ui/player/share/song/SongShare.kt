@@ -154,6 +154,16 @@ private fun SongShareDialog(
             snapshotFlow { session.activeVideoSource == ShareVideoSource.MusicVideo }.first { it }
             matchMusicVideo(session, playerConnection?.service)
         }
+        // if the user picks a YouTube video from search that happens to match the song's audio, line it up automatically too
+        LaunchedEffect(session) {
+            var matchedId: String? = null
+            snapshotFlow { session.pickedYouTubeVideo.found?.videoId }.collectLatest { videoId ->
+                if (videoId != null && videoId != matchedId) {
+                    matchedId = videoId
+                    matchPickedYouTubeVideo(session, videoId, playerConnection?.service)
+                }
+            }
+        }
         MovesThePlayhead(session)
         SongPreviewAudio(session)
 

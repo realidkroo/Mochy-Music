@@ -70,6 +70,7 @@ import com.mochyy.mochymusic.ui.player.share.song.found
 import com.mochyy.mochymusic.ui.player.share.song.freshMusicVideo
 import com.mochyy.mochymusic.ui.player.share.song.isTextureVideo
 import com.mochyy.mochymusic.ui.player.share.song.trackFor
+import com.mochyy.mochymusic.ui.player.share.song.youtubeClipWindow
 import com.mochyy.mochymusic.utils.followAppProxy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -326,12 +327,25 @@ private suspend fun videoBackground(session: SongShareSession, video: SongBackgr
         ShareVideoSource.MusicVideo -> session.musicVideo.found?.let { found ->
             val music = freshMusicVideo(found)
             val track = music.trackFor(1080) ?: return@let null
+            val mime = track.mimeType.substringBefore(';').ifBlank { MimeTypes.VIDEO_MP4 }
             val item = clippedItem(
-                MediaItem.Builder().setUri(track.url).setMimeType(MimeTypes.VIDEO_MP4),
+                MediaItem.Builder().setUri(track.url).setMimeType(mime),
                 music.videoMsAt(session.windowStartMs),
                 session.windowLengthMs,
             )
             VideoBackground(item, music.streams.headers)
+        }
+        ShareVideoSource.YouTube -> session.pickedYouTubeVideo.found?.let { found ->
+            val yt = freshMusicVideo(found)
+            val track = yt.trackFor(1080) ?: return@let null
+            val (start, length) = youtubeClipWindow(yt, session.windowStartMs, session.windowLengthMs)
+            val mime = track.mimeType.substringBefore(';').ifBlank { MimeTypes.VIDEO_MP4 }
+            val item = clippedItem(
+                MediaItem.Builder().setUri(track.url).setMimeType(mime),
+                start,
+                length,
+            )
+            VideoBackground(item, yt.streams.headers)
         }
     }
 

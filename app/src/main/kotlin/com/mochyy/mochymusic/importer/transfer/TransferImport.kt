@@ -5,9 +5,12 @@ package com.mochyy.mochymusic.importer.transfer
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import com.mochyy.mochymusic.db.AllMigrations
 import com.mochyy.mochymusic.db.MusicDatabaseVersion
+import com.mochyy.mochymusic.playback.StoragePlaces
+import com.mochyy.mochymusic.playback.StoredKind
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -45,17 +48,32 @@ class TransferImporter @Inject constructor(
 
     private fun unpackAndConvert(source: Uri, onProgress: (Float) -> Unit): TransferManifest {
         val manifest = readManifest(source)
-        // the zip's contents land next to the data, so they need about as much room as the zip itself
         val needed = manifest.bytes + SpareBytes
-        if (context.dataDir.usableSpace < needed) {
+        // if downloads are already kept on an SD card (or phone storage lacks room while a mounted SD card has plenty),
+        // stage downloaded songs directly onto that SD card instead of forcing everything through internal storage
+        val externalDownloadsRoot = chooseDownloadsRoot(needed)
+        val downloadsStage = externalDownloadsRoot?.let { File(it, TransferRestore.DownloadsStagingName) }
+        if (externalDownloadsRoot == null && context.dataDir.usableSpace < needed) {
             throw TransferException("Not enough free space. Mochy needs about ${needed / 1_000_000} MB free to import this.")
+        }
+        if (externalDownloadsRoot != null && context.dataDir.usableSpace < SpareBytes) {
+            throw TransferException("Not enough free space on this phone for your library database.")
         }
 
         val staging = TransferRestore.stagingDir(context).apply { deleteRecursively(); mkdirs() }
-        unpack(source, staging, total = manifest.bytes, onProgress)
+        downloadsStage?.apply { deleteRecursively(); mkdirs() }
+        try {
+            unpack(source, staging, downloadsStage, total = manifest.bytes, onProgress)
+        } catch (e: Throwable) {
+            downloadsStage?.deleteRecursively()
+            throw e
+        }
 
         val library = File(staging, TransferArchive.LibraryEntry)
-        if (!library.exists()) throw TransferException("That export has no library inside. Export again from your old app.")
+        if (!library.exists()) {
+            downloadsStage?.deleteRecursively()
+            throw TransferException("That export has no library inside. Export again from your old app.")
+        }
 
         val moveToHere = pathMover(manifest)
         val missingLocal = convertLibrary(library, File(staging, TransferArchive.LocalSongsEntry), moveToHere)
@@ -64,16 +82,31 @@ class TransferImporter @Inject constructor(
             if (prefs.name.removeSuffix(".json") in TransferArchive.PrefsToCarry) rewriteSettings(prefs, moveToHere) else prefs.delete()
         }
 
+        val hasStagedExternalDownloads = downloadsStage != null && downloadsStage.listFiles()?.isNotEmpty() == true
+        if (!hasStagedExternalDownloads) downloadsStage?.deleteRecursively()
+
         // written last: without it the next start throws the half-made folder away instead of using it
         File(staging, TransferRestore.ReadyMarker).writeText(
             JSONObject()
                 .put("songs", manifest.songs)
                 .put("playlists", manifest.playlists)
                 .put("missingLocal", missingLocal)
+                .apply {
+                    if (hasStagedExternalDownloads) {
+                        put("downloadsRoot", externalDownloadsRoot.path)
+                    }
+                }
                 .toString()
         )
         onProgress(1f)
         return manifest
+    }
+
+    private fun chooseDownloadsRoot(neededBytes: Long): File? {
+        val current = StoragePlaces.placeOf(context, StoredKind.Downloads)
+        if (!current.isPhone && current.free >= neededBytes) return current.root
+        if (context.dataDir.usableSpace >= neededBytes) return null
+        return StoragePlaces.sdCards(context).firstOrNull { it.free >= neededBytes }?.root
     }
 
     private fun readManifest(source: Uri): TransferManifest {
@@ -95,20 +128,29 @@ class TransferImporter @Inject constructor(
         return manifest
     }
 
-    // copies the known entries into staging, everything else in the zip is ignored
-    private fun unpack(source: Uri, staging: File, total: Long, onProgress: (Float) -> Unit) {
+    // copies the known entries into staging (routing files/download/* straight to an SD card when chosen), everything else in the zip is ignored
+    private fun unpack(source: Uri, staging: File, downloadsStage: File?, total: Long, onProgress: (Float) -> Unit) {
         val stream = context.contentResolver.openInputStream(source)
             ?: throw TransferException("Couldn't open that file. Try picking it again.")
         val root = staging.canonicalPath + File.separator
+        val dlRoot = downloadsStage?.let { it.canonicalPath + File.separator }
+        val dlPrefix = TransferArchive.FilesPrefix + StoredKind.Downloads.folder + "/"
         var copied = 0L
+        var lastReported = 0f
         val buffer = ByteArray(128 * 1024)
         ZipInputStream(stream.buffered(256 * 1024)).use { zip ->
             while (true) {
                 val entry = zip.nextEntry ?: break
                 if (entry.isDirectory || !isWanted(entry.name)) continue
-                val target = File(staging, entry.name)
+                val toExternalDownloads = downloadsStage != null && entry.name.startsWith(dlPrefix)
+                val target = if (toExternalDownloads) {
+                    File(downloadsStage, entry.name.removePrefix(dlPrefix))
+                } else {
+                    File(staging, entry.name)
+                }
+                val expectedRoot = if (toExternalDownloads) dlRoot else root
                 // a crafted zip could point outside the folder with ../, this keeps every file inside it
-                if (!target.canonicalPath.startsWith(root)) continue
+                if (expectedRoot == null || !target.canonicalPath.startsWith(expectedRoot)) continue
                 target.parentFile?.mkdirs()
                 target.outputStream().buffered(256 * 1024).use { out ->
                     while (true) {
@@ -116,7 +158,13 @@ class TransferImporter @Inject constructor(
                         if (read < 0) break
                         out.write(buffer, 0, read)
                         copied += read
-                        if (total > 0) onProgress((copied.toDouble() / total).toFloat().coerceIn(0f, 0.97f))
+                        if (total > 0) {
+                            val p = (copied.toDouble() / total).toFloat().coerceIn(0f, 0.97f)
+                            if (p - lastReported >= 0.01f) {
+                                lastReported = p
+                                onProgress(p)
+                            }
+                        }
                     }
                 }
                 if (entry.time > 0) target.setLastModified(entry.time)
@@ -214,20 +262,30 @@ class TransferImporter @Inject constructor(
         return missing
     }
 
-    // looks the file up by name and size, null without audio permission or when it isn't on this phone
+    // looks the file up by name and size across internal storage and mounted SD cards, null without audio permission or when it isn't on this phone
     private fun findInMediaStore(name: String, size: Long): String? {
         if (name.isBlank()) return null
-        val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        val collections = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val volumes = runCatching { MediaStore.getExternalVolumeNames(context) }.getOrNull().orEmpty()
+            if (volumes.isNotEmpty()) volumes.map { MediaStore.Audio.Media.getContentUri(it) }
+            else listOf(MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL))
+        } else {
+            listOf(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+        }
         val (selection, args) = if (size > 0) {
             "${MediaStore.Audio.Media.DISPLAY_NAME} = ? AND ${MediaStore.Audio.Media.SIZE} = ?" to arrayOf(name, size.toString())
         } else {
             "${MediaStore.Audio.Media.DISPLAY_NAME} = ?" to arrayOf(name)
         }
-        return runCatching {
-            context.contentResolver.query(collection, arrayOf(MediaStore.Audio.Media._ID), selection, args, null)?.use { cursor ->
-                if (cursor.moveToFirst()) Uri.withAppendedPath(collection, cursor.getLong(0).toString()).toString() else null
-            }
-        }.getOrNull()
+        for (collection in collections) {
+            val found = runCatching {
+                context.contentResolver.query(collection, arrayOf(MediaStore.Audio.Media._ID), selection, args, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) Uri.withAppendedPath(collection, cursor.getLong(0).toString()).toString() else null
+                }
+            }.getOrNull()
+            if (found != null) return found
+        }
+        return null
     }
 
     // drops any login that slipped in and moves saved paths, in settings.json and each prefs file alike

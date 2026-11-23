@@ -181,7 +181,10 @@ internal object TransferArchive {
 
 /** turns a copied wal-mode database into one plain file, so it can be zipped or moved on its own without losing the newest changes */
 internal fun foldIntoOneFile(db: SQLiteDatabase) {
-    val mode = db.rawQuery("PRAGMA journal_mode=DELETE", null).use { if (it.moveToFirst()) it.getString(0) else null }
+    runCatching { db.disableWriteAheadLogging() }
+    val mode = runCatching {
+        db.rawQuery("PRAGMA journal_mode=DELETE", null).use { if (it.moveToFirst()) it.getString(0) else null }
+    }.getOrNull()
     if (mode.equals("delete", ignoreCase = true)) return
     // android kept it in wal mode, so push everything from the wal into the main file instead
     db.rawQuery("PRAGMA wal_checkpoint(TRUNCATE)", null).use { cursor ->
@@ -189,15 +192,40 @@ internal fun foldIntoOneFile(db: SQLiteDatabase) {
     }
 }
 
-// copies a live database while holding its write lock, so nothing lands halfway, then folds its wal into one plain file
-internal fun snapshotDatabase(source: File, target: File, begin: () -> Unit, end: () -> Unit) {
-    val targetWal = File(target.path + "-wal")
+// copies a live database into one compacted, self-contained file; uses atomic VACUUM INTO when available and falls back to lock+copy on older SQLite
+internal fun snapshotDatabase(
+    source: File,
+    target: File,
+    begin: () -> Unit,
+    end: () -> Unit,
+    vacuumInto: ((String) -> Unit)? = null,
+    checkpoint: (() -> Unit)? = null,
+) {
+    fun cleanSidecars() = listOf("-wal", "-shm", "-journal").forEach { File(target.path + it).delete() }
     target.delete()
-    targetWal.delete()
+    cleanSidecars()
+
+    // SQLite 3.27+ (Android 11+): atomic, consistent, compacted single-file snapshot with zero write-lock stall
+    if (vacuumInto != null) {
+        val ok = runCatching {
+            vacuumInto(target.path)
+            target.exists() && target.length() > 0L
+        }.getOrDefault(false)
+        if (ok) {
+            cleanSidecars()
+            return
+        }
+        target.delete()
+        cleanSidecars()
+    }
+
+    // Flush WAL into the main file before copying so older Android/SQLite versions have minimal WAL to replay
+    runCatching { checkpoint?.invoke() }
+    val targetWal = File(target.path + "-wal")
     begin()
     try {
         source.copyTo(target, overwrite = true)
-        File(source.path + "-wal").takeIf { it.exists() }?.copyTo(targetWal, overwrite = true)
+        File(source.path + "-wal").takeIf { it.exists() && it.length() > 0L }?.copyTo(targetWal, overwrite = true)
     } finally {
         end()
     }
@@ -207,7 +235,7 @@ internal fun snapshotDatabase(source: File, target: File, begin: () -> Unit, end
             check(cursor.moveToFirst() && cursor.getString(0).equals("ok", ignoreCase = true)) { "snapshot of ${source.name} failed its check" }
         }
     }
-    listOf("-wal", "-shm", "-journal").forEach { File(target.path + it).delete() }
+    cleanSidecars()
 }
 
 /** what the manifest says about a zip, enough to check it and to tell the user what's inside */

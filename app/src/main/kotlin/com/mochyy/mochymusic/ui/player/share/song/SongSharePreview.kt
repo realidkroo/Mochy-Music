@@ -182,10 +182,20 @@ internal fun ShareVideoLayer(
         ShareVideoSource.MusicVideo -> session.musicVideo.found?.let { music ->
             val track = music.trackFor(PreviewVideoShortSide) ?: return@let
             val start = music.videoMsAt(session.windowStartMs).coerceAtLeast(0L)
+            val mime = track.mimeType.substringBefore(';').ifBlank { MimeTypes.VIDEO_MP4 }
             val item = remember(track.url, start, session.windowLengthMs) {
-                clippedItem(MediaItem.Builder().setUri(track.url).setMimeType(MimeTypes.VIDEO_MP4), start, session.windowLengthMs)
+                clippedItem(MediaItem.Builder().setUri(track.url).setMimeType(mime), start, session.windowLengthMs)
             }
             LoopingVideo(item, music.streams.headers, playing, restartKey = loops, modifier = modifier)
+        }
+        ShareVideoSource.YouTube -> session.pickedYouTubeVideo.found?.let { yt ->
+            val track = yt.trackFor(PreviewVideoShortSide) ?: return@let
+            val (start, length) = youtubeClipWindow(yt, session.windowStartMs, session.windowLengthMs)
+            val mime = track.mimeType.substringBefore(';').ifBlank { MimeTypes.VIDEO_MP4 }
+            val item = remember(track.url, start, length) {
+                clippedItem(MediaItem.Builder().setUri(track.url).setMimeType(mime), start, length)
+            }
+            LoopingVideo(item, yt.streams.headers, playing, restartKey = loops, modifier = modifier)
         }
         is ShareVideoSource.Own -> {
             val item = remember(source) { clippedItem(MediaItem.Builder().setUri(source.uri), source.startMs, source.lengthMs) }

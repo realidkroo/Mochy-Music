@@ -83,12 +83,13 @@ class StorageMover @Inject constructor(
             if (total > to.free) throw IOException("not enough room")
             var copied = 0L
             var shown = 0f
+            // reuse one copy buffer across every file chunk to avoid allocating 256 KB per file
+            val buffer = ByteArray(256 * 1024)
             for (file in files) {
                 val out = File(staging, file.relativeTo(from).path)
                 out.parentFile?.mkdirs()
                 file.inputStream().use { input ->
                     out.outputStream().use { output ->
-                        val buffer = ByteArray(256 * 1024)
                         while (true) {
                             val read = input.read(buffer)
                             if (read < 0) break
@@ -106,7 +107,13 @@ class StorageMover @Inject constructor(
                 if (out.length() != file.length()) throw IOException("${file.name} came out a different size")
             }
             target.deleteRecursively()
-            if (!staging.renameTo(target)) throw IOException("couldn't put the copied folder in place")
+            if (!staging.renameTo(target)) {
+                // some exFAT/FUSE SD cards refuse directory rename right after delete; fall back to copying in place
+                if (!staging.copyRecursively(target, overwrite = true)) {
+                    throw IOException("couldn't put the copied folder in place")
+                }
+                staging.deleteRecursively()
+            }
             moved = true
         } finally {
             // after a move they stay paused until the restart, or they'd write into the folder that's about to go

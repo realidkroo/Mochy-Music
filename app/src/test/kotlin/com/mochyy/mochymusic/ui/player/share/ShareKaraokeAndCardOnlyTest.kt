@@ -7,13 +7,17 @@ import com.mochyy.mochymusic.models.MediaMetadata
 import com.mochyy.mochymusic.ui.player.karaokeHeadFor
 import com.mochyy.mochymusic.ui.player.share.song.CardOnlyBackground
 import com.mochyy.mochymusic.ui.player.share.song.Fetched
+import com.mochyy.mochymusic.ui.player.share.song.ShareMusicVideo
 import com.mochyy.mochymusic.ui.player.share.song.ShareVideoSource
 import com.mochyy.mochymusic.ui.player.share.song.SongBackground
 import com.mochyy.mochymusic.ui.player.share.song.SongShareKind
 import com.mochyy.mochymusic.ui.player.share.song.SongShareSession
 import com.mochyy.mochymusic.ui.player.share.song.isTextureVideo
+import com.mochyy.mochymusic.ui.player.share.song.youtubeClipWindow
+import com.mochyy.mochymusic.utils.VideoStreams
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -167,5 +171,49 @@ class ShareKaraokeAndCardOnlyTest {
         session.pick = pick
         assertFalse(session.hasCard)
         assertFalse(session.isCardOnly)
+    }
+
+    @Test
+    fun `ShareVideoSource YouTube requires resolved video and youtubeClipWindow stays inside video duration`() {
+        val song = MediaMetadata(id = "test-id", title = "Song", artists = emptyList(), duration = 180)
+        val session = SongShareSession(song)
+        assertTrue(ShareVideoSource.YouTube.isTextureVideo)
+
+        // Before resolving streams, YouTube source is not active
+        session.setVideo(SongBackground.Video(ShareVideoSource.YouTube))
+        assertNull(session.activeVideoSource)
+        assertFalse(session.hasVideoBackground)
+
+        // Once resolved, both full-canvas and Card-only modes activate it
+        val streams = VideoStreams(
+            videoId = "yt123",
+            tracks = emptyList(),
+            headers = emptyMap(),
+            expiresAtMs = Long.MAX_VALUE,
+            durationMs = 30_000L,
+        )
+        val picked = ShareMusicVideo("yt123", streams) { it }
+        session.pickedYouTubeVideo = Fetched.Found(picked)
+        assertEquals(ShareVideoSource.YouTube, session.activeVideoSource)
+        assertTrue(session.hasVideoBackground)
+
+        session.toggleCardOnly(true)
+        assertEquals(CardOnlyBackground.Video(ShareVideoSource.YouTube), session.cardOnlyBg)
+        assertEquals(ShareVideoSource.YouTube, session.activeVideoSource)
+
+        // Normal window inside 30s video
+        assertEquals(5_000L to 10_000L, youtubeClipWindow(picked, songStartMs = 5_000L, windowLengthMs = 10_000L))
+        // Song timestamp past 30s video wraps cleanly inside [0, 20_000)
+        val (wrappedStart, wrappedLen) = youtubeClipWindow(picked, songStartMs = 95_000L, windowLengthMs = 10_000L)
+        assertEquals(10_000L, wrappedLen)
+        assertTrue("Wrapped start should keep clip inside video duration", wrappedStart in 0L..20_000L)
+
+        // Short 6s looping clip clamps length to 6s and starts at 0
+        val shortVideo = ShareMusicVideo("short", streams.copy(durationMs = 6_000L)) { it }
+        assertEquals(0L to 6_000L, youtubeClipWindow(shortVideo, songStartMs = 45_000L, windowLengthMs = 10_000L))
+
+        // Unknown duration keeps requested start and window
+        val unknownDuration = ShareMusicVideo("unk", streams.copy(durationMs = 0L)) { it }
+        assertEquals(45_000L to 10_000L, youtubeClipWindow(unknownDuration, songStartMs = 45_000L, windowLengthMs = 10_000L))
     }
 }

@@ -116,8 +116,12 @@ fun PopupSheetState.showAddLocalMusicSheet(viewModel: LibraryImportViewModel, on
         },
     ) {
         val scan by viewModel.scan.collectAsState()
-        val songs = remember(scan) {
-            (scan as? DeviceScan.Found)?.songs?.map { PickerSong(it.uri.toString(), it.title, it.artist, it.artworkUri) }
+        val cardLabel = stringResource(R.string.storage_place_card)
+        val songs = remember(scan, cardLabel) {
+            (scan as? DeviceScan.Found)?.songs?.map { song ->
+                val sub = listOfNotNull(song.artist, cardLabel.takeIf { song.onSdCard }).joinToString(" · ").ifEmpty { null }
+                PickerSong(song.uri.toString(), song.title, sub, song.artworkUri)
+            }
         }
         LaunchedEffect(songs) {
             if (songs != null && !selection.started) {

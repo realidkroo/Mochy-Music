@@ -322,24 +322,30 @@ private fun PlaceButtons(viewModel: StorageViewModel, downloadCount: Int) {
     val export by viewModel.exportStep.collectAsState()
     val menuState = LocalMenuState.current
     val moving = move as? MoveStep.Working
+    val downloadsPlace by androidx.compose.runtime.produceState<String?>(null) {
+        value = viewModel.externalPlaceLabel(StoredKind.Downloads)
+    }
+    val cachePlace by androidx.compose.runtime.produceState<String?>(null) {
+        value = viewModel.externalPlaceLabel(StoredKind.SongCache)
+    }
 
     @Composable
-    fun moveDetail(kind: StoredKind): String? = when {
+    fun moveDetail(kind: StoredKind, externalLabel: String?): String? = when {
         moving?.kind == kind -> stringResource(R.string.storage_moving, (moving.progress * 100).toInt())
         (move as? MoveStep.Failed)?.kind == kind -> stringResource(R.string.storage_move_failed)
-        else -> null
+        else -> externalLabel
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         StorageActionButton(
             label = stringResource(R.string.storage_downloads_place),
-            detail = moveDetail(StoredKind.Downloads),
+            detail = moveDetail(StoredKind.Downloads, downloadsPlace),
             enabled = moving == null,
             onClick = { menuState.showStoragePlaceSheet(viewModel, StoredKind.Downloads) },
         )
         StorageActionButton(
             label = stringResource(R.string.storage_cache_place),
-            detail = moveDetail(StoredKind.SongCache),
+            detail = moveDetail(StoredKind.SongCache, cachePlace),
             enabled = moving == null,
             onClick = { menuState.showStoragePlaceSheet(viewModel, StoredKind.SongCache) },
         )

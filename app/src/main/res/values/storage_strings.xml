@@ -80,6 +80,11 @@
     <string name="storage_export_covers">Cover pictures</string>
     <string name="storage_export_lyrics">Lyrics</string>
     <string name="storage_export_pick">Pick a folder</string>
+    <string name="storage_export_destination">Where to export</string>
+    <string name="storage_export_to_card">Export to %1$s</string>
+    <string name="storage_export_card_detail">Saves into mochy-preserve on your memory card</string>
+    <string name="storage_export_pick_folder">Another folder</string>
+    <string name="storage_export_pick_folder_detail">Choose any folder on this phone or a memory card</string>
     <string name="storage_export_progress">Exporting… %1$d of %2$d</string>
     <string name="storage_export_starting">Getting the songs ready…</string>
     <string name="storage_export_failed">The export stopped partway. Check the folder you picked and try again.</string>

@@ -134,6 +134,40 @@ internal suspend fun matchMusicVideo(session: SongShareSession, service: MusicSe
     session.musicVideo = Fetched.Found(ShareMusicVideo(found.videoId, found.streams) { songMs -> map.videoMsAt(songMs) })
 }
 
+// resolves streams for a YouTube video picked from search inside Song Share; returns false if no playable video stream was found
+internal suspend fun loadPickedYouTubeVideo(session: SongShareSession, videoId: String, title: String): Boolean {
+    val streams = YTPlayerUtils.resolveVideoStreams(videoId).getOrNull() ?: return false
+    if (streams.tracks.isEmpty()) return false
+    session.pickedYouTubeTitle = title
+    session.pickedYouTubeVideo = Fetched.Found(ShareMusicVideo(videoId, streams) { it })
+    return true
+}
+
+// aligns a picked YouTube video with the song if its audio matches; unrelated videos stay on their fallback position
+internal suspend fun matchPickedYouTubeVideo(session: SongShareSession, videoId: String, service: MusicService?) {
+    if (videoId == session.song.id || service == null) return
+    val map = withTimeoutOrNull(VideoMatchTimeoutMs) { runCatching { service.matchSongToVideo(session.song.id, videoId) }.getOrNull() }
+        ?: return
+    val current = session.pickedYouTubeVideo.found?.takeIf { it.videoId == videoId } ?: return
+    session.pickedYouTubeVideo = Fetched.Found(ShareMusicVideo(current.videoId, current.streams) { songMs -> map.videoMsAt(songMs) })
+}
+
+// keeps a YouTube clip window inside the video's real duration so short loops and arbitrary videos never clip past EOF
+internal fun youtubeClipWindow(video: ShareMusicVideo, songStartMs: Long, windowLengthMs: Long): Pair<Long, Long> {
+    val safeWindow = windowLengthMs.coerceAtLeast(1L)
+    val rawStart = video.videoMsAt(songStartMs).coerceAtLeast(0L)
+    val duration = video.streams.durationMs
+    if (duration <= 0L) return rawStart to safeWindow
+    val clipLength = safeWindow.coerceAtMost(duration).coerceAtLeast(1L)
+    val maxStart = (duration - clipLength).coerceAtLeast(0L)
+    val start = when {
+        rawStart <= maxStart -> rawStart
+        maxStart == 0L -> 0L
+        else -> rawStart % maxStart
+    }
+    return start to clipLength
+}
+
 // links run out after a few hours; an export fetches fresh ones first if they have
 internal suspend fun freshMusicVideo(video: ShareMusicVideo): ShareMusicVideo {
     if (!video.streams.isExpired) return video

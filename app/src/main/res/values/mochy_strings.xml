@@ -1089,7 +1089,7 @@
     <string name="song_share_type_title">Type</string>
     <string name="song_share_type_subtitle">Select background type</string>
     <string name="song_share_type_video">Video</string>
-    <string name="song_share_type_video_hint">Flowing cover, your own, the music video or the moving cover</string>
+    <string name="song_share_type_video_hint">Flowing cover, YouTube video, your own, or moving cover</string>
     <string name="song_share_type_still">Static</string>
     <string name="song_share_type_still_hint">A picture, the music\'s colours or a plain colour</string>
     <string name="song_share_type_link">Copy link</string>
@@ -1114,9 +1114,14 @@
     <string name="song_share_card_bg_liquid">Flowing cover</string>
     <string name="song_share_card_bg_moving">Moving cover</string>
     <string name="song_share_card_bg_music_video">Music video</string>
+    <string name="song_share_card_bg_youtube">YouTube</string>
     <string name="song_share_card_bg_own_video">Your video</string>
     <string name="song_share_bg_liquid_cover">Flowing cover</string>
     <string name="song_share_bg_liquid_cover_hint">The cover swirling and warping softly in motion</string>
+    <string name="song_share_bg_youtube_video">Find YouTube video</string>
+    <string name="song_share_bg_youtube_video_hint">Tap the circle to search YouTube for a video</string>
+    <string name="song_share_bg_youtube_picker_subtitle">Search YouTube for a background video</string>
+    <string name="song_share_bg_youtube_failed">Couldn\'t load that video. Try another one.</string>
     <string name="song_share_bg_own_video">Add your own video</string>
     <string name="song_share_bg_own_video_hint">Tap the circle to pick a video from your phone</string>
     <string name="song_share_bg_music_video">The music video</string>

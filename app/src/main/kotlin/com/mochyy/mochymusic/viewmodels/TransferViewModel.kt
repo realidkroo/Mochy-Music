@@ -10,6 +10,7 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mochyy.mochymusic.importer.transfer.TransferExportStatus
 import com.mochyy.mochymusic.importer.transfer.TransferExporter
 import com.mochyy.mochymusic.importer.transfer.TransferImporter
 import com.mochyy.mochymusic.importer.transfer.TransferManifest
@@ -18,8 +19,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalDate
@@ -40,8 +44,16 @@ class TransferViewModel @Inject constructor(
     private val exporter: TransferExporter,
     private val importer: TransferImporter,
 ) : ViewModel() {
-    private val _export = MutableStateFlow<TransferStep>(TransferStep.Idle)
-    val export: StateFlow<TransferStep> = _export.asStateFlow()
+    val export: StateFlow<TransferStep> = exporter.status
+        .map { status ->
+            when (status) {
+                TransferExportStatus.Idle -> TransferStep.Idle
+                is TransferExportStatus.Working -> TransferStep.Working(status.progress)
+                TransferExportStatus.Done -> TransferStep.Done
+                is TransferExportStatus.Failed -> TransferStep.Failed(status.message)
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, TransferStep.Idle)
 
     private val _import = MutableStateFlow<TransferStep>(TransferStep.Idle)
     val import: StateFlow<TransferStep> = _import.asStateFlow()
@@ -55,16 +67,7 @@ class TransferViewModel @Inject constructor(
     fun exportFileName(): String = "mochy-export-${LocalDate.now()}.zip"
 
     fun exportTo(target: Uri) {
-        if (_export.value is TransferStep.Working) return
-        _export.value = TransferStep.Working(0f)
-        viewModelScope.launch {
-            exporter.export(target) { _export.value = TransferStep.Working(it) }
-                .onSuccess { _export.value = TransferStep.Done }
-                .onFailure {
-                    Timber.e(it, "Export failed")
-                    _export.value = TransferStep.Failed(it.message ?: "Couldn't export. Try again.")
-                }
-        }
+        exporter.startExport(target)
     }
 
     /** checks a picked zip before anything is unpacked, the failure message is ready to show */

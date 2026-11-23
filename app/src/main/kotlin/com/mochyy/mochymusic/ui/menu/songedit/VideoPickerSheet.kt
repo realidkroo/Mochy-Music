@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,6 +56,7 @@ import com.mochyy.mochymusic.songedit.SongEditSaver
 import com.mochyy.mochymusic.songedit.SongEdits
 import com.mochyy.mochymusic.ui.component.LocalMenuState
 import com.mochyy.mochymusic.ui.component.PopupSheetHandle
+import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.SheetPillButton
 import com.mochyy.mochymusic.ui.component.SheetSearchField
@@ -77,12 +79,71 @@ internal sealed interface VideoChoice {
 }
 
 @Stable
-private class VideoPickState(query: String, val startChoice: VideoChoice) {
+private class VideoPickState(
+    query: String,
+    val startChoice: VideoChoice,
+    val showSongOptions: Boolean = true,
+    val subtitle: String? = null,
+    val earlierTitle: String? = null,
+) {
     var query by mutableStateOf(query)
     var choice by mutableStateOf(startChoice)
+    var pickedTitle by mutableStateOf(earlierTitle)
     val results = mutableStateListOf<SongItem>()
     var searching by mutableStateOf(false)
     var busy by mutableStateOf(false)
+}
+
+/**
+ * Reuses the YouTube video search & selector sheet inside any [PopupSheetState] (such as Song Share's dialog)
+ * without touching the song's saved video override. [onPick] runs while the sheet is locked; return true to close.
+ */
+internal fun PopupSheetState.showYouTubeVideoPicker(
+    initialQuery: String,
+    currentVideoId: String? = null,
+    currentTitle: String? = null,
+    subtitle: String? = null,
+    onPick: suspend (videoId: String, title: String) -> Boolean,
+): PopupSheetHandle {
+    val start = currentVideoId?.let { VideoChoice.Picked(it) } ?: VideoChoice.None
+    val state = VideoPickState(
+        query = initialQuery,
+        startChoice = start,
+        showSongOptions = false,
+        subtitle = subtitle,
+        earlierTitle = currentTitle,
+    )
+    val handle = arrayOfNulls<PopupSheetHandle>(1)
+    handle[0] = showWithHandle(
+        buttonBar = {
+            val scope = rememberCoroutineScope()
+            val picked = state.choice as? VideoChoice.Picked
+            SheetPillButton(
+                text = stringResource(R.string.video_pick_next),
+                enabled = !state.busy && picked != null,
+                onClick = {
+                    val chosen = state.choice as? VideoChoice.Picked ?: return@SheetPillButton
+                    state.busy = true
+                    handle[0]?.setLocked(true)
+                    scope.launch {
+                        val title = state.pickedTitle
+                            ?: state.results.firstOrNull { it.id == chosen.videoId }?.title
+                            ?: ""
+                        val done = runCatching { onPick(chosen.videoId, title) }.getOrDefault(false)
+                        handle[0]?.setLocked(false)
+                        if (done) {
+                            handle[0]?.dismiss()
+                        } else {
+                            state.busy = false
+                        }
+                    }
+                },
+            )
+        },
+    ) {
+        VideoPickerContent(state)
+    }
+    return requireNotNull(handle[0])
 }
 
 // "select video" from the mock: pick the right youtube video for a song, or none, for its cover video and the video mode; opens over whatever asked for it
@@ -188,7 +249,7 @@ private fun VideoPickerContent(state: VideoPickState) {
             letterSpacing = (-0.04).em,
         )
         Text(
-            text = stringResource(R.string.video_pick_subtitle),
+            text = state.subtitle ?: stringResource(R.string.video_pick_subtitle),
             color = Color.White.copy(alpha = 0.55f),
             fontFamily = InterFontFamily,
             fontSize = 19.sp,
@@ -203,19 +264,21 @@ private fun VideoPickerContent(state: VideoPickState) {
         )
         Spacer(Modifier.height(12.dp))
 
-        ChoiceRow(
-            title = stringResource(R.string.video_pick_auto),
-            detail = stringResource(R.string.video_pick_auto_desc),
-            picked = state.choice == VideoChoice.Auto,
-            onClick = { state.choice = VideoChoice.Auto },
-        )
-        Spacer(Modifier.height(8.dp))
-        ChoiceRow(
-            title = stringResource(R.string.video_pick_none),
-            detail = stringResource(R.string.video_pick_none_desc),
-            picked = state.choice == VideoChoice.None,
-            onClick = { state.choice = VideoChoice.None },
-        )
+        if (state.showSongOptions) {
+            ChoiceRow(
+                title = stringResource(R.string.video_pick_auto),
+                detail = stringResource(R.string.video_pick_auto_desc),
+                picked = state.choice == VideoChoice.Auto,
+                onClick = { state.choice = VideoChoice.Auto },
+            )
+            Spacer(Modifier.height(8.dp))
+            ChoiceRow(
+                title = stringResource(R.string.video_pick_none),
+                detail = stringResource(R.string.video_pick_none_desc),
+                picked = state.choice == VideoChoice.None,
+                onClick = { state.choice = VideoChoice.None },
+            )
+        }
 
         // the video picked before, even when this search doesn't bring it up
         val earlier = state.startChoice as? VideoChoice.Picked
@@ -223,11 +286,26 @@ private fun VideoPickerContent(state: VideoPickState) {
             Spacer(Modifier.height(8.dp))
             VideoRow(
                 thumbnail = "https://i.ytimg.com/vi/${earlier.videoId}/mqdefault.jpg",
-                title = stringResource(R.string.song_edit_video_picked),
+                title = state.earlierTitle?.takeIf { it.isNotBlank() } ?: stringResource(R.string.song_edit_video_picked),
                 detail = null,
                 picked = state.choice == earlier,
-                onClick = { state.choice = earlier },
+                onClick = {
+                    state.choice = earlier
+                    state.pickedTitle = state.earlierTitle
+                },
             )
+        }
+        if (state.searching && state.results.isEmpty()) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+            ) {
+                CircularProgressIndicator(
+                    color = Color.White.copy(alpha = 0.7f),
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
         }
         for (video in state.results) {
             Spacer(Modifier.height(8.dp))
@@ -240,7 +318,10 @@ private fun VideoPickerContent(state: VideoPickState) {
                     video.duration?.let { makeTimeString(it * 1000L) },
                 ).joinToString(" · "),
                 picked = state.choice == choice,
-                onClick = { state.choice = choice },
+                onClick = {
+                    state.choice = choice
+                    state.pickedTitle = video.title
+                },
             )
         }
         if (!state.searching && state.results.isEmpty() && state.query.isNotBlank()) {

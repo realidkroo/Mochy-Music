@@ -61,6 +61,9 @@ internal sealed interface ShareVideoSource {
     // the song's music video, lined up with the song
     data object MusicVideo : ShareVideoSource
 
+    // any YouTube video found via search inside the share flow
+    data object YouTube : ShareVideoSource
+
     // the album's looping animated cover
     data object AnimatedCover : ShareVideoSource
 }
@@ -171,12 +174,15 @@ internal class SongShareSession(val song: MediaMetadata) {
                     ShareVideoSource.LiquidCover -> ShareVideoSource.LiquidCover
                     ShareVideoSource.AnimatedCover -> ShareVideoSource.AnimatedCover.takeIf { animatedCover is Fetched.Found }
                     ShareVideoSource.MusicVideo -> ShareVideoSource.MusicVideo.takeIf { musicVideo is Fetched.Found }
+                    ShareVideoSource.YouTube -> ShareVideoSource.YouTube.takeIf { pickedYouTubeVideo is Fetched.Found }
                     is ShareVideoSource.Own -> bg.source
                 }
                 else -> null
             }
         } else {
-            (background as? SongBackground.Video)?.source
+            (background as? SongBackground.Video)?.source?.takeIf {
+                it != ShareVideoSource.YouTube || pickedYouTubeVideo is Fetched.Found
+            }
         }
 
     val hasVideoBackground: Boolean get() = activeVideoSource != null
@@ -227,6 +233,8 @@ internal class SongShareSession(val song: MediaMetadata) {
     var lyricsOffsetMs by mutableLongStateOf(0L)
     var lyricsLook by mutableStateOf(ShareLyricsLook())
     var musicVideo by mutableStateOf<Fetched<ShareMusicVideo>>(Fetched.Looking)
+    var pickedYouTubeVideo by mutableStateOf<Fetched<ShareMusicVideo>>(Fetched.Missing)
+    var pickedYouTubeTitle by mutableStateOf<String?>(null)
     var animatedCover by mutableStateOf<Fetched<String>>(Fetched.Looking)
     var art by mutableStateOf(ShareArt())
 

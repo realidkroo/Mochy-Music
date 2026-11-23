@@ -24,6 +24,7 @@ import kotlin.system.exitProcess
 object TransferRestore {
     private const val Tag = "TransferRestore"
     private const val StagingName = "transfer_staging"
+    internal const val DownloadsStagingName = "transfer_staging_download"
     private const val NoteName = "transfer_restored.json"
     internal const val ReadyMarker = "ready.json"
 
@@ -40,6 +41,7 @@ object TransferRestore {
         if (!ready.exists()) {
             // the import was closed halfway through unpacking, so there's nothing whole to use
             staging.deleteRecursively()
+            StoragePlaces.sdCards(app).forEach { File(it.root, DownloadsStagingName).deleteRecursively() }
             return
         }
         runCatching { swapIn(app, staging, JSONObject(ready.readText())) }
@@ -73,10 +75,23 @@ object TransferRestore {
 
     // files first and the library last, so a stop halfway leaves an app that still starts and can import again
     private fun swapIn(context: Context, staging: File, ready: JSONObject) {
-        val carriesDownloads = File(staging, TransferArchive.FilesPrefix + StoredKind.Downloads.folder).exists()
+        val externalDownloadsRoot = ready.optString("downloadsRoot").takeIf { it.isNotBlank() }?.let(::File)
+        val externalDownloadsStage = externalDownloadsRoot?.let { File(it, DownloadsStagingName) }?.takeIf { it.exists() }
+        val carriesDownloads = externalDownloadsStage != null || File(staging, TransferArchive.FilesPrefix + StoredKind.Downloads.folder).exists()
         moveFiles(context, File(staging, TransferArchive.FilesPrefix))
-        // the import's downloads land on the phone, so a card that held the old ones is let go; a backup without songs leaves them be
-        if (carriesDownloads) StoragePlaces.resetToPhone(context, StoredKind.Downloads)
+        if (externalDownloadsStage != null) {
+            val target = File(externalDownloadsRoot, StoredKind.Downloads.folder)
+            target.deleteRecursively()
+            if (!externalDownloadsStage.renameTo(target)) {
+                externalDownloadsStage.copyRecursively(target, overwrite = true)
+                externalDownloadsStage.deleteRecursively()
+            }
+            // keep downloads pointed at the SD card where they were staged instead of moving back to internal storage
+            StoragePlaces.pointToRoot(context, StoredKind.Downloads, externalDownloadsRoot)
+        } else if (carriesDownloads) {
+            // the import's downloads landed on the phone, so a card that held the old ones is let go; a backup without songs leaves them be
+            StoragePlaces.resetToPhone(context, StoredKind.Downloads)
+        }
         File(staging, TransferArchive.MediaEntry).takeIf { it.exists() }?.let { media ->
             // the streaming cache's index lived in the old media database, so the cache starts over with the new one
             StoragePlaces.dir(context, StoredKind.SongCache).deleteRecursively()

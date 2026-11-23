@@ -169,7 +169,17 @@ class StorageViewModel @Inject constructor(
 
     fun clearMoveFailure() = mover.clearFailure()
 
+    /** mounted SD cards where songs can be exported or stored with no extra permissions */
+    suspend fun sdCards(): List<StoragePlace> = withContext(Dispatchers.IO) { StoragePlaces.sdCards(context) }
+
+    /** label of the drive currently holding [kind], or null when on internal phone storage */
+    suspend fun externalPlaceLabel(kind: StoredKind): String? = withContext(Dispatchers.IO) {
+        StoragePlaces.placeOf(context, kind).takeIf { !it.isPhone }?.label
+    }
+
     fun export(tree: android.net.Uri, choice: ExportChoice) = exporter.start(tree, choice)
+
+    fun exportToFolder(root: File, choice: ExportChoice) = exporter.startToFolder(root, choice)
 
     fun clearExport() = exporter.clear()
 

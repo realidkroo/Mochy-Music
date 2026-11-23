@@ -29,8 +29,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.io.BufferedOutputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.io.OutputStream
 import java.io.SequenceInputStream
 import java.util.Collections
@@ -56,7 +59,62 @@ sealed interface ExportStep {
     data class Failed(val message: String) : ExportStep
 }
 
-// copies downloaded songs out as plain files into a folder the user picked; where mochy keeps its own downloads never changes
+// abstracts writing exported songs to either a SAF DocumentTree (any user-picked folder) or a direct File folder (e.g. SD card)
+private interface ExportSink {
+    fun folder(path: List<String>): String
+    fun write(folderKey: String, name: String, block: (OutputStream) -> Unit)
+}
+
+private class TreeExportSink(private val documents: DocumentTree) : ExportSink {
+    private val root = documents.folder(documents.rootId, RootFolder)
+    private val folders = HashMap<List<String>, String>()
+
+    override fun folder(path: List<String>): String = folders.getOrPut(path) {
+        path.fold(root) { parent, name -> documents.folder(parent, name) }
+    }
+
+    override fun write(folderKey: String, name: String, block: (OutputStream) -> Unit) =
+        documents.write(folderKey, name, block)
+}
+
+private class FileExportSink(baseDir: File) : ExportSink {
+    private val root = File(baseDir, RootFolder).apply {
+        if (!exists() && !mkdirs()) throw IOException("couldn't create $path")
+    }
+    private val folders = HashMap<String, File>()
+
+    override fun folder(path: List<String>): String {
+        val dir = path.fold(root) { parent, name -> File(parent, name) }
+        if (!dir.exists() && !dir.mkdirs()) throw IOException("couldn't create ${dir.path}")
+        folders[dir.path] = dir
+        return dir.path
+    }
+
+    override fun write(folderKey: String, name: String, block: (OutputStream) -> Unit) {
+        val dir = folders[folderKey] ?: File(folderKey)
+        val target = File(dir, name)
+        val tmp = File(dir, ".$name.tmp")
+        try {
+            FileOutputStream(tmp).use { raw ->
+                BufferedOutputStream(raw, 256 * 1024).use { out ->
+                    block(out)
+                    out.flush()
+                    runCatching { raw.fd.sync() }
+                }
+            }
+            if (target.exists()) target.delete()
+            if (!tmp.renameTo(target)) {
+                tmp.copyTo(target, overwrite = true)
+                tmp.delete()
+            }
+        } catch (error: Throwable) {
+            tmp.delete()
+            throw error
+        }
+    }
+}
+
+// copies downloaded songs out as plain files into a folder the user picked or directly onto an SD card; where mochy keeps its own downloads never changes
 @Singleton
 class DownloadExporter @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -71,11 +129,16 @@ class DownloadExporter @Inject constructor(
     private val _step = MutableStateFlow<ExportStep>(ExportStep.Idle)
     val step: StateFlow<ExportStep> = _step.asStateFlow()
 
-    fun start(tree: Uri, choice: ExportChoice) {
+    fun start(tree: Uri, choice: ExportChoice) = launchExport(choice) { TreeExportSink(DocumentTree(context.contentResolver, tree)) }
+
+    /** exports directly into [root]/mochy-preserve using plain file I/O (used for one-tap SD card export) */
+    fun startToFolder(root: File, choice: ExportChoice) = launchExport(choice) { FileExportSink(root) }
+
+    private fun launchExport(choice: ExportChoice, makeSink: () -> ExportSink) {
         if (_step.value is ExportStep.Working) return
         _step.value = ExportStep.Working(0, 0)
         scope.launch {
-            runCatching { export(tree, choice) }
+            runCatching { export(makeSink(), choice) }
                 .onSuccess { _step.value = it }
                 .onFailure {
                     Log.e("DownloadExporter", "Export stopped", it)
@@ -88,26 +151,22 @@ class DownloadExporter @Inject constructor(
         if (_step.value !is ExportStep.Working) _step.value = ExportStep.Idle
     }
 
-    private suspend fun export(tree: Uri, choice: ExportChoice): ExportStep.Done {
+    private suspend fun export(sink: ExportSink, choice: ExportChoice): ExportStep.Done {
         val ids = downloadUtil.downloads.value.values.filter { it.state == Download.STATE_COMPLETED }.map { it.request.id }
         val songs = if (ids.isEmpty()) emptyList() else database.getSongsByIds(ids)
         val entries = when (choice.layout) {
             ExportLayout.Playlists -> byPlaylist(songs)
             ExportLayout.Albums -> byAlbum(songs)
         }
-        val documents = DocumentTree(context.contentResolver, tree)
-        val root = documents.folder(documents.rootId, RootFolder)
-        val folders = HashMap<List<String>, String>()
         val usedNames = HashMap<List<String>, MutableSet<String>>()
         val coveredFolders = HashSet<List<String>>()
         val covers = CoverMemo()
+        val copyBuffer = ByteArray(256 * 1024)
         var skipped = 0
 
         entries.forEachIndexed { index, entry ->
             _step.value = ExportStep.Working(index, entries.size)
-            val folder = folders.getOrPut(entry.path) {
-                entry.path.fold(root) { parent, name -> documents.folder(parent, name) }
-            }
+            val folder = sink.folder(entry.path)
             val audio = audioOf(entry.song.id)
             if (audio == null) {
                 skipped++
@@ -116,15 +175,15 @@ class DownloadExporter @Inject constructor(
             val base = uniqueName(usedNames.getOrPut(entry.path) { HashSet() }, baseName(entry.song))
             val lyrics = if (choice.lyrics) lyricsOf(entry.song.id) else null
             val cover = if (choice.covers) (entry.folderCover ?: entry.song.song.thumbnailUrl)?.let { covers.get(it) } else null
-            writeAudio(documents, folder, base, audio, tagsOf(entry.song, lyrics?.first, cover))
+            writeAudio(sink, folder, base, audio, tagsOf(entry.song, lyrics?.first, cover), copyBuffer)
 
             lyrics?.let { (text, ext) ->
-                documents.write(folder, "$base.$ext") { it.write(text.toByteArray()) }
+                sink.write(folder, "$base.$ext") { it.write(text.toByteArray()) }
             }
             if (cover != null) {
                 // an album folder shares one cover.jpg, a mixed folder gets a picture per song; a missing cover never stops the songs
                 val name = if (entry.folderCover != null) "cover.jpg".takeIf { coveredFolders.add(entry.path) } else "$base.jpg"
-                if (name != null) runCatching { documents.write(folder, name) { it.write(cover.jpeg) } }
+                if (name != null) runCatching { sink.write(folder, name) { it.write(cover.jpeg) } }
             }
         }
         return ExportStep.Done(songs = entries.size - skipped, skipped = skipped)
@@ -196,12 +255,12 @@ class DownloadExporter @Inject constructor(
     }
 
     // the song's own audio, only youtube's webm opus moves into an .opus file since players skip .webm; opus and flac carry the song's tags
-    private fun writeAudio(documents: DocumentTree, folder: String, base: String, audio: CachedAudio, tags: ExportTags) {
+    private fun writeAudio(sink: ExportSink, folder: String, base: String, audio: CachedAudio, tags: ExportTags, buffer: ByteArray) {
         if (audio.extension == "webm" && Build.VERSION.SDK_INT >= 29) {
             val temp = File.createTempFile("export", ".opus", context.cacheDir)
             try {
                 if (OggOpusRemux.remux(audio.spans, temp)) {
-                    documents.write(folder, "$base.opus") { out -> temp.inputStream().buffered(256 * 1024).use { ExportTagWriter.copyOpus(it, out, tags) } }
+                    sink.write(folder, "$base.opus") { out -> temp.inputStream().buffered(256 * 1024).use { ExportTagWriter.copyOpus(it, out, tags) } }
                     return
                 }
             } finally {
@@ -212,22 +271,30 @@ class DownloadExporter @Inject constructor(
         if (audio.extension == "m4a") {
             Mp4FlacRemux.flacHeader(audio.spans)?.let { header ->
                 val tagged = ExportTagWriter.retagFlacHeader(header, tags) ?: header
-                documents.write(folder, "$base.flac") { out -> Mp4FlacRemux.write(audio.spans, tagged, out) }
+                sink.write(folder, "$base.flac") { out -> Mp4FlacRemux.write(audio.spans, tagged, out) }
                 return
             }
         }
-        documents.write(folder, "$base.${audio.extension}") { out ->
+        sink.write(folder, "$base.${audio.extension}") { out ->
             when (audio.extension) {
                 "opus" -> audio.open().use { ExportTagWriter.copyOpus(it, out, tags) }
                 "flac" -> audio.open().use { ExportTagWriter.copyFlac(it, out, tags) }
-                else -> audio.copyTo(out)
+                else -> audio.copyTo(out, buffer)
             }
         }
     }
 
     // a downloaded song's bytes, straight from the pieces in the download cache, and what kind of file they make
     private class CachedAudio(val spans: List<File>, val extension: String) {
-        fun copyTo(out: OutputStream) = spans.forEach { span -> span.inputStream().use { it.copyTo(out, 256 * 1024) } }
+        fun copyTo(out: OutputStream, buffer: ByteArray) = spans.forEach { span ->
+            span.inputStream().use { input ->
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    out.write(buffer, 0, read)
+                }
+            }
+        }
 
         fun open() = SequenceInputStream(Collections.enumeration(spans.map { it.inputStream() })).buffered(256 * 1024)
     }

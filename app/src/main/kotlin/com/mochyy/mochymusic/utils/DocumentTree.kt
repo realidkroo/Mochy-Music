@@ -5,6 +5,8 @@ package com.mochyy.mochymusic.utils
 import android.content.ContentResolver
 import android.net.Uri
 import android.provider.DocumentsContract
+import java.io.BufferedOutputStream
+import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
 
@@ -14,35 +16,43 @@ private val BadNameChars = Regex("[\\\\/:*?\"<>|\\p{Cntrl}]")
 // a folder the user picked in the system picker, filled with plain documentscontract calls; each folder is listed once and remembered
 class DocumentTree(private val resolver: ContentResolver, private val tree: Uri) {
     val rootId: String = DocumentsContract.getTreeDocumentId(tree)
+    // keyed case-insensitively so FAT32/exFAT SD cards replace existing files instead of creating "name (1)" copies
     private val listed = HashMap<String, MutableMap<String, String>>()
 
     // the folder called [name] inside [parentId], made if it isn't there yet
     fun folder(parentId: String, name: String): String {
         val children = childrenOf(parentId)
-        children[name]?.let { return it }
+        val key = name.lowercase()
+        children[key]?.let { return it }
         val uri = DocumentsContract.createDocument(resolver, documentUri(parentId), DocumentsContract.Document.MIME_TYPE_DIR, name)
             ?: throw IOException("couldn't make the folder $name")
         val id = DocumentsContract.getDocumentId(uri)
-        children[name] = id
+        children[key] = id
         return id
     }
 
     // writes a file called [name] inside [parentId], replacing one that's already there so an export run twice stays tidy
     fun write(parentId: String, name: String, block: (OutputStream) -> Unit) {
         val children = childrenOf(parentId)
-        children.remove(name)?.let { old -> runCatching { DocumentsContract.deleteDocument(resolver, documentUri(old)) } }
+        val key = name.lowercase()
+        children.remove(key)?.let { old -> runCatching { DocumentsContract.deleteDocument(resolver, documentUri(old)) } }
         // a generic type, so the provider never tacks a second extension onto the name
         val uri = DocumentsContract.createDocument(resolver, documentUri(parentId), "application/octet-stream", name)
             ?: throw IOException("couldn't make the file $name")
         try {
-            val stream = resolver.openOutputStream(uri, "w") ?: throw IOException("couldn't open $name")
-            stream.buffered(256 * 1024).use(block)
+            val raw = resolver.openOutputStream(uri, "w") ?: throw IOException("couldn't open $name")
+            val buffered = BufferedOutputStream(raw, 256 * 1024)
+            buffered.use { out ->
+                block(out)
+                out.flush()
+                if (raw is FileOutputStream) runCatching { raw.fd.sync() }
+            }
         } catch (error: Throwable) {
             // a half-written song is worse than none
             runCatching { DocumentsContract.deleteDocument(resolver, uri) }
             throw error
         }
-        children[name] = DocumentsContract.getDocumentId(uri)
+        children[key] = DocumentsContract.getDocumentId(uri)
     }
 
     private fun documentUri(id: String): Uri = DocumentsContract.buildDocumentUriUsingTree(tree, id)
@@ -56,7 +66,7 @@ class DocumentTree(private val resolver: ContentResolver, private val tree: Uri)
                 while (cursor.moveToNext()) {
                     val id = cursor.getString(0) ?: continue
                     val name = cursor.getString(1) ?: continue
-                    out[name] = id
+                    out[name.lowercase()] = id
                 }
             }
         }

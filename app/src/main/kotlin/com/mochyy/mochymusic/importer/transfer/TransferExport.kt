@@ -6,24 +6,36 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.os.Build
+import android.os.ParcelFileDescriptor
+import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.media3.database.DatabaseProvider
 import com.mochyy.mochymusic.BuildConfig
 import com.mochyy.mochymusic.db.MusicDatabase
+import com.mochyy.mochymusic.di.ApplicationScope
 import com.mochyy.mochymusic.playback.DownloadUtil
 import com.mochyy.mochymusic.playback.StoragePlaces
 import com.mochyy.mochymusic.playback.StoredKind
 import com.mochyy.mochymusic.utils.dataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import timber.log.Timber
+import java.io.BufferedOutputStream
 import java.io.File
+import java.io.FileOutputStream
+import java.io.FilterOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.zip.Deflater
@@ -32,20 +44,49 @@ import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** live status of a user-data export, held on the singleton exporter so leaving settings never cancels it */
+sealed interface TransferExportStatus {
+    data object Idle : TransferExportStatus
+    data class Working(val progress: Float?) : TransferExportStatus
+    data object Done : TransferExportStatus
+    data class Failed(val message: String) : TransferExportStatus
+}
+
 /** packs the whole library into one zip: database, play history, settings, the home algorithm, downloads and local copies, everything but logins */
 @Singleton
 class TransferExporter @Inject constructor(
     @ApplicationContext private val context: Context,
+    @ApplicationScope private val applicationScope: CoroutineScope,
     private val database: MusicDatabase,
     private val databaseProvider: DatabaseProvider,
     private val downloadUtil: DownloadUtil,
 ) {
     private val running = Mutex()
+    private val _status = MutableStateFlow<TransferExportStatus>(TransferExportStatus.Idle)
+    val status: StateFlow<TransferExportStatus> = _status.asStateFlow()
+
+    /** runs the export on the application scope so navigating away from Storage Settings never cancels it or leaves a 0-byte zip */
+    fun startExport(target: Uri) {
+        if (_status.value is TransferExportStatus.Working) return
+        _status.value = TransferExportStatus.Working(0f)
+        applicationScope.launch {
+            export(target) { _status.value = TransferExportStatus.Working(it) }
+                .onSuccess { _status.value = TransferExportStatus.Done }
+                .onFailure {
+                    Timber.e(it, "User data export failed")
+                    _status.value = TransferExportStatus.Failed(it.message ?: "Couldn't export. Try again.")
+                }
+        }
+    }
 
     /** writes the zip to target, onProgress goes from 0 to 1, the failure message is ready to show */
     suspend fun export(target: Uri, onProgress: (Float) -> Unit): Result<TransferManifest> =
         exclusive { work -> withDownloadsPaused { pack(work, withSongs = true, onProgress) { openTarget(target) } } }
             .onSuccess { markExported(context) }
+            .onFailure {
+                // remove the empty 0-byte placeholder file that ACTION_CREATE_DOCUMENT created so users aren't left with a 0 MB zip
+                runCatching { DocumentsContract.deleteDocument(context.contentResolver, target) }
+            }
 
     /** the same zip without a single song, for cloud backups: library, stats, recap, settings and pictures, so it stays small */
     suspend fun exportBackup(target: File, onProgress: (Float) -> Unit): Result<TransferManifest> =
@@ -64,23 +105,40 @@ class TransferExporter @Inject constructor(
         }
     }
 
-    // "wt" empties a file picked twice, some providers like drive only know "w"
+    // "wt" empties a file picked twice, some providers like drive only know "w", and a raw pfd covers quirky OEM SAF providers
     private fun openTarget(target: Uri): OutputStream =
         runCatching { context.contentResolver.openOutputStream(target, "wt") }.getOrNull()
             ?: runCatching { context.contentResolver.openOutputStream(target, "w") }.getOrNull()
+            ?: runCatching {
+                context.contentResolver.openFileDescriptor(target, "w")?.let { ParcelFileDescriptor.AutoCloseOutputStream(it) }
+            }.getOrNull()
             ?: throw TransferException("Couldn't open the file you picked. Try picking another folder.")
 
     private suspend fun pack(work: File, withSongs: Boolean, onProgress: (Float) -> Unit, open: () -> OutputStream): TransferManifest {
         onProgress(0f)
         val library = File(work, "library.db")
         val live = database.openHelper.writableDatabase
-        snapshotDatabase(File(requireNotNull(live.path)), library, begin = live::beginTransaction, end = live::endTransaction)
+        snapshotDatabase(
+            source = File(requireNotNull(live.path)),
+            target = library,
+            begin = live::beginTransaction,
+            end = live::endTransaction,
+            vacuumInto = { path -> live.execSQL("VACUUM INTO ?", arrayOf(path)) },
+            checkpoint = { live.query("PRAGMA wal_checkpoint(TRUNCATE)").use { it.moveToFirst() } },
+        )
 
         // media3's database is the list of downloads, which only means something with the songs beside it
         val media = File(work, "media.db")
         val liveMedia = databaseProvider.writableDatabase
         val hasMedia = withSongs && runCatching {
-            snapshotDatabase(File(liveMedia.path), media, begin = liveMedia::beginTransaction, end = liveMedia::endTransaction)
+            snapshotDatabase(
+                source = File(liveMedia.path),
+                target = media,
+                begin = liveMedia::beginTransaction,
+                end = liveMedia::endTransaction,
+                vacuumInto = { path -> liveMedia.execSQL("VACUUM INTO ?", arrayOf(path)) },
+                checkpoint = { liveMedia.rawQuery("PRAGMA wal_checkpoint(TRUNCATE)", null).use { it.moveToFirst() } },
+            )
             dropStreamingCacheIndex(media)
         }.isSuccess
 
@@ -95,24 +153,47 @@ class TransferExporter @Inject constructor(
         val manifest = readManifest(library, totalBytes, localSongs = localSongs.length())
 
         val stream = open()
+        val counting = CountingOutputStream(stream)
+        val buffered = BufferedOutputStream(counting, 256 * 1024)
+        // reuse one copy buffer across every entry instead of allocating 128 KB per file
+        val copyBuffer = ByteArray(128 * 1024)
         var written = 0L
+        var lastReported = 0f
         val report: (Long) -> Unit = { bytes ->
             written += bytes
-            if (totalBytes > 0) onProgress((written.toDouble() / totalBytes).toFloat().coerceIn(0f, 1f))
+            if (totalBytes > 0) {
+                val p = (written.toDouble() / totalBytes).toFloat().coerceIn(0f, 1f)
+                if (p - lastReported >= 0.01f || p >= 1f) {
+                    lastReported = p
+                    onProgress(p)
+                }
+            }
         }
-        ZipOutputStream(stream.buffered(256 * 1024)).use { zip ->
-            zip.setLevel(Deflater.BEST_SPEED)
+        ZipOutputStream(buffered).use { zip ->
+            var currentLevel = Deflater.BEST_SPEED
+            zip.setLevel(currentLevel)
             zip.putText(TransferArchive.ManifestEntry, manifest.toJson().toString())
             zip.putText(TransferArchive.SettingsEntry, settings.toString())
             prefs.forEach { (name, json) -> zip.putText("${TransferArchive.PrefsPrefix}$name.json", json.toString()) }
             zip.putText(TransferArchive.LocalSongsEntry, localSongs.toString())
-            zip.putFile(TransferArchive.LibraryEntry, library, report)
-            if (hasMedia) zip.putFile(TransferArchive.MediaEntry, media, report)
+            zip.putFile(TransferArchive.LibraryEntry, library, copyBuffer, report)
+            if (hasMedia) zip.putFile(TransferArchive.MediaEntry, media, copyBuffer, report)
             for ((relative, file) in files) {
                 // songs are already squeezed, so they go in as they are and the export stays quick
-                zip.setLevel(if (relative.substringBefore('/') in TransferArchive.SongFolders) Deflater.NO_COMPRESSION else Deflater.BEST_SPEED)
-                zip.putFile(TransferArchive.FilesPrefix + relative, file, report)
+                val wantedLevel = if (relative.substringBefore('/') in TransferArchive.SongFolders) Deflater.NO_COMPRESSION else Deflater.BEST_SPEED
+                if (wantedLevel != currentLevel) {
+                    zip.setLevel(wantedLevel)
+                    currentLevel = wantedLevel
+                }
+                zip.putFile(TransferArchive.FilesPrefix + relative, file, copyBuffer, report)
             }
+            zip.finish()
+            buffered.flush()
+            // force FUSE / SAF providers to commit buffered bytes to disk before closing the descriptor
+            if (stream is FileOutputStream) runCatching { stream.fd.sync() }
+        }
+        if (counting.bytesWritten <= 0L) {
+            throw TransferException("Export produced an empty file. Try picking another folder.")
         }
         onProgress(1f)
         return manifest
@@ -182,14 +263,19 @@ class TransferExporter @Inject constructor(
     // everything under the files folder that carries over, as zip-style relative paths
     private fun carriedFiles(withSongs: Boolean): List<Pair<String, File>> {
         val root = context.filesDir
+        val downloads = if (withSongs) StoragePlaces.dir(context, StoredKind.Downloads) else null
+        val downloadsOnExternal = downloads != null && downloads.parentFile != root
         val onPhone = root.listFiles().orEmpty()
-            .filter { TransferArchive.carriesFile(it.name) && (withSongs || it.name !in TransferArchive.SongFolders) }
+            .filter {
+                TransferArchive.carriesFile(it.name) &&
+                    (withSongs || it.name !in TransferArchive.SongFolders) &&
+                    // skip any leftover phone download/ folder when active downloads live on an SD card so zip never gets duplicate entries
+                    (!downloadsOnExternal || it.name != StoredKind.Downloads.folder)
+            }
             .flatMap { top -> top.walkTopDown().filter { it.isFile }.toList() }
             .map { it.relativeTo(root).invariantSeparatorsPath to it }
-        if (!withSongs) return onPhone
+        if (!downloadsOnExternal) return onPhone
         // downloads kept on a memory card go in under the same name, so the other phone finds them where it looks
-        val downloads = StoragePlaces.dir(context, StoredKind.Downloads)
-        if (downloads.parentFile == root) return onPhone
         val onCard = downloads.walkTopDown().filter { it.isFile }
             .map { "${StoredKind.Downloads.folder}/${it.relativeTo(downloads).invariantSeparatorsPath}" to it }
         return onPhone + onCard
@@ -219,23 +305,37 @@ class TransferExporter @Inject constructor(
         closeEntry()
     }
 
-    private fun ZipOutputStream.putFile(name: String, file: File, report: (Long) -> Unit) {
+    private fun ZipOutputStream.putFile(name: String, file: File, buffer: ByteArray, report: (Long) -> Unit) {
         // a cache file can be swapped out while the export runs, one that's gone is skipped instead of failing everything
         val input = runCatching { file.inputStream() }.getOrNull() ?: return
         input.use {
             putNextEntry(ZipEntry(name).apply { time = file.lastModified() })
-            it.copyInto(this, report)
+            it.copyInto(this, buffer, report)
             closeEntry()
         }
     }
 
-    private fun InputStream.copyInto(out: ZipOutputStream, report: (Long) -> Unit) {
-        val buffer = ByteArray(128 * 1024)
+    private fun InputStream.copyInto(out: ZipOutputStream, buffer: ByteArray, report: (Long) -> Unit) {
         while (true) {
             val read = read(buffer)
             if (read < 0) break
             out.write(buffer, 0, read)
             report(read.toLong())
+        }
+    }
+
+    private class CountingOutputStream(out: OutputStream) : FilterOutputStream(out) {
+        var bytesWritten: Long = 0L
+            private set
+
+        override fun write(b: Int) {
+            out.write(b)
+            bytesWritten++
+        }
+
+        override fun write(b: ByteArray, off: Int, len: Int) {
+            out.write(b, off, len)
+            bytesWritten += len
         }
     }
 

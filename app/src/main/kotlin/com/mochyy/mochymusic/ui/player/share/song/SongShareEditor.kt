@@ -53,7 +53,9 @@ import kotlinx.coroutines.launch
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.ui.component.PopupSheetState
 import com.mochyy.mochymusic.ui.component.SheetPillButton
+import com.mochyy.mochymusic.ui.component.TopToaster
 import com.mochyy.mochymusic.ui.component.pressBounce
+import com.mochyy.mochymusic.ui.menu.songedit.showYouTubeVideoPicker
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.player.share.EditOutlines
 import com.mochyy.mochymusic.ui.player.share.ShareHeight
@@ -221,9 +223,32 @@ internal fun PopupSheetState.showCardStyle(session: SongShareSession) {
                     }
                 }
                 val pickVideo = { videoLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)) }
+                val pickYouTubeVideo: () -> Unit = {
+                    val initialQuery = "${session.song.title} ${session.share.artist}".trim()
+                    popup.showYouTubeVideoPicker(
+                        initialQuery = initialQuery,
+                        currentVideoId = session.pickedYouTubeVideo.found?.videoId,
+                        currentTitle = session.pickedYouTubeTitle,
+                        subtitle = context.getString(R.string.song_share_bg_youtube_picker_subtitle),
+                    ) { videoId, title ->
+                        val ok = loadPickedYouTubeVideo(session, videoId, title)
+                        if (ok) {
+                            session.cardOnlyBgTouched = true
+                            session.cardOnlyBg = CardOnlyBackground.Video(ShareVideoSource.YouTube)
+                            if (session.pick != null && !session.windowTouched) session.fitWindowToPick()
+                        } else {
+                            TopToaster.show(context.getString(R.string.song_share_bg_youtube_failed))
+                        }
+                        ok
+                    }
+                }
                 SectionLabel(stringResource(R.string.song_share_card_bg))
                 Spacer(Modifier.height(10.dp))
-                CardOnlyBackgroundPicker(session, onPickOwnVideo = pickVideo)
+                CardOnlyBackgroundPicker(
+                    session = session,
+                    onPickOwnVideo = pickVideo,
+                    onPickYouTubeVideo = pickYouTubeVideo,
+                )
                 Spacer(Modifier.height(18.dp))
                 when (val bg = session.cardOnlyBg) {
                     CardOnlyBackground.Colour -> {
@@ -245,6 +270,10 @@ internal fun PopupSheetState.showCardStyle(session: SongShareSession) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
                                     CardActionText(stringResource(R.string.song_share_bg_which_part)) { popup.showVideoPart(session) }
                                     CardActionText(stringResource(R.string.song_share_bg_change_video), onClick = pickVideo)
+                                }
+                            } else if (bg is CardOnlyBackground.Video && bg.source == ShareVideoSource.YouTube) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
+                                    CardActionText(stringResource(R.string.song_share_bg_change_video), onClick = pickYouTubeVideo)
                                 }
                             }
                         }
@@ -291,10 +320,14 @@ internal fun PopupSheetState.showCardStyle(session: SongShareSession) {
     }
 }
 
-private enum class CardBgChoice { Colour, Blurred, Liquid, Moving, MusicVideo, OwnVideo }
+private enum class CardBgChoice { Colour, Blurred, Liquid, Moving, MusicVideo, YouTubeVideo, OwnVideo }
 
 @Composable
-private fun CardOnlyBackgroundPicker(session: SongShareSession, onPickOwnVideo: () -> Unit) {
+private fun CardOnlyBackgroundPicker(
+    session: SongShareSession,
+    onPickOwnVideo: () -> Unit,
+    onPickYouTubeVideo: () -> Unit,
+) {
     val hasAnimated = session.animatedCover is Fetched.Found
     val hasMusicVideo = session.musicVideo is Fetched.Found
     val choices = remember(hasAnimated, hasMusicVideo) {
@@ -304,6 +337,7 @@ private fun CardOnlyBackgroundPicker(session: SongShareSession, onPickOwnVideo: 
             add(CardBgChoice.Liquid to R.string.song_share_card_bg_liquid)
             if (hasAnimated) add(CardBgChoice.Moving to R.string.song_share_card_bg_moving)
             if (hasMusicVideo) add(CardBgChoice.MusicVideo to R.string.song_share_card_bg_music_video)
+            add(CardBgChoice.YouTubeVideo to R.string.song_share_card_bg_youtube)
             add(CardBgChoice.OwnVideo to R.string.song_share_card_bg_own_video)
         }
     }
@@ -314,6 +348,7 @@ private fun CardOnlyBackgroundPicker(session: SongShareSession, onPickOwnVideo: 
             ShareVideoSource.LiquidCover -> CardBgChoice.Liquid
             ShareVideoSource.AnimatedCover -> CardBgChoice.Moving
             ShareVideoSource.MusicVideo -> CardBgChoice.MusicVideo
+            ShareVideoSource.YouTube -> CardBgChoice.YouTubeVideo
             is ShareVideoSource.Own -> CardBgChoice.OwnVideo
         }
     }
@@ -357,6 +392,15 @@ private fun CardOnlyBackgroundPicker(session: SongShareSession, onPickOwnVideo: 
                                 session.cardOnlyBgTouched = true
                                 session.cardOnlyBg = CardOnlyBackground.Video(ShareVideoSource.MusicVideo)
                                 if (session.pick != null && !session.windowTouched) session.fitWindowToPick()
+                            }
+                            CardBgChoice.YouTubeVideo -> {
+                                if (session.pickedYouTubeVideo is Fetched.Found) {
+                                    session.cardOnlyBgTouched = true
+                                    session.cardOnlyBg = CardOnlyBackground.Video(ShareVideoSource.YouTube)
+                                    if (session.pick != null && !session.windowTouched) session.fitWindowToPick()
+                                } else {
+                                    onPickYouTubeVideo()
+                                }
                             }
                             CardBgChoice.OwnVideo -> {
                                 val own = session.lastOwnVideo
