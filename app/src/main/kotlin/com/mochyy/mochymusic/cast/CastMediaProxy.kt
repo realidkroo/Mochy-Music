@@ -3,9 +3,11 @@
 package com.mochyy.mochymusic.cast
 
 import com.mochyy.mochymusic.utils.AppProxy
+import com.mochyy.mochymusic.utils.LanHttpClient
 import com.music.innertube.YouTube
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import timber.log.Timber
@@ -22,7 +24,8 @@ import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
-import java.util.UUID
+import java.security.MessageDigest
+import java.security.SecureRandom
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
@@ -46,6 +49,7 @@ class CastMediaProxy(
     private val httpClient: OkHttpClient = AppProxy.sharedClient.newBuilder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
+        .followSslRedirects(false)
         .build(),
 ) {
     data class ServedTrack(
@@ -123,9 +127,14 @@ class CastMediaProxy(
         dlnaFeatures: String,
         remuxMp4: Boolean,
     ): ServedTrack? = withContext(Dispatchers.IO) {
+        val parsedUpstream = upstreamUrl.toHttpUrlOrNull()
+        if (parsedUpstream == null || !parsedUpstream.isHttps) {
+            Timber.w("CastMediaProxy refused non-HTTPS upstream URL")
+            return@withContext null
+        }
         val localIp = localAddressFor(receiverHost) ?: return@withContext null
         val listeningPort = ensureStarted()
-        val token = UUID.randomUUID().toString().replace("-", "").take(16)
+        val token = generateToken()
         val cleanMime = mimeType.substringBefore(';').trim().ifBlank { "audio/mp4" }
         val ext = extensionFor(cleanMime)
 
@@ -167,7 +176,7 @@ class CastMediaProxy(
         dlnaFeatures: String = DefaultDlnaFeatures,
     ): ServedTrack {
         val listeningPort = ensureStarted()
-        val token = UUID.randomUUID().toString().replace("-", "").take(16)
+        val token = generateToken()
         val ext = extensionFor(mimeType)
         currentEntry = Entry.LocalFile(token, mimeType, dlnaFeatures, file)
         return ServedTrack(
@@ -249,9 +258,12 @@ class CastMediaProxy(
         val builder = Request.Builder().get().url(url)
         headers.forEach { (k, v) -> builder.header(k, v) }
         if (rangeHeader != null) builder.header("Range", rangeHeader)
-        YouTube.cookie?.let { cookie ->
-            if (headers.keys.none { it.equals("Cookie", ignoreCase = true) }) {
-                builder.header("Cookie", cookie)
+        // Never send the user's Google/YouTube cookies to non-YouTube third-party stream servers
+        if (shouldAttachYouTubeCookie(url)) {
+            YouTube.cookie?.let { cookie ->
+                if (headers.keys.none { it.equals("Cookie", ignoreCase = true) }) {
+                    builder.header("Cookie", cookie)
+                }
             }
         }
         return builder.build()
@@ -278,6 +290,7 @@ class CastMediaProxy(
     private fun serve(socket: Socket) {
         socket.use { conn ->
             runCatching {
+                if (!LanHttpClient.isLocalOrLoopbackAddress(conn.inetAddress)) return
                 conn.soTimeout = ReadTimeoutMs
                 val input = BufferedInputStream(conn.getInputStream())
                 val requestLine = readLine(input) ?: return
@@ -286,9 +299,11 @@ class CastMediaProxy(
                 val method = parts[0].uppercase()
                 val rawPath = parts[1].substringBefore('?')
                 val reqHeaders = HashMap<String, String>()
+                var headerCount = 0
                 while (true) {
                     val line = readLine(input) ?: break
                     if (line.isEmpty()) break
+                    if (++headerCount > MaxHeaderCount) return
                     val colon = line.indexOf(':')
                     if (colon > 0) reqHeaders[line.substring(0, colon).trim().lowercase()] = line.substring(colon + 1).trim()
                 }
@@ -305,8 +320,8 @@ class CastMediaProxy(
                 }
 
                 val entry = currentEntry
-                val reqToken = rawPath.removePrefix("/media/").substringBefore('.')
-                if (entry == null || reqToken != entry.token) {
+                val reqToken = if (rawPath.startsWith("/media/")) rawPath.removePrefix("/media/").substringBefore('.') else ""
+                if (entry == null || reqToken.isEmpty() || !MessageDigest.isEqual(reqToken.toByteArray(Charsets.UTF_8), entry.token.toByteArray(Charsets.UTF_8))) {
                     writeSimpleStatus(out, 404, "Not Found")
                     return
                 }
@@ -509,7 +524,21 @@ class CastMediaProxy(
         private const val MaxConnections = 8
         private const val ReadTimeoutMs = 15_000
         private const val MaxHeaderLine = 16 * 1024
+        private const val MaxHeaderCount = 64
         private const val MaxBufferBytes = 64L * 1024L * 1024L
+        private val tokenRandom = SecureRandom()
+
+        private fun generateToken(): String =
+            ByteArray(16).also(tokenRandom::nextBytes).joinToString("") { "%02x".format(it) }
+
+        /** True only for HTTPS YouTube / GoogleVideo URLs where Google session cookies belong. */
+        internal fun shouldAttachYouTubeCookie(url: String): Boolean {
+            val parsed = url.toHttpUrlOrNull() ?: return false
+            if (!parsed.isHttps) return false
+            val host = parsed.host.lowercase().trimEnd('.')
+            return host == "googlevideo.com" || host.endsWith(".googlevideo.com") ||
+                host == "youtube.com" || host.endsWith(".youtube.com")
+        }
 
         fun extensionFor(mimeType: String): String = when (mimeType.substringBefore(';').trim().lowercase()) {
             "audio/mp4", "audio/m4a", "audio/x-m4a" -> "m4a"

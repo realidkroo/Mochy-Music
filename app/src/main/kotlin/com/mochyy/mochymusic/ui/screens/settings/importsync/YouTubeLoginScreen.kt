@@ -3,6 +3,8 @@ package com.mochyy.mochymusic.ui.screens.settings.importsync
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.webkit.CookieManager
+import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
@@ -64,6 +66,23 @@ import org.json.JSONObject
 import timber.log.Timber
 
 private const val LOGIN_URL = "https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fmusic.youtube.com"
+
+private val YOUTUBE_SESSION_ORIGINS = listOf(
+    "https://music.youtube.com",
+    "https://www.youtube.com",
+    "https://youtube.com",
+    "https://accounts.google.com",
+    "https://google.com",
+)
+
+internal fun isYouTubeMusicOrigin(url: String?): Boolean {
+    if (url.isNullOrBlank()) return false
+    val uri = runCatching { java.net.URI(url) }.getOrNull() ?: return false
+    val scheme = uri.scheme?.lowercase() ?: return false
+    val host = uri.host?.lowercase() ?: return false
+    val port = if (uri.port > 0) uri.port else 443
+    return scheme == "https" && host == "music.youtube.com" && port == 443
+}
 
 /** reads the session ids youtube music keeps in its page config */
 private const val READ_CONFIG_JS = """
@@ -190,6 +209,8 @@ fun YouTubeLoginWebContent(
                         settings[AccountChannelHandleKey] = info?.channelHandle.orEmpty()
                     }
                     withContext(Dispatchers.Main) {
+                        // Session cookies are now encrypted in DataStore; purge live Google cookies from global WebView storage
+                        clearWebSession(YOUTUBE_SESSION_ORIGINS)
                         finished = true
                         currentOnSignedIn(info)
                     }
@@ -232,16 +253,32 @@ fun YouTubeLoginWebContent(
                         )
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
+                    settings.allowFileAccess = false
+                    settings.allowContentAccess = false
+                    @Suppress("DEPRECATION")
+                    settings.allowFileAccessFromFileURLs = false
+                    @Suppress("DEPRECATION")
+                    settings.allowUniversalAccessFromFileURLs = false
+                    settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                     settings.setSupportZoom(true)
                     settings.builtInZoomControls = true
                     settings.displayZoomControls = false
                     // google refuses sign-in from pages that announce themselves as an embedded webview
                     settings.userAgentString = settings.userAgentString.replace("; wv", "")
                     disableForcedDarkening()
+                    hideAppIdentity()
                     CookieManager.getInstance().setAcceptCookie(true)
                     CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                     webViewClient =
                         object : WebViewClient() {
+                            override fun shouldOverrideUrlLoading(
+                                view: WebView,
+                                request: WebResourceRequest,
+                            ): Boolean {
+                                val scheme = request.url?.scheme?.lowercase()
+                                return scheme != "https" && request.url?.toString() != "about:blank"
+                            }
+
                             override fun onPageStarted(
                                 view: WebView,
                                 url: String?,
@@ -257,7 +294,7 @@ fun YouTubeLoginWebContent(
                             ) {
                                 currentOnLoadingChange(false)
                                 url?.let(currentOnUrlChange)
-                                if (url != null && url.startsWith("https://music.youtube.com")) finishLogin(view, url)
+                                if (url != null && isYouTubeMusicOrigin(url)) finishLogin(view, url)
                             }
                         }
                     loadUrl(LOGIN_URL)

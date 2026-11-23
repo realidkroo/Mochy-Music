@@ -115,7 +115,7 @@ class TransferImporter @Inject constructor(
         val json = ZipInputStream(stream.buffered()).use { zip ->
             val first = zip.nextEntry
             if (first?.name != TransferArchive.ManifestEntry) throw NotAnExport()
-            JSONObject(zip.readBytes().toString(Charsets.UTF_8))
+            JSONObject(readCappedBytes(zip, MaxManifestBytes).toString(Charsets.UTF_8))
         }
         val manifest = TransferManifest.fromJson(json) ?: throw NotAnExport()
         if (manifest.formatVersion > TransferArchive.FormatVersion || manifest.databaseVersion > MusicDatabaseVersion) {
@@ -128,6 +128,20 @@ class TransferImporter @Inject constructor(
         return manifest
     }
 
+    private fun readCappedBytes(input: java.io.InputStream, maxBytes: Int): ByteArray {
+        val out = java.io.ByteArrayOutputStream()
+        val buf = ByteArray(16 * 1024)
+        var total = 0
+        while (true) {
+            val n = input.read(buf)
+            if (n < 0) break
+            total += n
+            if (total > maxBytes) throw TransferException("This export contains an oversized metadata entry.")
+            out.write(buf, 0, n)
+        }
+        return out.toByteArray()
+    }
+
     // copies the known entries into staging (routing files/download/* straight to an SD card when chosen), everything else in the zip is ignored
     private fun unpack(source: Uri, staging: File, downloadsStage: File?, total: Long, onProgress: (Float) -> Unit) {
         val stream = context.contentResolver.openInputStream(source)
@@ -135,6 +149,7 @@ class TransferImporter @Inject constructor(
         val root = staging.canonicalPath + File.separator
         val dlRoot = downloadsStage?.let { it.canonicalPath + File.separator }
         val dlPrefix = TransferArchive.FilesPrefix + StoredKind.Downloads.folder + "/"
+        val maxTotalBytes = maxOf(total.coerceAtLeast(0L) + 512L * 1024 * 1024, 512L * 1024 * 1024)
         var copied = 0L
         var lastReported = 0f
         val buffer = ByteArray(128 * 1024)
@@ -151,13 +166,22 @@ class TransferImporter @Inject constructor(
                 val expectedRoot = if (toExternalDownloads) dlRoot else root
                 // a crafted zip could point outside the folder with ../, this keeps every file inside it
                 if (expectedRoot == null || !target.canonicalPath.startsWith(expectedRoot)) continue
+                val isJsonMetadata = entry.name.endsWith(".json")
+                var entryWritten = 0L
                 target.parentFile?.mkdirs()
                 target.outputStream().buffered(256 * 1024).use { out ->
                     while (true) {
                         val read = zip.read(buffer)
                         if (read < 0) break
-                        out.write(buffer, 0, read)
+                        entryWritten += read
                         copied += read
+                        if (isJsonMetadata && entryWritten > MaxJsonEntryBytes) {
+                            throw TransferException("This export contains an oversized settings file.")
+                        }
+                        if (copied > maxTotalBytes) {
+                            throw TransferException("This export expanded past its declared size.")
+                        }
+                        out.write(buffer, 0, read)
                         if (total > 0) {
                             val p = (copied.toDouble() / total).toFloat().coerceIn(0f, 0.97f)
                             if (p - lastReported >= 0.01f) {
@@ -223,7 +247,8 @@ class TransferImporter @Inject constructor(
             null,
         ).use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getString(0)) } }
         for (table in tables) {
-            val columns = db.rawQuery("PRAGMA table_info(`$table`)", null).use { cursor ->
+            val safeTable = table.replace("`", "``")
+            val columns = db.rawQuery("PRAGMA table_info(`$safeTable`)", null).use { cursor ->
                 val nameAt = cursor.getColumnIndexOrThrow("name")
                 val typeAt = cursor.getColumnIndexOrThrow("type")
                 buildList {
@@ -233,11 +258,14 @@ class TransferImporter @Inject constructor(
                     }
                 }
             }
-            for (column in columns) for (old in mover.from) {
-                db.execSQL(
-                    "UPDATE OR IGNORE `$table` SET `$column` = REPLACE(`$column`, ?, ?) WHERE instr(`$column`, ?) > 0",
-                    arrayOf(old, mover.to, old),
-                )
+            for (column in columns) {
+                val safeColumn = column.replace("`", "``")
+                for (old in mover.from) {
+                    db.execSQL(
+                        "UPDATE OR IGNORE `$safeTable` SET `$safeColumn` = REPLACE(`$safeColumn`, ?, ?) WHERE instr(`$safeColumn`, ?) > 0",
+                        arrayOf(old, mover.to, old),
+                    )
+                }
             }
         }
     }
@@ -312,6 +340,8 @@ class TransferImporter @Inject constructor(
 
     companion object {
         private const val SpareBytes = 64L * 1024 * 1024
+        private const val MaxManifestBytes = 2 * 1024 * 1024
+        private const val MaxJsonEntryBytes = 16L * 1024 * 1024
 
         /** true when room can walk the old database up to this version without wiping it, picking migrations the way room does */
         fun hasMigrationPath(from: Int, to: Int): Boolean {

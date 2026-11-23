@@ -53,6 +53,7 @@ object AppProxy {
         OkHttpClient.Builder()
             .dispatcher(dispatcher)
             .connectionPool(connectionPool)
+            .followSslRedirects(false)
             .followAppProxy()
             .build()
     }
@@ -134,13 +135,23 @@ object AppProxy {
         }
     }
 
-    // socks has no header for a login, java asks this one global authenticator instead
+    // socks has no header for a login, java asks this one global authenticator instead; strictly scope
+    // to PROXY challenges matching the configured SOCKS host/port so credentials never leak to HTTP 401 servers
     private fun useSocksLogin(config: ProxyConfig?) {
         val login = config?.takeIf { it.type == Proxy.Type.SOCKS && it.hasLogin }
         Authenticator.setDefault(
-            login?.let {
+            login?.let { cfg ->
+                val expectedHost = cfg.address.hostString
+                val expectedPort = cfg.address.port
                 object : Authenticator() {
-                    override fun getPasswordAuthentication() = PasswordAuthentication(it.username, it.password.toCharArray())
+                    override fun getPasswordAuthentication(): PasswordAuthentication? {
+                        if (requestorType != RequestorType.PROXY) return null
+                        if (requestingPort != expectedPort) return null
+                        val hostMatches = requestingHost?.equals(expectedHost, ignoreCase = true) == true ||
+                            requestingSite?.hostAddress?.equals(expectedHost, ignoreCase = true) == true
+                        if (!hostMatches) return null
+                        return PasswordAuthentication(cfg.username, cfg.password.toCharArray())
+                    }
                 }
             },
         )

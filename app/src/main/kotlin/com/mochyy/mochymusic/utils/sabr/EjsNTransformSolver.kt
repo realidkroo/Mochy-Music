@@ -7,7 +7,11 @@ import android.net.Uri
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import com.mochyy.mochymusic.utils.cipher.CipherDeobfuscator
 import com.mochyy.mochymusic.utils.cipher.PlayerJsFetcher
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +19,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.io.File
+import java.io.ByteArrayInputStream
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -115,16 +119,48 @@ object EjsNTransformSolver {
         var nFunctionAvailable: Boolean = false
             private set
 
+        @Volatile
+        private var virtualPlayerJsBytes: ByteArray = ByteArray(0)
+
         init {
             val settings = webView.settings
             @Suppress("SetJavaScriptEnabled")
             settings.javaScriptEnabled = true
-            settings.allowFileAccess = true
+            settings.allowFileAccess = false
+            settings.allowContentAccess = false
             @Suppress("DEPRECATION")
-            settings.allowFileAccessFromFileURLs = true
-            settings.blockNetworkLoads = true
+            settings.allowFileAccessFromFileURLs = false
+            @Suppress("DEPRECATION")
+            settings.allowUniversalAccessFromFileURLs = false
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
 
             webView.addJavascriptInterface(this, "EjsBridge")
+
+            val assetManager = context.applicationContext.assets
+            webView.webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = true
+
+                override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse {
+                    val uri = request.url
+                    if (uri?.scheme == "https" && uri.host == VIRTUAL_HOST) {
+                        val name = uri.path?.removePrefix("/")
+                        if (name == "player.js") {
+                            return WebResourceResponse(
+                                "application/javascript",
+                                "utf-8",
+                                ByteArrayInputStream(virtualPlayerJsBytes),
+                            )
+                        }
+                        if (name in ALLOWED_SOLVER_ASSETS) {
+                            val stream = runCatching { assetManager.open("solver/$name") }.getOrNull()
+                            if (stream != null) {
+                                return WebResourceResponse("application/javascript", "utf-8", stream)
+                            }
+                        }
+                    }
+                    return WebResourceResponse("text/plain", "utf-8", 403, "Forbidden", emptyMap(), ByteArrayInputStream(ByteArray(0)))
+                }
+            }
 
             webView.webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(m: ConsoleMessage): Boolean {
@@ -138,20 +174,8 @@ object EjsNTransformSolver {
         }
 
         private fun loadSolverAndPlayer(playerJs: String) {
-            val cacheDir = File(webView.context.cacheDir, "ejs_solver")
-            cacheDir.mkdirs()
-
-            val assetManager = webView.context.assets
-            for (file in listOf("meriyah.js", "astring.js", "yt.solver.core.js")) {
-                assetManager.open("solver/$file").use { input ->
-                    File(cacheDir, file).outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-            }
-
-            File(cacheDir, "player.js").writeText(playerJs)
-            Timber.tag(TAG).d("EJS solver assets written (${playerJs.length} chars)")
+            virtualPlayerJsBytes = playerJs.toByteArray(Charsets.UTF_8)
+            Timber.tag(TAG).d("EJS solver player loaded in memory (${playerJs.length} chars)")
 
             val html = """<!DOCTYPE html>
 <html><head>
@@ -226,7 +250,7 @@ function transformN(nValue) {
 </head><body onload="initSolver()"></body></html>"""
 
             webView.loadDataWithBaseURL(
-                "file://${cacheDir.absolutePath}/",
+                "https://$VIRTUAL_HOST/",
                 html, "text/html", "utf-8", null
             )
         }
@@ -297,6 +321,9 @@ function transformN(nValue) {
         }
 
         companion object {
+            private const val VIRTUAL_HOST = "appassets.mochy.local"
+            private val ALLOWED_SOLVER_ASSETS = setOf("meriyah.js", "astring.js", "yt.solver.core.js")
+
             suspend fun create(context: Context, playerJs: String): SolverWebView {
                 return withContext(Dispatchers.Main) {
                     suspendCancellableCoroutine { cont ->

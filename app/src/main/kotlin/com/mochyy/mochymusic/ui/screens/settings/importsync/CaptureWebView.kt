@@ -12,9 +12,11 @@ import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
+import android.webkit.WebSettings
 import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import java.util.concurrent.atomic.AtomicReference
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -249,9 +251,14 @@ fun CaptureWebContent(
     val currentOnLoadingChange by rememberUpdatedState(onLoadingChange)
     var mainWebView by remember { mutableStateOf<WebView?>(null) }
     var popupWebView by remember { mutableStateOf<WebView?>(null) }
+    val currentMainUrl = remember { AtomicReference<String?>(null) }
     val bridge = remember(playerOrigins) {
         CaptureBridge { name, value, url ->
-            if (playerOrigins.isEmpty() || isPlayerPage(url, playerOrigins)) currentOnHeader(name, value, url)
+            // Verify both the actual WebView main-frame URL and the reported request URL against playerOrigins
+            val activeUrl = currentMainUrl.get()
+            if (playerOrigins.isEmpty() || (isPlayerPage(activeUrl, playerOrigins) && isPlayerPage(url, playerOrigins))) {
+                currentOnHeader(name, value, url)
+            }
         }
     }
     val documentStartSupported = remember { WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT) }
@@ -268,6 +275,7 @@ fun CaptureWebContent(
         settings.allowFileAccessFromFileURLs = false
         @Suppress("DEPRECATION")
         settings.allowUniversalAccessFromFileURLs = false
+        settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         settings.javaScriptCanOpenWindowsAutomatically = true
         settings.setSupportMultipleWindows(true)
         settings.useWideViewPort = true
@@ -288,8 +296,14 @@ fun CaptureWebContent(
         }
 
         webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                val scheme = request.url?.scheme?.lowercase()
+                return scheme != "https" && request.url?.toString() != "about:blank"
+            }
+
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
                 if (!isPopup) {
+                    currentMainUrl.set(url)
                     currentOnLoadingChange(true)
                     url?.let(currentOnUrlChange)
                 }
@@ -299,6 +313,7 @@ fun CaptureWebContent(
 
             override fun onPageFinished(view: WebView, url: String?) {
                 if (!isPopup) {
+                    currentMainUrl.set(url)
                     currentOnLoadingChange(false)
                     url?.let(currentOnUrlChange)
                 }
@@ -344,8 +359,10 @@ fun CaptureWebContent(
 
             // the web players check for DRM before they start; WebView refuses it unless the app agrees
             override fun onPermissionRequest(request: PermissionRequest) {
+                val origin = request.origin?.toString()
+                val originAllowed = playerOrigins.isEmpty() || isPlayerPage(origin, playerOrigins)
                 val protectedMedia = arrayOf(PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID)
-                if (request.resources.any { it == PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID }) {
+                if (originAllowed && request.resources.any { it == PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID }) {
                     request.grant(protectedMedia)
                 } else {
                     request.deny()
@@ -519,7 +536,9 @@ fun clearWebSession(origins: List<String>) {
             val name = pair.substringBefore('=').trim()
             if (name.isNotEmpty()) {
                 cookies.setCookie(origin, "$name=; Max-Age=0; Path=/")
+                cookies.setCookie(origin, "$name=; Max-Age=0; Path=/; Secure")
                 cookies.setCookie(origin, "$name=; Max-Age=0; Path=/; Domain=.$parentDomain")
+                cookies.setCookie(origin, "$name=; Max-Age=0; Path=/; Domain=.$parentDomain; Secure")
             }
         }
         // web players keep their session in local storage too

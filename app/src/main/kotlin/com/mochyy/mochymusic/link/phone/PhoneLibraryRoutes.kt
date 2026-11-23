@@ -28,7 +28,7 @@ internal class PhoneLibraryRoutes(
     private val context: Context,
     private val database: MusicDatabase,
     private val internalDatabase: InternalDatabase,
-    private val downloadUtil: DownloadUtil,
+    private val downloadUtil: dagger.Lazy<DownloadUtil>,
 ) {
     // the whole library database, copied under its lock and squeezed on the way out
     fun snapshot(): LinkResponse {
@@ -52,9 +52,10 @@ internal class PhoneLibraryRoutes(
     // every song the phone can play without the internet: its finished downloads and its own song files
     fun files(): JSONArray {
         val out = JSONArray()
-        val cache = downloadUtil.downloadCache
+        val downloads = downloadUtil.get()
+        val cache = downloads.downloadCache
         val formats = mimeTypes()
-        downloadUtil.downloads.value.values
+        downloads.downloads.value.values
             .filter { it.state == Download.STATE_COMPLETED }
             .forEach { download ->
                 val id = download.request.id
@@ -77,7 +78,7 @@ internal class PhoneLibraryRoutes(
             val mime = runCatching { context.contentResolver.getType(uri) }.getOrNull() ?: "audio/mpeg"
             return LinkResponse.ranged(request, length, mime) { start, count, out -> copyLocal(uri, start, count, out) }
         }
-        val cache = downloadUtil.downloadCache
+        val cache = downloadUtil.get().downloadCache
         val length = ContentMetadata.getContentLength(cache.getContentMetadata(songId))
         if (length <= 0 || !cache.isCached(songId, 0, length)) return LinkResponse.status(404)
         val mime = mimeTypes()[songId] ?: "audio/mp4"

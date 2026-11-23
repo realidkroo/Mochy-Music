@@ -6,12 +6,16 @@ import android.content.Context
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.io.File
+import java.io.ByteArrayInputStream
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -35,16 +39,37 @@ class CipherWebView private constructor(
     var discoveredNFuncName: String? = null
         private set
 
+    @Volatile
+    private var virtualPlayerJsBytes: ByteArray = ByteArray(0)
+
     init {
         val settings = webView.settings
         @Suppress("SetJavaScriptEnabled")
         settings.javaScriptEnabled = true
-        settings.allowFileAccess = true
+        settings.allowFileAccess = false
+        settings.allowContentAccess = false
         @Suppress("DEPRECATION")
-        settings.allowFileAccessFromFileURLs = true
-        settings.blockNetworkLoads = true
+        settings.allowFileAccessFromFileURLs = false
+        @Suppress("DEPRECATION")
+        settings.allowUniversalAccessFromFileURLs = false
+        settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
 
         webView.addJavascriptInterface(this, JS_INTERFACE)
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = true
+
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse {
+                if (request.url?.toString() == "$VIRTUAL_ORIGIN/player.js") {
+                    return WebResourceResponse(
+                        "application/javascript",
+                        "utf-8",
+                        ByteArrayInputStream(virtualPlayerJsBytes),
+                    )
+                }
+                return WebResourceResponse("text/plain", "utf-8", 403, "Forbidden", emptyMap(), ByteArrayInputStream(ByteArray(0)))
+            }
+        }
 
         webView.webChromeClient = object : WebChromeClient() {
             override fun onConsoleMessage(m: ConsoleMessage): Boolean {
@@ -83,9 +108,7 @@ class CipherWebView private constructor(
             playerJs
         }
 
-        val cacheDir = File(webView.context.cacheDir, "cipher")
-        cacheDir.mkdirs()
-        File(cacheDir, "player.js").writeText(modifiedJs)
+        virtualPlayerJsBytes = modifiedJs.toByteArray(Charsets.UTF_8)
 
         val html = """<!DOCTYPE html>
 <html><head><script>
@@ -192,7 +215,7 @@ function discoverAndInit() {
 </head><body></body></html>"""
 
         webView.loadDataWithBaseURL(
-            "file://${cacheDir.absolutePath}/",
+            "$VIRTUAL_ORIGIN/",
             html, "text/html", "utf-8", null
         )
     }
@@ -302,6 +325,7 @@ function discoverAndInit() {
     companion object {
         private const val TAG = "mochy_CipherWebView"
         private const val JS_INTERFACE = "CipherBridge"
+        private const val VIRTUAL_ORIGIN = "https://appassets.mochy.local"
 
         suspend fun create(
             context: Context,

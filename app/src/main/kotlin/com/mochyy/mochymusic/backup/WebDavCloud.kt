@@ -101,12 +101,13 @@ internal class WebDavCloud(account: CloudAccount) : BackupCloud {
         private const val PropfindBody = """<?xml version="1.0" encoding="utf-8"?>
 <d:propfind xmlns:d="DAV:"><d:prop><d:getcontentlength/><d:getlastmodified/><d:resourcetype/></d:prop></d:propfind>"""
 
-        /** what the user typed as a server address, https added when they left it off and a slash on the end, or null when it isn't one */
+        /** what the user typed as a server address, https added when they left it off and a slash on the end, or null when it isn't a valid https URL */
         fun addressOf(typed: String): HttpUrl? {
             val trimmed = typed.trim()
             if (trimmed.isEmpty()) return null
             val withScheme = if ("://" in trimmed) trimmed else "https://$trimmed"
             val url = withScheme.toHttpUrlOrNull() ?: return null
+            if (!url.isHttps) return null
             return if (url.encodedPath.endsWith("/")) url else url.newBuilder().addPathSegment("").build()
         }
 

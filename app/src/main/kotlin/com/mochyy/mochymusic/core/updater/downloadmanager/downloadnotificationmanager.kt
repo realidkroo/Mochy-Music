@@ -59,6 +59,12 @@ object DownloadNotificationManager {
     }
 
     fun showDownloadComplete(version: String, filePath: String) {
+        val file = java.io.File(filePath)
+        if (!com.mochyy.mochymusic.core.updater.ApkVerifier.verifyUpdateApk(appContext, file)) {
+            runCatching { file.delete() }
+            showDownloadFailed(version, "Update APK signature verification failed")
+            return
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             showDownloadCompleteModern(version, filePath)
         } else {

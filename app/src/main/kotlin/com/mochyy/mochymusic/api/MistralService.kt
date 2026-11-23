@@ -13,13 +13,18 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 object MistralService {
-    private val client =
+    private val client by lazy {
         OkHttpClient
             .Builder()
+            .dispatcher(com.mochyy.mochymusic.utils.AppProxy.dispatcher)
+            .connectionPool(com.mochyy.mochymusic.utils.AppProxy.connectionPool)
+            .followRedirects(false)
+            .followSslRedirects(false)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(90, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
+    }
     private val JSON = "application/json; charset=utf-8".toMediaType()
 
     suspend fun translate(

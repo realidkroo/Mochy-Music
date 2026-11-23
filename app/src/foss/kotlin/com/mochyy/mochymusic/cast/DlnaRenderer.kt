@@ -15,9 +15,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.mochyy.mochymusic.utils.LanHttpClient
 import timber.log.Timber
 import java.io.IOException
-import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.abs
 
@@ -245,22 +245,20 @@ class DlnaRenderer(
             args.forEach { (name, value) -> append('<').append(name).append('>').append(escape(value)).append("</").append(name).append('>') }
             append("</u:").append(action).append("></s:Body></s:Envelope>")
         }.toByteArray(Charsets.UTF_8)
-        val connection = URL(controlUrl).openConnection() as HttpURLConnection
-        try {
-            connection.requestMethod = "POST"
-            connection.connectTimeout = TimeoutMs
-            connection.readTimeout = TimeoutMs
-            connection.doOutput = true
-            connection.setRequestProperty("Content-Type", "text/xml; charset=\"utf-8\"")
-            connection.setRequestProperty("SOAPACTION", "\"$service#$action\"")
-            connection.setFixedLengthStreamingMode(body.size)
-            connection.outputStream.use { it.write(body) }
-            val code = connection.responseCode
-            val text = (if (code >= 400) connection.errorStream else connection.inputStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
-            if (code >= 400) throw IOException("$action answered $code: ${text.take(200)}")
+        LanHttpClient.execute(
+            method = "POST",
+            url = controlUrl,
+            headers = mapOf(
+                "Content-Type" to "text/xml; charset=\"utf-8\"",
+                "SOAPACTION" to "\"$service#$action\"",
+            ),
+            body = body,
+            connectTimeoutMs = TimeoutMs,
+            readTimeoutMs = TimeoutMs,
+        ).use { response ->
+            val text = response.body.string(maxBytes = 512 * 1024)
+            if (response.code >= 400) throw IOException("$action answered ${response.code}: ${text.take(200)}")
             return text
-        } finally {
-            connection.disconnect()
         }
     }
 

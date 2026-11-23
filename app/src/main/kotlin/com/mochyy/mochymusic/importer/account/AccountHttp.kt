@@ -23,6 +23,11 @@ internal object AccountHttp {
 
     private val client by lazy {
         HttpClient(OkHttp) {
+            engine {
+                config {
+                    followSslRedirects(false)
+                }
+            }
             install(HttpTimeout) {
                 connectTimeoutMillis = 15_000
                 requestTimeoutMillis = 30_000

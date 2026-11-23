@@ -7,9 +7,39 @@
         domain="file"
         path="./download" />
     <exclude
+        domain="file"
+        path="./datastore" />
+    <exclude
+        domain="file"
+        path="./code_modules" />
+    <exclude
+        domain="file"
+        path="./module_files" />
+    <exclude
+        domain="file"
+        path="./module_data" />
+    <exclude
+        domain="root"
+        path="app_webview" />
+    <exclude
         domain="database"
         path="exoplayer_internal.db" />
     <exclude
         domain="sharedpref"
         path="module_browser.xml" />
+    <exclude
+        domain="sharedpref"
+        path="mochy_link_tvs.xml" />
+    <exclude
+        domain="sharedpref"
+        path="tv_profiles.xml" />
+    <exclude
+        domain="sharedpref"
+        path="mochy_link.xml" />
+    <exclude
+        domain="sharedpref"
+        path="musixmatch.xml" />
+    <exclude
+        domain="sharedpref"
+        path="source_modules.xml" />
 </full-backup-content>

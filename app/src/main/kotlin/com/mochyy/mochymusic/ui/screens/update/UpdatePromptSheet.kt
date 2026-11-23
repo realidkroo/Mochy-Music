@@ -307,6 +307,7 @@ private fun PromptButton(
 }
 
 private fun android.content.Context.openReleaseUrl(url: String) {
+    if (!com.mochyy.mochymusic.core.updater.ApkVerifier.isSafeExternalWebUrl(url)) return
     runCatching {
         startActivity(
             android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))

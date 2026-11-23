@@ -20,7 +20,13 @@ import com.mochyy.mochymusic.link.isTelevision
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 // keeps the phone reachable for its paired devices while mochy is closed, with a quiet notification saying so
@@ -37,11 +43,33 @@ class PhoneLinkService : Service() {
 
     override fun onDestroy() {
         scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+        host.onBackgroundServiceStopped()
         super.onDestroy()
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        if (!host.shouldRunBackgroundService()) {
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            host.onBackgroundServiceStopped()
+        }
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ActionStop || host.devices.value.isEmpty()) {
+        if (intent?.action == ActionStop || !host.shouldRunBackgroundService()) {
+            // satisfy Android O+ startForegroundService contract in case of a toggle race, then immediately dismiss and stop
+            if (intent != null && intent.action != ActionStop) {
+                runCatching {
+                    ServiceCompat.startForeground(
+                        this,
+                        NotificationId,
+                        notification(),
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE else 0,
+                    )
+                }
+            }
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
         }
@@ -60,26 +88,40 @@ class PhoneLinkService : Service() {
         }
         host.refresh()
         watchState()
-        return START_STICKY
+        // never silently respawn the whole app process and notification after the system kills it for ram
+        return START_NOT_STICKY
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun watchState() {
         if (watching) return
         watching = true
         scope.launch {
-            // posted again only when its words change, so one swiped away on android 14+ stays away instead of coming back every 30 seconds
-            kotlinx.coroutines.flow.combine(host.devices, host.live, host.lastStream, ticks()) { _, _, _, _ -> status() }
+            // posted again only when its words change, so one swiped away on android 14+ stays away instead of coming back every 30 seconds;
+            // only tick while a device is actually live or streaming so an idle link does zero periodic wakeups
+            combine(host.devices, host.live, host.lastStream) { _, live, streams ->
+                live.isNotEmpty() || streams.isNotEmpty()
+            }.flatMapLatest { hasActivity ->
+                if (hasActivity) ticks() else flowOf(Unit)
+            }.map { status() }
                 .distinctUntilChanged()
                 .collect { NotificationManagerCompat.from(this@PhoneLinkService).runCatching { notify(NotificationId, notification(it)) } }
         }
     }
 
-    // a device that goes quiet drops back to "linked" without anything else changing, so the line is checked now and then
-    private fun ticks() = kotlinx.coroutines.flow.flow {
-        while (true) {
-            emit(Unit)
+    // a device that goes quiet drops back to "linked" without anything else changing, so check until it settles
+    private fun ticks() = flow {
+        emit(Unit)
+        while (hasExpiringActivity()) {
             kotlinx.coroutines.delay(30_000)
+            emit(Unit)
         }
+    }
+
+    private fun hasExpiringActivity(): Boolean {
+        val now = System.currentTimeMillis()
+        return host.liveDevices(now).isNotEmpty() ||
+            host.lastStream.value.values.any { now - it < StreamingForMs }
     }
 
     // says what's really going on: streaming to a tv, a device around and in step, or only linked and waiting
@@ -135,7 +177,7 @@ class PhoneLinkService : Service() {
         // android 12+ refuses this from the background, the link then only runs while mochy itself is up
         fun start(context: Context) {
             if (context.isTelevision()) return
-            if (!PhoneLinkHost.hasPairedDevices(context) || !PhoneLinkHost.staysReachable(context)) return
+            if (!PhoneLinkHost.shouldStartInBackground(context)) return
             runCatching { ContextCompat.startForegroundService(context, Intent(context, PhoneLinkService::class.java)) }
                 .onFailure { Timber.tag("Link").i("background link not started: ${it.message}") }
         }

@@ -42,7 +42,6 @@ object SecretVault {
     @Volatile private var keyDir: File? = null
     @Volatile private var dek: ByteArray? = null
     @Volatile private var legacyKey: SecretKey? = null
-    @Volatile private var broken = false
     @Volatile private var testDek: ByteArray? = null
 
     fun init(context: Context) {
@@ -53,7 +52,6 @@ object SecretVault {
     internal fun useTestKey(raw: ByteArray?) {
         testDek = raw?.copyOf()
         dek = null
-        broken = false
     }
 
     fun isSealed(text: String): Boolean = text.startsWith(PrefixV2) || text.startsWith(PrefixV1)
@@ -86,6 +84,9 @@ object SecretVault {
         }
         return stored
     }
+
+    fun openWithFallbackDomain(stored: String, primary: String, fallback: String): String? =
+        open(stored, primary) ?: if (primary != fallback) open(stored, fallback) else null
 
     private fun sealV2(plain: String, master: ByteArray, domain: String): String {
         val iv = ByteArray(IvBytes).also(random::nextBytes)
@@ -126,15 +127,12 @@ object SecretVault {
     private fun dekOrNull(): ByteArray? {
         testDek?.let { return it }
         dek?.let { return it }
-        if (broken) return null
         val dir = keyDir ?: return null
         synchronized(this) {
             dek?.let { return it }
-            if (broken) return null
             return runCatching { loadOrCreateDek(dir) }
                 .onFailure {
-                    broken = true
-                    Timber.tag("Vault").w(it, "keystore shit the bed, falling back")
+                    Timber.tag("Vault").w(it, "KeyStore temporarily unavailable while loading vault DEK")
                 }
                 .getOrNull()
                 ?.also { dek = it }
@@ -149,13 +147,14 @@ object SecretVault {
                 val wrap = loadKeyStoreKey(parts[1], create = false)
                 if (wrap != null) {
                     val blob = Base64.decode(parts[2])
-                    if (blob.size > IvBytes) {
-                        val cipher = Cipher.getInstance(Transformation)
-                        cipher.init(Cipher.DECRYPT_MODE, wrap, GCMParameterSpec(TagBits, blob, 0, IvBytes))
-                        val raw = cipher.doFinal(blob, IvBytes, blob.size - IvBytes)
-                        if (raw.size == DekBytes) return raw
-                    }
+                    if (blob.size <= IvBytes) error("Corrupted vault key blob")
+                    val cipher = Cipher.getInstance(Transformation)
+                    cipher.init(Cipher.DECRYPT_MODE, wrap, GCMParameterSpec(TagBits, blob, 0, IvBytes))
+                    val raw = cipher.doFinal(blob, IvBytes, blob.size - IvBytes)
+                    if (raw.size != DekBytes) error("Unexpected vault DEK length")
+                    return raw
                 }
+                // KeyStore alias is genuinely gone (e.g., keystore wiped); rotate cleanly below.
             }
         }
         val suffix = ByteArray(16).also(random::nextBytes).joinToString("") { "%02x".format(it) }
@@ -177,14 +176,11 @@ object SecretVault {
 
     private fun legacyKeyOrNull(): SecretKey? {
         legacyKey?.let { return it }
-        if (broken) return null
         synchronized(this) {
             legacyKey?.let { return it }
-            if (broken) return null
             return runCatching { loadKeyStoreKey(LegacyAlias, create = true) }
                 .onFailure {
-                    broken = true
-                    Timber.tag("Vault").w(it, "legacy keystore unusable")
+                    Timber.tag("Vault").w(it, "Legacy KeyStore unavailable")
                 }
                 .getOrNull()
                 ?.also { legacyKey = it }

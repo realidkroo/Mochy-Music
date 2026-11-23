@@ -53,7 +53,8 @@ class PhoneLinkHost @Inject constructor(
     @ApplicationContext private val context: Context,
     private val database: MusicDatabase,
     private val internalDatabase: InternalDatabase,
-    downloadUtil: DownloadUtil,
+    // lazy so bringing up the link server doesn't eagerly boot ExoPlayer's DownloadManager and cache
+    downloadUtil: dagger.Lazy<DownloadUtil>,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
     private val prefs = context.getSharedPreferences(PairedDeviceStore.Prefs, Context.MODE_PRIVATE)
@@ -77,10 +78,21 @@ class PhoneLinkHost @Inject constructor(
     private val _lastStream = MutableStateFlow<Map<String, Long>>(emptyMap())
     val lastStream: StateFlow<Map<String, Long>> = _lastStream.asStateFlow()
 
-    private val _foreground = MutableStateFlow(false)
+    private val _foreground = MutableStateFlow(
+        runCatching {
+            androidx.lifecycle.ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)
+        }.getOrDefault(false),
+    )
 
     // mochy is on screen here: other phones are checked on and a steered device is asked what it plays
     val foreground: StateFlow<Boolean> = _foreground.asStateFlow()
+
+    // android auto session keeps the link alive while the car screen is open even when the phone ui is closed
+    @Volatile
+    private var carActive = false
+
+    val isActiveSurface: Boolean
+        get() = _foreground.value || carActive
 
     private val _notifyShown = MutableStateFlow(prefs.getBoolean(NotifyKey, true))
     val notifyShown: StateFlow<Boolean> = _notifyShown.asStateFlow()
@@ -104,17 +116,30 @@ class PhoneLinkHost @Inject constructor(
             _menuShown.value = value
         }
 
-    // the background switch lives here too, so the boot receiver can read it without the settings store
+    // the background switch lives here too, so the boot receiver can read it without the settings store;
+    // opt-in (defaults off) so closing mochy doesn't keep the process and connected-device notification alive in ram
     var staysReachable: Boolean
-        get() = prefs.getBoolean(StayKey, true)
+        get() = prefs.getBoolean(StayKey, false)
         set(value) {
             prefs.edit { putBoolean(StayKey, value) }
-            if (value) PhoneLinkService.start(context) else PhoneLinkService.stop(context)
+            syncBackgroundService()
         }
+
+    // only run the foreground service in the background when the user opted in AND a paired tv can actually use it
+    fun shouldRunBackgroundService(): Boolean = staysReachable && _devices.value.any { it.needsBackgroundLink }
+
+    private fun syncBackgroundService() {
+        if (shouldRunBackgroundService()) {
+            PhoneLinkService.start(context)
+        } else {
+            PhoneLinkService.stop(context)
+            if (!isActiveSurface) stop()
+        }
+    }
 
     // goes up whenever the library changes, so a tv only pulls a fresh copy when there is one
     private val revision = AtomicLong(System.currentTimeMillis())
-    private var watchingLibrary = false
+    private var libraryObserver: androidx.room.InvalidationTracker.Observer? = null
     @Volatile private var mark: Pair<Long, String>? = null
 
     // the library sum each tv was last told "in step" about, so the notice only shows when it got something new
@@ -175,6 +200,7 @@ class PhoneLinkHost @Inject constructor(
     @Synchronized
     fun stop() {
         peers.stop()
+        unwatchLibrary()
         advert?.close()
         advert = null
         advertPort = -1
@@ -191,6 +217,41 @@ class PhoneLinkHost @Inject constructor(
     fun appHidden() {
         _foreground.value = false
         peers.stop()
+        if (!isActiveSurface && !shouldRunBackgroundService()) {
+            scope.launch(Dispatchers.IO) {
+                if (!isActiveSurface && !shouldRunBackgroundService()) {
+                    stop()
+                    PhoneLinkService.stop(context)
+                }
+            }
+        }
+    }
+
+    fun carSessionShown() {
+        carActive = true
+        scope.launch(Dispatchers.IO) {
+            if (_devices.value.isNotEmpty()) refresh()
+        }
+    }
+
+    fun carSessionHidden() {
+        carActive = false
+        if (!isActiveSurface && !shouldRunBackgroundService()) {
+            scope.launch(Dispatchers.IO) {
+                if (!isActiveSurface && !shouldRunBackgroundService()) {
+                    stop()
+                    PhoneLinkService.stop(context)
+                }
+            }
+        }
+    }
+
+    internal fun onBackgroundServiceStopped() {
+        if (!isActiveSurface) {
+            scope.launch(Dispatchers.IO) {
+                if (!isActiveSurface && !shouldRunBackgroundService()) stop()
+            }
+        }
     }
 
     // asks a device in pairing mode to take this phone, with the code its screen shows; the key made here is shared by both from now on
@@ -246,7 +307,7 @@ class PhoneLinkHost @Inject constructor(
         }.onSuccess { paired ->
             refresh()
             if (!paired.kind.isTv && paired.host != null) markLive(paired, paired.host, paired.port)
-            PhoneLinkService.start(context)
+            syncBackgroundService()
         }.onFailure {
             if (_devices.value.isEmpty()) stop()
             Timber.tag("Link").w(it, "pairing with ${peer.name} failed")
@@ -279,7 +340,7 @@ class PhoneLinkHost @Inject constructor(
         change { list -> list.filterNot { it.id == id } + device }
         refresh()
         markLive(device, remoteHost, port, now)
-        PhoneLinkService.start(context)
+        syncBackgroundService()
         return Result.success(Accepted(device, LinkAuth.publicText(keyPair)))
     }
 
@@ -311,10 +372,13 @@ class PhoneLinkHost @Inject constructor(
         _live.update { it - id }
         change { list -> list.filterNot { it.id == id } }
         refresh()
-        if (_devices.value.isEmpty()) PhoneLinkService.stop(context)
+        syncBackgroundService()
     }
 
-    fun update(id: String, transform: (PairedDevice) -> PairedDevice) = change { list -> list.map { if (it.id == id) transform(it) else it } }
+    fun update(id: String, transform: (PairedDevice) -> PairedDevice) {
+        change { list -> list.map { if (it.id == id) transform(it) else it } }
+        syncBackgroundService()
+    }
 
     // the device is around at this address: told by its hello, or by answering ours
     internal fun markLive(device: PairedDevice, host: String, port: Int, now: Long = System.currentTimeMillis()) {
@@ -423,31 +487,47 @@ class PhoneLinkHost @Inject constructor(
 
     // which picture the phone has right now, so a tv fetches it again only when it changed; empty with no picture
     private fun avatarStamp(profile: androidx.datastore.preferences.core.Preferences): String {
-        val path = profile[ProfilePicUriKey].orEmpty()
-        val file = File(path.removePrefix("file://")).takeIf { path.isNotBlank() && it.isFile } ?: return ""
+        val file = resolveAvatarFile(profile[ProfilePicUriKey].orEmpty()) ?: return ""
         return "${file.length()}:${file.lastModified()}"
     }
 
     private fun avatar(): LinkResponse {
         val path = runBlocking { context.dataStore.data.first()[ProfilePicUriKey] }.orEmpty()
-        val file = File(path.removePrefix("file://")).takeIf { path.isNotBlank() && it.isFile }
-            ?: return LinkResponse.status(404)
+        val file = resolveAvatarFile(path) ?: return LinkResponse.status(404)
         return LinkResponse.bytes(file.readBytes(), "image/jpeg")
+    }
+
+    // Only serve avatar files inside the app's own files or cache directories and within a sane size limit
+    private fun resolveAvatarFile(rawPath: String): File? {
+        if (rawPath.isBlank()) return null
+        val file = File(rawPath.removePrefix("file://"))
+        if (!file.isFile || file.length() <= 0L || file.length() > MaxAvatarBytes) return null
+        val canonical = runCatching { file.canonicalPath }.getOrNull() ?: return null
+        val filesRoot = runCatching { context.filesDir.canonicalPath + File.separator }.getOrNull()
+        val cacheRoot = runCatching { context.cacheDir.canonicalPath + File.separator }.getOrNull()
+        val insideOwnDir = (filesRoot != null && canonical.startsWith(filesRoot)) ||
+            (cacheRoot != null && canonical.startsWith(cacheRoot))
+        return if (insideOwnDir) file else null
     }
 
     // only the tables a tv shows count, a new lyric or format alone isn't worth a whole sync
     private fun watchLibrary() {
-        if (watchingLibrary) return
-        watchingLibrary = true
-        internalDatabase.invalidationTracker.addObserver(
-            object : androidx.room.InvalidationTracker.Observer(
-                arrayOf("song", "artist", "album", "playlist", "playlist_song_map", "event"),
-            ) {
-                override fun onInvalidated(tables: Set<String>) {
-                    revision.incrementAndGet()
-                }
-            },
-        )
+        if (libraryObserver != null) return
+        val observer = object : androidx.room.InvalidationTracker.Observer(
+            arrayOf("song", "artist", "album", "playlist", "playlist_song_map", "event"),
+        ) {
+            override fun onInvalidated(tables: Set<String>) {
+                revision.incrementAndGet()
+            }
+        }
+        libraryObserver = observer
+        internalDatabase.invalidationTracker.addObserver(observer)
+    }
+
+    private fun unwatchLibrary() {
+        val observer = libraryObserver ?: return
+        libraryObserver = null
+        runCatching { internalDatabase.invalidationTracker.removeObserver(observer) }
     }
 
     private fun synced(device: PairedDevice, library: String) {
@@ -477,13 +557,20 @@ class PhoneLinkHost @Inject constructor(
 
         // a device that hasn't said hello for this long is closed or gone
         const val LiveForMs = 70_000L
+        private const val MaxAvatarBytes = 10L * 1024 * 1024
 
-        // read without hilt by the boot receiver
+        // read without hilt by the boot receiver and App.onCreate
         fun hasPairedDevices(context: Context): Boolean =
             PairedDeviceStore.hasAny(context.getSharedPreferences(PairedDeviceStore.Prefs, Context.MODE_PRIVATE))
 
+        fun hasBackgroundCapableDevices(context: Context): Boolean =
+            PairedDeviceStore.hasBackgroundCapable(context.getSharedPreferences(PairedDeviceStore.Prefs, Context.MODE_PRIVATE))
+
         fun staysReachable(context: Context): Boolean =
-            context.getSharedPreferences(PairedDeviceStore.Prefs, Context.MODE_PRIVATE).getBoolean(StayKey, true)
+            context.getSharedPreferences(PairedDeviceStore.Prefs, Context.MODE_PRIVATE).getBoolean(StayKey, false)
+
+        fun shouldStartInBackground(context: Context): Boolean =
+            staysReachable(context) && hasBackgroundCapableDevices(context)
     }
 }
 

@@ -35,6 +35,8 @@ import com.mochyy.mochymusic.constants.LastFMUsernameKey
 import com.mochyy.mochymusic.constants.LibreFmSessionKey
 import com.mochyy.mochymusic.constants.LibreFmUsernameKey
 import com.mochyy.mochymusic.constants.MonochromePlaybackApiTokenKey
+import com.mochyy.mochymusic.constants.MonochromeTurnstileJwtExpiryKey
+import com.mochyy.mochymusic.constants.MonochromeTurnstileJwtKey
 import com.mochyy.mochymusic.constants.OpenRouterApiKey
 import com.mochyy.mochymusic.constants.ProxyPasswordKey
 import com.mochyy.mochymusic.constants.ProxyUsernameKey
@@ -80,15 +82,16 @@ internal object TransferArchive {
         DiscordLoginVerifierKey, DiscordProfileKey, EnableDiscordRPCKey,
         LastFMSessionKey, LastFMUsernameKey, EnableLastFMScrobblingKey,
         LibreFmSessionKey, LibreFmUsernameKey, EnableLibreFmScrobblingKey,
-        MonochromePlaybackApiTokenKey, TurnstileBypassTokenKey,
+        MonochromePlaybackApiTokenKey, MonochromeTurnstileJwtKey, MonochromeTurnstileJwtExpiryKey, TurnstileBypassTokenKey,
         OpenRouterApiKey, DeeplApiKey, ProxyUsernameKey, ProxyPasswordKey,
     ).map { it.name }.toSet()
 
     // top-level things in the files folder that stay behind: the streaming cache, settings (sent as json),
-    // caches, crash notes, the saved queue (java objects tied to class names) and folder picks android won't hand over
+    // caches, crash notes, executable/untrusted module bundles, the saved queue and folder picks android won't hand over
     private val FilesLeftBehind = setOf(
         "exoplayer", "datastore", "cipher_cache", "local_music_folders.txt", "last_crash.txt",
         "persistent_queue.data", "persistent_automix.data", "persistent_player_state.data",
+        "code_modules", "module_files", "module_data",
     )
 
     // top-level folders in the files folder that hold songs: downloads and songs shared into mochy; a backup leaves them out to stay small

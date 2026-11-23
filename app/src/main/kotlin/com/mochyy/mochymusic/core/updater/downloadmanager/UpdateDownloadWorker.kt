@@ -1,17 +1,15 @@
 package com.mochyy.mochymusic.core.updater.downloadmanager
 
 import android.content.Context
-import android.os.Environment
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.core.updater.ApkVerifier
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.zip.ZipInputStream
 
 class UpdateDownloadWorker(private val context: Context, workerParams: WorkerParameters) :
@@ -24,79 +22,74 @@ class UpdateDownloadWorker(private val context: Context, workerParams: WorkerPar
 
         DownloadNotificationManager.showDownloadStarting(version, fileSize)
 
+        val isZip = apkUrl.contains("nightly.link") || apkUrl.endsWith(".zip")
         try {
-            val url = URL(apkUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 15000
-            connection.readTimeout = 15000
-            connection.connect()
-
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                DownloadNotificationManager.showDownloadFailed(
-                    version,
-                    context.getString(R.string.server_error, connection.responseCode)
-                )
+            val connection = ApkVerifier.openVerifiedConnection(apkUrl, allowNightlyLink = isZip)
+            val fileLength = connection.contentLengthLong
+            if (fileLength > ApkVerifier.MaxApkBytes) {
+                connection.disconnect()
+                DownloadNotificationManager.showDownloadFailed(version, "Update file exceeds maximum allowed size")
                 return@withContext Result.failure()
             }
 
-            val fileLength = connection.contentLength
-            val inputStream = connection.inputStream
-
-            val downloadDir = File(
-                context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
-                "mochy_updates"
-            )
-            if (!downloadDir.exists()) {
-                downloadDir.mkdirs()
-            }
-
-            val isZip = apkUrl.contains("nightly.link") || apkUrl.endsWith(".zip")
+            val downloadDir = ApkVerifier.updatesDir(context)
             val downloadFile = if (isZip) File(downloadDir, "mochy_temp.zip") else File(downloadDir, "mochy.apk")
-            val outputStream = FileOutputStream(downloadFile)
+            if (downloadFile.exists()) downloadFile.delete()
 
-            val buffer = ByteArray(8192)
-            var bytesRead: Int
-            var totalBytesRead: Long = 0
+            try {
+                connection.inputStream.use { inputStream ->
+                    FileOutputStream(downloadFile).use { outputStream ->
+                        val buffer = ByteArray(8192)
+                        var bytesRead: Int
+                        var totalBytesRead = 0L
 
-            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                if (isStopped) {
-                    outputStream.close()
-                    inputStream.close()
-                    connection.disconnect()
-                    if (downloadFile.exists()) {
-                        downloadFile.delete()
+                        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                            if (isStopped) {
+                                downloadFile.delete()
+                                return@withContext Result.retry()
+                            }
+                            totalBytesRead += bytesRead
+                            if (totalBytesRead > ApkVerifier.MaxApkBytes) {
+                                downloadFile.delete()
+                                DownloadNotificationManager.showDownloadFailed(version, "Update file exceeded maximum allowed size")
+                                return@withContext Result.failure()
+                            }
+                            outputStream.write(buffer, 0, bytesRead)
+
+                            if (fileLength > 0) {
+                                val progress = (totalBytesRead.toFloat() / fileLength.toFloat() * 100).toInt().coerceIn(0, 100)
+                                DownloadNotificationManager.updateDownloadProgress(progress, version)
+                                setProgress(workDataOf("progress" to progress.toFloat() / 100f))
+                            }
+                        }
+                        outputStream.flush()
                     }
-                    return@withContext Result.retry()
                 }
-
-                outputStream.write(buffer, 0, bytesRead)
-                totalBytesRead += bytesRead
-
-                if (fileLength > 0) {
-                    val progress = (totalBytesRead.toFloat() / fileLength.toFloat() * 100).toInt()
-
-                    DownloadNotificationManager.updateDownloadProgress(progress, version)
-
-                    setProgress(workDataOf("progress" to progress.toFloat() / 100f))
-                }
+            } finally {
+                connection.disconnect()
             }
-
-            outputStream.flush()
-            outputStream.close()
-            inputStream.close()
-            connection.disconnect()
 
             val finalFile = if (isZip) {
                 val targetApkFile = File(downloadDir, "mochy.apk")
+                if (targetApkFile.exists()) targetApkFile.delete()
                 var extracted = false
                 try {
                     ZipInputStream(downloadFile.inputStream()).use { zis ->
                         var entry = zis.nextEntry
                         while (entry != null) {
-                            if (!entry.isDirectory && entry.name.endsWith(".apk")) {
+                            if (!entry.isDirectory && entry.name.endsWith(".apk", ignoreCase = true)) {
                                 FileOutputStream(targetApkFile).use { fos ->
-                                    zis.copyTo(fos)
+                                    val buf = ByteArray(16 * 1024)
+                                    var extractedBytes = 0L
+                                    while (true) {
+                                        val n = zis.read(buf)
+                                        if (n < 0) break
+                                        extractedBytes += n
+                                        if (extractedBytes > ApkVerifier.MaxApkBytes) {
+                                            throw SecurityException("Extracted APK exceeded maximum allowed size")
+                                        }
+                                        fos.write(buf, 0, n)
+                                    }
                                 }
                                 extracted = true
                                 break
@@ -105,7 +98,7 @@ class UpdateDownloadWorker(private val context: Context, workerParams: WorkerPar
                         }
                     }
                 } catch (e: Exception) {
-                    if (downloadFile.exists()) downloadFile.delete()
+                    targetApkFile.delete()
                     DownloadNotificationManager.showDownloadFailed(
                         version,
                         e.message ?: "Failed to extract zip file"
@@ -126,6 +119,15 @@ class UpdateDownloadWorker(private val context: Context, workerParams: WorkerPar
                 targetApkFile
             } else {
                 downloadFile
+            }
+
+            if (!ApkVerifier.verifyUpdateApk(context, finalFile)) {
+                finalFile.delete()
+                DownloadNotificationManager.showDownloadFailed(
+                    version,
+                    "Update APK signature verification failed"
+                )
+                return@withContext Result.failure()
             }
 
             if (version.startsWith("nightly-r")) {

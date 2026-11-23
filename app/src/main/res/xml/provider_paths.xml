@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <external-path
-        name="external_files"
-        path="." />
     <cache-path
-        name="cache"
-        path="." />
-    <external-cache-path
-        name="external_cache"
-        path="." />
+        name="updates"
+        path="updates/" />
+    <cache-path
+        name="song_share"
+        path="song_share/" />
+    <cache-path
+        name="images"
+        path="images/" />
 </paths>

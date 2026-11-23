@@ -142,6 +142,10 @@ object TvProfiles {
 
     private fun save(context: Context, list: List<TvProfile>) {
         _profiles.value = list
+        com.mochyy.mochymusic.modules.security.SecretGuard.register(
+            "tv_profiles",
+            *list.mapNotNull { it.phone?.key }.toTypedArray(),
+        )
         context.getSharedPreferences(Prefs, Context.MODE_PRIVATE).edit(commit = true) {
             putString(ListKey, JSONArray(list.map(::toJson)).toString())
         }
@@ -149,11 +153,15 @@ object TvProfiles {
 
     private fun parse(text: String?): List<TvProfile> {
         val array = runCatching { JSONArray(text ?: return emptyList()) }.getOrNull() ?: return emptyList()
-        return (0 until array.length()).mapNotNull { index ->
+        val parsed = (0 until array.length()).mapNotNull { index ->
             val json = array.optJSONObject(index) ?: return@mapNotNull null
             val phone = json.optJSONObject("phone")?.let { p ->
-                // sealed by this tv's vault; a key from another tv's backup can't be opened, so the phone pairs again
-                val key = com.mochyy.mochymusic.utils.SecretVault.open(p.optString("key"))?.ifBlank { null } ?: return@let null
+                // sealed by this tv's vault under LinkDomain (with legacy DefaultDomain read migration)
+                val key = com.mochyy.mochymusic.utils.SecretVault.openWithFallbackDomain(
+                    p.optString("key"),
+                    com.mochyy.mochymusic.utils.SecretVault.LinkDomain,
+                    com.mochyy.mochymusic.utils.SecretVault.DefaultDomain,
+                )?.ifBlank { null } ?: return@let null
                 LinkedPhone(
                     id = p.optString("id"),
                     name = p.optString("name"),
@@ -174,6 +182,11 @@ object TvProfiles {
                 phoneAvatar = json.opt("phoneAvatar") as? String,
             )
         }
+        com.mochyy.mochymusic.modules.security.SecretGuard.register(
+            "tv_profiles",
+            *parsed.mapNotNull { it.phone?.key }.toTypedArray(),
+        )
+        return parsed
     }
 
     private fun toJson(profile: TvProfile): JSONObject = JSONObject()
@@ -192,7 +205,7 @@ object TvProfiles {
                         .put("name", phone.name)
                         .put("host", phone.host)
                         .put("port", phone.port)
-                        .put("key", com.mochyy.mochymusic.utils.SecretVault.seal(phone.key))
+                        .put("key", com.mochyy.mochymusic.utils.SecretVault.seal(phone.key, com.mochyy.mochymusic.utils.SecretVault.LinkDomain))
                         .put("pairedAt", phone.pairedAt)
                         .put("lastSyncAt", phone.lastSyncAt),
                 )

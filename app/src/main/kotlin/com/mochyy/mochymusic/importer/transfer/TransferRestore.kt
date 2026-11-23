@@ -130,9 +130,22 @@ object TransferRestore {
     // merged into what's there, so anything set during onboarding that the old app never had stays
     private fun restorePrefs(context: Context, folder: File) {
         for (file in folder.listFiles().orEmpty()) {
-            val fileName = TransferArchive.PrefsToCarry[file.name.removeSuffix(".json")] ?: continue
+            val logicalName = file.name.removeSuffix(".json")
+            val fileName = TransferArchive.PrefsToCarry[logicalName] ?: continue
+            val json = JSONObject(file.readText())
+            if (logicalName == "source_modules") {
+                // Never let an imported archive silently register executable code modules or pre-acknowledge script security warnings
+                val toRemove = buildList {
+                    val keys = json.keys()
+                    while (keys.hasNext()) {
+                        val k = keys.next()
+                        if (k == "code_modules" || k.startsWith("script_warn_ack_")) add(k)
+                    }
+                }
+                toRemove.forEach { json.remove(it) }
+            }
             val editor = context.getSharedPreferences(fileName, Context.MODE_PRIVATE).edit()
-            TransferArchive.jsonIntoSharedPreferences(JSONObject(file.readText()), editor)
+            TransferArchive.jsonIntoSharedPreferences(json, editor)
             editor.commit()
         }
     }

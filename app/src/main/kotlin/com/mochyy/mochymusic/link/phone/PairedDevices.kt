@@ -6,7 +6,14 @@ import android.content.SharedPreferences
 import androidx.compose.runtime.Immutable
 import androidx.core.content.edit
 import com.mochyy.mochymusic.link.DeviceKind
+import com.mochyy.mochymusic.modules.security.SecretGuard
 import com.mochyy.mochymusic.utils.SecretVault
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -31,7 +38,12 @@ data class PairedDevice(
     val streamLocal: Boolean = true,
     // a tv's library is replaced by this phone's and kept in step
     val mirrorLibrary: Boolean = true,
-)
+) {
+    // only a paired tv syncing or streaming from this phone can use the link while mochy is closed;
+    // phones, tablets and computers steering this phone need mochy's activity alive anyway
+    val needsBackgroundLink: Boolean
+        get() = kind.isTv && (mirrorLibrary || streamLocal)
+}
 
 // a paired device that's around right now, with where it listens for this phone
 @Immutable
@@ -53,13 +65,23 @@ internal object PairedDeviceStore {
 
     fun read(prefs: SharedPreferences): List<PairedDevice> {
         val array = runCatching { JSONArray(prefs.getString(ListKey, null) ?: return emptyList()) }.getOrNull() ?: return emptyList()
-        return (0 until array.length()).mapNotNull { index ->
+        var needsDomainUpgrade = false
+        val devices = (0 until array.length()).mapNotNull { index ->
             val json = array.optJSONObject(index) ?: return@mapNotNull null
+            val storedKey = json.optString("key")
+            val openedLink = SecretVault.open(storedKey, SecretVault.LinkDomain)
+            val key = if (openedLink != null) {
+                if (SecretVault.needsUpgrade(storedKey)) needsDomainUpgrade = true
+                openedLink
+            } else {
+                needsDomainUpgrade = true
+                SecretVault.open(storedKey, SecretVault.DefaultDomain)
+            }?.ifBlank { null } ?: return@mapNotNull null
             PairedDevice(
                 id = json.optString("id"),
                 name = json.optString("name"),
-                // sealed by this phone's vault; one from another phone's backup can't be opened, so that device pairs again
-                key = SecretVault.open(json.optString("key"))?.ifBlank { null } ?: return@mapNotNull null,
+                // sealed by this phone's vault under LinkDomain; one from another device can't be opened
+                key = key,
                 // saved before kinds existed, so it can only be a tv
                 kind = DeviceKind.fromWire(json.optString("kind").ifBlank { null }, DeviceKind.Tv),
                 pairedAt = json.optLong("pairedAt"),
@@ -73,15 +95,19 @@ internal object PairedDeviceStore {
                 mirrorLibrary = json.optBoolean("mirrorLibrary", true),
             )
         }
+        SecretGuard.register("link_devices", *devices.map { it.key }.toTypedArray())
+        if (needsDomainUpgrade && devices.isNotEmpty()) write(prefs, devices)
+        return devices
     }
 
     fun write(prefs: SharedPreferences, list: List<PairedDevice>) {
+        SecretGuard.register("link_devices", *list.map { it.key }.toTypedArray())
         val array = JSONArray(
             list.map {
                 JSONObject()
                     .put("id", it.id)
                     .put("name", it.name)
-                    .put("key", SecretVault.seal(it.key))
+                    .put("key", SecretVault.seal(it.key, SecretVault.LinkDomain))
                     .put("kind", it.kind.wire)
                     .put("pairedAt", it.pairedAt)
                     .put("lastSeenAt", it.lastSeenAt)
@@ -100,5 +126,24 @@ internal object PairedDeviceStore {
     fun hasAny(prefs: SharedPreferences): Boolean {
         val saved = prefs.getString(ListKey, null)
         return !saved.isNullOrBlank() && saved != "[]"
+    }
+
+    // checks without unsealing keys whether any paired device can actually use the link in the background
+    fun hasBackgroundCapable(prefs: SharedPreferences): Boolean = hasBackgroundCapableJson(prefs.getString(ListKey, null))
+
+    internal fun hasBackgroundCapableJson(raw: String?): Boolean {
+        if (raw.isNullOrBlank() || raw == "[]") return false
+        val array = runCatching { Json.parseToJsonElement(raw).jsonArray }.getOrNull() ?: return false
+        for (element in array) {
+            val json = runCatching { element.jsonObject }.getOrNull() ?: continue
+            val kindWire = json["kind"]?.jsonPrimitive?.contentOrNull?.ifBlank { null }
+            val kind = DeviceKind.fromWire(kindWire, DeviceKind.Tv)
+            val mirrorLibrary = json["mirrorLibrary"]?.jsonPrimitive?.booleanOrNull ?: true
+            val streamLocal = json["streamLocal"]?.jsonPrimitive?.booleanOrNull ?: true
+            if (kind.isTv && (mirrorLibrary || streamLocal)) {
+                return true
+            }
+        }
+        return false
     }
 }

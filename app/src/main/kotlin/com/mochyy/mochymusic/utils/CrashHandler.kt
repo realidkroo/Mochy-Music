@@ -3,9 +3,9 @@
 package com.mochyy.mochymusic.utils
 
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import com.mochyy.mochymusic.BuildConfig
+import com.mochyy.mochymusic.modules.security.SecretGuard
 import timber.log.Timber
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -20,8 +20,8 @@ class CrashHandler private constructor(
 
     override fun uncaughtException(thread: Thread, throwable: Throwable) {
         try {
-            val crashLog = buildCrashLog(throwable)
-            Timber.e(throwable, "App crashed")
+            val crashLog = sanitizeCrashLog(buildCrashLog(throwable))
+            Timber.e("App crashed:\n%s", crashLog)
             // Timber isn't planted in release builds, and the process is killed right after: without
             // this a release crash left nothing behind at all. Log.e is kept by R8.
             android.util.Log.e("MochyCrash", crashLog)
@@ -63,6 +63,31 @@ class CrashHandler private constructor(
     companion object {
         const val EXTRA_CRASH_LOG = "crash_log"
         const val LAST_CRASH_FILE = "last_crash.txt"
+
+        private val AuthHeaderPattern = Regex(
+            """(?i)(Authorization|Proxy-Authorization|X-Mochy-Auth|X-Mochy-Key)\s*[:=]\s*([^\r\n,]+)""",
+        )
+        private val BearerOrBasicPattern = Regex(
+            """(?i)\b(Bearer|Basic|SAPISIDHASH|DeepL-Auth-Key)\s+[A-Za-z0-9._~+/=-]{6,}""",
+        )
+        private val CookieHeaderPattern = Regex(
+            """(?i)\b(Cookie|Set-Cookie)\s*[:=]\s*([^\r\n]+)""",
+        )
+        private val SensitiveParamPattern = Regex(
+            """(?i)\b(SAPISID|PAPISID|HSID|SSID|APISID|LOGIN_INFO|__Secure-[13]P(?:API)?SID(?:CC)?|sp_dc|access_token|refresh_token|client_secret|code_verifier|api[_-]?key|password|passwd|session_?token|media-user-token)\s*[:=]\s*([^\s;&"',}\r\n]+)""",
+        )
+        private val UrlCredsPattern = Regex("""(https?://)([^:@/\s]+):([^@/\s]+)@""")
+
+        /** Scrubs registered secrets and common credential/cookie/token patterns before logs hit disk or logcat. */
+        internal fun sanitizeCrashLog(raw: String): String {
+            var out = SecretGuard.redact(raw)
+            out = AuthHeaderPattern.replace(out) { "${it.groupValues[1]}: [REDACTED]" }
+            out = BearerOrBasicPattern.replace(out) { "${it.groupValues[1]} [REDACTED]" }
+            out = CookieHeaderPattern.replace(out) { "${it.groupValues[1]}: [REDACTED]" }
+            out = SensitiveParamPattern.replace(out) { "${it.groupValues[1]}=[REDACTED]" }
+            out = UrlCredsPattern.replace(out) { "${it.groupValues[1]}[REDACTED]@" }
+            return out
+        }
 
         fun install(context: Context) {
             val handler = CrashHandler(context.applicationContext)

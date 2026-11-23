@@ -49,6 +49,12 @@ class PoTokenWebView private constructor(
         val webViewSettings = webView.settings
 
         webViewSettings.javaScriptEnabled = true
+        webViewSettings.allowFileAccess = false
+        webViewSettings.allowContentAccess = false
+        @Suppress("DEPRECATION")
+        webViewSettings.allowFileAccessFromFileURLs = false
+        @Suppress("DEPRECATION")
+        webViewSettings.allowUniversalAccessFromFileURLs = false
         webViewSettings.userAgentString = USER_AGENT
         webViewSettings.blockNetworkLoads = true
 
@@ -126,10 +132,11 @@ class PoTokenWebView private constructor(
 
     @JavascriptInterface
     fun onRunBotguardResult(botguardResponse: String) {
-        Timber.tag(TAG).d("botguardResponse: $botguardResponse")
+        Timber.tag(TAG).d("botguardResponse received (${botguardResponse.length} chars)")
+        val payload = org.json.JSONArray().put(REQUEST_KEY).put(botguardResponse).toString()
         makeBotguardServiceRequest(
             "https://www.youtube.com/api/jnn/v1/GenerateIT",
-            "[ \"$REQUEST_KEY\", \"$botguardResponse\" ]",
+            payload,
         ) { responseBody ->
             Timber.tag(TAG).d("GenerateIT response: $responseBody")
             try {
@@ -190,9 +197,10 @@ class PoTokenWebView private constructor(
                 Timber.tag(TAG).d("generatePoToken() called with identifier $identifier")
                 addPoTokenEmitter(identifier, cont)
 
+                val quotedId = org.json.JSONObject.quote(identifier)
                 webView.evaluateJavascript(
                     """try {
-                        identifier = "$identifier"
+                        identifier = $quotedId
                         u8Identifier = ${stringToU8(identifier)}
                         obtainPoToken(u8Identifier).then(function(poTokenU8) {
                             poTokenU8String = poTokenU8.join(",")
@@ -272,7 +280,7 @@ class PoTokenWebView private constructor(
                 onInitializationErrorCloseAndCancel(PoTokenException("Invalid response code: $httpCode"))
             } else {
                 val body = withContext(Dispatchers.IO) {
-                    response.body!!.string()
+                    response.body.string()
                 }
                 handleResponseBody(body)
             }

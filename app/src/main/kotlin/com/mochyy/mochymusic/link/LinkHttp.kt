@@ -2,6 +2,7 @@
 
 package com.mochyy.mochymusic.link
 
+import com.mochyy.mochymusic.utils.LanHttpClient
 import timber.log.Timber
 import java.io.BufferedInputStream
 import java.io.InputStream
@@ -12,8 +13,10 @@ import java.net.Socket
 import java.net.SocketException
 import java.net.URLDecoder
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 // one request as the link server reads it: the path without its query, the query split up, headers in lowercase
 class LinkRequest(
@@ -103,8 +106,16 @@ class LinkHttpServer(
         val server = runCatching { ServerSocket().apply { reuseAddress = true; bind(InetSocketAddress(preferredPort)) } }
             .getOrElse { ServerSocket(0) }
         socket = server
-        // a few at once covers a song streaming while the library syncs and the art loads
-        val pool = Executors.newFixedThreadPool(MaxConnections) { runnable -> Thread(runnable, "$name-conn").apply { isDaemon = true } }
+        // bounded worker pool that shrinks to 0 idle threads so a background link doesn't pin 6 permanent threads in ram
+        val pool = ThreadPoolExecutor(
+            MaxConnections,
+            MaxConnections,
+            IdleThreadTimeoutSeconds,
+            TimeUnit.SECONDS,
+            LinkedBlockingQueue(),
+        ) { runnable -> Thread(runnable, "$name-conn").apply { isDaemon = true } }.apply {
+            allowCoreThreadTimeOut(true)
+        }
         workers = pool
         Thread({ acceptLoop(server, pool) }, "$name-accept").apply { isDaemon = true }.start()
         Timber.tag("Link").i("$name listening on ${server.localPort}")
@@ -140,12 +151,13 @@ class LinkHttpServer(
     private fun serve(client: Socket) {
         client.use { connection ->
             runCatching {
+                if (!LanHttpClient.isLocalOrLoopbackAddress(connection.inetAddress)) return
                 connection.soTimeout = ReadTimeoutMs
                 val input = BufferedInputStream(connection.getInputStream())
                 val request = readRequest(input, connection.inetAddress?.hostAddress.orEmpty()) ?: return
                 val response = runCatching { handler(request) }.getOrElse {
                     Timber.tag("Link").w(it, "$name route ${request.path} failed")
-                    LinkResponse.status(500, it.message.orEmpty())
+                    LinkResponse.status(500, "internal error")
                 }
                 val out = connection.getOutputStream().buffered(64 * 1024)
                 writeHead(out, response)
@@ -163,13 +175,22 @@ class LinkHttpServer(
         val parts = requestLine.split(' ')
         if (parts.size < 2) return null
         val headers = HashMap<String, String>()
+        var headerCount = 0
         while (true) {
             val line = readLine(input) ?: break
             if (line.isEmpty()) break
+            if (++headerCount > MaxHeaderCount) return null
             val colon = line.indexOf(':')
             if (colon > 0) headers[line.substring(0, colon).trim().lowercase()] = line.substring(colon + 1).trim()
         }
-        val length = headers["content-length"]?.toIntOrNull()?.coerceIn(0, MaxBodyBytes) ?: 0
+        val rawLength = headers["content-length"]
+        val length = if (rawLength == null) {
+            0
+        } else {
+            val parsed = rawLength.toIntOrNull() ?: return null
+            if (parsed < 0 || parsed > MaxBodyBytes) return null
+            parsed
+        }
         val body = ByteArray(length)
         var read = 0
         while (read < length) {
@@ -178,7 +199,7 @@ class LinkHttpServer(
             read += got
         }
         val target = parts[1]
-        val path = URLDecoder.decode(target.substringBefore('?'), "UTF-8")
+        val path = runCatching { URLDecoder.decode(target.substringBefore('?'), "UTF-8") }.getOrNull() ?: return null
         val query = LinkAuth.parseQuery(target.substringAfter('?', ""))
         return LinkRequest(parts[0].uppercase(), path, query, headers, body, remoteHost)
     }
@@ -221,8 +242,10 @@ class LinkHttpServer(
 
     private companion object {
         const val MaxConnections = 6
+        const val IdleThreadTimeoutSeconds = 30L
         const val ReadTimeoutMs = 15_000
         const val MaxBodyBytes = 8 * 1024 * 1024
         const val MaxHeaderLine = 16 * 1024
+        const val MaxHeaderCount = 64
     }
 }

@@ -307,22 +307,16 @@ fun UpdateScreen(navController: NavHostController) {
                                                 return@AnimatedActionButton
                                             }
                                             file.let { f ->
-                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                                    if (!context.packageManager.canRequestPackageInstalls()) {
-                                                        val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                                                            data = Uri.parse("package:${context.packageName}")
+                                                if (!installApk(context, f)) {
+                                                    if (!ApkVerifier.verifyUpdateApk(context, f)) {
+                                                        isDownloadComplete = false
+                                                        downloadedFile = null
+                                                        downloadProgress = 0f
+                                                        scope.launch {
+                                                            snackbarHostState.showSnackbar("Update signature verification failed")
                                                         }
-                                                        context.startActivity(intent)
-                                                        return@let
                                                     }
                                                 }
-                                                val uri = FileProvider.getUriForFile(context, "${context.packageName}.FileProvider", file)
-                                                val installIntent = Intent(Intent.ACTION_VIEW).apply {
-                                                    setDataAndType(uri, "application/vnd.android.package-archive")
-                                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                                }
-                                                ContextCompat.startActivity(context, installIntent, null)
                                             }
                                         } else {
                                             val urlToDownload = currentStatus.apkUrl ?: "https://github.com/realidkroo/Mochy-Music/releases/download/${currentStatus.version}/mochy.apk"
@@ -477,7 +471,9 @@ fun UpdateScreen(navController: NavHostController) {
                                             text = annotatedText,
                                             onClick = { offset ->
                                                 annotatedText.getStringAnnotations("URL", offset, offset).firstOrNull()?.let {
-                                                    ContextCompat.startActivity(context, Intent(Intent.ACTION_VIEW, Uri.parse(it.item)), null)
+                                                    if (ApkVerifier.isSafeExternalWebUrl(it.item)) {
+                                                        ContextCompat.startActivity(context, Intent(Intent.ACTION_VIEW, Uri.parse(it.item)), null)
+                                                    }
                                                 }
                                             },
                                             style = MaterialTheme.typography.bodyMedium.copy(

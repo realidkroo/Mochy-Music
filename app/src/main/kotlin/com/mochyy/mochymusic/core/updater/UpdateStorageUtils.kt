@@ -1,12 +1,9 @@
 package com.mochyy.mochymusic.core.updater
 
 import android.content.Context
-import android.os.Environment
 import java.io.File
 
-fun getDownloadedApksDir(context: Context): File {
-    return File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "mochy_updates")
-}
+fun getDownloadedApksDir(context: Context): File = ApkVerifier.updatesDir(context)
 
 fun getDownloadedApkCount(context: Context): Int {
     val dir = getDownloadedApksDir(context)

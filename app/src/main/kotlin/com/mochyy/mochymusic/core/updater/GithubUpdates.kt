@@ -254,34 +254,51 @@ suspend fun downloadApk(
         val url = release.apkUrl ?: error("This release has no APK attached")
         val target = apkFileFor(context, release)
 
-        if (isDownloaded(context, release)) {
+        if (isDownloaded(context, release) && ApkVerifier.verifyUpdateApk(context, target)) {
             onProgress(1f)
             return@runCatching target
         }
         if (target.exists()) target.delete()
 
-        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
-            connectTimeout = 15_000
-            readTimeout = 30_000
-            instanceFollowRedirects = true
-            setRequestProperty("User-Agent", "mochy-android")
-        }
-        val total = release.apkSizeBytes.takeIf { it > 0 }
-            ?: connection.contentLengthLong.takeIf { it > 0 }
-            ?: -1L
+        val temp = File(target.parentFile, "${target.name}.part")
+        if (temp.exists()) temp.delete()
 
-        connection.inputStream.use { input ->
-            target.outputStream().use { output ->
-                val buffer = ByteArray(64 * 1024)
-                var written = 0L
-                while (true) {
-                    val read = input.read(buffer)
-                    if (read == -1) break
-                    output.write(buffer, 0, read)
-                    written += read
-                    if (total > 0) onProgress((written.toFloat() / total).coerceIn(0f, 1f))
+        val connection = ApkVerifier.openVerifiedConnection(url, allowNightlyLink = false)
+        try {
+            val declaredTotal = release.apkSizeBytes.takeIf { it > 0 }
+                ?: connection.contentLengthLong.takeIf { it > 0 }
+                ?: -1L
+            if (declaredTotal > ApkVerifier.MaxApkBytes) {
+                error("Update APK exceeds maximum allowed size")
+            }
+
+            connection.inputStream.use { input ->
+                temp.outputStream().use { output ->
+                    val buffer = ByteArray(64 * 1024)
+                    var written = 0L
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read == -1) break
+                        written += read
+                        if (written > ApkVerifier.MaxApkBytes) {
+                            error("Update APK exceeded maximum allowed size")
+                        }
+                        output.write(buffer, 0, read)
+                        if (declaredTotal > 0) onProgress((written.toFloat() / declaredTotal).coerceIn(0f, 1f))
+                    }
                 }
             }
+        } finally {
+            connection.disconnect()
+        }
+
+        if (!temp.renameTo(target)) {
+            temp.copyTo(target, overwrite = true)
+            temp.delete()
+        }
+        if (!ApkVerifier.verifyUpdateApk(context, target)) {
+            target.delete()
+            error("Update APK signature verification failed")
         }
         onProgress(1f)
         target
@@ -289,12 +306,13 @@ suspend fun downloadApk(
 }
 
 fun apkFileFor(context: Context, release: GithubRelease): File =
-    File(context.cacheDir, release.apkName ?: "mochy-update.apk")
+    ApkVerifier.safeApkFile(context, release.apkName)
 
 fun isDownloaded(context: Context, release: GithubRelease): Boolean {
     val f = apkFileFor(context, release)
     if (!f.exists() || f.length() <= 0L) return false
-    return release.apkSizeBytes <= 0L || f.length() == release.apkSizeBytes
+    val sizeMatches = release.apkSizeBytes <= 0L || f.length() == release.apkSizeBytes
+    return sizeMatches && ApkVerifier.verifyUpdateApk(context, f)
 }
 
 fun canInstallPackages(context: Context): Boolean =
@@ -315,6 +333,10 @@ fun requestInstallPermission(context: Context) {
 }
 
 fun installApk(context: Context, apk: File): Boolean {
+    if (!ApkVerifier.verifyUpdateApk(context, apk)) {
+        runCatching { apk.delete() }
+        return false
+    }
     if (!canInstallPackages(context)) {
         requestInstallPermission(context)
         return false

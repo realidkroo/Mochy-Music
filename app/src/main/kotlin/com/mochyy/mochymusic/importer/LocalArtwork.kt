@@ -54,9 +54,12 @@ object LocalArtwork {
 
     /** the cover file a provider link names, or null for anything that isn't a plain file in the covers folder */
     fun fileFor(context: Context, name: String?): File? {
-        if (name.isNullOrBlank() || '/' in name || name.startsWith(".")) return null
+        if (name.isNullOrBlank() || '/' in name || '\\' in name || '\u0000' in name || ".." in name || name.startsWith(".")) return null
         val folder = folder(context)
-        return File(folder, name).takeIf { it.parentFile == folder && it.isFile }
+        val file = File(folder, name)
+        val root = runCatching { folder.canonicalPath + File.separator }.getOrNull() ?: return null
+        val canonical = runCatching { file.canonicalPath }.getOrNull() ?: return null
+        return file.takeIf { it.parentFile == folder && canonical.startsWith(root) && it.isFile }
     }
 
     /** true for a cover file on this phone that is gone, or that sits where it could vanish */

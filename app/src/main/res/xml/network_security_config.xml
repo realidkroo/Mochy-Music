@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Allow cleartext traffic for Listen Together local servers -->
-    <!-- We're already using WSS for the prod server -->
-    <base-config cleartextTrafficPermitted="true">
+    <!-- Require HTTPS for all internet traffic. Local-network-only protocols (UPnP/DLNA casting
+         and Phone-TV Link) use LanHttpClient with strict RFC1918/ULA LAN address validation. -->
+    <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>

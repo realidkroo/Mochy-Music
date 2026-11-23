@@ -4,6 +4,7 @@ package com.mochyy.mochymusic.api
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -18,6 +19,8 @@ object OpenRouterService {
         OkHttpClient.Builder()
             .dispatcher(com.mochyy.mochymusic.utils.AppProxy.dispatcher)
             .connectionPool(com.mochyy.mochymusic.utils.AppProxy.connectionPool)
+            .followRedirects(false)
+            .followSslRedirects(false)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(90, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
@@ -39,6 +42,11 @@ object OpenRouterService {
 
         if (text.isBlank()) {
             return@withContext Result.failure(Exception("Input text is empty"))
+        }
+
+        val resolvedUrl = baseUrl.trim().ifBlank { "https://openrouter.ai/api/v1/chat/completions" }.toHttpUrlOrNull()
+        if (resolvedUrl == null || !resolvedUrl.isHttps) {
+            return@withContext Result.failure(Exception("Custom API URL must use HTTPS"))
         }
 
         val lines = text.lines()
@@ -137,7 +145,7 @@ Output MUST be a JSON array with EXACTLY $lineCount strings."""
                 }
 
                 val request = Request.Builder()
-                    .url(baseUrl.ifBlank { "https://openrouter.ai/api/v1/chat/completions" })
+                    .url(resolvedUrl)
                     .apply {
                         if (apiKey.isNotBlank()) {
                             addHeader("Authorization", "Bearer ${apiKey.trim()}")

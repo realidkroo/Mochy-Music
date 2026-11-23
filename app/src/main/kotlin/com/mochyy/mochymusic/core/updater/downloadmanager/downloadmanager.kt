@@ -1,13 +1,11 @@
 package com.mochyy.mochymusic.core.updater.downloadmanager
 
 import android.content.Context
-import android.os.Environment
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.core.updater.ApkVerifier
 import kotlinx.coroutines.*
 import java.io.File
 import java.io.FileOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
 
 class CustomDownloadManager {
     private var downloadJob: Job? = null
@@ -25,61 +23,57 @@ class CustomDownloadManager {
 
         downloadJob = CoroutineScope(Dispatchers.IO).launch {
             try {
-                val url = URL(apkUrl)
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 15000
-                connection.readTimeout = 15000
-                connection.connect()
-
-                if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                    withContext(Dispatchers.Main) {
-                        onError("Server returned HTTP ${connection.responseCode}")
-                    }
+                val connection = ApkVerifier.openVerifiedConnection(apkUrl, allowNightlyLink = false)
+                val fileLength = connection.contentLengthLong
+                if (fileLength > ApkVerifier.MaxApkBytes) {
+                    connection.disconnect()
+                    withContext(Dispatchers.Main) { onError("Update file exceeds maximum allowed size") }
                     return@launch
                 }
 
-                val fileLength = connection.contentLength
-                val inputStream = connection.inputStream
-
-                val downloadDir = File(
-                    context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
-                    "mochy_updates"
-                )
-                if (!downloadDir.exists()) {
-                    downloadDir.mkdirs()
-                }
-
+                val downloadDir = ApkVerifier.updatesDir(context)
                 val outputFile = File(downloadDir, "mochy.apk")
-                val outputStream = FileOutputStream(outputFile)
+                if (outputFile.exists()) outputFile.delete()
 
-                val buffer = ByteArray(8192)
-                var bytesRead: Int
-                var totalBytesRead: Long = 0
+                try {
+                    connection.inputStream.use { inputStream ->
+                        FileOutputStream(outputFile).use { outputStream ->
+                            val buffer = ByteArray(8192)
+                            var bytesRead: Int
+                            var totalBytesRead = 0L
 
-                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                    if (isPaused) {
-                        outputStream.close()
-                        inputStream.close()
-                        connection.disconnect()
-                        return@launch
-                    }
+                            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                                if (isPaused) {
+                                    outputFile.delete()
+                                    return@launch
+                                }
+                                totalBytesRead += bytesRead
+                                if (totalBytesRead > ApkVerifier.MaxApkBytes) {
+                                    outputFile.delete()
+                                    withContext(Dispatchers.Main) { onError("Update file exceeded maximum allowed size") }
+                                    return@launch
+                                }
+                                outputStream.write(buffer, 0, bytesRead)
 
-                    outputStream.write(buffer, 0, bytesRead)
-                    totalBytesRead += bytesRead
-
-                    if (fileLength > 0) {
-                        val progress = totalBytesRead.toFloat() / fileLength.toFloat()
-                        withContext(Dispatchers.Main) {
-                            onProgress(progress)
+                                if (fileLength > 0) {
+                                    val progress = (totalBytesRead.toFloat() / fileLength.toFloat()).coerceIn(0f, 1f)
+                                    withContext(Dispatchers.Main) {
+                                        onProgress(progress)
+                                    }
+                                }
+                            }
+                            outputStream.flush()
                         }
                     }
+                } finally {
+                    connection.disconnect()
                 }
 
-                outputStream.flush()
-                outputStream.close()
-                inputStream.close()
-                connection.disconnect()
+                if (!ApkVerifier.verifyUpdateApk(context, outputFile)) {
+                    outputFile.delete()
+                    withContext(Dispatchers.Main) { onError("Update APK signature verification failed") }
+                    return@launch
+                }
 
                 withContext(Dispatchers.Main) {
                     onDownloadComplete(outputFile)

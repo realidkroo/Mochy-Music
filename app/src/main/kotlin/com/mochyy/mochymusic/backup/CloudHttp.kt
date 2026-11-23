@@ -23,6 +23,7 @@ internal object CloudHttp {
         OkHttpClient.Builder()
             .dispatcher(com.mochyy.mochymusic.utils.AppProxy.dispatcher)
             .connectionPool(com.mochyy.mochymusic.utils.AppProxy.connectionPool)
+            .followSslRedirects(false)
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(2, TimeUnit.MINUTES)
             .writeTimeout(2, TimeUnit.MINUTES)

@@ -19,6 +19,7 @@ import org.json.JSONObject
 import timber.log.Timber
 import java.io.File
 import java.io.IOException
+import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -50,7 +51,14 @@ class CloudSignIn @Inject constructor(
         val state = Pkce.randomCode(24)
         val verifier = Pkce.randomCode(64)
         withContext(Dispatchers.IO) {
-            pendingFile.writeText(JSONObject().put("kind", kind.name).put("state", state).put("verifier", verifier).toString())
+            pendingFile.writeText(
+                JSONObject()
+                    .put("kind", kind.name)
+                    .put("state", state)
+                    .put("verifier", verifier)
+                    .put("createdAt", System.currentTimeMillis())
+                    .toString(),
+            )
         }
         _login.value = CloudLogin.InBrowser(kind)
         return app.authorizeUri(state, Pkce.challengeOf(verifier))
@@ -63,7 +71,10 @@ class CloudSignIn @Inject constructor(
 
     /** back from the browser without an answer, the page goes back to its sign-in rows */
     fun cancelWaiting() {
-        if (_login.value is CloudLogin.InBrowser) _login.value = CloudLogin.Idle
+        if (_login.value is CloudLogin.InBrowser) {
+            _login.value = CloudLogin.Idle
+            scope.launch { runCatching { pendingFile.delete() } }
+        }
     }
 
     fun dismissProblem() {
@@ -72,14 +83,21 @@ class CloudSignIn @Inject constructor(
 
     private suspend fun finish(redirect: Uri) {
         val pending = runCatching { JSONObject(pendingFile.readText()) }.getOrNull()
-        pendingFile.delete()
         val app = pending?.optString("kind")?.let { name -> OAuthApp.entries.find { it.kind.name == name } }
         val verifier = pending?.optString("verifier").orEmpty()
-        // a link that doesn't belong to the login we started is ignored, not trusted
-        if (app == null || verifier.isEmpty() || redirect.getQueryParameter("state") != pending.optString("state")) {
+        val expectedState = pending?.optString("state").orEmpty()
+        val createdAt = pending?.optLong("createdAt", 0L) ?: 0L
+        val expired = createdAt > 0L && System.currentTimeMillis() - createdAt > OAuthStateTtlMs
+        val givenState = redirect.getQueryParameter("state")
+        // a link that doesn't belong to the login we started is ignored without aborting an active sign-in
+        if (app == null || verifier.isEmpty() || expectedState.isEmpty() || expired || givenState == null ||
+            !MessageDigest.isEqual(expectedState.toByteArray(Charsets.UTF_8), givenState.toByteArray(Charsets.UTF_8))
+        ) {
+            if (expired) pendingFile.delete()
             _login.value = CloudLogin.Failed(CloudProblem.Expired)
             return
         }
+        pendingFile.delete()
         val code = redirect.getQueryParameter("code")
         if (code == null) {
             _login.value = CloudLogin.Failed(if (redirect.getQueryParameter("error") == "access_denied") CloudProblem.Denied else CloudProblem.Busy)
@@ -113,5 +131,6 @@ class CloudSignIn @Inject constructor(
     private companion object {
         const val Tag = "CloudBackup"
         const val PendingName = "cloud_backup_login.json"
+        const val OAuthStateTtlMs = 15 * 60_000L
     }
 }

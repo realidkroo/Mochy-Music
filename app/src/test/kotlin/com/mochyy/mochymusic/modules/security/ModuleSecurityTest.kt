@@ -227,4 +227,133 @@ class ModuleSecurityTest {
         assertFalse(error.contains("\n"))
         assertTrue(error.length <= 200)
     }
+
+    @Test
+    fun shaderSecurityGuardBlocksDoSAndAllowsCleanAgsl() {
+        val clean = """
+            // simple ambient wave
+            uniform float2 size;
+            uniform float time;
+            half4 main(float2 p) {
+                float acc = 0.0;
+                for (int i = 0; i < 12; i++) {
+                    acc += sin(p.x * 0.01 + time + float(i));
+                }
+                return half4(acc * 0.05, 0.2, 0.5, 1.0);
+            }
+        """.trimIndent()
+        assertNull(ShaderSecurityGuard.validate(clean))
+
+        // unbounded loops
+        assertNotNull(ShaderSecurityGuard.validate("half4 main(float2 p){ while(true){} return half4(0); }"))
+        assertNotNull(ShaderSecurityGuard.validate("half4 main(float2 p){ do { p.x += 1.0; } while(p.x < 10.0); return half4(0); }"))
+        assertNotNull(ShaderSecurityGuard.validate("half4 main(float2 p){ for(;;){} return half4(0); }"))
+        // excessive loop iteration count
+        assertNotNull(ShaderSecurityGuard.validate("half4 main(float2 p){ for(int i=0;i<500;i++){} return half4(0); }"))
+        // preprocessor directive
+        assertNotNull(ShaderSecurityGuard.validate("#include <secret>\nhalf4 main(float2 p){ return half4(0); }"))
+        // excessive texture sampling
+        val manyEvals = "uniform shader s;\nhalf4 main(float2 p){ half4 c = half4(0);\n" +
+            (1..35).joinToString("\n") { "c += s.eval(p);" } + "\nreturn c; }"
+        assertNotNull(ShaderSecurityGuard.validate(manyEvals))
+        // control characters
+        assertNotNull(ShaderSecurityGuard.validate("half4 main(float2 p){ return half4(0); }\u0000"))
+        // comments with words like while or #include should not trigger false positives
+        val commented = "/* while(true) #include <x> */\nhalf4 main(float2 p){ return half4(1); }"
+        assertNull(ShaderSecurityGuard.validate(commented))
+    }
+
+    @Test
+    fun safeModuleRoutesBlocksSensitiveAndAllowsSafeRoutes() {
+        val allowed = listOf(
+            "home", "search_input", "library", "library/songs", "library/playlists",
+            "history", "stats", "mochy_settings", "settings", "audio_lab", "equalizer",
+            "customisation_settings", "modules", "module_browser",
+            "album/MPREb_123", "artist/UCabc-9", "local_playlist/pl_1", "online_playlist/PL99",
+            "auto_playlist/liked", "auto_playlist/downloaded", "cache_playlist/cached", "top_playlist/50",
+        )
+        allowed.forEach { route ->
+            assertNotNull("expected allowed: $route", SafeModuleRoutes.sanitize(route))
+        }
+        assertEquals("mochy_settings", SafeModuleRoutes.sanitize("settings"))
+        assertEquals("auto_playlist/liked", SafeModuleRoutes.sanitize("liked"))
+
+        val blocked = listOf(
+            "youtube_login", "youtube_sync", "backup", "proxy_settings", "cipher_settings",
+            "account_import", "import_sync", "discord", "scrobble_service/lastfm",
+            "experimental_settings", "playback_diagnostics", "dev_playground",
+            "../backup", "album/foo?bar=1", "javascript:alert(1)", "http://evil.example",
+            "top_playlist/99999", "auto_playlist/evil", "unknown_secret_route",
+        )
+        blocked.forEach { route ->
+            assertNull("expected blocked: $route", SafeModuleRoutes.sanitize(route))
+        }
+
+        assertTrue(SafeModuleRoutes.isSensitiveRoute("youtube_login"))
+        assertTrue(SafeModuleRoutes.isSensitiveRoute("backup"))
+        assertTrue(SafeModuleRoutes.isSensitiveRoute("proxy_settings"))
+        assertTrue(SafeModuleRoutes.isSensitiveRoute("modules"))
+        assertTrue(SafeModuleRoutes.isSensitiveRoute("module/applemusic"))
+        assertFalse(SafeModuleRoutes.isSensitiveRoute("home"))
+        assertFalse(SafeModuleRoutes.isSensitiveRoute("mochy_settings"))
+    }
+
+    @Test
+    fun safeAppSettingsBlocksSecretsAndAllowsSafePreferences() {
+        assertNotNull(SafeAppSettings.find("blur"))
+        assertNotNull(SafeAppSettings.find("pureBlack"))
+        assertNotNull(SafeAppSettings.find("floating_lyrics"))
+        assertNotNull(SafeAppSettings.find("skipSilence"))
+        assertNotNull(SafeAppSettings.find("blurStrength"))
+        assertTrue(SafeAppSettings.byCategory("blur").isNotEmpty())
+        assertTrue(SafeAppSettings.byCategory("playback").isNotEmpty())
+        assertTrue(SafeAppSettings.byCategory("now_playing").size >= 10)
+
+        val forbidden = listOf(
+            "innerTubeCookie", "proxyPassword", "proxyUrl", "discordAccessToken",
+            "openRouterApiKey", "disableScreenshot", "developerMode", "webdavPassword",
+            "lastfmSessionKey", "visitorData", "accountEmail",
+        )
+        forbidden.forEach { key ->
+            assertNull("expected forbidden setting: $key", SafeAppSettings.find(key))
+        }
+    }
+
+    @Test
+    fun moduleActionGuardRateLimitsAndBlocksSecretExfil() {
+        ModuleActionGuard.resetForTests()
+        val mod = "local.spammer"
+        repeat(6) { i ->
+            assertTrue("trigger $i should pass", ModuleActionGuard.allowTrigger(mod, nowMs = 10_000L + i * 50L))
+        }
+        assertFalse("7th trigger inside 1s should be throttled", ModuleActionGuard.allowTrigger(mod, nowMs = 10_400L))
+        assertTrue("trigger after 1s window should pass again", ModuleActionGuard.allowTrigger(mod, nowMs = 11_200L))
+
+        SecretGuard.register("test_yt", "SAPISID=TopSecretExfil9876")
+        assertFalse(ModuleActionGuard.isSafeFinalUrl("https://evil.example/?s=TopSecretExfil9876"))
+        assertFalse(ModuleActionGuard.isSafeFinalUrl("http://127.0.0.1:8080/ping"))
+        assertTrue(ModuleActionGuard.isSafeFinalUrl("https://genius.com/search?q=hello"))
+    }
+
+    @Test
+    fun zipBombCompressionRatioGuardCatchesBombs() {
+        assertFalse(com.mochyy.mochymusic.modules.skin.SkinFiles.exceedsCompressionRatio(written = 500_000L, compressedSize = 100L))
+        assertTrue(com.mochyy.mochymusic.modules.skin.SkinFiles.exceedsCompressionRatio(written = 2_000_000L, compressedSize = 10_000L))
+        assertFalse(com.mochyy.mochymusic.modules.skin.SkinFiles.exceedsCompressionRatio(written = 2_000_000L, compressedSize = 1_000_000L))
+    }
+
+    @Test
+    fun takeoverAllowlistNeverPermitsSensitiveScreens() {
+        val allowed = com.mochyy.mochymusic.ui.screens.settings.modules.AllowedTakeovers
+        assertTrue("mochy_settings" in allowed)
+        assertTrue("artist" in allowed)
+        assertTrue("library" in allowed)
+        listOf(
+            "modules", "module", "module_browser", "youtube_login", "youtube_sync",
+            "backup", "proxy_settings", "cipher_settings", "discord", "scrobble_service",
+            "experimental_settings", "playback_diagnostics", "account_import",
+        ).forEach { sensitive ->
+            assertFalse("sensitive route $sensitive must never be in AllowedTakeovers", sensitive in allowed)
+        }
+    }
 }

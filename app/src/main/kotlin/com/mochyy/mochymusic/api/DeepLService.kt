@@ -17,6 +17,8 @@ object DeepLService {
         OkHttpClient.Builder()
             .dispatcher(com.mochyy.mochymusic.utils.AppProxy.dispatcher)
             .connectionPool(com.mochyy.mochymusic.utils.AppProxy.connectionPool)
+            .followRedirects(false)
+            .followSslRedirects(false)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(90, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)

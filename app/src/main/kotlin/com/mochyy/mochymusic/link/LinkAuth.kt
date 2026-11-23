@@ -56,9 +56,11 @@ object LinkAuth {
 
     // a query string split the one way both sides agree on, so what's signed is what's checked
     fun parseQuery(encoded: String?): Map<String, String> =
-        encoded.orEmpty().split('&').filter { it.isNotEmpty() }.associate { pair ->
-            URLDecoder.decode(pair.substringBefore('='), "UTF-8") to URLDecoder.decode(pair.substringAfter('=', ""), "UTF-8")
-        }
+        encoded.orEmpty().split('&').filter { it.isNotEmpty() }.mapNotNull { pair ->
+            val key = runCatching { URLDecoder.decode(pair.substringBefore('='), "UTF-8") }.getOrNull() ?: return@mapNotNull null
+            val value = runCatching { URLDecoder.decode(pair.substringAfter('=', ""), "UTF-8") }.getOrNull() ?: return@mapNotNull null
+            key to value
+        }.toMap()
 
     // one per server: remembers the nonces it has seen, so a call someone copied can't be played again
     class Verifier {
@@ -85,6 +87,9 @@ object LinkAuth {
         }
 
         private fun verifyLink(request: LinkRequest, keyOf: (id: String) -> String?): String? {
+            // Query-signed links are strictly for read-only media playback on /file/*
+            if (request.method != "GET" && request.method != "HEAD") return null
+            if (!request.path.startsWith("/file/")) return null
             val id = request.query[SignedId] ?: return null
             val expiresAt = request.query[Expires]?.toLongOrNull() ?: return null
             if (expiresAt < System.currentTimeMillis()) return null

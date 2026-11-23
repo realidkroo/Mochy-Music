@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -23,6 +24,8 @@ object OpenRouterStreamingService {
         OkHttpClient.Builder()
             .dispatcher(com.mochyy.mochymusic.utils.AppProxy.dispatcher)
             .connectionPool(com.mochyy.mochymusic.utils.AppProxy.connectionPool)
+            .followRedirects(false)
+            .followSslRedirects(false)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(120, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
@@ -41,6 +44,12 @@ object OpenRouterStreamingService {
     ): Flow<StreamChunk> = flow {
         if (text.isBlank()) {
             emit(StreamChunk.Error("Input text is empty"))
+            return@flow
+        }
+
+        val resolvedUrl = baseUrl.trim().ifBlank { "https://openrouter.ai/api/v1/chat/completions" }.toHttpUrlOrNull()
+        if (resolvedUrl == null || !resolvedUrl.isHttps) {
+            emit(StreamChunk.Error("Custom API URL must use HTTPS"))
             return@flow
         }
 
@@ -111,7 +120,7 @@ Output MUST be a JSON array with EXACTLY $lineCount strings."""
             }
 
             val request = Request.Builder()
-                .url(baseUrl.ifBlank { "https://openrouter.ai/api/v1/chat/completions" })
+                .url(resolvedUrl)
                 .apply {
                     if (apiKey.isNotBlank()) {
                         addHeader("Authorization", "Bearer ${apiKey.trim()}")

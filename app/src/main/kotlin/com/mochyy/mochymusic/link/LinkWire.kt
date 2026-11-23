@@ -8,20 +8,15 @@ import android.net.nsd.NsdServiceInfo
 import android.os.Build
 import android.provider.Settings
 import androidx.core.content.edit
+import com.mochyy.mochymusic.utils.LanHttpClient
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import timber.log.Timber
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import timber.log.Timber
 import java.net.URLDecoder
 import java.util.ArrayDeque
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 // the names both sides agree on, so a phone and a tv on different app versions still find each other
 object LinkWire {
@@ -47,41 +42,43 @@ object LinkWire {
     const val AttrName = "n"
     const val AttrKind = "k"
 
-    // a lan is fast and a phone that's gone should be noticed quickly, so short waits
-    val client: OkHttpClient by lazy {
-        OkHttpClient.Builder()
-            .dispatcher(com.mochyy.mochymusic.utils.AppProxy.dispatcher)
-            .connectionPool(com.mochyy.mochymusic.utils.AppProxy.connectionPool)
-            .connectTimeout(4, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .retryOnConnectionFailure(false)
-            .build()
-    }
-
+    private const val ConnectTimeoutMs = 4_000
+    private const val ReadTimeoutMs = 30_000
     // a big library takes the phone a while to copy and squeeze before the first byte goes out
-    private val slowClient: OkHttpClient by lazy {
-        client.newBuilder().readTimeout(3, TimeUnit.MINUTES).build()
-    }
+    private const val SlowReadTimeoutMs = 3 * 60_000
 
-    fun getSlow(url: String, auth: LinkCredentials?): Response = slowClient.newCall(request(url, auth, null)).execute()
+    fun getSlow(url: String, auth: LinkCredentials?): LanHttpClient.Response =
+        execute(url, auth, json = null, readTimeoutMs = SlowReadTimeoutMs)
 
     fun baseUrl(host: String, port: Int) = "http://${if (host.contains(':')) "[$host]" else host}:$port"
 
-    fun get(url: String, auth: LinkCredentials?): Response = client.newCall(request(url, auth, null)).execute()
+    fun get(url: String, auth: LinkCredentials?): LanHttpClient.Response =
+        execute(url, auth, json = null, readTimeoutMs = ReadTimeoutMs)
 
-    fun postJson(url: String, auth: LinkCredentials?, json: String): Response = client.newCall(request(url, auth, json)).execute()
+    fun postJson(url: String, auth: LinkCredentials?, json: String): LanHttpClient.Response =
+        execute(url, auth, json = json, readTimeoutMs = ReadTimeoutMs)
 
-    // a call signed with the key when there is one; the path and query are read back the way the server reads them, so both sign the same thing
-    private fun request(url: String, auth: LinkCredentials?, json: String?): Request {
+    // a call signed with the key when there is one; strictly restricted to private LAN peers via LanHttpClient
+    private fun execute(url: String, auth: LinkCredentials?, json: String?, readTimeoutMs: Int): LanHttpClient.Response {
         val body = json?.toByteArray(Charsets.UTF_8)
-        val builder = Request.Builder().url(url)
+        val method = if (body == null) "GET" else "POST"
+        val headers = LinkedHashMap<String, String>()
         if (auth != null) {
             val parsed = url.toHttpUrl()
             val path = URLDecoder.decode(parsed.encodedPath, "UTF-8")
-            builder.header(LinkAuth.Header, LinkAuth.header(auth, if (body == null) "GET" else "POST", path, LinkAuth.parseQuery(parsed.encodedQuery), body))
+            headers[LinkAuth.Header] = LinkAuth.header(auth, method, path, LinkAuth.parseQuery(parsed.encodedQuery), body)
         }
-        if (body != null) builder.post(body.toRequestBody("application/json; charset=utf-8".toMediaType()))
-        return builder.build()
+        if (body != null) {
+            headers["Content-Type"] = "application/json; charset=utf-8"
+        }
+        return LanHttpClient.execute(
+            method = method,
+            url = url,
+            headers = headers,
+            body = body,
+            connectTimeoutMs = ConnectTimeoutMs,
+            readTimeoutMs = readTimeoutMs,
+        )
     }
 }
 
@@ -203,12 +200,14 @@ fun discoverPeers(context: Context, type: String): Flow<List<LinkPeer>> = callba
 }
 
 private fun hostOf(info: NsdServiceInfo): String? {
-    val address = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-        info.hostAddresses.firstOrNull { it is java.net.Inet4Address } ?: info.hostAddresses.firstOrNull()
+    val candidates = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        info.hostAddresses
     } else {
         @Suppress("DEPRECATION")
-        info.host
+        listOfNotNull(info.host)
     }
+    val lanOnly = candidates.filter { LanHttpClient.isPrivateLanAddress(it) }
+    val address = lanOnly.firstOrNull { it is java.net.Inet4Address } ?: lanOnly.firstOrNull()
     return address?.hostAddress?.substringBefore('%')
 }
 

@@ -7,11 +7,14 @@ import androidx.datastore.preferences.core.Preferences
 import com.mochyy.mochymusic.constants.DataSyncIdKey
 import com.mochyy.mochymusic.constants.DeeplApiKey
 import com.mochyy.mochymusic.constants.DiscordAccessTokenKey
+import com.mochyy.mochymusic.constants.DiscordLoginStateKey
+import com.mochyy.mochymusic.constants.DiscordLoginVerifierKey
 import com.mochyy.mochymusic.constants.DiscordRefreshTokenKey
 import com.mochyy.mochymusic.constants.InnerTubeCookieKey
 import com.mochyy.mochymusic.constants.LastFMSessionKey
 import com.mochyy.mochymusic.constants.LibreFmSessionKey
 import com.mochyy.mochymusic.constants.MonochromePlaybackApiTokenKey
+import com.mochyy.mochymusic.constants.MonochromeTurnstileJwtKey
 import com.mochyy.mochymusic.constants.OpenRouterApiKey
 import com.mochyy.mochymusic.constants.ProxyPasswordKey
 import com.mochyy.mochymusic.constants.TurnstileBypassTokenKey
@@ -44,11 +47,14 @@ class SecretPreferences(private val raw: DataStore<Preferences>) : DataStore<Pre
             DataSyncIdKey,
             DiscordAccessTokenKey,
             DiscordRefreshTokenKey,
+            DiscordLoginStateKey,
+            DiscordLoginVerifierKey,
             LastFMSessionKey,
             LibreFmSessionKey,
             OpenRouterApiKey,
             DeeplApiKey,
             MonochromePlaybackApiTokenKey,
+            MonochromeTurnstileJwtKey,
             TurnstileBypassTokenKey,
             ProxyPasswordKey,
         )
