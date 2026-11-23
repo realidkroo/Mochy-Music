@@ -51,6 +51,7 @@ transcript_*.txt
 docs/*
 !docs/index.html
 !docs/.nojekyll
+!docs/CNAME
 !docs/assets/
 !docs/wiki/
 !docs/modules/
