@@ -48,3 +48,24 @@ interface BridgeReply {
 
 /** an http answer on its way back to the module, its headers as json */
 class BridgeResponse(val code: Int, val headers: String, val body: ByteArray)
+
+/** optional live framebuffer bridge a code module implements when it drives a live player surface */
+interface SurfaceBridge {
+    fun hasSurface(): Boolean
+
+    fun surfaceStart(assetPath: String, dataDir: String, extraPaths: Array<String>?): Int
+
+    fun surfaceSize(): IntArray
+
+    fun surfaceTick(): Boolean
+
+    fun surfaceCopyFrame(pixels: IntArray, lastSeq: Long): Long
+
+    fun surfaceSetPaused(paused: Boolean)
+
+    fun surfaceKey(keyCode: Int, pressed: Boolean)
+
+    fun surfaceTurn(delta: Int)
+
+    fun surfaceLastError(): String
+}
