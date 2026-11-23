@@ -784,6 +784,7 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>path</code></td><td>any shape you can write as svg path data</td><td><a href="#modules-player-panels">panels, shapes &amp; blur</a></td></tr>
 <tr><td><code>visualizer</code></td><td>bars, a wave, dots or a ring that follow the music</td><td><a href="#modules-player-motion">animation basics</a></td></tr>
 <tr><td><code>shader</code></td><td>your own gpu code in a box</td><td><a href="#modules-player-shaders">shader code</a></td></tr>
+<tr><td><code>surface</code></td><td>a live interactive canvas drawn frame by frame by a signed code module</td><td><a href="#modules-player-surface">live surfaces</a></td></tr>
 </table></div>
 <h2>Layout</h2>
 <div class="tbl"><table>
@@ -1404,6 +1405,42 @@ half4 main(float2 p) {
     return mix(a, b, glow) * (0.75 + 0.25 * bass);
 }</code></pre>
 <div class="note warn">keep it light. a background shader runs for every pixel of the screen, every frame the song plays, on slow phones too: no big loops, a handful of maths per pixel. it needs android 13 and a zip. if it doesn't compile, the fallback shows and your module's page says why under module info.</div>
+</article>
+
+<article class="page" id="modules-player-surface" data-group="Your own player" data-title="Live surfaces">
+<h1>Live surfaces</h1>
+<p class="sub">a live interactive canvas inside your player</p>
+<p>when a shader isn't enough and a signed <a href="#modules-zip">code module</a> wants to draw its own pixels every frame, drop a <code>surface</code> block into its player. mochy hands it touch input, draws each frame straight into the box, and pauses it the moment the player closes, is covered by lyrics or goes to the background.</p>
+<pre><code class="json">{
+  "type": "surface",
+  "asset": "data.bin",
+  "title": "LIVE",
+  "aspect": "4:3",
+  "corner": 12,
+  "controls": "below",
+  "crisp": true,
+  "accent": "$accent|#D92B2B"
+}</code></pre>
+<div class="tbl"><table>
+<tr><th>field</th><th>what it's for</th><th>default</th></tr>
+<tr><td><code>asset</code></td><td>an optional data file unpacked from your zip (up to 24 MB)</td><td>none</td></tr>
+<tr><td><code>extras</code></td><td>up to 4 more data files from your zip, handed over beside <code>asset</code></td><td>none</td></tr>
+<tr><td><code>title</code></td><td>short label shown on the static preview card in the style picker (up to 24 characters)</td><td>PLAY</td></tr>
+<tr><td><code>width</code>, <code>height</code></td><td>fixed size in dp (120–800 and 80–800); leave out to fill the width at <code>aspect</code></td><td>full width</td></tr>
+<tr><td><code>aspect</code></td><td>width over height, like <code>"4:3"</code> or a number</td><td>4:3</td></tr>
+<tr><td><code>corner</code></td><td>corner rounding in dp, 0–48</td><td>12</td></tr>
+<tr><td><code>controls</code></td><td>where the built-in multi-touch pad sits: <code>below</code>, <code>overlay</code> or <code>none</code></td><td>below</td></tr>
+<tr><td><code>crisp</code></td><td>keep sharp nearest-neighbour pixels instead of smoothing them</td><td>true</td></tr>
+<tr><td><code>accent</code></td><td>colour for the main action button and active highlights</td><td>red</td></tr>
+</table></div>
+<h2>How touch and pausing work</h2>
+<ul>
+  <li>swiping sideways on the canvas sends smooth horizontal deltas to your module, and a quick tap sends confirm. touches inside the canvas and controls stay there, so they won't accidentally skip songs or pull the player down.</li>
+  <li>in the style picker and editor previews, mochy shows a light static card instead of starting your module, so browsing styles stays instant.</li>
+  <li>when the player closes, gets covered, or the app backgrounds, mochy pauses the clock and releases any held buttons, then picks right back up when you return.</li>
+</ul>
+<h2>How it's kept contained</h2>
+<p>a <code>surface</code> block only works from a zip whose code is signed with mochy's own key and implements <code>SurfaceModule</code>. frame sizes are capped (64×64 to 640×480), data files can only come from that module's own unpacked folder, anything it saves stays inside its private folder, error text is scrubbed before it reaches the screen, and removing or updating the module shuts the surface down cleanly.</p>
 </article>
 
 <article class="page" id="modules-players-many" data-group="Your own player" data-title="Several players &amp; sub-styles">
@@ -2513,6 +2550,7 @@ export default {
   <li><code>name</code> and <code>resources</code> only fill in the sheet before it's added. once it's in, the module says itself what it adds, its icon, banner and settings.</li>
   <li>signed like your mochy: a debug mochy takes a zip built with the debug key, a release mochy one built with the release key. anything else gets "it has to be signed with the same key as your mochy".</li>
   <li>it runs on its own copy of everything: its own kotlin, coroutines and libraries, in a class loader that only sees android, java and mochy's bridge. calls go across as json, so a different kotlin version can't break it.</li>
+  <li>a code zip can also ship a look, players, settings, pictures, unpacked data files, and a <code>SurfaceModule</code> to drive a <a href="#modules-player-surface">live surface</a> block right inside its player.</li>
   <li>updating with the same id swaps the running copy straight away. switch, choices and settings stay. removing deletes its code and everything it kept.</li>
 </ul>
 </article>
