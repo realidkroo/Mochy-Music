@@ -4,6 +4,7 @@ package com.mochyy.mochymusic.modules.skin
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.mochyy.mochymusic.module.bridge.shared.SurfaceBridge
 import com.mochyy.mochymusic.modules.security.ModuleSanitizer
 import com.mochyy.mochymusic.modules.security.ModuleUrlGuard
 import kotlinx.serialization.json.JsonArray
@@ -29,6 +30,7 @@ internal object SkinParser {
         players: JsonElement? = null,
         bar: JsonElement? = null,
         mini: JsonElement? = null,
+        surface: SurfaceBridge? = null,
     ): ModuleSkin? {
         val parsedPlayers = SkinPlayerParser.players(player, players, moduleName, fromZip = files != null)
         // a font has to be a file on the phone, so only a zip can bring one
@@ -40,7 +42,7 @@ internal object SkinParser {
         val parsedBar = (bar as? JsonObject)?.let { SkinBarParser.bar(it, fromZip = files != null) }
         val parsedMini = (mini as? JsonObject)?.let { SkinPlayerParser.mini(it, moduleName, fromZip = files != null) }
         if (parsedPlayers.isEmpty() && parsedFont == null && parsedPages.isEmpty() && parsedActions.isEmpty() && parsedGlass == null && parsedBar == null && parsedMini == null) return null
-        return ModuleSkin(moduleId, moduleName, parsedPlayers, parsedFont, parsedPages, files, base, parsedActions, parsedGlass, parsedBar, parsedMini)
+        return ModuleSkin(moduleId, moduleName, parsedPlayers, parsedFont, parsedPages, files, base, parsedActions, parsedGlass, parsedBar, parsedMini, surface)
     }
 
     // ---- the bottom bar's glass -----------------------------------------------------------------

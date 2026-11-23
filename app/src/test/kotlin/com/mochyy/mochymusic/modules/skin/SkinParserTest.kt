@@ -548,4 +548,29 @@ class SkinParserTest {
         assertFalse(player.playerFields)
         assertEquals(SkinPictureSource.Asset("pic.png"), (player.blocks[1] as SkinBlock.Picture).source)
     }
+
+    @Test
+    fun `a surface block parses safe zip assets and blocks traversal or web modules`() {
+        val text = """
+            { "id": "arcade", "name": "Arcade", "player": { "blocks": [
+              { "type": "surface", "asset": "game.wad", "extras": ["mod.pk3", "../escape.wad", "bad.apk"], "title": "RETRO", "controls": "overlay", "aspect": "4:3", "crisp": false, "corner": 16 }
+            ] } }
+        """
+        val player = skin(text, files = File("/data/arcade"))!!.player!!
+        val surface = player.blocks.single() as SkinBlock.Surface
+        assertEquals("game.wad", surface.asset)
+        assertEquals(listOf("mod.pk3"), surface.extras)
+        assertEquals("RETRO", surface.title)
+        assertEquals(SurfaceControls.Overlay, surface.controls)
+        assertEquals(4f / 3f, surface.aspect, 0.001f)
+        assertFalse(surface.crisp)
+        assertEquals(16.dp, surface.corner)
+        // a web module without a zip cannot embed a live surface
+        assertNull(skin(text, base = "https://mod.dev"))
+        // path traversal or forbidden extension on the main asset drops the block
+        val traversal = """{ "id": "bad", "name": "Bad", "player": { "blocks": [ { "type": "surface", "asset": "../secret.wad" } ] } }"""
+        assertNull(skin(traversal, files = File("/data/bad")))
+        val remote = """{ "id": "bad", "name": "Bad", "player": { "blocks": [ { "type": "surface", "asset": "https://evil.example/a.wad" } ] } }"""
+        assertNull(skin(remote, files = File("/data/bad")))
+    }
 }

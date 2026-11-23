@@ -7,7 +7,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.constants.PlayerBackgroundStyle
+import com.mochyy.mochymusic.module.bridge.shared.SurfaceBridge
 import com.mochyy.mochymusic.modules.web.resolveModulePath
 import java.io.File
 
@@ -26,6 +28,8 @@ class ModuleSkin(
     val bar: SkinBar? = null,
     /** the look's own mini player: its blocks in a row beside mochy's cover, over the pill */
     val mini: SkinPlayer? = null,
+    /** optional live framebuffer bridge when this skin comes from a signed code module */
+    val surface: SurfaceBridge? = null,
 ) {
     /** the first player, the one the look switches to when it's turned on */
     val player: SkinPlayer? get() = players.firstOrNull()
@@ -340,6 +344,9 @@ enum class BottomBarKind { Cards, Pills, Volume }
 
 enum class StackAlign { Center, Top, Bottom, Start, End }
 
+/** where a live surface block puts its touch gamepad: under the screen, over it, or hidden */
+enum class SurfaceControls { Below, Overlay, None }
+
 /** which way a box's colours run when it has more than one */
 enum class GradientKind { Vertical, Horizontal, Diagonal, Radial }
 
@@ -406,6 +413,19 @@ sealed interface SkinBlock {
     data class Time(val kind: TimeKind, val text: SkinText) : SkinBlock
     /** the module's own agsl drawn in a box, [fallback] colour where shaders can't run */
     data class Shader(val program: SkinShaderSource, val width: Dp?, val height: Dp, val corner: Dp, val fallback: SkinColor?) : SkinBlock
+    /** a live interactive framebuffer surface driven by a signed code module inside the player */
+    data class Surface(
+        val asset: String? = null,
+        val extras: List<String> = emptyList(),
+        val title: String? = null,
+        val width: Dp? = null,
+        val height: Dp? = null,
+        val aspect: Float = 4f / 3f,
+        val corner: Dp = 12.dp,
+        val controls: SurfaceControls = SurfaceControls.Below,
+        val crisp: Boolean = true,
+        val accent: SkinColor? = null,
+    ) : SkinBlock
     /** the bar under the controls that opens the lyrics and the queue, on frosted [glass] or the module's colours */
     data class BottomBar(
         val kind: BottomBarKind,

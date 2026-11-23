@@ -418,6 +418,7 @@ internal object SkinPlayerParser {
                     fallback = skinColor(o.string("fallback")),
                 )
             }
+            "surface" -> surface(o)
             else -> null
         }
 
@@ -557,6 +558,53 @@ internal object SkinPlayerParser {
             if (!fromZip) return null
             val file = o.string("shader")?.takeIf { name -> ShaderKinds.any { name.endsWith(it, ignoreCase = true) } } ?: return null
             return SkinShaderSource(file, shaderUniforms(o["uniforms"], PlayerUniforms))
+        }
+
+        // a live surface runs from a signed code module zip with optional unpacked data files
+        private fun surface(o: JsonObject): SkinBlock.Surface? {
+            if (!fromZip) return null
+            val rawAsset = o.string("asset")
+            val asset = if (rawAsset != null) safeSurfaceAsset(rawAsset) ?: return null else null
+            val rawExtras = when (val extra = o["extras"] ?: o["files"]) {
+                is JsonArray -> extra.mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
+                is JsonPrimitive -> listOfNotNull(extra.contentOrNull)
+                else -> emptyList()
+            }
+            val extras = rawExtras.mapNotNull(::safeSurfaceAsset).distinct().take(4)
+            val controls = when (val c = o["controls"]) {
+                is JsonPrimitive -> when {
+                    c.booleanOrNull == false -> SurfaceControls.None
+                    c.booleanOrNull == true -> SurfaceControls.Below
+                    else -> when (c.contentOrNull?.trim()?.lowercase()) {
+                        "overlay", "over" -> SurfaceControls.Overlay
+                        "none", "off", "false", "hidden" -> SurfaceControls.None
+                        else -> SurfaceControls.Below
+                    }
+                }
+                else -> SurfaceControls.Below
+            }
+            return SkinBlock.Surface(
+                asset = asset,
+                extras = extras,
+                title = o.string("title")?.take(24),
+                width = o.float("width")?.coerceIn(120f, 800f)?.dp,
+                height = o.float("height")?.coerceIn(80f, 800f)?.dp,
+                aspect = aspect(o["aspect"]) ?: (4f / 3f),
+                corner = (o.float("corner") ?: 12f).coerceIn(0f, 48f).dp,
+                controls = controls,
+                crisp = o.bool("crisp") ?: true,
+                accent = skinColor(o.string("accent")),
+            )
+        }
+
+        // only relative paths with allowed surface asset extensions inside the module zip
+        private fun safeSurfaceAsset(raw: String): String? {
+            val trimmed = raw.trim()
+            if (trimmed.isEmpty() || trimmed.length > 200 || trimmed.startsWith("/") || '\\' in trimmed || '\u0000' in trimmed || "://" in trimmed) return null
+            val parts = trimmed.split('/')
+            if (parts.any { it.isEmpty() || it == "." || it == ".." || it.startsWith(".") }) return null
+            val ext = trimmed.substringAfterLast('.', "").lowercase()
+            return trimmed.takeIf { ext in SkinFiles.SurfaceAssetKinds }
         }
 
         // the lyrics' fill and effect, "shader" or a plain file name, with the lyrics' own uniforms kept for mochy
