@@ -82,6 +82,8 @@ fun AudioFxScreen(
         Spacer(Modifier.height(24.dp))
         com.mochyy.mochymusic.ui.screens.audiolab.stage.StageCard(viewModel) { navController.navigate("audio_stage") }
         Spacer(Modifier.height(14.dp))
+        com.mochyy.mochymusic.ui.screens.audiolab.mixer.MixerCard(onOpen = { navController.navigate("audio_mixer") })
+        Spacer(Modifier.height(14.dp))
         ReverbCard(viewModel)
         Spacer(Modifier.height(14.dp))
         EightDAudioCard(viewModel)

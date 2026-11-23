@@ -18,6 +18,7 @@ import com.mochyy.mochymusic.eq.data.EQProfileRepository
 import com.mochyy.mochymusic.eq.data.FilterType
 import com.mochyy.mochymusic.eq.data.ParametricEQ
 import com.mochyy.mochymusic.eq.data.ParametricEQBand
+import com.mochyy.mochymusic.eq.mixer.MixerStore
 import com.mochyy.mochymusic.eq.stage.StageNative
 import com.mochyy.mochymusic.eq.stage.StageOutput
 import com.mochyy.mochymusic.eq.stage.StageSettings
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -162,6 +164,8 @@ class AudioLabStore @Inject constructor(
     private val equalizerService: EqualizerService,
     private val audioFx: AudioFxService,
     private val legacyProfiles: EQProfileRepository,
+    /** the mixer counts as part of audio fx wherever "does anything change the sound" is asked */
+    val mixer: MixerStore,
 ) {
     private val prefs = context.getSharedPreferences("audio_lab", Context.MODE_PRIVATE)
     private val json = Json {
@@ -229,7 +233,8 @@ class AudioLabStore @Inject constructor(
         },
         stage,
         eightD,
-    ) { others, stage, eightD -> others || stage.enabled || eightD.enabled }.distinctUntilChanged()
+        mixer.state.map { it.enabled },
+    ) { others, stage, eightD, mixerOn -> others || stage.enabled || eightD.enabled || mixerOn }.distinctUntilChanged()
 
     init {
         migrateLegacyEqualizer()

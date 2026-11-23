@@ -1198,7 +1198,7 @@ class MusicService :
             audioLab.stage,
         ) { (eq, reverb, loudness), spatial, playback, volume, stage ->
             LabSound(eq, reverb, loudness, spatial, playback, volume, stage.enabled)
-        }
+        }.combine(audioLab.mixer.state) { lab, mixer -> lab.copy(mixer = mixer.enabled) }
         combine(dataStore.data, labSound, playerVolume) { prefs, lab, volume -> passBlockersOf(prefs, lab, volume) }
             .distinctUntilChanged()
             .collect(scope) { _passBlockers.value = it }
@@ -1492,8 +1492,11 @@ class MusicService :
         equalizerService.addAudioProcessor(eqProcessor)
         // this player's song's ReplayGain, read from its file's tags when its tracks change
         val replayGain = com.mochyy.mochymusic.eq.audio.ReplayGainTags()
+        // the mixer comes first of the effects, so it still sees a surround song's own channels before the room folds them
+        val mixerProcessor = com.mochyy.mochymusic.eq.mixer.MixerAudioProcessor(audioLab.mixer)
         val fxProcessors = arrayOf<androidx.media3.common.audio.AudioProcessor>(
-            // first, so a surround song reaches the room with its own channels
+            mixerProcessor,
+            // before the rest, so a surround song reaches the room with its own channels
             com.mochyy.mochymusic.eq.audio.StageAudioProcessor(audioFx),
             SpatialAudioProcessor(audioFx),
             ReverbAudioProcessor(audioFx),
@@ -1571,7 +1574,7 @@ class MusicService :
         val player = ExoPlayer.Builder(this)
             .setLoadControl(loadControl)
             .setMediaSourceFactory(createMediaSourceFactory())
-            .setRenderersFactory(createRenderersFactory(eqProcessor, fxProcessors, silenceProcessor, hapticAudioProcessor, crossmixProcessor, replayGain, spectrum, inspector))
+            .setRenderersFactory(createRenderersFactory(eqProcessor, fxProcessors, silenceProcessor, hapticAudioProcessor, crossmixProcessor, replayGain, spectrum, inspector, mixerProcessor))
             .setHandleAudioBecomingNoisy(true)
             // local wake lock keeps background audio smooth without locking the wifi radio out of power-save mode
             .setWakeMode(C.WAKE_MODE_LOCAL)
@@ -1655,8 +1658,8 @@ class MusicService :
         audioOutputs.devices.collect(scope) {
             audioLab.setStageOutput(com.mochyy.mochymusic.eq.stage.StageOutput.of(this, audioOutputs.activeDevice()))
         }
-        // the room renders at 48 khz at most: at 192 khz it would cost sixteen times the work for nothing anyone hears
-        audioLab.stage.map { it.enabled }.distinctUntilChanged().collect(scope) { on ->
+        // the room and the mixer render at 48 khz at most: at 192 khz they'd cost four to sixteen times the work for nothing anyone hears
+        combine(audioLab.stage.map { it.enabled }, audioLab.mixer.state.map { it.enabled }) { stage, mixer -> stage || mixer }.distinctUntilChanged().collect(scope) { on ->
             audioOutputs.effectRateCap = if (on) 48_000 else null
         }
     }
@@ -4473,6 +4476,7 @@ class MusicService :
         replayGain: com.mochyy.mochymusic.eq.audio.ReplayGainTags,
         spectrum: com.mochyy.mochymusic.playback.audio.AudioSpectrum,
         inspector: StreamInspector,
+        mixerProcessor: com.mochyy.mochymusic.eq.mixer.MixerAudioProcessor,
     ) =
         object : DefaultRenderersFactory(this) {
             // the renderer below tells both the router and precision sink which file each song comes from,
@@ -4558,6 +4562,12 @@ class MusicService :
                     // the loop sleeps half the audio buffer, and speed on the audio track sizes that for 8x, so it slept a whole second and the position went that stale
                     override fun getDurationToProgressUs(positionUs: Long, elapsedRealtimeUs: Long, isOnBufferAvailableListenerRegistered: Boolean): Long =
                         minOf(super.getDurationToProgressUs(positionUs, elapsedRealtimeUs, isOnBufferAvailableListenerRegistered), PositionWakeUs)
+
+                    // a mixer module that decodes the stream itself (atmos objects) reads each encoded frame just before the decoder does
+                    override fun onQueueInputBuffer(buffer: androidx.media3.decoder.DecoderInputBuffer) {
+                        buffer.data?.let { data -> mixerProcessor.encodedFrame(data.duplicate(), buffer.timeUs) }
+                        super.onQueueInputBuffer(buffer)
+                    }
                 })
                 // after the phone's own, so it only takes what the phone can't decode: alac on most phones, flac on old ones, 192 kHz masters
                 out.add(object : FfmpegFallbackRenderer(eventHandler, eventListener, audioSink) {
