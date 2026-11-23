@@ -110,9 +110,18 @@ data class ModuleEntry(
 ) {
     val id: String get() = module.info.id
 
-    val icon: String? get() = (module as? ModuleArt)?.icon
+    val icon: String? get() = safeArt((module as? ModuleArt)?.icon)
 
-    val banner: String? get() = (module as? ModuleArt)?.banner
+    val banner: String? get() = safeArt((module as? ModuleArt)?.banner)
+
+    private fun safeArt(raw: String?): String? {
+        val value = raw?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        if (value.startsWith("/")) {
+            val path = runCatching { File(value).canonicalPath }.getOrNull() ?: return null
+            return path.takeIf { "/module_files/" in it || "/module_data/" in it }
+        }
+        return value.takeIf(ModuleUrlGuard::isSafeRemoteUrl)
+    }
 
     /** switched on and, when it needs an account, signed in: only then does anything it adds show up */
     val active: Boolean get() = enabled && account is AccountState.SignedIn

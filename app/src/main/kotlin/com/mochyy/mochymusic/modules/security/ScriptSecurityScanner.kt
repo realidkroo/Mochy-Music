@@ -78,11 +78,13 @@ internal object ScriptSecurityScanner {
                         break
                     }
                     val name = entry.name.trimStart('/')
-                    if (entry.isDirectory || name.startsWith("__MACOSX/") || name.split('/').any { it.startsWith(".") }) continue
+                    if (entry.isDirectory || name.startsWith("__MACOSX/")) continue
+                    // check traversal BEFORE skipping dotfiles, since ".." starts with "."
                     if ('\\' in name || '\u0000' in name || name.split('/').any { it == ".." }) {
                         findings += ScriptFinding(FindingKind.ZipUnsafe, true, name, "path traversal inside zip")
                         continue
                     }
+                    if (name.split('/').any { it.startsWith(".") }) continue
                     val content = readEntryCapped(zip, minOf(MaxEntryBytes, MaxTotalUncompressed - totalUncompressed))
                     if (content == null) {
                         findings += ScriptFinding(FindingKind.ZipUnsafe, true, name, "zip entry is suspiciously huge")

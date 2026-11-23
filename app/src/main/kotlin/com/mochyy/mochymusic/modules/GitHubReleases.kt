@@ -2,6 +2,7 @@
 
 package com.mochyy.mochymusic.modules
 
+import com.mochyy.mochymusic.modules.security.ModuleUrlGuard
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
@@ -37,7 +38,9 @@ internal object GitHubReleases {
         val repo = parts[1].removeSuffix(".git")
         if (!Name.matches(owner) || !Name.matches(repo)) return null
         if (parts.getOrNull(2) in FileViews) return null
-        val tag = if (parts.getOrNull(2) == "releases" && parts.getOrNull(3) == "tag") parts.getOrNull(4) else null
+        val tag = if (parts.getOrNull(2) == "releases" && parts.getOrNull(3) == "tag") {
+            parts.getOrNull(4)?.takeIf { Name.matches(it) && it != "." && it != ".." }
+        } else null
         return Link(owner, repo, tag)
     }
 
@@ -91,7 +94,8 @@ internal object GitHubReleases {
             val asset = assets.optJSONObject(i) ?: return@mapNotNull null
             val name = asset.optString("name")
             val url = asset.optString("browser_download_url")
-            val fits = name.contains(Marker, ignoreCase = true) && name.endsWith(".zip", ignoreCase = true) && url.startsWith("https://")
+            val fits = name.contains(Marker, ignoreCase = true) && name.endsWith(".zip", ignoreCase = true) &&
+                url.startsWith("https://") && ModuleUrlGuard.isSafeRemoteUrl(url)
             // the id and upload time change when an author swaps the file for a fixed one without a new tag
             val stamp = "${asset.optLong("id")}:${asset.optString("updated_at")}:${asset.optLong("size")}"
             if (fits && asset.optLong("size") <= MaxZipBytes) Asset(name, url, stamp) else null

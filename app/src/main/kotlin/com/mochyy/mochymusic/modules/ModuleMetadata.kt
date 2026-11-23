@@ -5,6 +5,7 @@ package com.mochyy.mochymusic.modules
 import com.mochyy.mochymusic.module.MetadataModule
 import com.mochyy.mochymusic.module.TrackMetadata
 import com.mochyy.mochymusic.module.TrackQuery
+import com.mochyy.mochymusic.modules.security.ModuleUrlGuard
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -45,7 +46,7 @@ object ModuleMetadata {
             producers = all.firstOrNull { it.producers.isNotEmpty() }?.producers.orEmpty(),
             label = all.firstNotNullOfOrNull { it.label },
             about = all.firstNotNullOfOrNull { it.about?.takeIf(String::isNotBlank) },
-            coverUrl = all.firstNotNullOfOrNull { it.coverUrl },
+            coverUrl = all.firstNotNullOfOrNull { it.coverUrl?.takeIf(ModuleUrlGuard::isSafeRemoteUrl) },
             isrc = all.firstNotNullOfOrNull { it.isrc },
         )
         return ModuleFacts(merged, answers.firstOrNull { !it.second.about.isNullOrBlank() }?.first)

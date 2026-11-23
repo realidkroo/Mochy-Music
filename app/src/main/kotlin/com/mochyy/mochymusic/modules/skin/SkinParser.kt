@@ -205,7 +205,7 @@ internal object SkinParser {
     }
 
     fun actionTarget(o: JsonObject): ActionTarget? =
-        o.string("link")?.takeIf { ModuleUrlGuard.isSafeRemoteUrl(it.replace(Regex("\\{[a-z]+}"), "x")) }?.let(ActionTarget::Link)
+        o.string("link")?.takeIf { ModuleUrlGuard.isSafeRemoteUrl(it.replace(Regex("\\{[a-z]+}"), "x").replace(" ", "%20")) }?.let(ActionTarget::Link)
             ?: o.string("page")?.lowercase()?.takeIf { PageId.matches(it) }?.let(ActionTarget::Page)
             ?: o.string("search")?.take(120)?.let(ActionTarget::Search)
 

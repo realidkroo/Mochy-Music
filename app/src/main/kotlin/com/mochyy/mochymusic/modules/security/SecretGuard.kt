@@ -24,8 +24,8 @@ internal object SecretGuard {
                 val clean = raw?.trim().orEmpty()
                 if (clean.length < MinSecretLen) return@forEach
                 addVariants(clean)
-                // yt cookies bundle a bunch of auth values in one string; watch the important pieces too
-                if ('=' in clean && ';' in clean) {
+                // yt cookies bundle auth pairs (even a single SAPISID=... pair); watch each value too
+                if ('=' in clean) {
                     clean.split(';').forEach { part ->
                         val name = part.substringBefore('=').trim()
                         val value = part.substringAfter('=', "").trim()

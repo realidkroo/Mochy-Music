@@ -48,6 +48,7 @@ import com.mochyy.mochymusic.module.applemusic.AppleMusicModule
 import com.mochyy.mochymusic.module.monochrome.MonochromeModule
 import com.mochyy.mochymusic.modules.ModuleEntry
 import com.mochyy.mochymusic.modules.ModuleOrigin
+import com.mochyy.mochymusic.modules.security.ModuleUrlGuard
 import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import java.io.File
@@ -66,8 +67,17 @@ private fun logoFor(id: String): Int? = when (id) {
     else -> null
 }
 
-/** a module's picture as coil reads it: a file the zip brought, or a link */
-internal fun artModel(art: String?): Any? = art?.let { if (it.startsWith("/")) File(it) else it }
+/** a module's picture as coil reads it: a file the zip brought, or a safe remote link */
+internal fun artModel(art: String?): Any? {
+    val raw = art?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    if (raw.startsWith("/")) {
+        // only files inside module_files or module_data, never random app/device paths
+        val file = runCatching { File(raw).canonicalFile }.getOrNull() ?: return null
+        val path = file.path
+        return if ("/module_files/" in path || "/module_data/" in path) file else null
+    }
+    return raw.takeIf(ModuleUrlGuard::isSafeRemoteUrl)
+}
 
 /** the module's own icon, a built-in logo, or its first letter on a colour of its own when it has neither */
 @Composable
