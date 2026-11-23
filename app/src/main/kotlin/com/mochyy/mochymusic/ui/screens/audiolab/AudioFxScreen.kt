@@ -133,7 +133,7 @@ private fun LoudnessCard(viewModel: AudioLabViewModel) {
         picture = { LoudnessPicture(loudness, viewModel.fx) },
         header = {
             LabToggleRow(stringResource(R.string.fx_loudness_title), stringResource(R.string.fx_loudness_sub), loudness.enabled,
-                { on -> viewModel.updateLoudness { it.copy(enabled = on) } })
+                { on -> viewModel.updateLoudness { it.copy(enabled = on) } }, highlightKey = "Loudness")
         },
         expanded = loudness.enabled,
         options = {
@@ -176,7 +176,13 @@ private fun LoudnessCard(viewModel: AudioLabViewModel) {
         },
         footer = {
             Spacer(Modifier.height(6.dp))
-            LabToggleRow(stringResource(R.string.fx_even_out), stringResource(R.string.fx_even_out_sub), normalize, onNormalize)
+            LabToggleRow(
+                title = stringResource(R.string.audio_normalization),
+                subtitle = stringResource(R.string.fx_even_out_sub),
+                checked = normalize,
+                onCheckedChange = onNormalize,
+                highlightKey = "Audio Normalization",
+            )
             val rg by viewModel.normalize.collectAsState()
             LabCollapsible(normalize) {
                 Spacer(Modifier.height(4.dp))
@@ -226,7 +232,7 @@ private fun SpatialCard(viewModel: AudioLabViewModel) {
         picture = { SpatialPicture(spatial) },
         header = {
             LabToggleRow(stringResource(R.string.fx_spatial_title), stringResource(R.string.fx_spatial_sub), spatial.enabled,
-                { on -> viewModel.updateSpatial { it.copy(enabled = on) } })
+                { on -> viewModel.updateSpatial { it.copy(enabled = on) } }, highlightKey = "Spatial audio")
         },
         expanded = spatial.enabled,
         options = {
@@ -315,6 +321,7 @@ private fun AtmosCard(viewModel: AudioLabViewModel) {
                 subtitle = stringResource(R.string.fx_atmos_sub),
                 checked = spatial.surround,
                 onCheckedChange = { on -> viewModel.updateSpatial { it.copy(surround = on) } },
+                highlightKey = "Dolby Atmos",
             )
         },
         expanded = false,
@@ -487,7 +494,7 @@ private fun VolumeCard(viewModel: AudioLabViewModel) {
         picture = { VolumeCurvePicture(volume, playerVolume?.value ?: 0.6f) },
         header = {
             LabToggleRow(stringResource(R.string.fx_volume_title), stringResource(R.string.fx_volume_sub), volume.enabled,
-                { on -> viewModel.updateVolume { it.copy(enabled = on) } })
+                { on -> viewModel.updateVolume { it.copy(enabled = on) } }, highlightKey = "Exponential volume")
         },
         expanded = volume.enabled,
         options = {

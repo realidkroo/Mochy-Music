@@ -41,6 +41,27 @@ class AudioFxService @Inject constructor() {
     @Volatile
     var normalize: Boolean = true
 
+    /** in-app youtube loudness normalization: attenuation (<= 1) applied in the sink, boost (> 0 db) applied in LoudnessAudioProcessor; avoids attaching Android's native LoudnessEnhancer AudioEffect which breaks system Accessibility Audio Balance on Android 11 */
+    @Volatile
+    var trackNormalizationLinear: Float = 1f
+
+    @Volatile
+    var trackNormalizationBoostDb: Float = 0f
+
+    fun setTrackNormalizationDb(gainDb: Float) {
+        if (!gainDb.isFinite() || kotlin.math.abs(gainDb) < 0.05f) {
+            trackNormalizationLinear = 1f
+            trackNormalizationBoostDb = 0f
+        } else if (gainDb < 0f) {
+            val clamped = gainDb.coerceAtLeast(-15f)
+            trackNormalizationLinear = Math.pow(10.0, clamped / 20.0).toFloat().coerceIn(0.03f, 1f)
+            trackNormalizationBoostDb = 0f
+        } else {
+            trackNormalizationLinear = 1f
+            trackNormalizationBoostDb = gainDb.coerceIn(0f, 3f)
+        }
+    }
+
     @Volatile
     var replayGain: ReplayGainParams = ReplayGainParams()
 

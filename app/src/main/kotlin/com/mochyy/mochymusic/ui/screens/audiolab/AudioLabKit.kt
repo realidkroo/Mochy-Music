@@ -70,10 +70,12 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
@@ -88,6 +90,7 @@ import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.component.DefaultPlayerSeekBarSlider
 import com.mochyy.mochymusic.ui.component.LocalNavAnimatedContentScope
 import com.mochyy.mochymusic.ui.component.damageBoundary
+import com.mochyy.mochymusic.ui.component.reveal
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.flow.first
 import com.mochyy.mochymusic.ui.component.RemoteFocus
@@ -159,26 +162,62 @@ fun LabToggleRow(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     leadingDot: Boolean = false,
+    highlightKey: String? = null,
 ) {
     val (hideDescriptions) = com.mochyy.mochymusic.utils.rememberPreference(
         com.mochyy.mochymusic.constants.HideSettingsDescriptionsKey,
         defaultValue = true,
     )
+    val requester = remember { BringIntoViewRequester() }
+    val settingsScroll = com.mochyy.mochymusic.ui.component.LocalSettingsScroll.current
+    val density = LocalDensity.current
+    val placement = remember { com.mochyy.mochymusic.ui.component.SettingsPlacement() }
+    LaunchedEffect(highlightKey) {
+        if (highlightKey == null) return@LaunchedEffect
+        snapshotFlow { com.mochyy.mochymusic.ui.component.SettingsHighlight.pending }.collect { pending ->
+            if (pending != highlightKey) return@collect
+            com.mochyy.mochymusic.ui.component.SettingsHighlight.pending = null
+            com.mochyy.mochymusic.ui.component.SettingsHighlight.active = highlightKey
+            kotlinx.coroutines.delay(320)
+            val target = placement.coords
+            if (settingsScroll != null && target != null) {
+                settingsScroll.reveal(target, density)
+            } else {
+                requester.bringIntoView()
+            }
+            kotlinx.coroutines.delay(2400)
+            if (com.mochyy.mochymusic.ui.component.SettingsHighlight.active == highlightKey) {
+                com.mochyy.mochymusic.ui.component.SettingsHighlight.active = null
+            }
+        }
+    }
+    val isFlashing = highlightKey != null && com.mochyy.mochymusic.ui.component.SettingsHighlight.active == highlightKey
+    val highlightAlpha by animateFloatAsState(
+        targetValue = if (isFlashing) 1f else 0f,
+        animationSpec = tween(durationMillis = 450),
+        label = "labHighlight",
+    )
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .then(if (highlightKey != null) Modifier.bringIntoViewRequester(requester).onPlaced { placement.coords = it } else Modifier)
             .clip(RoundedCornerShape(16.dp))
+            .drawBehind {
+                if (highlightAlpha > 0.01f) {
+                    drawRect(color = Color.White.copy(alpha = 0.16f * highlightAlpha))
+                }
+            }
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
             .padding(horizontal = 6.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (leadingDot) {
-            val dot by animateColorAsState(if (checked) Color.White else Color(0xFFD9D9DE), tween(200), label = "dot")
+            val dot = animateColorAsState(if (checked) Color.White else Color(0xFFD9D9DE), tween(200), label = "dot")
             Box(
                 Modifier
                     .size(20.dp)
                     .clip(CircleShape)
-                    .background(dot)
+                    .drawBehind { drawRect(dot.value) }
             )
             Spacer(Modifier.width(12.dp))
         }

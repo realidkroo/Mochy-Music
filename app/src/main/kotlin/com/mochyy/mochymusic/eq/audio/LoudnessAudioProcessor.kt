@@ -37,6 +37,7 @@ class LoudnessAudioProcessor(private val service: AudioFxService) : AudioProcess
     private var amount = 0f
     private var envelope = 0f
     private var gain = 1f
+    private var normGain = 1f
     private var limiterGain = 1f
     private var attack = 0f
     private var release = 0f
@@ -62,10 +63,40 @@ class LoudnessAudioProcessor(private val service: AudioFxService) : AudioProcess
         }
         val params = service.loudness
         val target = if (params.enabled) 1f else 0f
+        val normBoostDb = if (service.normalize) service.trackNormalizationBoostDb.coerceIn(0f, 3f) else 0f
+        val targetNormGain = if (normBoostDb > 0.01f) 10f.pow(normBoostDb / 20f) else 1f
+        val normActive = targetNormGain > 1.001f || abs(normGain - 1f) > 0.001f
         val out = replaceOutputBuffer(bytes)
+        if (target == 0f && amount == 0f && !normActive) {
+            service.loudnessReductionDb = 0f
+            normGain = 1f
+            out.put(inputBuffer)
+            out.flip()
+            return
+        }
+
+        val frames = bytes / (2 * channels)
+        val scale = 1f / 32768f
+
+        // pure in-app track normalization boost (when Loudness FX itself is off): smooth linear gain + soft peak limiter
         if (target == 0f && amount == 0f) {
             service.loudnessReductionDb = 0f
-            out.put(inputBuffer)
+            val normStep = (targetNormGain - normGain) / frames.coerceAtLeast(1)
+            for (f in 0 until frames) {
+                normGain += normStep
+                val inL = inputBuffer.getShort() * scale
+                val inR = if (channels == 2) inputBuffer.getShort() * scale else inL
+                var l = inL * normGain
+                var r = inR * normGain
+                val peakOut = max(abs(l), abs(r)) * limiterGain
+                limiterGain = if (peakOut > Ceiling) limiterGain * Ceiling / peakOut
+                else limiterGain + (1f - limiterGain) * limiterRelease
+                l *= limiterGain
+                r *= limiterGain
+                out.putShort(toPcm(l))
+                if (channels == 2) out.putShort(toPcm(r))
+            }
+            normGain = targetNormGain
             out.flip()
             return
         }
@@ -78,8 +109,6 @@ class LoudnessAudioProcessor(private val service: AudioFxService) : AudioProcess
         val boost = params.boostDb.coerceIn(0f, 12f)
         val toggleStep = 1f / (sampleRate * ToggleSeconds)
 
-        val frames = bytes / (2 * channels)
-        val scale = 1f / 32768f
         var deepest = 1f
         var mostReduction = 0f
         var f = 0
@@ -91,9 +120,13 @@ class LoudnessAudioProcessor(private val service: AudioFxService) : AudioProcess
             if (reduction < mostReduction) mostReduction = reduction
             val targetGain = 10f.pow((boost + makeup + reduction) / 20f)
             val gainStep = (targetGain - gain) / block
+            val normStep = (targetNormGain - normGain) / block
             for (b in 0 until block) {
-                val inL = inputBuffer.getShort() * scale
-                val inR = if (channels == 2) inputBuffer.getShort() * scale else inL
+                normGain += normStep
+                val rawL = inputBuffer.getShort() * scale
+                val rawR = if (channels == 2) inputBuffer.getShort() * scale else rawL
+                val inL = rawL * normGain
+                val inR = rawR * normGain
                 val peakIn = max(abs(inL), abs(inR))
                 envelope = if (peakIn > envelope) envelope + (peakIn - envelope) * attack
                 else envelope + (peakIn - envelope) * release
@@ -158,6 +191,8 @@ class LoudnessAudioProcessor(private val service: AudioFxService) : AudioProcess
         envelope = 0f
         limiterGain = 1f
         gain = 10f.pow(params.boostDb.coerceIn(0f, 12f) / 20f)
+        val normBoostDb = if (service.normalize) service.trackNormalizationBoostDb.coerceIn(0f, 3f) else 0f
+        normGain = if (normBoostDb > 0.01f) 10f.pow(normBoostDb / 20f) else 1f
     }
 
     override fun reset() {

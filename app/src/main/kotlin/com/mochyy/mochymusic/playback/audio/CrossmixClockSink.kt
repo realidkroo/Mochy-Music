@@ -31,6 +31,7 @@ class CrossmixClockSink(
     private var requestedVolume = 1f
     private var appliedCurve: VolumeCurve? = null
     private var appliedReplayGain = 1f
+    private var appliedTrackNormalization = 1f
 
     override fun handleBuffer(buffer: ByteBuffer, presentationTimeUs: Long, encodedAccessUnitCount: Int): Boolean {
         // a buffer the sink couldn't take yet comes back with the same timestamp, part-consumed;
@@ -40,9 +41,14 @@ class CrossmixClockSink(
             processor.onInputTimestamp(presentationTimeUs)
             spectrum?.onBuffer(buffer, presentationTimeUs)
         }
-        // the curve or the song's ReplayGain changed: the player won't send its (unchanged)
+        // the curve or the song's normalization changed: the player won't send its (unchanged)
         // volume again
-        if (audioFx != null && (audioFx.volumeCurve !== appliedCurve || replayGainFactor() != appliedReplayGain)) applyVolume()
+        if (audioFx != null && (
+                audioFx.volumeCurve !== appliedCurve ||
+                    replayGainFactor() != appliedReplayGain ||
+                    trackNormalizationFactor() != appliedTrackNormalization
+                )
+        ) applyVolume()
         return super.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
     }
 
@@ -55,12 +61,21 @@ class CrossmixClockSink(
         val curve = audioFx?.volumeCurve
         appliedCurve = curve
         appliedReplayGain = replayGainFactor()
-        super.setVolume((curve?.gain(requestedVolume) ?: requestedVolume) * appliedReplayGain)
+        appliedTrackNormalization = trackNormalizationFactor()
+        super.setVolume((curve?.gain(requestedVolume) ?: requestedVolume) * appliedReplayGain * appliedTrackNormalization)
     }
 
     private fun replayGainFactor(): Float {
         val fx = audioFx ?: return 1f
         return replayGain?.linear(fx.replayGain, fx.normalize) ?: 1f
+    }
+
+    private fun trackNormalizationFactor(): Float {
+        val fx = audioFx ?: return 1f
+        if (!fx.normalize) return 1f
+        // a file with its own ReplayGain tags uses those instead of YouTube's loudness metadata
+        if (replayGain?.present == true) return 1f
+        return fx.trackNormalizationLinear.coerceIn(0.03f, 1f)
     }
 
     override fun configure(inputFormat: androidx.media3.common.Format, specifiedBufferSize: Int, outputChannels: IntArray?) {

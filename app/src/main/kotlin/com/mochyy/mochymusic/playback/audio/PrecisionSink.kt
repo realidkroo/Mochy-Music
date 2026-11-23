@@ -22,6 +22,10 @@ class PrecisionSink(
     private val inspector: StreamInspector?,
 ) : ForwardingAudioSink(delegate) {
 
+    /** the file format being decoded, set by the audio renderer before it asks the sink about float */
+    @Volatile
+    var sourceFormat: Format? = null
+
     private var inputFormat: Format? = null
     private var bufferSize = 0
     private var outputChannels: IntArray? = null
@@ -45,9 +49,12 @@ class PrecisionSink(
     private var out: ByteBuffer? = null
     private var dither = 0x2545F491
 
-    // the decoder is asked for float only when float would make it all the way to the track; multichannel stays 16-bit so surround processors still see it
+    // the decoder is asked for float only when float would make it all the way to the track AND the source actually has >16-bit depth;
+    // 16-bit lossless and lossy sources stay 16-bit from the decoder so vendor decoders (like samsung's) don't distort on float
     override fun getFormatSupport(format: Format): Int {
-        if (format.pcmEncoding == C.ENCODING_PCM_FLOAT && MimeTypes.AUDIO_RAW == format.sampleMimeType && (!outputs.floatAllowed || format.channelCount > 2)) {
+        if (format.pcmEncoding == C.ENCODING_PCM_FLOAT && MimeTypes.AUDIO_RAW == format.sampleMimeType &&
+            (!outputs.floatAllowed || format.channelCount > 2 || !AudioDecoderPolicy.shouldRequestFloat(sourceFormat))
+        ) {
             return AudioSink.SINK_FORMAT_SUPPORTED_WITH_TRANSCODING
         }
         return super.getFormatSupport(format)
@@ -73,7 +80,7 @@ class PrecisionSink(
         val capped = configuredCap?.takeIf { format.sampleRate > it }
         val target = listOfNotNull(configuredTarget, capped).minOrNull()?.takeIf { workable && it != format.sampleRate }
         val nextResampler = target?.let {
-            resampler?.takeIf { r -> r.inRate == format.sampleRate && r.outRate == it }
+            resampler?.takeIf { r -> r.inRate == format.sampleRate && r.outRate == it && r.channels == format.channelCount }
                 ?: SincResampler.create(format.sampleRate, it, format.channelCount)
         }
         val reworked = nextResampler != null || hiRes
@@ -180,7 +187,7 @@ class PrecisionSink(
             ?: ByteBuffer.allocateDirect(bytes + bytes / 4).order(ByteOrder.LITTLE_ENDIAN).also { out = it }
         target.clear()
         if (outEncoding == C.ENCODING_PCM_FLOAT) {
-            for (i in 0 until count) for (c in 0 until channels) target.putFloat(data[c][i])
+            for (i in 0 until count) for (c in 0 until channels) target.putFloat(clampFloat(data[c][i]))
         } else {
             for (i in 0 until count) for (c in 0 until channels) target.putShort(ditherTo16(data[c][i]))
         }
@@ -217,6 +224,14 @@ class PrecisionSink(
                 planes[c][i] = input.getFloat(start + (i * channels + c) * 4)
             }
         }
+    }
+
+    // keeps valid 24-bit samples bit-exact while stopping non-finite values or resampler peaks above 1.0 from distorting the track
+    private fun clampFloat(sample: Float): Float = when {
+        !sample.isFinite() -> 0f
+        sample > 1f -> 1f
+        sample < -1f -> -1f
+        else -> sample
     }
 
     // tpdf dither: two random halves of a step added before rounding, soft-clamped first so dolby float peaks above 1.0 never crackle

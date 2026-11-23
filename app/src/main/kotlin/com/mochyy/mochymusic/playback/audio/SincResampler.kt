@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 class SincResampler private constructor(
     val inRate: Int,
     val outRate: Int,
-    private val channels: Int,
+    val channels: Int,
     private val table: Table,
 ) {
     /** the filter's taps per output sample, which is what decides its steepness */

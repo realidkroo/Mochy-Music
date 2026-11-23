@@ -11,6 +11,7 @@ import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import com.mochyy.mochymusic.constants.AudioPassMode
+import com.mochyy.mochymusic.playback.audio.AudioDecoderPolicy
 import com.mochyy.mochymusic.playback.audio.AudioOutputs
 import com.mochyy.mochymusic.playback.audio.UsbDacReader
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -111,7 +112,7 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
 
     /** lets the decoder hand a hi-res song over as float, which carries 24 bits whole, while it could go exclusive */
     fun wantsFloat(source: Format?): Boolean =
-        engaged && (takesLossy || isLossless(source)) && (source?.pcmEncoding?.let { PassPcm.sourceBits(it, it) > 16 } ?: true)
+        engaged && (takesLossy || isLossless(source)) && AudioDecoderPolicy.shouldRequestFloat(source)
 
     @Synchronized
     internal fun canTake(format: Format, source: Format?, requester: Any): Boolean {

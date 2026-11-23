@@ -32,9 +32,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
+import com.mochyy.mochymusic.ui.component.LocalSettingsScroll
+import com.mochyy.mochymusic.ui.component.SettingsScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -147,27 +150,30 @@ fun AudioLabPage(
             }.map { it.measure(constraints) }
 
             val body = subcompose("body") {
+                val settingsScroll = remember(scroll, statusTop) { SettingsScroll(scroll, statusTop + 88.dp) }
                 // its own layer: scrolling repaints the sheet, not the backdrop and title behind it
                 Box(Modifier.fillMaxSize().graphicsLayer()) {
-                    Column(Modifier.fillMaxSize().verticalScroll(scroll)) {
-                        Spacer(Modifier.height(headerDp))
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                // black to the bottom even when there's little on the page
-                                .heightIn(min = viewport - headerDp + SheetCorner)
-                                // drawn round, never clipped: a two-corner clip is a path, and compose drops every touch past 8192 px down a path
-                                .background(SheetColor, SheetShape),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
+                    CompositionLocalProvider(LocalSettingsScroll provides settingsScroll) {
+                        Column(Modifier.fillMaxSize().verticalScroll(scroll)) {
+                            Spacer(Modifier.height(headerDp))
                             Column(
                                 modifier = Modifier
-                                    .widthIn(max = ContentMaxWidth)
                                     .fillMaxWidth()
-                                    .padding(horizontal = SideMargin)
-                                    .padding(top = 30.dp, bottom = bottomInset + 32.dp),
-                                content = content,
-                            )
+                                    // black to the bottom even when there's little on the page
+                                    .heightIn(min = viewport - headerDp + SheetCorner)
+                                    // drawn round, never clipped: a two-corner clip is a path, and compose drops every touch past 8192 px down a path
+                                    .background(SheetColor, SheetShape),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .widthIn(max = ContentMaxWidth)
+                                        .fillMaxWidth()
+                                        .padding(horizontal = SideMargin)
+                                        .padding(top = 30.dp, bottom = bottomInset + 32.dp),
+                                    content = content,
+                                )
+                            }
                         }
                     }
                     TopScrim(scroll, headerHeight, statusTop)
@@ -186,6 +192,12 @@ fun AudioLabPage(
 /** how far the header's picture reaches below the header, under the sheet */
 internal val LabArtOverhang = 64.dp
 
+// Pre-allocated rounded shapes (0dp..30dp in 0.5dp steps) so scrolling LabBackdrop allocates zero shapes per pixel.
+private const val LabBackdropMaxStep = 60
+private val LabBackdropShapes = Array(LabBackdropMaxStep + 1) { step ->
+    RoundedCornerShape((step * 0.5f).dp)
+}
+
 /** the dotted backdrop with title and picture as one layer, it shrinks, rounds, dims and blurs as the sheet slides over it, blur only on android 12+ */
 @Composable
 private fun LabBackdrop(scroll: ScrollState, headerHeight: Int, content: @Composable BoxScope.() -> Unit) {
@@ -199,7 +211,7 @@ private fun LabBackdrop(scroll: ScrollState, headerHeight: Int, content: @Compos
                 scaleY = scale
                 transformOrigin = TransformOrigin(0.5f, 0f)
                 alpha = 1f - 0.4f * covered
-                shape = RoundedCornerShape((30f * covered).dp)
+                shape = LabBackdropShapes[(covered * LabBackdropMaxStep + 0.5f).toInt()]
                 clip = covered > 0f
                 // DECAL is android 12's, named outside this check it fails to load on older phones
                 renderEffect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
