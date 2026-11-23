@@ -66,7 +66,8 @@ class App : Application(), SingletonImageLoader.Factory {
     lateinit var phoneLink: dagger.Lazy<com.mochyy.mochymusic.link.phone.PhoneLinkHost>
 
     override fun onCreate() {
-        // before super, because that's where hilt builds the database and the player caches
+        // init random-key vault first so transfer restore and settings can use it right away
+        com.mochyy.mochymusic.utils.SecretVault.init(this)
         com.mochyy.mochymusic.importer.transfer.TransferRestore.applyPending(this)
         // the folders a move to another drive left behind, cleared once nothing has them open
         com.mochyy.mochymusic.playback.StoragePlaces.cleanUpLeftovers(this)
@@ -380,7 +381,6 @@ class App : Application(), SingletonImageLoader.Factory {
             Timber.d("forgetAccount: DataStore preferences cleared")
 
             Timber.d("forgetAccount: Clearing YouTube object auth state")
-            Timber.d("forgetAccount: Before - cookie=${YouTube.cookie?.take(50)}, visitorData=${YouTube.visitorData?.take(20)}, dataSyncId=${YouTube.dataSyncId?.take(20)}")
             YouTube.cookie = null
             YouTube.visitorData = null
             YouTube.dataSyncId = null
@@ -388,7 +388,6 @@ class App : Application(), SingletonImageLoader.Factory {
             com.mochyy.mochymusic.importer.YouTubeLikesMemory.clear(context)
             com.mochyy.mochymusic.importer.PendingYouTubeLikes.clear(context)
             com.mochyy.mochymusic.importer.PlaylistAddedHere.clearAll(context)
-            Timber.d("forgetAccount: After - cookie=${YouTube.cookie}, visitorData=${YouTube.visitorData}, dataSyncId=${YouTube.dataSyncId}")
 
             Timber.d("forgetAccount: Clearing WebView CookieManager")
             withContext(Dispatchers.Main) {

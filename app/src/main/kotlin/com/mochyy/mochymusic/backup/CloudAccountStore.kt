@@ -82,9 +82,10 @@ class CloudAccountStore @Inject constructor(
     val account: StateFlow<CloudAccount?> = _account.asStateFlow()
 
     init {
-        // read off the main thread, the page shows "not connected" for the moment it takes
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-            _account.value = read()
+            val found = read()
+            _account.value = found
+            syncGuard(found)
             loaded.complete(Unit)
         }
     }
@@ -94,13 +95,11 @@ class CloudAccountStore @Inject constructor(
         return _account.value
     }
 
-    /** null signs out */
     suspend fun save(account: CloudAccount?) = withContext(Dispatchers.IO) {
         loaded.await()
         writing.withLock { write(account) }
     }
 
-    /** changes the saved account in place, for new tokens and the last backup's stamp; does nothing once signed out */
     suspend fun update(change: (CloudAccount) -> CloudAccount) = withContext(Dispatchers.IO) {
         loaded.await()
         writing.withLock { _account.value?.let { write(change(it)) } }
@@ -108,22 +107,42 @@ class CloudAccountStore @Inject constructor(
 
     private fun read(): CloudAccount? = runCatching {
         if (!file.exists()) return null
-        CloudAccount.fromJson(JSONObject(file.readText()))
+        val raw = file.readText().trim()
+        val opened = com.mochyy.mochymusic.utils.SecretVault.open(raw, com.mochyy.mochymusic.utils.SecretVault.CloudBackupDomain) ?: return null
+        val account = CloudAccount.fromJson(JSONObject(opened)) ?: return null
+        // upgrade old plaintext webdav/cloud creds straight into the vault
+        if (com.mochyy.mochymusic.utils.SecretVault.needsUpgrade(raw)) writeSealed(account)
+        account
     }.onFailure { Timber.tag(Tag).w(it, "Couldn't read the backup account") }.getOrNull()
 
-    // written beside and renamed over, so a phone dying mid-write never leaves half an account
     private fun write(account: CloudAccount?) {
         if (account == null) {
             file.delete()
         } else {
-            val temp = File(file.path + ".tmp")
-            temp.writeText(account.toJson().toString())
-            if (!temp.renameTo(file)) {
-                temp.copyTo(file, overwrite = true)
-                temp.delete()
-            }
+            writeSealed(account)
         }
         _account.value = account
+        syncGuard(account)
+    }
+
+    private fun writeSealed(account: CloudAccount) {
+        val sealed = com.mochyy.mochymusic.utils.SecretVault.seal(account.toJson().toString(), com.mochyy.mochymusic.utils.SecretVault.CloudBackupDomain)
+        val temp = File(file.path + ".tmp")
+        temp.writeText(sealed)
+        if (!temp.renameTo(file)) {
+            temp.copyTo(file, overwrite = true)
+            temp.delete()
+        }
+    }
+
+    private fun syncGuard(account: CloudAccount?) {
+        if (account == null) {
+            com.mochyy.mochymusic.modules.security.SecretGuard.clear("cloud_backup")
+            com.mochyy.mochymusic.modules.security.SecretGuard.registerBlockedUrl("cloud_webdav", null)
+        } else {
+            com.mochyy.mochymusic.modules.security.SecretGuard.register("cloud_backup", account.password, account.accessToken, account.refreshToken)
+            com.mochyy.mochymusic.modules.security.SecretGuard.registerBlockedUrl("cloud_webdav", account.serverUrl)
+        }
     }
 
     private companion object {

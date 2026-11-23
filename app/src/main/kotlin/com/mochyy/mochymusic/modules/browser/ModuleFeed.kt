@@ -109,10 +109,23 @@ class ModuleFeed @Inject constructor(
             .build()
     }
 
-    private val _session = MutableStateFlow(prefs.getString(SessionKey, null))
+    private val _session = MutableStateFlow(readSession())
 
-    /** the session the feed gave back, null while signed out; the browser reloads when it changes */
     val session: StateFlow<String?> = _session.asStateFlow()
+
+    private fun readSession(): String? {
+        val raw = prefs.getString(SessionKey, null) ?: return null
+        val opened = com.mochyy.mochymusic.utils.SecretVault.open(raw, com.mochyy.mochymusic.utils.SecretVault.ModuleFeedDomain)
+        if (opened == null) {
+            prefs.edit { remove(SessionKey) }
+            return null
+        }
+        if (com.mochyy.mochymusic.utils.SecretVault.needsUpgrade(raw)) {
+            prefs.edit { putString(SessionKey, com.mochyy.mochymusic.utils.SecretVault.seal(opened, com.mochyy.mochymusic.utils.SecretVault.ModuleFeedDomain)) }
+        }
+        com.mochyy.mochymusic.modules.security.SecretGuard.register("module_feed", opened)
+        return opened
+    }
 
     val isSetUp: Boolean get() = FeedUrl.isNotBlank()
 
@@ -143,7 +156,8 @@ class ModuleFeed @Inject constructor(
         prefs.edit { remove(StateKey) }
         val session = redirect.getQueryParameter("session")?.takeIf { SessionPattern.matches(it) }
         if (redirect.getQueryParameter("state") != expected || session == null) return false
-        prefs.edit { putString(SessionKey, session) }
+        prefs.edit { putString(SessionKey, com.mochyy.mochymusic.utils.SecretVault.seal(session, com.mochyy.mochymusic.utils.SecretVault.ModuleFeedDomain)) }
+        com.mochyy.mochymusic.modules.security.SecretGuard.register("module_feed", session)
         _session.value = session
         return true
     }
@@ -198,7 +212,25 @@ class ModuleFeed @Inject constructor(
                     return@use null
                 }
                 if (!res.isSuccessful) return@use null
-                file.outputStream().use { out -> res.body.byteStream().copyTo(out) }
+                // cap zip downloads so a busted or shady response can't nuke storage
+                val buffer = ByteArray(16 * 1024)
+                var written = 0L
+                val ok = file.outputStream().use { out ->
+                    val input = res.body.byteStream()
+                    while (true) {
+                        val n = input.read(buffer)
+                        if (n < 0) return@use true
+                        written += n
+                        if (written > MaxZipBytes) return@use false
+                        out.write(buffer, 0, n)
+                    }
+                    @Suppress("UNREACHABLE_CODE")
+                    false
+                }
+                if (!ok) {
+                    file.delete()
+                    return@use null
+                }
                 file
             }
         }.getOrNull()
@@ -215,6 +247,7 @@ class ModuleFeed @Inject constructor(
 
     private fun forgetSession() {
         prefs.edit { remove(SessionKey) }
+        com.mochyy.mochymusic.modules.security.SecretGuard.clear("module_feed")
         _session.value = null
     }
 
@@ -286,7 +319,7 @@ class ModuleFeed @Inject constructor(
                 link = item.optString("link").takeIf { it.startsWith("https://") },
                 size = item.optLong("size", -1).takeIf { it >= 0 && !item.isNull("size") },
                 updated = item.optLong("updated", -1).takeIf { it > 0 },
-                postUrl = item.optString("postUrl"),
+                postUrl = item.optString("postUrl").takeIf { it.startsWith("https://") }.orEmpty(),
             )
         }
     }
@@ -298,6 +331,7 @@ class ModuleFeed @Inject constructor(
         private const val SessionKey = "session"
         private const val PrefsName = "module_browser"
         private const val StateKey = "state"
+        private const val MaxZipBytes = 40L * 1024 * 1024
         private val SessionPattern = Regex("^[0-9a-f]{64}$")
         private val PostIdPattern = Regex("^\\d+$")
         private val ItemIdPattern = Regex("^[A-Za-z0-9_-]{1,128}$")

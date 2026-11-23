@@ -19,6 +19,7 @@ import com.mochyy.mochymusic.constants.AccountChannelHandleKey
 import com.mochyy.mochymusic.constants.AccountEmailKey
 import com.mochyy.mochymusic.constants.AccountNameKey
 import com.mochyy.mochymusic.constants.DataSyncIdKey
+import com.mochyy.mochymusic.constants.DeeplApiKey
 import com.mochyy.mochymusic.constants.DiscordAccessTokenKey
 import com.mochyy.mochymusic.constants.DiscordLoginStateKey
 import com.mochyy.mochymusic.constants.DiscordLoginVerifierKey
@@ -34,6 +35,9 @@ import com.mochyy.mochymusic.constants.LastFMUsernameKey
 import com.mochyy.mochymusic.constants.LibreFmSessionKey
 import com.mochyy.mochymusic.constants.LibreFmUsernameKey
 import com.mochyy.mochymusic.constants.MonochromePlaybackApiTokenKey
+import com.mochyy.mochymusic.constants.OpenRouterApiKey
+import com.mochyy.mochymusic.constants.ProxyPasswordKey
+import com.mochyy.mochymusic.constants.ProxyUsernameKey
 import com.mochyy.mochymusic.constants.TurnstileBypassTokenKey
 import com.mochyy.mochymusic.constants.VisitorDataKey
 import com.mochyy.mochymusic.playback.StoredKind
@@ -69,7 +73,7 @@ internal object TransferArchive {
         "display" to "mochy_settings",
     )
 
-    // sign-ins and tokens stay behind, the new app signs in again instead of carrying them around in a zip
+    // creds and api keys never ride along in a backup zip
     val LoginKeys: Set<String> = setOf(
         InnerTubeCookieKey, VisitorDataKey, DataSyncIdKey, AccountNameKey, AccountEmailKey, AccountChannelHandleKey,
         DiscordAccessTokenKey, DiscordRefreshTokenKey, DiscordTokenExpiresAtKey, DiscordLoginStateKey,
@@ -77,6 +81,7 @@ internal object TransferArchive {
         LastFMSessionKey, LastFMUsernameKey, EnableLastFMScrobblingKey,
         LibreFmSessionKey, LibreFmUsernameKey, EnableLibreFmScrobblingKey,
         MonochromePlaybackApiTokenKey, TurnstileBypassTokenKey,
+        OpenRouterApiKey, DeeplApiKey, ProxyUsernameKey, ProxyPasswordKey,
     ).map { it.name }.toSet()
 
     // top-level things in the files folder that stay behind: the streaming cache, settings (sent as json),
