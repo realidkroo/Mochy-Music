@@ -12,26 +12,28 @@
 <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&display=swap">
-<!-- fira code for the ring only, cut down to just its letters so it weighs a couple of kb -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&amp;family=JetBrains+Mono:wght@400;500&amp;family=Space+Grotesk:wght@500;700&amp;display=swap">
+<!-- fira code is limited to the ring letters to keep it a few kb -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@600&display=swap&text=MOCHYUSI%E2%80%A2%20">
-<!-- bump ?v= on the css and js links whenever they change, or browsers keep showing the old copy for up to 10 minutes -->
+<!-- bump ?v= on css and js, or browsers keep the old file -->
 <link rel="stylesheet" href="assets/css/site.css?v=20261111a">
 <link rel="stylesheet" href="assets/css/home.css?v=20261107k">
+<link rel="stylesheet" href="assets/css/releases.css?v=20261123l">
 <link rel="preload" as="image" href="assets/img/mochy-hero.webp" type="image/webp">
 <script>document.documentElement.classList.add("js");</script>
 </head>
-<body class="dots home-page">
+<body class="dots home-page" data-page="home">
 
 <header class="topnav" id="topnav">
   <nav class="wrap nav" aria-label="Main">
-    <div class="brand"><a class="brand-name" href="./" style="text-decoration:none"><img src="assets/img/logo.svg" alt="" width="32" height="35">Mochy Music</a><span class="brand-sep"></span><a class="brand-sub" href="https://github.com/realidkroo/Mochy-Music">GITHUB</a></div>
+    <div class="brand"><a class="brand-name" href="index.html" style="text-decoration:none"><img src="assets/img/logo.svg" alt="" width="32" height="35">Mochy Music</a><span class="brand-sep"></span><a class="brand-sub" href="https://github.com/realidkroo/Mochy-Music">GITHUB</a></div>
     <button class="nav-toggle press" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <div class="nav-links">
-      <a href="wiki/#roadmap">Roadmaps</a><span></span>
-      <a href="wiki/">Docs</a><span></span>
+      <a href="wiki/index.html#roadmap">Roadmaps</a><span></span>
+      <a href="wiki/index.html">Docs</a><span></span>
       <a href="https://discord.gg/NTmqVphbRY">Community</a><span></span>
-      <a href="https://github.com/realidkroo/Mochy-Music/releases">Download</a>
+      <a href="changelog.html">Changelog</a><span></span>
+      <a href="download.html">Download</a>
     </div>
   </nav>
 </header>
@@ -54,11 +56,13 @@
       </div>
       <div class="wrap scene-grid">
         <div class="hero-copy">
+          <a id="heroNew" class="hero-new" href="download.html" hidden><span class="rel-badge">NEW</span><span id="heroNewText"></span></a>
           <h1><span class="w">Music</span><span class="s">With style &lt;3</span></h1>
           <div class="cta">
-            <a class="pill press" href="https://github.com/realidkroo/Mochy-Music/releases"><i><svg class="line" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5v11M7 11l5 5 5-5M5.5 19.5h13"/></svg></i>Download Now</a>
+            <a class="pill press" href="download.html"><i><svg class="line" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5v11M7 11l5 5 5-5M5.5 19.5h13"/></svg></i>Download Now</a>
             <a class="pill press" href="https://discord.gg/NTmqVphbRY"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg></i>Join Discord</a>
           </div>
+          <div id="heroTotal" class="hero-total" hidden><strong id="heroTotalCount">—</strong> downloads <span aria-hidden="true">·</span> <span id="heroTotalReleases">—</span> releases</div>
         </div>
       </div>
       <div class="mascot-wrap" aria-hidden="true"><img class="mascot" src="assets/img/mochy-hero.webp" alt="" width="1095" height="1858" fetchpriority="high"></div>
@@ -117,18 +121,47 @@
         <p class="lead">Keep scrolling, it slides.</p>
       </div>
       <div class="rail-track">
-        <a class="card press" href="wiki/#app-lyrics"><h3>Lyrics that sing along</h3><p>Word by word, from a bunch of sources, and they follow the music video too.</p><div class="phone"><img src="assets/img/app-lyrics.webp" alt="Synced lyrics" width="450" height="1000" decoding="async" fetchpriority="low"></div></a>
-        <a class="card press" href="wiki/#app-audio"><h3>An audio lab in your pocket</h3><p>Equalizer, effects, crossfade, lossless when a module has it.</p><div class="phone"><img src="assets/img/app-audiolab.webp" alt="Audio Lab" width="450" height="1000" decoding="async" fetchpriority="low"></div></a>
-        <a class="card press" href="wiki/#modules-types"><h3>Make it yours, with modules</h3><p>Looks, liquid glass, your own player, new sources. Anyone can make one.</p><div class="phone"><img src="assets/img/app-modules2.webp" alt="The modules page" width="450" height="1000" decoding="async" fetchpriority="low"></div></a>
-        <a class="card press" href="wiki/#app-home"><h3>Search everything</h3><p>Moods, genres, songs, albums, artists, playlists and videos.</p><div class="phone"><img src="assets/img/app-search.webp" alt="Search" width="450" height="1000" decoding="async" fetchpriority="low"></div></a>
-        <a class="card press" href="wiki/#app-settings"><h3>Easy on your data</h3><p>Data saver plays lighter streams and keeps covers still on mobile data.</p><div class="phone"><img src="assets/img/app-behaviour.webp" alt="App behaviour and data saver" width="450" height="1000" decoding="async" fetchpriority="low"></div></a>
-        <a class="card press" href="wiki/#app-settings"><h3>Every setting, one search away</h3><p>Type any setting and it takes you right to it.</p><div class="phone"><img src="assets/img/app-settings.webp" alt="Settings" width="450" height="1000" decoding="async" fetchpriority="low"></div></a>
-        <a class="card end press" href="wiki/"><h3>Read the docs</h3><p>How every part of Mochy works, and how to make your own modules.</p></a>
+        <a class="card press" href="wiki/index.html#app-lyrics"><h3>Lyrics that sing along</h3><p>Word by word, from a bunch of sources, and they follow the music video too.</p><div class="phone"><img src="assets/img/app-lyrics.webp" alt="Synced lyrics" width="450" height="1000" decoding="async" fetchpriority="low"></div></a>
+        <a class="card press" href="wiki/index.html#app-audio"><h3>An audio lab in your pocket</h3><p>Equalizer, effects, crossfade, lossless when a module has it.</p><div class="phone"><img src="assets/img/app-audiolab.webp" alt="Audio Lab" width="450" height="1000" decoding="async" fetchpriority="low"></div></a>
+        <a class="card press" href="wiki/index.html#modules-types"><h3>Make it yours, with modules</h3><p>Looks, liquid glass, your own player, new sources. Anyone can make one.</p><div class="phone"><img src="assets/img/app-modules2.webp" alt="The modules page" width="450" height="1000" decoding="async" fetchpriority="low"></div></a>
+        <a class="card press" href="wiki/index.html#app-home"><h3>Search everything</h3><p>Moods, genres, songs, albums, artists, playlists and videos.</p><div class="phone"><img src="assets/img/app-search.webp" alt="Search" width="450" height="1000" decoding="async" fetchpriority="low"></div></a>
+        <a class="card press" href="wiki/index.html#app-settings"><h3>Easy on your data</h3><p>Data saver plays lighter streams and keeps covers still on mobile data.</p><div class="phone"><img src="assets/img/app-behaviour.webp" alt="App behaviour and data saver" width="450" height="1000" decoding="async" fetchpriority="low"></div></a>
+        <a class="card press" href="wiki/index.html#app-settings"><h3>Every setting, one search away</h3><p>Type any setting and it takes you right to it.</p><div class="phone"><img src="assets/img/app-settings.webp" alt="Settings" width="450" height="1000" decoding="async" fetchpriority="low"></div></a>
+        <a class="card end press" href="wiki/index.html"><h3>Read the docs</h3><p>How every part of Mochy works, and how to make your own modules.</p></a>
       </div>
     </div>
   </section>
 
 </div>
+
+<section class="wrap release-scene" aria-labelledby="relHomeHeading">
+  <div id="relHomeSkeleton" class="rel-skeleton" role="status" aria-label="Loading latest release">
+    <div class="rel-skel short"></div>
+    <div class="rel-skel wide"></div>
+  </div>
+
+  <section id="relHomeError" class="rel-error" hidden>
+    <p>Release data is unavailable right now.</p>
+    <a class="rel-btn" href="https://github.com/realidkroo/Mochy-Music/releases/latest">Open GitHub releases</a>
+  </section>
+
+  <div id="relHomeCard" class="rel-card" hidden>
+    <div class="rel-heading">
+      <h2 id="relHomeHeading">Latest release</h2>
+      <small>LATEST RELEASE</small>
+    </div>
+    <div>
+      <div id="relHomeVersion" class="rel-ver">—</div>
+      <div id="relHomeDate" class="rel-date"></div>
+    </div>
+    <div id="relHomeNotes" class="rel-notes"></div>
+    <div class="rel-actions">
+      <a id="relHomeArm" class="rel-link" href="download.html">Download</a>
+      <a class="rel-link" href="changelog.html">See every release</a>
+      <a id="nightlyTeaser" class="rel-link" href="download.html?channel=nightly">Want it first? Try the Nightly build</a>
+    </div>
+  </div>
+</section>
 
 <section class="wrap tour-scene">
   <div class="reveal">
@@ -169,15 +202,17 @@
       <div class="year">2026</div>
     </div>
     <nav aria-label="Footer">
-      <a href="wiki/">Docs</a>
+      <a href="wiki/index.html">Docs</a>
+      <a href="changelog.html">Changelog</a>
       <a href="https://github.com/realidkroo/Mochy-Music">Github</a>
       <a href="https://discord.gg/NTmqVphbRY">Join discord</a>
-      <a href="https://github.com/realidkroo/Mochy-Music/releases">Download now</a>
+      <a href="download.html">Download now</a>
     </nav>
   </div>
 </footer>
 
 <script src="assets/js/site.js?v=20261107g" defer></script>
 <script src="assets/js/home.js?v=20261107k" defer></script>
+<script src="assets/js/releases.js?v=20261123l" defer></script>
 </body>
 </html>

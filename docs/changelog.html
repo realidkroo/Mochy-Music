@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mochy Music Changelog</title>
+<meta name="description" content="Every stable Mochy Music release, with notes and arm64 and Universal APK links.">
+<meta name="theme-color" content="#0E0E0F">
+<link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&amp;family=JetBrains+Mono:wght@400;500&amp;family=Space+Grotesk:wght@500;700&amp;display=swap">
+<link rel="stylesheet" href="assets/css/site.css?v=20261111a">
+<link rel="stylesheet" href="assets/css/home.css?v=20261107k">
+<link rel="stylesheet" href="assets/css/releases.css?v=20261123l">
+<script>document.documentElement.classList.add("js");</script>
+</head>
+<body class="dots home-page rel-page" data-page="changelog">
+
+<header class="topnav" id="topnav">
+  <nav class="wrap nav" aria-label="Main">
+    <div class="brand"><a class="brand-name" href="index.html" style="text-decoration:none"><img src="assets/img/logo.svg" alt="" width="32" height="35">Mochy Music</a><span class="brand-sep"></span><a class="brand-sub" href="https://github.com/realidkroo/Mochy-Music">GITHUB</a></div>
+    <button class="nav-toggle press" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <div class="nav-links">
+      <a href="wiki/index.html#roadmap">Roadmaps</a><span></span>
+      <a href="wiki/index.html">Docs</a><span></span>
+      <a href="https://discord.gg/NTmqVphbRY">Community</a><span></span>
+      <a href="changelog.html">Changelog</a><span></span>
+      <a href="download.html">Download</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+<div class="rel-wrap narrow">
+
+  <div class="rel-head">
+    <h1>Changelog</h1>
+    <p class="rel-intro">Every stable release, newest first. Notes come from the release itself.</p>
+  </div>
+
+  <div id="changeSkeleton" class="rel-skeleton" role="status" aria-label="Loading changelog">
+    <div class="rel-skel short"></div>
+    <div class="rel-skel wide"></div>
+    <div class="rel-skel"></div>
+  </div>
+
+  <section id="changeError" class="rel-error" hidden>
+    <p>Release data is unavailable right now.</p>
+    <a class="rel-btn" href="https://github.com/realidkroo/Mochy-Music/releases/latest">Open GitHub releases</a>
+  </section>
+
+    <div id="changeList" class="rel-timeline"></div>
+    <div class="rel-bottom">
+      <button id="moreChanges" class="rel-btn quiet" type="button" hidden>Load older releases</button>
+      <small>Full notes on <a href="https://github.com/realidkroo/Mochy-Music/releases">GitHub</a></small>
+    </div>
+
+</div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <div>
+      <span class="brand-name"><img src="assets/img/logo.svg" alt="" width="32" height="35">Mochy Music</span>
+      <small>not affiliated by google, apple, or other.</small>
+      <div class="year">2026</div>
+    </div>
+    <nav aria-label="Footer">
+      <a href="wiki/index.html">Docs</a>
+      <a href="changelog.html">Changelog</a>
+      <a href="download.html">Download</a>
+      <a href="https://discord.gg/NTmqVphbRY">Join discord</a>
+    </nav>
+  </div>
+</footer>
+<script src="assets/js/site.js?v=20261107g" defer></script>
+<!-- marked renders the notes, DOMPurify scrubs them before they go into innerHTML -->
+<script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+<script src="assets/js/releases.js?v=20261123l" defer></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-/* what the homepage and the wiki share: one dark look, the dotted ground from the concept, inter like the app; the homepage's own parts are in home.css */
+/* shared dark look; home.css holds the homepage pieces */
 :root {
   --bg: #0e0e0f;
   --bg-deep: #070708;
@@ -51,7 +51,7 @@ a { color: inherit; }
 .brand-sep { width: 1px; height: 40px; background: #3a3a3e; }
 .brand-sub { font-size: 23px; font-weight: 500; color: var(--soft); letter-spacing: 0.01em; }
 
-/* ---------- buttons that press like the app's (pressBounce: a squish, then a spring back) ---------- */
+/* ---------- pressBounce ---------- */
 .press { transition: transform 0.42s var(--spring); transform: translateZ(0); -webkit-tap-highlight-color: transparent; }
 .press.down { transform: scale(0.94); transition: transform 0.12s ease-out; }
 /* ---------- phones ---------- */
@@ -62,7 +62,7 @@ a { color: inherit; }
 }
 .phone img { width: 100%; height: 100%; object-fit: cover; }
 
-/* the tour: a phone with the app's own bottom bar under it, tap a tab and the screen swaps like in the app */
+/* tap a tab, the screen swaps like in the app */
 .tour { display: flex; flex-direction: column; align-items: center; gap: 26px; }
 .tour .phone { width: 300px; }
 .tour .phone img { position: absolute; inset: 0; opacity: 0; transition: opacity 0.3s; }
@@ -79,7 +79,7 @@ a { color: inherit; }
 .tour-caption { color: var(--soft); font-weight: 700; letter-spacing: -0.03em; min-height: 1.6em; text-align: center; }
 
 /* ---------- wiki ---------- */
-/* the sidebar sits fixed beside the page and folds into a pill; the column layout keeps the footer at the bottom of short pages */
+/* the sidebar folds into a pill; the column keeps short pages full-height */
 .wiki { --side-w: 380px; --fold: 0.5s cubic-bezier(0.32, 0.72, 0, 1); min-height: 100vh; display: flex; flex-direction: column; }
 .side {
   position: fixed; z-index: 8; top: 0; left: 0; width: var(--side-w); height: 100vh;
@@ -118,7 +118,7 @@ a { color: inherit; }
   .side-folded .main { margin-left: 0; }
   .side-folded .fold .arrow { transform: rotate(180deg); }
 }
-/* the first paint lands where it was left, the folding only animates when someone presses it */
+/* keep the last scroll position; animate only on press */
 html:not(.ready) .side, html:not(.ready) .main, html:not(.ready) .toc, html:not(.ready) .fold .arrow { transition: none !important; }
 
 /* the search keeps its corner whatever the sidebar does, level with the folded pill */
@@ -201,7 +201,7 @@ pre .k { color: #8fb8ff; } pre .s { color: var(--yellow); } pre .n { color: #ff9
 .board { position: relative; aspect-ratio: 16 / 10; min-height: 480px; margin: 20px 0 22px; border-radius: 24px; overflow: hidden; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
 .board iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
-/* the footer: a black sheet under every page, mochy holding up the app on the right, sliding along with the sidebar like the page does */
+/* the footer slides with the sidebar */
 .footer {
   position: relative; overflow: hidden; margin-left: var(--side-w); min-height: 290px;
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px;
@@ -236,7 +236,7 @@ html:not(.ready) .footer { transition: none !important; }
 .bar.frost { background: rgba(19, 19, 19, 0.78); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
 .bar.liquid { background: linear-gradient(180deg, rgba(255,255,255,.1), transparent 45%), rgba(19,19,19,.42); backdrop-filter: blur(7px) saturate(1.35); -webkit-backdrop-filter: blur(7px) saturate(1.35); box-shadow: inset 1.2px 1.2px 0 rgba(255,255,255,.55), inset -1px -1px 0 rgba(255,255,255,.22); }
 .bar.clear { background: linear-gradient(180deg, rgba(255,255,255,.1), transparent 45%), rgba(19,19,19,.16); backdrop-filter: blur(2.5px) saturate(1.2); -webkit-backdrop-filter: blur(2.5px) saturate(1.2); box-shadow: inset 1.2px 1.2px 0 rgba(255,255,255,.7), inset -1px -1px 0 rgba(255,255,255,.3); }
-/* the states demo: a cover that blends between poses the way a player's states do, and pops for a new song */
+/* a cover blends between states and pops for a new song */
 .state-demo { display: grid; place-items: center; padding: 22px 0 18px; }
 .state-demo .disc { width: 120px; height: 120px; border-radius: 28px; background: conic-gradient(from 210deg, #f5e27a, #ff5fd2, #6b4fd8, #f5e27a); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45); transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.45s ease, opacity 0.45s ease; }
 .state-demo[data-state="paused"] .disc { transform: scale(0.86); filter: blur(3px); opacity: 0.7; }
@@ -281,7 +281,7 @@ html:not(.ready) .footer { transition: none !important; }
   .board { aspect-ratio: 3 / 4; min-height: 420px; border-radius: 20px; }
   .next { flex-direction: column; }
   .next a:last-child { text-align: left; }
-  /* on a phone everything stacks, and she stands under the links fading into the black, the year in the corner */
+  /* on phones everything stacks and she fades behind the links */
   .footer { margin-left: 0; display: block; min-height: 0; padding: 48px 32px 0; border-radius: 28px 28px 0 0; }
   .footer-links { align-items: flex-start; gap: 22px; margin-top: 40px; }
   .footer-year { position: absolute; right: 30px; bottom: 26px; padding: 0; z-index: 1; }

@@ -1,4 +1,4 @@
-/* the homepage: the hero and the feature sheets stick and the next one slides up over them, a strip of cards slides sideways, and the footer fades in out of the dots */
+/* sheets stack as you scroll; the strip slides sideways */
 .home-page {
   --ease: cubic-bezier(0.32, 0.72, 0, 1);
   --nav-h: 96px;
@@ -41,19 +41,19 @@
 .pill.small { font-size: 16px; padding: 11px 18px; gap: 10px; }
 .pill.small i { width: 16px; height: 16px; }
 
-/* ---------- the sheets: each fills the screen and sticks, the next slides up over it and it sinks back ---------- */
+/* ---------- sheets ---------- */
 .stack { position: relative; }
 .scene { position: sticky; top: 0; height: 100vh; height: 100svh; min-height: 640px; overflow: hidden; border-radius: 40px 40px 0 0; box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.55); }
 .scene.hero { border-radius: 0; box-shadow: none; }
-/* the girl and the ring hang off the window's right edge like the concept, not the text column, and she never gets wider than the right half, so the headline stays clear of her */
+/* she hangs off the right edge so the headline stays clear */
 .hero { --m-w: min(calc(98vh * 1095 / 1858), 42vw); --m-r: max(24px, 3vw); }
-/* home.js moves these with plain transforms as you scroll; will-change keeps each on its own gpu layer, so a scroll frame only shifts layers and never repaints a sheet */
+/* transforms only, so scrolling moves layers without repainting */
 .scene-body { position: absolute; inset: 0; transform-origin: 50% 30%; will-change: transform; }
 .shade { position: absolute; inset: 0; z-index: 6; background: #000; opacity: 0; border-radius: inherit; pointer-events: none; will-change: opacity; }
 .scene-grid { position: relative; z-index: 2; height: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; gap: 48px; padding-top: var(--nav-h); }
 .scene.flip .words { grid-column: 2; }
 
-/* the words slide in from their own side, the phones rise from below at their own speeds and drift up as the sheet is covered */
+/* words slide in, phones rise and slow as a sheet is covered */
 .scene .words { will-change: transform, opacity; }
 .art { position: absolute; inset: 0; pointer-events: none; }
 .slot { position: absolute; pointer-events: auto; will-change: transform; }
@@ -69,7 +69,7 @@
 .phone.tilt { transition: transform 0.5s var(--spring); }
 
 /* ---------- the hero ---------- */
-/* two rows of outlined words drifting forever, mochy to the right and music to the left; each row is two identical halves, so sliding by half loops without a seam */
+/* two identical halves, so a half-width slide loops without a seam */
 .ghost {
   position: absolute; left: 0; right: 0; top: 9vh; z-index: 0; font: 800 clamp(140px, 21vw, 400px)/0.82 var(--font); letter-spacing: -0.04em;
   color: transparent; -webkit-text-stroke: 1px rgba(255, 255, 255, 0.06); white-space: nowrap; pointer-events: none; user-select: none;
@@ -82,7 +82,7 @@
 .ring-wrap { position: absolute; z-index: 0; right: calc(var(--m-r) + var(--m-w) / 2 - min(500px, 35vw)); top: -22vh; width: min(1000px, 70vw); aspect-ratio: 1; pointer-events: none; will-change: transform; }
 .ring { width: 100%; height: 100%; will-change: transform; animation: ring-in 1.6s var(--ease) both, spin 70s linear 1.6s infinite; }
 .ring circle { fill: none; stroke: rgba(255, 255, 255, 0.035); stroke-width: 150; }
-/* the path runs a little inside the band, so the letters' middle lands on the band's middle in every browser */
+/* the path sits inside the band, so letters land on its middle */
 .ring text { fill: rgba(255, 255, 255, 0.075); font: 600 66px "Fira Code", ui-monospace, Menlo, monospace; }
 /* once a sheet covers the hero nothing in it needs to keep moving */
 .resting .ring { animation-play-state: running, paused; }
@@ -104,7 +104,7 @@
 @keyframes drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
 @keyframes cue { 0% { transform: scaleY(0); opacity: 1; } 70% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
 
-/* ---------- the strip: pinned while it slides sideways, the card in the middle the biggest ---------- */
+/* ---------- strip ---------- */
 .rail { position: relative; height: 300vh; border-radius: 40px 40px 0 0; box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.55); }
 .rail-pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 5vh; padding-top: var(--nav-h); }
 .rail-head { will-change: transform, opacity; }
@@ -140,7 +140,7 @@ a.card.end:hover { background: #ececf0; }
 .foot nav a { color: var(--soft); text-decoration: none; transition: color 0.15s; }
 .foot nav a:hover { color: #fff; }
 
-/* ---------- phones and tablets: the sheets flow one after another, the strip swipes ---------- */
+/* ---------- phones and tablets ---------- */
 @media (max-width: 980px) {
   .home-page { --nav-h: 76px; }
   .nav .brand-sep, .nav .brand-sub { display: none; }

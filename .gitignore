@@ -50,6 +50,8 @@ implementation_plan.md
 transcript_*.txt
 docs/*
 !docs/index.html
+!docs/download.html
+!docs/changelog.html
 !docs/.nojekyll
 !docs/assets/
 !docs/wiki/
