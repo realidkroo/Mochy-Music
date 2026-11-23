@@ -1,0 +1,145 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- Shared labels -->
+    <string name="lib_artist">Artista</string>
+    <string name="lib_album">Álbum</string>
+    <string name="lib_playlist">Playlist</string>
+    <string name="lib_nothing_to_show">Nada para mostrar aqui</string>
+    <string name="lib_no_results">Nada na sua biblioteca corresponde a \"%1$s\"</string>
+    <plurals name="lib_song_count">
+        <item quantity="one">%1$d música</item>
+        <item quantity="other">%1$d músicas</item>
+    </plurals>
+    <string name="lib_count_on_device">%1$s neste dispositivo</string>
+    <string name="lib_count_cached">%1$s em cache</string>
+
+    <!-- Albums / artists / playlists / songs screens -->
+    <string name="lib_albums_local_subtitle">Álbuns com músicas neste dispositivo.</string>
+    <string name="lib_albums_cached_subtitle">Álbuns com músicas no cache.</string>
+    <string name="lib_artists_local_subtitle">Artistas com músicas neste dispositivo.</string>
+    <string name="lib_artists_cached_subtitle">Artistas com músicas no cache.</string>
+    <string name="lib_artists_all_subtitle">Todos os artistas da sua biblioteca aparecem aqui.</string>
+    <string name="lib_artists_search">Encontrar artista pelo nome</string>
+    <string name="lib_playlists_imported_subtitle">Playlists importadas de %1$s.</string>
+    <string name="lib_playlists_local_subtitle">Playlists com músicas neste dispositivo.</string>
+    <string name="lib_playlists_cached_subtitle">Playlists com músicas no cache.</string>
+    <string name="lib_playlists_all_subtitle">Todas as playlists da sua biblioteca aparecem aqui.</string>
+    <string name="lib_playlists_search">Encontrar playlist pelo nome</string>
+    <string name="lib_songs_subtitle">Todas as músicas da sua biblioteca aparecem aqui.</string>
+    <string name="lib_songs_search">Encontrar música pelo título ou artista</string>
+    <string name="lib_recent_title">Adicionadas</string>
+    <string name="lib_recent_subtitle">Recentemente</string>
+    <string name="lib_recent_search">Encontre uma música desta lista pela letra ou pelo artista</string>
+
+    <!-- Imported screen -->
+    <string name="lib_imported_unknown_source">uma origem desconhecida</string>
+    <plurals name="lib_imported_songs_subtitle">
+        <item quantity="one">%1$d música importada de %2$s.</item>
+        <item quantity="other">%1$d músicas importadas de %2$s.</item>
+    </plurals>
+    <string name="lib_imported_search">Encontrar uma música importada de %1$s</string>
+    <string name="lib_imported_queue_title">Importadas de %1$s</string>
+
+    <!-- Tabs -->
+    <string name="lib_cached_empty">Ainda não há nada no cache. As músicas que você ouvir aparecerão aqui.</string>
+    <string name="lib_manage_cache_pill">Gerenciar cache</string>
+    <string name="lib_cached_all_music">Todas as músicas em cache</string>
+    <string name="lib_all_music">Todas as músicas</string>
+    <string name="lib_manage_imports_pill">Gerenciar importações</string>
+    <string name="lib_manage_local_pill">Gerenciar arquivos locais</string>
+    <string name="lib_local_or">Ou</string>
+    <string name="lib_local_let_read">Permita que o Mochy acesse seu armazenamento para encontrar todas as suas músicas</string>
+    <string name="lib_local_import_here">Importe suas músicas locais aqui</string>
+    <string name="lib_local_imported_from_local">Importado de arquivos locais</string>
+
+    <!-- Import banner -->
+    <string name="lib_import_banner_title">Importe suas músicas aqui!</string>
+    <string name="lib_import_checking_resync">Procurando músicas novas em \"%1$s\"…</string>
+    <string name="lib_import_adding_resync">Adicionando %1$d de %2$d músicas novas a \"%3$s\"</string>
+    <string name="lib_import_getting_ready">Preparando suas faixas…</string>
+    <string name="lib_import_adding_from">Adicionando %1$d de %2$d faixas de %3$s</string>
+    <string name="lib_import_adding">Adicionando %1$d de %2$d faixas</string>
+    <string name="lib_import_still_running">Já existe uma importação em andamento. Tente novamente quando ela terminar.</string>
+
+    <!-- Local import -->
+    <string name="lib_local_no_access">O Mochy não consegue acessar suas músicas sem permissão</string>
+    <string name="lib_local_no_new_songs">Nenhuma música nova nas suas pastas de música</string>
+    <plurals name="lib_local_repaired">
+        <item quantity="one">Nome, letra ou capa de %1$d música corrigido</item>
+        <item quantity="other">Nomes, letras ou capas de %1$d músicas corrigidos</item>
+    </plurals>
+
+    <!-- Transfer progress -->
+    <string name="lib_transfer_download_title">Progresso dos downloads</string>
+    <string name="lib_transfer_download_idle">Nenhum download em andamento.</string>
+    <string name="lib_transfer_import_title">Progresso da importação</string>
+    <string name="lib_transfer_import_idle">Nenhuma importação em andamento.</string>
+    <string name="lib_transfer_n_of_m">%1$d de %2$d</string>
+    <string name="lib_transfer_failed">Não foi possível adicionar este item</string>
+    <string name="lib_transfer_cancel_all">Cancelar todos os downloads</string>
+    <string name="lib_transfer_create_playlist">Criar playlist</string>
+
+    <!-- Song picker sheets -->
+    <string name="lib_picker_done">Concluir</string>
+    <plurals name="lib_picker_add_songs">
+        <item quantity="one">Adicionar %1$d música</item>
+        <item quantity="other">Adicionar %1$d músicas</item>
+    </plurals>
+    <plurals name="lib_picker_remove_songs">
+        <item quantity="one">Remover %1$d música</item>
+        <item quantity="other">Remover %1$d músicas</item>
+    </plurals>
+    <string name="lib_picker_add_music">Adicionar músicas</string>
+    <string name="lib_picker_looking">Procurando músicas no seu celular…</string>
+    <string name="lib_picker_all_in_library">Todas as músicas do seu celular já estão na sua biblioteca.</string>
+    <string name="lib_picker_remove_from_list">Remover da lista</string>
+    <string name="lib_picker_no_local_files">Ainda não há arquivos do seu celular na biblioteca.</string>
+    <string name="lib_picker_files_stay">Os arquivos continuarão no seu celular.</string>
+    <string name="lib_picker_remove_from_cache">Remover do cache</string>
+    <string name="lib_picker_nothing_cached">Ainda não há nada no cache.</string>
+    <string name="lib_picker_cache_hint">As músicas serão transmitidas novamente na próxima vez que você as reproduzir.</string>
+    <string name="lib_picker_pick_to_remove">Selecione as músicas que deseja remover</string>
+    <string name="lib_picker_select_none">Desmarcar tudo</string>
+    <string name="lib_picker_select_all">Selecionar tudo</string>
+    <string name="lib_picker_nothing_matches">Nada corresponde a \"%1$s\"</string>
+
+    <!-- Manage sheets -->
+    <string name="lib_manage_delete_all_imports">Excluir todas as importações</string>
+    <string name="lib_manage_delete_all_imports_title">Excluir todas as importações?</string>
+    <string name="lib_manage_delete_all_imports_msg">Todas as músicas, curtidas e playlists que você importou serão removidas da sua biblioteca. O que já estava nela permanecerá, assim como as músicas mantidas atualizadas pela sincronização do YouTube.</string>
+    <string name="lib_manage_undo_session">Desfazer sessão de importação</string>
+    <string name="lib_manage_undo_last_title">Desfazer sua última importação?</string>
+    <string name="lib_manage_undo_last_msg">As músicas, curtidas e playlists adicionadas na última importação serão removidas da sua biblioteca. Tudo o que já estava nela permanecerá.</string>
+    <string name="lib_manage_undo_import">Desfazer importação</string>
+    <string name="lib_manage_resync_all">Sincronizar tudo novamente</string>
+    <string name="lib_manage_delete_source">Excluir importações de %1$s</string>
+    <string name="lib_manage_delete_source_title">Excluir importações de %1$s?</string>
+    <string name="lib_manage_delete_source_msg">Tudo o que você importou de %1$s será removido da sua biblioteca, incluindo playlists.</string>
+    <string name="lib_manage_delete_source_msg_youtube">Tudo o que você importou de %1$s será removido da sua biblioteca, incluindo playlists. As músicas mantidas atualizadas pela sincronização do YouTube permanecerão.</string>
+    <string name="lib_manage_delete">Excluir</string>
+    <string name="lib_manage_rescan_local">Verificar arquivos locais novamente</string>
+    <string name="lib_manage_delete_from_list">Remover da lista</string>
+    <string name="lib_manage_add_folder">Adicionar pasta de música</string>
+    <string name="lib_manage_undo_local_title">Desfazer sua última importação local?</string>
+    <string name="lib_manage_undo_local_msg">As músicas adicionadas serão removidas da sua biblioteca. Os arquivos continuarão no seu celular.</string>
+    <string name="lib_manage_clear_cache">Limpar cache</string>
+    <string name="lib_manage_clear_cache_title">Limpar seu cache?</string>
+    <string name="lib_manage_clear_cache_msg">Todas as músicas em cache serão excluídas deste celular e transmitidas novamente na próxima vez que você as reproduzir. Sua biblioteca e seus downloads permanecerão como estão.</string>
+    <string name="lib_manage_remove_songs">Remover músicas</string>
+    <string name="library_tab_genres">Gêneros</string>
+    <string name="lib_all_songs_title">Todas as músicas</string>
+    <string name="lib_stats_in_library">Na sua biblioteca · %1$s</string>
+    <string name="lib_stats_in_library_time">Na sua biblioteca · %1$s · %2$s para ouvir</string>
+    <string name="lib_time_hours_minutes">%1$dh %2$dm</string>
+    <string name="lib_time_minutes">%1$dm</string>
+    <string name="lib_view_grid">Exibir em grade</string>
+    <string name="lib_view_list">Exibir em lista</string>
+    <string name="lib_see_all">Ver tudo</string>
+    <string name="lib_history_empty">Nada foi reproduzido ainda. As músicas aparecerão aqui conforme você ouvir.</string>
+    <string name="lib_history_all">Todo o histórico</string>
+    <string name="lib_genres_local_empty">Ainda não há gêneros. Salve, curta ou ouça algumas músicas para que elas sejam organizadas aqui.</string>
+    <string name="lib_genre_search">Encontrar uma música neste gênero</string>
+    <string name="lib_added_when">Adicionada %1$s</string>
+    <string name="lib_added_earlier">Anteriormente</string>
+    <string name="lib_nothing_matches">Nada aqui corresponde a \"%1$s\"</string>
+</resources>

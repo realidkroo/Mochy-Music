@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="builtin_module_apple_description">Reproduz sua assinatura do Apple Music no Mochy em AAC 256, com todos os efeitos do Laboratório de áudio</string>
+    <string name="builtin_module_monochrome_description">FLAC sem perdas para todas as músicas disponíveis no Monochrome, sem precisar de conta e com todos os efeitos do Laboratório de áudio</string>
+    <string name="builtin_module_jiosaavn_description">Catálogo do JioSaavn em AAC de até 320 kbps, sem precisar de conta. Especialmente bom para música indiana</string>
+    <string name="builtin_module_stream">Transmissão</string>
+    <string name="builtin_module_apple_aac_description">Transmissão estéreo padrão do Apple Music</string>
+    <string name="builtin_module_apple_he_description">Usa um quarto dos dados, ideal para redes lentas ou com franquia limitada</string>
+    <string name="builtin_module_saavn_320_description">A melhor qualidade do JioSaavn; 160 kbps para as músicas que não têm essa opção</string>
+    <string name="builtin_module_saavn_160_description">Metade do consumo de dados, mantendo boa nitidez</string>
+    <string name="builtin_module_saavn_96_description">Para redes lentas ou com franquia limitada</string>
+    <string name="builtin_module_region">Região</string>
+    <string name="builtin_module_account_region">A da sua conta</string>
+    <string name="builtin_module_account_region_description">Pesquisa no catálogo do país da sua conta Apple</string>
+    <string name="builtin_module_region_description">Pesquisa no catálogo de %1$s. Músicas sem licença no país da sua conta ainda podem não ser reproduzidas</string>
+</resources>

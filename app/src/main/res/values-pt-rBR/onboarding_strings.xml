@@ -1,0 +1,145 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- common -->
+    <string name="onb_next">Próximo</string>
+    <string name="onb_next_lower">próximo</string>
+    <string name="onb_done">Concluir</string>
+    <string name="onb_close">Fechar</string>
+    <string name="onb_go_back">nem pensar, voltar</string>
+    <string name="onb_yes">Sim!</string>
+    <string name="onb_skip">Pular</string>
+    <string name="onb_stop">Parar</string>
+    <string name="onb_selected">Selecionado</string>
+
+    <!-- welcome -->
+    <string name="onb_welcome_title">Boas-vindas ao\nmochy!</string>
+    <string name="onb_welcome_subtitle">Uma nova maneira de ouvir e ter sua\nmúsica, de um jeito diferente.</string>
+
+    <!-- photo cropper -->
+    <string name="onb_adjust_photo">Ajuste sua foto de perfil</string>
+    <string name="onb_select_new_image">Selecionar nova imagem</string>
+
+    <!-- import -->
+    <string name="onb_import_title">Importando músicas</string>
+    <string name="onb_import_ask_subtitle">Quer importar músicas de outras plataformas, como Spotify, Apple Music, Tidal ou SoundCloud, ou sincronizar seus dados com o YouTube Music?</string>
+    <string name="onb_import_mode_subtitle">o que você quer fazer?</string>
+    <string name="onb_import_previous_title">Importar dados anteriores</string>
+    <string name="onb_import_previous_desc">o arquivo .zip exportado do seu app antigo, com sua biblioteca, histórico, downloads e configurações</string>
+    <string name="onb_import">Importar</string>
+    <string name="onb_import_desc">importe músicas, playlists e álbuns de serviços compatíveis, como Apple Music, Spotify, Tidal e YouTube Music</string>
+    <string name="onb_import_backup_title">Importar de um backup</string>
+    <string name="onb_import_backup_desc">caso você tenha um backup do Mochy</string>
+
+    <!-- restoring previous data -->
+    <string name="onb_all_set">Tudo pronto!</string>
+    <string name="onb_bringing_over">Trazendo suas músicas</string>
+    <string name="onb_restart_once">O Mochy será reiniciado uma vez para concluir. Até já!</string>
+    <string name="onb_restore_counts">%1$s, %2$s e %3$s do seu app antigo.</string>
+    <string name="onb_reading_export">Lendo sua exportação…</string>
+    <string name="onb_restarting">Reiniciando…</string>
+    <string name="onb_restore_progress">%1$d%% · mantenha o Mochy aberto; ele será reiniciado automaticamente quando terminar</string>
+    <plurals name="onb_songs">
+        <item quantity="one">%1$,d música</item>
+        <item quantity="other">%1$,d músicas</item>
+    </plurals>
+    <plurals name="onb_playlists">
+        <item quantity="one">%1$,d playlist</item>
+        <item quantity="other">%1$,d playlists</item>
+    </plurals>
+    <plurals name="onb_plays">
+        <item quantity="one">%1$,d reprodução</item>
+        <item quantity="other">%1$,d reproduções</item>
+    </plurals>
+
+    <!-- provider -->
+    <string name="onb_select_provider">Selecionar serviço</string>
+    <string name="onb_provider_spotify_desc">Músicas curtidas e playlists</string>
+    <string name="onb_provider_apple_desc">Playlists da biblioteca e músicas favoritas</string>
+    <string name="onb_provider_youtube_desc">Músicas curtidas e playlists · também oferece sincronização</string>
+    <string name="onb_provider_tidal_desc">Minhas faixas e suas playlists</string>
+    <string name="onb_or">ou</string>
+    <string name="onb_import_from_link">Importar por link de playlist</string>
+    <string name="onb_import_from_link_desc">Spotify, Apple Music, YouTube, Deezer ou SoundCloud. Não é necessário entrar na conta.</string>
+    <string name="onb_link_title">Cole um link</string>
+    <string name="onb_link_subtitle">Qualquer playlist ou álbum público do Spotify, Apple Music, YouTube Music, Deezer ou SoundCloud.</string>
+    <string name="onb_link_hint">Link da playlist ou do álbum</string>
+    <string name="onb_link_paste">Colar</string>
+    <string name="onb_link_clear">Limpar</string>
+    <string name="onb_link_read">Ler playlist</string>
+    <string name="onb_link_reading">Lendo…</string>
+    <string name="onb_link_reading_body">Lendo a playlist…</string>
+    <string name="onb_link_unknown">Ainda não conseguimos ler links desse serviço.</string>
+    <string name="onb_link_source_songs">%1$s · %2$s</string>
+    <string name="onb_link_by">por %1$s</string>
+    <plurals name="onb_link_import_songs">
+        <item quantity="one">Importar %d música</item>
+        <item quantity="other">Importar %d músicas</item>
+    </plurals>
+    <string name="onb_provider_setup_title">Configuração de %1$s</string>
+    <string name="onb_provider_setup_subtitle">Você entrará na sua conta. Nunca vemos sua senha. Uma página da web será aberta.</string>
+    <string name="onb_sign_in_again">Entrar novamente</string>
+    <string name="onb_try_again">Tentar novamente</string>
+    <string name="onb_open_sign_in">Abrir página de login</string>
+    <string name="onb_provider_setup_body">Entre na sua conta pela página oficial de %1$s. Depois que você entrar, a página será fechada e suas playlists aparecerão aqui.</string>
+    <string name="onb_sign_in_to">Entrar no %1$s</string>
+
+    <!-- what to import -->
+    <string name="onb_what_to_import">O que importar</string>
+    <string name="onb_signed_in_as">Conectado como %1$s</string>
+    <string name="onb_choose_what_to_import">Escolha o que importar</string>
+    <string name="onb_import_count">Importar %1$d</string>
+    <string name="onb_reading_progress">%1$s (%2$d de %3$d)</string>
+    <string name="onb_select_none">Desmarcar tudo</string>
+    <string name="onb_select_all">Selecionar tudo</string>
+    <string name="onb_nothing_in_account">Esta conta ainda não tem conteúdo.</string>
+
+    <!-- sync options -->
+    <string name="onb_sync_title">Quer manter tudo sincronizado também?</string>
+    <string name="onb_sync_subtitle">O YouTube Music pode ficar sincronizado com o Mochy: playlists, curtidas e histórico nos dois sentidos.</string>
+    <string name="onb_import_and_sync">Importar e sincronizar</string>
+    <string name="onb_just_import">Apenas importar</string>
+    <string name="onb_sync_launch_title">Sincronizar biblioteca ao abrir</string>
+    <string name="onb_sync_launch_desc">Curtidas, biblioteca e playlists selecionadas sempre que o Mochy for aberto</string>
+    <string name="onb_sync_new_playlists_title">Novas playlists também vão para o YouTube</string>
+    <string name="onb_sync_new_playlists_desc">As playlists criadas aqui também serão criadas no YouTube</string>
+    <string name="onb_sync_push_plays_title">Enviar reproduções para o histórico do YouTube</string>
+    <string name="onb_sync_push_plays_desc">O que você ouvir aqui também aparecerá no seu histórico do YouTube</string>
+    <string name="onb_sync_bring_history_title">Trazer o histórico do YouTube para cá</string>
+    <string name="onb_sync_bring_history_desc">As reproduções dos seus outros dispositivos entrarão no histórico do Mochy</string>
+
+    <!-- profile -->
+    <string name="onb_profile_title">Vamos criar seu perfil!</string>
+    <string name="onb_never_store">O Mochy nunca armazenará seus dados on-line!</string>
+    <string name="onb_username_prompt">qual é seu nome de usuário?</string>
+    <string name="onb_username_hint">nome de usuário</string>
+    <string name="onb_set_photo">Adicione uma foto de perfil aqui!</string>
+    <string name="onb_profile_picture">Foto de perfil</string>
+    <string name="onb_add_profile_picture">Adicionar foto de perfil</string>
+    <string name="onb_card_profile_usr">PERFIL USR#%1$s</string>
+    <string name="onb_card_id_of">IDENTIDADE DE</string>
+    <string name="onb_card_of_name">CARTÃO DE %1$s</string>
+
+    <!-- hello / done -->
+    <string name="onb_hello">Olá!</string>
+    <string name="onb_welcome_to_mochy">boas-vindas ao mochy!</string>
+    <string name="onb_all_good">Tudo pronto para começar</string>
+
+    <!-- blur warning -->
+    <string name="onb_warning">Aviso</string>
+    <string name="onb_blur_warning_body">Seu celular pode não ter potência suficiente para executar os efeitos de desfoque. Quer desativá-los? Você pode mudar isso nas Configurações quando quiser.</string>
+    <string name="onb_disable_blur">Desativar desfoque</string>
+    <string name="onb_measured">Medido: %1$s</string>
+    <string name="onb_continue">continuar</string>
+    <string name="onb_no_continue">não, continuar</string>
+    <string name="onb_blur_needs_android_12">O desfoque requer Android 12</string>
+    <string name="onb_blur_slow_frames">%1$d%% de quadros lentos a %2$d Hz</string>
+    <string name="onb_blur_low_memory">%1$s · dispositivo com pouca memória</string>
+
+    <!-- last one -->
+    <string name="onb_last_one">Última etapa</string>
+    <string name="onb_last_one_subtitle">Desative o que não quiser usar</string>
+    <string name="onb_auto_crossfade_title">Transição automática</string>
+    <string name="onb_auto_crossfade_desc">Faz transições automáticas, analisando o tom, o ritmo e outros elementos para escolher o momento ideal</string>
+    <string name="onb_ai_filter_title">Filtro de artistas por IA</string>
+    <string name="onb_ai_filter_desc">Desativar isso pode resultar em recomendações de IA de qualidade inferior</string>
+</resources>

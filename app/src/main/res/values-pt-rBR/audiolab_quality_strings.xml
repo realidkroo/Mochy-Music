@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="aq_title_first">Áudio</string>
+    <string name="aq_title_second">Qualidade</string>
+    <string name="aq_nothing_on">Nenhum serviço está ativo</string>
+    <string name="aq_turn_provider_on">Ative um serviço</string>
+    <string name="aq_youtube_tier">YouTube · %1$s</string>
+    <string name="aq_section_streaming">Transmissão</string>
+    <string name="aq_section_download">Download</string>
+    <string name="aq_section_provider">Serviço</string>
+    <string name="aq_youtube_status_on">Reproduz o que os outros serviços não têm</string>
+    <string name="aq_youtube_status_off_none">Desativado e sem outro serviço ativo; as músicas não serão reproduzidas</string>
+    <string name="aq_youtube_status_off">Desativado: músicas que os outros serviços não têm serão ignoradas</string>
+    <string name="aq_quality_auto">Automática</string>
+    <string name="aq_quality_high">Alta</string>
+    <string name="aq_quality_medium">Média</string>
+    <string name="aq_quality_low">Baixa</string>
+    <string name="aq_quality_lossless">Sem perdas</string>
+    <string name="aq_desc_auto">Alta no Wi-Fi, média nos dados móveis</string>
+    <string name="aq_desc_high">A melhor qualidade oferecida pelo serviço: menos compressão, mais dados</string>
+    <string name="aq_desc_medium">Cerca de 128 kbps, com menor consumo de dados</string>
+    <string name="aq_desc_low">Os menores fluxos, para conexões lentas</string>
+    <string name="aq_fmt_adaptive">Adaptável</string>
+    <string name="aq_fmt_high">~160 kbps · Opus</string>
+    <string name="aq_fmt_medium">~128 kbps · AAC</string>
+    <string name="aq_fmt_low">~50–70 kbps · Opus</string>
+    <string name="aq_desc_monochrome_lossless">FLAC, na qualidade oferecida pelo Monochrome: qualidade de CD ou superior</string>
+    <string name="aq_module_settings">Configurações de %1$s</string>
+    <string name="aq_dl_desc_high">O melhor que o YouTube oferece: ~160 kbps Opus</string>
+    <string name="aq_dl_desc_medium">Cerca de 128 kbps, ocupando metade do espaço</string>
+    <string name="aq_dl_desc_low">Os menores arquivos, ~50–70 kbps</string>
+    <string name="aq_status_sign_in">Entre na conta para reproduzir por este serviço</string>
+    <string name="aq_status_sign_in_again">Entrar novamente</string>
+    <string name="aq_status_on">Ativado</string>
+    <string name="aq_status_off_tap">Desativado; toque para ativar</string>
+    <string name="aq_status_not_installed">Não instalado</string>
+</resources>

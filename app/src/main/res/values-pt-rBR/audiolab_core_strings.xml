@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="lab_back">Voltar</string>
+    <string name="lab_equalizer">Equalizador</string>
+    <string name="lab_audio_effect">Efeito de áudio</string>
+    <string name="lab_audio_quality">Qualidade do áudio</string>
+    <string name="lab_transition">Transição</string>
+    <string name="lab_status_off">DESATIVADO</string>
+    <string name="lab_status_all_off">TUDO DESATIVADO</string>
+    <string name="lab_status_custom">Personalizado</string>
+    <string name="lab_transition_off">Desativada</string>
+    <string name="lab_transition_auto">Automática</string>
+    <string name="lab_transition_manual">Manual</string>
+    <string name="lab_transition_crossmix">CrossMix</string>
+    <string name="lab_quality_monochrome">Monochrome · Sem perdas</string>
+    <string name="lab_quality_apple_music">Apple Music · AAC</string>
+    <string name="lab_quality_youtube">YouTube · %1$s</string>
+    <string name="lab_quality_low">Baixa</string>
+    <string name="lab_quality_medium">Média</string>
+    <string name="lab_quality_high">Alta</string>
+    <string name="lab_quality_auto">Automática</string>
+    <string name="lab_effects_and_more">%1$s e mais %2$d</string>
+    <string name="lab_effect_reverb">Reverberação</string>
+    <string name="lab_effect_loudness">Intensidade sonora</string>
+    <string name="lab_effect_spatial">Espacial</string>
+    <string name="lab_effect_surround">Surround</string>
+    <string name="lab_effect_mono">Mono</string>
+    <string name="lab_effect_playback">Reprodução</string>
+    <string name="lab_effect_volume">Volume</string>
+    <string name="lab_effect_stage">Simulação 3D</string>
+    <string name="lab_fx_on">ATIVADO</string>
+    <string name="lab_fx_position">%1$d de %2$d</string>
+    <string name="lab_fx_and_other">e mais %1$d</string>
+</resources>

@@ -1,0 +1,114 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- device integration: the sheet that lists paired devices -->
+    <string name="devices_title">Integração entre dispositivos</string>
+    <string name="devices_row_detail">Conecte sua TV, outro celular ou tablet na mesma rede Wi-Fi</string>
+    <string name="devices_hero">Conecte até 10 dispositivos à sua rede Wi-Fi: outro celular, tablet, TV, central multimídia do carro e muito mais.</string>
+    <string name="devices_mine">Meus dispositivos</string>
+    <string name="devices_add_more">Adicione mais dispositivos aqui</string>
+    <string name="devices_full">Você atingiu o limite de 10 dispositivos que um celular pode manter. Desconecte um para adicionar outro.</string>
+    <string name="devices_options">Opções</string>
+    <string name="devices_control">Controlar</string>
+    <string name="devices_controlling_button">Controlando</string>
+    <string name="devices_device_settings">Configurações do dispositivo</string>
+    <string name="devices_status_controlling">Controlando-o por aqui</string>
+    <string name="devices_status_connected_detail">Você pode controlar os dispositivos entre si</string>
+    <string name="devices_stay_reachable">Permanecer acessível em segundo plano</string>
+    <string name="devices_stay_reachable_detail">Seus dispositivos podem sincronizar, transmitir e controlar mesmo quando o Mochy estiver fechado. Uma notificação discreta será exibida.</string>
+    <string name="devices_in_player_menu">Mostrar meus dispositivos no menu do player</string>
+    <string name="devices_in_player_menu_detail">Reproduza neles, organize músicas na fila ou controle-os pelo menu do player</string>
+    <string name="devices_notification_title">Seus dispositivos podem acessar este celular</string>
+    <string name="devices_notification_text">%1$s pode sincronizar, transmitir e controlar a partir daqui</string>
+    <string name="devices_kind_phone">Celular</string>
+    <string name="devices_kind_tablet">Tablet</string>
+    <string name="devices_kind_tv">TV</string>
+    <string name="devices_kind_car">Carro</string>
+
+    <!-- one device's own sheet -->
+    <string name="devices_ok">OK</string>
+    <string name="devices_remote_control">Ativar controle remoto</string>
+    <string name="devices_remote_control_tv_detail">Reproduza, avance faixas e altere as configurações da TV por este celular</string>
+    <string name="devices_remote_control_phone_detail">Controle a reprodução e altere as configurações de um celular pelo outro</string>
+    <string name="devices_auto_control">Assumir o controle quando conectar</string>
+    <string name="devices_auto_control_detail">Assim que o Mochy abrir nele, este celular se tornará o controle remoto</string>
+    <string name="devices_stream_local">Transmitir arquivos locais deste dispositivo</string>
+    <string name="devices_stream_local_detail">Seus downloads e arquivos de música serão reproduzidos nele diretamente deste celular</string>
+    <string name="devices_override_library">Substituir biblioteca do dispositivo</string>
+    <string name="devices_override_library_detail">A biblioteca dele será substituída pela deste celular e mantida sincronizada</string>
+    <string name="devices_sync_now">Sincronizar agora</string>
+    <string name="devices_sync_asked">%1$s está recebendo sua biblioteca atualizada</string>
+    <string name="devices_unlink_question">Desconectar %1$s? Ele manterá o que já possui.</string>
+
+    <!-- adding a device -->
+    <string name="devices_add_title">Adicionar dispositivo</string>
+    <string name="devices_pairing_code">Código do modo de pareamento</string>
+    <string name="devices_detected">Detectado</string>
+    <string name="devices_looking">Procurando dispositivos…</string>
+    <string name="devices_looking_detail">Abra a opção Adicionar dispositivo no outro celular ou a página do celular no Mochy da sua TV</string>
+    <string name="devices_connect">Conectar</string>
+    <string name="devices_or">Ou</string>
+    <string name="devices_enter_code">Inserir código</string>
+    <string name="devices_enter_code_none">Nenhum dispositivo está em modo de pareamento nesta rede Wi-Fi. Ative esse modo no outro dispositivo primeiro.</string>
+    <string name="devices_pair_detail">Digite o código exibido por %1$s</string>
+    <string name="devices_paired_with">Pareado com %1$s</string>
+    <string name="devices_wrong_code">Esse código não corresponde. Confira a outra tela e tente novamente.</string>
+    <string name="devices_pair_full">Um dos dispositivos já atingiu o limite de 10 conexões. Desconecte um primeiro.</string>
+    <string name="devices_pair_failed">Não foi possível conectar. Confira se ambos estão na mesma rede Wi-Fi.</string>
+    <string name="devices_pair_outdated">Esse dispositivo está usando uma versão antiga do Mochy. Atualize-o e tente o código novamente</string>
+
+    <!-- remote control mode -->
+    <string name="remote_controlling">Controlando %1$s</string>
+    <string name="remote_stop">Parar de controlar</string>
+    <string name="remote_playing">Reproduzindo</string>
+    <string name="remote_paused">Pausado</string>
+    <string name="remote_connecting">Consultando o que está tocando…</string>
+    <string name="remote_unreachable">Não foi possível acessar agora. O Mochy está aberto nele?</string>
+    <string name="remote_up_next">A seguir</string>
+    <string name="remote_hand_over">Reproduzir a fila deste celular em %1$s</string>
+    <string name="remote_queued_on">Adicionado à fila de %1$s</string>
+    <string name="remote_like">Curtir</string>
+    <string name="remote_add_to_playlist">Adicionar à playlist</string>
+    <string name="remote_previous">Anterior</string>
+    <string name="remote_play_pause">Reproduzir ou pausar</string>
+    <string name="remote_next">Próxima</string>
+    <string name="remote_remove_from_queue">Remover da fila</string>
+    <string name="remote_settings_on">Configurações em %1$s</string>
+    <string name="remote_settings_loading">Carregando as configurações…</string>
+    <string name="remote_settings_failed">Não foi possível obter as configurações. Confira se o Mochy está aberto lá e permite que este celular o controle.</string>
+    <string name="remote_settings_retry">Tentar novamente</string>
+    <string name="remote_setting_failed">Não foi possível alterar isso em %1$s</string>
+    <string name="remote_seconds">%1$d s</string>
+
+    <!-- the settings a controlling phone sees, sent by the device that has them -->
+    <string name="link_section_playback">Reprodução</string>
+    <string name="link_section_audio_lab">Laboratório de áudio</string>
+    <string name="link_section_youtube">YouTube</string>
+    <string name="link_section_player">Player</string>
+    <string name="link_setting_transition">Transição entre músicas</string>
+    <string name="link_transition_off">Desativada</string>
+    <string name="link_transition_auto">Transição automática</string>
+    <string name="link_transition_manual">Transição manual</string>
+    <string name="link_transition_crossmix">Crossmix</string>
+    <string name="link_setting_crossfade_length">Duração da transição</string>
+    <string name="link_setting_transport_fade">Efeito ao reproduzir, pausar e avançar</string>
+    <string name="link_setting_skip_silence">Pular silêncios</string>
+    <string name="link_setting_normalize">Uniformizar volume das músicas</string>
+    <string name="link_setting_autoplay">Continuar reproduzindo músicas semelhantes</string>
+    <string name="link_setting_eq">Equalizador</string>
+    <string name="link_setting_eq_preset">Curva do equalizador</string>
+    <string name="link_setting_loudness">Reforço de volume</string>
+    <string name="link_setting_reverb">Reverberação</string>
+    <string name="link_setting_spatial">Áudio espacial</string>
+    <string name="link_setting_speed">Velocidade</string>
+    <string name="link_speed_times">%1$s×</string>
+    <string name="link_setting_audio_quality">Qualidade do áudio</string>
+    <string name="link_quality_auto">Automática</string>
+    <string name="link_quality_high">Alta</string>
+    <string name="link_quality_medium">Média</string>
+    <string name="link_quality_low">Baixa</string>
+    <string name="link_setting_video_quality">Qualidade do vídeo</string>
+    <string name="link_video_lines">%1$dp</string>
+    <string name="link_setting_studio_for_videos">Reproduzir a versão de estúdio nos videoclipes</string>
+    <string name="link_setting_data_saver">Economia de dados</string>
+    <string name="link_setting_player_style">Aparência do player</string>
+</resources>
