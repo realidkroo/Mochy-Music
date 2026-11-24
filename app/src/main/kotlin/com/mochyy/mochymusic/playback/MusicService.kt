@@ -121,6 +121,7 @@ import com.mochyy.mochymusic.constants.UsbPassthroughKey
 import com.mochyy.mochymusic.constants.AudioPassMode
 import com.mochyy.mochymusic.constants.AudioPassModeKey
 import com.mochyy.mochymusic.constants.AudioPassFixedVolumeKey
+import com.mochyy.mochymusic.constants.UsbDriverKey
 import com.mochyy.mochymusic.constants.AudioPassRestoreKey
 import com.mochyy.mochymusic.constants.CrossmixLength
 import com.mochyy.mochymusic.constants.CrossmixLengthKey
@@ -1210,8 +1211,9 @@ class MusicService :
                 blocked = blockers.isNotEmpty(),
                 fixedVolume = prefs[AudioPassFixedVolumeKey] ?: false,
             )
-        }.distinctUntilChanged().collect(scope) { audioPass.update(it.enabled, it.mode, it.blocked, it.fixedVolume) }
+        }.distinctUntilChanged().collect(scope) { audioPass.update(it.enabled, it.mode, it.blocked, it.fixedVolume, it.driver) }
 
+                driver = prefs[UsbDriverKey].toEnum(com.mochyy.mochymusic.playback.audio.pass.UsbDriver.MOCHY),
         currentSong.debounce(1000).collect(scope) { song ->
             updateNotification()
             updateWidgetUI(player.isPlaying)
@@ -6013,7 +6015,13 @@ private val NoLyricCue = WidgetLyricTracker.Cue("", "")
 private const val PositionSaveStepMs = 2_000L
 
 // the passthrough switch, its mode and whether anything shapes the sound, compared as one so audio pass hears each change once
-private data class PassSettings(val enabled: Boolean, val mode: AudioPassMode, val blocked: Boolean, val fixedVolume: Boolean)
+private data class PassSettings(
+    val enabled: Boolean,
+    val mode: AudioPassMode,
+    val blocked: Boolean,
+    val fixedVolume: Boolean,
+    val driver: com.mochyy.mochymusic.playback.audio.pass.UsbDriver,
+)
 
 // reads a restore point from an older version even if fields were added since
 private val passJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }

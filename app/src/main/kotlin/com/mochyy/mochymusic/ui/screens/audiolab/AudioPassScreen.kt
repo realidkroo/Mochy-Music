@@ -52,6 +52,7 @@ import androidx.navigation.NavController
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.AudioPassFixedVolumeKey
+import com.mochyy.mochymusic.constants.UsbDriverKey
 import com.mochyy.mochymusic.constants.AudioPassMode
 import com.mochyy.mochymusic.constants.AudioPassModeKey
 import com.mochyy.mochymusic.constants.HiFiResamplerKey
@@ -66,6 +67,7 @@ import com.mochyy.mochymusic.playback.audio.UsbDacDetails
 import com.mochyy.mochymusic.playback.audio.UsbDacReader
 import com.mochyy.mochymusic.playback.audio.pass.AudioPass
 import com.mochyy.mochymusic.playback.audio.pass.PassBlocker
+import com.mochyy.mochymusic.playback.audio.pass.UsbDriver
 import com.mochyy.mochymusic.ui.component.AppSwitch
 import com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
@@ -524,6 +526,30 @@ private fun DirectUsbCard(
             checked = fixedVolume,
             onCheckedChange = onFixedVolume,
         )
+        UsbDriverPicker()
+    }
+}
+
+// mochy's own way to the dac, or libusb for one that clicks, stays silent or won't start with it
+@Composable
+private fun UsbDriverPicker() {
+    val (driverName, onDriver) = rememberPreference(UsbDriverKey, defaultValue = UsbDriver.MOCHY.name)
+    val drivers = UsbDriver.entries
+    val picked = drivers.indexOfFirst { it.name == driverName }.coerceAtLeast(0)
+    Column(Modifier.padding(horizontal = 6.dp, vertical = 6.dp)) {
+        Text(
+            stringResource(R.string.audiopass_usb_driver),
+            fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color.White,
+        )
+        Spacer(Modifier.height(8.dp))
+        LabSelect(
+            options = listOf(stringResource(R.string.audiopass_usb_driver_mochy), stringResource(R.string.audiopass_usb_driver_libusb)),
+            selectedIndex = picked,
+            onSelect = { onDriver(drivers[it].name) },
+            contentDescription = stringResource(R.string.audiopass_usb_driver),
+        )
+        Spacer(Modifier.height(6.dp))
+        Note(stringResource(R.string.audiopass_usb_driver_desc))
     }
 }
 
