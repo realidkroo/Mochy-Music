@@ -16,6 +16,7 @@
 
   function byId(id) { return document.getElementById(id); }
   function text(id, value) { var n = byId(id); if (n) n.textContent = value == null ? "" : String(value); }
+  function setMeta(value, label) { var n = byId("dlMeta"); if (!n) return; n.textContent = value; n.setAttribute("aria-label", label); }
   function show(id, on) { var n = byId(id); if (n) n.hidden = !on; }
 
   var REVEAL = ".rel-head > *, .rel-grid > *, .rel-cta, .rel-nightly, .rel-cmp, .rel-sections > *, .rel-older, .rel-timeline > article, .rel-bottom";
@@ -194,7 +195,7 @@
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "rel-show-all";
-    btn.textContent = "Show all";
+    btn.textContent = "show all";
     btn.addEventListener("click", function () {
       body.classList.remove("clamped");
       if (btn.parentNode) btn.parentNode.removeChild(btn);
@@ -204,13 +205,13 @@
 
   function chip(label, href, kind) {
     var a = document.createElement("a");
-    a.className = "rel-chip" + (kind ? " " + kind : "");
+    a.className = "rel-chip press" + (kind ? " " + kind : "");
     a.textContent = label;
     a.href = href;
     return a;
   }
   function notesLink(r) {
-    var a = chip("Notes", "changelog.html#" + slug(r.tag_name), "notes");
+    var a = chip("notes", "changelog.html#" + slug(r.tag_name), "notes");
     a.title = "Read release notes";
     return a;
   }
@@ -263,7 +264,7 @@
   }
 
   /* ---------- download page ---------- */
-  var dl = { channel: "stable", selected: "arm64", list: [], page: 1, commits: {} };
+  var dl = { channel: "stable", selected: "arm64", list: [], page: 1, commits: {}, entered: false };
 
   function currentRelease() {
     if (dl.channel === "nightly") return nightlyOf(dl.list);
@@ -271,7 +272,7 @@
   }
   function fillVariant(kind, r) {
     var a = pickAsset(r, kind);
-    text("file-" + kind, a ? a.name : "No APK in this release");
+    text("file-" + kind, a ? a.name : "no apk in this release");
     text("meta-" + kind, a ? sizeOf(a) + " · " + Number(a.download_count || 0).toLocaleString("en-GB") + " downloads" : "");
     var card = byId("variant-" + kind);
     if (card) {
@@ -284,7 +285,7 @@
     if (!r) return;
     var a = pickAsset(r, dl.selected);
     text("selected-name", (dl.channel === "nightly" ? "Nightly" : version(r)) + " · " + (dl.selected === "arm64" ? "arm64" : "Universal"));
-    text("selected-file", a ? a.name : "No APK in this release");
+    text("selected-file", a ? a.name : "no apk in this release");
     var btn = byId("downloadBtn");
     if (btn) {
       btn.href = a ? a.browser_download_url : ((r && r.html_url) || FALLBACK);
@@ -309,13 +310,13 @@
         if (!/^[0-9a-f]{7,40}$/i.test(sha)) throw new Error("bad sha");
         dl.commits[ref] = sha.slice(0, 7);
         if (dl.channel === "nightly" && currentRelease() === r) {
-          text("dlMeta", "Built " + buildDate(r) + " · commit " + dl.commits[ref]);
+          setMeta(buildDate(r) + " · #" + dl.commits[ref], "Nightly build from " + buildDate(r) + ", commit " + dl.commits[ref]);
         }
       })
       .catch(function () {
         dl.commits[ref] = "unknown";
         if (dl.channel === "nightly" && currentRelease() === r) {
-          text("dlMeta", "Built " + buildDate(r) + " · commit unknown");
+          setMeta(buildDate(r) + " · #—", "Nightly build from " + buildDate(r) + ", commit unknown");
         }
       });
   }
@@ -335,22 +336,23 @@
     show("dlSkeleton", false);
     show("dlError", false);
     show("dlContent", true);
+    if (!dl.entered) { var box = byId("dlContent"); if (box) box.classList.add("rel-enter"); dl.entered = true; }
     show("nightlyOnly", nightlyOn);
     observeReveals();
-    text("dlBadge", nightlyOn ? "NIGHTLY" : "LATEST");
     var meta;
     if (nightlyOn) {
       var sha = dl.commits[commitRef(r)] || commitOf(r) || "…";
-      meta = "Built " + buildDate(r) + " · commit " + sha;
+      meta = buildDate(r) + " · #" + sha;
+      setMeta(meta, "Nightly build from " + buildDate(r) + ", commit " + sha);
     } else {
-      meta = "Mochy " + version(r) + " · " + dateOf(r.published_at);
+      meta = version(r) + " · " + dateOf(r.published_at);
+      setMeta(meta, "Mochy " + version(r) + ", published " + dateOf(r.published_at));
     }
-    text("dlMeta", meta);
     if (nightlyOn) resolveCommit(r);
     text("dlTitle", nightlyOn ? "Mochy Nightly" : "Download Mochy");
     text("dlIntro", nightlyOn
       ? "Test builds made from the newest code. You get new things first, and new bugs too."
-      : "Pick the build that matches your phone. Not sure? Take arm64, it fits almost every phone from the last 8 years.");
+      : "two builds. pick the one that fits. not sure? take arm64. it fits most phones from the last 8 years.");
     fillVariant("arm64", r);
     fillVariant("universal", r);
     renderSelected(r);
@@ -366,20 +368,28 @@
   function initDownload() {
     var stableTab = byId("channelStable");
     var nightlyTab = byId("channelNightly");
-    function refresh() {
+    var seg = document.querySelector(".rel-segmented");
+    function refresh(channel) {
       var box = byId("dlContent");
       if (!box) return;
-      // reflow between class changes so the fade restarts on every switch
-      box.classList.remove("rel-refresh");
+      if (seg) seg.setAttribute("data-channel", channel);
+      // restart the direction slide on every switch
+      box.classList.remove("rel-refresh", "to-nightly", "to-stable");
       void box.offsetWidth;
-      box.classList.add("rel-refresh");
+      box.classList.add("to-" + channel, "rel-refresh");
     }
     function pick(channel) {
+      if (channel === dl.channel) return;
       dl.channel = channel;
       if (stableTab) stableTab.setAttribute("aria-pressed", channel === "stable" ? "true" : "false");
       if (nightlyTab) nightlyTab.setAttribute("aria-pressed", channel === "nightly" ? "true" : "false");
+      var box = byId("dlContent");
+      if (box) {
+        // replay reveal so the new information arrives gradually
+        Array.prototype.forEach.call(box.querySelectorAll(REVEAL), function (el) { if (el !== seg) el.classList.remove("in"); });
+      }
       renderDownload(dl.list);
-      refresh();
+      refresh(channel);
     }
     if (stableTab) stableTab.addEventListener("click", function () { pick("stable"); });
     if (nightlyTab) nightlyTab.addEventListener("click", function () { pick("nightly"); });
@@ -419,25 +429,28 @@
     art.id = slug(r.tag_name);
     var when = document.createElement("div");
     when.className = "rel-when";
+    var head = document.createElement("div");
+    head.className = "rel-when-head";
     var v = document.createElement("div");
     v.className = "rel-ver" + (isMusicfy(r) ? " dim" : "");
     v.textContent = version(r);
-    when.appendChild(v);
-    var d = document.createElement("span");
-    d.className = "rel-sub";
-    d.textContent = dateOf(r.published_at);
-    when.appendChild(d);
+    head.appendChild(v);
     if (first) {
       var latest = document.createElement("span");
-      latest.className = "rel-badge";
-      latest.textContent = "Latest";
-      when.appendChild(latest);
+      latest.className = "rel-status";
+      latest.textContent = "latest";
+      head.appendChild(latest);
     } else if (isMusicfy(r)) {
       var old = document.createElement("span");
       old.className = "rel-badge quiet";
       old.textContent = "Musicfy";
-      when.appendChild(old);
+      head.appendChild(old);
     }
+    when.appendChild(head);
+    var d = document.createElement("span");
+    d.className = "rel-sub";
+    d.textContent = dateOf(r.published_at);
+    when.appendChild(d);
     var col = document.createElement("div");
     col.className = "rel-body-col";
     var card = document.createElement("div");

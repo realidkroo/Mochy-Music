@@ -9,10 +9,10 @@
 <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&amp;family=JetBrains+Mono:wght@400;500&amp;family=Space+Grotesk:wght@500;700&amp;display=swap">
-<link rel="stylesheet" href="assets/css/site.css?v=20261124a">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="assets/css/site.css?v=20261124b">
 <link rel="stylesheet" href="assets/css/home.css?v=20261107k">
-<link rel="stylesheet" href="assets/css/releases.css?v=20261124b">
+<link rel="stylesheet" href="assets/css/releases.css?v=20261124g">
 <script>document.documentElement.classList.add("js");</script>
 </head>
 <body class="dots home-page rel-page" data-page="changelog">
@@ -36,7 +36,7 @@
 
   <div class="rel-head">
     <h1>Changelog</h1>
-    <p class="rel-intro">Every stable release, newest first. Notes come from the release itself.</p>
+    <p class="rel-intro">every stable release, newest first. notes come straight from the release.</p>
   </div>
 
   <div id="changeSkeleton" class="rel-skeleton" role="status" aria-label="Loading changelog">
@@ -47,12 +47,12 @@
 
   <section id="changeError" class="rel-error" hidden>
     <p>Release data is unavailable right now.</p>
-    <a class="rel-btn" href="https://github.com/realidkroo/Mochy-Music/releases/latest">Open GitHub releases</a>
+    <a class="rel-btn press" href="https://github.com/realidkroo/Mochy-Music/releases/latest">Open GitHub releases</a>
   </section>
 
     <div id="changeList" class="rel-timeline"></div>
     <div class="rel-bottom">
-      <button id="moreChanges" class="rel-btn quiet" type="button" hidden>Load older releases</button>
+      <button id="moreChanges" class="rel-btn quiet press" type="button" hidden>Load older releases</button>
       <small>Full notes on <a href="https://github.com/realidkroo/Mochy-Music/releases">GitHub</a></small>
     </div>
 
@@ -78,6 +78,6 @@
 <!-- marked renders the notes, DOMPurify scrubs them before they go into innerHTML -->
 <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
-<script src="assets/js/releases.js?v=20261124b" defer></script>
+<script src="assets/js/releases.js?v=20261124g" defer></script>
 </body>
 </html>
