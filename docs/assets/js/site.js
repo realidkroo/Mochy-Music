@@ -1,4 +1,4 @@
-// buttons that spring back and the tour bar
+// the little bits of feel the homepage and the wiki borrow from the app: buttons that squish and spring back, and the tour's bottom bar
 (function () {
   // pressBounce: down squishes, up springs back past and settles
   document.addEventListener("pointerdown", function (e) {
@@ -14,7 +14,7 @@
     window.addEventListener("pointercancel", up);
   });
 
-  // tap a tab, show that page, slide the highlight
+  // the tour: tap a tab and the phone shows that page, the highlight sliding over the way the app's does
   document.querySelectorAll(".tour").forEach(function (tour) {
     var tabs = tour.querySelectorAll(".navbar button");
     var shots = tour.querySelectorAll(".phone img");

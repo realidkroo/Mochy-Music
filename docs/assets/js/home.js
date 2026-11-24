@@ -1,4 +1,4 @@
-// scroll poses, sliding strip, top bar, reveals and leaning phones
+// the homepage's motion: each sheet's pose from the scroll, the strip that slides sideways, the top bar, reveals and leaning phones
 (function () {
   var root = document.documentElement;
   var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -29,7 +29,7 @@
   function ease(t) { return 1 - Math.pow(1 - t, 3); }
   function n(v) { return Math.round(v * 100) / 100; }
 
-  // write a style only when it changed, so a still page costs nothing
+  // a style only written when it changed, so a still page costs nothing and a moving one never restyles a whole sheet
   function put(el, prop, value) {
     if (!el) return;
     var seen = el._seen || (el._seen = {});
@@ -42,7 +42,7 @@
     return isNaN(v) ? fallback : v;
   }
 
-  // find moving pieces once; the shaded sheet gets its own layer
+  // each sheet's moving pieces, found once; the dark shade that falls over a covered sheet is its own layer
   var parts = items.map(function (el) {
     var shade = null;
     if (el.classList.contains("scene")) {
@@ -66,7 +66,7 @@
     };
   });
 
-  // strip travel, pin length and each phone's rise
+  // how far the strip travels sideways, how long it stays pinned, and each phone's own rise and lean
   function measure() {
     parts.forEach(function (p) {
       p.slots.forEach(function (s) {

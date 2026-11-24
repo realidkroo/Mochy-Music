@@ -1,4 +1,4 @@
-// per-page routing, sidebar, search, copy buttons and demos
+// the wiki: one page per #name, the sidebar and search built from the articles, copy buttons, colours for json, and the little demos
 (function () {
   var pages = Array.prototype.slice.call(document.querySelectorAll(".page"));
   var toc = document.getElementById("toc");
@@ -59,7 +59,7 @@
     next.classList.remove("in");
     void next.offsetWidth;
     next.classList.add("in");
-    // jump to the top at once; smooth scrolling would fight the browser's own #name jump
+    // straight to the top, not the smooth scroll the rest of the site uses, and again after the browser's own jump to the #name
     toTop();
     requestAnimationFrame(toTop);
   }
@@ -75,7 +75,7 @@
   }
 
   var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // opened at a #name link, start at the title instead of the browser's jump
+  // opening a link to a page, the browser jumps to its article once everything has loaded; the page should open at its title instead
   window.addEventListener("load", function () { if (window.scrollY < 400) toTop(); });
   window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
   show(location.hash.slice(1));
@@ -86,7 +86,7 @@
     burger.setAttribute("aria-expanded", String(document.getElementById("side").classList.toggle("open")));
   });
 
-  // the folded sidebar sticks between visits
+  // the fold button tucks the sidebar away to just the brand, and it stays that way next visit
   // the head already folded it before the first paint, so this only syncs the button
   var root = document.documentElement;
   var fold = document.getElementById("sideFold");
@@ -189,7 +189,7 @@
       if (b.dataset.bar) document.getElementById("glassBar").className = "bar " + b.dataset.bar;
     });
   });
-  // a picked state drives the demo; "song" replays the pop
+  // the states demo: a picked state is set on the demo and the css blends to it; "song" plays the pop again like an event
   document.querySelectorAll(".demo-row[data-target]").forEach(function (row) {
     row.addEventListener("click", function (e) {
       var b = e.target.closest(".opt");
