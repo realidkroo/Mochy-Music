@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- estilo de reproductor nocturno -->
+    <string name="bedside_close">Cerrar el reproductor</string>
+    <string name="bedside_unlock_to_close">Desbloquear para cerrar el reproductor</string>
+    <string name="bedside_more">Más</string>
+    <string name="bedside_like">Me gusta</string>
+    <string name="bedside_now_playing">En reproducción</string>
+
+    <string name="bedside_lock_ask_title">¿Mantener el reloj en tu pantalla de bloqueo?</string>
+    <string name="bedside_lock_ask_body">Tu teléfono restringe apps en la pantalla de bloqueo hasta que lo permitas. En la siguiente pantalla, activa "Mostrar en pantalla de bloqueo".</string>
+    <string name="bedside_lock_ask_allow">Permitir</string>
+    <string name="bedside_lock_ask_later">Ahora no</string>
+
+    <string name="bedside_sheet_title">Modo nocturno</string>
+    <string name="bedside_rest_caption">Cuando no lo estás utilizando</string>
+    <string name="bedside_tint_off">Mantener blanco</string>
+    <string name="bedside_tint_off_caption">Los colores no cambian</string>
+    <string name="bedside_tint_orange">Naranja cálido</string>
+    <string name="bedside_tint_orange_caption">Todo se torna naranja suave, cómodo para vista cansada</string>
+    <string name="bedside_tint_cover">Color de la portada</string>
+    <string name="bedside_tint_cover_caption">Toma el color de la portada de la canción</string>
+    <string name="bedside_saver">Salvapantallas</string>
+    <string name="bedside_saver_caption">Atenúa y desplaza suavemente para evitar retención de imagen</string>
+    <string name="bedside_keep_awake">Mantener pantalla encendida</string>
+    <string name="bedside_keep_awake_caption">El teléfono no se suspenderá mientras esté abierto</string>
+    <string name="bedside_lock_screen">Mostrar en pantalla de bloqueo</string>
+    <string name="bedside_lock_screen_caption">Bloquea el teléfono con esta vista activa</string>
+    <string name="bedside_lock_blocked">Tu teléfono está bloqueando esta función</string>
+    <string name="bedside_lock_blocked_caption">Toca para activar \"Mostrar en pantalla de bloqueo\" para Mochy</string>
+    <string name="bedside_lock_blocked_tag">SOLUCIONAR</string>
+</resources>

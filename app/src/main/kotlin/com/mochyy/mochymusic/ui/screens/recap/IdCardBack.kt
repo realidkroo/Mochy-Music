@@ -46,8 +46,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import com.mochyy.mochymusic.R
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -178,6 +180,8 @@ internal fun IdCardBack(
     val modules = remember(payload) { Code128.encode(payload) }
     val measurer = rememberTextMeasurer()
     val haptics = LocalHapticFeedback.current
+    val verifiedLabel = stringResource(R.string.recap_stamp_verified)
+    val invalidLabel = stringResource(R.string.recap_stamp_invalid)
 
     BoxWithConstraints(
         modifier = modifier
@@ -207,7 +211,7 @@ internal fun IdCardBack(
                     if (s > 0f) drawScanner(modules, bars, s, v, u)
                     if (v != null && s >= 0.86f) {
                         val p = easeOutBack(((s - 0.86f) / 0.14f).coerceIn(0f, 1f))
-                        val label = if (v == ScanVerdict.Valid) "VERIFIED" else "INVALID"
+                        val label = if (v == ScanVerdict.Valid) verifiedLabel else invalidLabel
                         val color = if (v == ScanVerdict.Valid) ScanGreen else ScanRed
                         val layout = measurer.measure(label, stampStyle.copy(color = color), softWrap = false, maxLines = 1)
                         val center = bars.center

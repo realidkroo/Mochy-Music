@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_np_2x2">En reproducción 2×2</string>
+    <string name="widget_np_4x1">En reproducción 4×1</string>
+    <string name="widget_np_4x2">En reproducción 4×2</string>
+    <string name="widget_np_description">Tarjeta de reproductor actual con anterior, reproducción y siguiente</string>
+    <string name="widget_np_pill_description">Píldora del reproductor con me gusta, reproducción y repetición</string>
+    <string name="widget_np_preview_title">Título de la canción</string>
+    <string name="widget_np_preview_artist">Artista</string>
+    <string name="widget_np_preview_title_artist">Título de la canción - Artista</string>
+    <string name="widget_np_previous">Anterior</string>
+    <string name="widget_np_next">Siguiente</string>
+    <string name="widget_np_repeat">Repetir</string>
+    <string name="widget_np_lyrics_unavailable">Letras no disponibles</string>
+    <string name="widget_np_lyrics_loading">Buscando letras…</string>
+    <string name="widget_np_lyrics_not_synced">Las letras no están sincronizadas para esta canción</string>
+    <string name="widget_np_time_zero">00:00</string>
+</resources>

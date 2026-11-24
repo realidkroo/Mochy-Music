@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Saludos -->
+    <string name="profile_greeting_hello_again">Hola de nuevo</string>
+    <string name="profile_greeting_hey">Hey</string>
+    <string name="profile_greeting_welcome_back">Te damos la bienvenida de nuevo</string>
+    <string name="profile_greeting_good_to_see_you">Gusto en verte</string>
+    <string name="profile_greeting_fallback">por aquí</string>
+    <string name="profile_greeting_format">¡%1$s, %2$s!</string>
+
+    <!-- Encabezado de perfil y tarjeta de ID -->
+    <string name="profile_joined_at">unido el %1$s</string>
+    <string name="profile_pull_down_cd">Deslizar hacia abajo</string>
+    <string name="profile_swipe_down_hint">¡¡desliza hacia abajo aquí!!</string>
+    <string name="profile_scratch_hint">¡raspa aquí!</string>
+    <string name="profile_come_back_later">vuelve más tarde</string>
+    <string name="profile_swipe_up_to_close">desliza hacia arriba para cerrar</string>
+
+    <!-- Tarjeta de tiempo de escucha y estadísticas -->
+    <string name="profile_total_listening_time">"Tiempo total\nde escucha"</string>
+    <string name="profile_view_stats">"Ver estadísticas  &gt;"</string>
+    <string name="profile_unit_hour_short">h</string>
+    <string name="profile_unit_minute_short">m</string>
+
+    <!-- Versión y tarjeta Acerca de -->
+    <string name="profile_version_about_app">Versión y acerca de la app</string>
+    <string name="profile_capsule_about">Acerca de</string>
+    <string name="profile_capsule_update">Actualizar</string>
+
+    <!-- Comunidad y Ajustes -->
+    <string name="profile_meet_dev_contributors">conoce al dev y colaboradores :3</string>
+    <string name="profile_join_discord">¡Únete al servidor de Discord de Mochy!</string>
+    <string name="profile_discord_cd">Discord</string>
+    <string name="profile_settings_title">Ajustes</string>
+    <string name="profile_open_settings">Abrir ajustes</string>
+
+    <!-- Editar perfil -->
+    <string name="profile_edit_title">Editar perfil</string>
+    <string name="profile_data_privacy_hint">¡Mochy nunca guardará tus datos en línea!</string>
+    <string name="profile_done">Listo</string>
+    <string name="profile_username_label">nombre de usuario</string>
+    <string name="profile_username_placeholder">usuario</string>
+    <string name="profile_picture_label">foto de perfil</string>
+    <string name="profile_picture_cd">Foto de perfil</string>
+    <string name="profile_picture_add_cd">Añadir foto de perfil</string>
+
+    <!-- Página de perfil de usuario -->
+    <string name="profile_tag">PERFIL USR#%1$s</string>
+    <string name="profile_edit_button">Editar perfil</string>
+    <string name="profile_total_listens">Escuchas totales</string>
+    <plurals name="profile_unit_songs">
+        <item quantity="one">Canción</item>
+        <item quantity="many">Canciones</item>
+        <item quantity="other">Canciones</item>
+    </plurals>
+    <plurals name="profile_unit_minutes">
+        <item quantity="one">Min</item>
+        <item quantity="many">Mins</item>
+        <item quantity="other">Mins</item>
+    </plurals>
+    <plurals name="profile_unit_hours">
+        <item quantity="one">Hora</item>
+        <item quantity="many">Horas</item>
+        <item quantity="other">Horas</item>
+    </plurals>
+    <string name="profile_listening_to">Escuchando</string>
+    <string name="profile_recent_empty">Las canciones que reproduzcas aparecerán aquí.</string>
+    <string name="profile_your_playlists">Tus listas de reproducción</string>
+    <string name="profile_top_artists">Artistas principales</string>
+    <string name="profile_top_artists_empty">Los artistas que más escuches aparecerán aquí.</string>
+</resources>

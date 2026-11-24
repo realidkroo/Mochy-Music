@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pantalla de importación y sincronización -->
+    <string name="import_sync_title">Importar y sincronizar</string>
+    <string name="import_sync_progress_resyncing">Volviendo a sincronizar \"%1$s\"…</string>
+    <string name="import_sync_progress_importing_count">Importando… %1$d de %2$d</string>
+    <string name="import_sync_progress_stopped">Importación detenida</string>
+    <string name="import_sync_progress_resynced_single">Se resincronizó \"%1$s\": %2$s</string>
+    <string name="import_sync_progress_resynced_multiple">Se resincronizaron %1$d listas de reproducción: %2$s</string>
+    <string name="import_sync_progress_new_songs_single">1 canción nueva</string>
+    <string name="import_sync_progress_new_songs_multiple">%1$d canciones nuevas</string>
+    <string name="import_sync_progress_failed">Error de importación</string>
+    <string name="import_sync_progress_finished_count">Importación finalizada: %1$d de %2$d canciones</string>
+    <string name="import_sync_see_progress">Ver progreso</string>
+    <string name="import_sync_see_results">Ver resultados</string>
+    <string name="import_sync_import_title">Importar</string>
+    <string name="import_sync_import_desc">Inicia sesión y elige tus listas de reproducción</string>
+    <string name="import_sync_import_detail">Inicia sesión en Spotify, Apple Music, YouTube Music o Tidal y elige listas</string>
+    <string name="import_sync_sync_title">Sincronización</string>
+    <string name="import_sync_sync_desc_connected">Cuenta de YouTube conectada: listas, me gusta e historial</string>
+    <string name="import_sync_sync_desc_disconnected">Conecta tu cuenta de YouTube para mantener listas, me gusta e historial al día</string>
+    <string name="import_sync_tunemymusic_title">TuneMyMusic CSV</string>
+    <string name="import_sync_tunemymusic_desc">Amazon Music, SoundCloud, Deezer y más</string>
+    <string name="import_sync_tunemymusic_detail">Cualquier otro servicio, como bibliotecas de Amazon Music, SoundCloud o Deezer</string>
+    <string name="import_sync_backup_title">Copia de seguridad</string>
+    <string name="import_sync_export_csv_title">Exportar a Mochy CSV</string>
+    <string name="import_sync_export_csv_desc">Canciones que te gustan y listas de reproducción</string>
+    <string name="import_sync_export_csv_detail">Exporta tus canciones y listas para recuperarlas desde Importar → Copia de seguridad de Mochy</string>
+    <string name="import_sync_exporting">Exportando…</string>
+    <string name="import_sync_btn_ok">Aceptar</string>
+
+    <!-- Pantalla de sincronización de YouTube -->
+    <string name="yt_sync_account_header">Cuenta de YouTube</string>
+    <string name="yt_sync_signed_in">Sesión iniciada</string>
+    <string name="yt_sync_sign_out">Cerrar sesión</string>
+    <string name="yt_sync_sign_in_title">Iniciar sesión en YouTube</string>
+    <string name="yt_sync_sign_in_desc">Necesario para sincronizar. El inicio de sesión se mantiene en este teléfono</string>
+    <string name="yt_sync_keep_in_sync_header">Mantener sincronizado</string>
+    <string name="yt_sync_auto_sync_title">Sincronizar biblioteca al iniciar</string>
+    <string name="yt_sync_auto_sync_desc">Me gusta, biblioteca, artistas y listas guardadas desde YouTube</string>
+    <string name="yt_sync_new_playlists_title">Las nuevas listas van a YouTube</string>
+    <string name="yt_sync_new_playlists_desc">Las listas creadas aquí también se crean en tu cuenta de YouTube</string>
+    <string name="yt_sync_report_plays_title">Enviar reproducciones al historial de YouTube</string>
+    <string name="yt_sync_report_plays_desc">Las canciones escuchadas aquí aparecerán en tu historial de YouTube</string>
+    <string name="yt_sync_pull_history_title">Copiar historial de YouTube aquí</string>
+    <string name="yt_sync_pull_history_desc">Las reproducciones de otros dispositivos se unen al historial de Mochy</string>
+    <string name="yt_sync_other_apps_header">Otras aplicaciones</string>
+    <string name="yt_sync_now_header">Ahora</string>
+    <string name="yt_sync_now_title">Sincronizar ahora</string>
+    <string name="yt_sync_now_desc_history">Biblioteca, listas de reproducción e historial</string>
+    <string name="yt_sync_now_desc_no_history">Biblioteca y listas de reproducción</string>
+    <string name="yt_sync_pull_history_now_title">Copiar historial de YouTube ahora</string>
+    <string name="yt_sync_pull_history_now_desc">Solo añade reproducciones que Mochy no tenga aún</string>
+    <string name="yt_sync_upload_playlists_title">Subir listas locales a YouTube</string>
+    <string name="yt_sync_upload_playlists_desc">Copiar listas de reproducción locales a YouTube</string>
+    <string name="yt_sync_upload_playlists_detail">Crea una copia privada en YouTube de cada lista que solo exista localmente</string>
+    <string name="yt_sync_no_account_hint">Importar desde un enlace de lista de YouTube no requiere cuenta. Usa Importar → YouTube Music.</string>
+    <string name="yt_sync_dialog_sign_out_title">¿Cerrar sesión en YouTube?</string>
+    <string name="yt_sync_dialog_sign_out_body">Todo lo que ya esté en tu biblioteca se conservará. La sincronización se detendrá hasta que inicies sesión de nuevo.</string>
+    <string name="yt_sync_dialog_upload_title">¿Subir listas locales a YouTube?</string>
+    <string name="yt_sync_dialog_upload_create">Crear</string>
+    <string name="yt_sync_dialog_upload_body">Cada lista existente únicamente en Mochy obtendrá una copia privada en tu cuenta de YouTube.</string>
+    <string name="yt_sync_cancel">Cancelar</string>
+
+    <!-- Iniciar sesión en YouTube -->
+    <string name="yt_login_title">Iniciar sesión en YouTube</string>
+    <string name="yt_login_subtitle">Página oficial de inicio de sesión de Google. Mochy nunca ve tu contraseña.</string>
+    <string name="yt_login_signed_in_as">Sesión iniciada como %1$s</string>
+    <string name="yt_login_signed_in_general">Sesión iniciada en YouTube</string>
+    <string name="yt_login_failed">No se pudo completar el inicio de sesión. Inténtalo de nuevo.</string>
+    <string name="yt_login_back">Atrás</string>
+
+    <!-- Importar con TuneMyMusic -->
+    <string name="tunemymusic_info_intro">Funciona con cualquier servicio compatible con TuneMyMusic, incluyendo listas privadas y canciones que te gustan.</string>
+    <string name="tunemymusic_step_1">Abre TuneMyMusic y elige el servicio de origen (Spotify, Apple Music, Tidal, Amazon Music…).</string>
+    <string name="tunemymusic_step_2">Inicia sesión allí y elige las listas de reproducción a transferir.</string>
+    <string name="tunemymusic_step_3">Como destino, elige \"Exportar a archivo\", y luego CSV.</string>
+    <string name="tunemymusic_step_4">Vuelve aquí y selecciona el archivo .csv descargado.</string>
+    <string name="tunemymusic_open_site">Abrir TuneMyMusic</string>
+    <string name="tunemymusic_open_site_desc">tunemymusic.com en tu navegador</string>
+    <string name="tunemymusic_no_browser">No se encontró navegador</string>
+    <string name="tunemymusic_choose_file">Seleccionar archivo CSV</string>
+    <string name="tunemymusic_choose_file_desc">Archivos CSV de Exportify y otras plataformas también funcionan</string>
+
+    <!-- Proveedores de importación -->
+    <string name="import_providers_signin_header">Iniciar sesión y elegir</string>
+    <string name="import_provider_spotify_desc">Canciones que te gustan y tus listas de reproducción</string>
+    <string name="import_provider_apple_music_desc">Listas de biblioteca, Canciones favoritas y toda tu biblioteca</string>
+    <string name="import_provider_ytm_desc">Música preferida y tus listas · también compatible con sincronización</string>
+    <string name="import_provider_tidal_desc">Mis Pistas y tus listas de reproducción</string>
+    <string name="import_providers_link_header">O pega un enlace público</string>
+    <string name="import_link_spotify_desc">Listas públicas y álbumes</string>
+    <string name="import_link_apple_music_desc">Listas públicas y álbumes</string>
+    <string name="import_link_deezer_desc">Listas públicas y álbumes de cualquier longitud</string>
+    <string name="import_link_youtube_desc">Listas de reproducción y álbumes de canciones exactas</string>
+    <string name="import_link_soundcloud_desc">Listas públicas y álbumes</string>
+    <string name="import_providers_file_header">Desde un archivo</string>
+    <string name="import_mochy_backup_title">Copia de seguridad de Mochy</string>
+    <string name="import_mochy_backup_desc">Archivo CSV generado al exportar a Mochy CSV. Restaura canciones exactas</string>
+    <string name="import_tunemymusic_csv_desc">Listas privadas, canciones que te gustan y cualquier otro servicio</string>
+    <string name="import_providers_other_header">Otros servicios</string>
+    <string name="import_other_services_title">Amazon Music, SoundCloud, Pandora…</string>
+    <string name="import_other_services_desc">Mediante TuneMyMusic</string>
+    <string name="import_other_services_detail">Se procesan a través de TuneMyMusic con inicio de sesión directo</string>
+
+    <!-- Importación por cuenta -->
+    <string name="account_resync_looking">Buscando nuevas canciones en %1$s…</string>
+    <string name="account_resync_missing"> No se pudo encontrar %1$s allí.</string>
+    <string name="account_import_signin_title">Iniciar sesión en %1$s</string>
+    <string name="account_import_resync_subtitle">Página oficial de %1$s. Mochy solo lee la lista que estás resincronizando</string>
+    <string name="account_import_signin_subtitle">Página oficial de %1$s. Mochy solo lee tus listas de reproducción</string>
+    <string name="account_import_ytm_needs_signin">La importación de YouTube Music usa la cuenta conectada. Inicia sesión y luego elige tus listas.</string>
+    <string name="account_import_reading_count">(%1$d de %2$d)</string>
+    <string name="account_import_stop">Detener</string>
+    <string name="account_import_try_again">Reintentar</string>
+    <string name="account_import_signin_again">Iniciar sesión de nuevo</string>
+    <string name="account_import_pick_resync_prompt">No se encontró \"%1$s\" en tu biblioteca de %2$s. ¿Cuál es?</string>
+    <string name="account_import_not_in_account">No está en esta cuenta</string>
+    <string name="account_import_paste_link_instead">Pega el enlace de la lista de reproducción en su lugar</string>
+    <string name="account_import_in_library_count">%1$d en tu biblioteca</string>
+    <string name="account_import_song_single">1 canción</string>
+    <string name="account_import_songs_multiple">%1$d canciones</string>
+    <string name="account_import_signed_in_service">Sesión iniciada en %1$s</string>
+    <string name="account_import_manage_on_sync">Gestionar en la página de Sincronización</string>
+    <string name="account_import_use_different">Usar una cuenta diferente</string>
+    <string name="account_import_choose_what">Elige qué importar</string>
+    <string name="account_import_btn_single">Importar 1 seleccionada</string>
+    <string name="account_import_btn_multiple">Importar %1$d seleccionadas</string>
+    <string name="account_import_tick_below">Marca las listas de reproducción abajo</string>
+    <string name="account_import_next_add_yt">A continuación también puedes añadirlas a YouTube</string>
+    <string name="account_import_select_all">Seleccionar todo</string>
+    <string name="account_import_select_none">Deseleccionar todo</string>
+    <string name="account_import_ytm_sync_on_notice">La sincronización de biblioteca está activa, por lo que las listas guardadas ya están en tu biblioteca.</string>
+    <string name="account_import_no_playlists">No hay listas de reproducción en esta cuenta.</string>
+
+    <!-- Progreso de importación -->
+    <string name="import_progress_title_resync">Resincronizar</string>
+    <string name="import_progress_title_importing">Importando</string>
+    <string name="import_progress_songs_count">%1$d de %2$d canciones</string>
+    <string name="import_progress_status_stopped">Detenido</string>
+    <string name="import_progress_status_resync_failed">Error al resincronizar</string>
+    <string name="import_progress_status_done">Listo</string>
+    <string name="import_progress_status_no_import">Sin importación en curso</string>
+    <string name="import_progress_starting">Iniciando…</string>
+    <string name="import_progress_background_hint">Puedes salir de esta página; la importación continuará y te avisará al finalizar.</string>
+    <string name="import_progress_found_ytm">Encontrado en YouTube Music</string>
+    <string name="import_progress_fraction">%1$d de %2$d</string>
+    <string name="import_progress_added_to">Añadido a \"%1$s\"</string>
+    <string name="import_progress_new_playlists">Nuevas listas</string>
+    <string name="import_progress_songs_liked">Canciones marcadas con Me gusta</string>
+    <string name="import_progress_not_found">No encontrado</string>
+    <string name="import_progress_youtube_failures">Importado localmente pero no completamente en YouTube: %1$s</string>
+    <string name="import_progress_stop_import">Detener importación</string>
+    <string name="import_progress_stop_import_desc">Las canciones y listas importadas hasta ahora se conservarán</string>
+    <string name="import_progress_done_btn">Listo</string>
+    <string name="import_progress_copy_not_found">Copiar canciones no encontradas</string>
+    <string name="import_progress_copy_not_found_desc">Para buscarlas manualmente</string>
+    <string name="import_progress_copied_toast">Copiadas %1$d canciones</string>
+    <string name="import_progress_liked_songs_fallback">Canciones que te gustan</string>
+    <string name="import_progress_unmatched_more">y %1$d más. Copia la lista para verlas todas.</string>
+
+    <!-- Componentes de importación y sincronización -->
+    <string name="import_component_from_source">Importar desde %1$s</string>
+    <string name="import_component_paste">Pegar</string>
+    <string name="import_component_continue">Continuar</string>
+    <string name="import_component_link_prompt">Pega un enlace a una lista de reproducción o álbum público. Compártelo desde %1$s con \"Copiar enlace\".</string>
+    <string name="import_component_failed_title">No se pudo importar</string>
+    <string name="import_component_already_running">Ya hay una importación en curso</string>
+    <string name="import_component_liked_songs_count">%1$d canciones marcadas con me gusta</string>
+    <string name="import_component_playlists_summary_single">1 lista de reproducción · %1$d canciones</string>
+    <string name="import_component_playlists_summary_multiple">%1$d listas de reproducción · %2$d canciones</string>
+    <string name="import_component_and_more"> y %1$d más</string>
+    <string name="import_component_search_notice">Cada canción se busca en YouTube Music. Bibliotecas grandes pueden tomar unos minutos.</string>
+    <string name="import_component_mirror_yt_title">Crear también en YouTube</string>
+    <string name="import_component_mirror_yt_desc">Las listas y me gusta también se añadirán a tu cuenta de YouTube.</string>
+    <string name="import_component_mirror_yt_sync_likes">La sincronización de YouTube mantiene los me gusta iguales en ambos lados.</string>
+</resources>

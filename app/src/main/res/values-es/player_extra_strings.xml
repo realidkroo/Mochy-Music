@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Registros de reproducción -->
+    <string name="playback_logs_clip_label">Registros de reproducción</string>
+
+    <!-- Hoja de gestión de descargas -->
+    <string name="storage_manage_sort_by">Ordenar por - </string>
+    <string name="storage_manage_sort_size">tamaño</string>
+    <string name="storage_manage_sort_name">nombre</string>
+    <string name="storage_manage_sort_recent">descargado recientemente</string>
+    <string name="storage_manage_sort_most_played">más reproducidas</string>
+    <string name="storage_manage_sort_least_played">menos reproducidas</string>
+    <string name="storage_manage_done">Listo</string>
+    <string name="storage_manage_remove_one">Eliminar 1 canción · %1$s</string>
+    <string name="storage_manage_remove_many">Eliminar %1$d canciones · %2$s</string>
+    <string name="storage_manage_confirm_remove_one">¿Eliminar esta descarga?</string>
+    <string name="storage_manage_confirm_remove_many">¿Eliminar %1$d descargas?</string>
+    <string name="storage_manage_confirm_message">Se eliminarán de este teléfono pero se conservan en la biblioteca y se reproducen por transmisión.</string>
+    <string name="storage_manage_confirm_action">Eliminar</string>
+    <string name="storage_manage_search_placeholder">Buscar tus descargas</string>
+    <string name="storage_manage_song_single">canción</string>
+    <string name="storage_manage_song_plural">canciones</string>
+    <string name="storage_manage_empty_note">Aún no hay descargas. Las canciones descargadas aparecerán aquí.</string>
+    <string name="storage_manage_no_match">Ninguna descarga coincide con \"%1$s\".</string>
+    <string name="storage_manage_shelf_biggest">Más grandes</string>
+    <string name="storage_manage_shelf_less_listened">Menos escuchadas</string>
+    <string name="storage_manage_shelf_less_listened_sub">Descargadas hace tiempo y poco escuchadas</string>
+    <string name="storage_manage_all">Todas</string>
+    <string name="storage_manage_unpick">Deseleccionar</string>
+    <string name="storage_manage_pick_all">Seleccionar todas</string>
+
+    <!-- Menú de listas de reproducción -->
+    <string name="sheet_label_recents">recientes</string>
+    <string name="sheet_label_results">resultados</string>
+    <string name="sheet_label_all">todas</string>
+
+    <!-- Salida de dispositivo -->
+    <string name="ps_device_usb_audio">Audio USB</string>
+    <string name="ps_device_usb_dac">DAC USB</string>
+</resources>

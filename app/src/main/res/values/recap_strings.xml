@@ -162,5 +162,14 @@
     <string name="rc_story_thats_your">That\'s your\n%1$s recap!</string>
     <string name="rc_story_tap_finish">TAP TO FINISH</string>
 
-    <!-- Recap ID card back -->
+    <!-- Stamps -->
+    <string name="recap_stamp_verified">VERIFIED</string>
+    <string name="recap_stamp_invalid">INVALID</string>
+
+    <!-- Recap Not Yet -->
+    <string name="recap_not_yet_single">once you\'ve played a song</string>
+    <string name="recap_not_yet_date">on %1$s %2$d, once you\'ve played %3$d songs</string>
+    <string name="recap_not_yet_missing">when you\'ve played %1$d more %2$s this month</string>
+    <string name="recap_song_singular">song</string>
+    <string name="recap_song_plural">songs</string>
 </resources>

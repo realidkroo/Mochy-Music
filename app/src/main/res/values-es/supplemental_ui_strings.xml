@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="supplemental_support_enjoying">¿Disfrutas Mochy Music?</string>
+    <string name="supplemental_support_title">¡Apoya el desarrollo de Mochy!</string>
+    <string name="supplemental_support_body">¡Gracias por probar la app! Mochy Music siempre será gratuita. Sería de gran ayuda si apoyas al desarrollador. Con darle una estrella al repositorio de Mochy es más que suficiente. ¡Gracias de nuevo!</string>
+    <string name="supplemental_support_donate">¡Dónanos!</string>
+    <string name="supplemental_support_star">¡Dar estrella al repo!</string>
+    <string name="supplemental_support_dismiss">¡Ahora no!</string>
+    <string name="supplemental_coming_soon">Próximamente</string>
+    <string name="supplemental_coming_soon_detail">%1$s aún está en desarrollo.</string>
+    <string name="supplemental_adding">Añadiendo…</string>
+    <string name="supplemental_search_all_songs">Buscar todas las canciones</string>
+    <string name="supplemental_playlist_recommended">Recomendado para esta lista</string>
+    <string name="supplemental_in_library">En biblioteca</string>
+    <string name="supplemental_online_search_failed">No se pudo buscar en línea. Revisa tu conexión.</string>
+    <string name="supplemental_search_nothing">Sin resultados para “%1$s”.</string>
+    <string name="supplemental_playlist_suggestions_empty">Añade algunas canciones primero y te sugeriremos más del mismo estilo.</string>
+    <string name="supplemental_playlist_suggestions_failed">Sin sugerencias por el momento.</string>
+    <string name="supplemental_library_search_empty">Tu biblioteca está vacía. Busca arriba para encontrar canciones.</string>
+    <string name="supplemental_add_songs_failed">No se pudieron añadir las canciones. Inténtalo de nuevo.</string>
+    <string name="supplemental_update_personal">¡Actualización disponible, %1$s!</string>
+    <string name="supplemental_update_changes">Novedades en %1$s</string>
+    <string name="supplemental_update_install_target">Por instalar -</string>
+    <string name="supplemental_update_downloading">Descargando… %1$d%%</string>
+    <string name="supplemental_update_no_apk">No hay APK en esta versión</string>
+    <string name="supplemental_install_here">Instalar aquí</string>
+    <string name="supplemental_update_open_web">Abrir la web</string>
+    <string name="supplemental_update_snooze">recordarme en 24 horas</string>
+    <string name="supplemental_install_permission">Permite \"Instalar aplicaciones desconocidas\" para Mochy.</string>
+    <string name="supplemental_featured_playlist">Lista destacada</string>
+    <string name="supplemental_featured_songs">Canciones destacadas</string>
+    <string name="supplemental_artist_new_releases">Lo nuevo de sus artistas</string>
+    <string name="supplemental_nothing_here">Nada para mostrar aquí aún</string>
+    <string name="supplemental_start_of_line">INICIO DE LÍNEA</string>
+    <plurals name="supplemental_add_song_count">
+        <item quantity="one">Añadir %1$d canción</item>
+        <item quantity="many">Añadir %1$d canciones</item>
+        <item quantity="other">Añadir %1$d canciones</item>
+    </plurals>
+    <string name="supplemental_artist_top_songs">Canciones principales de %1$s</string>
+    <string name="supplemental_artist_category">%1$s %2$s</string>
+    <string name="supplemental_kind_songs">canciones</string>
+    <string name="supplemental_kind_albums">álbumes</string>
+    <string name="supplemental_kind_videos">videos</string>
+    <string name="supplemental_kind_playlists">listas de reproducción</string>
+    <string name="supplemental_kind_artists">artistas</string>
+    <string name="supplemental_count_songs">%1$s canciones</string>
+    <string name="supplemental_count_albums">%1$s álbumes</string>
+    <string name="supplemental_count_videos">%1$s videos</string>
+    <string name="supplemental_count_playlists">%1$s listas de reproducción</string>
+    <string name="supplemental_count_artists">%1$s artistas</string>
+    <string name="supplemental_items_retry">No se pudo cargar la página. Toca para reintentar</string>
+    <plurals name="supplemental_song_count">
+        <item quantity="one">%1$d canción</item>
+        <item quantity="many">%1$d canciones</item>
+        <item quantity="other">%1$d canciones</item>
+    </plurals>
+</resources>

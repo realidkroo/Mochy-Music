@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lab_back">Atrás</string>
+    <string name="lab_equalizer">Ecualizador</string>
+    <string name="lab_audio_effect">Efecto de audio</string>
+    <string name="lab_audio_quality">Calidad de audio</string>
+    <string name="lab_transition">Transición</string>
+    <string name="lab_status_off">APAGADO</string>
+    <string name="lab_status_all_off">TODO APAGADO</string>
+    <string name="lab_status_custom">Personalizado</string>
+    <string name="lab_transition_off">Desactivado</string>
+    <string name="lab_transition_auto">Automático</string>
+    <string name="lab_transition_manual">Manual</string>
+    <string name="lab_transition_crossmix">CrossMix</string>
+    <string name="lab_quality_monochrome">Monochrome · Sin pérdida</string>
+    <string name="lab_quality_apple_music">Apple Music · AAC</string>
+    <string name="lab_quality_youtube">YouTube · %1$s</string>
+    <string name="lab_quality_low">Baja</string>
+    <string name="lab_quality_medium">Media</string>
+    <string name="lab_quality_high">Alta</string>
+    <string name="lab_quality_auto">Automática</string>
+    <string name="lab_effects_and_more">%1$s y %2$d más</string>
+    <string name="lab_effect_reverb">Reverberación</string>
+    <string name="lab_effect_loudness">Sonoridad</string>
+    <string name="lab_effect_spatial">Espacial</string>
+    <string name="lab_effect_surround">Envolvente</string>
+    <string name="lab_effect_mono">Mono</string>
+    <string name="lab_effect_playback">Reproducción</string>
+    <string name="lab_effect_volume">Volumen</string>
+    <string name="lab_effect_stage">Simulación 3D</string>
+    <string name="lab_fx_on">ENCENDIDO</string>
+    <string name="lab_fx_position">%1$d de %2$d</string>
+    <string name="lab_fx_and_other">y %1$d otro</string>
+    <string name="preset_sheet_new">Nuevo ajuste predefinido</string>
+    <string name="preset_sheet_edit">Editar ajuste predefinido</string>
+    <string name="preset_sheet_name">Nombre de ajuste predefinido</string>
+    <string name="preset_sheet_ok">Aceptar</string>
+    <string name="preset_sheet_taken">Ya tienes un ajuste predefinido con este nombre</string>
+    <string name="preset_sheet_delete">Eliminar ajuste predefinido</string>
+    <string name="preset_delete_body">Se eliminará permanentemente, pero el sonido actual se mantendrá.</string>
+</resources>

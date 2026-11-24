@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="aq_title_first">Calidad de</string>
+    <string name="aq_title_second">Audio</string>
+    <string name="aq_nothing_on">Nada está activo</string>
+    <string name="aq_turn_provider_on">Activa un proveedor</string>
+    <string name="aq_youtube_tier">YouTube · %1$s</string>
+    <string name="aq_section_streaming">Transmisión</string>
+    <string name="aq_section_download">Descargas</string>
+    <string name="aq_section_provider">Proveedor</string>
+    <string name="aq_youtube_status_on">Reproduce lo que otros no tienen</string>
+    <string name="aq_youtube_status_off_none">Desactivado y ningún otro proveedor está activo</string>
+    <string name="aq_youtube_status_off">Desactivado: canciones no disponibles en otros se omiten</string>
+    <string name="aq_quality_auto">Automática</string>
+    <string name="aq_quality_high">Alta</string>
+    <string name="aq_quality_medium">Media</string>
+    <string name="aq_quality_low">Baja</string>
+    <string name="aq_quality_lossless">Sin pérdida (Lossless)</string>
+    <string name="aq_desc_auto">Alta en Wi-Fi, Media en datos móviles</string>
+    <string name="aq_desc_high">La mejor calidad disponible del proveedor</string>
+    <string name="aq_desc_medium">Alrededor de 128 kbps, menor consumo de datos</string>
+    <string name="aq_desc_low">Transmisiones reducidas para conexiones lentas</string>
+    <string name="aq_fmt_adaptive">Adaptativo</string>
+    <string name="aq_fmt_high">~160 kbps · Opus</string>
+    <string name="aq_fmt_medium">~128 kbps · AAC</string>
+    <string name="aq_fmt_low">~50–70 kbps · Opus</string>
+    <string name="aq_desc_monochrome_lossless">FLAC calidad CD o superior</string>
+    <string name="aq_module_settings">Ajustes de %1$s</string>
+    <string name="aq_dl_desc_high">Lo mejor de YouTube: ~160 kbps Opus</string>
+    <string name="aq_dl_desc_medium">Alrededor de 128 kbps, ocupa la mitad de espacio</string>
+    <string name="aq_dl_desc_low">Archivos livianos, ~50–70 kbps</string>
+    <string name="aq_status_sign_in">Inicia sesión para reproducir desde aquí</string>
+    <string name="aq_status_sign_in_again">Inicia sesión de nuevo</string>
+    <string name="aq_status_on">Activado</string>
+    <string name="aq_status_off_tap">Desactivado, toca para activar</string>
+    <string name="aq_status_not_installed">No instalado</string>
+</resources>

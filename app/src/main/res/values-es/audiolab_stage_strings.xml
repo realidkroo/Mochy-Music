@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stage_title_first">Simulaciones</string>
+    <string name="stage_title_second">3D</string>
+
+    <string name="stage_card_title">Simulación 3D</string>
+    <string name="stage_card_sub">Separa la canción y posiciona cada elemento en un espacio moldeable.</string>
+    <string name="stage_open">Abrir la sala</string>
+    <string name="stage_toggle_sub">Voces, bajos y resto de mezcla posicionado donde decidas. Recomendado en audífonos.</string>
+    <string name="stage_room_hint">Arrastra un punto para moverlo, usa dos dedos para elevarlo</string>
+    <string name="stage_reset_view">Restablecer vista</string>
+
+    <string name="stage_source_vocal">Voz</string>
+    <string name="stage_source_center">Centro</string>
+    <string name="stage_source_left">Izquierda</string>
+    <string name="stage_source_right">Derecha</string>
+    <string name="stage_source_ambience">Ambiente</string>
+    <string name="stage_source_sub">Subgrave</string>
+    <string name="stage_source_numbered">%1$s %2$d</string>
+    <string name="stage_you">Tú</string>
+    <string name="stage_add">Añadir sonido</string>
+    <string name="stage_add_title">Añadir a la sala</string>
+    <string name="stage_add_count">%1$d de %2$d en la sala</string>
+    <string name="stage_add_full">Los %1$d están en la sala</string>
+    <string name="stage_remove">Quitar</string>
+    <string name="stage_mute">Silenciar</string>
+    <string name="stage_solo">Solo</string>
+
+    <string name="stage_axis_side">Izquierda a derecha</string>
+    <string name="stage_axis_height">Altura</string>
+    <string name="stage_axis_depth">Atrás a adelante</string>
+    <string name="stage_level">Nivel</string>
+    <string name="stage_width">Anchura</string>
+    <string name="stage_facing">Orientación</string>
+    <string name="stage_middle">Centro</string>
+    <string name="stage_meters_left">%1$s m izquierda</string>
+    <string name="stage_meters_right">%1$s m derecha</string>
+    <string name="stage_meters_up">%1$s m arriba</string>
+    <string name="stage_meters_front">%1$s m al frente</string>
+    <string name="stage_meters_back">%1$s m atrás</string>
+    <string name="stage_facing_ahead">Al frente</string>
+    <string name="stage_facing_left">%1$d° izquierda</string>
+    <string name="stage_facing_right">%1$d° derecha</string>
+
+    <string name="stage_presets">Salas</string>
+    <string name="stage_preset_studio">Estudio</string>
+    <string name="stage_preset_living">Sala de estar</string>
+    <string name="stage_preset_front_row">Primera fila</string>
+    <string name="stage_preset_on_stage">En el escenario</string>
+    <string name="stage_preset_around">Alrededor</string>
+    <string name="stage_preset_hall">Gran sala</string>
+
+    <string name="stage_room">Sala</string>
+    <string name="stage_room_size">Tamaño</string>
+    <string name="stage_room_size_value">%1$s × %2$s m</string>
+    <string name="stage_walls_soft">Suave</string>
+    <string name="stage_walls_wood">Madera</string>
+    <string name="stage_walls_concrete">Concreto</string>
+    <string name="stage_room_amount">Sonido de la sala</string>
+    <string name="stage_output_level">Nivel de salida</string>
+
+    <string name="stage_output">Reproduciendo en</string>
+    <string name="stage_output_phone">Altavoz del teléfono</string>
+    <string name="stage_output_wired">Audífonos por cable</string>
+    <string name="stage_output_usb">Audio USB</string>
+    <string name="stage_output_bluetooth">Bluetooth</string>
+    <string name="stage_output_hdmi">TV o HDMI</string>
+    <string name="stage_kind_headphones">Audífonos</string>
+    <string name="stage_kind_speaker">Altavoz</string>
+    <string name="stage_output_guessed">Mochy estimó esto por el dispositivo.</string>
+    <string name="stage_output_set">Elegiste esto para este dispositivo.</string>
+    <string name="stage_output_reset">Dejar que Mochy elija</string>
+    <string name="stage_on_speakers">En altavoces</string>
+    <string name="stage_speakers_off">Desactivado</string>
+    <string name="stage_speakers_stereo">Estéreo simple</string>
+    <string name="stage_speakers_3d">Mantener 3D</string>
+    <string name="stage_speakers_note">El sonido 3D está pensado para dos oídos.</string>
+
+    <string name="stage_surround_note">Las canciones envolventes y Atmos usan sus propios canales.</string>
+    <string name="stage_credit">Mediciones binaurales por MIT Media Lab KEMAR (Bill Gardner y Keith Martin).</string>
+    <string name="stage_spatial_note">Simulación 3D activa.</string>
+</resources>
