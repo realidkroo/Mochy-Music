@@ -18,6 +18,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -569,13 +570,21 @@ internal fun FollowingLyrics(
         LaunchedEffect(stagger) { stagger.run() }
 
         var followPlayback by remember { mutableStateOf(true) }
-        var isAutoScrolling by remember { mutableStateOf(false) }
-        val userScrolling by remember { derivedStateOf { listState.isScrollInProgress && !isAutoScrolling } }
-        LaunchedEffect(userScrolling) { if (userScrolling) followPlayback = false }
-        LaunchedEffect(userScrolling, followPlayback) {
-            if (!followPlayback && !userScrolling) {
-                delay(IdleRecenterDelayMs)
-                followPlayback = true
+        var autoScrollCount by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+        val isDraggedState = listState.interactionSource.collectIsDraggedAsState()
+        val userScrollingState = remember { derivedStateOf { isDraggedState.value || (listState.isScrollInProgress && autoScrollCount == 0) } }
+        LaunchedEffect(listState) {
+            snapshotFlow { userScrollingState.value }.collect { scrolling ->
+                if (scrolling) followPlayback = false
+            }
+        }
+        LaunchedEffect(followPlayback, listState) {
+            if (followPlayback) return@LaunchedEffect
+            snapshotFlow { userScrollingState.value }.collectLatest { scrolling ->
+                if (!scrolling) {
+                    delay(IdleRecenterDelayMs)
+                    followPlayback = true
+                }
             }
         }
 
@@ -587,8 +596,8 @@ internal fun FollowingLyrics(
                 if (target !in lines.indices) return@collectLatest
                 val targetRow = rowOfLine[target]
                 snapshotFlow { listState.layoutInfo.viewportSize.height }.first { it > 0 }
+                autoScrollCount++
                 try {
-                    isAutoScrolling = true
                     // still opening or closing: the line goes straight to its place, the flight needs it there
                     if (opening() < 0.999f) {
                         listState.scrollToItem(targetRow, 0)
@@ -597,6 +606,12 @@ internal fun FollowingLyrics(
                     val layoutInfo = listState.layoutInfo
                     val visible = layoutInfo.visibleItemsInfo.firstOrNull { it.index == targetRow }
                     if (visible == null) {
+                        val firstVisible = listState.firstVisibleItemIndex
+                        if (kotlin.math.abs(targetRow - firstVisible) > 8) {
+                            val stagingRow = (targetRow + if (targetRow > firstVisible) -4 else 4)
+                                .coerceIn(0, (rows.size - 1).coerceAtLeast(0))
+                            listState.scrollToItem(stagingRow, 0)
+                        }
                         listState.animateScrollToItem(targetRow, 0)
                         return@collectLatest
                     }
@@ -624,7 +639,7 @@ internal fun FollowingLyrics(
                         }
                     }
                 } finally {
-                    isAutoScrolling = false
+                    autoScrollCount = (autoScrollCount - 1).coerceAtLeast(0)
                 }
             }
         }
@@ -673,7 +688,7 @@ internal fun FollowingLyrics(
                             startMs = row.startMs,
                             endMs = row.endMs,
                             positionProvider = positionProvider,
-                            bloom = look.motion.shaded && !userScrolling,
+                            bloom = look.motion.shaded && !userScrollingState.value,
                             highBloom = look.highBloom,
                             visible = activeInterlude == row.afterIndex,
                             collapseEasing = recenterEasingFor(look.motion),
@@ -697,11 +712,11 @@ internal fun FollowingLyrics(
                             VideoLyricRow(
                                 entry = row.entry,
                                 state = lineState.state,
-                                blurStage = if (userScrolling || !look.blurAllowed) 0 else lineState.blurStage,
+                                blurStage = if (userScrollingState.value || !look.blurAllowed) 0 else lineState.blurStage,
                                 positionProvider = positionProvider,
                                 alignment = alignmentFor(row.entry, useAgents),
                                 look = look,
-                                suppressEffects = userScrolling,
+                                suppressEffects = userScrollingState.value,
                                 onClick = {
                                     if (!unsynced) {
                                         connection.player.seekTo(row.entry.time)

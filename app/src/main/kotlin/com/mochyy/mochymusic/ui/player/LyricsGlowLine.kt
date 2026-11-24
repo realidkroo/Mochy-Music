@@ -257,24 +257,27 @@ fun LyricsGlowLine(
 
     // set when the page sits right on a cover background: the resting look is white soft-lit onto it
     blend: LyricsBackdropBlend? = null,
+    // read inside graphicsLayer/draw so scroll start/stop suppresses blur and wave without recomposing every row
+    suppressEffectsProvider: () -> Boolean = { suppressEffects },
 ) {
     val wordMotion = motionStyle.risesWords
     val targetAlpha = restingAlphaOf(state)
     val targetScale = restingScaleOf(state)
 
-    // every ease below starts only when its target changes, so the page's lines mount without six coroutines each
+    // every ease below starts only when its target changes and stays as State<Float> so animations
+    // invalidate draw/graphicsLayer without recomposing the entire lyric row at 60-120 Hz
     val animSpec = tween<Float>(durationMillis = 600)
-    val alpha by com.mochyy.mochymusic.ui.utils.animateFloatOnChange(targetAlpha, animSpec)
-    val scale by com.mochyy.mochymusic.ui.utils.animateFloatOnChange(targetScale, animSpec)
+    val alphaState = com.mochyy.mochymusic.ui.utils.animateFloatOnChange(targetAlpha, animSpec)
+    val scaleState = com.mochyy.mochymusic.ui.utils.animateFloatOnChange(targetScale, animSpec)
     // how sung the line is: the wave's strength, and the plain copy's share while it soft-lights
-    val waveAmplitude by com.mochyy.mochymusic.ui.utils.animateFloatOnChange(
+    val waveAmplitudeState = com.mochyy.mochymusic.ui.utils.animateFloatOnChange(
         target = if (state == LyricsLineState.ACTIVE) 1f else 0f,
         spec = animSpec,
     )
 
     // Only lines without word timing move as a whole; word-synced ones rise word by word.
     val wholeLineRise = wordMotion && entry.words.isNullOrEmpty()
-    val drop by com.mochyy.mochymusic.ui.utils.animateFloatOnChange(
+    val dropState = com.mochyy.mochymusic.ui.utils.animateFloatOnChange(
         target = if (state == LyricsLineState.ACTIVE || !wholeLineRise) 0f else 1f,
         spec = androidx.compose.animation.core.spring(
             dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
@@ -282,7 +285,7 @@ fun LyricsGlowLine(
         ),
     )
 
-    val blurRadius by com.mochyy.mochymusic.ui.utils.animateFloatOnChange(
+    val blurRadiusState = com.mochyy.mochymusic.ui.utils.animateFloatOnChange(
         target = BlurStageRadii[blurStage.coerceIn(0, BlurStageRadii.lastIndex)],
         spec = tween(durationMillis = 350),
     )
@@ -338,14 +341,16 @@ fun LyricsGlowLine(
     val rowCoords = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
     val tapPadPx = with(androidx.compose.ui.platform.LocalDensity.current) { LyricsTapPadH.toPx() }
 
+    // a derived flag reading waveAmplitudeState.value, so the fade doesn't recompose the line on every frame
+    val waveLingers by remember(waveAmplitudeState) { derivedStateOf { waveAmplitudeState.value > 0.01f } }
+    val sweepActive = !words.isNullOrEmpty() && (state == LyricsLineState.ACTIVE || waveLingers)
+    val karaokeActive = sweepActive && leadText.isNotEmpty()
+    val litOrLingering = state == LyricsLineState.ACTIVE || waveLingers
+
     Column(
         horizontalAlignment = columnAlign,
         modifier = modifier
             .then(if (onTextStart != null) Modifier.onPlaced { rowCoords[0] = it } else Modifier)
-            // a row repaints alone, so one moving line doesn't redraw every other row of the list
-            .layerBleed(DamageBleed)
-            .damageBoundary()
-            .padding(DamageBleed)
             .fillMaxWidth()
             .padding(
                 start = insets.start,
@@ -354,10 +359,11 @@ fun LyricsGlowLine(
                 bottom = insets.top,
             )
             .graphicsLayer {
-                if (blend == null) this.alpha = alpha
-                scaleX = scale
-                scaleY = scale
-                translationY = drop * LyricsWaitingDrop.toPx()
+                if (blend == null) this.alpha = alphaState.value
+                val s = scaleState.value
+                scaleX = s
+                scaleY = s
+                translationY = dropState.value * LyricsWaitingDrop.toPx()
                 // The active line grows from its own anchored edge. Pinning a right-aligned line
                 // to origin 0 would make it swing left as it scaled up, away from the side it is
                 // aligned to.
@@ -370,7 +376,7 @@ fun LyricsGlowLine(
                     pivotFractionY = 0.5f,
                 )
 
-                if (blend == null) renderEffect = if (suppressEffects) null else blurEffectForRadius(blurRadius)
+                if (blend == null) renderEffect = if (suppressEffectsProvider()) null else blurEffectForRadius(blurRadiusState.value)
             }
             .then(
                 if (blend != null) {
@@ -378,21 +384,24 @@ fun LyricsGlowLine(
                         blend = blend,
                         // upcoming lines get the full fill, past and far ones keep their dimmer share of it; a sweeping line keeps its own soft copy under the plain one
                         softAlpha = {
-                            val resting = SoftLightFill * alpha / UpcomingAlpha * (1f - waveAmplitude)
-                            val sung = if (sweepsWords) ActiveSoftFill * waveAmplitude else 0f
+                            val amp = waveAmplitudeState.value
+                            val resting = SoftLightFill * alphaState.value / UpcomingAlpha * (1f - amp)
+                            val sung = if (sweepsWords) ActiveSoftFill * amp else 0f
                             (resting + sung).coerceIn(0f, 1f)
                         },
-                        litAlpha = { waveAmplitude },
+                        litAlpha = { waveAmplitudeState.value },
                         // while the sweep is up its unsung words are faint, so the soft copy draws them back up to solid white; it eases off as the line lets go, or its translation snapped dim when the sweep ended
                         softBoost = {
                             when {
                                 !sweepsWords -> 1f
                                 state == LyricsLineState.ACTIVE -> SweepSoftBoost
-                                else -> 1f + (SweepSoftBoost - 1f) * waveAmplitude
+                                else -> 1f + (SweepSoftBoost - 1f) * waveAmplitudeState.value
                             }
                         },
-                        blur = { if (suppressEffects) null else blurEffectForRadius(blurRadius) },
-                        moving = { scale; drop },
+                        blur = { if (suppressEffectsProvider()) null else blurEffectForRadius(blurRadiusState.value) },
+                        moving = { scaleState.value; dropState.value },
+                        needsLitLayer = litOrLingering,
+                        needsBoostLayer = sweepsWords && litOrLingering,
                     )
                 } else {
                     Modifier
@@ -432,19 +441,14 @@ fun LyricsGlowLine(
             TranslationSubText(translation, translationLoading, translationColor, textAlign, above = true)
         }
 
-        // a derived flag, so the fade doesn't recompose the line on every frame
-        val waveLingers by remember { derivedStateOf { waveAmplitude > 0.01f } }
-        val sweepActive = !words.isNullOrEmpty() &&
-            (state == LyricsLineState.ACTIVE || waveLingers)
-        val karaokeActive = sweepActive && leadText.isNotEmpty()
         if (karaokeActive) {
             KaraokeSweepText(
                 text = leadText,
-                words = words,
+                words = words!!,
                 positionProvider = positionProvider,
-                waveAmplitudeProvider = { if (waveEnabled) waveAmplitude else 0f },
+                waveAmplitudeProvider = { if (waveEnabled && !suppressEffectsProvider()) waveAmplitudeState.value else 0f },
                 // The rise is drawn, not shaded, so it runs with the shader setting off too.
-                riseAmplitudeProvider = { waveAmplitude },
+                riseAmplitudeProvider = { waveAmplitudeState.value },
                 motionStyle = motionStyle,
                 fontWeight = LyricsSungWeight,
                 baseColor = unsungColor,
@@ -505,14 +509,14 @@ fun LyricsGlowLine(
                 slide = leadText.isNotEmpty(),
                 words = parts.backingWords,
                 positionProvider = positionProvider,
-                waveAmplitudeProvider = { if (waveEnabled) waveAmplitude else 0f },
+                waveAmplitudeProvider = { if (waveEnabled && !suppressEffectsProvider()) waveAmplitudeState.value else 0f },
                 sweep = sweepActive,
 
-                expandProvider = { waveAmplitude },
+                expandProvider = { waveAmplitudeState.value },
                 highBloom = highBloom,
                 textAlign = textAlign,
                 motionStyle = motionStyle,
-                riseAmplitudeProvider = { waveAmplitude },
+                riseAmplitudeProvider = { waveAmplitudeState.value },
             )
         }
 

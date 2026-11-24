@@ -94,6 +94,14 @@ internal class CardGeometry(val e: Float, val w: Float, val h: Float, gapPx: Flo
     fun visibleY(row: Int, rowPosition: Float) = abs(centerY(row, rowPosition) - h / 2f) < h / 2f + cardH / 2f
 }
 
+// caches quantized rounded shapes so swiping at constant corner radius allocates nothing and avoids rebuilding clip paths every frame
+private val SelectorCornerShapes = android.util.SparseArray<RoundedCornerShape>()
+
+private fun cachedCornerShape(radiusPx: Float): RoundedCornerShape {
+    val key = (radiusPx.coerceAtLeast(0f) * 2f).roundToInt()
+    return SelectorCornerShapes.get(key) ?: RoundedCornerShape(key / 2f).also { SelectorCornerShapes.put(key, it) }
+}
+
 /**
  * Applies the selector card transform to the live player sheet: the player shrinks into the card
  * of the style it's showing, which follows the selector's scroll. The backgrounds box (the cover
@@ -140,7 +148,7 @@ fun Modifier.studioSheetLayer(studio: PlayerStudioState): Modifier = graphicsLay
     translationX = tx
     translationY = ty
     // the shape is in the layer's own (unscaled) units
-    shape = RoundedCornerShape(corner.coerceAtLeast(0f) / scale.coerceAtLeast(0.01f))
+    shape = cachedCornerShape(corner / scale.coerceAtLeast(0.01f))
     clip = true
 }
 
@@ -315,11 +323,48 @@ fun PlayerSelectorOverlay(
                     }
                 ),
         ) {
-            // every style, as itself
-            styles.forEachIndexed { index, style ->
-                key(style) {
-                    val column = studio.columnOf(index)
-                    val row = studio.rowOf(index)
+            // Only mount cards within a 1-column lookahead around the viewport (and the live card
+            // only during a style handoff), instead of inflating all 10+ full-screen player styles
+            // at once — eliminates the opening freeze and swipe stutter.
+            val mountedIndices by remember(studio, styles, lastColumn) {
+                derivedStateOf {
+                    val pos = studio.page.value
+                    val minCol = (floor(pos).toInt() - 1).coerceIn(0, lastColumn)
+                    val maxCol = (ceil(pos).toInt() + 1).coerceIn(0, lastColumn)
+                    val focusCol = pos.roundToInt().coerceIn(0, lastColumn)
+                    val live = studio.livePage
+                    val handoff = studio.handoff.value > 0.001f
+                    buildList(6) {
+                        styles.indices.forEach { index ->
+                            val isLive = index == live
+                            if (isLive) {
+                                if (handoff) add(index)
+                                return@forEach
+                            }
+                            val column = studio.columnOf(index)
+                            if (column !in minCol..maxCol) return@forEach
+                            val row = studio.rowOf(index)
+                            val rp = studio.rows(column).value
+                            val inRowWindow = if (column == focusCol) {
+                                row in floor(rp).toInt()..(ceil(rp).toInt() + 1)
+                            } else {
+                                row == rp.roundToInt()
+                            }
+                            if (inRowWindow) add(index)
+                        }
+                    }
+                }
+            }
+            mountedIndices.forEach { index ->
+                val style = styles[index]
+                val column = studio.columnOf(index)
+                val row = studio.rowOf(index)
+                val cardKey: Any = if (style == PlayerStyle.MODULE) {
+                    moduleStyleAt(styles, index)?.key ?: "module:$index"
+                } else {
+                    style
+                }
+                key(cardKey) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -334,19 +379,21 @@ fun PlayerSelectorOverlay(
                                 val leaving = rowLeaving(row, rowPosition) * variantFade(column, row, studio, g.e)
                                 val visible = g.visible(column, position) && g.visibleY(row, rowPosition) && leaving > 0f &&
                                     (!live || studio.handoff.value > 0.001f)
-                                alpha = if (!visible) 0f else if (live) studio.handoff.value.coerceIn(0f, 1f) * leaving else leaving
+                                if (!visible) {
+                                    alpha = 0f
+                                    return@graphicsLayer
+                                }
+                                alpha = if (live) studio.handoff.value.coerceIn(0f, 1f) * leaving else leaving
                                 scaleX = g.scale
                                 scaleY = g.scale
                                 translationX = g.centerX(column, position) - w / 2f
                                 translationY = g.centerY(row, rowPosition) - h / 2f
                                 // springs settle a hair past their ends: a corner must never go below zero
-                                shape = RoundedCornerShape(CardCorner.toPx() * g.e.coerceIn(0f, 1f) / g.scale.coerceAtLeast(0.01f))
+                                shape = cachedCornerShape(CardCorner.toPx() * g.e.coerceIn(0f, 1f) / g.scale.coerceAtLeast(0.01f))
                                 clip = true
                             }
                             .background(Color.Black),
                     ) {
-                        // every card built, the live one too: picking a style hands over to its
-                        // card, which mustn't be built in the frame it has to cover the player
                         when (style) {
                             PlayerStyle.FLAGSHIP -> FlagshipPreview(flagship = true)
                             PlayerStyle.TURNTABLE -> FlagshipPreview(turntable = true)

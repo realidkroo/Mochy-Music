@@ -97,8 +97,8 @@ internal fun CoverArt(
             style = style,
             artworkUrl = trackInfo.thumbnailUrl,
             mediaId = trackInfo.mediaId,
-            isPlaying = isPlaying,
-            spinActive = true,
+            isPlaying = false,
+            spinActive = false,
             editMode = true,
             modifier = modifier.fillMaxSize(),
         )
@@ -107,8 +107,7 @@ internal fun CoverArt(
     val url = trackInfo.thumbnailUrl ?: return
     AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
-            .data(url.resize(1200, 1200))
-            .crossfade(200)
+            .data(url.resize(512, 512))
             .build(),
         contentDescription = null,
         contentScale = ContentScale.Crop,

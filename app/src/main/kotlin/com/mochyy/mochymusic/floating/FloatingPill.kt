@@ -31,13 +31,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -54,6 +58,13 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.modules.skin.ActiveFloating
+import com.mochyy.mochymusic.modules.skin.ActiveSkin
+import com.mochyy.mochymusic.modules.skin.CoverShape
+import com.mochyy.mochymusic.modules.skin.GradientKind
+import com.mochyy.mochymusic.modules.skin.SkinColor
+import com.mochyy.mochymusic.modules.skin.SkinFloating
+import com.mochyy.mochymusic.ui.component.onChrome
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -151,9 +162,9 @@ internal class PillMetrics(val bubbleWidth: Dp) {
         // the middle of the progress bar, down from the window's top
         fun barY(slots: Float): Dp = Margin + bodyHeight(slots) + BarTop + BarHeight / 2
 
-        fun forScreen(screenWidth: Dp): PillMetrics {
-            val room = screenWidth - Margin * 2 - Cover - Gap - ButtonExtra - 12.dp
-            return PillMetrics(room.coerceIn(150.dp, 226.dp))
+        fun forScreen(screenWidth: Dp, widthScale: Float = 1f): PillMetrics {
+            val room = (screenWidth - Margin * 2 - Cover - Gap - ButtonExtra - 12.dp) * widthScale.coerceIn(0.8f, 1.35f)
+            return PillMetrics(room.coerceIn(140.dp, (screenWidth - Margin * 2 - Cover - Gap - ButtonExtra - 4.dp).coerceAtLeast(150.dp)))
         }
     }
 }
@@ -213,11 +224,28 @@ internal fun FloatingPill(state: PillState, metrics: PillMetrics, host: PillHost
     val press = animateFloatAsState(if (pressed) 0.93f else 1f, spring(dampingRatio = 0.6f, stiffness = 600f), label = "coverPress")
     val lift = animateFloatAsState(if (state.lifted) 1f else 0f, spring(dampingRatio = 0.55f, stiffness = 500f), label = "coverLift")
 
-    // the bubble takes the cover's accent, fading over from one song's to the next
-    val colors = remember(state.accent) { PillColors.from(state.accent) }
-    val bubbleColor = animateColorAsState(colors.bubble, tween(700), label = "pillBubble")
-    val inkColor = animateColorAsState(colors.ink, tween(700), label = "pillInk")
-    val tint = remember { PillTint(bubbleColor, inkColor) }
+    // optional look module skin for the floating lyrics bubble
+    val activeFloating = ActiveSkin.floating
+    val skin = activeFloating?.floating
+    val coverSeed = state.accent ?: PillColors.Default.bubble
+    fun resolveColor(color: SkinColor?): Color? = color?.onChrome(coverSeed, activeFloating?.values.orEmpty())
+
+    // the bubble takes the cover's accent unless a floating skin overrides it, fading over from one song's to the next
+    val baseColors = remember(state.accent) { PillColors.from(state.accent) }
+    val customBubbleColors = remember(skin, activeFloating?.values, state.accent) {
+        skin?.bubble.orEmpty().map { it.onChrome(coverSeed, activeFloating?.values.orEmpty()).copy(alpha = (skin?.opacity ?: 1f)) }
+    }
+    val targetBubble = customBubbleColors.firstOrNull() ?: baseColors.bubble.copy(alpha = skin?.opacity ?: 1f)
+    val targetInk = resolveColor(skin?.ink) ?: baseColors.ink
+    val bubbleColor = animateColorAsState(targetBubble, tween(700), label = "pillBubble")
+    val inkColor = animateColorAsState(targetInk, tween(700), label = "pillInk")
+    val waitingOverride = resolveColor(skin?.waiting)
+    val softOverride = resolveColor(skin?.soft)
+    val progressOverride = resolveColor(skin?.progressColor)
+    val trackOverride = resolveColor(skin?.trackColor)
+    val tint = remember(waitingOverride, softOverride, progressOverride, trackOverride) {
+        PillTint(bubbleColor, inkColor, waitingOverride, softOverride, progressOverride, trackOverride)
+    }
 
     // the pill is a fixed size, so the text inside it keeps to its own size too
     val density = LocalDensity.current
@@ -229,11 +257,11 @@ internal fun FloatingPill(state: PillState, metrics: PillMetrics, host: PillHost
         val coverScale = { press.value * (1f + (LiftScale - 1f) * lift.value) * (0.4f + 0.6f * appear.value) }
         val coverAlpha = { (appear.value * 2f).coerceIn(0f, 1f) }
         Box(Modifier.fillMaxSize()) {
-            PlayButton(state, host, end, opened)
-            CoverDisc(state, host, end, coverScale, coverAlpha, { lift.value }) { pressed = it }
+            PlayButton(state, host, end, opened, skin)
+            CoverDisc(state, host, end, coverScale, coverAlpha, { lift.value }, skin) { pressed = it }
             ProgressRing(progress, scrub, end, opened, body, coverScale, coverAlpha)
             if (timesShown) SongTimes(state, elapsed, scrub, opened, body)
-            Bubble(state, metrics, end, opened, tucked, body)
+            Bubble(state, metrics, end, opened, tucked, body, activeFloating, customBubbleColors)
             SeekBarTouch(state, host, scrub, progress, body)
         }
     }
@@ -249,7 +277,7 @@ internal fun Modifier.fromCoverSide(end: Boolean, x: Density.() -> Float, y: Den
     }
 }
 
-// the song's cover in a circle; a tap opens the controls, a hold opens mochy
+// the song's cover in a circle (or the floating skin's shape); a tap opens the controls, a hold opens mochy
 @Composable
 private fun CoverDisc(
     state: PillState,
@@ -258,6 +286,7 @@ private fun CoverDisc(
     coverScale: () -> Float,
     coverAlpha: () -> Float,
     lift: () -> Float,
+    skin: SkinFloating?,
     onPressed: (Boolean) -> Unit,
 ) {
     val haptics = LocalHapticFeedback.current
@@ -265,6 +294,17 @@ private fun CoverDisc(
     val coverPx = with(LocalDensity.current) { PillMetrics.Cover.roundToPx() }
     val url = state.song?.thumbnailUrl
     val request = remember(url, coverPx) { ImageRequest.Builder(context).data(url).size(coverPx).build() }
+    val coverShape = when (skin?.coverShape) {
+        CoverShape.Square -> RectangleShape
+        CoverShape.Rounded -> RoundedCornerShape(skin.coverCorner)
+        else -> CircleShape
+    }
+    val shadowCorner = when (skin?.coverShape) {
+        CoverShape.Square -> 0.dp
+        CoverShape.Rounded -> skin.coverCorner
+        else -> PillMetrics.Cover / 2
+    }
+    val showShadow = skin?.shadow ?: true
     Box(
         Modifier
             .fromCoverSide(end, { PillMetrics.Margin.toPx() }, { PillMetrics.Margin.toPx() })
@@ -275,11 +315,13 @@ private fun CoverDisc(
                 scaleY = scale
                 alpha = coverAlpha()
             }
-            .softShadow(
-                corner = PillMetrics.Cover / 2,
-                blur = CoverShadowBlur,
-                offsetY = { CoverShadowDrop + LiftShadowDrop * lift() },
-                alpha = { CoverShadowAlpha + LiftShadowAlpha * lift() },
+            .then(
+                if (showShadow) Modifier.softShadow(
+                    corner = shadowCorner,
+                    blur = CoverShadowBlur,
+                    offsetY = { CoverShadowDrop + LiftShadowDrop * lift() },
+                    alpha = { CoverShadowAlpha + LiftShadowAlpha * lift() },
+                ) else Modifier,
             )
             .pointerInput(Unit) {
                 detectTapGestures(
@@ -306,7 +348,7 @@ private fun CoverDisc(
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
-                .clip(CircleShape)
+                .clip(coverShape)
                 .background(CoverPlaceholder),
         )
     }
@@ -314,9 +356,26 @@ private fun CoverDisc(
 
 // the speech bubble with the lyrics: pushed aside as the controls open, tucked into the cover while it's carried
 @Composable
-private fun Bubble(state: PillState, metrics: PillMetrics, end: Boolean, opened: () -> Float, tucked: () -> Float, body: () -> Float) {
+private fun Bubble(
+    state: PillState,
+    metrics: PillMetrics,
+    end: Boolean,
+    opened: () -> Float,
+    tucked: () -> Float,
+    body: () -> Float,
+    activeFloating: ActiveFloating?,
+    customBubbleColors: List<Color>,
+) {
     val toCover = if (end) 1f else -1f
     val tint = LocalPillTint.current
+    val skin = activeFloating?.floating
+    val corner = skin?.corner ?: BubbleCorner
+    val tail = skin?.tail ?: true
+    val showShadow = skin?.shadow ?: true
+    val borderWidth = skin?.border
+    val borderColor = skin?.borderColor?.onChrome(state.accent ?: PillColors.Default.bubble, activeFloating.values)
+        ?: tint.ink.copy(alpha = 0.22f)
+    val gradientKind = skin?.gradient ?: GradientKind.Horizontal
     Box(
         Modifier
             .fromCoverSide(
@@ -341,18 +400,37 @@ private fun Bubble(state: PillState, metrics: PillMetrics, end: Boolean, opened:
                 transformOrigin = TransformOrigin(if (end) 1f else 0f, (PillMetrics.BubbleHeight.toPx() * TailAt / size.height).coerceIn(0f, 1f))
                 compositingStrategy = CompositingStrategy.ModulateAlpha
             }
-            .softShadow(BubbleCorner, BubbleShadowBlur, { BubbleShadowDrop }, { BubbleShadowAlpha })
+            .then(if (showShadow) Modifier.softShadow(corner, BubbleShadowBlur, { BubbleShadowDrop }, { BubbleShadowAlpha }) else Modifier)
             .drawWithCache {
-                val outline = bubblePath(size, BubbleCorner.toPx(), TailWidth.toPx(), TailHeight.toPx(), PillMetrics.BubbleHeight.toPx() * TailAt, end)
-                onDrawBehind { drawPath(outline, tint.bubble) }
+                val outline = if (tail) {
+                    bubblePath(size, corner.toPx(), TailWidth.toPx(), TailHeight.toPx(), PillMetrics.BubbleHeight.toPx() * TailAt, end)
+                } else {
+                    Path().apply { addRoundRect(RoundRect(0f, 0f, size.width, size.height, CornerRadius(corner.toPx()))) }
+                }
+                val brush = if (customBubbleColors.size >= 2) {
+                    when (gradientKind) {
+                        GradientKind.Horizontal -> Brush.horizontalGradient(customBubbleColors)
+                        GradientKind.Diagonal -> Brush.linearGradient(customBubbleColors, Offset.Zero, Offset(size.width, size.height))
+                        GradientKind.Radial -> Brush.radialGradient(customBubbleColors)
+                        GradientKind.Vertical -> Brush.verticalGradient(customBubbleColors)
+                    }
+                } else null
+                onDrawBehind {
+                    if (brush != null) drawPath(outline, brush) else drawPath(outline, tint.bubble)
+                    if (borderWidth != null && borderWidth.value > 0f) {
+                        drawPath(outline, borderColor, style = Stroke(width = borderWidth.toPx()))
+                    }
+                }
             },
     ) {
         PillLyrics(
             state = state,
             width = metrics.bubbleWidth,
+            activeFloating = activeFloating,
+            transparentEdge = customBubbleColors.size >= 2 || (skin?.opacity ?: 1f) < 0.96f,
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(BubbleCorner)),
+                .clip(RoundedCornerShape(corner)),
         )
     }
 }

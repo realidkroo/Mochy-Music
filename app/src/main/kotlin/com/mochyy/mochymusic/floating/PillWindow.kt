@@ -87,7 +87,10 @@ internal class PillWindow(
     private val compose = ComposeView(context)
     private val flight = PillFlight { x, y -> moveCover(x, y) }
 
-    val metrics = PillMetrics.forScreen((screenSize().x / density).dp)
+    val metrics = PillMetrics.forScreen(
+        (screenSize().x / density).dp,
+        widthScale = com.mochyy.mochymusic.modules.skin.ActiveSkin.floating?.floating?.widthScale ?: 1f,
+    )
     private val margin = px(PillMetrics.Margin)
     private val cover = px(PillMetrics.Cover)
 
@@ -139,6 +142,13 @@ internal class PillWindow(
         gravity = Gravity.TOP or Gravity.START
         // window coordinates are the screen's, navigation bar included, so the full-screen window lines up with the resting one
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) fitInsetsTypes = 0
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val blurDp = com.mochyy.mochymusic.modules.skin.ActiveSkin.floating?.floating?.blur ?: 0f
+            if (blurDp > 0.5f && windowManager.isCrossWindowBlurEnabled) {
+                flags = flags or WindowManager.LayoutParams.FLAG_BLUR_BEHIND
+                blurBehindRadius = (blurDp * density).roundToInt().coerceIn(0, 80)
+            }
+        }
         title = "Floating lyrics"
         noMoveAnimation()
     }

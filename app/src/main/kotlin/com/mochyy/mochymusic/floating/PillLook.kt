@@ -66,15 +66,26 @@ internal class PillColors(val bubble: Color, val ink: Color) {
 
 // the colours as they fade from one cover to the next, read while drawing so a fade repaints the pill instead of recomposing it
 @Stable
-internal class PillTint(private val bubbleState: State<Color>, private val inkState: State<Color>) {
+internal class PillTint(
+    private val bubbleState: State<Color>,
+    private val inkState: State<Color>,
+    private val waitingOverride: Color? = null,
+    private val softOverride: Color? = null,
+    private val progressOverride: Color? = null,
+    private val trackOverride: Color? = null,
+) {
     val bubble: Color get() = bubbleState.value
     val ink: Color get() = inkState.value
 
     // a line not sung yet, the same grey whether it waits underneath or is about to be sung on top, so moving up never flashes
-    val waiting: Color get() = inkState.value.copy(alpha = WaitingAlpha)
+    val waiting: Color get() = waitingOverride ?: inkState.value.copy(alpha = WaitingAlpha)
 
     // a reading or translation of the line being sung, quieter than the line but not waiting
-    val soft: Color get() = inkState.value.copy(alpha = SoftAlpha)
+    val soft: Color get() = softOverride ?: inkState.value.copy(alpha = SoftAlpha)
+
+    /** optional ring/bar accent from a floating lyrics skin */
+    val progress: Color? get() = progressOverride
+    val track: Color? get() = trackOverride
 }
 
 internal val LocalPillTint = staticCompositionLocalOf<PillTint> { error("the pill's colours are provided by FloatingPill") }

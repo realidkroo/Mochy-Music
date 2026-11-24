@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -56,6 +57,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.mochyy.mochymusic.modules.skin.ActiveFloating
+import com.mochyy.mochymusic.modules.skin.ActiveSkin
 import com.mochyy.mochymusic.ui.player.KaraokeHead
 import com.mochyy.mochymusic.ui.player.LyricsAlignment
 import com.mochyy.mochymusic.ui.player.WordWaitDrop
@@ -67,6 +70,7 @@ import com.mochyy.mochymusic.ui.player.rememberWordMotionModifier
 import com.mochyy.mochymusic.ui.player.sweepHeadX
 import com.mochyy.mochymusic.ui.player.withLetterMotionFeatures
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
+import com.mochyy.mochymusic.ui.theme.LookFont
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.coroutineScope
@@ -126,19 +130,19 @@ private enum class RowLook { SUNG, SOFT, WAITING }
 @Immutable
 internal class PreparedScript(val script: PillScript, val layouts: List<TextLayoutResult>)
 
-private fun rowStyle(font: FontFamily, small: Boolean) = TextStyle(
+private fun rowStyle(font: FontFamily, small: Boolean, baseSize: Float? = null, customWeight: FontWeight? = null) = TextStyle(
     fontFamily = font,
-    fontWeight = if (small) FontWeight.SemiBold else FontWeight.Bold,
-    fontSize = if (small) 13.sp else 15.sp,
-    lineHeight = if (small) 17.sp else 19.sp,
+    fontWeight = customWeight ?: if (small) FontWeight.SemiBold else FontWeight.Bold,
+    fontSize = (baseSize?.let { if (small) (it - 2f).coerceAtLeast(10f) else it } ?: if (small) 13f else 15f).sp,
+    lineHeight = (baseSize?.let { if (small) (it + 2f) else (it + 4f) } ?: if (small) 17f else 19f).sp,
     letterSpacing = (-0.03).em,
 ).withLetterMotionFeatures(true)
 
 // every row measured once, off the main thread, so a line change never lays text out mid-animation
-private suspend fun prepare(script: PillScript, measurer: TextMeasurer, font: FontFamily): PreparedScript =
+private suspend fun prepare(script: PillScript, measurer: TextMeasurer, font: FontFamily, baseSize: Float?, customWeight: FontWeight?): PreparedScript =
     withContext(Dispatchers.Default) {
-        val big = rowStyle(font, small = false)
-        val small = rowStyle(font, small = true)
+        val big = rowStyle(font, small = false, baseSize = baseSize, customWeight = customWeight)
+        val small = rowStyle(font, small = true, baseSize = baseSize, customWeight = customWeight)
         val layouts = script.rows.map { row ->
             measurer.measure(
                 text = row.text,
@@ -153,19 +157,28 @@ private suspend fun prepare(script: PillScript, measurer: TextMeasurer, font: Fo
 
 // the bubble's lyrics: the line being sung on top, what comes next under it, each sliding into its place as the song goes
 @Composable
-internal fun PillLyrics(state: PillState, width: Dp, modifier: Modifier = Modifier) {
+internal fun PillLyrics(
+    state: PillState,
+    width: Dp,
+    activeFloating: ActiveFloating? = null,
+    transparentEdge: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
     val song = state.song
     val script = state.script
     val resolver = LocalFontFamilyResolver.current
     val density = LocalDensity.current
     val direction = LocalLayoutDirection.current
-    val font = InterFontFamily
-    val prepared by produceState<PreparedScript?>(null, script, song?.id, font) {
+    val skin = activeFloating?.floating
+    val font = activeFloating?.skin?.moduleId?.let(ActiveSkin::playerFont) ?: LookFont.family ?: InterFontFamily
+    val baseSize = skin?.fontSize
+    val customWeight = skin?.weight
+    val prepared by produceState<PreparedScript?>(null, script, song?.id, font, baseSize, customWeight) {
         val shown = script ?: PillScript.info(song?.title.orEmpty(), song?.artists?.joinToString { it.name }.orEmpty())
-        value = prepare(shown, TextMeasurer(resolver, density, direction, 0), font)
+        value = prepare(shown, TextMeasurer(resolver, density, direction, 0), font, baseSize, customWeight)
     }
     Crossfade(targetState = prepared, animationSpec = tween(320), modifier = modifier, label = "pillLyrics") { ready ->
-        if (ready != null) PillRows(ready, state, width, appRtl = direction == LayoutDirection.Rtl)
+        if (ready != null) PillRows(ready, state, width, appRtl = direction == LayoutDirection.Rtl, transparentEdge = transparentEdge)
     }
 }
 
@@ -203,7 +216,7 @@ private class RowGeometry(
 }
 
 @Composable
-private fun PillRows(prepared: PreparedScript, state: PillState, width: Dp, appRtl: Boolean) {
+private fun PillRows(prepared: PreparedScript, state: PillState, width: Dp, appRtl: Boolean, transparentEdge: Boolean = false) {
     val script = prepared.script
     var top by remember(script) { mutableIntStateOf(script.stops[script.stopAt(state.lyricsClock())].top) }
     var dotsLit by remember(script) { mutableIntStateOf(-1) }
@@ -260,18 +273,38 @@ private fun PillRows(prepared: PreparedScript, state: PillState, width: Dp, appR
         Modifier
             .fillMaxSize()
             .clipToBounds()
-            .drawWithCache {
-                // the fog sits in the inset, so a long line fades at the bubble's edge instead of being cut
-                val fog = geometry.slotLeft
-                val bubble = tint.bubble
-                val left = Brush.horizontalGradient(0f to bubble, 1f to bubble.copy(alpha = 0f), startX = 0f, endX = fog)
-                val right = Brush.horizontalGradient(0f to bubble.copy(alpha = 0f), 1f to bubble, startX = size.width - fog, endX = size.width)
-                onDrawWithContent {
-                    drawContent()
-                    drawRect(left, size = Size(fog, size.height))
-                    drawRect(right, topLeft = Offset(size.width - fog, 0f), size = Size(fog, size.height))
-                }
-            },
+            .then(
+                if (transparentEdge) {
+                    Modifier
+                        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                        .drawWithCache {
+                            val fog = geometry.slotLeft
+                            val mask = Brush.horizontalGradient(
+                                0f to Color.Transparent,
+                                (fog / size.width.coerceAtLeast(1f)).coerceIn(0.01f, 0.2f) to Color.Black,
+                                (1f - fog / size.width.coerceAtLeast(1f)).coerceIn(0.8f, 0.99f) to Color.Black,
+                                1f to Color.Transparent,
+                            )
+                            onDrawWithContent {
+                                drawContent()
+                                drawRect(mask, blendMode = BlendMode.DstIn)
+                            }
+                        }
+                } else {
+                    Modifier.drawWithCache {
+                        // the fog sits in the inset, so a long line fades at the bubble's edge instead of being cut
+                        val fog = geometry.slotLeft
+                        val bubble = tint.bubble
+                        val left = Brush.horizontalGradient(0f to bubble, 1f to bubble.copy(alpha = 0f), startX = 0f, endX = fog)
+                        val right = Brush.horizontalGradient(0f to bubble.copy(alpha = 0f), 1f to bubble, startX = size.width - fog, endX = size.width)
+                        onDrawWithContent {
+                            drawContent()
+                            drawRect(left, size = Size(fog, size.height))
+                            drawRect(right, topLeft = Offset(size.width - fog, 0f), size = Size(fog, size.height))
+                        }
+                    }
+                },
+            ),
     ) {
         val first = (top - 1).coerceAtLeast(0)
         val last = (top + script.slots).coerceAtMost(script.rows.lastIndex)

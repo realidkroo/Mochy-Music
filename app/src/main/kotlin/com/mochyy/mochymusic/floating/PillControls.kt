@@ -119,9 +119,17 @@ internal fun SongProgressTicker(state: PillState, progress: MutableFloatState, e
 
 // the light pill the ring turns into: it slides out from behind the cover with play or pause in it
 @Composable
-internal fun PlayButton(state: PillState, host: PillHost, end: Boolean, opened: () -> Float) {
+internal fun PlayButton(
+    state: PillState,
+    host: PillHost,
+    end: Boolean,
+    opened: () -> Float,
+    skin: com.mochyy.mochymusic.modules.skin.SkinFloating? = null,
+) {
     val haptics = LocalHapticFeedback.current
     val tint = LocalPillTint.current
+    val buttonCorner = skin?.corner?.coerceAtMost(ButtonCorner) ?: ButtonCorner
+    val showShadow = skin?.shadow ?: true
     val playing = animateFloatAsState(if (state.playing) 1f else 0f, PlaySpring, label = "pillPlaying")
     var pressed by remember { mutableStateOf(false) }
     val press = animateFloatAsState(if (pressed) 0.82f else 1f, spring(dampingRatio = 0.6f, stiffness = 700f), label = "pillPlayPress")
@@ -136,9 +144,9 @@ internal fun PlayButton(state: PillState, host: PillHost, end: Boolean, opened: 
                 layout(width, height) { placeable.place(0, 0) }
             }
             .graphicsLayer { alpha = (opened() * 4f).coerceIn(0f, 1f) }
-            .softShadow(ButtonCorner, ButtonShadowBlur, { ButtonShadowDrop }, { ButtonShadowAlpha * opened() })
+            .then(if (showShadow) Modifier.softShadow(buttonCorner, ButtonShadowBlur, { ButtonShadowDrop }, { ButtonShadowAlpha * opened() }) else Modifier)
             .drawBehind {
-                val corner = ButtonCorner.toPx()
+                val corner = buttonCorner.toPx()
                 drawRoundRect(tint.bubble, cornerRadius = CornerRadius(corner, corner))
             },
     )
@@ -216,6 +224,7 @@ internal fun ProgressRing(
     coverAlpha: () -> Float,
 ) {
     val morph = remember { RingMorph() }
+    val tint = LocalPillTint.current
     val grabbing by remember { derivedStateOf { scrub.floatValue >= 0f } }
     val grab = animateFloatAsState(if (grabbing) 1f else 0f, GrabSpring, label = "pillBarGrab")
     Spacer(
@@ -235,8 +244,9 @@ internal fun ProgressRing(
                 val barRight = size.width - margin - barHeight / 2f
                 val barY = PillMetrics.barY(body()).toPx()
                 val stroke = RingStroke.toPx() + (barHeight - RingStroke.toPx()) * t
-                val track = lerp(RingTrack, BarTrack, t).let { it.copy(alpha = it.alpha * shown) }
-                val head = Color.White.copy(alpha = shown)
+                val baseTrack = tint.track ?: lerp(RingTrack, BarTrack, t)
+                val track = baseTrack.copy(alpha = baseTrack.alpha * shown)
+                val head = (tint.progress ?: Color.White).let { it.copy(alpha = it.alpha * shown) }
                 val played = scrub.floatValue.takeIf { it >= 0f } ?: progress.floatValue
                 // the dark edge comes in over the last stretch of the unroll, once it's nearly a line
                 val shade = ((t - 0.85f) / 0.15f).coerceIn(0f, 1f)

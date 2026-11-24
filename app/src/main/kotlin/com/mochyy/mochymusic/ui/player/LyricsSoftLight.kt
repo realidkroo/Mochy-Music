@@ -57,20 +57,24 @@ class LyricsBackdropBlend internal constructor(
         val rowCoords = row?.takeIf { it.isAttached } ?: return null
         val listHeight = list.size.height.toFloat()
         val rowHeight = scope.size.height
-        if (listHeight <= 0f || rowHeight <= 0f) return null
+        if (listHeight <= 1f || rowHeight <= 1f) return null
         val top = list.localPositionOf(rowCoords, Offset.Zero).y
         val bottom = list.localPositionOf(rowCoords, Offset(0f, rowHeight)).y
+        if (!top.isFinite() || !bottom.isFinite()) return null
         if (top >= listHeight * topFadeEnd && bottom <= listHeight * bottomFadeStart) return null
         if (bottom - top < 1f) return null
         // list pixels to row pixels, so a row that's zoomed or still sliding in gets the fade where it really is
         val rowPerList = rowHeight / (bottom - top)
+        val startY = -top * rowPerList
+        val endY = (listHeight - top) * rowPerList
+        if (!startY.isFinite() || !endY.isFinite() || endY - startY < 1f) return null
         return Brush.verticalGradient(
             0f to Color.Transparent,
             topFadeEnd to Color.Black,
             bottomFadeStart to Color.Black,
             1f to Color.Transparent,
-            startY = -top * rowPerList,
-            endY = (listHeight - top) * rowPerList,
+            startY = startY,
+            endY = endY,
         )
     }
 }
@@ -84,6 +88,7 @@ internal fun Modifier.lyricsEdgeFade(blend: LyricsBackdropBlend?): Modifier {
     return this
         .onPlaced { coords[0] = it }
         .drawWithContent {
+            if (size.width < 1f || size.height < 1f) return@drawWithContent
             val mask = blend.maskFor(this, coords[0])
             if (mask == null) {
                 drawContent()
@@ -104,14 +109,18 @@ internal fun Modifier.softLightLine(
     moving: () -> Unit,
     // how much the soft copy lifts faint words back up to solid white before lighting the background with them, 1 for none
     softBoost: () -> Float = { 1f },
+    // only allocate extra layers on rows that actually draw a lit or boosted copy (the active line), saving 2 RenderNodes per resting row
+    needsLitLayer: Boolean = true,
+    needsBoostLayer: Boolean = true,
 ): Modifier {
     val soft = rememberGraphicsLayer()
-    val lit = rememberGraphicsLayer()
-    val boosted = rememberGraphicsLayer()
+    val lit = if (needsLitLayer) rememberGraphicsLayer() else null
+    val boosted = if (needsBoostLayer) rememberGraphicsLayer() else null
     val coords = remember { arrayOfNulls<LayoutCoordinates>(1) }
     return this
         .onPlaced { coords[0] = it }
         .drawWithContent {
+            if (size.width < 1f || size.height < 1f) return@drawWithContent
             moving()
             val mask = blend.maskFor(this, coords[0])
             val effect = blur()
@@ -120,7 +129,15 @@ internal fun Modifier.softLightLine(
             if (softShare > HiddenCopyAlpha) {
                 drawCopy(soft, softShare, BlendMode.Softlight, effect, mask, boostFilterFor(softBoost()), boosted)
             }
-            if (litShare > HiddenCopyAlpha) drawCopy(lit, litShare, BlendMode.SrcOver, effect, mask)
+            if (litShare > HiddenCopyAlpha) {
+                if (litShare >= 0.999f && effect == null && mask == null) {
+                    drawContent()
+                } else if (lit != null) {
+                    drawCopy(lit, litShare, BlendMode.SrcOver, effect, mask)
+                } else {
+                    drawCopy(soft, litShare, BlendMode.SrcOver, effect, mask)
+                }
+            }
         }
 }
 

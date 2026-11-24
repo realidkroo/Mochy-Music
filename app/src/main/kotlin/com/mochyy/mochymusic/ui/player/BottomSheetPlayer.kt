@@ -2,6 +2,8 @@
 
 package com.mochyy.mochymusic.ui.player
 
+import com.mochyy.mochymusic.ui.screens.devices.showDeviceIntegration
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -313,6 +315,15 @@ private fun PlayerSheet(
     var showPlaybackSpeed by remember { mutableStateOf(false) }
     var showDeviceOutput by remember { mutableStateOf(false) }
     var showLyricsSource by remember { mutableStateOf(false) }
+    var showAddToPlaylist by remember { mutableStateOf(false) }
+    var showLyricsOffset by remember { mutableStateOf(false) }
+    var showLyricsTranslation by remember { mutableStateOf(false) }
+    var showLyricsEditor by remember { mutableStateOf(false) }
+    var showSongEdit by remember { mutableStateOf(false) }
+    var showVideoQuality by remember { mutableStateOf(false) }
+    var showCanvasQuality by remember { mutableStateOf(false) }
+    var showVideoPicker by remember { mutableStateOf(false) }
+    var showCreatePlaylist by remember { mutableStateOf(false) }
 
     var showExpandMenu by remember { mutableStateOf(false) }
     var seeVideo by remember { mutableStateOf(false) }
@@ -524,6 +535,8 @@ private fun PlayerSheet(
         active = styleTurned && playerFullyOpen,
     )
 
+    val styleDevicesLink = com.mochyy.mochymusic.ui.screens.devices.rememberDevicesLink()
+    val styleOverlaySheets = com.mochyy.mochymusic.ui.component.LocalZoomOutOverlayState.current
     val styleActions = remember(openStudio) {
         com.mochyy.mochymusic.ui.player.styles.StyleActions(
             onOtherMenu = {
@@ -550,6 +563,41 @@ private fun PlayerSheet(
             onClose = { state.collapseSoft() },
             onQueue = { styleQueueOpen = true },
             turn = if (onTv) null else styleTurn,
+            onFullVideo = { enterVideoMode() },
+            onEqualizer = { openEqualizer() },
+            onOpenSheet = { kind ->
+                when (kind) {
+                    com.mochyy.mochymusic.modules.skin.SheetKind.PlayerMenu -> {
+                        menuFromLyrics = false
+                        showActionMenu = true
+                    }
+                    com.mochyy.mochymusic.modules.skin.SheetKind.SleepTimer -> showSleepTimer = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.Output -> showDeviceOutput = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.Speed -> showPlaybackSpeed = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.SongDetails -> showSongDetails = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.StreamInfo -> showStreamInfo = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.Share ->
+                        playerConnection?.mediaMetadata?.value?.let { com.mochyy.mochymusic.ui.player.share.song.SongShare.open(it) }
+                    com.mochyy.mochymusic.modules.skin.SheetKind.AddToPlaylist -> showAddToPlaylist = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.CreatePlaylist -> showCreatePlaylist = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.LyricsProvider -> showLyricsSource = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.LyricsOffset -> showLyricsOffset = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.LyricsTranslation -> showLyricsTranslation = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.LyricsEditor -> showLyricsEditor = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.Customise -> moduleCustomiseOpen = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.SongEdit -> showSongEdit = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.VideoQuality -> showVideoQuality = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.CanvasQuality -> showCanvasQuality = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.VideoPicker -> showVideoPicker = true
+                    com.mochyy.mochymusic.modules.skin.SheetKind.Devices -> styleOverlaySheets.showDeviceIntegration(styleDevicesLink)
+                    com.mochyy.mochymusic.modules.skin.SheetKind.EditPlayer -> openStudio()
+                    com.mochyy.mochymusic.modules.skin.SheetKind.SongMenu -> {
+                        menuFromLyrics = false
+                        showActionMenu = true
+                    }
+                    else -> Unit
+                }
+            },
         )
     }
 
@@ -635,7 +683,8 @@ private fun PlayerSheet(
     // The queue hides the controls the same way when scrolled, each page with its own flag so one
     // page's state never hides the controls on the other.
     var queueImmersive by remember { mutableStateOf(false) }
-    val controlsHidden by animateFloatAsState(
+    // kept as State so toggling lyrics/queue immersion doesn't recompose the entire player every frame for 420ms
+    val controlsHiddenState = animateFloatAsState(
         targetValue = if (
             (lyricsImmersive && showLyrics) || (queueImmersive && showQueue)
         ) 1f else 0f,
@@ -710,10 +759,10 @@ private fun PlayerSheet(
     // Also built just before a page closes, while the deck is still hidden (preparingClose), and
     // kept from then on: with no page open the controls are showing or on their way back
     val deckMounted by remember {
-        derivedStateOf { controlsHidden < 0.99f || transition.preparingClose || transition.page == PlayerPage.NONE }
+        derivedStateOf { controlsHiddenState.value < 0.99f || transition.preparingClose || transition.page == PlayerPage.NONE }
     }
     androidx.compose.runtime.SideEffect {
-        transition.closeNeedsPreparing = { (showDeck || showVolumeBar) && controlsHidden >= 0.99f }
+        transition.closeNeedsPreparing = { (showDeck || showVolumeBar) && controlsHiddenState.value >= 0.99f }
     }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -768,7 +817,7 @@ private fun PlayerSheet(
                 /** [start] (root) is on or below the seek bar, with the controls actually showing. */
                 private fun inControlStrip(start: Offset): Boolean {
                     val top = seekBarTop[0]
-                    return !top.isNaN() && controlsHidden < 0.5f && start.y >= top
+                    return !top.isNaN() && controlsHiddenState.value < 0.5f && start.y >= top
                 }
 
                 /**
@@ -776,7 +825,7 @@ private fun PlayerSheet(
                  * anywhere under a cover that doesn't reach the title. Never on the cover itself.
                  */
                 private fun aroundControls(start: Offset): Boolean {
-                    if (controlsHidden >= 0.5f) return false
+                    if (controlsHiddenState.value >= 0.5f) return false
                     val controlsTop = rects.controls?.top ?: return false
                     val coverBottom = if (currentCoverStyle == PlayerCoverStyle.EDGE_TO_EDGE) null else rects.cover?.bottom
                     return start.y >= minOf(controlsTop, coverBottom ?: controlsTop)
@@ -1374,8 +1423,9 @@ private fun PlayerSheet(
                         .then(Modifier.studioPiece(studioPieces, StudioPieces.CARD_STACK))
 
                         .graphicsLayer {
-                            alpha = 1f - controlsHidden
-                            translationY = controlsHidden * size.height * 0.75f
+                            val hidden = controlsHiddenState.value
+                            alpha = 1f - hidden
+                            translationY = hidden * size.height * 0.75f
                             letTouchesThroughWhenHidden()
                         }
                 )
@@ -1393,8 +1443,9 @@ private fun PlayerSheet(
                     .studioBarLayer(studioParts) { it.volumeBar }
                     .studioPiece(studioPieces, StudioPieces.VOLUME_BAR)
                     .graphicsLayer {
-                        alpha = 1f - controlsHidden
-                        translationY = controlsHidden * size.height * 0.75f
+                        val hidden = controlsHiddenState.value
+                        alpha = 1f - hidden
+                        translationY = hidden * size.height * 0.75f
                         letTouchesThroughWhenHidden()
                     }
                 FlagshipBottomBar(
@@ -1451,11 +1502,12 @@ private fun PlayerSheet(
                     // where the editor's hold put them; only placed, so a drag never recomposes
                     .offset { androidx.compose.ui.unit.IntOffset(0, layoutTweaks.controlsOffset().roundToInt()) }
                     .graphicsLayer {
+                        val hidden = controlsHiddenState.value
                         // the Turntable shows its own controls; these (with the seek bar) come up
                         // only as the lyrics or the queue open, which run off the seek bar
-                        alpha = (1f - controlsHidden) * (if (isTurntable) turntablePageProgress else 1f)
+                        alpha = (1f - hidden) * (if (isTurntable) turntablePageProgress else 1f)
 
-                        translationY = controlsHidden * size.height * 0.55f
+                        translationY = hidden * size.height * 0.55f
                         // Hidden over the lyrics, or behind the Turntable's own controls, they let
                         // touches through. A layer that ate every touch used to sit here, and it
                         // blocked the lyrics, the record and swipes along with the hidden buttons.
@@ -1706,7 +1758,7 @@ private fun PlayerSheet(
                                 // coordinates this moved on every frame of the sheet's slide (and of
                                 // the controls hiding), and the pages that read it recomposed - and
                                 // re-laid out their lists - frame by frame for it.
-                                if (!state.isExpanded || controlsHidden > 0.001f) return@onGloballyPositioned
+                                if (!state.isExpanded || controlsHiddenState.value > 0.001f) return@onGloballyPositioned
                                 val rootHeight = coords.findRootCoordinates().size.height
                                 val topY = coords.positionInRoot().y
                                 seekBarTop[0] = topY
@@ -1775,8 +1827,9 @@ private fun PlayerSheet(
                         .widthIn(max = 600.dp)
                         .padding(bottom = belowControls + TurntableControlsLift)
                         .graphicsLayer {
-                            alpha = (1f - controlsHidden) * (1f - turntablePageProgress)
-                            translationY = controlsHidden * size.height * 0.55f
+                            val hidden = controlsHiddenState.value
+                            alpha = (1f - hidden) * (1f - turntablePageProgress)
+                            translationY = hidden * size.height * 0.55f
                             // gone with a page up, so the flagship's controls under them answer
                             letTouchesThroughWhenHidden()
                         },
@@ -1905,6 +1958,68 @@ private fun PlayerSheet(
         // opened by "Switch" at the end of the lyrics page
         if (showLyricsSource) {
             com.mochyy.mochymusic.ui.player.menu.LyricsProviderSheet(onDismiss = { showLyricsSource = false })
+        }
+        if (showLyricsOffset) {
+            com.mochyy.mochymusic.ui.player.menu.LyricsOffsetSheet(onDismiss = { showLyricsOffset = false })
+        }
+        if (showLyricsTranslation) {
+            com.mochyy.mochymusic.ui.player.menu.LyricsTranslationSheet(onDismiss = { showLyricsTranslation = false })
+        }
+        if (showLyricsEditor) {
+            com.mochyy.mochymusic.ui.player.menu.LyricsEditorSheet(onDismiss = { showLyricsEditor = false })
+        }
+        if (showAddToPlaylist) {
+            val metadata = playerConnection?.mediaMetadata?.value
+            val database = com.mochyy.mochymusic.LocalDatabase.current
+            if (metadata != null) {
+                com.mochyy.mochymusic.ui.menu.AddToPlaylistDialog(
+                    isVisible = true,
+                    onGetSong = {
+                        database.transaction { insert(metadata) }
+                        listOf(metadata.id)
+                    },
+                    onDismiss = { showAddToPlaylist = false },
+                    topSongId = metadata.id,
+                    topSongArtworkUrl = metadata.thumbnailUrl,
+                )
+            } else {
+                showAddToPlaylist = false
+            }
+        }
+        if (showCreatePlaylist) {
+            com.mochyy.mochymusic.ui.component.CreatePlaylistDialog(
+                onDismiss = { showCreatePlaylist = false },
+            )
+        }
+        if (showSongEdit) {
+            val metadata = playerConnection?.mediaMetadata?.value
+            if (metadata != null) {
+                com.mochyy.mochymusic.ui.menu.songedit.SongEditSheet(metadata = metadata, onDismiss = { showSongEdit = false })
+            } else {
+                showSongEdit = false
+            }
+        }
+        if (showVideoQuality) {
+            com.mochyy.mochymusic.ui.player.video.VideoQualitySheet(
+                session = com.mochyy.mochymusic.ui.player.video.YouTubeVideoSessions.showing,
+                onDismiss = { showVideoQuality = false },
+            )
+        }
+        if (showCanvasQuality) {
+            com.mochyy.mochymusic.ui.player.menu.CanvasQualitySheet(onDismiss = { showCanvasQuality = false })
+        }
+        if (showVideoPicker) {
+            val metadata = playerConnection?.mediaMetadata?.value
+            if (metadata != null) {
+                com.mochyy.mochymusic.ui.menu.songedit.VideoPickerSheet(
+                    songId = metadata.id,
+                    title = metadata.title,
+                    artist = metadata.artists.joinToString { it.name },
+                    onDismiss = { showVideoPicker = false },
+                )
+            } else {
+                showVideoPicker = false
+            }
         }
         }
 

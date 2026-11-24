@@ -101,6 +101,11 @@ internal object SteadyWraps {
     }
 
     // called on a background thread with a song's lines; a failure only means those lines work it out themselves later
+    fun warmLines(entries: List<com.mochyy.mochymusic.lyrics.LyricsEntry>) {
+        if (entries.isEmpty() || profiles.isEmpty()) return
+        warm(entries.map { splitBackingVocal(it.text, it.syllables ?: it.words).lead })
+    }
+
     private fun warm(texts: List<String>) {
         profiles.values.forEach { profile ->
             val sk = styleKey(profile.style)
