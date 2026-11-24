@@ -101,9 +101,10 @@ fun UpdatePromptSheet(
     ) { _ ->
         Column(
             modifier = Modifier
+                // keep the scroll viewport above the navigation bar so bottom actions never sit behind it
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(top = sheetHandleRoom())
-                .navigationBarsPadding()
                 .padding(horizontal = 24.dp)
                 .padding(top = 12.dp, bottom = 24.dp)
                 .animateContentSize()
