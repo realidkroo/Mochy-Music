@@ -29,7 +29,7 @@ internal object SkinFiles {
                     val file = File(target, relative)
                     if (!file.canonicalPath.startsWith(targetPath)) continue
                     file.parentFile?.mkdirs()
-                    val written = copyCapped(zip, file, minOf(MaxFileBytes, MaxTotalBytes - total))
+                    val written = copyCapped(zip, file, minOf(MaxFileBytes, MaxTotalBytes - total), entry.compressedSize)
                     if (written < 0) file.delete() else {
                         total += written
                         count++
@@ -52,8 +52,8 @@ internal object SkinFiles {
         return path.substringAfterLast('.', "").lowercase() in Kinds
     }
 
-    // the entry's bytes into [file], or -1 once it passes [limit] so a huge or lying entry can't fill the phone
-    private fun copyCapped(zip: ZipInputStream, file: File, limit: Long): Long {
+    // the entry's bytes into [file], or -1 once it passes [limit] or looks like a zip bomb so a huge or lying entry can't fill the phone
+    private fun copyCapped(zip: ZipInputStream, file: File, limit: Long, compressedSize: Long): Long {
         var written = 0L
         val buffer = ByteArray(16 * 1024)
         file.outputStream().use { out ->
@@ -62,15 +62,21 @@ internal object SkinFiles {
                 if (read < 0) break
                 written += read
                 if (written > limit) return -1
+                if (exceedsCompressionRatio(written, compressedSize)) return -1
                 out.write(buffer, 0, read)
             }
         }
         return written
     }
 
+    internal fun exceedsCompressionRatio(written: Long, compressedSize: Long): Boolean =
+        compressedSize > 0L && written > ZipBombCheckThreshold && written > compressedSize * MaxCompressionRatio
+
     internal val SurfaceAssetKinds = setOf("wad", "pk3", "wl6", "wl1", "pak", "rom", "gb", "gbc", "gba", "nes", "sfc", "smc", "ch8", "dat", "bin")
     private val Kinds = setOf("png", "jpg", "jpeg", "webp", "gif", "ttf", "otf", "agsl", "sksl") + SurfaceAssetKinds
     private const val MaxFiles = 200
     private const val MaxFileBytes = 24L * 1024 * 1024
     private const val MaxTotalBytes = 48L * 1024 * 1024
+    private const val ZipBombCheckThreshold = 1024L * 1024L
+    private const val MaxCompressionRatio = 100L
 }

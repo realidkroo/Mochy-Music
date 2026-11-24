@@ -3,6 +3,7 @@
 package com.mochyy.mochymusic.ui.player.styles
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,6 +41,9 @@ import coil3.compose.AsyncImage
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.modules.skin.BottomBarKind
 import com.mochyy.mochymusic.modules.skin.SkinBlock
+import com.mochyy.mochymusic.modules.skin.SkinBlurDirection
+import com.mochyy.mochymusic.modules.skin.SkinGlassConfig
+import com.mochyy.mochymusic.ui.component.BlurDirection
 import com.mochyy.mochymusic.ui.component.GlassPillBackground
 import com.mochyy.mochymusic.ui.player.PlayerVolumeBar
 import com.mochyy.mochymusic.ui.player.studio.PlayerMenuAction
@@ -136,19 +140,28 @@ private fun RowScope.BarPill(block: SkinBlock.BottomBar, context: SkinContext, i
 private fun BarSurface(block: SkinBlock.BottomBar, context: SkinContext, modifier: Modifier, onClick: () -> Unit, content: @Composable () -> Unit) {
     val shape = RoundedCornerShape(block.corner)
     val colors = block.fill.map(context::color)
-    val glass = context.glass.takeIf { block.glass != null }
+    val cfg = block.glassConfig ?: block.glass?.let { SkinGlassConfig(blur = it) }
+    val glass = context.glass.takeIf { cfg != null }
     Box(modifier.clip(shape).clickable(onClick = onClick), contentAlignment = Alignment.CenterStart) {
-        if (glass != null) {
-            val radius = with(LocalDensity.current) { (block.glass ?: 0f).dp.toPx() }
-            // the blur reads past the card's edges and the clip trims it, so nothing bright smears in from an edge
+        if (glass != null && cfg != null) {
+            val radius = with(LocalDensity.current) { cfg.blur.dp.toPx() }
+            val progressive = when (cfg.progressive) {
+                SkinBlurDirection.TopToBottom -> BlurDirection.TopToBottom
+                SkinBlurDirection.BottomToTop -> BlurDirection.BottomToTop
+                else -> null
+            }
             GlassPillBackground(
                 state = glass,
                 blurRadius = { radius },
-                tint = colors.singleOrNull() ?: Color.Transparent,
+                tint = cfg.tint?.let(context::color) ?: colors.singleOrNull() ?: Color.Transparent,
                 tileMode = android.graphics.Shader.TileMode.CLAMP,
-                bleed = true,
+                bleed = cfg.bleed,
+                progressive = progressive,
+                progressiveRamp = cfg.ramp,
                 modifier = Modifier.matchParentSize(),
             )
+            cfg.shader?.let { prog -> SkinShaderSurface(prog, context, Modifier.matchParentSize()) {} }
+            if (cfg.outline) Box(Modifier.matchParentSize().border(1.dp, Color.White.copy(alpha = 0.2f), shape))
         } else {
             val fill = colors.ifEmpty { listOf(context.tones.chip) }
             Box(Modifier.matchParentSize().background(if (fill.size == 1) Brush.linearGradient(listOf(fill[0], fill[0])) else Brush.horizontalGradient(fill)))

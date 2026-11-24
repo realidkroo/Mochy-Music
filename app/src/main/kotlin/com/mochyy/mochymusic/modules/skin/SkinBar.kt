@@ -47,6 +47,8 @@ sealed interface BarTarget {
     /** home, search, library or settings */
     data class Tab(val route: String) : BarTarget
     data class Page(val id: String) : BarTarget
+    /** an allowlisted safe Mochy route (e.g. history, stats, mochy_settings, audio_lab, auto_playlist/liked) */
+    data class Route(val route: String) : BarTarget
 }
 
 enum class BarLabels { Never, Selected, Always }

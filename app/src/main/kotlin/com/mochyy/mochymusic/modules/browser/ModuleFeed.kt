@@ -22,6 +22,7 @@ import com.mochyy.mochymusic.utils.get
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -104,6 +105,8 @@ class ModuleFeed @Inject constructor(
         OkHttpClient.Builder()
             .dispatcher(com.mochyy.mochymusic.utils.AppProxy.dispatcher)
             .connectionPool(com.mochyy.mochymusic.utils.AppProxy.connectionPool)
+            .followRedirects(false)
+            .followSslRedirects(false)
             .connectTimeout(12, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
@@ -137,7 +140,7 @@ class ModuleFeed @Inject constructor(
         val state = ByteArray(24).also(SecureRandom()::nextBytes).joinToString("") { "%02x".format(it) }
         // the sign-in page opens in a browser, so the build's signature rides along in the link instead of a header
         val (time, signature) = StoreSignature.sign(context, "GET", "/login", state) ?: return null
-        prefs.edit { putString(StateKey, state) }
+        prefs.edit { putString(StateKey, "${System.currentTimeMillis()}|$state") }
         return Uri.parse("$FeedUrl/login").buildUpon()
             .appendQueryParameter("state", state)
             .appendQueryParameter("t", time)
@@ -152,10 +155,20 @@ class ModuleFeed @Inject constructor(
             return false
         }
         if (redirect.scheme != "mochy-modules" || redirect.host != "signed-in") return false
-        val expected = prefs.getString(StateKey, null) ?: return false
+        val stored = prefs.getString(StateKey, null) ?: return false
+        val sep = stored.indexOf('|')
+        val createdAt = if (sep > 0) stored.substring(0, sep).toLongOrNull() ?: 0L else 0L
+        val expected = if (sep > 0 && createdAt > 0L) stored.substring(sep + 1) else stored
+        val expired = createdAt > 0L && System.currentTimeMillis() - createdAt > StateTtlMs
+        val givenState = redirect.getQueryParameter("state")
+        if (expired || expected.isEmpty() || givenState == null ||
+            !MessageDigest.isEqual(expected.toByteArray(Charsets.UTF_8), givenState.toByteArray(Charsets.UTF_8))
+        ) {
+            if (expired) prefs.edit { remove(StateKey) }
+            return false
+        }
         prefs.edit { remove(StateKey) }
-        val session = redirect.getQueryParameter("session")?.takeIf { SessionPattern.matches(it) }
-        if (redirect.getQueryParameter("state") != expected || session == null) return false
+        val session = redirect.getQueryParameter("session")?.takeIf { SessionPattern.matches(it) } ?: return false
         prefs.edit { putString(SessionKey, com.mochyy.mochymusic.utils.SecretVault.seal(session, com.mochyy.mochymusic.utils.SecretVault.ModuleFeedDomain)) }
         com.mochyy.mochymusic.modules.security.SecretGuard.register("module_feed", session)
         _session.value = session
@@ -331,6 +344,7 @@ class ModuleFeed @Inject constructor(
         private const val SessionKey = "session"
         private const val PrefsName = "module_browser"
         private const val StateKey = "state"
+        private const val StateTtlMs = 15 * 60_000L
         private const val MaxZipBytes = 40L * 1024 * 1024
         private val SessionPattern = Regex("^[0-9a-f]{64}$")
         private val PostIdPattern = Regex("^\\d+$")

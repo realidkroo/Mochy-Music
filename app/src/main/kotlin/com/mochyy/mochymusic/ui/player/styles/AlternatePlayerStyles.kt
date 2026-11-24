@@ -294,6 +294,7 @@ private fun PosterPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                             width = w,
                             height = h,
                             animate = false,
+                            warp = !preview,
                             timeProvider = backgroundClock,
                             modifier = Modifier.fillMaxSize(),
                         )

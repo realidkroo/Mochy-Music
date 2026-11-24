@@ -36,10 +36,76 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.mochyy.mochymusic.modules.skin.GradientKind
 import com.mochyy.mochymusic.modules.skin.SkinBlock
+import com.mochyy.mochymusic.modules.skin.SkinBlurDirection
+import com.mochyy.mochymusic.modules.skin.SkinGlassConfig
+import com.mochyy.mochymusic.ui.component.BlurDirection
 import com.mochyy.mochymusic.ui.component.GlassPillBackground
+import com.mochyy.mochymusic.ui.component.ProgressiveGlassBackground
 import kotlin.math.min
 
-/** a panel: frosted glass, a fill or a gradient behind its blocks, a border, round corners, its blocks in a column or a row */
+/** a standalone frosted or progressive blur band over the player's backdrop */
+@Composable
+internal fun SkinBlurBlock(block: SkinBlock.Blur, context: SkinContext, modifier: Modifier) {
+    val shape = RoundedCornerShape(block.corner)
+    val colors = block.colors.map(context::color)
+    val sized = modifier
+        .then(block.width?.let { Modifier.width(it) } ?: Modifier.fillMaxWidth())
+        .height(block.height)
+        .clip(shape)
+    val glass = context.glass
+    Box(sized) {
+        if (glass != null) {
+            val radiusPx = with(LocalDensity.current) { block.radius.dp.toPx() }
+            val tint = colors.singleOrNull() ?: Color.Transparent
+            when (block.direction) {
+                SkinBlurDirection.TopToBottom -> ProgressiveGlassBackground(
+                    state = glass,
+                    maxBlurRadius = { radiusPx },
+                    tint = tint,
+                    direction = BlurDirection.TopToBottom,
+                    steps = block.steps,
+                    modifier = Modifier.matchParentSize(),
+                )
+                SkinBlurDirection.BottomToTop -> ProgressiveGlassBackground(
+                    state = glass,
+                    maxBlurRadius = { radiusPx },
+                    tint = tint,
+                    direction = BlurDirection.BottomToTop,
+                    steps = block.steps,
+                    modifier = Modifier.matchParentSize(),
+                )
+                SkinBlurDirection.Radial -> {
+                    val radialMask = remember {
+                        Brush.radialGradient(0f to Color.Black, 0.72f to Color.Black, 1f to Color.Transparent)
+                    }
+                    GlassPillBackground(
+                        state = glass,
+                        blurRadius = { radiusPx },
+                        tint = tint,
+                        mask = radialMask,
+                        tileMode = android.graphics.Shader.TileMode.CLAMP,
+                        bleed = block.bleed,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                }
+                null -> GlassPillBackground(
+                    state = glass,
+                    blurRadius = { radiusPx },
+                    tint = tint,
+                    tileMode = android.graphics.Shader.TileMode.CLAMP,
+                    bleed = block.bleed,
+                    modifier = Modifier.matchParentSize(),
+                )
+            }
+            if (colors.size > 1) Box(Modifier.matchParentSize().background(Brush.verticalGradient(colors)))
+        } else {
+            val fill = colors.ifEmpty { listOf(GlassStandIn) }
+            Box(Modifier.matchParentSize().background(if (fill.size == 1) Brush.linearGradient(listOf(fill[0], fill[0])) else Brush.verticalGradient(fill)))
+        }
+    }
+}
+
+/** a panel: frosted glass, progressive blur, a fill or a gradient behind its blocks, a border, round corners, its blocks in a column or a row */
 @Composable
 internal fun SkinBox(block: SkinBlock.Box, context: SkinContext, modifier: Modifier, inRow: Boolean) {
     val shape = RoundedCornerShape(block.corner)
@@ -53,23 +119,43 @@ internal fun SkinBox(block: SkinBlock.Box, context: SkinContext, modifier: Modif
         .then(if (block.shadow) Modifier.shadow(16.dp, shape) else Modifier)
         .clip(shape)
         .then(if (target != null && run != null) Modifier.clickable { if (!context.preview && interactive()) run(target) } else Modifier)
-    val glass = context.glass.takeIf { block.glass != null }
+    val cfg = block.glassConfig ?: block.glass?.let { SkinGlassConfig(blur = it) }
+    val glass = context.glass.takeIf { cfg != null }
     Box(sized) {
-        if (glass != null) {
-            val radius = with(LocalDensity.current) { (block.glass ?: 0f).dp.toPx() }
-            // the blur reads past the box's edges and the clip trims it, so nothing bright smears in from an edge
+        if (glass != null && cfg != null) {
+            val radius = with(LocalDensity.current) { cfg.blur.dp.toPx() }
+            val tint = cfg.tint?.let(context::color) ?: colors.singleOrNull() ?: Color.Transparent
+            val progressive = when (cfg.progressive) {
+                SkinBlurDirection.TopToBottom -> BlurDirection.TopToBottom
+                SkinBlurDirection.BottomToTop -> BlurDirection.BottomToTop
+                else -> null
+            }
+            val radialMask = remember(cfg.progressive) {
+                if (cfg.progressive == SkinBlurDirection.Radial) {
+                    Brush.radialGradient(0f to Color.Black, 0.72f to Color.Black, 1f to Color.Transparent)
+                } else null
+            }
             GlassPillBackground(
                 state = glass,
                 blurRadius = { radius },
-                tint = colors.singleOrNull() ?: Color.Transparent,
+                tint = tint,
+                mask = radialMask,
                 tileMode = android.graphics.Shader.TileMode.CLAMP,
-                bleed = true,
+                bleed = cfg.bleed,
+                progressive = progressive,
+                progressiveRamp = cfg.ramp,
                 modifier = Modifier.matchParentSize(),
             )
+            cfg.shader?.let { prog ->
+                SkinShaderSurface(prog, context, Modifier.matchParentSize()) {}
+            }
             if (colors.size > 1) Box(Modifier.matchParentSize().background(gradient(colors, block.gradient)))
-        } else if (colors.isNotEmpty() || block.glass != null) {
+            if (cfg.outline && block.stroke == null) {
+                Box(Modifier.matchParentSize().border(1.dp, Color.White.copy(alpha = 0.22f), shape))
+            }
+        } else if (colors.isNotEmpty() || cfg != null) {
             // where there's no glass to be had (the small preview, a tones background) a frosted box still reads as a panel
-            val fill = colors.ifEmpty { listOf(GlassStandIn) }
+            val fill = colors.ifEmpty { listOf(cfg?.tint?.let(context::color) ?: GlassStandIn) }
             Box(Modifier.matchParentSize().background(gradient(fill, block.gradient)))
         }
         block.stroke?.let { Box(Modifier.matchParentSize().border(it, context.color(block.strokeColor), shape)) }

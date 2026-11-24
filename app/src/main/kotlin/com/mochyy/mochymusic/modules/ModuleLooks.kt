@@ -13,6 +13,7 @@ import com.mochyy.mochymusic.constants.BlurQualityKey
 import com.mochyy.mochymusic.constants.BlurStrengthPxKey
 import com.mochyy.mochymusic.constants.ChromeGlassStyle
 import com.mochyy.mochymusic.constants.ChromeGlassStyleKey
+import com.mochyy.mochymusic.constants.DisableBlurKey
 import com.mochyy.mochymusic.constants.DynamicThemeKey
 import com.mochyy.mochymusic.constants.ElementBlurKey
 import com.mochyy.mochymusic.constants.EnableProgressiveBlurKey
@@ -141,6 +142,8 @@ internal class ModuleLooks(private val context: Context) {
             LookSetting.PLAYLIST_STYLE to Setting(PlaylistStyleKey) { enumName<PlaylistStyle>(it) },
             LookSetting.COVER_ROUNDING to Setting(ThumbnailCornerRadiusKey) { number(it, 0f..45f) },
             LookSetting.LYRICS_MOTION to Setting(LyricsMotionStyleKey) { enumName<LyricsMotionStyle>(it) },
+            // blur "true" turns DisableBlurKey off; restoring writes the original DisableBlurKey boolean back directly
+            LookSetting.BLUR to Setting(DisableBlurKey, saved = ::bool) { bool(it)?.not() },
             LookSetting.BLUR_QUALITY to Setting(BlurQualityKey) { enumName<BlurQuality>(it) },
             LookSetting.BLUR_STRENGTH to Setting(BlurStrengthPxKey) { number(it, 10f..50f) },
             LookSetting.PROGRESSIVE_BLUR to Setting(EnableProgressiveBlurKey) { bool(it) },

@@ -20,9 +20,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.mochyy.mochymusic.LocalAppContentObscured
+import com.mochyy.mochymusic.constants.DisableBlurKey
 import com.mochyy.mochymusic.constants.PlayerBackgroundStyle
 import com.mochyy.mochymusic.modules.skin.SkinBackground
 import com.mochyy.mochymusic.ui.component.glassRoot
+import com.mochyy.mochymusic.ui.utils.resize
+import com.mochyy.mochymusic.utils.rememberPreference
 import com.mochyy.mochymusic.ui.player.customize.PlayerBackgroundContent
 import com.mochyy.mochymusic.ui.player.flagship.AmbientBackdrop
 import com.mochyy.mochymusic.ui.player.flagship.FollowPicture
@@ -64,9 +67,16 @@ private fun SkinBackgroundFill(background: SkinBackground, context: SkinContext,
         }
         is SkinBackground.Fill -> {
             val colors = background.colors.map(context::color)
-            Box(modifier.then(if (colors.size == 1) Modifier.background(colors.first()) else Modifier.background(Brush.verticalGradient(colors))))
+            val fillModifier = if (colors.size == 1) {
+                Modifier.background(colors.first())
+            } else {
+                val gradient = remember(colors) { Brush.verticalGradient(colors) }
+                Modifier.background(gradient)
+            }
+            Box(modifier.then(fillModifier))
         }
         is SkinBackground.Picture -> SkinPictureBackdrop(background, context, modifier)
+        is SkinBackground.CoverBlur -> SkinCoverBlurBackdrop(background, context, modifier)
         is SkinBackground.Shader -> SkinShaderSurface(background.program, context, modifier) {
             SkinBackgroundFill(background.fallback, context, modifier)
         }
@@ -82,23 +92,61 @@ private fun SkinBackgroundFill(background: SkinBackground, context: SkinContext,
 // a picture, blurred once when it asks; a little bigger than the screen so the blur's clamped edges never show as a glow
 @Composable
 private fun SkinPictureBackdrop(background: SkinBackground.Picture, context: SkinContext, modifier: Modifier) {
-    val blurred = background.blur > 0.5f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val disableBlur by rememberPreference(DisableBlurKey, defaultValue = false)
+    val blurred = !disableBlur && background.blur > 0.5f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val model = context.skin.resolve(background.image)
-    AsyncImage(
-        model = model,
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
-        modifier = modifier.then(
-            if (!blurred) Modifier else Modifier
-                .graphicsLayer {
-                    scaleX = 1.1f
-                    scaleY = 1.1f
-                }
-                .blur(background.blur.dp),
-        ),
-    )
-    // a gif or webp moves unless it's blurred, since a blur over a moving picture is worked out again on every frame
-    if (!blurred && model != null && isMovingPicture(model)) MovingPictureOverlay(model, context, ContentScale.Crop, null, modifier)
+    Box(modifier) {
+        AsyncImage(
+            model = model,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().then(
+                if (!blurred) Modifier else Modifier
+                    .graphicsLayer {
+                        scaleX = 1.1f
+                        scaleY = 1.1f
+                    }
+                    .blur(background.blur.dp),
+            ),
+        )
+        // a gif or webp moves unless it's blurred, since a blur over a moving picture is worked out again on every frame
+        if (!blurred && model != null && isMovingPicture(model)) MovingPictureOverlay(model, context, ContentScale.Crop, null, Modifier.fillMaxSize())
+        if (background.edgeBlur) {
+            Box(Modifier.fillMaxSize().background(SkinPictureEdgeVignette))
+        }
+    }
+}
+
+private val SkinPictureEdgeVignette = Brush.verticalGradient(
+    0f to Color.Black.copy(alpha = 0.45f),
+    0.28f to Color.Transparent,
+    0.68f to Color.Transparent,
+    1f to Color.Black.copy(alpha = 0.65f),
+)
+
+// the song's cover art blurred at a custom radius with a dim veil
+@Composable
+private fun SkinCoverBlurBackdrop(background: SkinBackground.CoverBlur, context: SkinContext, modifier: Modifier) {
+    val disableBlur by rememberPreference(DisableBlurKey, defaultValue = false)
+    val blurred = !disableBlur && background.blur > 0.5f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    Box(modifier.background(Color.Black)) {
+        AsyncImage(
+            model = if (blurred) context.track.artwork?.resize(256, 256) else context.track.artwork,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().then(
+                if (!blurred) Modifier else Modifier
+                    .graphicsLayer {
+                        scaleX = 1.15f
+                        scaleY = 1.15f
+                    }
+                    .blur(background.blur.dp),
+            ),
+        )
+        if (background.dim > 0f) {
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = background.dim)))
+        }
+    }
 }
 
 // the flagship's drifting colours, whose clock rests while the style can't be seen instead of running under the mini player

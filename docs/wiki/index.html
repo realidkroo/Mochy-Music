@@ -450,8 +450,12 @@ echo "built build/neon-night.mochyymodule.zip"</code></pre>
 <tr><td><code>glass</code></td><td>zip only</td><td><a href="#modules-glass">a shader for the bars</a></td></tr>
 <tr><td><code>bar</code></td><td>no (its shader zip only)</td><td><a href="#modules-navbar">a nav bar of your own</a></td></tr>
 <tr><td><code>mini</code></td><td>no</td><td><a href="#modules-mini">a mini player of your own</a></td></tr>
-<tr><td><code>pages</code></td><td>no</td><td><a href="#modules-pages">pages</a>, even in settings, and ones that <a href="#modules-takeover">take mochy's over</a></td></tr>
-<tr><td><code>actions</code></td><td>no</td><td><a href="#modules-pages">rows in the player's menu</a></td></tr>
+<tr><td><code>floating</code></td><td>no</td><td><a href="#modules-floating-and-sheets">skin for the floating lyrics bubble</a></td></tr>
+<tr><td><code>sheet</code></td><td>no</td><td><a href="#modules-floating-and-sheets">custom bottom sheet look</a> (legibility-clamped)</td></tr>
+<tr><td><code>menu</code></td><td>no</td><td><a href="#modules-floating-and-sheets">default bubble popup menu style</a> for players</td></tr>
+<tr><td><code>appBackground</code> (or <code>background</code>)</td><td>no</td><td><a href="#modules-floating-and-sheets">app-wide custom background</a> behind non-sensitive screens</td></tr>
+<tr><td><code>pages</code></td><td>no</td><td><a href="#modules-pages">pages</a>, custom settings, sheets, and <a href="#modules-takeover">full-app takeovers</a></td></tr>
+<tr><td><code>actions</code></td><td>no</td><td><a href="#modules-callers">rows in the player's menu</a> (links, sheets, routes, controls, settings)</td></tr>
 <tr><td><code>url</code></td><td>zip only</td><td>the server a zip's songs, lyrics or song info come from</td></tr>
 <tr><td><code>code</code></td><td>zip only, me</td><td>signed code inside the zip (<a href="#modules-zip">zips with code</a>)</td></tr>
 </table></div>
@@ -653,6 +657,7 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>playerBackground</code></td><td>the same names</td><td>the classic player's background</td></tr>
 <tr><td><code>ipodTheme</code></td><td><code>SILVER</code>, <code>BLACK</code>, <code>U2</code>, <code>TRUE_DARK</code></td><td>the ipod player's body</td></tr>
 <tr><td><code>ipodWheelColor</code></td><td><code>THEME</code>, <code>WHITE</code>, <code>BLACK</code>, <code>RED</code></td><td>the ipod's click wheel</td></tr>
+<tr><td><code>blur</code></td><td><code>true</code>, <code>false</code></td><td>master switch for frosted glass &amp; backdrop blur across the app</td></tr>
 <tr><td><code>blurQuality</code></td><td><code>LOW</code>, <code>HIGH</code></td><td>cheaper or nicer glass</td></tr>
 <tr><td><code>blurStrengthPx</code></td><td>10 to 50</td><td>how strong the glass blur is</td></tr>
 <tr><td><code>enableProgressiveBlur</code></td><td><code>true</code>, <code>false</code></td><td>blur that grows toward the edges</td></tr>
@@ -882,16 +887,31 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>gap</code></td><td>space between its blocks, 0–80</td><td>8</td></tr>
 <tr><td><code>padding</code></td><td>space inside its edge, 0–80</td><td>16</td></tr>
 <tr><td><code>corner</code></td><td>0–300</td><td>22</td></tr>
-<tr><td><code>glass</code></td><td>frosted glass: <code>true</code> (a 24 dp blur), a blur in dp 0–60, or <code>{ "blur": 30 }</code>. it blurs <b>your player's background</b> behind the box</td><td>none</td></tr>
+<tr><td><code>glass</code></td><td>frosted glass: <code>true</code> (24 dp), a blur in dp 0–60, or a full object <code>{ "blur": 28, "progressive": "bottomToTop", "ramp": 1.2, "tint": "#26000000", "bleed": true, "outline": true, "shader": "shaders/frost.agsl" }</code>. <code>progressive</code> can be <code>topToBottom</code>, <code>bottomToTop</code> or <code>radial</code></td><td>none</td></tr>
 <tr><td><code>fill</code></td><td>one colour. over glass it's the glass's tint, so keep it see-through</td><td>none</td></tr>
 <tr><td><code>colors</code></td><td>2 to 6 colours for a gradient</td><td></td></tr>
 <tr><td><code>gradient</code></td><td><code>vertical</code>, <code>horizontal</code>, <code>diagonal</code>, <code>radial</code></td><td>vertical</td></tr>
 <tr><td><code>stroke</code>, <code>strokeColor</code></td><td>a border, 0.5–20 dp, in any colour</td><td>white at 18%</td></tr>
 <tr><td><code>width</code>, <code>height</code></td><td>8–600 and 8–800. without a width it fills the row or the screen</td><td></td></tr>
 <tr><td><code>shadow</code></td><td>a soft shadow under it</td><td>false</td></tr>
-<tr><td><code>action</code>, <code>link</code>, <code>page</code>, <code>search</code></td><td>makes the whole box tappable, with any <a href="#modules-player-custom">button action</a> (like <code>"action": "queue"</code> on your own up-next card)</td><td>none</td></tr>
+<tr><td><code>action</code>, <code>sheet</code>, <code>sheetPage</code>, <code>route</code>, <code>toggle</code>, <code>toggleSetting</code>, <code>link</code>, <code>page</code>, <code>search</code></td><td>makes the whole box tappable with <a href="#modules-callers">any caller</a></td><td>none</td></tr>
 </table></div>
 <div class="note">how the glass works: mochy captures your player's background (everything under <code>background</code>, layers and shader included) and blurs the part behind each glass box, past its edges so nothing bright smears in. it doesn't blur other blocks, and with the <code>tones</code> background there's nothing to blur, so the box shows its tint. in the small preview in the style picker it's a soft panel. blur needs android 12+, older phones get the tint.</div>
+
+<h2>blur: standalone progressive &amp; frosted blur bands</h2>
+<p>use a <code>blur</code> block inside a <code>stack</code> or layout to paint a uniform, progressive or radial backdrop blur strip anywhere without wrapping children in a box:</p>
+<pre><code class="json">{ "type": "blur", "radius": 32, "direction": "bottomToTop", "height": 140,
+  "colors": ["#00000000", "#88000000"], "steps": 6, "corner": 24 }</code></pre>
+<div class="tbl"><table>
+<tr><th>field</th><th>what it's for</th><th>default</th></tr>
+<tr><td><code>radius</code> (or <code>blur</code>)</td><td>blur radius in dp, 0–60</td><td>24</td></tr>
+<tr><td><code>direction</code></td><td><code>topToBottom</code>, <code>bottomToTop</code>, <code>radial</code>, or omit for uniform blur</td><td>uniform</td></tr>
+<tr><td><code>ramp</code></td><td>progressive ramp curve, 0.3–3</td><td>1</td></tr>
+<tr><td><code>colors</code> or <code>fill</code></td><td>optional tint or gradient laid over the blur</td><td>none</td></tr>
+<tr><td><code>width</code>, <code>height</code>, <code>corner</code></td><td>box dimensions (height 8–800, corner 0–300)</td><td>full width, 96, 0</td></tr>
+<tr><td><code>steps</code></td><td>progressive blur band count, 2–8</td><td>5</td></tr>
+<tr><td><code>bleed</code></td><td>sample slightly beyond edges so nothing darkens at the rim</td><td>true</td></tr>
+</table></div>
 
 <h2>path: your own shapes</h2>
 <p>any icon, logo, squiggle or badge you can draw as an svg path. open your svg, copy the <code>d</code> of a path and its <code>viewBox</code>:</p>
@@ -935,12 +955,13 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><th>type</th><th>what it is</th><th>extra fields</th></tr>
 <tr><td><code>ambient</code></td><td>the cover's colours drifting slowly, like the flagship</td><td></td></tr>
 <tr><td><code>blurredCover</code></td><td>the cover, blurred across the screen</td><td></td></tr>
+<tr><td><code>coverBlur</code></td><td>the playing cover blurred with your own radius and veil</td><td><code>blur</code> 0–80 dp (40) · <code>dim</code> 0–0.9 (0.25)</td></tr>
 <tr><td><code>darkGradient</code></td><td>a dark gradient</td><td></td></tr>
 <tr><td><code>solid</code></td><td>plain dark</td><td></td></tr>
 <tr><td><code>tones</code></td><td>the song's two tones, split where the song is (like timeline)</td><td></td></tr>
 <tr><td><code>color</code></td><td>one colour</td><td><code>color</code></td></tr>
 <tr><td><code>gradient</code></td><td>top to bottom</td><td><code>colors</code>: 2 to 6 colours</td></tr>
-<tr><td><code>image</code></td><td>your picture, cropped to fill. a gif or animated webp plays as a loop when it isn't blurred</td><td><code>image</code> · <code>blur</code> 0–60 dp, android 12+, blurred once and kept</td></tr>
+<tr><td><code>image</code></td><td>your picture, cropped to fill. a gif or animated webp plays as a loop when it isn't blurred</td><td><code>image</code> · <code>blur</code> 0–60 dp, android 12+ · <code>edgeBlur</code>: true adds soft progressive top/bottom blur bands</td></tr>
 <tr><td><code>liveCover</code></td><td>the song's video or animated cover across the whole screen (<a href="#modules-player-covers">covers that move</a>)</td><td><code>media</code> (auto) · <code>fallback</code>: what's under it until it starts and for songs with nothing moving (blurredCover)</td></tr>
 <tr><td><code>shader</code></td><td>your own gpu code, android 13+, zip only</td><td><code>shader</code> · <code>uniforms</code> · <code>fallback</code>: another background for older phones (<a href="#modules-player-shaders">shader code</a>)</td></tr>
 </table></div>
@@ -1319,23 +1340,27 @@ gh release upload v1.2 vinyl-night.mochyymodule.zip --clobber</code></pre>
 <tr><td><code>close</code></td><td>folds the player down to the mini player</td></tr>
 <tr><td><code>editor</code></td><td>opens your player's <a href="#modules-player-editor">editor page</a>, or your customise sheet without one</td></tr>
 </table></div>
-<p>or make it a custom action, the same three as menu rows: a <code>link</code> (https only), one of your <code>page</code>s, or a <code>search</code>. <code>{title}</code>, <code>{artist}</code>, <code>{album}</code> and <code>{id}</code> are filled in with the song.</p>
+<p>or give any button, box, menu item or page button <a href="#modules-callers">any caller</a>: 50+ built-in <code>action</code>s (download, pin, radio, share, volume, equalizer, floating lyrics…), 24 native <code>sheet</code>s (sleep timer, output, speed, details, stream info, add to playlist, lyrics offset/translation/editor, devices…), <code>sheetPage</code> to pop open one of your own pages inside a native bottom sheet, safe <code>route</code>s, <code>toggle</code>/<code>set</code> for your module's fields, <code>toggleSetting</code>/<code>setSetting</code> for safe Mochy settings, plus <code>link</code>, <code>page</code> and <code>search</code>! see <a href="#modules-callers">every caller</a> for the complete list.</p>
 <pre><code class="json">{ "type": "row", "gap": 18, "blocks": [
   { "type": "space", "grow": true },
   { "type": "button", "action": "shuffle", "image": "icons/dice.png", "imageOn": "icons/dice-lit.png" },
   { "type": "button", "action": "like", "fill": "#00000000", "color": "accent",
     "on": { "like": { "keyframes": "heartbeat", "duration": 600 } } },
-  { "type": "button", "link": "https://genius.com/search?q={artist}%20{title}", "image": "icons/genius.png" },
-  { "type": "button", "page": "about", "image": "icons/info.png" },
+  { "type": "button", "sheet": "sleepTimer" },
+  { "type": "button", "sheetPage": "quick-controls", "image": "icons/tune.png" },
+  { "type": "button", "route": "equalizer" },
   { "type": "space", "grow": true }
 ]}</code></pre>
-<p>without an <code>image</code>, mochy uses its own icon (a puzzle piece for custom actions). <code>imageOn</code> swaps in while it's on: playing, liked, shuffling or repeating.</p>
-<h2>The chevron menu</h2>
-<p>the chevron at the top right opens a little menu (lyrics, shuffle, repeat, other menu, edit player). <code>menu</code> adds up to 4 items of your own above <b>other menu</b>, each with your own picture and any action or custom action:</p>
-<pre><code class="json">"menu": [
-  { "title": "Wallpapers", "icon": "icons/walls.png", "page": "walls" },
-  { "title": "Live versions", "icon": "icons/live.png", "search": "{title} {artist} live" },
-  { "title": "Like", "action": "like" }
+<p>without an <code>image</code>, mochy picks a matching built-in icon automatically. <code>imageOn</code> swaps in while it's on: playing, liked, shuffling, repeating, downloaded, pinned, in library or floating lyrics active.</p>
+<h2>The chevron / bubble menu</h2>
+<p>the chevron at the top right opens the bubble popup menu. <code>menu</code> adds up to 12 items of your own, each with any <a href="#modules-callers">caller</a>, optional <code>when</code> visibility condition (<code>@playing</code>, <code>@liked</code>, or your own setting) and optional <code>accent</code> colour. style the entire popup (<code>stack</code>, <code>pill</code>, <code>card</code> or <code>grid</code>, backdrop blur, glass items, bottom placement) with <code>menuStyle</code> — see <a href="#modules-floating-and-sheets">floating lyrics, bubble menu &amp; sheets</a>:</p>
+<pre><code class="json">"menuStyle": { "layout": "pill", "backdropBlur": 18, "glass": 20, "atBottom": false },
+"menu": [
+  { "title": "Sleep timer", "sheet": "sleepTimer" },
+  { "title": "Audio output", "sheet": "output" },
+  { "title": "Quick controls", "sheetPage": "quick", "accent": "accent" },
+  { "title": "Equalizer", "route": "equalizer", "when": "@playing" },
+  { "title": "Floating lyrics", "toggleSetting": "floatingLyrics" }
 ]</code></pre>
 <p>titles are up to 30 characters. toggles (like, shuffle, repeat, play) keep the menu open so you see the change, everything else closes it.</p>
 <h2>Moving the chevron</h2>
@@ -1583,7 +1608,31 @@ half4 main(float2 p) {
 <article class="page" id="modules-player-lyrics" data-group="Your own player" data-title="Lyrics your way">
 <h1>Lyrics your way</h1>
 <p class="sub">your own lyrics, not mochy's style: poses, keyframes and agsl</p>
-<p>the <code>lyrics</code> block has two looks built in. <code>"style": "custom"</code> is your own: you say how the sung line, the lines before it and the lines after it look, how they move over to the next one, how a new line comes in, and whether the sung colour runs across the words as they're sung. then, if you like, paint the words or bend the whole block with your own shader.</p>
+<p>the <code>lyrics</code> block has three modes: Mochy's expressive lyrics, <b>flowing lyrics</b> (<code>"style": "flow"</code>), and full custom pose/shader lyrics (<code>"style": "custom"</code>).</p>
+<h2>Flowing lyrics (<code>"style": "flow"</code>)</h2>
+<p>flowing lyrics roll smoothly line-by-line with optional inactive-line blur (Apple Music style), soft top/bottom edge fade, word-by-word karaoke sweep, translations, and tap-to-seek — without writing keyframes or shaders. they also work inside <a href="#modules-pages">custom pages</a>!</p>
+<pre><code class="json">{ "type": "lyrics", "style": "flow", "height": 260,
+  "size": 19, "weight": "semibold", "color": "inkSoft", "active": "ink",
+  "blur": 3, "pastBlur": 4.5, "nextBlur": 2,
+  "edgeFade": true, "gap": 10, "activeScale": 1.08,
+  "pastOpacity": 0.35, "nextOpacity": 0.65, "linesAbove": 1,
+  "sweep": true, "translation": true, "seek": true }</code></pre>
+<div class="tbl"><table>
+<tr><th>field</th><th>what it's for</th><th>default</th></tr>
+<tr><td><code>blur</code></td><td>inactive line blur in dp, 0–16 (android 12+, respects Mochy's blur setting)</td><td>0</td></tr>
+<tr><td><code>pastBlur</code>, <code>nextBlur</code></td><td>override blur separately for lines already sung vs upcoming</td><td><code>blur</code></td></tr>
+<tr><td><code>edgeFade</code></td><td>soft alpha mask fading the top and bottom edges</td><td>true</td></tr>
+<tr><td><code>gap</code></td><td>vertical space between lines, 0–40 dp</td><td>6</td></tr>
+<tr><td><code>weight</code></td><td>thin, light, normal, medium, semibold, bold, black</td><td>semibold</td></tr>
+<tr><td><code>activeScale</code></td><td>scale boost for the currently sung line, 0.8–1.5</td><td>1.06</td></tr>
+<tr><td><code>pastOpacity</code>, <code>nextOpacity</code></td><td>opacity of past and upcoming lines, 0–1</td><td>0.35, 0.6</td></tr>
+<tr><td><code>linesAbove</code></td><td>how many past lines remain visible above the sung line, 0–5</td><td>1</td></tr>
+<tr><td><code>sweep</code></td><td>word-by-word karaoke highlight sweep when word timings exist</td><td>false</td></tr>
+<tr><td><code>translation</code></td><td>show translated/romanised reading under the sung line</td><td>false</td></tr>
+<tr><td><code>seek</code></td><td>tap any line to seek playback straight to it</td><td>false</td></tr>
+</table></div>
+<h2>Custom pose &amp; shader lyrics (<code>"style": "custom"</code>)</h2>
+<p>go even further with <code>"style": "custom"</code>: you say how the sung line, the lines before it and the lines after it look, how they move over to the next one, how a new line comes in, and whether the sung colour runs across the words as they're sung. then, if you like, paint the words or bend the whole block with your own shader.</p>
 <pre><code class="json">"keyframes": {
   "rise": { "from": { "y": 18, "opacity": 0, "blur": 6 }, "to": {} }
 },
@@ -1903,10 +1952,10 @@ half4 main(float2 p) {
   "idle": { "keyframes": "breathe", "duration": 2400 }
 }</code></pre>
 <h2>Tabs</h2>
-<p>each tab is one of mochy's by name (<code>home</code>, <code>search</code>, <code>library</code>, <code>settings</code>), or one of your <a href="#modules-pages">pages</a> with <code>page</code>. up to 6. leave <code>tabs</code> out to keep mochy's four.</p>
+<p>each tab is one of mochy's by name (<code>home</code>, <code>search</code>, <code>library</code>, <code>settings</code>), one of your <a href="#modules-pages">pages</a> with <code>page</code>, or any allowlisted safe app screen with <code>route</code> (like <code>history</code>, <code>stats</code>, <code>audio_lab</code>, <code>auto_playlist/liked</code>, <code>mochy_settings</code>). up to 6. leave <code>tabs</code> out to keep mochy's four.</p>
 <div class="tbl"><table>
 <tr><th>field</th><th>what it's for</th></tr>
-<tr><td><code>tab</code> or <code>page</code></td><td>what it opens. a plain name like <code>"home"</code> works too</td></tr>
+<tr><td><code>tab</code>, <code>page</code> or <code>route</code></td><td>what it opens. a plain name like <code>"home"</code> or <code>"history"</code> works too. unsafe routes (login, backup, proxy) are silently dropped</td></tr>
 <tr><td><code>icon</code>, <code>iconOn</code></td><td>your picture, and the one while it's lit (the same one without it). without an icon, mochy's own</td></tr>
 <tr><td><code>label</code></td><td>its word, for <code>labels</code>. mochy's tabs have their own</td></tr>
 </table></div>
@@ -2023,34 +2072,51 @@ half4 main(float2 p) {
 <tr><td><code>designWidth</code>, <code>scale</code></td><td><a href="#modules-scaling">fitting every screen</a></td></tr>
 </table></div>
 <p>up to 12 pages. a page only opens while its module is on.</p>
-<h2>Backgrounds</h2>
+<h2>Backgrounds &amp; layers</h2>
 <div class="tbl"><table>
 <tr><th>type</th><th>what it is</th><th>fields</th></tr>
 <tr><td><code>color</code></td><td>one colour</td><td><code>color</code></td></tr>
-<tr><td><code>gradient</code></td><td>top to bottom</td><td><code>colors</code>: 2 to 6</td></tr>
-<tr><td><code>image</code></td><td>your picture, cropped to fill</td><td><code>image</code> · <code>blur</code> 0–60 dp (android 12+) · <code>dim</code> 0–0.9 (0.35) so the words stay readable</td></tr>
+<tr><td><code>gradient</code></td><td>2 to 6 colours in any direction</td><td><code>colors</code> · <code>gradient</code>: <code>vertical</code>, <code>horizontal</code>, <code>diagonal</code>, <code>radial</code></td></tr>
+<tr><td><code>image</code></td><td>your picture, cropped to fill</td><td><code>image</code> · <code>blur</code> 0–60 dp (android 12+) · <code>dim</code> 0–0.9 (0.35)</td></tr>
+<tr><td><code>subjectCover</code></td><td>the playlist's, album's or artist's cover blurred behind the page</td><td><code>blur</code> 0–80 dp (36) · <code>dim</code> 0–0.9 (0.45)</td></tr>
+<tr><td><code>playingCover</code></td><td>the currently playing song's cover blurred live behind the page</td><td><code>blur</code> 0–80 dp (36) · <code>dim</code> 0–0.9 (0.45)</td></tr>
+<tr><td><code>ambient</code></td><td>ambient tint wash following the current artwork</td><td><code>dim</code> 0–0.9 (0.3)</td></tr>
 <tr><td><code>shader</code></td><td>your agsl, zip only, android 13+</td><td><code>shader</code> · <code>uniforms</code> · <code>fallback</code>: one colour or a list for older phones</td></tr>
 </table></div>
-<p>colours on pages are <code>"#RRGGBB"</code> / <code>"#AARRGGBB"</code>, or <code>"accent"</code> for the app's accent.</p>
+<p>add <code>"layers": [ { "type": "gradient", "colors": ["#33FF5CA8", "#00000000"], "opacity": 0.6 } ]</code> (up to 4) on any page to stack tints, grain images or shaders over its base background. colours on pages are <code>"#RRGGBB"</code> / <code>"#AARRGGBB"</code>, <code>"accent"</code>, or <code>"$settingKey|#fallback"</code>.</p>
 <h2>Blocks</h2>
+<p>every block on a page accepts an optional <code>when</code> condition (<code>"tab=songs"</code>, <code>"!compact"</code>, <code>"showStats"</code>) so you can build multi-tab screens, toggle sections live, or hide controls cleanly.</p>
 <div class="tbl"><table>
 <tr><th>type</th><th>what it shows</th><th>fields</th></tr>
-<tr><td><code>heading</code></td><td>a big line</td><td><code>text</code></td></tr>
-<tr><td><code>text</code></td><td>a paragraph</td><td><code>text</code> (up to 2000 characters)</td></tr>
+<tr><td><code>heading</code>, <code>text</code></td><td>big title or body paragraph (supports <code>{title}</code>, <code>{subtitle}</code>, <code>{count}</code>, <code>{bio}</code>, <code>{listeners}</code>, <code>{subscribers}</code>, <code>{nowTitle}</code>, <code>{nowArtist}</code>, <code>{nowAlbum}</code>, route args and <code>{$settingKey}</code>)</td><td><code>text</code></td></tr>
 <tr><td><code>image</code></td><td>a picture, full width</td><td><code>image</code> · <code>height</code> 40–400 (160) · <code>corner</code> (16)</td></tr>
-<tr><td><code>card</code></td><td>blocks grouped on a card: frosted glass over the page's background, or a colour</td><td><code>blocks</code> · <code>glass</code>: <code>true</code> (24 dp) or a blur 0–60 · <code>color</code> or <code>colors</code> (the glass's tint, or the card's fill) · <code>corner</code> 0–80 (22) · <code>padding</code> 0–60 (16). a card can't hold another card</td></tr>
-<tr><td><code>shader</code></td><td>your agsl in a box that follows a finger</td><td><code>shader</code> · <code>height</code> 24–800 (180) · <code>corner</code> 0–120 (22) · <code>uniforms</code> · <code>fallback</code> a colour</td></tr>
-<tr><td><code>button</code></td><td>opens a web page</td><td><code>text</code> · <code>link</code> (https:// or http:// only)</td></tr>
-<tr><td><code>setting</code></td><td>one of your <a href="#modules-settings">settings</a>, changed right there</td><td><code>key</code></td></tr>
-<tr><td><code>song</code></td><td>plays a song</td><td><code>id</code> (its youtube music video id) · <code>title</code> · <code>artist</code></td></tr>
-<tr><td><code>playlist</code></td><td>opens a playlist</td><td><code>id</code> · <code>title</code> · <code>subtitle</code></td></tr>
-<tr><td><code>album</code></td><td>opens an album</td><td><code>id</code> (its browse id, <code>MPREb_…</code>) · <code>title</code> · <code>subtitle</code></td></tr>
-<tr><td><code>artist</code></td><td>opens an artist</td><td><code>id</code> (its channel id, <code>UC…</code>) · <code>title</code></td></tr>
-<tr><td><code>search</code></td><td>opens a search</td><td><code>query</code> · <code>title</code></td></tr>
-<tr><td><code>divider</code></td><td>a thin line</td><td></td></tr>
-<tr><td><code>space</code></td><td>empty space</td><td><code>size</code> 0–120 (16)</td></tr>
-<tr><td><code>player</code>, <code>styles</code>, <code>use</code></td><td>your player, its sub-styles, and a button to use it, for an <a href="#modules-player-editor">editor page</a></td><td></td></tr>
-<tr><td><code>cover</code>, <code>songs</code>, <code>play</code>, <code>shuffle</code>, <code>original</code></td><td>what a page <a href="#modules-takeover">took over</a></td><td></td></tr>
+<tr><td><code>card</code></td><td>blocks grouped on a frosted/progressive glass or coloured card; optionally tappable</td><td><code>blocks</code> · <code>glass</code> (<code>true</code> or 0–60) · <code>progressive</code> (<code>topToBottom</code>/<code>bottomToTop</code>/<code>radial</code>) · <code>color</code>/<code>colors</code> · <code>stroke</code>/<code>strokeColor</code> · <code>corner</code> (22) · <code>padding</code> (16) · any <a href="#modules-callers">caller</a> (<code>action</code>/<code>sheet</code>/<code>route</code>…)</td></tr>
+<tr><td><code>row</code>, <code>column</code>, <code>stack</code></td><td>layout containers (up to 3 levels deep) to place buttons, cards, stats and overlays side-by-side or layered</td><td><code>blocks</code> · <code>gap</code> (10) · <code>align</code> &amp; <code>height</code> (for <code>stack</code>)</td></tr>
+<tr><td><code>blur</code></td><td>standalone frosted, progressive or radial backdrop blur strip</td><td><code>radius</code> 0–60 · <code>direction</code> (<code>topToBottom</code>/<code>bottomToTop</code>/<code>radial</code>) · <code>colors</code> · <code>height</code> (80) · <code>corner</code> (20) · <code>steps</code> (5)</td></tr>
+<tr><td><code>shader</code></td><td>your agsl in a box that follows a finger</td><td><code>shader</code> · <code>height</code> 24–800 (180) · <code>corner</code> 0–120 (22) · <code>uniforms</code> · <code>fallback</code></td></tr>
+<tr><td><code>actionButton</code> (or <code>button</code>)</td><td>rich button calling <a href="#modules-callers">every caller</a>: native sheets, module-page-in-sheet, safe routes, playback/app controls, settings, search or https links</td><td><code>text</code> · <code>icon</code> · <code>filled</code> · <code>colors</code> · <code>glass</code> · <code>corner</code> (24) · any caller (<code>sheet</code>, <code>sheetPage</code>, <code>action</code>, <code>route</code>, <code>toggle</code>, <code>toggleSetting</code>, <code>page</code>, <code>search</code>, <code>link</code>)</td></tr>
+<tr><td><code>tabs</code></td><td>segmented tab switcher bound to one of your module's settings; pair with <code>when</code> on blocks to build multi-tab pages</td><td><code>setting</code> (key) · <code>items</code>: <code>[{ "value": "songs", "label": "Songs" }, …]</code> · <code>glass</code> · <code>corner</code></td></tr>
+<tr><td><code>artistBanner</code></td><td>Mochy's full editorial artist banner (Apple motion cover over YouTube photo, progressive edge blur, avatar, wordmark logo, stats, and Play / Like / Subscribe buttons)</td><td><code>artistId</code> (optional; defaults to takeover artist) · <code>height</code> 160–560 (320) · <code>corner</code> (24) · <code>edgeBlur</code> · <code>motion</code> · <code>showAvatar</code> · <code>showLogo</code> · <code>showStats</code> · <code>showActions</code> · <code>scrim</code></td></tr>
+<tr><td><code>bio</code></td><td>expandable artist bio / about card</td><td><code>maxLines</code> (4) · <code>expandable</code> (true) · <code>title</code></td></tr>
+<tr><td><code>songs</code></td><td>live interactive song list with tap-to-play and native <code>SongMenu</code> sheet</td><td><code>source</code> (<code>subject</code>, <code>library</code>, <code>liked</code>, <code>downloaded</code>, <code>recent</code>, <code>queue</code>, <code>top</code>) · <code>layout</code> (<code>list</code>, <code>compact</code>, <code>grid</code>, <code>row</code>) · <code>searchable</code> · <code>showMenu</code> (true) · <code>numbers</code> · <code>covers</code> · <code>limit</code> · <code>glass</code> · <code>empty</code></td></tr>
+<tr><td><code>playlists</code></td><td>live playlist list/grid/carousel with tap-to-open and native <code>PlaylistMenu</code> sheet</td><td><code>source</code> (<code>library</code>, <code>subject</code>, <code>auto</code>, <code>all</code>) · <code>layout</code> (<code>list</code>, <code>grid</code>, <code>row</code>, <code>compact</code>) · <code>columns</code> (2) · <code>limit</code> · <code>covers</code> · <code>showCount</code> · <code>showMenu</code> · <code>empty</code></td></tr>
+<tr><td><code>albums</code></td><td>live album list/grid/carousel with native <code>AlbumMenu</code> sheet</td><td><code>source</code> (<code>subject</code>, <code>library</code>, <code>liked</code>) · <code>layout</code> · <code>columns</code> · <code>limit</code> · <code>showMenu</code> · <code>empty</code></td></tr>
+<tr><td><code>artists</code></td><td>live artist list/grid/carousel with native <code>ArtistMenu</code> sheet</td><td><code>source</code> (<code>subject</code>, <code>library</code>, <code>liked</code>) · <code>layout</code> · <code>columns</code> · <code>limit</code> · <code>empty</code></td></tr>
+<tr><td><code>nowPlaying</code></td><td>live now-playing card (cover, title, artist, play/pause/next/like, optional live lyric line; tap opens the full player)</td><td><code>glass</code> · <code>corner</code> (22) · <code>showControls</code> (true) · <code>showLyrics</code> (false)</td></tr>
+<tr><td><code>lyrics</code></td><td>live synced flowing lyrics right inside any page</td><td><code>height</code> (200) · <code>size</code> (15) · <code>color</code> · <code>active</code> · <code>blur</code> · <code>sweep</code> (true) · <code>seek</code> (true) · <code>translation</code></td></tr>
+<tr><td><code>searchBar</code></td><td>interactive search bar that submits straight to Mochy's search screen</td><td><code>placeholder</code> · <code>glass</code> · <code>corner</code> (24)</td></tr>
+<tr><td><code>speedDial</code></td><td>user's pinned Speed Dial tiles (songs, albums, artists, playlists)</td><td><code>layout</code> (<code>grid</code>, <code>row</code>, <code>list</code>) · <code>columns</code> (3) · <code>limit</code> (9) · <code>corner</code> · <code>empty</code></td></tr>
+<tr><td><code>stats</code></td><td>live listening &amp; library counts (plays, songs, liked, playlists)</td><td><code>glass</code> · <code>corner</code> (22) · <code>showLibrary</code> (true)</td></tr>
+<tr><td><code>settingsSearch</code></td><td>live search across all of Mochy's settings with highlight navigation</td><td><code>placeholder</code> · <code>glass</code> · <code>corner</code> (22)</td></tr>
+<tr><td><code>settingsCategories</code></td><td>Mochy's settings categories in a list, grid or row (always guarantees <b>Modules</b> stays reachable)</td><td><code>layout</code> (<code>list</code>, <code>grid</code>, <code>row</code>, <code>compact</code>) · <code>categories</code> (optional filter) · <code>columns</code> (2) · <code>glass</code> · <code>colors</code> · <code>corner</code></td></tr>
+<tr><td><code>appSetting</code></td><td>renders one safe Mochy setting (<code>key</code>) OR an entire safe category (<code>category</code>) interactively (switches, sliders, chips)</td><td><code>key</code> or <code>category</code> (<code>blur</code>, <code>customisation</code>, <code>now_playing</code>, <code>lyrics</code>, <code>canvas</code>, <code>video</code>, <code>playback</code>, <code>behaviour</code>, <code>audio_lab</code>) · <code>glass</code> · <code>corner</code></td></tr>
+<tr><td><code>settingsLink</code></td><td>styled row linking to an allowlisted safe settings page</td><td><code>target</code> · <code>title</code> · <code>subtitle</code> · <code>icon</code> · <code>glass</code> · <code>corner</code></td></tr>
+<tr><td><code>moduleSettingsPages</code></td><td>embeds all active modules' <code>inSettings</code> pages on a custom Settings page</td><td><code>glass</code> · <code>corner</code></td></tr>
+<tr><td><code>setting</code></td><td>one of your own module's <a href="#modules-settings">settings</a>, changed right there</td><td><code>key</code></td></tr>
+<tr><td><code>song</code>, <code>playlist</code>, <code>album</code>, <code>artist</code>, <code>search</code></td><td>static deep-link rows for curated picks</td><td><code>id</code>/<code>query</code> · <code>title</code> · <code>artist</code>/<code>subtitle</code></td></tr>
+<tr><td><code>divider</code>, <code>space</code></td><td>a thin hairline or empty vertical gap</td><td><code>size</code> 0–120 (16)</td></tr>
+<tr><td><code>player</code>, <code>styles</code>, <code>use</code></td><td>live preview of your player, its sub-styles, and a button to use it</td><td><code>height</code> · <code>corner</code></td></tr>
+<tr><td><code>cover</code>, <code>play</code>, <code>shuffle</code>, <code>original</code></td><td>subject cover art and quick takeover controls</td><td><code>height</code> · <code>corner</code> · <code>text</code> · <code>filled</code></td></tr>
 </table></div>
 <p>the ids are in youtube music links: <code>music.youtube.com/watch?v=<b>id</b></code>, <code>/playlist?list=<b>id</b></code>, <code>/browse/<b>id</b></code>, <code>/channel/<b>id</b></code>.</p>
 <h2>Page shaders</h2>
@@ -2135,11 +2201,12 @@ half4 main(float2 p) {
 <tr><td><code>local_playlist</code></td><td>your own playlists</td><td>name, picture, song count, songs</td></tr>
 <tr><td><code>online_playlist</code></td><td>youtube music playlists</td><td>title, author and count, picture, songs</td></tr>
 <tr><td><code>album</code></td><td>an album</td><td>title, artists and year, cover, songs</td></tr>
-<tr><td><code>artist</code></td><td>an artist</td><td>name, listeners, picture, top songs</td></tr>
+<tr><td><code>artist</code></td><td>an artist</td><td>full editorial banner/motion/logo, avatar, bio, monthly listeners, subscribers, top songs, albums, playlists, similar artists, like &amp; subscribe</td></tr>
 <tr><td><code>search</code></td><td>the search tab and its results</td><td>the query as <code>{query}</code> on results</td></tr>
-<tr><td><code>home</code>, <code>search_input</code> (only the tab), <code>library</code>, <code>history</code>, <code>stats</code>, <code>library/songs</code>, <code>auto_playlist</code>, <code>top_playlist</code>, <code>cache_playlist</code>, any other route</td><td>that page</td><td>the route's own parts as <code>{playlistId}</code>, <code>{albumId}</code>…</td></tr>
+<tr><td><code>mochy_settings</code> (or <code>settings_hub</code>)</td><td>Mochy's main Settings hub</td><td>interactive <code>settingsSearch</code>, <code>settingsCategories</code>, <code>appSetting</code>, <code>settingsLink</code> &amp; <code>moduleSettingsPages</code> — always with a pinned un-hideable native safety bar (<b>Modules</b> + <b>Original</b>) at the top</td></tr>
+<tr><td><code>home</code>, <code>search_input</code> (only the tab), <code>library</code>, <code>history</code>, <code>stats</code>, <code>library/songs</code>, <code>auto_playlist</code>, <code>top_playlist</code>, <code>cache_playlist</code></td><td>that page</td><td>live songs/title/count + the route's own parts as <code>{playlistId}</code>, <code>{albumId}</code>…</td></tr>
 </table></div>
-<div class="note">some pages can never be taken over: settings, the modules pages and setup. so however your page turns out, people can always reach your module and turn it off.</div>
+<div class="note">sensitive pages can <b>never</b> be taken over: <code>modules</code>, <code>module/{id}</code>, <code>module_browser</code>, login, YouTube sync, backup, proxy, cipher, Discord, scrobble, experimental &amp; setup. and taking over <code>mochy_settings</code> always pins a native safety strip above your page so nobody can ever be locked out of Modules.</div>
 <h2>The page's fields</h2>
 <div class="tbl"><table>
 <tr><th>field</th><th>what it's for</th></tr>
@@ -2159,6 +2226,414 @@ half4 main(float2 p) {
 </table></div>
 <p>a button only shows when it has something to do: no songs, no play button. <code>{ "type": "control", "action": "play" }</code> works too. every other page block works here as well.</p>
 <div class="note">your page reads the same data mochy's own page would, the same way, so it's as quick to open. a long playlist turns into rows off the main thread, and the rows come a screenful at a time.</div>
+</article>
+
+<article class="page" id="modules-callers" data-group="Interfaces" data-title="Every caller">
+<h1>Every caller</h1>
+<p class="sub">buttons, boxes, bubble menu items, player menu rows &amp; custom pages — all wired to Mochy</p>
+<p>anywhere a module can react to a tap — a player <code>button</code>, a tappable <code>box</code>, a <code>menu</code> bubble item, a top-level <code>actions</code> menu row, a page <code>actionButton</code>, or a clickable page <code>card</code> — you can use <b>any</b> of Mochy's sandboxed callers. give one target field per item:</p>
+
+<h2>1. Playback &amp; app controls (<code>"action": "…"</code>)</h2>
+<div class="tbl"><table>
+<tr><th>category</th><th>action names</th></tr>
+<tr><td><b>Playback</b></td><td><code>playPause</code>, <code>play</code>, <code>pause</code>, <code>previous</code> (<code>prev</code>), <code>next</code>, <code>shuffle</code>, <code>repeat</code>, <code>forward</code> (<code>forward10</code>, <code>seekForward</code>), <code>rewind</code> (<code>back10</code>, <code>seekBack</code>), <code>forward30</code>, <code>rewind30</code>, <code>restart</code></td></tr>
+<tr><td><b>Library &amp; song</b></td><td><code>like</code>, <code>library</code> (<code>addToLibrary</code>), <code>download</code> (<code>offline</code>), <code>pin</code> (<code>speedDial</code>), <code>radio</code> (<code>startRadio</code>), <code>share</code></td></tr>
+<tr><td><b>Audio &amp; volume</b></td><td><code>volumeUp</code> (<code>volUp</code>), <code>volumeDown</code> (<code>volDown</code>), <code>mute</code>, <code>equalizer</code> (<code>eq</code>), <code>audioLab</code>, <code>floatingLyrics</code> (<code>floating</code>)</td></tr>
+<tr><td><b>Player views</b></td><td><code>lyrics</code>, <code>queue</code>, <code>openPlayer</code> (<code>expandPlayer</code>), <code>close</code> (<code>dismiss</code>), <code>menu</code>, <code>otherMenu</code> (<code>more</code>), <code>customise</code> (<code>customize</code>), <code>editor</code>, <code>editPlayer</code>, <code>rotate</code>, <code>fullVideo</code> (<code>video</code>)</td></tr>
+<tr><td><b>Quick navigation</b></td><td><code>artist</code>, <code>album</code>, <code>home</code>, <code>search</code>, <code>settings</code>, <code>back</code></td></tr>
+<tr><td><b>Sheet shortcuts</b></td><td><code>sleepTimer</code>, <code>output</code>, <code>speed</code>, <code>songDetails</code>, <code>streamInfo</code>, <code>addToPlaylist</code>, <code>createPlaylist</code>, <code>lyricsProvider</code>, <code>lyricsOffset</code>, <code>lyricsTranslation</code>, <code>lyricsEditor</code>, <code>songEdit</code>, <code>videoQuality</code>, <code>canvasQuality</code>, <code>videoPicker</code>, <code>devices</code></td></tr>
+</table></div>
+
+<h2>2. Native sheets &amp; modal module pages (<code>"sheet"</code> / <code>"sheetPage"</code>)</h2>
+<p>open any native Mochy bottom sheet — or pop open one of your own module pages inside Mochy's native <code>PopupSheet</code> (capped at 2 sheets deep):</p>
+<pre><code class="json">{ "type": "actionButton", "text": "Sleep timer", "sheet": "sleepTimer" }
+{ "type": "actionButton", "text": "Quick studio", "sheetPage": "quick-controls" }
+{ "type": "button", "sheet": "page:quick-controls" }</code></pre>
+<div class="tbl"><table>
+<tr><th>sheet name</th><th>opens</th></tr>
+<tr><td><code>playerMenu</code> (<code>more</code>)</td><td>Mochy's full player ••• action menu</td></tr>
+<tr><td><code>sleepTimer</code> (<code>sleep</code>)</td><td>Sleep timer sheet</td></tr>
+<tr><td><code>output</code> (<code>audioOutput</code>)</td><td>Audio output / Bluetooth / USB DAC switcher</td></tr>
+<tr><td><code>speed</code> (<code>tempo</code>, <code>pitch</code>)</td><td>Playback speed &amp; pitch sheet</td></tr>
+<tr><td><code>songDetails</code> (<code>details</code>, <code>about</code>)</td><td>Song details &amp; credits sheet</td></tr>
+<tr><td><code>streamInfo</code> (<code>stats</code>, <code>codec</code>)</td><td>Live codec, sample rate &amp; stream diagnostics sheet</td></tr>
+<tr><td><code>share</code></td><td>Rich song share sheet</td></tr>
+<tr><td><code>addToPlaylist</code> (<code>playlist</code>)</td><td>Add current song to a playlist</td></tr>
+<tr><td><code>createPlaylist</code> (<code>newPlaylist</code>)</td><td>Create a new playlist dialog</td></tr>
+<tr><td><code>lyricsProvider</code>, <code>lyricsOffset</code>, <code>lyricsTranslation</code>, <code>lyricsEditor</code></td><td>All four lyrics sheets</td></tr>
+<tr><td><code>songEdit</code> (<code>editMetadata</code>)</td><td>Edit song metadata sheet</td></tr>
+<tr><td><code>videoQuality</code>, <code>canvasQuality</code>, <code>videoPicker</code></td><td>Video resolution, animated cover quality &amp; video picker sheets</td></tr>
+<tr><td><code>devices</code> (<code>link</code>)</td><td>Device integration / TV remote sheet</td></tr>
+<tr><td><code>customise</code>, <code>editPlayer</code></td><td>Module customise sheet or Mochy's player style selector</td></tr>
+<tr><td><code>songMenu</code>, <code>playlistMenu</code>, <code>artistMenu</code></td><td>Context menu sheet for the current song / subject playlist / subject artist</td></tr>
+<tr><td><code>sheetPage: "&lt;pageId&gt;"</code> (or <code>sheet: "page:&lt;pageId&gt;"</code>)</td><td>Renders your own module page inside a native modal bottom sheet</td></tr>
+</table></div>
+
+<h2>3. Safe app routes (<code>"route": "…"</code>)</h2>
+<p>jump straight to any non-sensitive screen in Mochy (also works in custom <code>bar</code> tabs):</p>
+<div class="tbl"><table>
+<tr><th>group</th><th>allowed routes</th></tr>
+<tr><td><b>Browse &amp; library</b></td><td><code>home</code>, <code>search_input</code> (<code>search</code>), <code>library</code>, <code>library/songs</code> (<code>songs</code>), <code>library/playlists</code> (<code>playlists</code>), <code>library/added</code>, <code>library/local/added</code>, <code>library/local/albums</code>, <code>library/local/artists</code>, <code>library/local/playlists</code>, <code>library/cached/added</code>, <code>library/cached/albums</code>, <code>library/cached/artists</code>, <code>library/cached/playlists</code>, <code>library/imported</code>, <code>history</code>, <code>stats</code>, <code>explore</code>, <code>mood_and_genres</code>, <code>new_release</code></td></tr>
+<tr><td><b>Smart playlists</b></td><td><code>auto_playlist/liked</code> (<code>liked</code>), <code>auto_playlist/downloaded</code> (<code>downloaded</code>), <code>auto_playlist/uploaded</code>, <code>top_playlist/50</code> (10–500), <code>cache_playlist/cached</code></td></tr>
+<tr><td><b>Entities</b></td><td><code>album/{id}</code>, <code>artist/{id}</code>, <code>local_playlist/{id}</code>, <code>online_playlist/{id}</code></td></tr>
+<tr><td><b>Safe settings</b></td><td><code>mochy_settings</code> (<code>settings</code>), <code>audio_lab</code>, <code>equalizer</code>, <code>audio_fx</code>, <code>audio_stage</code>, <code>audio_quality</code>, <code>audio_pass</code>, <code>crossmix_settings</code>, <code>playback_settings</code>, <code>now_playing_settings</code>, <code>general_settings</code>, <code>customisation_settings</code>, <code>gesture_settings</code>, <code>storage_settings</code>, <code>integrations</code>, <code>modules</code>, <code>module_browser</code></td></tr>
+</table></div>
+<p>sensitive routes (<code>youtube_login</code>, <code>backup</code>, <code>proxy_settings</code>, <code>cipher_settings</code>, <code>discord</code>, <code>scrobble_service</code>, <code>experimental_settings</code>) are always blocked.</p>
+
+<h2>4. Toggling module fields &amp; safe Mochy settings</h2>
+<pre><code class="json">// toggle one of your own module settings ("true" &lt;-&gt; "false")
+{ "type": "button", "toggle": "compactMode" }
+// or set it to a specific value
+{ "type": "actionButton", "text": "Dark preset", "set": { "key": "preset", "value": "dark" } }
+
+// toggle or set any allowlisted safe Mochy app setting
+{ "type": "button", "toggleSetting": "blur" }
+{ "type": "actionButton", "text": "Pure black", "toggleSetting": "pureBlack" }
+{ "type": "actionButton", "text": "High quality blur", "setSetting": { "key": "blurQuality", "value": "HIGH" } }</code></pre>
+<p>supported safe setting keys cover 9 categories (<code>blur</code>, <code>customisation</code>, <code>now_playing</code>, <code>lyrics</code>, <code>canvas</code>, <code>video</code>, <code>playback</code>, <code>behaviour</code>, <code>audio_lab</code>) — including <code>blur</code>, <code>progressiveBlur</code>, <code>blurQuality</code>, <code>blurStrength</code>, <code>elementBlur</code>, <code>bottomBar</code>, <code>pureBlack</code>, <code>dynamicTheme</code>, <code>playerStyle</code>, <code>homeStyle</code>, <code>playlistStyle</code>, <code>coverRounding</code>, <code>animations</code>, <code>animationSpeed</code>, <code>slimNavBar</code>, <code>lyricsMotion</code>, <code>lyricsBloom</code>, <code>lyricsSoftLight</code>, <code>lyricsGlow</code>, <code>lyricsTextSize</code>, <code>lyricsLineSpacing</code>, <code>floatingLyrics</code>, <code>romanizeAsMain</code>, <code>translateLyrics</code>, <code>formatBadge</code>, <code>animatedCanvas</code>, <code>youtubeBackground</code>, <code>videoQuality</code>, <code>skipSilence</code>, <code>audioNormalization</code>, <code>persistentQueue</code>, <code>persistentShuffle</code>, <code>crossmixMode</code>, <code>skipBlend</code>, <code>offlineMode</code>, <code>dataSaver</code>, <code>hideExplicit</code>, <code>audioQuality</code>, <code>downloadQuality</code>, <code>preferUsbDac</code>, <code>hiResOutput</code>, <code>spatialAudio</code>, <code>musicHaptics</code>. secrets, cookies, proxy, backup &amp; screenshot flags are strictly unreachable.</p>
+
+<h2>5. Pages, searches &amp; links</h2>
+<p><code>"page": "my-page"</code> opens your module page; <code>"search": "{artist} live"</code> searches in Mochy; <code>"link": "https://…"</code> opens an external https URL (checked against SSRF &amp; secret exfiltration before launch).</p>
+</article>
+
+<article class="page" id="modules-floating-and-sheets" data-group="Interfaces" data-title="Floating lyrics, bubble menu &amp; sheets">
+<h1>Floating lyrics, bubble menu &amp; sheets</h1>
+<p class="sub">skin the floating lyrics pill, the player's bubble popup, bottom sheets &amp; app-wide backgrounds</p>
+
+<h2>Floating lyrics bubble (<code>floating</code>)</h2>
+<p>restyle Mochy's system-overlay floating lyrics bubble right from your manifest's top level:</p>
+<pre><code class="json">"floating": {
+  "bubble": ["#CC161024", "#CC241538"],
+  "gradient": "diagonal",
+  "ink": "#FFFFFF",
+  "waiting": "#99FFFFFF",
+  "soft": "#AAFFFFFF",
+  "progress": "accent",
+  "track": "#33FFFFFF",
+  "corner": 24,
+  "tail": false,
+  "border": 1,
+  "borderColor": "#33FFFFFF",
+  "coverShape": "rounded",
+  "coverCorner": 10,
+  "opacity": 0.94,
+  "blur": 24,
+  "fontSize": 15,
+  "weight": "semibold",
+  "shadow": true,
+  "widthScale": 1.1
+}</code></pre>
+<div class="tbl"><table>
+<tr><th>field</th><th>what it's for</th><th>default</th></tr>
+<tr><td><code>bubble</code> (or <code>colors</code>/<code>fill</code>)</td><td>one colour or 2–4 colour gradient (clamped for legibility); omit to follow cover art</td><td>cover art</td></tr>
+<tr><td><code>gradient</code></td><td><code>horizontal</code>, <code>vertical</code>, <code>diagonal</code>, <code>radial</code></td><td>horizontal</td></tr>
+<tr><td><code>ink</code>, <code>waiting</code>, <code>soft</code></td><td>active lyric colour, upcoming/unsung colour, secondary text colour</td><td>auto contrast</td></tr>
+<tr><td><code>progress</code>, <code>track</code></td><td>mini progress bar fill &amp; track colours inside the expanded pill</td><td>auto</td></tr>
+<tr><td><code>corner</code></td><td>bubble corner radius, 0–40 dp</td><td>18</td></tr>
+<tr><td><code>tail</code></td><td>speech-bubble tail notch</td><td>true</td></tr>
+<tr><td><code>border</code>, <code>borderColor</code></td><td>optional crisp border, 0.5–4 dp</td><td>none</td></tr>
+<tr><td><code>coverShape</code>, <code>coverCorner</code></td><td><code>circle</code>, <code>rounded</code> or <code>square</code></td><td>circle</td></tr>
+<tr><td><code>opacity</code></td><td>overall bubble opacity, 0.35–1</td><td>1</td></tr>
+<tr><td><code>blur</code></td><td>real Android 12+ system blur behind the floating window, 0–60 dp (respects Mochy's blur setting)</td><td>0</td></tr>
+<tr><td><code>fontSize</code>, <code>weight</code></td><td>lyric text size (10–24 sp) &amp; weight</td><td>default</td></tr>
+<tr><td><code>shadow</code>, <code>widthScale</code></td><td>elevation shadow toggle; horizontal width multiplier 0.75–1.35</td><td>true, 1.0</td></tr>
+</table></div>
+
+<h2>Custom bubble / chevron menu (<code>menuStyle</code> or top-level <code>menu</code>)</h2>
+<p>put <code>menuStyle</code> inside a <code>player</code> (or top-level <code>menu</code> for every player) to completely customize the "more options" bubble popup:</p>
+<pre><code class="json">"menuStyle": {
+  "layout": "grid",
+  "columns": 3,
+  "dim": 0.65,
+  "backdropBlur": 16,
+  "glass": 22,
+  "fill": ["#D91C1B24"],
+  "activeFill": "accent",
+  "ink": "#FFFFFF",
+  "labelColor": "#EEFFFFFF",
+  "labelFill": "#99121218",
+  "corner": 20,
+  "stroke": 1,
+  "strokeColor": "#2EFFFFFF",
+  "size": 48,
+  "gap": 12,
+  "atBottom": false,
+  "showDefaults": true,
+  "triggerIcon": "icons/more.png"
+}</code></pre>
+<p><b>layouts:</b> <code>stack</code> (classic vertical bubbles beside labels), <code>pill</code> (wide rounded horizontal pills), <code>card</code> (frosted full-width menu card), and <code>grid</code> (2–4 column control center tiles). <b>safety rule:</b> even if <code>showDefaults</code> is <code>false</code>, Mochy always keeps <b>Other menu</b> and <b>Edit player</b> reachable so nobody can lose access to settings or switch away from a broken player.</p>
+
+<h2>Custom bottom sheets (<code>sheet</code>)</h2>
+<p>restyle Mochy's native bottom sheets (<code>PopupSheet</code>, song menus, sleep timer, output switcher, player action menu) globally:</p>
+<pre><code class="json">"sheet": {
+  "surface": "#EB15151C",
+  "rowSurface": "#1FFFFFFF",
+  "ink": "#FFFFFF",
+  "accent": "accent",
+  "corner": 28,
+  "rowCorner": 16,
+  "dim": 0.62,
+  "stroke": 1,
+  "strokeColor": "#26FFFFFF"
+}</code></pre>
+<p>sheet background alpha is clamped to at least 86% so text inside every native sheet stays readable.</p>
+
+<h2>App-wide custom background (<code>appBackground</code> or <code>background</code>)</h2>
+<p>paint a custom background (blurred playing cover, ambient wash, gradient, image or AGSL shader + stacked layers) behind Mochy's screens. the frosted nav bar and mini player automatically capture and blur it!</p>
+<pre><code class="json">"appBackground": {
+  "type": "playingCover",
+  "blur": 46,
+  "dim": 0.45,
+  "opacity": 1,
+  "screens": ["home", "library", "mochy_settings"],
+  "layers": [
+    { "type": "gradient", "colors": ["#33FF5CA8", "#00000000"], "opacity": 0.5 }
+  ]
+}</code></pre>
+<p>leave <code>screens</code> empty to apply to all non-sensitive screens. for security, app-wide module backgrounds are <b>automatically disabled</b> on login, YouTube sync, backup, proxy, cipher, Discord, scrobble, experimental, and Modules screens.</p>
+</article>
+
+<article class="page" id="modules-recreate-app" data-group="Interfaces" data-title="Recreate the whole app">
+<h1>Recreate the whole app</h1>
+<p class="sub">step-by-step guide to rebuilding Home, Library, Artist, Playlist, Settings, Nav Bar, Player, Floating Lyrics &amp; Sheets as one module</p>
+<p>with custom takeovers, live media blocks, interactive settings blocks, and <a href="#modules-callers">every caller</a>, a single <code>.mochyymodule.zip</code> can replace virtually the entire Mochy interface while staying 100% sandboxed and safe to switch off anytime.</p>
+
+<h2>Folder layout</h2>
+<pre><code>my-app-theme/
+├── manifest.json
+├── icon.png
+├── banner.webp
+├── fonts/
+│   └── Display.ttf
+├── icons/
+│   ├── home.png
+│   ├── library.png
+│   ├── settings.png
+│   └── more.png
+└── shaders/
+    └── bg.agsl</code></pre>
+
+<h2>Complete blueprint (<code>manifest.json</code>)</h2>
+<p>copy this template, swap in your colours/assets, zip the folder as <code>my-app-theme.mochyymodule.zip</code>, and add it under <b>Settings → Modules → Add from a file</b>:</p>
+<pre><code class="json">{
+  "id": "studio-os",
+  "name": "Studio OS",
+  "version": "1.0.0",
+  "author": "You",
+  "description": "Complete custom interface for Mochy Music",
+  "look": {
+    "accentColor": "#FF6B9D",
+    "blur": "true",
+    "enableProgressiveBlur": "true",
+    "blurStrengthPx": "28",
+    "thumbnailCornerRadius": "18"
+  },
+  "appBackground": {
+    "type": "playingCover",
+    "blur": 50,
+    "dim": 0.55
+  },
+  "floating": {
+    "bubble": ["#CC161420", "#CC261830"],
+    "gradient": "diagonal",
+    "corner": 24,
+    "tail": false,
+    "blur": 24,
+    "coverShape": "rounded",
+    "coverCorner": 10
+  },
+  "sheet": {
+    "surface": "#EB14141B",
+    "rowSurface": "#1CFFFFFF",
+    "corner": 28,
+    "rowCorner": 16,
+    "stroke": 1,
+    "strokeColor": "#22FFFFFF"
+  },
+  "bar": {
+    "tabs": [
+      { "tab": "home", "label": "Home" },
+      { "tab": "search", "label": "Search" },
+      { "tab": "library", "label": "Library" },
+      { "route": "history", "label": "History" },
+      { "tab": "settings", "label": "Settings" }
+    ],
+    "labels": "selected",
+    "indicator": { "type": "pill", "color": "#2AFFFFFF" },
+    "glass": true
+  },
+  "settings": [
+    { "key": "libTab", "label": "Library tab", "default": "playlists",
+      "options": [
+        { "value": "playlists", "label": "Playlists" },
+        { "value": "songs", "label": "Songs" },
+        { "value": "albums", "label": "Albums" },
+        { "value": "artists", "label": "Artists" }
+      ] }
+  ],
+  "player": {
+    "name": "Studio Player",
+    "background": { "type": "coverBlur", "blur": 48, "dim": 0.35 },
+    "menuStyle": { "layout": "grid", "columns": 3, "backdropBlur": 18, "glass": 22 },
+    "menu": [
+      { "title": "Sleep timer", "sheet": "sleepTimer" },
+      { "title": "Output", "sheet": "output" },
+      { "title": "Speed", "sheet": "speed" },
+      { "title": "Add to playlist", "sheet": "addToPlaylist" },
+      { "title": "Quick sheet", "sheetPage": "quick-hub", "accent": "accent" },
+      { "title": "Equalizer", "route": "equalizer" }
+    ],
+    "blocks": [
+      { "type": "space", "grow": true },
+      { "type": "cover", "size": 0.78, "corner": 28, "shadow": true, "media": ["auto"] },
+      { "type": "space", "size": 16 },
+      { "type": "title", "size": 24, "weight": "bold" },
+      { "type": "artist", "size": 15, "color": "inkSoft" },
+      { "type": "space", "size": 14 },
+      { "type": "lyrics", "style": "flow", "height": 150, "size": 17, "blur": 3,
+        "edgeFade": true, "sweep": true, "translation": true, "seek": true },
+      { "type": "space", "size": 12 },
+      { "type": "progress", "style": "pill" },
+      { "type": "controls", "size": 56 },
+      { "type": "row", "gap": 14, "blocks": [
+        { "type": "space", "grow": true },
+        { "type": "button", "action": "like" },
+        { "type": "button", "sheet": "output" },
+        { "type": "button", "action": "queue" },
+        { "type": "button", "sheetPage": "quick-hub" },
+        { "type": "space", "grow": true }
+      ] },
+      { "type": "space", "grow": true }
+    ]
+  },
+  "pages": [
+    {
+      "id": "home-ui",
+      "title": "Home",
+      "replaces": ["home"],
+      "header": false,
+      "background": { "type": "playingCover", "blur": 52, "dim": 0.55 },
+      "blocks": [
+        { "type": "heading", "text": "Listen Now" },
+        { "type": "searchBar", "glass": 20, "placeholder": "Search songs, artists, albums" },
+        { "type": "nowPlaying", "glass": 24, "showControls": true, "showLyrics": true },
+        { "type": "stats", "glass": 18 },
+        { "type": "heading", "text": "Speed Dial" },
+        { "type": "speedDial", "layout": "grid", "columns": 3, "limit": 9 },
+        { "type": "heading", "text": "Jump back in" },
+        { "type": "songs", "source": "recent", "layout": "row", "limit": 12 },
+        { "type": "heading", "text": "Your playlists" },
+        { "type": "playlists", "source": "all", "layout": "row", "limit": 12 },
+        { "type": "row", "gap": 10, "blocks": [
+          { "type": "actionButton", "text": "Audio Lab", "route": "audio_lab", "glass": 18 },
+          { "type": "actionButton", "text": "Quick Hub", "sheetPage": "quick-hub", "glass": 18 }
+        ] }
+      ]
+    },
+    {
+      "id": "library-ui",
+      "title": "Library",
+      "replaces": ["library"],
+      "header": false,
+      "background": { "type": "ambient", "dim": 0.35 },
+      "blocks": [
+        { "type": "heading", "text": "Library" },
+        { "type": "tabs", "setting": "libTab", "glass": 20, "items": [
+          { "value": "playlists", "label": "Playlists" },
+          { "value": "songs", "label": "Songs" },
+          { "value": "albums", "label": "Albums" },
+          { "value": "artists", "label": "Artists" }
+        ] },
+        { "type": "actionButton", "text": "New playlist", "sheet": "createPlaylist", "when": "libTab=playlists" },
+        { "type": "playlists", "source": "all", "layout": "grid", "columns": 2, "when": "libTab=playlists" },
+        { "type": "songs", "source": "library", "searchable": true, "showMenu": true, "when": "libTab=songs" },
+        { "type": "albums", "source": "library", "layout": "grid", "columns": 2, "when": "libTab=albums" },
+        { "type": "artists", "source": "library", "layout": "grid", "columns": 3, "when": "libTab=artists" }
+      ]
+    },
+    {
+      "id": "artist-ui",
+      "title": "{title}",
+      "replaces": ["artist"],
+      "header": false,
+      "background": { "type": "subjectCover", "blur": 50, "dim": 0.55 },
+      "blocks": [
+        { "type": "artistBanner", "height": 340, "edgeBlur": true, "motion": true, "showAvatar": true, "showLogo": true, "showStats": true, "showActions": true },
+        { "type": "bio", "maxLines": 4, "expandable": true },
+        { "type": "heading", "text": "Top songs" },
+        { "type": "songs", "source": "subject", "numbers": true, "showMenu": true },
+        { "type": "heading", "text": "Albums" },
+        { "type": "albums", "source": "subject", "layout": "row" },
+        { "type": "heading", "text": "Playlists" },
+        { "type": "playlists", "source": "subject", "layout": "row" },
+        { "type": "heading", "text": "Similar artists" },
+        { "type": "artists", "source": "subject", "layout": "row" },
+        { "type": "original", "text": "Open Mochy's artist page", "filled": false }
+      ]
+    },
+    {
+      "id": "playlist-ui",
+      "title": "{title}",
+      "replaces": ["playlist", "album"],
+      "header": false,
+      "background": { "type": "subjectCover", "blur": 44, "dim": 0.5 },
+      "blocks": [
+        { "type": "cover", "height": 250, "corner": 24 },
+        { "type": "heading", "text": "{title}" },
+        { "type": "text", "text": "{subtitle}" },
+        { "type": "row", "gap": 10, "blocks": [
+          { "type": "play" },
+          { "type": "shuffle", "filled": false }
+        ] },
+        { "type": "songs", "source": "subject", "searchable": true, "numbers": true, "showMenu": true },
+        { "type": "original", "text": "Open Mochy's page", "filled": false }
+      ]
+    },
+    {
+      "id": "settings-ui",
+      "title": "Settings",
+      "replaces": ["mochy_settings"],
+      "header": false,
+      "background": { "type": "ambient", "dim": 0.4 },
+      "blocks": [
+        { "type": "heading", "text": "Settings" },
+        { "type": "settingsSearch", "glass": 20 },
+        { "type": "heading", "text": "Quick toggles" },
+        { "type": "appSetting", "key": "blur", "glass": 18 },
+        { "type": "appSetting", "key": "pureBlack", "glass": 18 },
+        { "type": "appSetting", "key": "floatingLyrics", "glass": 18 },
+        { "type": "appSetting", "key": "skipSilence", "glass": 18 },
+        { "type": "heading", "text": "All settings" },
+        { "type": "settingsCategories", "layout": "grid", "columns": 2, "glass": 18 },
+        { "type": "heading", "text": "Blur &amp; glass" },
+        { "type": "appSetting", "category": "blur", "glass": 18 },
+        { "type": "heading", "text": "Playback" },
+        { "type": "appSetting", "category": "playback", "glass": 18 },
+        { "type": "heading", "text": "Module pages" },
+        { "type": "moduleSettingsPages" }
+      ]
+    },
+    {
+      "id": "quick-hub",
+      "title": "Quick Hub",
+      "blocks": [
+        { "type": "nowPlaying", "showControls": true, "showLyrics": true },
+        { "type": "lyrics", "height": 180, "blur": 2.5, "sweep": true, "seek": true },
+        { "type": "row", "gap": 10, "blocks": [
+          { "type": "actionButton", "text": "Sleep timer", "sheet": "sleepTimer" },
+          { "type": "actionButton", "text": "Output", "sheet": "output" }
+        ] },
+        { "type": "row", "gap": 10, "blocks": [
+          { "type": "actionButton", "text": "Speed", "sheet": "speed", "filled": false },
+          { "type": "actionButton", "text": "Stream info", "sheet": "streamInfo", "filled": false }
+        ] },
+        { "type": "appSetting", "key": "floatingLyrics" },
+        { "type": "appSetting", "key": "blur" }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="note"><b>packaging tip:</b> zip the contents so <code>manifest.json</code> sits at the root of the archive (or one folder deep), and name the file <code>something.mochyymodule.zip</code> so both manual imports and GitHub release auto-updates recognize it immediately.</div>
 </article>
 
 <article class="page" id="modules-interface-example" data-group="Interfaces" data-title="Example: Liquid Glass">
@@ -2755,6 +3230,24 @@ unzip -l neon-night.mochyymodule.zip</code></pre>
 <tr><td>"… didn't answer" under the name</td><td>your server didn't answer. tried again after 10 minutes, or right away with check server</td></tr>
 </table></div>
 <p>modules are made by other people. reports about a 3rd party module will be ignored, ask whoever made it!</p>
+</article>
+
+<article class="page" id="modules-sandbox" data-group="Sharing &amp; help" data-title="Security &amp; sandbox">
+<h1>Security &amp; sandbox</h1>
+<p class="sub">how Mochy lets modules rebuild the entire interface without ever risking your accounts, files or phone</p>
+<p>giving modules full UI power only works because every surface is strictly declarative, bounded, and isolated. here is what Mochy enforces automatically on every look, page, shader and caller:</p>
+<div class="tbl"><table>
+<tr><th>boundary</th><th>what Mochy enforces</th></tr>
+<tr><td><b>No untrusted native code</b></td><td>look modules, pages, menus, floating skins and backgrounds are pure JSON + assets + validated AGSL shaders. executable code modules require Mochy's own signing key.</td></tr>
+<tr><td><b>Shader GPU-DoS guard</b></td><td>before Skia compiles any <code>.agsl</code>/<code>.sksl</code> file, Mochy checks for and blocks <code>while</code>/<code>do</code> loops, unbounded <code>for</code> loops, loop bounds above 128, more than 6 loops, more than 32 <code>.eval()</code> samples, <code>#include</code>/<code>#pragma</code>/<code>#extension</code>/<code>#version</code> directives, illegal control characters, and files over 64 KB.</td></tr>
+<tr><td><b>Strict route allowlist</b></td><td><code>route</code> callers, <code>settingsLink</code> blocks and <code>bar</code> tabs only permit safe browsing, library, media and safe settings routes. <code>youtube_login</code>, <code>youtube_sync</code>, <code>backup</code>, <code>proxy_settings</code>, <code>cipher_settings</code>, <code>discord</code>, <code>scrobble_service</code>, <code>account_import</code>, <code>experimental_settings</code>, <code>playback_diagnostics</code>, path traversal (<code>..</code>), query strings and foreign URI schemes are rejected.</td></tr>
+<tr><td><b>Strict app-setting allowlist</b></td><td><code>appSetting</code> blocks and <code>toggleSetting</code>/<code>setSetting</code> callers can only touch allowlisted UI, blur, lyrics, canvas, playback, behaviour and audio-lab preferences. cookies, tokens, passwords, proxy URLs, backup credentials, API keys, screenshot protection and developer flags are never exposed.</td></tr>
+<tr><td><b>Un-escapable exit paths</b></td><td>taking over <code>mochy_settings</code> always pins a native un-hideable safety bar at the top with 1-tap <b>Modules</b> and <b>Original</b> buttons. <code>settingsCategories</code> always keeps <b>Modules</b> present, <code>bar</code> always keeps the <b>Settings</b> tab, and custom bubble menus always keep <b>Other menu</b> and <b>Edit player</b> reachable.</td></tr>
+<tr><td><b>Protected sensitive screens</b></td><td><code>modules</code>, login, sync, backup, proxy, cipher, Discord, scrobble and experimental screens can never be taken over and never render app-wide module backgrounds.</td></tr>
+<tr><td><b>Caller rate-limit &amp; sheet cap</b></td><td>module callers are rate-limited (max 6 actions/second per module), modal <code>sheetPage</code> nesting is capped at 2 sheets deep, and every expanded link URL is checked for SSRF (localhost/LAN/metadata IPs) and secret exfiltration before opening.</td></tr>
+<tr><td><b>Zip-bomb &amp; traversal protection</b></td><td>zip extraction blocks path traversal (<code>..</code>), symlinks, files over size limits, and archives whose decompression ratio exceeds 100× past 1 MB.</td></tr>
+<tr><td><b>Legibility clamps</b></td><td>bottom sheet surfaces enforce at least 86% opacity, floating lyrics bubbles clamp opacity/scale, and every numeric size, blur radius and timeout is bounded.</td></tr>
+</table></div>
 </article>
 
 <!-- ============================== MORE ============================== -->

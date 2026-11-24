@@ -224,15 +224,32 @@ internal fun ModulePlayerStyle(actions: StyleActions, modifier: Modifier, previe
             )
         }
         val side = if (button.side == MenuSide.Start) insets.start else insets.end
-        StyleMenu(
-            open = menuOpen, onOpenChange = setMenuOpen, tones = tones, actions = actions,
-            atBottom = false,
-            end = 22.dp + side, edge = insets.top + 20.dp, buttonSize = MenuButton,
-            showButton = button.side != MenuSide.Hidden,
-            extras = rememberSkinMenuExtras(context),
-            atStart = button.side == MenuSide.Start,
-            buttonTones = buttonTones,
-        )
+        val customMenuStyle = layout.menuStyle ?: ActiveSkin.menuStyle?.style
+        if (customMenuStyle != null) {
+            SkinBubbleMenu(
+                open = menuOpen,
+                onOpenChange = setMenuOpen,
+                context = context,
+                style = customMenuStyle,
+                end = 22.dp + side,
+                edge = if (customMenuStyle.atBottom) insets.bottom + 20.dp else insets.top + 20.dp,
+                buttonSize = MenuButton,
+                showButton = button.side != MenuSide.Hidden,
+                extras = rememberSkinMenuExtras(context),
+                atStart = button.side == MenuSide.Start,
+                buttonTones = buttonTones,
+            )
+        } else {
+            StyleMenu(
+                open = menuOpen, onOpenChange = setMenuOpen, tones = tones, actions = actions,
+                atBottom = false,
+                end = 22.dp + side, edge = insets.top + 20.dp, buttonSize = MenuButton,
+                showButton = button.side != MenuSide.Hidden,
+                extras = rememberSkinMenuExtras(context),
+                atStart = button.side == MenuSide.Start,
+                buttonTones = buttonTones,
+            )
+        }
         if (customiseOpen) SkinCustomiseSheet(onDismiss = { customiseOpen = false })
         // over everything, the chevron too, so while the editor is up only the tiles answer a finger
         ModuleEditTiles(context, editor)
@@ -428,6 +445,7 @@ private fun Block(block: SkinBlock, context: SkinContext, modifier: Modifier, in
         is SkinBlock.Volume -> SkinVolume(block, context, modifier)
         is SkinBlock.Controls -> SkinControls(block, context, modifier)
         is SkinBlock.Lyrics -> SkinLyrics(block, context, modifier)
+        is SkinBlock.Blur -> SkinBlurBlock(block, context, modifier)
         is SkinBlock.BottomBar -> SkinBottomBar(block, context, modifier)
         is SkinBlock.QueueList -> SkinQueueList(block, context, modifier)
         is SkinBlock.Row -> Row(
@@ -735,6 +753,7 @@ private val SkinBlock.stretches: Boolean
         this is SkinBlock.Progress || this is SkinBlock.Volume || this is SkinBlock.Lyrics || this is SkinBlock.Column || this is SkinBlock.Stack ||
         this is SkinBlock.Visualizer || (this is SkinBlock.Shape && width == null) ||
         (this is SkinBlock.Shader && width == null) || (this is SkinBlock.Surface && width == null) ||
+        (this is SkinBlock.Blur && width == null) ||
         (this is SkinBlock.Box && width == null) || this is SkinBlock.BottomBar || this is SkinBlock.QueueList
 
 internal val SkinAlign.horizontal: Alignment.Horizontal

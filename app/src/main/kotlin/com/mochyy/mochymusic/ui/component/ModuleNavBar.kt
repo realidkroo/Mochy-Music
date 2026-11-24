@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.mochyy.mochymusic.LocalGlassState
+import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.modules.skin.ActiveBar
 import com.mochyy.mochymusic.modules.skin.BarLabels
 import com.mochyy.mochymusic.modules.skin.BarTarget
@@ -96,13 +97,16 @@ internal fun ModuleNavBar(
         tabs.mapNotNull { tab ->
             when (val target = tab.target) {
                 is BarTarget.Tab -> navigationItems.firstOrNull { it.route == target.route }?.let { BarSlot(tab, it) }
-                is BarTarget.Page -> BarSlot(tab, null)
+                is BarTarget.Page, is BarTarget.Route -> BarSlot(tab, null)
             }
         }
     }
-    // a module page that's one of the tabs lights it; anywhere else the mochy tab the page belongs to does
+    // a module page that's one of the tabs lights it; anywhere else the mochy tab or route it belongs to does
     val selectedIndex = slots.indexOfFirst { (it.tab.target as? BarTarget.Page)?.let { p -> "$moduleId/${p.id}" == currentPage } == true }
-        .takeIf { it >= 0 } ?: slots.indexOfFirst { it.screen?.route == selectedTabRoute && currentPage == null }
+        .takeIf { it >= 0 }
+        ?: slots.indexOfFirst { (it.tab.target as? BarTarget.Route)?.route == selectedTabRoute && currentPage == null }
+            .takeIf { it >= 0 }
+        ?: slots.indexOfFirst { it.screen?.route == selectedTabRoute && currentPage == null }
     val factor = bar.size.factor(LocalConfiguration.current.screenWidthDp.toFloat(), active.values)
     val height = min(bar.height * factor, MaxBarHeight)
     val shape = bar.corner?.let { RoundedCornerShape(it * factor) } ?: NavBarShape
@@ -119,7 +123,11 @@ internal fun ModuleNavBar(
         when {
             slot == null -> Unit
             slot.screen != null -> onItemClick(slot.screen, index == selectedIndex)
-            else -> (slot.tab.target as? BarTarget.Page)?.let { onOpenRoute(modulePageRoute(moduleId, it.id)) }
+            else -> when (val target = slot.tab.target) {
+                is BarTarget.Page -> onOpenRoute(modulePageRoute(moduleId, target.id))
+                is BarTarget.Route -> onOpenRoute(target.route)
+                is BarTarget.Tab -> Unit
+            }
         }
     }
 
@@ -244,16 +252,23 @@ private fun TabPicture(slot: BarSlot, bar: SkinBar, active: ActiveBar, lit: () -
     val on = slot.tab.iconOn ?: off
     Box(contentAlignment = Alignment.Center) {
         if (off == null) {
-            val screen = slot.screen ?: return@Box
-            val unlitIcon = coil3.compose.rememberAsyncImagePainter(model = screen.iconIdInactive)
-            val litIcon = coil3.compose.rememberAsyncImagePainter(model = screen.iconIdActive)
-            val icons: @Composable () -> Unit = {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(unlitIcon, contentDescription = label, tint = unlit, modifier = Modifier.size(size).fading { 1f - lit() })
-                    Icon(litIcon, contentDescription = null, tint = shown, modifier = Modifier.size(size).fading(lit))
+            val screen = slot.screen
+            if (screen != null) {
+                val unlitIcon = coil3.compose.rememberAsyncImagePainter(model = screen.iconIdInactive)
+                val litIcon = coil3.compose.rememberAsyncImagePainter(model = screen.iconIdActive)
+                val icons: @Composable () -> Unit = {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(unlitIcon, contentDescription = label, tint = unlit, modifier = Modifier.size(size).fading { 1f - lit() })
+                        Icon(litIcon, contentDescription = null, tint = shown, modifier = Modifier.size(size).fading(lit))
+                    }
                 }
+                if (screen == Screens.Library) LibraryDownloadIcon(icons) else icons()
+            } else {
+                val fallbackRes = routeFallbackIcon(slot.tab.target)
+                val painter = androidx.compose.ui.res.painterResource(fallbackRes)
+                Icon(painter, contentDescription = label, tint = unlit, modifier = Modifier.size(size).fading { 1f - lit() })
+                Icon(painter, contentDescription = null, tint = shown, modifier = Modifier.size(size).fading(lit))
             }
-            if (screen == Screens.Library) LibraryDownloadIcon(icons) else icons()
             return@Box
         }
         val tinted = bar.color != null || bar.active != null
@@ -340,6 +355,23 @@ internal fun SkinColor.onChrome(accent: Color, values: Map<String, String>): Col
     SkinColor.Ink -> Color.White
     // a setting can't point at another setting, so this never loops
     is SkinColor.Setting -> skinColor(values[key])?.takeIf { it !is SkinColor.Setting }?.onChrome(accent, values) ?: fallback.onChrome(accent, values)
+}
+
+private fun routeFallbackIcon(target: BarTarget): Int = when (target) {
+    is BarTarget.Page -> R.drawable.puzzle
+    is BarTarget.Route -> when {
+        target.route.startsWith("mochy_settings") || target.route.endsWith("_settings") -> R.drawable.settings
+        target.route == "audio_lab" || target.route == "equalizer" -> R.drawable.equalizer
+        target.route == "history" -> R.drawable.music_history
+        target.route == "stats" -> R.drawable.trending_up
+        target.route == "explore" || target.route == "mood_and_genres" -> R.drawable.explore_outlined
+        target.route.startsWith("auto_playlist/liked") -> R.drawable.ic_untitled_heart
+        target.route.startsWith("auto_playlist/downloaded") -> R.drawable.offline
+        target.route.contains("playlist") -> R.drawable.queue_music
+        target.route == "modules" || target.route == "module_browser" -> R.drawable.library_add
+        else -> R.drawable.library_music
+    }
+    is BarTarget.Tab -> R.drawable.home_filled
 }
 
 // the tallest a bar can be and still fit the room mochy keeps for it

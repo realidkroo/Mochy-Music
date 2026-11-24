@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import com.mochyy.mochymusic.constants.ChromeGlassStyle
 import com.mochyy.mochymusic.constants.PlayerStyle
 import com.mochyy.mochymusic.module.LookSetting
+import com.mochyy.mochymusic.modules.security.ShaderSecurityGuard
 import com.mochyy.mochymusic.ui.component.createAgslShader
 import com.mochyy.mochymusic.ui.theme.LookFont
 import kotlinx.coroutines.CoroutineScope
@@ -76,10 +77,26 @@ data class ActiveMini(val skin: ModuleSkin, val layout: SkinPlayer, val values: 
 @Immutable
 data class Takeover(val skin: ModuleSkin, val page: SkinPage, val values: Map<String, String>)
 
+/** active floating lyrics bubble skin with its module's values */
+@Immutable
+data class ActiveFloating(val skin: ModuleSkin, val floating: SkinFloating, val values: Map<String, String>)
+
+/** active sheet style with its module's values */
+@Immutable
+data class ActiveSheet(val skin: ModuleSkin, val sheet: SkinSheetStyle, val values: Map<String, String>)
+
+/** active app-wide background with its module's values */
+@Immutable
+data class ActiveAppBackground(val skin: ModuleSkin, val background: SkinAppBackground, val values: Map<String, String>)
+
+/** active default bubble/chevron menu style with its module's values */
+@Immutable
+data class ActiveMenuStyle(val skin: ModuleSkin, val style: SkinMenuStyle, val values: Map<String, String>)
+
 /** a skin and its module's settings right now */
 internal data class LookValues(val skin: ModuleSkin, val values: Map<String, String>)
 
-/** which look each part comes from: every look with players, the app's font, the glass, the nav bar, and every module with a takeover page */
+/** which look each part comes from: every look with players, the app's font, the glass, the nav bar, floating lyrics, sheet style, app background, menu style and every module with a takeover page */
 internal data class SkinParts(
     val players: List<LookValues> = emptyList(),
     val font: ModuleSkin? = null,
@@ -88,6 +105,10 @@ internal data class SkinParts(
     val bar: LookValues? = null,
     val pages: List<LookValues> = emptyList(),
     val mini: LookValues? = null,
+    val floating: LookValues? = null,
+    val sheet: LookValues? = null,
+    val appBackground: LookValues? = null,
+    val menuStyle: LookValues? = null,
 )
 
 object ActiveSkin {
@@ -129,6 +150,22 @@ object ActiveSkin {
 
     /** module pages by the name of the mochy page each one takes over */
     var takeovers: Map<String, List<Takeover>> by mutableStateOf(emptyMap())
+        private set
+
+    /** the highest look's floating lyrics bubble style, null to keep mochy's */
+    var floating: ActiveFloating? by mutableStateOf(null)
+        private set
+
+    /** the highest look's bottom sheet style, null to keep mochy's */
+    var sheet: ActiveSheet? by mutableStateOf(null)
+        private set
+
+    /** the highest look's app-wide background, null to keep mochy's */
+    var appBackground: ActiveAppBackground? by mutableStateOf(null)
+        private set
+
+    /** the highest look's default chevron/bubble menu style, null to keep mochy's */
+    var menuStyle: ActiveMenuStyle? by mutableStateOf(null)
         private set
 
     /** why a look's glass didn't load, for its page: the module's id and the shader's own words */
@@ -178,7 +215,7 @@ object ActiveSkin {
         if (parts == requested) return
         requested = parts
         val glassSkin = parts.glassSkin
-        val shaded = (parts.players.map { it.skin } + listOfNotNull(parts.bar?.skin, parts.mini?.skin)).distinct()
+        val shaded = (parts.players.map { it.skin } + listOfNotNull(parts.bar?.skin, parts.mini?.skin, parts.appBackground?.skin)).distinct()
         scope.launch(Dispatchers.IO) {
             val loaded = synchronized(this@ActiveSkin) {
                 // the app's font and each player's own font, each loaded once and kept while its look stays
@@ -214,6 +251,14 @@ object ActiveSkin {
                 if (nextBar != bar) bar = nextBar
                 val nextMini = parts.mini?.let { (skin, values) -> skin.mini?.let { ActiveMini(skin, it, values) } }
                 if (nextMini != mini) mini = nextMini
+                val nextFloating = parts.floating?.let { (skin, values) -> skin.floating?.let { ActiveFloating(skin, it, values) } }
+                if (nextFloating != floating) floating = nextFloating
+                val nextSheet = parts.sheet?.let { (skin, values) -> skin.sheet?.let { ActiveSheet(skin, it, values) } }
+                if (nextSheet != sheet) sheet = nextSheet
+                val nextAppBg = parts.appBackground?.let { (skin, values) -> skin.appBackground?.let { ActiveAppBackground(skin, it, values) } }
+                if (nextAppBg != appBackground) appBackground = nextAppBg
+                val nextMenuStyle = parts.menuStyle?.let { (skin, values) -> skin.menuStyle?.let { ActiveMenuStyle(skin, it, values) } }
+                if (nextMenuStyle != menuStyle) menuStyle = nextMenuStyle
                 val nextTakeovers = takeoversOf(parts.pages)
                 if (nextTakeovers != takeovers) takeovers = nextTakeovers
             }
@@ -260,6 +305,10 @@ object ActiveSkin {
             programs[key]?.let { return@mapNotNull name to it }
             try {
                 val source = file.readText()
+                ShaderSecurityGuard.validate(source)?.let { rejected ->
+                    problem("$name: $rejected")
+                    return@mapNotNull null
+                }
                 val program = SkinProgram(createAgslShader(source), DeclaredUniform.findAll(source).map { it.groupValues[1] }.toSet())
                 programs[key] = program
                 name to program
@@ -283,6 +332,11 @@ object ActiveSkin {
         if (key == shaderKey && shader != null) return Compiled(shader, null, shaderDrawsPill)
         return try {
             val source = file.readText()
+            ShaderSecurityGuard.validate(source)?.let { rejected ->
+                shaderKey = null
+                shader = null
+                return Compiled(null, rejected)
+            }
             val made = createAgslShader(source)
             shaderKey = key
             shader = made

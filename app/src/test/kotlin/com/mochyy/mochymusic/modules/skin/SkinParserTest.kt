@@ -17,7 +17,12 @@ class SkinParserTest {
 
     private fun skin(text: String, files: File? = null, base: String? = null): ModuleSkin? {
         val m = manifest(text)
-        return SkinParser.parse("local.test", "Test", m.player, m.font, m.pages, files, base, m.actions, m.glass, m.players, m.bar, m.mini)
+        return SkinParser.parse(
+            "local.test", "Test", m.player, m.font, m.pages, files, base,
+            m.actions, m.glass, m.players, m.bar, m.mini,
+            floating = m.floating, background = m.background, appBackground = m.appBackground,
+            sheet = m.sheet, menu = m.menu,
+        )
     }
 
     private val vinyl = """
@@ -572,5 +577,226 @@ class SkinParserTest {
         assertNull(skin(traversal, files = File("/data/bad")))
         val remote = """{ "id": "bad", "name": "Bad", "player": { "blocks": [ { "type": "surface", "asset": "https://evil.example/a.wad" } ] } }"""
         assertNull(skin(remote, files = File("/data/bad")))
+    }
+
+    @Test
+    fun `callers, bubble menu, floating lyrics, sheets, app background and blur blocks parse safely`() {
+        val text = """
+            {
+              "id": "fullapp", "name": "Full App",
+              "look": { "blur": "true" },
+              "floating": {
+                "bubble": ["#CC141418", "#CC241838"],
+                "gradient": "diagonal",
+                "ink": "#FFFFFF",
+                "corner": 24,
+                "tail": false,
+                "border": 1.5,
+                "coverShape": "rounded",
+                "coverCorner": 10,
+                "opacity": 0.92,
+                "blur": 24,
+                "fontSize": 15,
+                "weight": "bold",
+                "shadow": false,
+                "widthScale": 1.15
+              },
+              "sheet": {
+                "surface": "#E616161C",
+                "rowSurface": "#26FFFFFF",
+                "corner": 28,
+                "rowCorner": 16,
+                "dim": 0.65,
+                "stroke": 1
+              },
+              "appBackground": {
+                "type": "playingCover",
+                "blur": 44,
+                "dim": 0.4,
+                "screens": ["home", "library", "mochy_settings", "youtube_login"],
+                "layers": [
+                  { "type": "gradient", "colors": ["#33FF5CA8", "#00000000"], "opacity": 0.5 }
+                ]
+              },
+              "bar": {
+                "tabs": [
+                  "home",
+                  { "route": "history", "label": "History" },
+                  { "route": "youtube_login", "label": "Blocked" },
+                  { "page": "custom_settings", "label": "Prefs" }
+                ]
+              },
+              "player": {
+                "background": { "type": "coverBlur", "blur": 55, "dim": 0.3 },
+                "menuStyle": {
+                  "layout": "grid",
+                  "columns": 3,
+                  "backdropBlur": 18,
+                  "glass": 20,
+                  "atBottom": true,
+                  "showDefaults": true,
+                  "gap": 12
+                },
+                "menu": [
+                  { "title": "Sleep", "sheet": "sleepTimer", "when": "@playing", "accent": "accent" },
+                  { "title": "Output", "sheet": "output" },
+                  { "title": "Modal", "sheetPage": "quick" },
+                  { "title": "EQ", "route": "equalizer" },
+                  { "title": "BadRoute", "route": "youtube_login" },
+                  { "title": "Toggle glow", "toggle": "glow" },
+                  { "title": "Toggle blur", "toggleSetting": "blur" },
+                  { "title": "BadSetting", "toggleSetting": "innerTubeCookie" }
+                ],
+                "blocks": [
+                  { "type": "blur", "radius": 28, "direction": "bottomToTop", "height": 100, "corner": 24, "steps": 6 },
+                  { "type": "box", "glass": { "blur": 26, "progressive": "topToBottom", "ramp": 1.3, "outline": true, "bleed": true }, "blocks": [
+                    { "type": "lyrics", "style": "flow", "height": 220, "blur": 3.5, "pastBlur": 5, "nextBlur": 2, "edgeFade": true, "gap": 10, "weight": "semibold", "activeScale": 1.12, "pastOpacity": 0.3, "nextOpacity": 0.65, "linesAbove": 2, "sweep": true, "translation": true, "seek": true }
+                  ] },
+                  { "type": "button", "sheet": "speed" },
+                  { "type": "button", "sheetPage": "quick" },
+                  { "type": "button", "action": "download" },
+                  { "type": "button", "action": "pin" },
+                  { "type": "button", "action": "radio" },
+                  { "type": "button", "action": "volumeUp" },
+                  { "type": "button", "route": "audio_lab" },
+                  { "type": "button", "toggleSetting": "skipSilence" }
+                ]
+              },
+              "pages": [
+                {
+                  "id": "custom_settings",
+                  "title": "My Settings",
+                  "replaces": ["mochy_settings", "youtube_login", "modules"],
+                  "background": { "type": "ambient", "dim": 0.25 },
+                  "blocks": [
+                    { "type": "settingsSearch", "glass": 20 },
+                    { "type": "settingsCategories", "layout": "grid", "columns": 2, "categories": ["audio_lab", "playback"] },
+                    { "type": "appSetting", "key": "blur" },
+                    { "type": "appSetting", "key": "innerTubeCookie" },
+                    { "type": "appSetting", "category": "playback" },
+                    { "type": "settingsLink", "target": "audio_lab", "title": "Sound" },
+                    { "type": "settingsLink", "target": "backup", "title": "Blocked" },
+                    { "type": "moduleSettingsPages" },
+                    { "type": "tabs", "setting": "tab", "items": [ { "value": "songs", "label": "Songs" }, { "value": "playlists", "label": "Playlists" } ] },
+                    { "type": "artistBanner", "height": 340, "edgeBlur": true, "motion": true },
+                    { "type": "bio", "maxLines": 5, "expandable": true },
+                    { "type": "playlists", "source": "all", "layout": "grid", "columns": 2 },
+                    { "type": "songs", "source": "liked", "layout": "list", "searchable": true, "showMenu": true, "when": "tab=songs" },
+                    { "type": "albums", "source": "library", "layout": "row" },
+                    { "type": "artists", "source": "liked", "layout": "grid", "columns": 3 },
+                    { "type": "nowPlaying", "glass": 24, "showLyrics": true },
+                    { "type": "lyrics", "height": 180, "blur": 2.5, "sweep": true, "seek": true },
+                    { "type": "actionButton", "text": "Sleep timer", "sheet": "sleepTimer" },
+                    { "type": "actionButton", "text": "Quick sheet", "sheetPage": "quick" },
+                    { "type": "searchBar", "placeholder": "Find music" },
+                    { "type": "speedDial", "layout": "grid", "columns": 3 },
+                    { "type": "stats", "glass": 18 },
+                    { "type": "blur", "radius": 24, "direction": "radial", "height": 64 },
+                    { "type": "row", "gap": 12, "blocks": [
+                      { "type": "actionButton", "text": "Play", "action": "playPause" },
+                      { "type": "actionButton", "text": "Next", "action": "next" }
+                    ] }
+                  ]
+                },
+                { "id": "quick", "title": "Quick", "blocks": [ { "type": "heading", "text": "Quick Sheet" } ] }
+              ]
+            }
+        """
+        val s = skin(text, files = File("/data/fullapp"))!!
+
+        // floating lyrics skin
+        val fl = s.floating!!
+        assertEquals(2, fl.bubble.size)
+        assertEquals(GradientKind.Diagonal, fl.gradient)
+        assertEquals(24.dp, fl.corner)
+        assertFalse(fl.tail)
+        assertEquals(CoverShape.Rounded, fl.coverShape)
+        assertEquals(24f, fl.blur)
+        assertEquals(1.15f, fl.widthScale, 0.001f)
+
+        // sheet style
+        val sh = s.sheet!!
+        assertEquals(28.dp, sh.corner)
+        assertEquals(16.dp, sh.rowCorner)
+        assertEquals(0.65f, sh.dim!!, 0.001f)
+
+        // app-wide background
+        val abg = s.appBackground!!
+        assertTrue(abg.background is PageBackground.PlayingCover)
+        assertEquals(1, abg.layers.size)
+        assertTrue("home" in abg.screens)
+        assertTrue("mochy_settings" in abg.screens)
+
+        // nav bar safe route tab (blocked youtube_login dropped, settings auto-kept)
+        val barTargets = s.bar!!.tabs.map { it.target }
+        assertTrue(BarTarget.Route("history") in barTargets)
+        assertFalse(barTargets.any { it is BarTarget.Route && it.route.contains("login") })
+        assertTrue(BarTarget.Tab("settings") in barTargets)
+
+        // player coverBlur, bubble menuStyle, menu callers (unsafe route & setting dropped)
+        val player = s.player!!
+        assertEquals(SkinBackground.CoverBlur(55f, 0.3f), player.background)
+        val ms = player.menuStyle!!
+        assertEquals(SkinMenuLayout.Grid, ms.layout)
+        assertEquals(3, ms.columns)
+        assertEquals(18f, ms.backdropBlur)
+        assertTrue(ms.atBottom)
+        assertEquals(6, player.menu.size)
+        assertEquals(SkinTarget.Action(ActionTarget.Sheet(SheetKind.SleepTimer)), player.menu[0].target)
+        assertEquals(SkinCondition("@playing", null, false), player.menu[0].condition)
+        assertEquals(SkinTarget.Action(ActionTarget.Sheet(SheetKind.ModulePage, "quick")), player.menu[2].target)
+        assertEquals(SkinTarget.Action(ActionTarget.Route("equalizer")), player.menu[3].target)
+        assertEquals(SkinTarget.Action(ActionTarget.SetField("glow", null)), player.menu[4].target)
+        assertEquals(SkinTarget.Action(ActionTarget.SetAppSetting("blur", null)), player.menu[5].target)
+
+        // blur block, progressive glass box, upgraded flowing lyrics, and caller buttons
+        val blur = player.blocks[0] as SkinBlock.Blur
+        assertEquals(28f, blur.radius)
+        assertEquals(SkinBlurDirection.BottomToTop, blur.direction)
+        val box = player.blocks[1] as SkinBlock.Box
+        assertEquals(SkinBlurDirection.TopToBottom, box.glassConfig!!.progressive)
+        assertTrue(box.glassConfig!!.outline)
+        val lyr = box.blocks.single() as SkinBlock.Lyrics
+        assertTrue(lyr.flow)
+        assertEquals(3.5f, lyr.blur)
+        assertEquals(5f, lyr.pastBlur)
+        assertEquals(2f, lyr.nextBlur)
+        assertTrue(lyr.sweep)
+        assertTrue(lyr.translation)
+        assertTrue(lyr.seek)
+        assertEquals(2, lyr.linesAbove)
+
+        assertEquals(SkinTarget.Action(ActionTarget.Sheet(SheetKind.Speed)), (player.blocks[2] as SkinBlock.Button).target)
+        assertEquals(SkinTarget.Action(ActionTarget.Sheet(SheetKind.ModulePage, "quick")), (player.blocks[3] as SkinBlock.Button).target)
+        assertEquals(SkinTarget.Control(ButtonKind.Download), (player.blocks[4] as SkinBlock.Button).target)
+        assertEquals(SkinTarget.Control(ButtonKind.Pin), (player.blocks[5] as SkinBlock.Button).target)
+        assertEquals(SkinTarget.Control(ButtonKind.Radio), (player.blocks[6] as SkinBlock.Button).target)
+        assertEquals(SkinTarget.Control(ButtonKind.VolumeUp), (player.blocks[7] as SkinBlock.Button).target)
+        assertEquals(SkinTarget.Action(ActionTarget.Route("audio_lab")), (player.blocks[8] as SkinBlock.Button).target)
+        assertEquals(SkinTarget.Action(ActionTarget.SetAppSetting("skipsilence", null)), (player.blocks[9] as SkinBlock.Button).target)
+
+        // custom settings & full-app page blocks (forbidden appSetting & settingsLink dropped!)
+        val page = s.pages.first { it.id == "custom_settings" }
+        assertTrue(page.background is PageBackground.Ambient)
+        assertTrue(page.frosted)
+        assertTrue(page.blocks.any { it is PageBlock.SettingsSearch })
+        assertTrue(page.blocks.any { it is PageBlock.SettingsCategories })
+        assertEquals(2, page.blocks.count { it is PageBlock.AppSetting }) // innerTubeCookie dropped!
+        assertEquals(1, page.blocks.count { it is PageBlock.SettingsLink }) // backup dropped!
+        assertTrue(page.blocks.any { it is PageBlock.ModuleSettingsPages })
+        assertTrue(page.blocks.any { it is PageBlock.Tabs })
+        assertTrue(page.blocks.any { it is PageBlock.ArtistBanner })
+        assertTrue(page.blocks.any { it is PageBlock.Bio })
+        assertTrue(page.blocks.any { it is PageBlock.Playlists })
+        assertTrue(page.blocks.any { it is PageBlock.Conditional && it.inner is PageBlock.Songs })
+        assertTrue(page.blocks.any { it is PageBlock.Albums })
+        assertTrue(page.blocks.any { it is PageBlock.Artists })
+        assertTrue(page.blocks.any { it is PageBlock.NowPlaying })
+        assertTrue(page.blocks.any { it is PageBlock.Lyrics })
+        assertTrue(page.blocks.any { it is PageBlock.SearchBar })
+        assertTrue(page.blocks.any { it is PageBlock.SpeedDial })
+        assertTrue(page.blocks.any { it is PageBlock.Stats })
+        assertTrue(page.blocks.any { it is PageBlock.Blur })
+        assertTrue(page.blocks.any { it is PageBlock.Row })
     }
 }

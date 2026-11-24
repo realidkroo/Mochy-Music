@@ -3,6 +3,7 @@
 package com.mochyy.mochymusic.modules.skin
 
 import androidx.compose.ui.unit.dp
+import com.mochyy.mochymusic.modules.security.SafeModuleRoutes
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -60,6 +61,9 @@ internal object SkinBarParser {
         val name = (element as? JsonPrimitive)?.contentOrNull ?: o?.string("tab")
         val target = name?.let(::mochyTab)?.let(BarTarget::Tab)
             ?: o?.string("page")?.lowercase()?.takeIf { PageId.matches(it) }?.let(BarTarget::Page)
+            ?: (o?.string("route") ?: (element as? JsonPrimitive)?.contentOrNull?.takeIf { mochyTab(it) == null })
+                ?.let(SafeModuleRoutes::sanitize)
+                ?.let { clean -> if (clean == "home" || clean == "search_input" || clean == "library") BarTarget.Tab(clean) else BarTarget.Route(clean) }
             ?: return null
         return SkinBarTab(target, o?.string("icon"), o?.string("iconOn") ?: o?.string("activeIcon"), o?.string("label")?.take(20))
     }

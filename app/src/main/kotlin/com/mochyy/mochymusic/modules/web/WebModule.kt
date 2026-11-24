@@ -65,7 +65,12 @@ internal class WebModule(
         author = manifest.author,
     )
 
-    override val skin: ModuleSkin? = SkinParser.parse(info.id, info.name, manifest.player, manifest.font, manifest.pages, files, base, manifest.actions, manifest.glass, manifest.players, manifest.bar, manifest.mini)
+    override val skin: ModuleSkin? = SkinParser.parse(
+        info.id, info.name, manifest.player, manifest.font, manifest.pages, files, base,
+        manifest.actions, manifest.glass, manifest.players, manifest.bar, manifest.mini,
+        floating = manifest.floating, background = manifest.background, appBackground = manifest.appBackground,
+        sheet = manifest.sheet, menu = manifest.menu,
+    )
 
     override val icon: String? = resolveModuleArt(manifest.icon, files, base)
 

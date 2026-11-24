@@ -276,6 +276,10 @@ class ModuleRegistry @Inject constructor(
                 glass = glass?.glass,
                 bar = looks.firstOrNull { it.skin?.bar != null }?.let { entry -> entry.skin?.let { LookValues(it, entry.values) } },
                 mini = looks.firstOrNull { it.skin?.mini != null }?.let { entry -> entry.skin?.let { LookValues(it, entry.values) } },
+                floating = looks.firstOrNull { it.skin?.floating != null }?.let { entry -> entry.skin?.let { LookValues(it, entry.values) } },
+                sheet = looks.firstOrNull { it.skin?.sheet != null }?.let { entry -> entry.skin?.let { LookValues(it, entry.values) } },
+                appBackground = looks.firstOrNull { it.skin?.appBackground != null }?.let { entry -> entry.skin?.let { LookValues(it, entry.values) } },
+                menuStyle = looks.firstOrNull { it.skin?.menuStyle != null }?.let { entry -> entry.skin?.let { LookValues(it, entry.values) } },
                 // a page can take one of mochy's over from any module that's on, not only a look
                 pages = list.filter { it.active }.mapNotNull { entry -> entry.skin?.takeIf { it.takeovers.isNotEmpty() }?.let { LookValues(it, entry.values) } },
             ),
@@ -300,6 +304,10 @@ class ModuleRegistry @Inject constructor(
         if (entry.glass != null) add("glass")
         if (entry.skin?.bar != null) add("bar")
         if (entry.skin?.mini != null) add("mini")
+        if (entry.skin?.floating != null) add("floating")
+        if (entry.skin?.sheet != null) add("sheet")
+        if (entry.skin?.appBackground != null) add("appBackground")
+        if (entry.skin?.menuStyle != null) add("menuStyle")
     }
 
     // the first look above [entry] that takes something [entry] also brings, for its page to say so
@@ -617,7 +625,7 @@ class ModuleRegistry @Inject constructor(
         val (sites, kept) = savedWebModules().partition { WebModuleManifest.isWebsite(it.optString("manifest")) }
         if (sites.isNotEmpty()) prefs.edit { putString(WebModulesKey, JSONArray(kept).toString()) }
         val web = kept.mapNotNull { saved ->
-            val base = saved.optString("base").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            val base = saved.optString("base").takeIf { it.isNotBlank() && ModuleUrlGuard.isSafeRemoteUrl(it) } ?: return@mapNotNull null
             val manifest = WebModuleManifest.parse(saved.optString("manifest")) ?: return@mapNotNull null
             WebModule(base, manifest, context.resources, filesFor(WebModuleManifest.idFor(base, manifest))) to ModuleOrigin.Web(base)
         }

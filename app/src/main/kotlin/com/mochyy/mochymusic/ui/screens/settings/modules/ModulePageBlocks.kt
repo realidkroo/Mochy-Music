@@ -67,7 +67,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 internal fun PageLiveBlock(block: PageBlock, page: PageContext) {
     when (block) {
         is PageBlock.Cover -> PageCover(block, page.subject.cover)
-        is PageBlock.Songs -> PageSongs(block, page.subject)
         is PageBlock.Control -> PageControlButton(block, page)
         is PageBlock.Player -> PagePlayer(block, page)
         PageBlock.Styles -> PageStyles(page)

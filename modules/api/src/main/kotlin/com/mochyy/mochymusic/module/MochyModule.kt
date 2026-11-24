@@ -348,6 +348,8 @@ object LookSetting {
     const val COVER_ROUNDING = "thumbnailCornerRadius"
     /** MOTION, LEGACY, BORING or PLAIN */
     const val LYRICS_MOTION = "lyricsMotionStyle"
+    /** true or false: whether blur is enabled across mochy */
+    const val BLUR = "blur"
     /** LOW or HIGH */
     const val BLUR_QUALITY = "blurQuality"
     /** glass blur radius in px, 10 to 50 */

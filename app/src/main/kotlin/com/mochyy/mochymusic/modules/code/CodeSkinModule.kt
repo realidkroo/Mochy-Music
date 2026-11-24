@@ -45,7 +45,8 @@ internal class CodeSkinModule private constructor(
     override val skin: ModuleSkin? = SkinParser.parse(
         inner.info.id, inner.info.name, manifest.player, manifest.font, manifest.pages,
         files, base = null, manifest.actions, manifest.glass, manifest.players, manifest.bar, manifest.mini,
-        surface = inner.surface,
+        surface = inner.surface, floating = manifest.floating, background = manifest.background,
+        appBackground = manifest.appBackground, sheet = manifest.sheet, menu = manifest.menu,
     )
 
     override val adds: Set<ModuleFeature> =
