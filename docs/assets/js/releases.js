@@ -373,7 +373,7 @@
       var box = byId("dlContent");
       if (!box) return;
       if (seg) seg.setAttribute("data-channel", channel);
-      // reflow between class changes so the fade restarts on every switch
+      // reflow between class changes so the direction slide restarts on every switch
       box.classList.remove("rel-refresh", "to-nightly", "to-stable");
       void box.offsetWidth;
       box.classList.add("to-" + channel, "rel-refresh");

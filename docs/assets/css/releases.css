@@ -192,7 +192,7 @@ button.rel-chip:hover { background: var(--rel-panel); border-color: var(--rel-ac
 .rel-motion .rel-page .rel-timeline > article.in:nth-child(n+4) { transition-delay: 360ms; }
 .rel-motion .rel-page[data-page="download"] .rel-grid > *.in:nth-child(2) { transition-delay: 160ms; }
 .rel-motion .rel-page[data-page="download"] .rel-cta.in { transition-delay: 420ms; }
-/* one whole-page fade; staggered transforms made borders collide */
+/* the channel switch slides the panel in the chosen direction; staggered transforms on rebuilt cards made borders collide */
 .rel-refresh.to-nightly { animation: rel-swap-next 0.55s var(--rel-glide) both; }
 .rel-refresh.to-stable { animation: rel-swap-prev 0.55s var(--rel-glide) both; }
 .rel-motion .rel-page[data-page="download"] #dlContent.rel-refresh.to-nightly { animation: rel-swap-next 0.55s var(--rel-glide) both; }
@@ -220,7 +220,7 @@ button.rel-chip:hover { background: var(--rel-panel); border-color: var(--rel-ac
   .release-scene .rel-ver { font-size: 38px; }
 }
 
-/* no side scroll on a 400px phone: the comparison table becomes stacked rows */
+/* no side scroll on a 400px phone: the comparison keeps two columns under a full-width row label */
 @media (max-width: 600px) {
   .cmp-grid { grid-template-columns: 1fr 1fr; }
   .cmp-grid > div:first-child { display: none; }
