@@ -11,6 +11,7 @@ import com.mochyy.mochymusic.crossmix.TrackAnalysis
 import com.mochyy.mochymusic.crossmix.WaveformRateHz
 import com.mochyy.mochymusic.db.entities.PlaylistTransition
 import com.mochyy.mochymusic.playback.audio.CrossmixTransitionAudioProcessor
+import com.mochyy.mochymusic.ui.mixit.waveformBarNorms
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -98,6 +99,40 @@ class MixItEngineTest {
         assertTrue("introPeak ($introPeak) >= introBody ($introBody)", introPeak >= introBody - 1e-4f)
         assertTrue("dropPeak ($dropPeak) >= dropBody ($dropBody)", dropPeak >= dropBody - 1e-4f)
         assertTrue("dropPeak ($dropPeak) > introPeak ($introPeak)", dropPeak > introPeak * 1.4f)
+    }
+
+    @Test
+    fun `waveformBarNorms never throws on silent, sub-threshold, inverted, or non-finite samples`() {
+        val out = FloatArray(2)
+        val cases = listOf(
+            0f to 0f,
+            0.005f to 0.005f,
+            0.015f to 0.014f,
+            0.019f to 0.019f,
+            0.02f to 0.02f,
+            0.03f to 0.9f,
+            1.8f to 2.5f,
+            -0.5f to -1f,
+            Float.NaN to Float.NaN,
+            Float.POSITIVE_INFINITY to Float.NEGATIVE_INFINITY,
+        )
+        for ((peak, body) in cases) {
+            waveformBarNorms(peak, body, out)
+            assertTrue("peakNorm finite and in 0.03..1 for ($peak,$body), got ${out[0]}", out[0].isFinite() && out[0] in 0.03f..1f)
+            assertTrue("bodyNorm finite and in 0.02..peakNorm for ($peak,$body), got ${out[1]} vs ${out[0]}", out[1].isFinite() && out[1] in 0.02f..out[0])
+        }
+
+        // a track with complete digital silence at the start and end still slices cleanly without throwing
+        val withSilence = FloatArray(StreamingTrackAnalyzer.SampleRate * 12)
+        val quiet = synthTrack(120.0, 4)
+        System.arraycopy(quiet, 0, withSilence, StreamingTrackAnalyzer.SampleRate * 4, quiet.size)
+        val analysis = analyze(withSilence)
+        for (sec in 0..11) {
+            analysis.waveformSliceInto(sec * 1_000L, (sec + 1) * 1_000L, out)
+            waveformBarNorms(out[0], out[1], out)
+            assertTrue(out[0] in 0.03f..1f)
+            assertTrue(out[1] in 0.02f..out[0])
+        }
     }
 
     @Test

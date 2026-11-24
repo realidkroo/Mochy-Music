@@ -60,6 +60,7 @@ class MixItPreviewController(
         fun pauseMainPlayback()
         fun targetVolume(): Float
         fun learnedStartLatencyMs(): Double
+        fun onPreviewActiveChanged(active: Boolean) {}
     }
 
     private val _state = MutableStateFlow(MixItPreviewState())
@@ -88,6 +89,7 @@ class MixItPreviewController(
             inAnalysis = inAnalysis,
         )
         _state.value = MixItPreviewState(isPlaying = false, isBuffering = true)
+        host.onPreviewActiveChanged(true)
         job = scope.launch { runPreview(outItem, inItem, plan) }
     }
 
@@ -95,6 +97,7 @@ class MixItPreviewController(
         job?.cancel()
         job = null
         releasePlayers()
+        host.onPreviewActiveChanged(false)
         _state.value = MixItPreviewState()
     }
 
@@ -288,6 +291,7 @@ class MixItPreviewController(
             _state.value = MixItPreviewState(error = t.message ?: "Preview stopped")
         } finally {
             releasePlayers()
+            host.onPreviewActiveChanged(false)
             if (_state.value.error == null) {
                 _state.value = MixItPreviewState()
             }

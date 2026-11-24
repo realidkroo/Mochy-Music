@@ -86,12 +86,14 @@ class HttpResponse(val code: Int, val body: ByteArray, val headers: Map<String, 
 }
 
 /** The track Mochy wants to play, as Mochy knows it. */
-data class TrackQuery(
+data class TrackQuery @JvmOverloads constructor(
     val title: String,
     val artists: List<String>,
     val album: String? = null,
     val durationMs: Long? = null,
     val isrc: String? = null,
+    /** the song's youtube video id when it came from youtube, so a source keyed by it can skip the search; null for local files */
+    val videoId: String? = null,
 )
 
 /**

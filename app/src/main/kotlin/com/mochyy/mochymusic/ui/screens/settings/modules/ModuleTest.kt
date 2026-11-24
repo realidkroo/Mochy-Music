@@ -51,6 +51,7 @@ import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.module.AccountState
 import com.mochyy.mochymusic.module.DiagnosticStep
 import com.mochyy.mochymusic.module.TrackQuery
+import com.mochyy.mochymusic.utils.youtubeIdOrNull
 import com.mochyy.mochymusic.modules.ModuleEntry
 import com.mochyy.mochymusic.playback.queues.YouTubeQueue
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
@@ -78,7 +79,7 @@ internal fun ModuleTest(entry: ModuleEntry, viewModel: ModulesViewModel) {
             playing?.let {
                 TestSong(
                     it.id,
-                    TrackQuery(it.title, it.artists.map { a -> a.name }, it.album?.title, it.duration.takeIf { d -> d > 0 }?.times(1000L)),
+                    TrackQuery(it.title, it.artists.map { a -> a.name }, it.album?.title, it.duration.takeIf { d -> d > 0 }?.times(1000L), videoId = youtubeIdOrNull(it.id)),
                     it.thumbnailUrl,
                     it.artists.joinToString(", ") { a -> a.name },
                 )
@@ -88,7 +89,7 @@ internal fun ModuleTest(entry: ModuleEntry, viewModel: ModulesViewModel) {
         found.map { song ->
             TestSong(
                 song.id,
-                TrackQuery(song.title, song.artists.map { it.name }, song.album?.name, song.duration?.times(1000L)),
+                TrackQuery(song.title, song.artists.map { it.name }, song.album?.name, song.duration?.times(1000L), videoId = youtubeIdOrNull(song.id)),
                 song.thumbnail,
                 listOfNotNull(song.artists.joinToString(", ") { it.name }, song.album?.name).joinToString(" · "),
             )

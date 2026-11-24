@@ -411,6 +411,9 @@ class PlayerConnection(
     /** Live dual-player preview state for the Mix It Transition Editor */
     val mixItPreviewState: StateFlow<MixItPreviewState> = service.mixItPreviewState
 
+    /** Active local playlist id bound to the current queue (for Mix It transitions), or null */
+    val activePlaylistId: StateFlow<String?> = service.activePlaylistIdState
+
     fun startMixItPreview(
         outItem: MediaItem,
         inItem: MediaItem,
@@ -428,6 +431,9 @@ class PlayerConnection(
 
     fun cachedTrackAnalysis(mediaId: String): com.mochyy.mochymusic.crossmix.TrackAnalysis? =
         service.cachedTrackAnalysis(mediaId)
+
+    fun cachedTrackBpm(mediaId: String): Int? =
+        service.cachedTrackBpm(mediaId)
 
     suspend fun fetchLyricsForMixIt(item: MediaItem): String? = service.fetchLyricsForMixIt(item)
 

@@ -143,13 +143,15 @@ constructor(
                 }
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val sortedSongs =
-                playlistSongs.first().sortedWith(compareBy({ it.map.position }, { it.map.id }))
-            database.transaction {
-                sortedSongs.forEachIndexed { index, playlistSong ->
-                    if (playlistSong.map.position != index) {
-                        update(playlistSong.map.copy(position = index))
+                database.playlistSongs(playlistId).first().sortedWith(compareBy({ it.map.position }, { it.map.id }))
+            if (sortedSongs.indices.any { sortedSongs[it].map.position != it }) {
+                database.transaction {
+                    sortedSongs.forEachIndexed { index, playlistSong ->
+                        if (playlistSong.map.position != index) {
+                            update(playlistSong.map.copy(position = index))
+                        }
                     }
                 }
             }

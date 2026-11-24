@@ -48,6 +48,7 @@ import com.mochyy.mochymusic.di.DownloadCache
 import com.mochyy.mochymusic.ui.utils.resize
 import com.mochyy.mochymusic.utils.YTPlayerUtils
 import com.mochyy.mochymusic.utils.enumPreference
+import com.mochyy.mochymusic.utils.youtubeIdOrNull
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -361,6 +362,7 @@ constructor(
             artists = song.artists.map { it.name },
             album = song.song.albumName ?: song.album?.title,
             durationMs = song.song.duration.takeIf { it > 0 }?.times(1000L),
+            videoId = youtubeIdOrNull(mediaId),
         )
         val route = runBlocking(Dispatchers.IO) { sourceModules.downloadRoute(track, failedProviders[mediaId].orEmpty()) }
         val (module, stream) = route as? SourceModules.Route.Module ?: return null

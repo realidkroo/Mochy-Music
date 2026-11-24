@@ -31,3 +31,8 @@ fun joinByBullet(vararg str: String?) =
         .filterNot {
             it.isNullOrEmpty()
         }.joinToString(separator = " • ")
+
+// the id as a youtube video id (11 letters, digits, - or _), null for local files and anything else
+fun youtubeIdOrNull(id: String?): String? = id?.takeIf { YouTubeIdPattern.matches(it) }
+
+private val YouTubeIdPattern = Regex("[A-Za-z0-9_-]{11}")

@@ -438,7 +438,7 @@ private fun StemSliderRow(
             )
         }
         Slider(
-            value = value.coerceIn(0f, 1f),
+            value = value.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 1f,
             onValueChange = { onValueChange((it * 20f).roundToInt() / 20f) },
             valueRange = 0f..1f,
             colors = SliderDefaults.colors(
@@ -854,7 +854,7 @@ internal fun PopupSheetState.showMixItBeatMatchCustomizer(
                     )
                 }
                 Slider(
-                    value = activeRatio.coerceIn(0.80f, 1.20f),
+                    value = activeRatio.takeIf { it.isFinite() }?.coerceIn(0.80f, 1.20f) ?: 1f,
                     onValueChange = { v ->
                         val rounded = (v * 100f).roundToInt() / 100f
                         working = working.copy(customSpeedRatio = rounded)
@@ -999,8 +999,19 @@ private fun VisualBeatMatchStage(
             val beats = 8
             val spacing = size.width / beats
             val nudgeOffsetPx = (beatNudgeMs / 500f) * spacing
-            val driftRatio = if (summary.isLocked || summary.outBpm == null || summary.inBpm == null) 1f
-            else (summary.inBpm / summary.outBpm).coerceIn(0.65f, 1.45f)
+            val driftRatio = if (
+                summary.isLocked ||
+                summary.outBpm == null ||
+                summary.inBpm == null ||
+                !summary.outBpm.isFinite() ||
+                !summary.inBpm.isFinite() ||
+                summary.outBpm <= 1f ||
+                summary.inBpm <= 1f
+            ) {
+                1f
+            } else {
+                (summary.inBpm / summary.outBpm).takeIf { it.isFinite() }?.coerceIn(0.65f, 1.45f) ?: 1f
+            }
 
             val topY1 = 4.dp.toPx()
             val topY2 = size.height / 2f - 2.dp.toPx()
