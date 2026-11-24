@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Download Mochy Music</title>
+<meta name="description" content="Download the latest stable or nightly Mochy Music APK for arm64 and Universal Android phones.">
+<meta name="theme-color" content="#0E0E0F">
+<link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="assets/css/site.css?v=20261124b">
+<link rel="stylesheet" href="assets/css/home.css?v=20261107k">
+<link rel="stylesheet" href="assets/css/releases.css?v=20261124g">
+<script>document.documentElement.classList.add("js");</script>
+</head>
+<body class="dots home-page rel-page" data-page="download">
+
+<header class="topnav" id="topnav">
+  <nav class="wrap nav" aria-label="Main">
+    <div class="brand"><a class="brand-name" href="index.html" style="text-decoration:none"><img src="assets/img/logo.svg" alt="" width="32" height="35">Mochy Music</a><span class="brand-sep"></span><a class="brand-sub" href="https://github.com/realidkroo/Mochy-Music">GITHUB</a></div>
+    <button class="nav-toggle press" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <div class="nav-links">
+      <a href="wiki/index.html#roadmap">Roadmaps</a><span></span>
+      <a href="wiki/index.html">Docs</a><span></span>
+      <a href="https://discord.gg/NTmqVphbRY">Community</a><span></span>
+      <a href="changelog.html">Changelog</a><span></span>
+      <a href="download.html">Download</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+<div class="rel-wrap">
+
+  <div id="dlSkeleton" class="rel-skeleton" role="status" aria-label="Loading releases">
+    <div class="rel-skel short"></div>
+    <div class="rel-skel wide"></div>
+    <div class="rel-skel"></div>
+  </div>
+
+  <section id="dlError" class="rel-error" hidden>
+    <p id="dlErrorText">Release data is unavailable right now.</p>
+    <a class="rel-btn press" href="https://github.com/realidkroo/Mochy-Music/releases/latest">Open GitHub releases</a>
+  </section>
+
+  <div id="dlContent">
+    <div class="rel-head">
+      <div class="rel-segmented" role="group" aria-label="Build channel" data-channel="stable">
+        <span class="rel-seg-indicator" aria-hidden="true"></span>
+        <button id="channelStable" class="press" type="button" aria-pressed="true">Stable</button>
+        <button id="channelNightly" class="press" type="button" aria-pressed="false">Nightly</button>
+      </div>
+      <h1 id="dlTitle">Download Mochy</h1>
+      <div class="rel-meta"><span id="dlMeta" role="status" aria-label="Loading release information">Loading release…</span></div>
+      <p id="dlIntro" class="rel-intro">two builds. pick the one that fits.</p>
+    </div>
+
+    <div class="rel-grid" aria-label="Choose a build">
+      <button id="variant-arm64" class="rel-card picked press" type="button" aria-pressed="true">
+        <span class="rel-card-top"><span class="rel-name">arm64</span><span class="rel-badge">Recommended</span></span>
+        <span class="rel-blurb">smaller file. fits most phones from the last 8 years.</span>
+        <span id="file-arm64" class="rel-file">Loading…</span>
+        <span id="meta-arm64" class="rel-sub"></span>
+      </button>
+      <button id="variant-universal" class="rel-card press" type="button" aria-pressed="false">
+        <span class="rel-card-top"><span class="rel-name">Universal</span></span>
+        <span class="rel-blurb">bigger file. works on every phone and cpu.</span>
+        <span id="file-universal" class="rel-file">Loading…</span>
+        <span id="meta-universal" class="rel-sub"></span>
+      </button>
+    </div>
+
+    <div class="rel-cta">
+      <div class="rel-cta-main">
+        <div id="selected-name" class="rel-cta-title">arm64 · stable</div>
+        <div id="selected-file" class="rel-sub">Loading…</div>
+      </div>
+      <a id="downloadBtn" class="rel-btn press" href="https://github.com/realidkroo/Mochy-Music/releases/latest">Download arm64</a>
+    </div>
+
+    <div id="nightlyOnly" hidden>
+      <div class="rel-nightly">
+        <section class="rel-card outline">
+          <h4>What is a nightly build?</h4>
+          <div>Built automatically from the newest code on the main branch. It has changes that are not in a stable release yet, so you can try new things first.</div>
+          <div>Each nightly replaces the one before it. Build date and commit are shown above, so you know which code you are running.</div>
+        </section>
+        <section class="rel-card">
+          <h4>Before you install</h4>
+          <ul class="rel-list">
+            <li>It can have bugs or crash. Features may change or disappear before stable.</li>
+            <li>Make a backup in the app first.</li>
+            <li>Found a bug? Open an issue on GitHub with the build date and commit.</li>
+            <li>Want fewer surprises? Switch back to Stable above.</li>
+          </ul>
+        </section>
+      </div>
+      <div class="rel-cmp" aria-label="Stable and Nightly compared">
+        <div class="cmp-grid">
+          <div></div>
+          <div class="cmp-head">Stable</div>
+          <div class="cmp-head nightly">Nightly</div>
+
+          <div class="cmp-row-label">Updates</div>
+          <div class="cmp-cell" data-label="Stable">When a version is released</div>
+          <div class="cmp-cell" data-label="Nightly">Every new build</div>
+
+          <div class="cmp-row-label">Stability</div>
+          <div class="cmp-cell" data-label="Stable">Tested, safe for daily use</div>
+          <div class="cmp-cell" data-label="Nightly">May have bugs</div>
+
+          <div class="cmp-row-label">Best for</div>
+          <div class="cmp-cell" data-label="Stable">Everyone</div>
+          <div class="cmp-cell" data-label="Nightly">Testers who want new things first</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rel-sections">
+      <section>
+        <h2>Install in four steps</h2>
+        <ol class="rel-list">
+          <li>Open this page on your phone and download the APK.</li>
+          <li>Open the downloaded file.</li>
+          <li>Android asks to allow installs from your browser or file manager. Say yes.</li>
+          <li>Open Mochy. No account needed to start listening.</li>
+        </ol>
+        <div>Updating works the same way. Install the new APK over the old one and your library stays.</div>
+      </section>
+      <section>
+        <h2>Good to know</h2>
+        <div class="rel-note">
+          <div>Both builds are FOSS builds. They have no self-update permission, so update by installing the new APK.</div>
+          <div>Android 8 and newer. Android 7 is supported unofficially.</div>
+          <div>Blur and glass need Android 12. Some effects need Android 13. Older phones get a plain version.</div>
+        </div>
+        <div class="rel-warn">Only download Mochy from the official releases. A random mirror or Telegram link could be a modified app. <a href="https://github.com/realidkroo/Mochy-Music/releases">Official releases</a></div>
+      </section>
+    </div>
+
+    <section class="rel-older" aria-labelledby="olderHeading">
+      <h2 id="olderHeading">Older versions</h2>
+      <p>every stable release is here, each with its own arm64 and universal downloads.</p>
+      <p id="dlTotal" class="rel-sub">Loading downloads…</p>
+      <div id="olderList"></div>
+    </section>
+    <div class="rel-more"><button id="moreVersions" class="rel-chip press" type="button" hidden>Show more versions</button></div>
+  </div>
+
+</div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <div>
+      <span class="brand-name"><img src="assets/img/logo.svg" alt="" width="32" height="35">Mochy Music</span>
+      <small>not affiliated by google, apple, or other.</small>
+      <div class="year">2026</div>
+    </div>
+    <nav aria-label="Footer">
+      <a href="wiki/index.html">Docs</a>
+      <a href="changelog.html">Changelog</a>
+      <a href="https://github.com/realidkroo/Mochy-Music">Github</a>
+      <a href="https://discord.gg/NTmqVphbRY">Join discord</a>
+    </nav>
+  </div>
+</footer>
+<script src="assets/js/site.js?v=20261107g" defer></script>
+<script src="assets/js/releases.js?v=20261124g" defer></script>
+</body>
+</html>
