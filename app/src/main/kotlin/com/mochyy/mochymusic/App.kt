@@ -27,12 +27,14 @@ import com.mochyy.mochymusic.constants.*
 import com.mochyy.mochymusic.di.ApplicationScope
 import com.mochyy.mochymusic.i18n.AppLanguage
 import com.mochyy.mochymusic.extensions.toEnum
+import com.mochyy.mochymusic.ui.theme.AppFonts
 import com.mochyy.mochymusic.utils.CrashHandler
 import com.mochyy.mochymusic.utils.PreferencesCache
 import com.mochyy.mochymusic.utils.cipher.CipherDeobfuscator
 import com.mochyy.mochymusic.utils.dataStore
 import com.mochyy.mochymusic.utils.AppProxy
 import com.mochyy.mochymusic.utils.BotDetectionMitigator
+import com.mochyy.mochymusic.utils.isMainProcess
 import com.mochyy.mochymusic.utils.reportException
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -85,6 +87,7 @@ class App : Application(), SingletonImageLoader.Factory {
         }
 
         PreferencesCache.start(this, applicationScope)
+        if (!isTelevision() && isMainProcess(this)) AppFonts.start(this, applicationScope)
         // tokens saved before the vault existed are sealed on the first start after the update
         applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) { (dataStore as? com.mochyy.mochymusic.utils.SecretPreferences)?.sealLeftovers() }
         com.mochyy.mochymusic.utils.NotRecommended.init(this)

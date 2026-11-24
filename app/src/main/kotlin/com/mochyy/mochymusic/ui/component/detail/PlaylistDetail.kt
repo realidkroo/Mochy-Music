@@ -163,53 +163,60 @@ internal val TrackShape = RoundedCornerShape(9.dp)
 // a pressed track lights a pill from one side of the screen to the other, like the swipe slab
 private val TrackHighlight = RoundedHighlight(cornerRadius = 100.dp, spillX = (-10).dp)
 
-internal val PlaylistTitleStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 24.sp,
-    lineHeight = 28.sp,
-    letterSpacing = PlaylistTracking,
-)
-internal val PlaylistCreatorStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 15.sp,
-    lineHeight = 18.sp,
-    letterSpacing = (-0.04).em,
-)
-internal val PlaylistStatsStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 11.sp,
-    lineHeight = 14.sp,
-    letterSpacing = (-0.02).em,
-)
-internal val PillLabelStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 16.sp,
-    letterSpacing = PlaylistTracking,
-)
-internal val TrackTitleStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 14.sp,
-    lineHeight = 17.sp,
-    letterSpacing = (-0.03).em,
-)
-internal val TrackSubtitleStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Medium,
-    fontSize = 11.5.sp,
-    lineHeight = 14.sp,
-    letterSpacing = (-0.02).em,
-)
-internal val SectionTitleStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 16.sp,
-    letterSpacing = PlaylistTracking,
-)
+internal val PlaylistTitleStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 24.sp,
+        lineHeight = 28.sp,
+        letterSpacing = PlaylistTracking,
+    )
+internal val PlaylistCreatorStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 15.sp,
+        lineHeight = 18.sp,
+        letterSpacing = (-0.04).em,
+    )
+internal val PlaylistStatsStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 11.sp,
+        lineHeight = 14.sp,
+        letterSpacing = (-0.02).em,
+    )
+internal val PillLabelStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 16.sp,
+        letterSpacing = PlaylistTracking,
+    )
+internal val TrackTitleStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 14.sp,
+        lineHeight = 17.sp,
+        letterSpacing = (-0.03).em,
+    )
+internal val TrackSubtitleStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.5.sp,
+        lineHeight = 14.sp,
+        letterSpacing = (-0.02).em,
+    )
+internal val SectionTitleStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 16.sp,
+        letterSpacing = PlaylistTracking,
+    )
 internal val ReceiptSmallStyle = TextStyle(
     fontFamily = FontFamily.Monospace,
     fontWeight = FontWeight.Medium,
@@ -1127,13 +1134,14 @@ private fun playlistClassicCoverSize(): Dp = (LocalConfiguration.current.screenW
 @Composable
 private fun playlistClassicHeaderHeight(): Dp = playlistCompactHeaderTop() + playlistClassicCoverSize() + 22.dp + 120.dp
 
-internal val PlaylistCompactTitleStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 32.sp,
-    lineHeight = 36.sp,
-    letterSpacing = PlaylistTracking,
-)
+internal val PlaylistCompactTitleStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 32.sp,
+        lineHeight = 36.sp,
+        letterSpacing = PlaylistTracking,
+    )
 
 /**
  * an album's description where the stats line used to be: two lines, and a tap opens the rest in

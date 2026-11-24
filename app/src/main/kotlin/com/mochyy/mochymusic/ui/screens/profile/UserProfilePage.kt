@@ -95,14 +95,15 @@ internal val ProfilePhotoGrey = Color(0xFF4F4F4F)
 
 // both match the ID card's name and number (weight, tracking), so the copies flying between them
 // are the same text at both ends, only bigger or smaller
-internal val ProfileNameStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 60.sp,
-    lineHeight = 1.1.em,
-    letterSpacing = (-0.05).em,
-    color = Color.White,
-)
+internal val ProfileNameStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 60.sp,
+        lineHeight = 1.1.em,
+        letterSpacing = (-0.05).em,
+        color = Color.White,
+    )
 
 internal val ProfileTagStyle = TextStyle(
     fontFamily = FontFamily.Monospace,
@@ -120,12 +121,13 @@ private val DividerGrey = Color(0xFF262626)
 private val ListensCardGrey = Color(0xFF111111)
 private val FigureGrey = Color(0xFF707070)
 
-private val EmptyStyle = TextStyle(
-    fontFamily = InterFontFamily,
-    fontWeight = FontWeight.Medium,
-    fontSize = 13.sp,
-    color = Color.White.copy(alpha = 0.45f),
-)
+private val EmptyStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 13.sp,
+        color = Color.White.copy(alpha = 0.45f),
+    )
 
 @Composable
 internal fun UserProfilePage(

@@ -42,13 +42,14 @@ import com.mochyy.mochymusic.ui.utils.stableStatusBars
 import com.mochyy.mochymusic.ui.component.RemoteFocus
 
 /** the player's menu item label, exactly as its chevron menu sets it */
-private val MenuLabelStyle = TextStyle(
-    fontFamily = com.mochyy.mochymusic.ui.theme.InterFontFamily,
-    fontSize = 14.sp,
-    fontWeight = FontWeight.SemiBold,
-    color = Color.White,
-    shadow = Shadow(color = Color.Black.copy(alpha = 0.75f), offset = Offset(0f, 2f), blurRadius = 8f),
-)
+private val MenuLabelStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = com.mochyy.mochymusic.ui.theme.InterFontFamily,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = Color.White,
+        shadow = Shadow(color = Color.Black.copy(alpha = 0.75f), offset = Offset(0f, 2f), blurRadius = 8f),
+    )
 
 /**
  * Where the middle part's camera goes and where every piece ends up, laid out for this screen the
@@ -213,10 +214,11 @@ internal fun MiddleEditor(
     val measurer = rememberTextMeasurer()
     val slots = menuLayout.slots
     val sideAction = menuLayout.side
-    val labelWidths = remember(slots) {
-        FloatArray(slots.size) { i -> measurer.measure(slots[i].label, MenuLabelStyle).size.width.toFloat() }
+    val labelStyle = MenuLabelStyle
+    val labelWidths = remember(slots, measurer, labelStyle) {
+        FloatArray(slots.size) { i -> measurer.measure(slots[i].label, labelStyle).size.width.toFloat() }
     }
-    val sideLabelWidth = remember(sideAction) { measurer.measure(sideAction.label, MenuLabelStyle).size.width.toFloat() }
+    val sideLabelWidth = remember(sideAction, measurer, labelStyle) { measurer.measure(sideAction.label, labelStyle).size.width.toFloat() }
     val sideRect = anchors.sideButton.value
     val chevronRect = anchors.chevron.value
     val seekRect = anchors.seekBar.value

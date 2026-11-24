@@ -5,7 +5,6 @@ package com.mochyy.mochymusic.importer.transfer
 import android.app.Application
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import androidx.datastore.preferences.core.edit
 import com.mochyy.mochymusic.MainActivity
@@ -15,6 +14,7 @@ import com.mochyy.mochymusic.playback.MusicService
 import com.mochyy.mochymusic.playback.StoragePlaces
 import com.mochyy.mochymusic.playback.StoredKind
 import com.mochyy.mochymusic.utils.dataStore
+import com.mochyy.mochymusic.utils.isMainProcess
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import java.io.File
@@ -135,14 +135,5 @@ object TransferRestore {
             TransferArchive.jsonIntoSharedPreferences(JSONObject(file.readText()), editor)
             editor.commit()
         }
-    }
-
-    private fun isMainProcess(context: Context): Boolean {
-        val name = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            Application.getProcessName()
-        } else {
-            runCatching { File("/proc/self/cmdline").readText().substringBefore('\u0000').trim() }.getOrNull()
-        }
-        return name.isNullOrEmpty() || name == context.packageName
     }
 }

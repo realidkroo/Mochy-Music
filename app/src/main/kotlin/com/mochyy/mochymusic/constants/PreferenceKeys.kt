@@ -1413,3 +1413,7 @@ val ModuleStoreTermsKey = intPreferencesKey("moduleStoreTerms")
 
 // experimental: the module store answers as it would a fork, to see that page without building one
 val SimulateForkKey = booleanPreferencesKey("simulateFork")
+
+val AppFontModeKey = stringPreferencesKey("appFontMode")
+val CustomFontIdKey = stringPreferencesKey("customFontId")
+val CustomFontNameKey = stringPreferencesKey("customFontName")
