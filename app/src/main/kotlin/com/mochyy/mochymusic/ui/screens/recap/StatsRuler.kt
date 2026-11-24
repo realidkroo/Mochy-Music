@@ -71,13 +71,10 @@ private val MinorTick = 22.dp
 private val HighlightTick = 44.dp
 private val EdgeFade = 40.dp
 
-private val BigLabel: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 30.sp,
-        letterSpacing = (-1.1).sp,
-    )
+private val BigLabelCache = com.mochyy.mochymusic.ui.theme.headingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 30.sp, letterSpacing = (-1.1).sp),
+)
+private val BigLabel: TextStyle get() = BigLabelCache.current()
 
 // the other names are the same text drawn at this share of the size
 private const val SmallLabelScale = 0.48f

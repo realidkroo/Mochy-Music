@@ -258,14 +258,10 @@ private fun LibraryCoverStack(
 }
 
 /** The big grey count on every Library card. */
-private val LibraryCountStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 34.sp,
-        lineHeight = 36.sp,
-        letterSpacing = (-0.03).em,
-    )
+private val LibraryCountStyleCache = com.mochyy.mochymusic.ui.theme.headingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 36.sp, letterSpacing = (-0.03).em),
+)
+private val LibraryCountStyle: TextStyle get() = LibraryCountStyleCache.current()
 
 /** A card's label, a step above its count. */
 @Composable

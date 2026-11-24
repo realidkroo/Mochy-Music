@@ -121,14 +121,10 @@ private val ToastSquare = Color(0xFFD9D9D9)
 private val ToastError = Color(0xFFEE5A52)
 private val ToastEase = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 
-private val ToastTitle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 17.sp,
-        letterSpacing = (-0.6).sp,
-        color = Color.White,
-    )
+private val ToastTitleCache = com.mochyy.mochymusic.ui.theme.subheadingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 17.sp, letterSpacing = (-0.6).sp, color = Color.White),
+)
+private val ToastTitle: TextStyle get() = ToastTitleCache.current()
 
 /** Draws the current toast over everything in its parent; touches elsewhere pass straight through. */
 @Composable

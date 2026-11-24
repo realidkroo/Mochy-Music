@@ -121,50 +121,30 @@ import com.mochyy.mochymusic.ui.component.RemoteFocus
 internal const val ArtistAvatarAt = 0.45f
 internal val ArtistAvatarSize = 96.dp
 
-internal val ArtistNameStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 36.sp,
-        lineHeight = 40.sp,
-        letterSpacing = PlaylistTracking,
-    )
+private val ArtistNameStyleCache = com.mochyy.mochymusic.ui.theme.headingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 36.sp, lineHeight = 40.sp, letterSpacing = PlaylistTracking),
+)
+internal val ArtistNameStyle: TextStyle get() = ArtistNameStyleCache.current()
 
-private val ArtistBarTitleStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 19.sp,
-        lineHeight = 22.sp,
-        letterSpacing = (-0.04).em,
-    )
+private val ArtistBarTitleStyleCache = com.mochyy.mochymusic.ui.theme.headingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 19.sp, lineHeight = 22.sp, letterSpacing = (-0.04).em),
+)
+private val ArtistBarTitleStyle: TextStyle get() = ArtistBarTitleStyleCache.current()
 
-private val CardLabelStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 13.sp,
-        lineHeight = 16.sp,
-        letterSpacing = (-0.02).em,
-    )
+private val CardLabelStyleCache = com.mochyy.mochymusic.ui.theme.globalTextStyle(
+    TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 16.sp, letterSpacing = (-0.02).em),
+)
+private val CardLabelStyle: TextStyle get() = CardLabelStyleCache.current()
 
-internal val AboutTitleStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 21.sp,
-        lineHeight = 25.sp,
-        letterSpacing = (-0.04).em,
-    )
+private val AboutTitleStyleCache = com.mochyy.mochymusic.ui.theme.headingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 21.sp, lineHeight = 25.sp, letterSpacing = (-0.04).em),
+)
+internal val AboutTitleStyle: TextStyle get() = AboutTitleStyleCache.current()
 
-internal val AboutBodyStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 13.sp,
-        lineHeight = 18.sp,
-        letterSpacing = (-0.01).em,
-    )
+private val AboutBodyStyleCache = com.mochyy.mochymusic.ui.theme.globalTextStyle(
+    TextStyle(fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 18.sp, letterSpacing = (-0.01).em),
+)
+internal val AboutBodyStyle: TextStyle get() = AboutBodyStyleCache.current()
 
 private val ArtistCardShape = RoundedCornerShape(22.dp)
 

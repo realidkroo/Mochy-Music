@@ -120,14 +120,10 @@ private val SpeakerGap = 10.dp
 // no bounce, about a third of a second, quick enough that a held volume key never lags behind
 private val VolumeGlide = spring<Float>(dampingRatio = 1f, stiffness = 400f)
 
-private val PillText: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 9.5.sp,
-        letterSpacing = (-0.03).em,
-        color = Color.White,
-    )
+private val PillTextCache = com.mochyy.mochymusic.ui.theme.globalTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 9.5.sp, letterSpacing = (-0.03).em, color = Color.White),
+)
+private val PillText: TextStyle get() = PillTextCache.current()
 
 // how far up from the screen's bottom the bar reaches, the nav bar read as if showing so it never jumps when it hides
 @OptIn(ExperimentalLayoutApi::class)

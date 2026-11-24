@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="customise_font">Font</string>
+    <string name="customise_font_open_customizer">Open font customizer</string>
     <string name="customise_font_default">Default</string>
     <string name="customise_font_system">System</string>
     <string name="customise_font_custom">Custom</string>
@@ -8,9 +9,34 @@
     <string name="customise_font_import">Import font</string>
     <string name="customise_font_replace">Change</string>
     <string name="customise_font_remove">Delete</string>
-    <string name="customise_font_file_help">Choose a .ttf file up to 32 MB.</string>
+    <string name="customise_font_file_help">Choose a .ttf or .otf file up to 32 MB.</string>
     <string name="customise_font_missing">The imported font is unavailable on this device. Import a font to use it again.</string>
-    <string name="customise_font_invalid">This file is invalid. Choose a TrueType (.ttf) font.</string>
+    <string name="customise_font_invalid">This file isn’t a supported font. Choose a .ttf or .otf file.</string>
     <string name="customise_font_too_large">The font exceeds the 32 MB limit.</string>
     <string name="customise_font_storage_error">Couldn’t open the file picker or save the font setting.</string>
+
+    <string name="customise_font_role_heading">Heading</string>
+    <string name="customise_font_role_subheading">Sub heading</string>
+    <string name="customise_font_role_global">Global</string>
+    <string name="customise_font_follow_global">Same as Global</string>
+    <string name="customise_font_following_value">%1$s · Global</string>
+    <string name="customise_font_picker_title">%1$s font</string>
+    <string name="customise_font_reset_role">Reset %1$s font</string>
+    <string name="customise_font_style_bold">Bold</string>
+    <string name="customise_font_style_italic">Italic</string>
+    <string name="customise_font_style_light">Light</string>
+    <string name="customise_font_kind_builtin">Built-in</string>
+    <string name="customise_font_kind_variable">Variable</string>
+    <string name="customise_font_kind_custom">Custom</string>
+    <string name="customise_font_single_style">Regular only</string>
+    <string name="customise_font_meta_pair">%1$s · %2$s</string>
+    <string name="customise_font_summary_custom">%1$s · custom roles</string>
+    <string name="customise_font_preview_heading">Hello</string>
+    <string name="customise_font_preview_subheading">Recently played</string>
+    <string name="customise_font_preview_track_1">Midnight Echoes</string>
+    <string name="customise_font_preview_artist_1">Mochy Mix</string>
+    <string name="customise_font_preview_track_2">Velvet Horizon</string>
+    <string name="customise_font_preview_artist_2">Night Drive</string>
+    <string name="customise_font_preview_track_3">Soft Static</string>
+    <string name="customise_font_preview_artist_3">Lo-Fi Sessions</string>
 </resources>

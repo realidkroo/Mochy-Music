@@ -147,13 +147,10 @@ private val PillPadding = 13.dp
 private val PillIconSize = 18.dp
 private val PillLabelSpacing = 6.dp
 
-private val SwipeLabelStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 12.5.sp,
-        letterSpacing = (-0.02).em,
-    )
+private val SwipeLabelStyleCache = com.mochyy.mochymusic.ui.theme.globalTextStyle(
+    TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp, letterSpacing = (-0.02).em),
+)
+private val SwipeLabelStyle: TextStyle get() = SwipeLabelStyleCache.current()
 
 // how the fired colour pours across the row, then how long it lingers before it fades
 private val WashSpread = spring<Float>(dampingRatio = 0.9f, stiffness = 300f)

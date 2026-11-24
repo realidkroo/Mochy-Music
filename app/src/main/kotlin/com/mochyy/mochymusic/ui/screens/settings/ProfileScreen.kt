@@ -1005,14 +1005,10 @@ private fun Modifier.clipBottomRounded(radius: () -> Float): Modifier = drawWith
     }
 }
 
-private val PageTitle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 23.sp,
-        letterSpacing = (-0.6).sp,
-        color = Color.White,
-    )
+private val PageTitleCache = com.mochyy.mochymusic.ui.theme.headingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, letterSpacing = (-0.6).sp, color = Color.White),
+)
+private val PageTitle: TextStyle get() = PageTitleCache.current()
 
 private val MonoSmall = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 13.sp)
 

@@ -16,11 +16,27 @@ class FontFileInputTest {
     }
 
     @Test
+    fun acceptsTtfAndOtfExtensionsForSupportedFonts() {
+        assertTrue(isSupportedFontName("MyFont.ttf"))
+        assertTrue(isSupportedFontName("MyFont.OTF"))
+        assertFalse(isSupportedFontName("MyFont.woff2"))
+    }
+
+    @Test
     fun readsTrueTypeSfntVersion() {
         assertTrue(hasTrueTypeHeader(byteArrayOf(0, 1, 0, 0).inputStream()))
         assertFalse(hasTrueTypeHeader("OTTO".byteInputStream()))
         assertFalse(hasTrueTypeHeader("ttcf".byteInputStream()))
         assertFalse(hasTrueTypeHeader(byteArrayOf(0, 1).inputStream()))
+    }
+
+    @Test
+    fun readsSupportedTtfAndOtfHeaders() {
+        assertTrue(hasSupportedFontHeader(byteArrayOf(0, 1, 0, 0).inputStream()))
+        assertTrue(hasSupportedFontHeader("OTTO".byteInputStream()))
+        assertTrue(hasSupportedFontHeader("true".byteInputStream()))
+        assertFalse(hasSupportedFontHeader("ttcf".byteInputStream()))
+        assertFalse(hasSupportedFontHeader("PK\u0003\u0004".byteInputStream()))
     }
 
     @Test

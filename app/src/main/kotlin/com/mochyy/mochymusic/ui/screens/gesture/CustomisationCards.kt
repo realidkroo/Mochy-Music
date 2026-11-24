@@ -99,40 +99,25 @@ private val ArcTail = 12.dp
 // the outline round the style that's in use
 private val HighlightColor = Color.White.copy(alpha = 0.9f)
 
-internal val CardLabelStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 15.sp,
-        lineHeight = 14.sp,
-        letterSpacing = (-0.03).em,
-    )
+private val CardLabelStyleCache = com.mochyy.mochymusic.ui.theme.subheadingTextStyle(
+    TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 14.sp, letterSpacing = (-0.03).em),
+)
+internal val CardLabelStyle: TextStyle get() = CardLabelStyleCache.current()
 
-internal val CardValueStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 32.sp,
-        lineHeight = 34.sp,
-        letterSpacing = (-0.045).em,
-        color = Color.White,
-    )
+private val CardValueStyleCache = com.mochyy.mochymusic.ui.theme.headingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp, lineHeight = 34.sp, letterSpacing = (-0.045).em, color = Color.White),
+)
+internal val CardValueStyle: TextStyle get() = CardValueStyleCache.current()
 
-internal val SmallLabelStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 9.sp,
-        letterSpacing = (-0.01).em,
-    )
+private val SmallLabelStyleCache = com.mochyy.mochymusic.ui.theme.globalTextStyle(
+    TextStyle(fontWeight = FontWeight.Medium, fontSize = 9.sp, letterSpacing = (-0.01).em),
+)
+internal val SmallLabelStyle: TextStyle get() = SmallLabelStyleCache.current()
 
-internal val CaptionStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 10.sp,
-        letterSpacing = (-0.01).em,
-    )
+private val CaptionStyleCache = com.mochyy.mochymusic.ui.theme.globalTextStyle(
+    TextStyle(fontWeight = FontWeight.Medium, fontSize = 10.sp, letterSpacing = (-0.01).em),
+)
+internal val CaptionStyle: TextStyle get() = CaptionStyleCache.current()
 
 // the card and slider that set how round covers are across the app
 @Composable
@@ -250,13 +235,10 @@ internal fun CustomiseSliderCard(
     }
 }
 
-private val SliderTitleStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 13.sp,
-        letterSpacing = (-0.03).em,
-    )
+private val SliderTitleStyleCache = com.mochyy.mochymusic.ui.theme.subheadingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, letterSpacing = (-0.03).em),
+)
+private val SliderTitleStyle: TextStyle get() = SliderTitleStyleCache.current()
 
 // the big cover corner tucked into the card's top right, with the white arc hugging its bend
 @Composable

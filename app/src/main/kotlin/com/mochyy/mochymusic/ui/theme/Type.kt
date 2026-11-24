@@ -14,14 +14,30 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.R
 
-private val Inter = FontFamily(
+internal val BundledInter = FontFamily(
     Font(R.font.inter_thin, FontWeight.Thin),
     Font(R.font.inter_extralight, FontWeight.ExtraLight),
     Font(R.font.inter_light, FontWeight.Light),
     Font(R.font.inter_regular, FontWeight.Normal),
     Font(R.font.inter_medium, FontWeight.Medium),
     Font(R.font.inter_semibold, FontWeight.SemiBold),
-    Font(R.font.inter_bold, FontWeight.Bold)
+    Font(R.font.inter_bold, FontWeight.Bold),
+)
+
+// only swapped in when the user explicitly turns on bold for inter so stock screens stay identical
+internal val InterBoldOverride = FontFamily(
+    Font(R.font.inter_thin, FontWeight.Thin),
+    Font(R.font.inter_extralight, FontWeight.ExtraLight),
+    Font(R.font.inter_light, FontWeight.Light),
+    Font(R.font.inter_regular, FontWeight.Normal),
+    Font(R.font.inter_medium, FontWeight.Medium),
+    Font(R.font.inter_semibold, FontWeight.SemiBold),
+    Font(R.font.inter_bold, FontWeight.Bold),
+    Font(R.font.inter_extrabold, FontWeight.ExtraBold),
+)
+
+internal val BundledBbhBartle = FontFamily(
+    Font(R.font.bbh_bartle_regular, FontWeight.Normal),
 )
 
 /** a look module's font, standing in for inter across the app while that look is on; null is inter */
@@ -29,124 +45,91 @@ object LookFont {
     var family: FontFamily? by mutableStateOf(null)
 }
 
-internal fun fontFamilyForMode(mode: AppFontMode): FontFamily =
-    mode.resolve(LookFont.family, AppFonts.selection.family, Inter)
-
-// Read during composition so both Look changes and user selections update visible text.
+// read during composition so look changes and global font picks update direct fontfamily call sites
 val InterFontFamily: FontFamily
-    get() {
-        val selection = AppFonts.selection
-        return selection.mode.resolve(LookFont.family, selection.family, Inter)
+    get() = AppFonts.resolvedFor(FontRole.GLOBAL).family
+
+// caches a base style per role by pointer check so reading it on every recomposition allocates nothing
+internal class RoleTextStyle(
+    private val role: FontRole,
+    rawBase: TextStyle,
+) {
+    private val base = if (rawBase.fontFamily == null) rawBase.copy(fontFamily = BundledInter) else rawBase
+    @Volatile private var lastResolved: ResolvedRoleFont? = null
+    @Volatile private var cached: TextStyle = base
+
+    fun current(): TextStyle {
+        val resolved = AppFonts.resolvedFor(role)
+        if (resolved === lastResolved) return cached
+        val next = resolved.applyTo(base)
+        lastResolved = resolved
+        cached = next
+        return next
     }
+}
+
+internal fun headingTextStyle(base: TextStyle): RoleTextStyle = RoleTextStyle(FontRole.HEADING, base)
+
+internal fun subheadingTextStyle(base: TextStyle): RoleTextStyle = RoleTextStyle(FontRole.SUBHEADING, base)
+
+internal fun globalTextStyle(base: TextStyle): RoleTextStyle = RoleTextStyle(FontRole.GLOBAL, base)
 
 private val GlobalFontWeight = FontWeight.SemiBold
 private val GlobalLetterSpacing = (-0.05).em
 
-/** the app's text styles in [font], rebuilt when a look's font comes or goes */
-fun appTypography(font: FontFamily) = Typography(
-    displayLarge = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 57.sp,
-        lineHeight = 64.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    displayMedium = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 45.sp,
-        lineHeight = 52.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    displaySmall = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 36.sp,
-        lineHeight = 44.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    headlineLarge = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 32.sp,
-        lineHeight = 40.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    headlineMedium = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 28.sp,
-        lineHeight = 36.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    headlineSmall = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 24.sp,
-        lineHeight = 32.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    titleLarge = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    titleMedium = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    titleSmall = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    bodyMedium = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    bodySmall = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    labelLarge = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    labelMedium = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = GlobalLetterSpacing
-    ),
-    labelSmall = TextStyle(
-        fontFamily = font,
-        fontWeight = GlobalFontWeight,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = GlobalLetterSpacing
+/** the app's text styles in [font], kept for callers that pass a single family */
+fun appTypography(font: FontFamily): Typography {
+    val single = ResolvedRoleFont(fontId = BuiltinInterId, family = font, isDefaultInter = font === BundledInter)
+    return appTypography(ResolvedFonts(heading = single, subheading = single, global = single))
+}
+
+/** the app's text styles with heading, subheading, and global roles applied */
+internal fun appTypography(resolved: ResolvedFonts): Typography {
+    fun heading(sizeSp: Int, lineSp: Int) = resolved.heading.applyTo(
+        TextStyle(
+            fontFamily = resolved.heading.family,
+            fontWeight = GlobalFontWeight,
+            fontSize = sizeSp.sp,
+            lineHeight = lineSp.sp,
+            letterSpacing = GlobalLetterSpacing,
+        ),
     )
-)
+
+    fun subheading(sizeSp: Int, lineSp: Int) = resolved.subheading.applyTo(
+        TextStyle(
+            fontFamily = resolved.subheading.family,
+            fontWeight = GlobalFontWeight,
+            fontSize = sizeSp.sp,
+            lineHeight = lineSp.sp,
+            letterSpacing = GlobalLetterSpacing,
+        ),
+    )
+
+    fun body(sizeSp: Int, lineSp: Int) = resolved.global.applyTo(
+        TextStyle(
+            fontFamily = resolved.global.family,
+            fontWeight = GlobalFontWeight,
+            fontSize = sizeSp.sp,
+            lineHeight = lineSp.sp,
+            letterSpacing = GlobalLetterSpacing,
+        ),
+    )
+
+    return Typography(
+        displayLarge = heading(57, 64),
+        displayMedium = heading(45, 52),
+        displaySmall = heading(36, 44),
+        headlineLarge = heading(32, 40),
+        headlineMedium = heading(28, 36),
+        headlineSmall = heading(24, 32),
+        titleLarge = heading(22, 28),
+        titleMedium = subheading(16, 24),
+        titleSmall = subheading(14, 20),
+        bodyLarge = body(16, 24),
+        bodyMedium = body(14, 20),
+        bodySmall = body(12, 16),
+        labelLarge = body(14, 20),
+        labelMedium = body(12, 16),
+        labelSmall = body(11, 16),
+    )
+}

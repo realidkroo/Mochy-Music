@@ -117,14 +117,10 @@ private val CardPadding = 20.dp
 private val PageMaxWidth = 680.dp
 private val LandscapePageMaxWidth = 1080.dp
 
-private val PageTitleStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 34.sp,
-        lineHeight = 38.sp,
-        letterSpacing = (-0.04).em,
-    )
+private val PageTitleStyleCache = com.mochyy.mochymusic.ui.theme.headingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 38.sp, letterSpacing = (-0.04).em),
+)
+private val PageTitleStyle: TextStyle get() = PageTitleStyleCache.current()
 
 @Composable
 fun GestureScreen(navController: NavController) = CustomisationScreen(navController)
@@ -132,7 +128,7 @@ fun GestureScreen(navController: NavController) = CustomisationScreen(navControl
 // the customize page's parts in order, with what a search or a settings result can find each one by
 private enum class CustomiseSection(@StringRes val titleRes: Int, val keys: List<String>, val words: String) {
     ICONS(R.string.customise_icons, listOf("Icons", "App icon"), "icon icons app launcher home screen mochy outline anime material you white black dark transparent"),
-    FONT(R.string.customise_font, listOf(FontHighlightKey), "font typeface ttf import system 폰트 글꼴"),
+    FONT(R.string.customise_font, listOf(FontHighlightKey), "font typeface ttf otf import system heading subheading global bold italic light customizer 폰트 글꼴"),
     ROUNDING(R.string.customise_cover_rounding, listOf("Cover rounding"), "cover rounding corner radius square rounded art"),
     PLAYLIST(R.string.customise_playlist_styles, listOf("Playlist styles"), "playlist styles flow classic minimal header"),
     PLAYER(R.string.customise_player_styles, listOf("Player styles"), "player styles flagship turntable ipod poster timeline lyrics editor customize"),

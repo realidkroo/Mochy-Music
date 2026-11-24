@@ -127,23 +127,15 @@ import com.music.innertube.models.SongItem
 import com.music.innertube.models.WatchEndpoint
 import com.music.innertube.models.YTItem
 
-private val SmallLineStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 26.sp,
-        lineHeight = 28.sp,
-        letterSpacing = PlaylistTracking,
-    )
+private val SmallLineStyleCache = com.mochyy.mochymusic.ui.theme.subheadingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 28.sp, letterSpacing = PlaylistTracking),
+)
+private val SmallLineStyle: TextStyle get() = SmallLineStyleCache.current()
 
-private val BigLineStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 44.sp,
-        lineHeight = 46.sp,
-        letterSpacing = (-0.07).em,
-    )
+private val BigLineStyleCache = com.mochyy.mochymusic.ui.theme.headingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 44.sp, lineHeight = 46.sp, letterSpacing = (-0.07).em),
+)
+private val BigLineStyle: TextStyle get() = BigLineStyleCache.current()
 
 private val TallCardShape = RoundedCornerShape(20.dp)
 

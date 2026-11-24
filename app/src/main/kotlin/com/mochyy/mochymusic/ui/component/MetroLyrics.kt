@@ -60,8 +60,8 @@ import com.mochyy.mochymusic.constants.AppleMusicLyricsBlurKey
 import com.mochyy.mochymusic.constants.LyricsRomanizeAsMainKey
 import com.mochyy.mochymusic.lyrics.LyricsEntry
 import com.mochyy.mochymusic.ui.screens.LyricsPosition
-import com.mochyy.mochymusic.ui.theme.AppFontMode
 import com.mochyy.mochymusic.ui.theme.AppFonts
+import com.mochyy.mochymusic.ui.theme.FontRole
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.isActive
@@ -355,7 +355,8 @@ private fun WordLevelCanvasLyrics(
             ?: ResourcesCompat.getFont(context, R.font.inter_regular)
             ?: Typeface.create("sans-serif", Typeface.NORMAL)
     }
-    val glowTypeface = if (AppFonts.selection.mode == AppFontMode.DEFAULT) {
+    val globalFont = AppFonts.resolvedFor(FontRole.GLOBAL)
+    val glowTypeface = if (globalFont.isDefaultPassThrough) {
         interBoldTypeface
     } else {
         LocalFontFamilyResolver.current.resolve(

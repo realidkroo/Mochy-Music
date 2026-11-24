@@ -49,7 +49,9 @@ import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.LocalGridItemSize
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.constants.GridItemSize
-import com.mochyy.mochymusic.ui.theme.InterFontFamily
+import com.mochyy.mochymusic.ui.theme.globalTextStyle
+import com.mochyy.mochymusic.ui.theme.headingTextStyle
+import com.mochyy.mochymusic.ui.theme.subheadingTextStyle
 import coil3.compose.AsyncImage
 
 // spacing and type straight from the Figma home frames (13:11 / 14:212)
@@ -58,49 +60,30 @@ val HomeCardSpacing = 15.dp
 
 private val HomeTracking = (-0.06).em
 
-val HomeLabelStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 16.sp,
-        lineHeight = 19.sp,
-        letterSpacing = HomeTracking,
-    )
+private val HomeLabelStyleCache = subheadingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 19.sp, letterSpacing = HomeTracking),
+)
+val HomeLabelStyle: TextStyle get() = HomeLabelStyleCache.current()
 
-val HomeTitleStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 24.sp,
-        lineHeight = 28.sp,
-        letterSpacing = HomeTracking,
-    )
+private val HomeTitleStyleCache = headingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 24.sp, lineHeight = 28.sp, letterSpacing = HomeTracking),
+)
+val HomeTitleStyle: TextStyle get() = HomeTitleStyleCache.current()
 
-private val HomeCardTitleStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 14.sp,
-        lineHeight = 17.sp,
-        letterSpacing = (-0.03).em,
-    )
+private val HomeCardTitleStyleCache = globalTextStyle(
+    TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 17.sp, letterSpacing = (-0.03).em),
+)
+private val HomeCardTitleStyle: TextStyle get() = HomeCardTitleStyleCache.current()
 
-private val HomeCardSubtitleStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 15.sp,
-        letterSpacing = (-0.02).em,
-    )
+private val HomeCardSubtitleStyleCache = globalTextStyle(
+    TextStyle(fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 15.sp, letterSpacing = (-0.02).em),
+)
+private val HomeCardSubtitleStyle: TextStyle get() = HomeCardSubtitleStyleCache.current()
 
-private val HomeRankStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 22.sp,
-        letterSpacing = HomeTracking,
-    )
+private val HomeRankStyleCache = headingTextStyle(
+    TextStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp, letterSpacing = HomeTracking),
+)
+private val HomeRankStyle: TextStyle get() = HomeRankStyleCache.current()
 
 private val SectionLabelColor = Color.White.copy(alpha = 0.69f)
 private val HomeRowShape = RoundedCornerShape(14.dp)
@@ -288,23 +271,15 @@ fun HomeCoverCard(
 // the Figma "Concert" card (20:195) is 314 x 247 on a 402 wide frame
 const val HomeVideoCardAspect = 314f / 247f
 
-private val HomeVideoTitleStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 15.sp,
-        lineHeight = 18.sp,
-        letterSpacing = (-0.03).em,
-    )
+private val HomeVideoTitleStyleCache = globalTextStyle(
+    TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 18.sp, letterSpacing = (-0.03).em),
+)
+private val HomeVideoTitleStyle: TextStyle get() = HomeVideoTitleStyleCache.current()
 
-private val HomeVideoSubtitleStyle: TextStyle
-    get() = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 13.sp,
-        lineHeight = 16.sp,
-        letterSpacing = (-0.02).em,
-    )
+private val HomeVideoSubtitleStyleCache = globalTextStyle(
+    TextStyle(fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 16.sp, letterSpacing = (-0.02).em),
+)
+private val HomeVideoSubtitleStyle: TextStyle get() = HomeVideoSubtitleStyleCache.current()
 
 // dark at the top where the text sits, clear by the middle so the frame itself shows
 private val HomeVideoScrim = Brush.verticalGradient(
