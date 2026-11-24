@@ -92,6 +92,15 @@ internal object CodeModules {
         Loaded(opened, folder)
     }.onFailure { Timber.tag(Tag).w(it, "Couldn't start the module in $folder") }.getOrNull()
 
+    /** the folder this phone's copy of the module's native libraries sits in, null when it brought none */
+    fun nativeDir(context: Context, folder: String): File? {
+        val parts = folder.split('/')
+        if (parts.size != 2) return null
+        val dir = ModuleSanitizer.safeChild(root(context), parts[0], parts[1]) ?: return null
+        val abis = if (Process.is64Bit()) Build.SUPPORTED_64_BIT_ABIS else Build.SUPPORTED_32_BIT_ABIS
+        return abis.map { File(dir, "lib/$it") }.firstOrNull { it.isDirectory }
+    }
+
     fun tidy(context: Context, keep: Set<String>) {
         root(context).listFiles()?.forEach { key ->
             key.listFiles()?.forEach { copy -> if ("${key.name}/${copy.name}" !in keep) copy.deleteRecursively() }

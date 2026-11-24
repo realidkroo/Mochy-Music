@@ -52,6 +52,10 @@ internal data class WebModuleManifest(
     val appBackground: JsonElement? = null,
     val sheet: JsonElement? = null,
     val menu: JsonElement? = null,
+    // the module's own sheets, by id, each a layout of player blocks
+    val sheets: JsonElement? = null,
+    // effects for the mixer: liveprog scripts in the zip, and for a module with its own code a native library (ModuleAudio.kt)
+    val audio: JsonElement? = null,
 ) {
     @Serializable
     data class Setting(
@@ -155,8 +159,11 @@ internal data class WebModuleManifest(
             floating != null || background != null || appBackground != null || sheet != null || menu != null ||
             settings.any { it.changesLook }
 
+    /** brings effects for the mixer */
+    val bringsAudio: Boolean get() = audio != null
+
     // a manifest that lists nothing is an audio source, that's what most services of this kind are
-    val playsSongs: Boolean get() = (resourceNames.isEmpty() && !changesLook) || "search" in resourceNames
+    val playsSongs: Boolean get() = (resourceNames.isEmpty() && !changesLook && !bringsAudio) || "search" in resourceNames
 
     val hasLyrics: Boolean get() = "lyrics" in resourceNames
 
@@ -178,7 +185,7 @@ internal data class WebModuleManifest(
         }
 
         private val SiteKeys = listOf("start_url", "display", "short_name", "icons")
-        private val ModuleKeys = listOf("resources", "look", "player", "players", "bar", "mini", "font", "pages", "actions", "glass", "floating", "background", "appBackground", "sheet", "menu")
+        private val ModuleKeys = listOf("resources", "look", "player", "players", "bar", "mini", "font", "pages", "actions", "glass", "floating", "background", "appBackground", "sheet", "menu", "audio")
 
         // people paste the manifest's own link as often as the service's, both end up as the service's base
         fun baseOf(link: String): String? {

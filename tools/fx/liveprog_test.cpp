@@ -1,5 +1,6 @@
 #include "liveprog.h"
 #include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -15,7 +16,8 @@ int main(int argc, char** argv) {
         auto t0 = std::chrono::steady_clock::now();
         auto p = LiveprogPlugin::compile(src, {}, {}, 48000, report, &err);
         double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
-        const char* name = strrchr(argv[a], '/') + 1;
+        const char* slash = strrchr(argv[a], '/');
+        const char* name = slash ? slash + 1 : argv[a];
         if (!p) { printf("%-45s FAILED %s\n", name, err.c_str()); bad++; continue; }
         p->prepare(48000, 1024);
         std::vector<float> l(48000), r(48000); for (int i = 0; i < 48000; i++) { l[i] = 0.3f * sinf(i * 0.0571f); r[i] = 0.3f * sinf(i * 0.0391f); }

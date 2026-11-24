@@ -21,6 +21,8 @@ import com.mochyy.mochymusic.module.SourceModule
 import com.mochyy.mochymusic.module.TrackMetadata
 import com.mochyy.mochymusic.module.TrackQuery
 import com.mochyy.mochymusic.module.bridge.BridgedModule
+import com.mochyy.mochymusic.modules.AudioModule
+import com.mochyy.mochymusic.modules.ModuleAudio
 import com.mochyy.mochymusic.modules.skin.ModuleSkin
 import com.mochyy.mochymusic.modules.skin.SkinGlass
 import com.mochyy.mochymusic.modules.skin.SkinParser
@@ -38,7 +40,8 @@ internal class CodeSkinModule private constructor(
     private val inner: BridgedModule,
     private val manifest: WebModuleManifest,
     files: File?,
-) : SourceModule, LyricsModule, LookModule, MetadataModule, ModuleArt, ModuleFields, SkinSource, FieldRanges, AutoCloseable {
+    nativeDir: File?,
+) : SourceModule, LyricsModule, LookModule, MetadataModule, ModuleArt, ModuleFields, SkinSource, FieldRanges, AudioModule, AutoCloseable {
 
     override val info: ModuleInfo get() = inner.info
 
@@ -49,8 +52,14 @@ internal class CodeSkinModule private constructor(
         appBackground = manifest.appBackground, sheet = manifest.sheet, menu = manifest.menu,
     )
 
-    override val adds: Set<ModuleFeature> =
-        if (skin != null || manifest.lookValues.isNotEmpty()) inner.adds + ModuleFeature.Look else inner.adds
+    override val adds: Set<ModuleFeature> = buildSet {
+        addAll(inner.adds)
+        if (skin != null || manifest.lookValues.isNotEmpty()) add(ModuleFeature.Look)
+        if (manifest.bringsAudio) add(ModuleFeature.AudioProcessor)
+    }
+
+    // its own code may bring a native library of effects as well as scripts
+    override val audio: ModuleAudio? = manifest.audio?.let { ModuleAudio(inner.info.id, inner.info.name, it, files, nativeDir) }
 
     override val signIn: SignInSpec? get() = inner.signIn
 
@@ -102,10 +111,10 @@ internal class CodeSkinModule private constructor(
 
     companion object {
         /** returns [inner] untouched when the manifest has no skin, look or art of its own (so older code zips like js modules stay as-is) */
-        fun wrap(inner: BridgedModule, manifest: WebModuleManifest?, files: File?): MochyModule {
+        fun wrap(inner: BridgedModule, manifest: WebModuleManifest?, files: File?, nativeDir: File? = null): MochyModule {
             if (manifest == null) return inner
-            val hasExtras = manifest.changesLook || manifest.icon != null || manifest.banner != null || manifest.settings.isNotEmpty()
-            return if (hasExtras) CodeSkinModule(inner, manifest, files) else inner
+            val hasExtras = manifest.changesLook || manifest.icon != null || manifest.banner != null || manifest.settings.isNotEmpty() || manifest.bringsAudio
+            return if (hasExtras) CodeSkinModule(inner, manifest, files, nativeDir) else inner
         }
     }
 }

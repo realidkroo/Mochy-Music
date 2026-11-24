@@ -65,6 +65,7 @@ class ModuleCatalog @Inject constructor() {
         "lyrics" -> ModuleFeature.Lyrics
         "look", "theme" -> ModuleFeature.Look
         "metadata", "info" -> ModuleFeature.Metadata
+        "effects", "fx", "dsp", "mixer" -> ModuleFeature.AudioProcessor
         else -> null
     }
 

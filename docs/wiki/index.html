@@ -223,6 +223,7 @@
   <a class="press" href="#modules-web"><b>🎵 Songs</b><span>a source mochy plays from. you answer search and stream, mochy plays it with every audio lab effect still on.</span></a>
   <a class="press" href="#modules-lyrics"><b>💬 Lyrics</b><span>a lyrics provider: line by line, word by word, duets and background vocals.</span></a>
   <a class="press" href="#modules-metadata"><b>ℹ️ Song info</b><span>a metadata provider: genre, release date, writers, producers, the label and what the song is about, shown in about song.</span></a>
+  <a class="press" href="#modules-audio"><b>🎛️ Effects</b><span>effects for the mixer: liveprog scripts with knobs and presets, or native code for heavy dsp and object decoders.</span></a>
   <a class="press" href="#modules-js"><b>📜 Scripts</b><span>javascript for JS Modules: songs, lyrics or song info from a script, no server needed.</span></a>
 </div>
 <p>every module can also have an <a href="#modules-art">icon and a banner</a>, <a href="#modules-settings">settings</a> people change on its page, and an <a href="#modules-install">update button</a> that shows up by itself when you publish a new version.</p>
@@ -248,6 +249,7 @@
 <tr><td>songs from a service</td><td><a href="#modules-web"><b>song source</b></a>: a small http service</td><td>yes</td><td>anyone</td></tr>
 <tr><td>lyrics from a service</td><td><a href="#modules-lyrics"><b>lyrics provider</b></a>: the same, answering <code>/lyrics</code></td><td>yes</td><td>anyone</td></tr>
 <tr><td>song info from a service</td><td><a href="#modules-metadata"><b>song info provider</b></a>: answering <code>/metadata</code></td><td>yes</td><td>anyone</td></tr>
+<tr><td>effects in the mixer</td><td><a href="#modules-audio"><b>audio effects</b></a>: liveprog scripts in a zip</td><td>no</td><td>anyone (native code: only me)</td></tr>
 <tr><td>any of those three from javascript</td><td><a href="#modules-js"><b>script</b></a> for JS Modules</td><td>no</td><td>anyone</td></tr>
 <tr><td>add another monochrome server</td><td>not a module: monochrome's page → servers</td><td>no</td><td>anyone</td></tr>
 <tr><td>code that runs inside mochy</td><td><a href="#modules-zip"><b>zip with its own code</b></a></td><td>no</td><td>only me (it has to be signed with mochy's key)</td></tr>
@@ -3142,6 +3144,87 @@ module.exports = {
 <h1>Testing</h1>
 <p class="sub">does it actually work?</p>
 <h2>From a computer</h2>
+<article class="page" id="modules-audio" data-group="Songs, lyrics &amp; info" data-title="Audio effects">
+<h1>Audio effects</h1>
+<p class="sub">your own effects in the mixer, from a script or from native code</p>
+<p>an audio effects module brings effects for <b>audio fx → mixer</b>. while it's on, each one shows up under <b>add effect</b> with your module's name over it, and people put it on any bus like mochy's own: same knob cards, same presets, same bypass and reordering. turn the module off and its effects leave the mix (their slots say so and let the sound through).</p>
+<p>most effects are <b>liveprog scripts</b>: small programs in jamesdsp's eel2 language, the same scripts jamesdsp and jdsp4linux run. you write one file per effect, and the knobs come from the script itself.</p>
+<h2>The manifest</h2>
+<pre><code class="json">{
+  "id": "warm-things",
+  "name": "Warm things",
+  "version": "1.0",
+  "description": "Tape warmth and a soft widener",
+  "audio": [
+    {
+      "id": "tape",
+      "name": "Tape warmth",
+      "category": "Colour",
+      "description": "Rounds off the top and thickens the middle",
+      "script": "dsp/tape.eel",
+      "presets": [
+        { "name": "Gentle", "values": { "drive": 3, "tone": -10 } },
+        { "name": "Pushed", "values": { "drive": 9, "tone": 5 } }
+      ]
+    },
+    { "id": "wide", "name": "Soft wide", "script": "dsp/wide.eel" }
+  ]
+}</code></pre>
+<p>zip it with the scripts beside it: <code>manifest.json</code>, <code>dsp/tape.eel</code>, <code>dsp/wide.eel</code>. a module can be effects and a look at once, add <code>audio</code> to any other manifest.</p>
+<div class="tbl"><table>
+<tr><th>field</th><th>what it is</th></tr>
+<tr><td><code>id</code></td><td>letters, numbers, <code>.</code> <code>_</code> <code>-</code>. saved mixes point at it, so keep it the same across versions</td></tr>
+<tr><td><code>name</code></td><td>what the add sheet and the card show</td></tr>
+<tr><td><code>category</code></td><td>a word for its row's group; your module's name when left out</td></tr>
+<tr><td><code>description</code></td><td>a line under the name; the script's own <code>desc:</code> when left out</td></tr>
+<tr><td><code>script</code></td><td>the <code>.eel</code> file in the zip</td></tr>
+<tr><td><code>presets</code></td><td>names with values by knob name; knobs you leave out stay at their default</td></tr>
+</table></div>
+<h2>A script</h2>
+<pre><code>desc: Tape warmth
+
+// knobs go above the first section: name:default&lt;min,max,step&gt;Label
+drive:3&lt;0,12,0.5&gt;Drive (dB)
+tone:0&lt;-20,20,1&gt;Tone
+
+@init
+k = 1;
+
+@slider
+// runs whenever a knob moves, without restarting the script
+k = exp(drive * 0.1151292546);
+t = 0.5 + tone / 50;
+
+@sample
+spl0 = tanh(spl0 * k) / k * (1 + t) * 0.5 + spl0 * (1 - t) * 0.5;
+spl1 = tanh(spl1 * k) / k * (1 + t) * 0.5 + spl1 * (1 - t) * 0.5;</code></pre>
+<ul>
+  <li><code>@init</code> runs once, <code>@sample</code> once per sample with <code>spl0</code> (left) and <code>spl1</code> (right) to read and write. <code>srate</code> is the sample rate.</li>
+  <li><code>@slider</code> runs when a knob moves, so the effect keeps playing. without it, mochy runs your <code>@init</code> again with the new value and crossfades into it, the way jamesdsp does.</li>
+  <li><code>@block</code> runs once per buffer, with <code>samplesblock</code> set to its length.</li>
+  <li>knobs can also be written jsfx's way, <code>slider1:gain=0&lt;-24,24,0.1&gt;Gain</code>, and a list of choices goes in braces: <code>mode:0&lt;0,2,1{Soft,Hard,Fold}&gt;Mode</code>.</li>
+  <li>every jamesdsp function is there: fft and stft, filter design, convolution, polyphase filterbanks, linear algebra, <code>printf</code> (it goes to the effect's console).</li>
+</ul>
+<h2>What scripts can't do</h2>
+<p>scripts run in a sandbox: no reading or writing files, no listing or changing folders, no threads, no sleep. a script that makes numbers that can't be played (divide by zero, say) is silenced for those moments instead of breaking the mix, and one too slow to keep up with the music is paused, with a resume button on its card. scripts in a zip from anywhere are fine this way.</p>
+<h2>Trying it out</h2>
+<ul>
+  <li>you don't need a zip to test: <b>add effect → open a script file</b> runs any <code>.eel</code> straight away.</li>
+  <li><b>edit script</b> on its card opens the editor: <b>check</b> builds it with the real engine and points at the line that fails, <b>show console</b> shows your <code>printf</code>s.</li>
+  <li>a reverb or delay script with <code>tags: reverb</code> (or <code>delay</code>) in its header gets the measured decay picture too.</li>
+</ul>
+<h2>Native effects (code modules)</h2>
+<p>for heavy dsp, a <a href="#modules-zip">zip with its own code</a> can bring a native library. list it with <code>"native"</code> instead of <code>"script"</code>; every processor the library exports shows up:</p>
+<pre><code class="json">"audio": [ { "id": "objects", "native": "libmyfx.so" } ]</code></pre>
+<p>the library exports one function, <code>mochy_fx_processors</code>, from <a href="https://github.com/realidkroo/Mochy-Music/blob/main/modules/api/native/mochy_fx.h"><code>modules/api/native/mochy_fx.h</code></a>: a table per processor with its knobs, meters, and <code>create</code>, <code>set_params</code>, <code>process</code>, <code>reset</code>. two flags open the rest of the song to it:</p>
+<ul>
+  <li><code>MOCHY_FX_ALL_CHANNELS</code>: <code>process_all</code> gets every channel of a surround song in one call, in android's order.</li>
+  <li><code>MOCHY_FX_BITSTREAM</code>: <code>bitstream</code> gets each encoded frame (e-ac-3 and friends) in order, just before the decoder does. that's what an object decoder needs: frame k's decoded bed is the k-th run of the codec's frame length after a reset, so it can pair the two up and place the objects.</li>
+</ul>
+<p>like every code module it has to be signed with mochy's key. mochy itself ships no atmos object decoder; one built on someone else's code brings that code's licence with it, and keeps it in its own module.</p>
+<p class="sub">liveprog runs jamesdsp's eel2 engine by james fung, as packaged in jdsp4linux by tim schneeberger (thepbone).</p>
+</article>
+
 <p>check every call with curl before you touch the phone:</p>
 <pre><code>curl https://my-flac.example/manifest.json
 curl "https://my-flac.example/search?q=benny%20blanco%20eastside&amp;quality=LOSSLESS"

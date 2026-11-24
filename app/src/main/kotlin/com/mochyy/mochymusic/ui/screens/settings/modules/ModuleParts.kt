@@ -143,6 +143,7 @@ internal fun featureIcon(feature: ModuleFeature): Int = when (feature) {
     ModuleFeature.Lyrics -> R.drawable.lyrics
     ModuleFeature.Look -> R.drawable.palette
     ModuleFeature.Metadata -> R.drawable.info
+    ModuleFeature.AudioProcessor -> R.drawable.graphic_eq
 }
 
 internal fun featureLabel(feature: ModuleFeature): Int = when (feature) {
@@ -150,6 +151,7 @@ internal fun featureLabel(feature: ModuleFeature): Int = when (feature) {
     ModuleFeature.Lyrics -> R.string.module_adds_lyrics
     ModuleFeature.Look -> R.string.module_adds_look
     ModuleFeature.Metadata -> R.string.module_adds_metadata
+    ModuleFeature.AudioProcessor -> R.string.module_adds_audio
 }
 
 /** "Songs · Lyrics", what a module adds in a few words */
@@ -188,6 +190,10 @@ internal fun moduleOrigin(entry: ModuleEntry): String = stringResource(
 /** a module only changes how mochy looks (or adds pages and menu rows), it brings nothing to play or read */
 internal val ModuleEntry.isLookOnly: Boolean
     get() = adds(ModuleFeature.Look) && !adds(ModuleFeature.AudioSource) && !adds(ModuleFeature.Lyrics) && !adds(ModuleFeature.Metadata)
+
+/** a module that only brings effects for the mixer */
+internal val ModuleEntry.isEffectsOnly: Boolean
+    get() = adds(ModuleFeature.AudioProcessor) && module.adds.all { it == ModuleFeature.AudioProcessor }
 
 /** a module added from a link or a zip, the only kind that can be removed */
 internal val ModuleEntry.removable: Boolean

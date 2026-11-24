@@ -75,6 +75,7 @@ internal fun EnableCard(entry: ModuleEntry, onChange: (Boolean) -> Unit) {
         if (entry.adds(ModuleFeature.Lyrics)) add(stringResource(R.string.module_use_lyrics))
         if (entry.adds(ModuleFeature.Metadata)) add(stringResource(R.string.module_use_metadata))
         if (entry.adds(ModuleFeature.Look)) add(stringResource(R.string.module_use_look))
+        if (entry.adds(ModuleFeature.AudioProcessor)) add(stringResource(R.string.module_use_audio))
     }
     PageCard(padding = 14) {
         Row(

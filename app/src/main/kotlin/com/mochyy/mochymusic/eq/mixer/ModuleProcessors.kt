@@ -22,6 +22,11 @@ class ModuleProcessors @Inject constructor() {
 
     fun find(key: String): FxKind? = byModule.value.values.firstNotNullOfOrNull { list -> list.firstOrNull { it.key == key } }
 
+    /** drops every module not in [ids]: one removed takes its effects with it */
+    fun keepOnly(ids: Set<String>) {
+        byModule.update { map -> map.filterKeys { it in ids } }
+    }
+
     /** replaces everything [moduleId] offers, an empty list takes them all away */
     fun publish(moduleId: String, kinds: List<FxKind>) {
         byModule.update { if (kinds.isEmpty()) it - moduleId else it + (moduleId to kinds) }
