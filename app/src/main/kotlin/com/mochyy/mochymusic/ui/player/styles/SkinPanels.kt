@@ -22,7 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -64,6 +64,7 @@ internal fun SkinBlurBlock(block: SkinBlock.Blur, context: SkinContext, modifier
                     tint = tint,
                     direction = BlurDirection.TopToBottom,
                     steps = block.steps,
+                    fallbackBlur = true,
                     modifier = Modifier.matchParentSize(),
                 )
                 SkinBlurDirection.BottomToTop -> ProgressiveGlassBackground(
@@ -72,6 +73,7 @@ internal fun SkinBlurBlock(block: SkinBlock.Blur, context: SkinContext, modifier
                     tint = tint,
                     direction = BlurDirection.BottomToTop,
                     steps = block.steps,
+                    fallbackBlur = true,
                     modifier = Modifier.matchParentSize(),
                 )
                 SkinBlurDirection.Radial -> {
@@ -85,6 +87,9 @@ internal fun SkinBlurBlock(block: SkinBlock.Blur, context: SkinContext, modifier
                         mask = radialMask,
                         tileMode = android.graphics.Shader.TileMode.CLAMP,
                         bleed = block.bleed,
+                        fallbackBlur = true,
+                        fallbackMaskMode = 3,
+                        fallbackMaskParam = 0.72f,
                         modifier = Modifier.matchParentSize(),
                     )
                 }
@@ -94,13 +99,14 @@ internal fun SkinBlurBlock(block: SkinBlock.Blur, context: SkinContext, modifier
                     tint = tint,
                     tileMode = android.graphics.Shader.TileMode.CLAMP,
                     bleed = block.bleed,
+                    fallbackBlur = true,
                     modifier = Modifier.matchParentSize(),
                 )
             }
             if (colors.size > 1) Box(Modifier.matchParentSize().background(Brush.verticalGradient(colors)))
         } else {
             val fill = colors.ifEmpty { listOf(GlassStandIn) }
-            Box(Modifier.matchParentSize().background(if (fill.size == 1) Brush.linearGradient(listOf(fill[0], fill[0])) else Brush.verticalGradient(fill)))
+            Box(Modifier.matchParentSize().background(if (fill.size == 1) androidx.compose.ui.graphics.SolidColor(fill[0]) else Brush.verticalGradient(fill)))
         }
     }
 }
@@ -144,6 +150,9 @@ internal fun SkinBox(block: SkinBlock.Box, context: SkinContext, modifier: Modif
                 bleed = cfg.bleed,
                 progressive = progressive,
                 progressiveRamp = cfg.ramp,
+                fallbackBlur = true,
+                fallbackMaskMode = if (cfg.progressive == SkinBlurDirection.Radial) 3 else 0,
+                fallbackMaskParam = 0.72f,
                 modifier = Modifier.matchParentSize(),
             )
             cfg.shader?.let { prog ->
@@ -175,7 +184,7 @@ internal fun SkinBox(block: SkinBlock.Box, context: SkinContext, modifier: Modif
 }
 
 private fun gradient(colors: List<Color>, kind: GradientKind): Brush {
-    if (colors.size == 1) return Brush.linearGradient(listOf(colors[0], colors[0]))
+    if (colors.size == 1) return androidx.compose.ui.graphics.SolidColor(colors[0])
     return when (kind) {
         GradientKind.Vertical -> Brush.verticalGradient(colors)
         GradientKind.Horizontal -> Brush.horizontalGradient(colors)
@@ -190,24 +199,32 @@ internal fun SkinVector(block: SkinBlock.Vector, context: SkinContext, modifier:
     // parsed once per shape; a path the parser can't read draws nothing instead of breaking the player
     val path = remember(block.data) { runCatching { PathParser().parsePathString(block.data).toPath() }.getOrNull() }
     val fill = block.fill.map(context::color)
+    val fillBrush = remember(fill, block.viewHeight) {
+        when {
+            fill.isEmpty() -> null
+            fill.size == 1 -> androidx.compose.ui.graphics.SolidColor(fill[0])
+            else -> Brush.verticalGradient(fill, 0f, block.viewHeight)
+        }
+    }
     val outline = block.strokeColor?.let(context::color)
     val width = block.width ?: (block.height * (block.viewWidth / block.viewHeight))
     Spacer(
         modifier
             .size(width, block.height)
-            .drawBehind {
-                path ?: return@drawBehind
+            .drawWithCache {
                 val sx = size.width / block.viewWidth
                 val sy = size.height / block.viewHeight
-                scale(sx, sy, pivot = Offset.Zero) {
-                    if (fill.isNotEmpty()) {
-                        val brush = if (fill.size == 1) Brush.linearGradient(listOf(fill[0], fill[0])) else Brush.verticalGradient(fill, 0f, block.viewHeight)
-                        drawPath(path, brush)
-                    }
-                    if (outline != null && block.stroke != null) {
-                        // the stroke is given in dp on screen, so it's drawn thinner in the view box's own units
-                        val strokeWidth = block.stroke.toPx() / min(sx, sy).coerceAtLeast(0.001f)
-                        drawPath(path, outline, style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                val strokeStyle = if (outline != null && block.stroke != null) {
+                    val strokeWidth = block.stroke.toPx() / min(sx, sy).coerceAtLeast(0.001f)
+                    Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                } else null
+                onDrawBehind {
+                    path ?: return@onDrawBehind
+                    scale(sx, sy, pivot = Offset.Zero) {
+                        fillBrush?.let { drawPath(path, it) }
+                        if (outline != null && strokeStyle != null) {
+                            drawPath(path, outline, style = strokeStyle)
+                        }
                     }
                 }
             },

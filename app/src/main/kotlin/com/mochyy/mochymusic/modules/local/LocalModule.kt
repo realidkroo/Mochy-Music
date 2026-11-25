@@ -39,7 +39,7 @@ internal class LocalModule(private val manifest: WebModuleManifest, files: File?
         info.id, info.name, manifest.player, manifest.font, manifest.pages, files, base = null,
         manifest.actions, manifest.glass, manifest.players, manifest.bar, manifest.mini,
         floating = manifest.floating, background = manifest.background, appBackground = manifest.appBackground,
-        sheet = manifest.sheet, menu = manifest.menu,
+        sheet = manifest.sheet, menu = manifest.menu, sheets = manifest.sheets,
     )
 
     // a zip of effects alone is no look, so it isn't listed among them

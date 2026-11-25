@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -284,6 +285,11 @@ fun StyleCircle(
     glyph: (@Composable (Color) -> Unit)? = null,
     // a module's own picture in place of the icon, in its own colours
     picture: Any? = null,
+    // a module's chevron dressed its own way: its corner instead of a circle, its picture recoloured, how much of the button it fills, a ring round it
+    shape: androidx.compose.ui.graphics.Shape = CircleShape,
+    pictureTint: Color? = null,
+    pictureScale: Float = 0.5f,
+    ring: androidx.compose.foundation.BorderStroke? = null,
 ) {
     val press = remember { Animatable(1f) }
     val scope = rememberCoroutineScope()
@@ -298,7 +304,7 @@ fun StyleCircle(
                 alpha = if (enabled) 1f else 0.4f
             }
             .size(size)
-            .clip(CircleShape)
+            .clip(shape)
             .background(
                 when {
                     active -> ActiveFill
@@ -306,6 +312,7 @@ fun StyleCircle(
                     else -> tones.chip
                 }
             )
+            .then(if (ring != null) Modifier.border(ring, shape) else Modifier)
             .pointerInput(enabled, interactive) {
                 if (!enabled) return@pointerInput
                 whileStyleInteractive(interactive) {
@@ -333,7 +340,8 @@ fun StyleCircle(
                 model = picture,
                 contentDescription = null,
                 contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                modifier = Modifier.size(if (pill) 20.dp else size * 0.5f),
+                colorFilter = pictureTint?.let { androidx.compose.ui.graphics.ColorFilter.tint(it) },
+                modifier = Modifier.size(if (pill) 20.dp else size * pictureScale),
             )
         } else {
             Icon(
@@ -465,6 +473,19 @@ class StyleActions(
 @Stable
 class StyleTurn(val isTurned: () -> Boolean, val toggle: () -> Unit)
 
+/** a module's own chevron: its picture (another while the menu is open), size, shape, ring, and whether it flips round as the menu opens */
+@Immutable
+class ChevronArt(
+    val picture: Any?,
+    val pictureOpen: Any?,
+    val size: Dp?,
+    val shape: androidx.compose.ui.graphics.Shape,
+    val tint: Color?,
+    val scale: Float,
+    val turns: Boolean,
+    val ring: androidx.compose.foundation.BorderStroke?,
+)
+
 /**
  * Double tap plays or pauses; a sideways swipe slides the player's row of songs under the finger
  * (see SongCarousel), on to the next song or back to the last when it's let go. The alternate
@@ -559,7 +580,11 @@ fun BoxScope.StyleMenu(
     atStart: Boolean = false,
     /** the chevron's own fill and ink, when a module dresses it apart from the menu's circles */
     buttonTones: StyleTones = tones,
+    /** a module's own chevron art, size and shape */
+    chevron: ChevronArt? = null,
 ) {
+    // the rows open past the chevron, however big a module draws it
+    val chevronSize = chevron?.size ?: buttonSize
     val corner = when {
         atStart && atBottom -> Alignment.BottomStart
         atStart -> Alignment.TopStart
@@ -618,15 +643,15 @@ fun BoxScope.StyleMenu(
             else -> menu + turnItem + editItem
         }
         val itemGap = 10.dp
-        val roomForRows = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp - edge - buttonSize - itemGap
+        val roomForRows = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp - edge - chevronSize - itemGap
         Column(
             modifier = Modifier
                 .align(corner)
                 .padding(
                     start = if (atStart) end - 3.dp else 0.dp,
                     end = if (atStart) 0.dp else end - 3.dp,
-                    top = if (atBottom) 0.dp else edge + buttonSize + itemGap,
-                    bottom = if (atBottom) edge + buttonSize + itemGap else 0.dp,
+                    top = if (atBottom) 0.dp else edge + chevronSize + itemGap,
+                    bottom = if (atBottom) edge + chevronSize + itemGap else 0.dp,
                 )
                 // only a list too tall for the screen scrolls, from the button's end; a scroll would clip the rows sliding in
                 .then(if ((buttonSize + 6.dp + itemGap) * rows.size > roomForRows) Modifier.verticalScroll(rememberScrollState(), reverseScrolling = atBottom) else Modifier),
@@ -673,7 +698,7 @@ fun BoxScope.StyleMenu(
                     bottom = if (atBottom) edge else 0.dp,
                 ),
         ) {
-            MenuChevron(open, buttonTones, buttonSize, pill, opensDown = !atBottom, onOpenChange)
+            MenuChevron(open, buttonTones, chevronSize, pill, opensDown = !atBottom, onOpenChange, chevron)
         }
     }
 }
@@ -683,17 +708,26 @@ fun BoxScope.StyleMenu(
  * round once it's open.
  */
 @Composable
-private fun MenuChevron(open: Boolean, tones: StyleTones, size: Dp, pill: Boolean, opensDown: Boolean, onOpenChange: (Boolean) -> Unit) {
+internal fun MenuChevron(open: Boolean, tones: StyleTones, size: Dp, pill: Boolean, opensDown: Boolean, onOpenChange: (Boolean) -> Unit, art: ChevronArt? = null) {
     val turn = remember { Animatable(if (open) 1f else 0f) }
     LaunchedEffect(open) { turn.animateTo(if (open) 1f else 0f, spring(dampingRatio = 0.55f, stiffness = 380f)) }
+    val picture = if (open) art?.pictureOpen ?: art?.picture else art?.picture
+    val turns = art?.turns ?: true
     StyleCircle(
         icon = R.drawable.expand_less,
         tones = tones,
         size = size,
         pill = pill,
         onClick = { onOpenChange(!open) },
-        // up-pointing art: turned to point down at rest when the menu drops below it
-        modifier = Modifier.graphicsLayer { rotationZ = (if (opensDown) 180f else 0f) + turn.value * 180f },
+        picture = picture,
+        shape = art?.shape ?: CircleShape,
+        pictureTint = art?.tint,
+        pictureScale = art?.scale ?: 0.5f,
+        ring = art?.ring,
+        // up-pointing art: turned to point down at rest when the menu drops below it; a module's own picture only when it asks
+        modifier = Modifier.graphicsLayer {
+            if (turns) rotationZ = (if (opensDown && picture == null) 180f else 0f) + turn.value * 180f
+        },
     )
 }
 

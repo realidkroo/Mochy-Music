@@ -12,7 +12,6 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 
 internal object SkinPlayerParser {
@@ -88,6 +87,39 @@ internal object SkinPlayerParser {
             size = SkinSize.of(o),
             edit = editParts(o["edit"]),
             menuStyle = SkinExtrasParser.menuStyle(o["menuStyle"] ?: o["menuLook"] ?: o["bubbleMenu"]),
+            handle = o.bool("handle") ?: true,
+            lyricsPage = page(o["lyricsPage"], o, fallbackName, fromZip),
+            queuePage = page(o["queuePage"], o, fallbackName, fromZip),
+        )
+    }
+
+    // a lyrics or queue page is a layout of its own that borrows the player's styles and keyframes by name, and can't open pages itself
+    private fun page(element: JsonElement?, parent: JsonObject, fallbackName: String, fromZip: Boolean): SkinPlayer? {
+        val own = element as? JsonObject ?: return null
+        val merged = buildMap {
+            putAll(own - "lyricsPage" - "queuePage")
+            for (key in MergedKeys) {
+                val a = parent[key] as? JsonObject
+                val b = own[key] as? JsonObject
+                if (a != null) put(key, if (b != null) JsonObject(a + b) else a)
+            }
+        }
+        return player(JsonObject(merged), fallbackName, fromZip)?.copy(menu = emptyList(), header = emptyList())
+    }
+
+    /** a module sheet: a layout of blocks in mochy's own sheet ("look": "mochy") or drawn entirely by the module */
+    fun sheet(id: String, o: JsonObject, fallbackName: String, fromZip: Boolean): SkinSheet? {
+        val layout = player(JsonObject(o - "lyricsPage" - "queuePage"), fallbackName, fromZip) ?: return null
+        val look = if (o.string("look")?.lowercase() == "own" || o.string("style")?.lowercase() == "own") SheetLook.Own else SheetLook.Mochy
+        return SkinSheet(
+            id = id,
+            look = look,
+            // a sheet starts at its blocks, without the room a player keeps for the status bar and the chevron
+            layout = layout.copy(padding = (o.float("padding") ?: 20f).coerceIn(0f, 64f).dp, menu = emptyList(), header = emptyList()),
+            height = o.float("height")?.coerceIn(0.2f, 1f),
+            corner = (o.float("corner") ?: 28f).coerceIn(0f, 60f).dp,
+            dim = (o.float("veil") ?: 0.45f).coerceIn(0f, 0.9f),
+            handle = o.bool("handle") ?: true,
         )
     }
 
@@ -116,7 +148,7 @@ internal object SkinPlayerParser {
             )
         }.distinctBy { it.id }.take(MaxEditParts)
 
-    // "menuButton": "start", "hidden", false, or { "side": "start", "color": "cover", "fill": "#00000000" }
+    // "menuButton": "start", "hidden", false, or { "side": "start", "color": "cover", "fill": "#00000000", "image": "images/chevron.png", "size": 40, "corner": 10 }
     private fun menuButton(element: JsonElement?): SkinMenuButton {
         val o = element as? JsonObject
         val raw = (element as? JsonPrimitive)?.contentOrNull ?: o?.string("side")
@@ -125,7 +157,21 @@ internal object SkinPlayerParser {
             "hidden", "none", "false", "off" -> MenuSide.Hidden
             else -> MenuSide.End
         }
-        return SkinMenuButton(side, color = skinColor(o?.string("color")), fill = skinColor(o?.string("fill")))
+        val image = o?.string("image") ?: o?.string("icon")
+        return SkinMenuButton(
+            side,
+            color = skinColor(o?.string("color")),
+            fill = skinColor(o?.string("fill")),
+            image = image,
+            imageOpen = o?.string("imageOpen") ?: o?.string("iconOpen"),
+            size = o?.float("size")?.coerceIn(24f, 56f)?.dp,
+            corner = o?.float("corner")?.coerceIn(0f, 28f)?.dp,
+            imageScale = (o?.float("imageScale") ?: 0.5f).coerceIn(0.2f, 1f),
+            // a picture of the module's own stays the way it was drawn unless it asks to turn
+            turns = o?.bool("turn") ?: (image == null),
+            stroke = o?.float("stroke")?.coerceIn(0f, 4f)?.dp,
+            strokeColor = skinColor(o?.string("strokeColor")),
+        )
     }
 
     // { "title": "Wallpapers", "icon": "images/w.png", "page": "walls" } or { "title": "Like", "action": "like", "when": "@playing" }
@@ -347,7 +393,8 @@ internal object SkinPlayerParser {
             }
             "box", "panel", "card" -> box(o, depth)
             "bottombar", "deck" -> bottomBar(o)
-            "queue", "upnext" -> queueList(o)
+            "queue", "upnext" -> if (o.string("style")?.lowercase() in MochyStyles) SkinBlock.MochyQueue(fillHeight(o), header = o.bool("header") ?: false) else queueList(o)
+            "scroll", "scroller" -> scroll(o, depth)
             "volume" -> volume(o)
             "path", "vector", "svg" -> vector(o)
             "progress" -> SkinBlock.Progress(
@@ -367,7 +414,7 @@ internal object SkinPlayerParser {
                 color = skinColor(o.string("color")),
                 icon = skinColor(o.string("icon")),
             )
-            "lyrics" -> {
+            "lyrics" -> if (o.string("style")?.lowercase() in MochyStyles) SkinBlock.MochyLyrics(fillHeight(o), header = o.bool("header") ?: false) else {
                 // a flowing list is small words, the sung-through kind needs room for its big ones
                 val style = o.string("style")?.lowercase()
                 val flow = style == "flow" || style == "flowing"
@@ -585,6 +632,21 @@ internal object SkinPlayerParser {
             )
         }
 
+        // { "type": "scroll", "height": 280, "direction": "row", "blocks": [...] }: a box of its own that scrolls
+        private fun scroll(o: JsonObject, depth: Int): SkinBlock? {
+            if (depth >= MaxDepth) return null
+            val inside = blocks(o["blocks"], depth + 1).takeIf { it.isNotEmpty() } ?: return null
+            return SkinBlock.Scroll(
+                blocks = inside,
+                gap = (o.float("gap") ?: 12f).coerceIn(0f, 80f).dp,
+                height = fillHeight(o),
+                row = o.string("direction")?.lowercase() == "row",
+            )
+        }
+
+        // a fixed height in dp, or null to take the room the column has left
+        private fun fillHeight(o: JsonObject) = o.float("height")?.coerceIn(40f, 1200f)?.dp
+
         private fun group(o: JsonObject, depth: Int, make: (List<SkinBlock>, androidx.compose.ui.unit.Dp) -> SkinBlock): SkinBlock? {
             if (depth >= MaxDepth) return null
             val inside = blocks(o["blocks"], depth + 1).takeIf { it.isNotEmpty() } ?: return null
@@ -609,17 +671,14 @@ internal object SkinPlayerParser {
                 else -> emptyList()
             }
             val extras = rawExtras.mapNotNull(::safeSurfaceAsset).distinct().take(4)
-            val controls = when (val c = o["controls"]) {
-                is JsonPrimitive -> when {
-                    c.booleanOrNull == false -> SurfaceControls.None
-                    c.booleanOrNull == true -> SurfaceControls.Below
-                    else -> when (c.contentOrNull?.trim()?.lowercase()) {
-                        "overlay", "over" -> SurfaceControls.Overlay
-                        "none", "off", "false", "hidden" -> SurfaceControls.None
-                        else -> SurfaceControls.Below
-                    }
-                }
-                else -> SurfaceControls.Below
+            // "controls", "fit", "aspect" and "fullscreen" can each be "$setting|fallback", read again whenever that setting changes
+            val bound = mutableMapOf<String, String>()
+            fun option(field: String): String? {
+                val raw = (o[field] as? JsonPrimitive)?.contentOrNull?.trim() ?: return null
+                if (!raw.startsWith("$")) return raw
+                val key = raw.drop(1).substringBefore('|').trim()
+                if (key.isNotEmpty() && field in SurfaceOptions.Bindable) bound[field] = key.take(60)
+                return raw.substringAfter('|', "").trim().ifEmpty { null }
             }
             return SkinBlock.Surface(
                 asset = asset,
@@ -627,11 +686,14 @@ internal object SkinPlayerParser {
                 title = o.string("title")?.take(24),
                 width = o.float("width")?.coerceIn(120f, 800f)?.dp,
                 height = o.float("height")?.coerceIn(80f, 800f)?.dp,
-                aspect = aspect(o["aspect"]) ?: (4f / 3f),
+                aspect = SurfaceOptions.aspect(option(SurfaceOptions.Aspect)) ?: SurfaceAspect(4f / 3f, fill = false),
                 corner = (o.float("corner") ?: 12f).coerceIn(0f, 48f).dp,
-                controls = controls,
+                controls = SurfaceOptions.controls(option(SurfaceOptions.Controls)) ?: SurfaceControls.Below,
                 crisp = o.bool("crisp") ?: true,
                 accent = skinColor(o.string("accent")),
+                fit = SurfaceOptions.fit(option(SurfaceOptions.Fit)),
+                fullscreen = SurfaceOptions.fullscreen(option(SurfaceOptions.Fullscreen)) ?: SurfaceFullscreen.Button,
+                bound = bound,
             )
         }
 
@@ -807,6 +869,8 @@ internal object SkinPlayerParser {
     private val NextCoverToken = Regex("""\{next([1-9]|10)?cover\}""", RegexOption.IGNORE_CASE)
     // a sub-style adds to these by name instead of replacing them whole
     private val MergedKeys = listOf("styles", "keyframes")
+    // "style": "mochy" on lyrics or a queue puts mochy's own in the module's layout
+    private val MochyStyles = setOf("mochy", "page", "full")
     // what mochy hands every player shader itself
     val PlayerUniforms = setOf(
         "size", "time", "progress", "level", "bass", "mid", "treble", "playing", "density", "played", "remaining", "cover", "accent",

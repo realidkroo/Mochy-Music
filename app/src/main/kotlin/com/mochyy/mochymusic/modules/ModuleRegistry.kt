@@ -286,6 +286,8 @@ class ModuleRegistry @Inject constructor(
                 menuStyle = looks.firstOrNull { it.skin?.menuStyle != null }?.let { entry -> entry.skin?.let { LookValues(it, entry.values) } },
                 // a page can take one of mochy's over from any module that's on, not only a look
                 pages = list.filter { it.active }.mapNotNull { entry -> entry.skin?.takeIf { it.takeovers.isNotEmpty() }?.let { LookValues(it, entry.values) } },
+                // any module that's on can bring sheets, not only a look
+                sheets = list.filter { it.active }.mapNotNull { entry -> entry.skin?.takeIf { it.sheets.isNotEmpty() }?.let { LookValues(it, entry.values) } },
             ),
             scope,
         )
@@ -295,8 +297,6 @@ class ModuleRegistry @Inject constructor(
         )
         ModuleMetadata.sources = list.filter { it.active && it.adds(ModuleFeature.Metadata) }.mapNotNull { it.module as? MetadataModule }
         ModuleMenu.publish(list.filter { it.active }.mapNotNull { (it.module as? SkinSource)?.skin })
-    }
-
         publishAudio(list)
     }
 
@@ -312,6 +312,8 @@ class ModuleRegistry @Inject constructor(
                 processors.publish(entry.id, if (entry.active && audio != null) audio.kinds else emptyList())
             }
         }
+    }
+
     private val ModuleEntry.skin: ModuleSkin? get() = (module as? SkinSource)?.skin
 
     private val ModuleEntry.glass: SkinGlass? get() = (module as? SkinSource)?.glass
@@ -442,9 +444,9 @@ class ModuleRegistry @Inject constructor(
             if (manifest.hasLyrics) add(ModuleFeature.Lyrics)
             if (manifest.hasMetadata) add(ModuleFeature.Metadata)
             if (manifest.changesLook) add(ModuleFeature.Look)
+            if (manifest.bringsAudio) add(ModuleFeature.AudioProcessor)
         }
         val name = manifest.name.ifBlank { manifest.id }
-            if (manifest.bringsAudio) add(ModuleFeature.AudioProcessor)
         return LinkCheck.Ready(null, text, name, adds, module(manifest.id) != null, fileNameOf(uri), uri, root, code = apk)
     }
 

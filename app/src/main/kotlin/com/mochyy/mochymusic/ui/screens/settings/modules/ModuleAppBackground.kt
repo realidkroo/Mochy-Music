@@ -10,7 +10,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
@@ -30,6 +32,7 @@ import com.mochyy.mochymusic.modules.skin.GradientKind
 import com.mochyy.mochymusic.modules.skin.ModuleSkin
 import com.mochyy.mochymusic.modules.skin.PageBackground
 import com.mochyy.mochymusic.ui.component.onChrome
+import com.mochyy.mochymusic.ui.player.rememberFallbackBlurredImage
 import com.mochyy.mochymusic.ui.utils.resize
 import com.mochyy.mochymusic.utils.rememberPreference
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,26 +82,32 @@ internal fun PageBackgroundLayer(
             Box(Modifier.fillMaxSize().background(brush))
         }
         is PageBackground.Picture -> {
-            val blurred = !disableBlur && background.blur > 0.5f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            val wantBlur = !disableBlur && background.blur > 0.5f
+            val nativeBlur = wantBlur && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            val rawModel = skin.resolve(background.image)
+            val model = if (wantBlur && !nativeBlur) rememberFallbackBlurredImage(rawModel, background.blur) else rawModel
             AsyncImage(
-                model = skin.resolve(background.image),
+                model = model,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().then(
-                    if (blurred) Modifier.graphicsLayer { scaleX = 1.1f; scaleY = 1.1f }.blur(background.blur.dp) else Modifier,
+                    if (nativeBlur) Modifier.graphicsLayer { scaleX = 1.1f; scaleY = 1.1f }.blur(background.blur.dp) else Modifier,
                 ),
             )
             if (background.dim > 0f) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = background.dim)))
         }
         is PageBackground.SubjectCover -> {
             val url = subjectCover ?: return
-            val blurred = !disableBlur && background.blur > 0.5f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            val wantBlur = !disableBlur && background.blur > 0.5f
+            val nativeBlur = wantBlur && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            val rawModel = if (wantBlur) url.resize(256, 256) else url
+            val model = if (wantBlur && !nativeBlur) rememberFallbackBlurredImage(rawModel, background.blur) else rawModel
             AsyncImage(
-                model = if (blurred) url.resize(256, 256) else url,
+                model = model,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().then(
-                    if (blurred) Modifier.graphicsLayer { scaleX = 1.12f; scaleY = 1.12f }.blur(background.blur.dp) else Modifier,
+                    if (nativeBlur) Modifier.graphicsLayer { scaleX = 1.12f; scaleY = 1.12f }.blur(background.blur.dp) else Modifier,
                 ),
             )
             if (background.dim > 0f) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = background.dim)))
@@ -108,13 +117,16 @@ internal fun PageBackgroundLayer(
             val playing by (connection?.mediaMetadata ?: EmptySongFlow).collectAsState()
             val url = playing?.thumbnailUrl ?: subjectCover
             if (url != null) {
-                val blurred = !disableBlur && background.blur > 0.5f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                val wantBlur = !disableBlur && background.blur > 0.5f
+                val nativeBlur = wantBlur && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                val rawModel = if (wantBlur) url.resize(256, 256) else url
+                val model = if (wantBlur && !nativeBlur) rememberFallbackBlurredImage(rawModel, background.blur) else rawModel
                 AsyncImage(
-                    model = if (blurred) url.resize(256, 256) else url,
+                    model = model,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize().then(
-                        if (blurred) Modifier.graphicsLayer { scaleX = 1.12f; scaleY = 1.12f }.blur(background.blur.dp) else Modifier,
+                        if (nativeBlur) Modifier.graphicsLayer { scaleX = 1.12f; scaleY = 1.12f }.blur(background.blur.dp) else Modifier,
                     ),
                 )
             } else {
@@ -142,8 +154,9 @@ internal fun PageBackgroundLayer(
                 pageBackgroundBrush(background.fallback.map { it.onChrome(accent, values) }, GradientKind.Vertical)
             }
             val program = (rememberPageProgram(skin, background.program) as? PageProgram.Ready)?.program
-            if (program != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                PageShaderFill(program, background.program, Modifier.fillMaxSize(), touchable = false)
+            var failed by remember(program) { mutableStateOf(false) }
+            if (program != null && !failed) {
+                PageShaderFill(program, background.program, Modifier.fillMaxSize(), touchable = false, onFailed = { failed = true })
             } else {
                 Box(Modifier.fillMaxSize().background(fallbackBrush))
             }

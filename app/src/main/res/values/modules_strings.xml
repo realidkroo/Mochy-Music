@@ -87,7 +87,9 @@
     <string name="module_info_built_in">Built into Mochy</string>
     <string name="module_shader_problem">One of its shaders didn\'t load, so its player or bar shows the fallback there: %1$s</string>
     <string name="module_shader_needs_13">Its player shaders need Android 13, so this phone shows their fallbacks.</string>
+    <string name="module_lyrics_shader_needs_13">Its custom lyrics shaders need Android 13, so this phone shows plain custom lyrics.</string>
     <string name="module_glass_problem">Its glass didn\'t load, so the bars keep Mochy\'s frost: %1$s</string>
+    <string name="module_glass_needs_10">Its glass needs Android 10 or newer, so this phone uses the fallback.</string>
     <string name="module_glass_needs_13">Its glass needs Android 13 or newer, so this phone keeps Mochy\'s frost.</string>
     <string name="module_look_covered">%1$s is on above this look, so where both change the same thing, %1$s wins.</string>
     <string name="module_look_raise">Put this look on top</string>
@@ -313,4 +315,6 @@
     <string name="skin_surface_btn_use">USE</string>
     <string name="skin_surface_btn_enter">OK</string>
     <string name="skin_surface_btn_slot">S%1$d</string>
+    <string name="skin_surface_fullscreen">Fullscreen</string>
+    <string name="skin_surface_fullscreen_exit">Exit fullscreen</string>
 </resources>

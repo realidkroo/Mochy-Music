@@ -49,7 +49,7 @@ internal class CodeSkinModule private constructor(
         inner.info.id, inner.info.name, manifest.player, manifest.font, manifest.pages,
         files, base = null, manifest.actions, manifest.glass, manifest.players, manifest.bar, manifest.mini,
         surface = inner.surface, floating = manifest.floating, background = manifest.background,
-        appBackground = manifest.appBackground, sheet = manifest.sheet, menu = manifest.menu,
+        appBackground = manifest.appBackground, sheet = manifest.sheet, menu = manifest.menu, sheets = manifest.sheets,
     )
 
     override val adds: Set<ModuleFeature> = buildSet {

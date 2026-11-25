@@ -1424,10 +1424,13 @@ class MainActivity : ComponentActivity() {
         // and the bedside is a clock on the nightstand, a row of notifications over it would only glow in the dark
         val portrait = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
         // on its side the phone has little height to spare, so every style gets the whole of it
-        val hideStatusBar = !statusBarShown || !portrait || playerStyle == com.mochyy.mochymusic.constants.PlayerStyle.VIDEO || playerStyle.isBedside
+        val styleHidesStatusBar = !statusBarShown || !portrait || playerStyle == com.mochyy.mochymusic.constants.PlayerStyle.VIDEO || playerStyle.isBedside
+        // a module's live surface gone fullscreen takes both bars' room too, only while it's up
+        val surfaceFullscreen = com.mochyy.mochymusic.ui.player.styles.SurfaceSession.fullscreen
+        val hideStatusBar = styleHidesStatusBar || surfaceFullscreen
         // customize's bottom bar brings the navigation bar back, except where it would cut into the video or glow by the bed
         val (navBarShown) = rememberPreference(com.mochyy.mochymusic.constants.PlayerNavBarKey, defaultValue = com.mochyy.mochymusic.constants.PlayerNavBarDefault)
-        val hideNavBar = !navBarShown || playerStyle == com.mochyy.mochymusic.constants.PlayerStyle.VIDEO || playerStyle.isBedside
+        val hideNavBar = !navBarShown || playerStyle == com.mochyy.mochymusic.constants.PlayerStyle.VIDEO || playerStyle.isBedside || surfaceFullscreen
         // Back in the app (from Home, the recents, a dialog) it's hidden again: with
         // gesture navigation a swipe from the bottom brings it back for good (see
         // playerNavBarBehavior).
@@ -1456,8 +1459,9 @@ class MainActivity : ComponentActivity() {
             }
         }
         // set before the bar ever hides and left alone after, so hiding it never moves the window off the camera strip; on its side the app always fills the strip, android left it a black bar
-        LaunchedEffect(hideStatusBar, portrait) {
-            window.drawUnderCutout(!portrait || hideStatusBar)
+        // a fullscreen surface coming and going doesn't count, or the window would shift every time it's toggled
+        LaunchedEffect(styleHidesStatusBar, portrait) {
+            window.drawUnderCutout(!portrait || styleHidesStatusBar)
         }
         // A bar a swipe brought back while the player stays open (Samsung's swipe-from-
         // bottom gestures) goes away again after a moment, as the transient one does.

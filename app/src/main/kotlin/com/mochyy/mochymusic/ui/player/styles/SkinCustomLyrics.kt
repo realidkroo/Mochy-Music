@@ -27,7 +27,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asComposeRenderEffect
@@ -48,6 +53,7 @@ import com.mochyy.mochymusic.modules.skin.SkinAlign
 import com.mochyy.mochymusic.modules.skin.SkinLyricStyle
 import com.mochyy.mochymusic.modules.skin.SkinProgram
 import com.mochyy.mochymusic.modules.skin.SkinShaderSource
+import com.mochyy.mochymusic.modules.skin.SkinTimeline
 import com.mochyy.mochymusic.ui.component.agslRenderEffect
 import com.mochyy.mochymusic.ui.component.asAgslPaintShader
 import com.mochyy.mochymusic.ui.component.setAgslColorUniform
@@ -86,7 +92,9 @@ internal fun SkinCustomLyrics(lines: List<LyricsEntry>, style: SkinLyricStyle, c
     val focusAt = remember(focus) { { focus.value } }
     val enteredAt = remember(entered) { { entered.value } }
     val values = context.values
-    val factor = style.scale.factor(LocalConfiguration.current.screenWidthDp.toFloat(), values)
+    // the phone's short side, like the player's blocks, so the words keep their size when it's turned
+    val configuration = LocalConfiguration.current
+    val factor = style.scale.factor(minOf(configuration.screenWidthDp, configuration.screenHeightDp).toFloat(), values)
     val fill = style.fill?.let { lyricProgram(context, it) }
     val effect = style.effect?.let { lyricProgram(context, it) }
     val textStyle = rememberLyricText(style, factor, fill)
@@ -137,6 +145,9 @@ private fun LyricRow(
     val layout = remember { LayoutHolder() }
     val words = remember(line) { wordRanges(line) }
     val pose = remember { PoseSum() }
+    // kept for the row, so a popping word never allocates while drawing
+    val wordPose = remember { PoseSum() }
+    val cutout = remember { Path() }
     val origin = when (align) {
         SkinAlign.Start -> TransformOrigin(0f, 0.5f)
         SkinAlign.Center -> TransformOrigin(0.5f, 0.5f)
@@ -182,10 +193,24 @@ private fun LyricRow(
                     if (fill != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         setRowUniforms(fill, style.fill, context, index - focus(), if (place < 0) 1f else if (place > 0) 0f else clock.lineProgress())
                     }
+                    val pop = style.wordEnter
+                    val measured = layout.result
+                    // the sung row's words pop one by one: each is cut out of the line and drawn again, lit, on its own keyframe pose
+                    if (pop != null && fill == null && place == 0 && measured != null) {
+                        val now = context.lyricsPosition.positionMs()
+                        if (cutWords(cutout, measured, line, words, now, pop)) {
+                            clipPath(cutout, ClipOp.Difference) {
+                                this@drawWithContent.drawContent()
+                                if (style.sweep) sweep(measured, sungChars(line, words, clock), sung)
+                            }
+                            popWords(measured, line, words, now, pop, wordPose, sung)
+                            return@drawWithContent
+                        }
+                    }
                     drawContent()
                     // only the sung row reads the clock, so the others never redraw for it
                     if (fill != null || !style.sweep || place != 0) return@drawWithContent
-                    val result = layout.result ?: return@drawWithContent
+                    val result = measured ?: return@drawWithContent
                     sweep(result, sungChars(line, words, clock), sung)
                 },
         )
@@ -210,6 +235,71 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.sweep(result: TextL
             drawText(result, color = sung)
         }
     }
+}
+
+// cuts every word still playing its pop out of [into]; false when none is, so the line draws the usual way
+private fun cutWords(into: Path, result: TextLayoutResult, line: LyricsEntry, ranges: List<IntRange>, nowMs: Long, pop: SkinTimeline): Boolean {
+    into.reset()
+    var any = false
+    forEachPopping(line, ranges, nowMs, pop) { range, _ ->
+        val rect = wordRect(result, range) ?: return@forEachPopping
+        into.addRect(rect)
+        any = true
+    }
+    return any
+}
+
+// each popping word on its own pose from the module's keyframes, lit in the sung colour; its clip moves with it so a word that grows isn't cut
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.popWords(
+    result: TextLayoutResult,
+    line: LyricsEntry,
+    ranges: List<IntRange>,
+    nowMs: Long,
+    pop: SkinTimeline,
+    pose: PoseSum,
+    sung: Color,
+) {
+    forEachPopping(line, ranges, nowMs, pop) { range, elapsed ->
+        val rect = wordRect(result, range) ?: return@forEachPopping
+        pose.reset()
+        val at = pop.position(elapsed)
+        for (track in pop.frames.tracks) pose.add(track.prop, track.valueAt(at, FastOutSlowInEasing), 1f)
+        val center = rect.center
+        val dx = pose.x.dp.toPx()
+        val dy = pose.y.dp.toPx()
+        withTransform({
+            translate(dx, dy)
+            rotate(pose.rotate, center)
+            scale(pose.scaleX, pose.scaleY, center)
+        }) {
+            clipRect(rect.left, rect.top, rect.right, rect.bottom) {
+                drawText(result, color = sung, alpha = pose.alpha.coerceIn(0f, 1f))
+            }
+        }
+    }
+}
+
+// the words whose pop is still playing: started being sung, and not yet past the keyframes' delay and length
+private inline fun forEachPopping(line: LyricsEntry, ranges: List<IntRange>, nowMs: Long, pop: SkinTimeline, each: (IntRange, Float) -> Unit) {
+    val timed = line.words ?: return
+    val window = (pop.delayMs + pop.durationMs).toFloat()
+    for (i in ranges.indices) {
+        val word = timed.getOrNull(i) ?: return
+        val elapsed = (nowMs - (word.startTime * 1000).toLong()).toFloat()
+        if (elapsed >= 0f && elapsed < window) each(ranges[i], elapsed)
+    }
+}
+
+// the box around a word's letters on the line it starts on, a pixel wider each side so no edge of the old glyphs is left behind
+private fun wordRect(result: TextLayoutResult, range: IntRange): Rect? {
+    val length = result.layoutInput.text.length
+    if (range.isEmpty() || range.first >= length) return null
+    val row = result.getLineForOffset(range.first)
+    var last = range.first
+    while (last + 1 <= range.last && last + 1 < length && result.getLineForOffset(last + 1) == row) last++
+    val a = result.getBoundingBox(range.first)
+    val b = result.getBoundingBox(last)
+    return Rect(minOf(a.left, b.left) - 1f, result.getLineTop(row), maxOf(a.right, b.right) + 1f, result.getLineBottom(row))
 }
 
 // where a part-way character offset sits, between the edges of the whole characters around it
@@ -279,10 +369,10 @@ private fun LyricTranslation(line: LyricsEntry, textStyle: TextStyle, color: Col
     )
 }
 
-// a lyrics shader that compiled, only on android 13+
+// a lyrics shader that compiled, only native agsl on android 13+
 @Composable
 private fun lyricProgram(context: SkinContext, source: SkinShaderSource): SkinProgram? =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ActiveSkin.shader(context.skin.moduleId, source.file) else null
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ActiveSkin.shader(context.skin.moduleId, source.file)?.takeIf { it.isNative } else null
 
 // a row's fill: mochy's uniforms, how far it is from the sung line and how far it's sung, then the module's own
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -309,8 +399,8 @@ private fun Modifier.lyricEffect(program: SkinProgram, source: SkinShaderSource,
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private fun commonUniforms(shader: Any, declared: Set<String>, context: SkinContext, width: Float, height: Float, density: Float) {
     val pulse = context.pulse
-    // read so a new frame of the clock redraws this
-    pulse.frame
+    // subscribe to the per-frame clock only when the shader declares a dynamic uniform
+    if (declared.any { it in DynamicLyricUniforms }) pulse.frame
     if ("size" in declared) shader.setAgslUniform("size", width, height)
     if ("time" in declared) shader.setAgslUniform("time", pulse.time)
     if ("density" in declared) shader.setAgslUniform("density", density)
@@ -330,3 +420,8 @@ private fun commonUniforms(shader: Any, declared: Set<String>, context: SkinCont
 private class LayoutHolder {
     var result: TextLayoutResult? = null
 }
+
+private val DynamicLyricUniforms = setOf(
+    "time", "level", "bass", "mid", "treble", "progress",
+    "line", "lineProgress", "wordProgress", "singing", "position",
+)

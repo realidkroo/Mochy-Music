@@ -1160,20 +1160,28 @@ private fun PlayerSheet(
                         styleQueueOpen = false
                     }
                 }
-                com.mochyy.mochymusic.ui.player.styles.StyleLyricsPage(
+                // a module player can bring its own lyrics and queue pages; every other style gets mochy's
+                com.mochyy.mochymusic.ui.player.styles.StyleOrModuleLyricsPage(
                     open = styleLyricsOpen && styleOpen,
                     onClose = { styleLyricsOpen = false },
                     screenHeight = screenHeight,
+                    playerStyle = playerStyle,
+                    actions = styleActions,
                     onCoveredChange = { styleCovered = it },
                     onSwitchSource = { showLyricsSource = true },
                 )
-                com.mochyy.mochymusic.ui.player.styles.StyleQueuePage(
+                com.mochyy.mochymusic.ui.player.styles.StyleOrModuleQueuePage(
                     open = styleQueueOpen && styleOpen,
                     onClose = { styleQueueOpen = false },
+                    playerStyle = playerStyle,
+                    actions = styleActions,
                     onCoveredChange = { styleQueueCovered = it },
                 )
-                // the ipod, the full video mode and the bedside each have their own close, a bar over them would just be in the way
-                if (!onTv && playerStyle != PlayerStyle.IPOD && playerStyle != PlayerStyle.VIDEO && !playerStyle.isBedside) PlayerHandle(
+                com.mochyy.mochymusic.ui.player.styles.ModuleSheetHost(styleActions, playerOpen = styleInteractive)
+                // the ipod, the full video mode and the bedside each have their own close, a bar over them would just be in the way; a module player can take it away too
+                if (!onTv && playerStyle != PlayerStyle.IPOD && playerStyle != PlayerStyle.VIDEO && !playerStyle.isBedside &&
+                    !com.mochyy.mochymusic.ui.player.styles.moduleHidesHandle(playerStyle)
+                ) PlayerHandle(
                     state = handleState,
                     sheet = state,
                     statusBarTop = statusBarTopInset,
@@ -1187,6 +1195,7 @@ private fun PlayerSheet(
                 val landscapeOpen by remember(state) {
                     derivedStateOf { state.isExpanded || (state.isExpandedOrExpanding && state.progress > 0.9f) }
                 }
+                val landscapeInteractive = remember(state) { { landscapeOpen } }
                 // root reference for the player studio so edit tiles and camera moves work in landscape too
                 Spacer(
                     modifier = Modifier
@@ -1283,6 +1292,7 @@ private fun PlayerSheet(
                         },
                 )
                 if (playerStyle.hasFullEditor) EditTiles(studioParts)
+                com.mochyy.mochymusic.ui.player.styles.ModuleSheetHost(styleActions, playerOpen = landscapeInteractive)
                 // a tv closes its player with the back button, it has no handle to drag
                 if (!onTv) PlayerHandle(
                     state = handleState,
@@ -1838,6 +1848,9 @@ private fun PlayerSheet(
 
             // the editor's tiles: inside the sheet, so they shrink and grow with it
             EditTiles(studioParts)
+
+            // a module's own sheet, asked for from the other menu, opens over the flagship too
+            com.mochyy.mochymusic.ui.player.styles.ModuleSheetHost(styleActions, playerOpen = { state.isExpanded })
 
             // over everything on the player, pages included; a tv closes it with the back button instead
             if (!onTv) PlayerHandle(

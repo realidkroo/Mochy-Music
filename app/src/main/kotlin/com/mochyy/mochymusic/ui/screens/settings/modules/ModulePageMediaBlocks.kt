@@ -640,8 +640,8 @@ internal fun PagePlaylistsBlock(block: PageBlock.Playlists, page: PageContext) {
     }
 
     val entries: List<PlaylistEntry> = when (block.source) {
-        PlaylistSource.Auto -> autoItems
-        PlaylistSource.Library -> localPlaylists.map { pl ->
+        PlaylistSource.Auto -> autoItems.take(block.limit)
+        PlaylistSource.Library -> localPlaylists.take(block.limit).map { pl ->
             PlaylistEntry(
                 id = pl.id,
                 title = pl.playlist.name,
@@ -651,27 +651,32 @@ internal fun PagePlaylistsBlock(block: PageBlock.Playlists, page: PageContext) {
                 entity = pl,
             )
         }
-        PlaylistSource.Subject -> page.subject.artist?.playlists.orEmpty().map { pl ->
-            PlaylistEntry(
-                id = pl.id,
-                title = pl.title,
-                subtitle = listOfNotNull(pl.author?.name, pl.songCountText.takeIf { block.showCount }).joinToString(" · ").ifBlank { null },
-                cover = pl.thumbnail,
-                route = "online_playlist/${Uri.encode(pl.id)}",
-                entity = null,
-            )
+        PlaylistSource.Subject -> remember(page.subject.artist, block.showCount, block.limit) {
+            page.subject.artist?.playlists.orEmpty().take(block.limit).map { pl ->
+                PlaylistEntry(
+                    id = pl.id,
+                    title = pl.title,
+                    subtitle = listOfNotNull(pl.author?.name, pl.songCountText.takeIf { block.showCount }).joinToString(" · ").ifBlank { null },
+                    cover = pl.thumbnail,
+                    route = "online_playlist/${Uri.encode(pl.id)}",
+                    entity = null,
+                )
+            }
         }
-        PlaylistSource.All -> autoItems + localPlaylists.map { pl ->
-            PlaylistEntry(
-                id = pl.id,
-                title = pl.playlist.name,
-                subtitle = if (block.showCount) pluralStringResource(R.plurals.n_song, pl.songCount, pl.songCount) else null,
-                cover = pl.playlist.thumbnailUrl ?: pl.thumbnails.firstOrNull(),
-                route = "local_playlist/${Uri.encode(pl.id)}",
-                entity = pl,
-            )
+        PlaylistSource.All -> {
+            val remaining = (block.limit - autoItems.size).coerceAtLeast(0)
+            (autoItems + localPlaylists.take(remaining).map { pl ->
+                PlaylistEntry(
+                    id = pl.id,
+                    title = pl.playlist.name,
+                    subtitle = if (block.showCount) pluralStringResource(R.plurals.n_song, pl.songCount, pl.songCount) else null,
+                    cover = pl.playlist.thumbnailUrl ?: pl.thumbnails.firstOrNull(),
+                    route = "local_playlist/${Uri.encode(pl.id)}",
+                    entity = pl,
+                )
+            }).take(block.limit)
         }
-    }.take(block.limit)
+    }
 
     if (entries.isEmpty()) {
         Text(
@@ -792,17 +797,19 @@ internal fun PageAlbumsBlock(block: PageBlock.Albums, page: PageContext) {
     val menuState = LocalMenuState.current
     val libAlbums by remember(database) { database.albums(AlbumSortType.CREATE_DATE, true) }.collectAsState(initial = emptyList())
 
-    val items: List<AlbumEntry> = when (block.source) {
-        MediaSource.Subject -> page.subject.artist?.albums.orEmpty().map { a ->
-            AlbumEntry(a.browseId, a.title, listOfNotNull(a.artists?.joinToString(", ") { it.name }, a.year?.toString()).joinToString(" · ").ifBlank { null }, a.thumbnail, null)
+    val items: List<AlbumEntry> = remember(block.source, block.limit, page.subject.artist, libAlbums) {
+        when (block.source) {
+            MediaSource.Subject -> page.subject.artist?.albums.orEmpty().take(block.limit).map { a ->
+                AlbumEntry(a.browseId, a.title, listOfNotNull(a.artists?.joinToString(", ") { it.name }, a.year?.toString()).joinToString(" · ").ifBlank { null }, a.thumbnail, null)
+            }
+            MediaSource.Library -> libAlbums.take(block.limit).map { a ->
+                AlbumEntry(a.id, a.album.title, listOfNotNull(a.artists.joinToString(", ") { it.name }.ifBlank { null }, a.album.year?.toString()).joinToString(" · ").ifBlank { null }, a.album.thumbnailUrl, a)
+            }
+            MediaSource.Liked -> libAlbums.asSequence().filter { it.album.bookmarkedAt != null }.take(block.limit).map { a ->
+                AlbumEntry(a.id, a.album.title, listOfNotNull(a.artists.joinToString(", ") { it.name }.ifBlank { null }, a.album.year?.toString()).joinToString(" · ").ifBlank { null }, a.album.thumbnailUrl, a)
+            }.toList()
         }
-        MediaSource.Library -> libAlbums.map { a ->
-            AlbumEntry(a.id, a.album.title, listOfNotNull(a.artists.joinToString(", ") { it.name }.ifBlank { null }, a.album.year?.toString()).joinToString(" · ").ifBlank { null }, a.album.thumbnailUrl, a)
-        }
-        MediaSource.Liked -> libAlbums.filter { it.album.bookmarkedAt != null }.map { a ->
-            AlbumEntry(a.id, a.album.title, listOfNotNull(a.artists.joinToString(", ") { it.name }.ifBlank { null }, a.album.year?.toString()).joinToString(" · ").ifBlank { null }, a.album.thumbnailUrl, a)
-        }
-    }.take(block.limit)
+    }
 
     if (items.isEmpty()) {
         Text(
@@ -904,17 +911,19 @@ internal fun PageArtistsBlock(block: PageBlock.Artists, page: PageContext) {
     val scope = rememberCoroutineScope()
     val libArtists by remember(database) { database.artists(ArtistSortType.CREATE_DATE, true) }.collectAsState(initial = emptyList())
 
-    val items: List<ArtistEntry> = when (block.source) {
-        MediaSource.Subject -> page.subject.artist?.similarArtists.orEmpty().map { a ->
-            ArtistEntry(a.id, a.title, a.thumbnail, null)
+    val items: List<ArtistEntry> = remember(block.source, block.limit, page.subject.artist, libArtists) {
+        when (block.source) {
+            MediaSource.Subject -> page.subject.artist?.similarArtists.orEmpty().take(block.limit).map { a ->
+                ArtistEntry(a.id, a.title, a.thumbnail, null)
+            }
+            MediaSource.Library -> libArtists.take(block.limit).map { a ->
+                ArtistEntry(a.id, a.artist.name, a.artist.thumbnailUrl, a)
+            }
+            MediaSource.Liked -> libArtists.asSequence().filter { it.artist.bookmarkedAt != null }.take(block.limit).map { a ->
+                ArtistEntry(a.id, a.artist.name, a.artist.thumbnailUrl, a)
+            }.toList()
         }
-        MediaSource.Library -> libArtists.map { a ->
-            ArtistEntry(a.id, a.artist.name, a.artist.thumbnailUrl, a)
-        }
-        MediaSource.Liked -> libArtists.filter { it.artist.bookmarkedAt != null }.map { a ->
-            ArtistEntry(a.id, a.artist.name, a.artist.thumbnailUrl, a)
-        }
-    }.take(block.limit)
+    }
 
     if (items.isEmpty()) {
         Text(
@@ -1012,10 +1021,15 @@ internal fun PageNowPlayingBlock(block: PageBlock.NowPlaying, glass: GlassState?
         lyricsRow?.lyrics?.takeIf { it.isNotBlank() }?.let { runCatching { LyricsUtils.parseLyricsCached(it) }.getOrDefault(emptyList()) }.orEmpty()
     }
     val position = if (block.showLyrics && parsedLyrics.isNotEmpty()) rememberLivePosition(animated = true) else null
-    val activeLine = if (position != null && parsedLyrics.isNotEmpty()) {
-        val idx = LyricsUtils.findCurrentLineIndex(parsedLyrics, position.positionMs())
-        parsedLyrics.getOrNull(idx)?.text
-    } else null
+    // derivedStateOf ensures PageNowPlayingBlock only recomposes when the active lyric line changes, not at 60-120 Hz
+    val activeLineIndex by remember(position, parsedLyrics) {
+        androidx.compose.runtime.derivedStateOf {
+            if (position != null && parsedLyrics.isNotEmpty()) {
+                LyricsUtils.findCurrentLineIndex(parsedLyrics, position.positionMs())
+            } else -1
+        }
+    }
+    val activeLine = parsedLyrics.getOrNull(activeLineIndex)?.text
 
     SettingsBlockSurface(
         corner = block.corner,
@@ -1182,7 +1196,7 @@ internal fun PageSpeedDialBlock(block: PageBlock.SpeedDial, page: PageContext) {
     val database = LocalDatabase.current
     val connection = LocalPlayerConnection.current
     val items by remember(database) { database.speedDialDao.getAll() }.collectAsState(initial = emptyList())
-    val visible = items.take(block.limit)
+    val visible = remember(items, block.limit) { items.take(block.limit) }
     if (visible.isEmpty()) {
         Text(
             block.empty?.takeIf { it.isNotBlank() } ?: stringResource(R.string.module_page_empty_speed_dial),
@@ -1255,17 +1269,23 @@ internal fun PageSpeedDialBlock(block: PageBlock.SpeedDial, page: PageContext) {
 @Composable
 internal fun PageStatsBlock(block: PageBlock.Stats, glass: GlassState?) {
     val database = LocalDatabase.current
-    val allSongs by remember(database) { database.allSongs() }.collectAsState(initial = emptyList())
-    val likedCount by remember(database) { database.likedSongsCount() }.collectAsState(initial = 0)
-    val playlists by remember(database) { database.playlists(PlaylistSortType.CREATE_DATE, true) }.collectAsState(initial = emptyList())
     val plays by remember(database) { database.eventCount() }.collectAsState(initial = 0)
+    val songCount by remember(database, block.showLibrary) {
+        if (block.showLibrary) database.allSongCount() else ZeroIntFlow
+    }.collectAsState(initial = 0)
+    val likedCount by remember(database, block.showLibrary) {
+        if (block.showLibrary) database.likedSongsCount() else ZeroIntFlow
+    }.collectAsState(initial = 0)
+    val playlistCount by remember(database, block.showLibrary) {
+        if (block.showLibrary) database.playlistCount() else ZeroIntFlow
+    }.collectAsState(initial = 0)
 
     val tiles = buildList {
         add(stringResource(R.string.module_page_stats_plays) to plays.toString())
         if (block.showLibrary) {
-            add(stringResource(R.string.module_page_stats_songs) to allSongs.size.toString())
+            add(stringResource(R.string.module_page_stats_songs) to songCount.toString())
             add(stringResource(R.string.module_page_stats_liked) to likedCount.toString())
-            add(stringResource(R.string.module_page_stats_playlists) to playlists.size.toString())
+            add(stringResource(R.string.module_page_stats_playlists) to playlistCount.toString())
         }
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -1339,22 +1359,25 @@ internal fun PageBlurBlock(block: PageBlock.Blur, page: PageContext, glass: Glas
             when (block.direction) {
                 SkinBlurDirection.TopToBottom -> ProgressiveGlassBackground(
                     state = glass, maxBlurRadius = { radiusPx }, tint = tint,
-                    direction = BlurDirection.TopToBottom, steps = block.steps, modifier = Modifier.matchParentSize(),
+                    direction = BlurDirection.TopToBottom, steps = block.steps, fallbackBlur = true, modifier = Modifier.matchParentSize(),
                 )
                 SkinBlurDirection.BottomToTop -> ProgressiveGlassBackground(
                     state = glass, maxBlurRadius = { radiusPx }, tint = tint,
-                    direction = BlurDirection.BottomToTop, steps = block.steps, modifier = Modifier.matchParentSize(),
+                    direction = BlurDirection.BottomToTop, steps = block.steps, fallbackBlur = true, modifier = Modifier.matchParentSize(),
                 )
                 SkinBlurDirection.Radial -> {
                     val radial = remember { Brush.radialGradient(0f to Color.Black, 0.72f to Color.Black, 1f to Color.Transparent) }
                     GlassPillBackground(
                         state = glass, blurRadius = { radiusPx }, tint = tint, mask = radial,
-                        tileMode = android.graphics.Shader.TileMode.CLAMP, bleed = true, modifier = Modifier.matchParentSize(),
+                        tileMode = android.graphics.Shader.TileMode.CLAMP, bleed = true,
+                        fallbackBlur = true, fallbackMaskMode = 3, fallbackMaskParam = 0.72f,
+                        modifier = Modifier.matchParentSize(),
                     )
                 }
                 null -> GlassPillBackground(
                     state = glass, blurRadius = { radiusPx }, tint = tint,
-                    tileMode = android.graphics.Shader.TileMode.CLAMP, bleed = true, modifier = Modifier.matchParentSize(),
+                    tileMode = android.graphics.Shader.TileMode.CLAMP, bleed = true,
+                    fallbackBlur = true, modifier = Modifier.matchParentSize(),
                 )
             }
             if (colors.size > 1) Box(Modifier.matchParentSize().background(pageBackgroundBrush(colors)))
@@ -1426,6 +1449,7 @@ private fun MediaThumb(url: String?, fallbackIcon: Int, size: androidx.compose.u
 private val NullMetaFlow = MutableStateFlow<MediaMetadata?>(null)
 private val NullDbSongFlow = MutableStateFlow<com.mochyy.mochymusic.db.entities.Song?>(null)
 private val FalseFlow = MutableStateFlow(false)
+private val ZeroIntFlow = MutableStateFlow(0)
 private val EmptyQueueFlow = MutableStateFlow<List<androidx.media3.common.Timeline.Window>>(emptyList())
 private const val FirstSongRows = 30
 private const val MoreSongRows = 50

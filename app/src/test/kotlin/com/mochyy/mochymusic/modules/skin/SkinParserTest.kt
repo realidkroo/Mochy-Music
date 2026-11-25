@@ -567,7 +567,9 @@ class SkinParserTest {
         assertEquals(listOf("mod.pk3"), surface.extras)
         assertEquals("RETRO", surface.title)
         assertEquals(SurfaceControls.Overlay, surface.controls)
-        assertEquals(4f / 3f, surface.aspect, 0.001f)
+        assertEquals(4f / 3f, surface.aspect.ratio!!, 0.001f)
+        assertEquals(SurfaceFit.Stretch, surface.fitting)
+        assertEquals(SurfaceFullscreen.Button, surface.fullscreen)
         assertFalse(surface.crisp)
         assertEquals(16.dp, surface.corner)
         // a web module without a zip cannot embed a live surface
@@ -577,6 +579,32 @@ class SkinParserTest {
         assertNull(skin(traversal, files = File("/data/bad")))
         val remote = """{ "id": "bad", "name": "Bad", "player": { "blocks": [ { "type": "surface", "asset": "https://evil.example/a.wad" } ] } }"""
         assertNull(skin(remote, files = File("/data/bad")))
+    }
+
+    @Test
+    fun `a surface reads its fit, shape and fullscreen from settings with fallbacks`() {
+        val text = """
+            { "id": "arcade", "name": "Arcade", "player": { "blocks": [
+              { "type": "surface", "controls": "${'$'}pad|overlay", "aspect": "${'$'}screen|fill", "fit": "${'$'}scale", "fullscreen": "start" }
+            ] } }
+        """
+        val surface = skin(text, files = File("/data/arcade"))!!.player!!.blocks.single() as SkinBlock.Surface
+        assertEquals(SurfaceControls.Overlay, surface.controls)
+        assertTrue(surface.aspect.fill)
+        // no fit given: a filled screen keeps the whole frame
+        assertEquals(SurfaceFit.Contain, surface.fitting)
+        assertEquals(SurfaceFullscreen.Start, surface.fullscreen)
+
+        val picked = surface.with(mapOf("pad" to "none", "screen" to "16:10", "scale" to "pixel"))
+        assertEquals(SurfaceControls.None, picked.controls)
+        assertEquals(1.6f, picked.aspect.ratio!!, 0.001f)
+        assertFalse(picked.aspect.fill)
+        assertEquals(SurfaceFit.Pixel, picked.fitting)
+        // a setting that isn't a valid value keeps the fallback, and "frame" takes the module's own shape
+        assertEquals(SurfaceControls.Overlay, surface.with(mapOf("pad" to "sideways")).controls)
+        assertNull(surface.with(mapOf("screen" to "frame")).aspect.ratio)
+        // only the surface's own options can be bound
+        assertEquals(setOf("controls", "aspect", "fit"), surface.bound.keys)
     }
 
     @Test
@@ -798,5 +826,31 @@ class SkinParserTest {
         assertTrue(page.blocks.any { it is PageBlock.Stats })
         assertTrue(page.blocks.any { it is PageBlock.Blur })
         assertTrue(page.blocks.any { it is PageBlock.Row })
+    }
+
+    @Test
+    fun `glass fallback parses hex string, object with tint rim sheen, and frosted as null`() {
+        val objJson = """
+            {
+              "id": "lg", "name": "Liquid Glass",
+              "glass": {
+                "shader": "glass.agsl", "blur": 7, "margin": 22,
+                "fallback": { "tint": "#B812141A", "rim": "#44FFFFFF", "sheen": 0.14 }
+              }
+            }
+        """
+        val g1 = skin(objJson, files = File("/data/lg"))!!.glass!!
+        assertEquals(SkinColor.Fixed(Color(0xB812141A.toInt())), g1.fallback!!.tint)
+        assertEquals(SkinColor.Fixed(Color(0x44FFFFFF)), g1.fallback!!.rim)
+        assertEquals(0.14f, g1.fallback!!.sheen, 0.0001f)
+
+        val strJson = """{ "id": "lg", "name": "LG", "glass": { "shader": "glass.agsl", "fallback": "#AA101218" } }"""
+        val g2 = skin(strJson, files = File("/data/lg"))!!.glass!!
+        assertEquals(SkinColor.Fixed(Color(0xAA101218.toInt())), g2.fallback!!.tint)
+        assertNull(g2.fallback!!.rim)
+
+        val frostedJson = """{ "id": "lg", "name": "LG", "glass": { "shader": "glass.agsl", "fallback": "frosted" } }"""
+        val g3 = skin(frostedJson, files = File("/data/lg"))!!.glass!!
+        assertNull(g3.fallback)
     }
 }

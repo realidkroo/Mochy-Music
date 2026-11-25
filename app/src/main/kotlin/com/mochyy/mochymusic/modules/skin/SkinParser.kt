@@ -39,6 +39,7 @@ internal object SkinParser {
         appBackground: JsonElement? = null,
         sheet: JsonElement? = null,
         menu: JsonElement? = null,
+        sheets: JsonElement? = null,
     ): ModuleSkin? {
         val fromZip = files != null
         val parsedPlayers = SkinPlayerParser.players(player, players, moduleName, fromZip = fromZip)
@@ -54,9 +55,14 @@ internal object SkinParser {
         val parsedSheet = SkinExtrasParser.sheetStyle(sheet)
         val parsedAppBg = SkinExtrasParser.appBackground(appBackground ?: background, fromZip, ::pageBackground)
         val parsedMenuStyle = SkinExtrasParser.menuStyle(menu)
+        // "sheets": { "eq": { "look": "own", "blocks": [...] } }, each by an id the callers name
+        val parsedSheets = (sheets as? JsonObject).orEmpty().entries
+            .mapNotNull { (id, o) -> id.trim().lowercase().takeIf { PageId.matches(it) }?.let { key -> (o as? JsonObject)?.let { SkinPlayerParser.sheet(key, it, moduleName, fromZip) } } }
+            .distinctBy { it.id }
+            .take(MaxSheets)
         if (parsedPlayers.isEmpty() && parsedFont == null && parsedPages.isEmpty() && parsedActions.isEmpty() &&
             parsedGlass == null && parsedBar == null && parsedMini == null &&
-            parsedFloating == null && parsedSheet == null && parsedAppBg == null && parsedMenuStyle == null
+            parsedFloating == null && parsedSheet == null && parsedAppBg == null && parsedMenuStyle == null && parsedSheets.isEmpty()
         ) return null
         return ModuleSkin(
             moduleId = moduleId,
@@ -75,6 +81,7 @@ internal object SkinParser {
             sheet = parsedSheet,
             appBackground = parsedAppBg,
             menuStyle = parsedMenuStyle,
+            sheets = parsedSheets,
         )
     }
 
@@ -84,7 +91,31 @@ internal object SkinParser {
         val shader = o.string("shader")?.takeIf { name -> ShaderKinds.any { name.endsWith(it, ignoreCase = true) } } ?: return null
         val change = glassChange(o)
         // a glass that draws its own edge can turn off mochy's hairline and shadow, or the bars get two edges
-        return SkinGlass(shader, change.blurDp ?: 6f, change.marginDp ?: 16f, change.uniforms, outline = o.bool("outline") ?: true, shadow = o.bool("shadow") ?: true)
+        return SkinGlass(
+            shader = shader,
+            blurDp = change.blurDp ?: 6f,
+            marginDp = change.marginDp ?: 16f,
+            uniforms = change.uniforms,
+            outline = o.bool("outline") ?: true,
+            shadow = o.bool("shadow") ?: true,
+            fallback = glassFallback(o["fallback"]),
+        )
+    }
+
+    // "fallback": "#99131313" or { "tint": "#88131313", "rim": "#40FFFFFF", "sheen": 0.12 } for api 24-28 or blur-off
+    private fun glassFallback(element: JsonElement?): SkinGlassFallback? = when (element) {
+        is JsonPrimitive -> {
+            val raw = element.contentOrNull?.trim()
+            if (raw.isNullOrEmpty() || raw.equals("frosted", ignoreCase = true) || raw.equals("false", ignoreCase = true)) null
+            else skinColor(raw)?.let { SkinGlassFallback(tint = it) }
+        }
+        is JsonObject -> {
+            val tint = skinColor(element.string("tint") ?: element.string("color"))
+            val rim = skinColor(element.string("rim") ?: element.string("outlineColor"))
+            val sheen = (element.float("sheen") ?: 0.08f).coerceIn(0f, 0.4f)
+            if (tint == null && rim == null && element["sheen"] == null) null else SkinGlassFallback(tint, rim, sheen)
+        }
+        else -> null
     }
 
     /** a blur, a margin and uniforms, as the glass and a setting's option both write them; mochy's own uniforms can't be set this way */
@@ -480,6 +511,8 @@ internal object SkinParser {
             val pageId = raw.trim().lowercase().removePrefix("page:")
             if (PageId.matches(pageId)) return ActionTarget.Sheet(SheetKind.ModulePage, pageId)
         }
+        // "openSheet": "eq" opens the module's own sheet of that id over the player
+        o.string("openSheet")?.trim()?.lowercase()?.takeIf { PageId.matches(it) }?.let { return ActionTarget.ModuleSheet(it) }
         o.string("route")?.let { SafeModuleRoutes.sanitize(it) }?.let { return ActionTarget.Route(it) }
         o.string("page")?.lowercase()?.takeIf { PageId.matches(it) }?.let { return ActionTarget.Page(it) }
         o.string("search")?.take(120)?.let { return ActionTarget.Search(it) }
@@ -511,6 +544,7 @@ internal object SkinParser {
     private const val MaxRowBlocks = 6
     private const val MaxPageLayers = 4
     private const val MaxActions = 12
+    private const val MaxSheets = 12
     private val ShaderKinds = listOf(".agsl", ".sksl")
     private const val DefaultCardGlass = 24f
     // what mochy hands every page shader itself

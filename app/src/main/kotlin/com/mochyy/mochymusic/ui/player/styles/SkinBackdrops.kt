@@ -24,6 +24,7 @@ import com.mochyy.mochymusic.constants.DisableBlurKey
 import com.mochyy.mochymusic.constants.PlayerBackgroundStyle
 import com.mochyy.mochymusic.modules.skin.SkinBackground
 import com.mochyy.mochymusic.ui.component.glassRoot
+import com.mochyy.mochymusic.ui.player.rememberFallbackBlurredImage
 import com.mochyy.mochymusic.ui.utils.resize
 import com.mochyy.mochymusic.utils.rememberPreference
 import com.mochyy.mochymusic.ui.player.customize.PlayerBackgroundContent
@@ -93,15 +94,17 @@ private fun SkinBackgroundFill(background: SkinBackground, context: SkinContext,
 @Composable
 private fun SkinPictureBackdrop(background: SkinBackground.Picture, context: SkinContext, modifier: Modifier) {
     val disableBlur by rememberPreference(DisableBlurKey, defaultValue = false)
-    val blurred = !disableBlur && background.blur > 0.5f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    val model = context.skin.resolve(background.image)
+    val wantBlur = !disableBlur && background.blur > 0.5f
+    val nativeBlur = wantBlur && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val rawModel = context.skin.resolve(background.image)
+    val model = if (wantBlur && !nativeBlur) rememberFallbackBlurredImage(rawModel, background.blur) else rawModel
     Box(modifier) {
         AsyncImage(
             model = model,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().then(
-                if (!blurred) Modifier else Modifier
+                if (!nativeBlur) Modifier else Modifier
                     .graphicsLayer {
                         scaleX = 1.1f
                         scaleY = 1.1f
@@ -110,7 +113,7 @@ private fun SkinPictureBackdrop(background: SkinBackground.Picture, context: Ski
             ),
         )
         // a gif or webp moves unless it's blurred, since a blur over a moving picture is worked out again on every frame
-        if (!blurred && model != null && isMovingPicture(model)) MovingPictureOverlay(model, context, ContentScale.Crop, null, Modifier.fillMaxSize())
+        if (!wantBlur && rawModel != null && isMovingPicture(rawModel)) MovingPictureOverlay(rawModel, context, ContentScale.Crop, null, Modifier.fillMaxSize())
         if (background.edgeBlur) {
             Box(Modifier.fillMaxSize().background(SkinPictureEdgeVignette))
         }
@@ -128,14 +131,17 @@ private val SkinPictureEdgeVignette = Brush.verticalGradient(
 @Composable
 private fun SkinCoverBlurBackdrop(background: SkinBackground.CoverBlur, context: SkinContext, modifier: Modifier) {
     val disableBlur by rememberPreference(DisableBlurKey, defaultValue = false)
-    val blurred = !disableBlur && background.blur > 0.5f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val wantBlur = !disableBlur && background.blur > 0.5f
+    val nativeBlur = wantBlur && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val rawModel = if (wantBlur) context.track.artwork?.resize(256, 256) else context.track.artwork
+    val model = if (wantBlur && !nativeBlur) rememberFallbackBlurredImage(rawModel, background.blur) else rawModel
     Box(modifier.background(Color.Black)) {
         AsyncImage(
-            model = if (blurred) context.track.artwork?.resize(256, 256) else context.track.artwork,
+            model = model,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().then(
-                if (!blurred) Modifier else Modifier
+                if (!nativeBlur) Modifier else Modifier
                     .graphicsLayer {
                         scaleX = 1.15f
                         scaleY = 1.15f

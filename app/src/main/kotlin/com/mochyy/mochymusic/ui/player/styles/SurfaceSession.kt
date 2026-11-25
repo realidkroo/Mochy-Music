@@ -4,6 +4,7 @@ package com.mochyy.mochymusic.ui.player.styles
 
 import android.graphics.Bitmap
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -66,6 +67,13 @@ internal object SurfaceSession {
 
     var state: SurfaceState by mutableStateOf(SurfaceState.Idle)
         private set
+
+    /** the module's frame shape, width over height, known once it starts; a screen with "aspect": "frame" takes it */
+    var frameAspect: Float by mutableFloatStateOf(320f / 200f)
+        private set
+
+    /** a surface covers its whole player, so the open player hides the system bars too */
+    var fullscreen: Boolean by mutableStateOf(false)
 
     /** bumped on every new frame; read only inside draw to avoid recomposing the player */
     var frameTick: Long by mutableLongStateOf(0L)
@@ -178,6 +186,7 @@ internal object SurfaceSession {
         val (w, h) = clampDimensions(dims?.getOrNull(0), dims?.getOrNull(1))
         frameW = w
         frameH = h
+        frameAspect = w.toFloat() / h
         pixelScratch = IntArray(frameW * frameH)
         val created = Array(2) { Bitmap.createBitmap(frameW, frameH, Bitmap.Config.ARGB_8888) }
         buffers = created

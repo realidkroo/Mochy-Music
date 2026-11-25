@@ -38,4 +38,6 @@ data class SkinLyricStyle(
     val scale: SkinSize,
     /** the line's translation under it, when the song has one */
     val translation: Boolean,
+    /** keyframes each word plays as it starts being sung, moving and lighting it on its own */
+    val wordEnter: SkinTimeline? = null,
 )

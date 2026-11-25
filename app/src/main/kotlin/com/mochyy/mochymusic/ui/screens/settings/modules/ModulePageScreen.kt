@@ -261,7 +261,10 @@ internal fun ModulePage(
         onRequestSheet = { kind -> activeSheet = kind },
     )
     val connection = LocalPlayerConnection.current
-    val playing by (connection?.mediaMetadata ?: PageNullMeta).collectAsState()
+    val needsTitleMeta = page.header && '{' in page.title
+    val playing by remember(connection, needsTitleMeta) {
+        if (needsTitleMeta) connection?.mediaMetadata ?: PageNullMeta else PageNullMeta
+    }.collectAsState()
     Box(Modifier.fillMaxSize()) {
         if (page.background != null || page.layers.isNotEmpty()) {
             PageBackdrop(page, skin, glass, entry.values, subject.cover)
@@ -415,22 +418,25 @@ private fun PageCardBlock(block: PageBlock.Card, glass: GlassState?, page: PageC
             when (block.progressive) {
                 SkinBlurDirection.TopToBottom -> ProgressiveGlassBackground(
                     state = glass, maxBlurRadius = { radius }, tint = tint,
-                    direction = BlurDirection.TopToBottom, modifier = Modifier.matchParentSize(),
+                    direction = BlurDirection.TopToBottom, fallbackBlur = true, modifier = Modifier.matchParentSize(),
                 )
                 SkinBlurDirection.BottomToTop -> ProgressiveGlassBackground(
                     state = glass, maxBlurRadius = { radius }, tint = tint,
-                    direction = BlurDirection.BottomToTop, modifier = Modifier.matchParentSize(),
+                    direction = BlurDirection.BottomToTop, fallbackBlur = true, modifier = Modifier.matchParentSize(),
                 )
                 SkinBlurDirection.Radial -> {
                     val radial = remember { Brush.radialGradient(0f to Color.Black, 0.72f to Color.Black, 1f to Color.Transparent) }
                     GlassPillBackground(
                         state = glass, blurRadius = { radius }, tint = tint, mask = radial,
-                        tileMode = android.graphics.Shader.TileMode.CLAMP, bleed = true, modifier = Modifier.matchParentSize(),
+                        tileMode = android.graphics.Shader.TileMode.CLAMP, bleed = true,
+                        fallbackBlur = true, fallbackMaskMode = 3, fallbackMaskParam = 0.72f,
+                        modifier = Modifier.matchParentSize(),
                     )
                 }
                 null -> GlassPillBackground(
                     state = glass, blurRadius = { radius }, tint = tint,
-                    tileMode = android.graphics.Shader.TileMode.CLAMP, bleed = true, modifier = Modifier.matchParentSize(),
+                    tileMode = android.graphics.Shader.TileMode.CLAMP, bleed = true,
+                    fallbackBlur = true, modifier = Modifier.matchParentSize(),
                 )
             }
             if (colors.size > 1) Box(Modifier.matchParentSize().background(pageBackgroundBrush(colors)))
@@ -449,7 +455,9 @@ private fun PageCardBlock(block: PageBlock.Card, glass: GlassState?, page: PageC
 @Composable
 private fun PageActionButtonBlock(block: PageBlock.ActionButton, page: PageContext, glass: GlassState?) {
     val connection = LocalPlayerConnection.current
-    val playing by (connection?.mediaMetadata ?: PageNullMeta).collectAsState()
+    val playing by remember(connection, block.text) {
+        if ('{' in block.text) connection?.mediaMetadata ?: PageNullMeta else PageNullMeta
+    }.collectAsState()
     val runAction = rememberPageActionRunner(page)
     val accent = MaterialTheme.colorScheme.primary
     val resolvedColors = block.colors.map { it.onChrome(accent, page.entry.values) }
@@ -469,6 +477,7 @@ private fun PageActionButtonBlock(block: PageBlock.ActionButton, page: PageConte
         is ActionTarget.Search -> R.drawable.search_filled
         is ActionTarget.Route -> R.drawable.navigate_next
         is ActionTarget.SetField, is ActionTarget.SetAppSetting -> R.drawable.tune
+        is ActionTarget.ModuleSheet -> R.drawable.puzzle
         is ActionTarget.Page, is ActionTarget.Link -> null
     }
     SettingsBlockSurface(
@@ -548,6 +557,8 @@ internal fun rememberPageActionRunner(page: PageContext): (ActionTarget) -> Unit
                     page.onField(page.entry.id, target.key, next)
                 }
                 is ActionTarget.SetAppSetting -> scope.launch { applySafeAppSetting(context, target.key, target.value) }
+                // a module sheet holds player blocks, so it only opens over the player, never from a page
+                is ActionTarget.ModuleSheet -> Unit
                 is ActionTarget.Sheet -> when (target.kind) {
                     SheetKind.ModulePage -> {
                         val pid = target.pageId
@@ -727,8 +738,9 @@ private fun PageShaderBlock(block: PageBlock.Shader, skin: ModuleSkin, values: M
     val box = Modifier.fillMaxWidth().height(block.height).clip(shape)
     val loaded = rememberPageProgram(skin, block.program)
     val program = (loaded as? PageProgram.Ready)?.program
-    if (program != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        PageShaderFill(program, block.program, box, touchable = true)
+    var failed by remember(program) { mutableStateOf(false) }
+    if (program != null && !failed) {
+        PageShaderFill(program, block.program, box, touchable = true, onFailed = { failed = true })
         return
     }
     val accent = MaterialTheme.colorScheme.primary
@@ -749,7 +761,15 @@ private val PageNullMeta = MutableStateFlow<MediaMetadata?>(null)
 private fun PageBlockView(block: PageBlock, page: PageContext) {
     val context = LocalContext.current
     val connection = LocalPlayerConnection.current
-    val playing by (connection?.mediaMetadata ?: PageNullMeta).collectAsState()
+    val needsMeta = when (block) {
+        is PageBlock.Heading -> '{' in block.text
+        is PageBlock.Paragraph -> '{' in block.text
+        is PageBlock.Button -> '{' in block.text || '{' in block.link
+        else -> false
+    }
+    val playing by remember(connection, needsMeta) {
+        if (needsMeta) connection?.mediaMetadata ?: PageNullMeta else PageNullMeta
+    }.collectAsState()
     val skin = page.skin
     val navController = page.navController
     when (block) {
