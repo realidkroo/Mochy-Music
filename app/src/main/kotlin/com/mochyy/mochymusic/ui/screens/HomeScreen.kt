@@ -634,7 +634,14 @@ fun HomeScreen(
                             .map { it.song.toMediaItem() }
                         if (songs.isEmpty()) return@launch
                         withContext(Dispatchers.Main) {
-                            playerConnection.playQueue(ListQueue(title = playlist.playlist.name, items = songs))
+                            playerConnection.playQueue(
+                                ListQueue(
+                                    title = playlist.playlist.name,
+                                    items = songs,
+                                    playlistId = playlist.id,
+                                    disableShuffle = playlist.playlist.mixItEnabled,
+                                )
+                            )
                         }
                     }
                 }

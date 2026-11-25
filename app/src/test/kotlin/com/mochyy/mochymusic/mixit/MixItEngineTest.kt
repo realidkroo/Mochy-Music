@@ -539,4 +539,331 @@ class MixItEngineTest {
         MixItScriptEvaluator.evaluate(spec, CrossmixRole.Incoming, beat = 7.5f, length = 10f, swap = 6f, out = p)
         assertEquals(1f, p.gain, 1e-4f)
     }
+
+    @Test
+    fun `early and ultra-short custom transitions never produce negative firstMoveMs`() {
+        for ((outStart, inStart, dur) in listOf(
+            Triple(0L, 45_000L, 2_000L),
+            Triple(500L, 60_000L, 1_000L),
+            Triple(1_000L, 81_000L, 500L),
+        )) {
+            val t = PlaylistTransition(
+                playlistId = "LP_SHORT",
+                fromSongId = "s1",
+                toSongId = "s2",
+                outStartMs = outStart,
+                inStartMs = inStart,
+                durationMs = dur,
+                beatMatchMode = MixItBeatMatchMode.OFF.name,
+            )
+            val plan = MixItPlanner.buildPlan(t, 180_000L, 180_000L, track124, track128)
+            assertTrue(
+                "outMediaAt(inStartBeat) must never be negative: ${plan.outMediaAt(plan.inStartBeat)}",
+                plan.outMediaAt(plan.inStartBeat) >= -0.01,
+            )
+            assertEquals(outStart, plan.outStartMs)
+            assertEquals(inStart.toDouble(), plan.inMediaAt(0f), 2.0)
+        }
+    }
+
+    @Test
+    fun `chained short transitions 2m23-to-3m32 then 3m36-to-1m21 fit pre-roll without cutting T1`() {
+        val t1Out = 143_000L // 2:23
+        val t1In = 212_000L  // 3:32
+        val t2Out = 216_000L // 3:36 (only 4s after 3:32!)
+        val t2In = 81_000L   // 1:21
+
+        val t2 = PlaylistTransition(
+            playlistId = "LP_CHAIN",
+            fromSongId = "song2",
+            toSongId = "song3",
+            outStartMs = t2Out,
+            inStartMs = t2In,
+            durationMs = 4_000L,
+            beatMatchMode = MixItBeatMatchMode.OFF.name,
+        )
+        val rawT2Plan = MixItPlanner.buildPlan(t2, 240_000L, 240_000L, null, null)
+        // Default 4-beat pre-roll (2000ms @ 500ms/beat)
+        assertEquals(-4f, rawT2Plan.inStartBeat, 0.01f)
+
+        // Case 1: T1 is 2s (ends on Song 2 at 3:34 = 214_000ms) -> full 2s pre-roll fits inside [3:34, 3:36]!
+        val fitAfter2s = com.mochyy.mochymusic.playback.CrossmixDirector.fitCustomPreRoll(
+            plan = rawT2Plan,
+            currentPositionMs = 210_000L, // Song 2 promoted at 3:30
+            prevIncomingEndMs = (t1In + 2_000L).toDouble(),
+        )
+        assertEquals(-4f, fitAfter2s.inStartBeat, 0.01f)
+        assertEquals(214_000.0, fitAfter2s.outMediaAt(fitAfter2s.inStartBeat), 1.0)
+        assertEquals(t2In.toDouble(), fitAfter2s.inMediaAt(0f), 1.0)
+
+        // Case 2: T1 is 3s (ends on Song 2 at 3:35 = 215_000ms) -> pre-roll shrinks to 2 beats (1s) so T1 isn't cut
+        val fitAfter3s = com.mochyy.mochymusic.playback.CrossmixDirector.fitCustomPreRoll(
+            plan = rawT2Plan,
+            currentPositionMs = 210_000L,
+            prevIncomingEndMs = (t1In + 3_000L).toDouble(),
+        )
+        assertEquals(-2f, fitAfter3s.inStartBeat, 0.01f)
+        assertEquals(215_000.0, fitAfter3s.outMediaAt(fitAfter3s.inStartBeat), 1.0)
+        assertEquals(t2In.toDouble(), fitAfter3s.inMediaAt(0f), 1.0)
+
+        // Case 3: T1 is 4s (3:32..3:36) or 8s (3:32..3:40, overlapping T2) -> pre-roll shrinks to 0 beats
+        for (t1Dur in listOf(4_000L, 8_000L)) {
+            val fitTight = com.mochyy.mochymusic.playback.CrossmixDirector.fitCustomPreRoll(
+                plan = rawT2Plan,
+                currentPositionMs = 210_000L,
+                prevIncomingEndMs = (t1In + t1Dur).toDouble(),
+            )
+            assertEquals("Expected 0 pre-roll for T1 dur $t1Dur", 0f, fitTight.inStartBeat, 0.01f)
+            assertEquals(t2Out.toDouble(), fitTight.outMediaAt(fitTight.inStartBeat), 1.0)
+            assertEquals(t2In, fitTight.inStartMs)
+        }
+
+        // Case 4: User seeks to 1s before outStartMs -> pre-roll shrinks instead of aborting
+        val fitAfterSeek = com.mochyy.mochymusic.playback.CrossmixDirector.fitCustomPreRoll(
+            plan = rawT2Plan,
+            currentPositionMs = t2Out - 1_000L,
+            prevIncomingEndMs = null,
+        )
+        assertTrue(
+            "Expected firstMoveMs (${fitAfterSeek.outMediaAt(fitAfterSeek.inStartBeat)}) ahead of currentPosition",
+            fitAfterSeek.outMediaAt(fitAfterSeek.inStartBeat) >= t2Out - 400.0,
+        )
+
+        // PlayAt compensates for residual beat-lock delay carried on outgoing from T1
+        val basePlayAt = com.mochyy.mochymusic.playback.CrossmixDirector.computePlayAtMs(fitAfter2s, 60.0, 70.0, 1f, 0.0)
+        val delayedPlayAt = com.mochyy.mochymusic.playback.CrossmixDirector.computePlayAtMs(fitAfter2s, 60.0, 70.0, 1f, 45.0)
+        assertEquals(basePlayAt + 45.0, delayedPlayAt, 0.01)
+
+        // Analysis budget reserves room for buffering on tight chained transitions
+        val tightBudget = com.mochyy.mochymusic.playback.CrossmixDirector.customAnalysisBudgetMs(
+            outStartMs = t2Out,
+            currentPositionMs = 210_000L, // 6s away
+            speed = 1f,
+            testJump = false,
+        )
+        assertEquals(1_500L, tightBudget)
+        val longBudget = com.mochyy.mochymusic.playback.CrossmixDirector.customAnalysisBudgetMs(
+            outStartMs = t1Out,
+            currentPositionMs = 0L,
+            speed = 1f,
+            testJump = false,
+        )
+        assertTrue("Long runway keeps large analysis budget ($longBudget)", longBudget > 100_000L)
+    }
+
+    @Test
+    fun `processor supports click-free live chained handoff from T1 Incoming directly to T2 Outgoing`() {
+        val rate = 44_100
+        val beatMs = 500.0
+        val processor = CrossmixTransitionAudioProcessor()
+        processor.configure(AudioProcessor.AudioFormat(rate, 2, C.ENCODING_PCM_16BIT))
+        processor.flush()
+
+        val t1Spec = MixItSpec(
+            outEffect = MixItEffect.CROSSFADE,
+            inEffect = MixItEffect.CROSSFADE,
+            outFadeStart = 0.2f,
+            outFadeEnd = 0.9f,
+            inFadeStart = 0.05f,
+            inFadeEnd = 0.7f,
+            bassSwap = true,
+            swapFrac = 0.5f,
+            label = "T1",
+        )
+        val t2Spec = MixItSpec(
+            outEffect = MixItEffect.ECHO,
+            inEffect = MixItEffect.CROSSFADE,
+            outFadeStart = 0.1f,
+            outFadeEnd = 0.9f,
+            inFadeStart = 0.1f,
+            inFadeEnd = 0.8f,
+            bassSwap = true,
+            swapFrac = 0.5f,
+            label = "T2",
+            outVoiceLevel = 0.2f,
+        )
+
+        // Song 2 enters at 210s (2s pre-roll before T1 beat 0 at 212s = 3:32), with 60ms beat-lock delay
+        processor.arm(
+            CrossmixTransitionAudioProcessor.Script(
+                role = CrossmixRole.Incoming,
+                style = com.mochyy.mochymusic.crossmix.CrossmixStyle.SilkBlend,
+                variation = 0,
+                lengthBeats = 8f,
+                swapBeat = 4f,
+                anchorMs = 212_000.0,
+                mediaPerBeatMs = beatMs,
+                musicalBeatMs = beatMs,
+                endBeat = 16f,
+                calibrationMs = 210_000.0,
+                calibrationNanos = 0L,
+                mixIt = t1Spec,
+            ),
+        )
+        processor.setBeatLockDelay(60.0)
+
+        val startSec = 210.0
+        val handoffSec = 215.8 // right before T2 at 216.0s (3:36)!
+        val endSec = 228.0     // past T2 window (4s) + echo tail (5s) + 2 beats
+        val totalFrames = ((endSec - startSec) * rate).toInt()
+        val handoffFrame = ((handoffSec - startSec) * rate).toInt()
+        val output = FloatArray(totalFrames)
+        val block = 1_024
+        var frame = 0
+        var handedOff = false
+        var delayAtHandoff = 0.0
+
+        while (frame < totalFrames) {
+            if (!handedOff && frame >= handoffFrame) {
+                handedOff = true
+                delayAtHandoff = processor.currentDelayMs
+                assertTrue("Expected beat-lock delay still active before handoff ($delayAtHandoff ms)", delayAtHandoff > 40.0)
+                // Seamlessly hand Song 2's processor directly from T1 Incoming -> T2 Outgoing (no flush!)
+                processor.arm(
+                    CrossmixTransitionAudioProcessor.Script(
+                        role = CrossmixRole.Outgoing,
+                        style = com.mochyy.mochymusic.crossmix.CrossmixStyle.SilkBlend,
+                        variation = 0,
+                        lengthBeats = 8f,
+                        swapBeat = 4f,
+                        anchorMs = 216_000.0,
+                        mediaPerBeatMs = beatMs,
+                        musicalBeatMs = beatMs,
+                        endBeat = 8f + t2Spec.tailBeats + 2f,
+                        calibrationMs = (startSec + frame.toDouble() / rate) * 1_000.0,
+                        calibrationNanos = 0L,
+                        mixIt = t2Spec,
+                    ),
+                    preserveDelayAndHistory = true,
+                )
+            }
+            val count = minOf(block, totalFrames - frame)
+            val buffer = ByteBuffer.allocateDirect(count * 4).order(ByteOrder.nativeOrder())
+            for (i in 0 until count) {
+                val t = startSec + (frame + i).toDouble() / rate
+                val v = (0.5 * sin(2 * PI * 440.0 * t)).toFloat()
+                val s = (v * 32_767).toInt().toShort()
+                buffer.putShort(s); buffer.putShort(s)
+            }
+            buffer.flip()
+            val ptsUs = ((startSec + frame.toDouble() / rate) * 1_000_000.0).toLong()
+            processor.onInputTimestamp(ptsUs)
+            processor.queueInput(buffer)
+            val out = processor.output
+            for (i in 0 until count) {
+                output[frame + i] = out.getShort() / 32_768f
+                out.getShort()
+            }
+            frame += count
+        }
+
+        // Verify zero NaNs, zero clipping, and zero click spikes around the live handoff seam
+        for (i in 1 until output.size) {
+            val v = output[i]
+            assertFalse("NaN at $i", v.isNaN())
+            assertTrue("Clipped at $i", abs(v) <= 1f)
+        }
+        val seamStart = (handoffFrame - 2_048).coerceAtLeast(1)
+        val seamEnd = (handoffFrame + 4_096).coerceAtMost(output.lastIndex)
+        var maxSeamJump = 0f
+        for (i in seamStart..seamEnd) {
+            maxSeamJump = maxOf(maxSeamJump, abs(output[i] - output[i - 1]))
+        }
+        assertTrue("Expected click-free handoff seam, got jump $maxSeamJump", maxSeamJump < 0.2f)
+
+        // Verify Song 2 was audible around 3:35 (after T1 faded it in) and cleanly silent after T2 + echo tail (3:46+)
+        val midRms = rmsLevel(Rendered(output, output), 4.8, 5.6)
+        val endRms = rmsLevel(Rendered(output, output), 16.5, 17.5)
+        assertTrue("Song 2 should be audible before T2 ($midRms)", midRms > 0.25)
+        assertTrue("Song 2 should be silent after T2 + tail ($endRms)", endRms < 1e-3)
+    }
+
+    @Test
+    fun `re-arming processor cleanly resets stale fadeOutNow state without flush`() {
+        val rate = 44_100
+        val processor = CrossmixTransitionAudioProcessor()
+        processor.configure(AudioProcessor.AudioFormat(rate, 2, C.ENCODING_PCM_16BIT))
+        processor.flush()
+
+        val spec = MixItSpec(
+            outEffect = MixItEffect.NONE,
+            inEffect = MixItEffect.NONE,
+            outFadeStart = 0.2f,
+            outFadeEnd = 0.9f,
+            inFadeStart = 0.1f,
+            inFadeEnd = 0.8f,
+            bassSwap = false,
+            swapFrac = 0.5f,
+            label = "Reset Test",
+        )
+        // First script fades out early via fadeOutNow() (driving internal outFade to 0)
+        processor.arm(
+            CrossmixTransitionAudioProcessor.Script(
+                role = CrossmixRole.Outgoing,
+                style = com.mochyy.mochymusic.crossmix.CrossmixStyle.SilkBlend,
+                variation = 0,
+                lengthBeats = 8f,
+                swapBeat = 4f,
+                anchorMs = 10_000.0,
+                mediaPerBeatMs = 500.0,
+                musicalBeatMs = 500.0,
+                endBeat = 10f,
+                calibrationMs = 0.0,
+                calibrationNanos = 0L,
+                mixIt = spec,
+            ),
+        )
+        processor.fadeOutNow()
+        var frame = 0
+        repeat(8) {
+            val buf = ByteBuffer.allocateDirect(1_024 * 4).order(ByteOrder.nativeOrder())
+            for (i in 0 until 1_024) {
+                val s = (0.5 * sin(2 * PI * 440.0 * (frame + i) / rate) * 32_767).toInt().toShort()
+                buf.putShort(s); buf.putShort(s)
+            }
+            buf.flip()
+            processor.onInputTimestamp(frame * 1_000_000L / rate)
+            processor.queueInput(buf)
+            processor.output
+            frame += 1_024
+        }
+
+        // Re-arm without flush (calibrationNanos = 0L simulating paused arm) -> must play full volume before beat 0!
+        processor.arm(
+            CrossmixTransitionAudioProcessor.Script(
+                role = CrossmixRole.Outgoing,
+                style = com.mochyy.mochymusic.crossmix.CrossmixStyle.SilkBlend,
+                variation = 0,
+                lengthBeats = 8f,
+                swapBeat = 4f,
+                anchorMs = 10_000.0,
+                mediaPerBeatMs = 500.0,
+                musicalBeatMs = 500.0,
+                endBeat = 10f,
+                calibrationMs = frame * 1_000.0 / rate,
+                calibrationNanos = 0L,
+                mixIt = spec,
+            ),
+        )
+        val outSamples = FloatArray(4_096)
+        var written = 0
+        repeat(4) {
+            val buf = ByteBuffer.allocateDirect(1_024 * 4).order(ByteOrder.nativeOrder())
+            for (i in 0 until 1_024) {
+                val s = (0.5 * sin(2 * PI * 440.0 * (frame + i) / rate) * 32_767).toInt().toShort()
+                buf.putShort(s); buf.putShort(s)
+            }
+            buf.flip()
+            processor.onInputTimestamp(frame * 1_000_000L / rate)
+            processor.queueInput(buf)
+            val out = processor.output
+            for (i in 0 until 1_024) {
+                outSamples[written++] = out.getShort() / 32_768f
+                out.getShort()
+            }
+            frame += 1_024
+        }
+        val rms = sqrt(outSamples.sumOf { (it * it).toDouble() } / outSamples.size)
+        assertTrue("Re-armed processor must output full audio before beat 0, got rms=$rms", rms > 0.3)
+    }
 }

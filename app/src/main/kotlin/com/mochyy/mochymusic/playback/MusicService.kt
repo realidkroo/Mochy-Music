@@ -713,6 +713,7 @@ class MusicService :
                 }
                 if (matches && activePlaylistId == null) {
                     observeActivePlaylistMixIt(playlistId)
+                    if (dataStore.get(PersistentQueueKey, true)) saveQueueToDisk(onlyChanges = true)
                 }
             }
         }
@@ -4743,7 +4744,7 @@ class MusicService :
 
     // a cheap fingerprint of everything in the queue and automix files: the songs, where in them we are, and how they play
     private fun queueKey(): Int {
-        var key = java.util.Objects.hash(queueTitle, player.currentMediaItemIndex, player.shuffleModeEnabled, player.repeatMode, player.playWhenReady, playerVolume.value)
+        var key = java.util.Objects.hash(queueTitle, activePlaylistId, player.currentMediaItemIndex, player.shuffleModeEnabled, player.repeatMode, player.playWhenReady, playerVolume.value)
         for (i in 0 until player.mediaItemCount) {
             val item = player.getMediaItemAt(i)
             key = 31 * key + item.mediaId.hashCode()

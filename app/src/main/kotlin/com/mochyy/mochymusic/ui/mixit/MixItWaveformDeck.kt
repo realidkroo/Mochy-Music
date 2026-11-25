@@ -194,7 +194,7 @@ internal fun MixItWaveformDeck(
             labelRight = formatMixClock(currentOutDur),
             waveColor = MixItColors.Track1Wave,
             onJumpTo = { newStart ->
-                val maxStart = (currentOutDur - 1_500L).coerceAtLeast(0L)
+                val maxStart = (currentOutDur - 500L).coerceAtLeast(0L)
                 val snapped = if (currentDraft.snapToBeat) {
                     MixItPlanner.snapToNearestBeat(newStart, currentOutAnalysis)
                 } else newStart
@@ -305,7 +305,7 @@ internal fun MixItWaveformDeck(
                                     working = when (target) {
                                         ActiveDrag.OutWave -> {
                                             val deltaMs = (-delta.x / scale).toLong()
-                                            val maxStart = (currentOutDur - 1_500L).coerceAtLeast(0L)
+                                            val maxStart = (currentOutDur - 500L).coerceAtLeast(0L)
                                             val next = (working.outStartMs + deltaMs).coerceIn(0L, maxStart)
                                             if (working.snapToBeat) {
                                                 val beatMs = currentOutAnalysis?.beatMs?.toLong()?.takeIf { it > 200L } ?: 500L
@@ -320,7 +320,7 @@ internal fun MixItWaveformDeck(
 
                                         ActiveDrag.InWave -> {
                                             val deltaMs = (-delta.x / scale).toLong()
-                                            val maxIn = (currentInDur - 1_500L).coerceAtLeast(0L)
+                                            val maxIn = (currentInDur - 500L).coerceAtLeast(0L)
                                             val next = (working.inStartMs + deltaMs).coerceIn(0L, maxIn)
                                             if (working.snapToBeat) {
                                                 val beatMs = currentInAnalysis?.beatMs?.toLong()?.takeIf { it > 200L } ?: 500L
@@ -399,11 +399,11 @@ internal fun MixItWaveformDeck(
                                 val snapped = when (target) {
                                     ActiveDrag.OutWave -> working.copy(
                                         outStartMs = MixItPlanner.snapToNearestBeat(working.outStartMs, currentOutAnalysis)
-                                            .coerceIn(0L, (currentOutDur - 1_500L).coerceAtLeast(0L)),
+                                            .coerceIn(0L, (currentOutDur - 500L).coerceAtLeast(0L)),
                                     )
                                     ActiveDrag.InWave -> working.copy(
                                         inStartMs = MixItPlanner.snapToNearestBeat(working.inStartMs, currentInAnalysis)
-                                            .coerceIn(0L, (currentInDur - 1_500L).coerceAtLeast(0L)),
+                                            .coerceIn(0L, (currentInDur - 500L).coerceAtLeast(0L)),
                                     )
                                     ActiveDrag.WindowLeft, ActiveDrag.WindowRight -> working.copy(
                                         durationMs = MixItPlanner.snapDurationToBeats(working.durationMs, currentOutAnalysis),
@@ -764,7 +764,7 @@ internal fun MixItWaveformDeck(
             labelRight = formatMixClock(currentInDur),
             waveColor = MixItColors.Track2Wave,
             onJumpTo = { newStart ->
-                val maxStart = (currentInDur - 1_500L).coerceAtLeast(0L)
+                val maxStart = (currentInDur - 500L).coerceAtLeast(0L)
                 val snapped = if (currentDraft.snapToBeat) {
                     MixItPlanner.snapToNearestBeat(newStart, currentInAnalysis)
                 } else newStart

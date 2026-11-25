@@ -183,6 +183,7 @@ fun LocalPlaylistScreen(
     val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val queueTitle by playerConnection.queueTitle.collectAsState()
+    val activePlaylistId by playerConnection.activePlaylistId.collectAsState()
 
     val playlist by viewModel.playlist.collectAsState()
     val imported by viewModel.imported.collectAsState()
@@ -223,6 +224,7 @@ fun LocalPlaylistScreen(
         if (viewModel.startInMixIt) {
             onSortTypeChange(PlaylistSongSortType.CUSTOM)
             viewModel.setMixItEnabled(true)
+            playerConnection.notifyMixItChanged(viewModel.playlistId)
         }
     }
 
@@ -468,6 +470,7 @@ fun LocalPlaylistScreen(
                 items = items.map { it.song.toMediaItem() },
                 startIndex = startIndex,
                 playlistId = if (shuffled) null else current.id,
+                disableShuffle = !shuffled && current.playlist.mixItEnabled,
             )
         )
         database.query { insert(PlaylistEvent(playlistId = current.id, timestamp = LocalDateTime.now())) }
@@ -677,7 +680,8 @@ fun LocalPlaylistScreen(
             }
         } else if (!isSearching) {
             item(key = "playlist_header") {
-                val isThisQueue = queueTitle == currentPlaylist.playlist.name
+                val isThisQueue = queueTitle == currentPlaylist.playlist.name &&
+                    (!mixItEnabled || activePlaylistId == currentPlaylist.id)
                 val savedRemote = currentPlaylist.playlist.browseId != null && !currentPlaylist.playlist.isEditable
                 Column(modifier = Modifier.fillMaxWidth()) {
                     PlaylistHeader(
@@ -691,7 +695,11 @@ fun LocalPlaylistScreen(
                         ),
                         isPlaying = isThisQueue && isPlaying,
                         onPlayClick = {
-                            if (isThisQueue) playerConnection.togglePlayPause() else play(songs)
+                            if (isThisQueue && (!mixItEnabled || queueMatchesPlaylistOrder(playerConnection, songs))) {
+                                playerConnection.togglePlayPause()
+                            } else {
+                                play(songs)
+                            }
                         },
                         onShuffleClick = { play(songs.shuffled(), shuffled = true) },
                         isSaved = if (savedRemote) currentPlaylist.playlist.bookmarkedAt != null else null,
@@ -817,7 +825,10 @@ fun LocalPlaylistScreen(
                                     inSong = nextSong.song,
                                     existing = existing,
                                 )
-                            } else if (song.song.id == mediaMetadata?.id) {
+                            } else if (
+                                song.song.id == mediaMetadata?.id &&
+                                (!mixItEnabled || (activePlaylistId == currentPlaylist.id && queueMatchesPlaylistOrder(playerConnection, songs)))
+                            ) {
                                 playerConnection.togglePlayPause()
                             } else {
                                 play(songs, startIndex = songs.indexOfFirst { it.map.id == song.map.id })
@@ -1084,6 +1095,18 @@ fun LocalPlaylistScreen(
             }
         )
     }
+}
+
+private fun queueMatchesPlaylistOrder(
+    playerConnection: com.mochyy.mochymusic.playback.PlayerConnection,
+    songs: List<com.mochyy.mochymusic.db.entities.PlaylistSong>,
+): Boolean {
+    val p = playerConnection.player
+    if (p.shuffleModeEnabled || p.mediaItemCount < songs.size) return false
+    for (i in songs.indices) {
+        if (p.getMediaItemAt(i).mediaId != songs[i].song.id) return false
+    }
+    return true
 }
 
 private fun playlistSortLabel(type: PlaylistSongSortType): Int = when (type) {
