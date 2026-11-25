@@ -97,7 +97,7 @@ fun SearchSidePane(
             if (!offlineMode) {
                 when (val parsed = YouTubeUrlParser.parse(text)) {
                     is YouTubeUrlParser.ParsedUrl.Video ->
-                        playerConnection?.playQueue(YouTubeQueue(WatchEndpoint(videoId = parsed.id)))
+                        playerConnection?.playQueue(YouTubeQueue.radio(parsed.id))
                     is YouTubeUrlParser.ParsedUrl.Artist ->
                         navController.navigate("artist/${parsed.id}")
                     null -> navController.navigate(searchRoute(text)) {

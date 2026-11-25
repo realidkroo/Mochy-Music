@@ -43,9 +43,13 @@ class CarSession(
         app = car
         lifecycle.addObserver(
             object : DefaultLifecycleObserver {
-                override fun onCreate(owner: LifecycleOwner) = playback.bind()
+                override fun onCreate(owner: LifecycleOwner) {
+                    playback.bind()
+                    link.carSessionShown()
+                }
 
                 override fun onDestroy(owner: LifecycleOwner) {
+                    link.carSessionHidden()
                     playback.unbind()
                     app = null
                 }

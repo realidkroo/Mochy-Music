@@ -124,19 +124,21 @@ constructor(
     // stream was two files glued together: the song played for a few seconds, then went silent.
     private val dataSourceFactory =
         ResolvingDataSource.Factory(
-            OkHttpDataSource.Factory(
-                com.mochyy.mochymusic.utils.AppProxy.sharedClient.newBuilder()
-                    .dns(object : Dns {
-                        override fun lookup(hostname: String): List<InetAddress> {
-                            val addresses = Dns.SYSTEM.lookup(hostname)
-                            return when (this@DownloadUtil.ipVersion) {
-                                IpVersion.IPV4 -> addresses.filter { it is Inet4Address }.ifEmpty { addresses }
-                                IpVersion.IPV6 -> addresses.filter { it is Inet6Address }.ifEmpty { addresses }
-                                IpVersion.AUTO -> addresses
+            com.mochyy.mochymusic.link.LanHttpDataSource.Factory(
+                OkHttpDataSource.Factory(
+                    com.mochyy.mochymusic.utils.AppProxy.sharedClient.newBuilder()
+                        .dns(object : Dns {
+                            override fun lookup(hostname: String): List<InetAddress> {
+                                val addresses = Dns.SYSTEM.lookup(hostname)
+                                return when (this@DownloadUtil.ipVersion) {
+                                    IpVersion.IPV4 -> addresses.filter { it is Inet4Address }.ifEmpty { addresses }
+                                    IpVersion.IPV6 -> addresses.filter { it is Inet6Address }.ifEmpty { addresses }
+                                    IpVersion.AUTO -> addresses
+                                }
                             }
-                        }
-                    })
-                    .build(),
+                        })
+                        .build(),
+                ),
             ),
         ) { dataSpec ->
             val mediaId = dataSpec.key ?: error("No media id")

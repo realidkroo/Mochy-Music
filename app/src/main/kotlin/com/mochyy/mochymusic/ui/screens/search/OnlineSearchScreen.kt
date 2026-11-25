@@ -144,7 +144,7 @@ fun OnlineSearchScreen(
                 onOpen = { recent ->
                     when (recent.kind) {
                         RecentSearch.Kind.Song -> playerConnection.playQueue(
-                            YouTubeQueue(com.music.innertube.models.WatchEndpoint(videoId = recent.id)),
+                            YouTubeQueue.radio(recent.id),
                         )
                         RecentSearch.Kind.Album -> navController.navigate("album/${recent.id}")
                         RecentSearch.Kind.Artist -> navController.navigate("artist/${recent.id}")

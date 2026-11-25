@@ -141,8 +141,9 @@ class App : Application(), SingletonImageLoader.Factory {
         // potoken webview and innertubex both boot on demand when a song actually needs them, keeping ~80 mb of chromium and quackjs out of startup and background ram
 
         applicationScope.launch(Dispatchers.IO) {
-            // a paired device can reach this phone again as soon as mochy is up, after the intro has had the main thread
-            if (isTelevision() || !com.mochyy.mochymusic.link.phone.PhoneLinkHost.hasPairedDevices(this@App)) return@launch
+            // only boot the background link service at process start when the user opted in and a paired tv needs it;
+            // otherwise MainActivity.onStart brings the link up while on screen and tears it down when closed
+            if (isTelevision() || !com.mochyy.mochymusic.link.phone.PhoneLinkHost.shouldStartInBackground(this@App)) return@launch
             com.mochyy.mochymusic.ui.launch.LaunchGate.awaitIntro()
             phoneLink.get().refresh()
             com.mochyy.mochymusic.link.phone.PhoneLinkService.start(this@App)
@@ -392,13 +393,22 @@ class App : Application(), SingletonImageLoader.Factory {
             com.mochyy.mochymusic.importer.PendingYouTubeLikes.clear(context)
             com.mochyy.mochymusic.importer.PlaylistAddedHere.clearAll(context)
 
-            Timber.d("forgetAccount: Clearing WebView CookieManager")
+            Timber.d("forgetAccount: Clearing WebView CookieManager & WebStorage")
             withContext(Dispatchers.Main) {
                 android.webkit.CookieManager.getInstance().apply {
                     removeAllCookies { removed ->
                         Timber.d("forgetAccount: CookieManager.removeAllCookies callback: removed=$removed")
                     }
                     flush()
+                }
+                android.webkit.WebStorage.getInstance().apply {
+                    listOf(
+                        "https://music.youtube.com",
+                        "https://www.youtube.com",
+                        "https://youtube.com",
+                        "https://accounts.google.com",
+                        "https://google.com",
+                    ).forEach { origin -> runCatching { deleteOrigin(origin) } }
                 }
             }
             Timber.d("forgetAccount: Logout process complete")

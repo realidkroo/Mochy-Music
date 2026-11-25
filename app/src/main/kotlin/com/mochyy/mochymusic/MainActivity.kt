@@ -1223,13 +1223,18 @@ class MainActivity : ComponentActivity() {
                                     // the settings list stays at the left of a wide screen while its pages open beside it
                                     val settingsPane = isWideLayout() &&
                                         com.mochyy.mochymusic.ui.screens.settings.showsSettingsPane(backStack, currentRoute)
-                                    // one glass capture for both panes so the bar frosts what's under it, clear of a sideways phone's side nav bar (its shown size, so hiding it moves nothing)
-                                    Row(
+                                    // one glass capture for both panes so the bar frosts what's under it (including any app-wide module background)
+                                    Box(
                                         Modifier
                                             .fillMaxSize()
                                             .windowInsetsPadding(WindowInsets.stableSystemBars.only(WindowInsetsSides.Horizontal))
                                             .glassRoot(glassState, isActive = { playerBottomSheetState.progress < 0.999f })
                                     ) {
+                                    com.mochyy.mochymusic.ui.screens.settings.modules.ModuleAppBackground(
+                                        currentRoute = currentRoute,
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                    Row(Modifier.fillMaxSize()) {
                                     if (settingsPane) {
                                         com.mochyy.mochymusic.ui.screens.settings.SettingsListPane(
                                             navController = navController,
@@ -1317,6 +1322,7 @@ class MainActivity : ComponentActivity() {
                                             activity = this@MainActivity,
                                             snackbarHostState = snackbarHostState
                                         )
+                                    }
                                     }
                                     }
                                     }
@@ -1556,29 +1562,32 @@ class MainActivity : ComponentActivity() {
         intent.removeExtra(Intent.EXTRA_TEXT)
         val coroutineScope = lifecycle.coroutineScope
 
+        fun safeRouteId(raw: String?): String? =
+            raw?.trim()?.takeIf { it.isNotEmpty() && it.length <= 256 && !it.contains('/') && !it.contains("..") && !it.contains('?') && !it.contains('#') && !it.any(Char::isWhitespace) }
+
         when (val path = uri.pathSegments.firstOrNull()) {
-            "playlist" -> uri.getQueryParameter("list")?.let { playlistId ->
+            "playlist" -> safeRouteId(uri.getQueryParameter("list"))?.let { playlistId ->
                 if (playlistId.startsWith("OLAK5uy_")) {
                     coroutineScope.launch(Dispatchers.IO) {
                         YouTube.albumSongs(playlistId).onSuccess { songs ->
-                            songs.firstOrNull()?.album?.id?.let { browseId ->
+                            safeRouteId(songs.firstOrNull()?.album?.id)?.let { browseId ->
                                 withContext(Dispatchers.Main) {
-                                    navController.navigate("album/$browseId")
+                                    navController.navigate("album/${android.net.Uri.encode(browseId)}")
                                 }
                             }
                         }.onFailure { reportException(it) }
                     }
                 } else {
-                    navController.navigate("online_playlist/$playlistId")
+                    navController.navigate("online_playlist/${android.net.Uri.encode(playlistId)}")
                 }
             }
 
-            "browse" -> uri.lastPathSegment?.let { browseId ->
-                navController.navigate("album/$browseId")
+            "browse" -> safeRouteId(uri.lastPathSegment)?.let { browseId ->
+                navController.navigate("album/${android.net.Uri.encode(browseId)}")
             }
 
-            "channel", "c" -> uri.lastPathSegment?.let { artistId ->
-                navController.navigate("artist/$artistId")
+            "channel", "c" -> safeRouteId(uri.lastPathSegment)?.let { artistId ->
+                navController.navigate("artist/${android.net.Uri.encode(artistId)}")
             }
 
             "search" -> {

@@ -766,10 +766,14 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     composable(
-        route = "local_playlist/{playlistId}",
+        route = "local_playlist/{playlistId}?mixIt={mixIt}",
         arguments = listOf(
             navArgument("playlistId") {
                 type = NavType.StringType
+            },
+            navArgument("mixIt") {
+                type = NavType.BoolType
+                defaultValue = false
             },
         ),
         enterTransition = { fadeIn(tween(300)) },

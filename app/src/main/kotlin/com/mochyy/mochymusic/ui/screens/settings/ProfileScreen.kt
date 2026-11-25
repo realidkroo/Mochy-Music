@@ -821,7 +821,8 @@ fun ProfileScreen(navController: NavController) {
             }
 
             // ---- the glass top bar, a sibling of the glassRoot box (never inside it) ------------------
-            if (collapseProgress > 0.005f && stage == HeaderStage.Collapsed) {
+            val showTopBarGlass by remember { derivedStateOf { collapseProgress > 0.005f && stage == HeaderStage.Collapsed } }
+            if (showTopBarGlass) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -831,7 +832,7 @@ fun ProfileScreen(navController: NavController) {
                     ProgressiveGlassBackground(
                         state = glassState,
                         maxBlurRadius = { 55f * collapseProgress },
-                        foundationColor = Color.Black.copy(alpha = 0.55f * collapseProgress),
+                        foundationColor = Color.Black.copy(alpha = 0.55f),
                         direction = BlurDirection.BottomToTop,
                         steps = 3,
                         modifier = Modifier
@@ -842,15 +843,18 @@ fun ProfileScreen(navController: NavController) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(
-                                if (progressiveBar) {
+                            .drawWithCache {
+                                val fade = if (progressiveBar) {
                                     Brush.verticalGradient(
-                                        listOf(Color.Black, Color.Black.copy(alpha = 0.85f * collapseProgress), Color.Transparent),
+                                        listOf(Color.Black, Color.Black.copy(alpha = 0.85f), Color.Transparent),
                                     )
                                 } else {
                                     androidx.compose.ui.graphics.SolidColor(Color.Black.copy(alpha = com.mochyy.mochymusic.ui.component.FlatBarScrimAlpha))
-                                },
-                            ),
+                                }
+                                onDrawBehind {
+                                    drawRect(brush = fade, alpha = collapseProgress)
+                                }
+                            },
                     )
                 }
             }
@@ -870,7 +874,8 @@ fun ProfileScreen(navController: NavController) {
                         transformOrigin = TransformOrigin(0f, 0.5f)
                     },
             )
-            if (collapseProgress > 0.01f) {
+            val showTopBarGreeting by remember { derivedStateOf { collapseProgress > 0.01f } }
+            if (showTopBarGreeting) {
                 Text(
                     text = stringResource(R.string.profile_greeting_format, stringResource(MochyGreeting.currentRes), accountName.ifBlank { stringResource(R.string.profile_greeting_fallback) }),
                     style = PageTitle.copy(fontSize = 18.sp),

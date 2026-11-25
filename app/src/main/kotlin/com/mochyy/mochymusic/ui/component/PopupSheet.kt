@@ -44,6 +44,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
@@ -113,8 +114,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.mochyy.mochymusic.modules.skin.ActiveSkin
 import com.mochyy.mochymusic.ui.player.menu.MenuRowSurface
 import com.mochyy.mochymusic.ui.player.menu.MenuSurface
+import com.mochyy.mochymusic.ui.player.menu.resolvedSheetRowSurface
+import com.mochyy.mochymusic.ui.player.menu.resolvedSheetSurface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
@@ -347,11 +351,11 @@ fun PopupSheetHost(
                 .graphicsLayer {
                     // Read inside the layer, not in composition: it changes on every frame of
                     // every drag/transition, and this way only this layer re-runs, not the app.
-                    val p = active?.presence ?: 0f
+                    val p = (active?.presence ?: 0f).coerceIn(0f, 1f)
                     val scale = 1f - BackdropRecede * p
                     scaleX = scale
                     scaleY = scale
-                    shape = RoundedCornerShape((28f * p).dp)
+                    shape = PopupBackdropShapes[(p * PopupBackdropMaxStep + 0.5f).toInt()]
                     clip = p > 0f
                     // While the sheet moves, the app behind is drawn once into a layer and the
                     // zoom moves that - the same as behind the player. Zoomed live, every frame
@@ -373,10 +377,11 @@ fun PopupSheetHost(
         // Only gated on `active`, which changes once per open/close - never on the live
         // presence, which would recompose everything from here down on every drag delta.
         if (active != null) {
+            val sheetDim = ActiveSkin.sheet?.sheet?.dim ?: 0.5f
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer { alpha = 0.5f * active.presence }
+                    .graphicsLayer { alpha = sheetDim * active.presence }
                     .background(Color.Black)
             )
 
@@ -394,6 +399,12 @@ fun PopupSheetHost(
 }
 
 /** Phone/tablet geometry shared by every frame in a stack. */
+// Pre-allocated rounded shapes (0dp..28dp in 0.5dp steps) so popup open/close never allocates shapes per frame.
+private const val PopupBackdropMaxStep = 56
+private val PopupBackdropShapes = Array(PopupBackdropMaxStep + 1) { step ->
+    RoundedCornerShape((step * 0.5f).dp)
+}
+
 @Immutable
 private data class StackMetrics(
     val isTablet: Boolean,
@@ -546,13 +557,22 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
         !frame.locked && (frame.closing || (pulling && frame.offset > ArrowAfterPull))
     }
 
+    val activeSheet = ActiveSkin.sheet
+    val defaultSurface = resolvedSheetSurface()
+    val defaultRow = resolvedSheetRowSurface()
+    val sheetStroke = activeSheet?.sheet?.stroke
+    val sheetStrokeColor = activeSheet?.sheet?.strokeColor?.onChrome(
+        androidx.compose.material3.MaterialTheme.colorScheme.primary,
+        activeSheet.values,
+    ) ?: Color.White.copy(alpha = 0.16f)
+
     // the sheet's colour, stepping up to the row gray as it recedes; the fade behind its bar matches it
-    val surfaceColor: () -> Color = remember(state, frame) {
+    val surfaceColor: () -> Color = remember(state, frame, defaultSurface, defaultRow) {
         {
             val frames = state.frames
             val index = frames.indexOf(frame)
             val recede = if (index < 0) 0f else frames.depthAbove(index).coerceAtMost(1f)
-            lerp(frame.surface ?: MenuSurface, MenuRowSurface, recede)
+            lerp(frame.surface ?: defaultSurface, defaultRow, recede)
         }
     }
 
@@ -656,7 +676,8 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
     }
 
     val centred = metrics.isTablet && !metrics.floating
-    val shape = remember(centred, metrics.floating) { sheetSurfaceShape(centred, metrics.floating) }
+    val customCorner = activeSheet?.sheet?.corner
+    val shape = remember(centred, metrics.floating, customCorner) { sheetSurfaceShape(centred, metrics.floating, customCorner) }
     val minHeight = if (centred) 0.dp else with(LocalDensity.current) { frame.minHeightPx.toDp() }
 
     Box(
@@ -688,6 +709,7 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
                 // front reads as a separate layer against both that sheet and the dimmed app.
                 drawRect(surfaceColor())
             }
+            .then(if (sheetStroke != null) Modifier.border(sheetStroke, sheetStrokeColor, shape) else Modifier)
             // The whole sheet is a touch target, not just the parts of its content that have one -
             // otherwise a tap on an empty patch (beside a row, around the button bar) fell
             // through to the backdrop or the sheet behind and closed something.
@@ -725,15 +747,17 @@ private fun BoxWithConstraintsScope.PopupSheetFrame(
     }
 }
 
-private fun sheetSurfaceShape(isTablet: Boolean, floating: Boolean): Shape =
+private fun sheetSurfaceShape(isTablet: Boolean, floating: Boolean, customCorner: Dp? = null): Shape =
     if (floating) {
-        RoundedCornerShape(FloatingCorner)
+        RoundedCornerShape(customCorner ?: FloatingCorner)
     } else {
+        val top = customCorner ?: if (isTablet) 28.dp else 24.dp
+        val bottom = if (isTablet) (customCorner ?: 28.dp) else 0.dp
         RoundedCornerShape(
-            topStart = if (isTablet) 28.dp else 24.dp,
-            topEnd = if (isTablet) 28.dp else 24.dp,
-            bottomStart = if (isTablet) 28.dp else 0.dp,
-            bottomEnd = if (isTablet) 28.dp else 0.dp,
+            topStart = top,
+            topEnd = top,
+            bottomStart = bottom,
+            bottomEnd = bottom,
         )
     }
 

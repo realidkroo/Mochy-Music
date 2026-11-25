@@ -88,7 +88,7 @@ class StreamInspector : AnalyticsListener {
                 bitrate = format.averageBitrate.takeIf { it > 0 } ?: format.bitrate.takeIf { it > 0 } ?: old.bitrate,
                 sampleRate = format.sampleRate.takeIf { it > 0 },
                 channels = format.channelCount.takeIf { it > 0 },
-                sourceBitDepth = bitDepthOf(format.pcmEncoding),
+                sourceBitDepth = com.mochyy.mochymusic.playback.audio.AudioDecoderPolicy.sourceBitDepth(format),
             )
         }
     }

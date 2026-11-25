@@ -451,4 +451,57 @@
     <string name="eight_d_preset_chill">Chill</string>
     <string name="eight_d_preset_balanced">Balanced</string>
     <string name="eight_d_preset_extreme">Extreme</string>
+
+    <!-- Mix It DJ transitions -->
+    <string name="mixit_title">Mix It</string>
+    <string name="mixit_beta">BETA</string>
+    <string name="mixit_menu_desc">Be your own DJ — customize every song transition</string>
+    <string name="mixit_menu_active_desc">Active · %1$d custom transitions</string>
+    <string name="mixit_menu_active_default_desc">Active · Using %1$s for unconfigured</string>
+    <string name="mixit_editor_title">Transition\nEditor</string>
+    <string name="mixit_presets">Presets</string>
+    <string name="mixit_presets_title">DJ Presets</string>
+    <string name="mixit_presets_desc">Start from a curated DJ transition, then tweak freely</string>
+    <string name="mixit_smart_pick">Smart Auto Pick</string>
+    <string name="mixit_smart_pick_desc">Finds a musical spot and matches beats automatically</string>
+    <string name="mixit_effects_title">Effects</string>
+    <string name="mixit_select">Select</string>
+    <string name="mixit_edit_point">Edit Point</string>
+    <string name="mixit_reset">Reset</string>
+    <string name="mixit_save">Save</string>
+    <string name="mixit_preview">Preview transition</string>
+    <string name="mixit_reading_audio">Reading…</string>
+    <string name="mixit_edit_transition">Edit transition</string>
+    <string name="mixit_edit_custom">Customised</string>
+    <string name="mixit_edit_pill">Edit</string>
+    <string name="mixit_active_banner_count">Mix It active · %1$d custom mixes</string>
+    <string name="mixit_active_banner_default">Mix It active · Unconfigured uses %1$s</string>
+    <string name="mixit_saved_toast">Transition saved</string>
+    <string name="mixit_reset_toast">Transition reset to default</string>
+    <string name="mixit_hint_drag_waves">Drag waves anywhere · Yellow dots = fade · Fx &amp; Mix = sound</string>
+    <string name="mixit_hint_edit_point">Drag &lt; &gt; to resize window · Drag waves to shift cue</string>
+    <string name="mixit_beatmatch_title">Beat-Match</string>
+    <string name="mixit_auto_align_beats">Align Beats</string>
+    <string name="mixit_auto_align_beats_desc">Lock nearest downbeats</string>
+    <string name="mixit_tempo_sync_mode">Sync Mode</string>
+    <string name="mixit_snap_to_beat">Snap to Beat</string>
+    <string name="mixit_snap_to_beat_desc">Lock drags to beats</string>
+    <string name="mixit_bass_swap">Bass Swap</string>
+    <string name="mixit_bass_swap_desc">Swap kick on crossover</string>
+    <string name="mixit_beat_nudge">Beat Nudge</string>
+    <string name="mixit_custom_tempo">Song 2 Speed</string>
+    <string name="mixit_mix_title">Sound Mix</string>
+    <string name="mixit_mix_song1">Song 1 · Out</string>
+    <string name="mixit_mix_song2">Song 2 · In</string>
+    <string name="mixit_stem_voice">Voice</string>
+    <string name="mixit_stem_bass">Bass &amp; Drums</string>
+    <string name="mixit_stem_instruments">Instruments</string>
+    <string name="mixit_reset_levels">Reset Levels</string>
+    <string name="mixit_playlist_settings_title">Mix It Options</string>
+    <string name="mixit_enable_for_playlist">Enable Mix It on this playlist</string>
+    <string name="mixit_enable_for_playlist_desc">Turn off anytime without losing your saved custom mixes</string>
+    <string name="mixit_unconfigured_heading">Unconfigured Transitions</string>
+    <string name="mixit_clear_all">Reset all %1$d custom transitions</string>
+    <string name="mixit_clear_all_confirm">Tap again to reset all %1$d custom transitions</string>
+    <string name="mixit_need_two_songs">Add at least 2 songs to customize transitions</string>
 </resources>

@@ -408,6 +408,31 @@ class PlayerConnection(
 
     fun testCrossmix() = service.testCrossmix()
 
+    /** Live dual-player preview state for the Mix It Transition Editor */
+    val mixItPreviewState: StateFlow<MixItPreviewState> = service.mixItPreviewState
+
+    fun startMixItPreview(
+        outItem: MediaItem,
+        inItem: MediaItem,
+        transition: com.mochyy.mochymusic.db.entities.PlaylistTransition,
+        outDurationMs: Long,
+        inDurationMs: Long,
+        outAnalysis: com.mochyy.mochymusic.crossmix.TrackAnalysis?,
+        inAnalysis: com.mochyy.mochymusic.crossmix.TrackAnalysis?,
+    ) = service.startMixItPreview(outItem, inItem, transition, outDurationMs, inDurationMs, outAnalysis, inAnalysis)
+
+    fun stopMixItPreview() = service.stopMixItPreview()
+
+    suspend fun analyzeTrackForMixIt(item: MediaItem): com.mochyy.mochymusic.crossmix.TrackAnalysis? =
+        service.analyzeTrackForMixIt(item)
+
+    fun cachedTrackAnalysis(mediaId: String): com.mochyy.mochymusic.crossmix.TrackAnalysis? =
+        service.cachedTrackAnalysis(mediaId)
+
+    suspend fun fetchLyricsForMixIt(item: MediaItem): String? = service.fetchLyricsForMixIt(item)
+
+    fun notifyMixItChanged(playlistId: String) = service.notifyMixItChanged(playlistId)
+
     var onSkipPrevious: (() -> Unit)? = null
     var onSkipNext: (() -> Unit)? = null
 

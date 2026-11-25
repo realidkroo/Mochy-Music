@@ -137,7 +137,7 @@ class SuggestionsViewModel @Inject constructor() : ViewModel() {
 
                 if (bestMatch != null) {
                     withContext(Dispatchers.Main) {
-                        playerConnection?.playQueue(YouTubeQueue(WatchEndpoint(videoId = bestMatch.id)))
+                        playerConnection?.playQueue(YouTubeQueue.radio(bestMatch.id))
                     }
                 }
             }
@@ -196,7 +196,7 @@ class SuggestionsViewModel @Inject constructor() : ViewModel() {
 
                     if (bestMatch != null) {
                         withContext(Dispatchers.Main) {
-                            playerConnection?.playQueue(YouTubeQueue(WatchEndpoint(videoId = bestMatch.id)))
+                            playerConnection?.playQueue(YouTubeQueue.radio(bestMatch.id))
                         }
                     }
                 }

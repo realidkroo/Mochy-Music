@@ -7,12 +7,17 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
+import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.mochyy.mochymusic.modules.security.SecretGuard
+import com.mochyy.mochymusic.ui.screens.settings.importsync.hideAppIdentity
 import com.mochyy.mochymusic.utils.followAppProxy
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -116,6 +121,7 @@ object SpotifyCanvasProvider {
         cachedClientToken = null
         failedFor = null
         misses.clear()
+        SecretGuard.clear("spotify_canvas")
     }
 
     // never waits for a token: without a fresh one this song skips spotify and one is fetched in the background
@@ -165,6 +171,7 @@ object SpotifyCanvasProvider {
                 tokenExp = h.expiresAt
                 h.clientId?.let { clientId = it }
                 cachedClientToken = null
+                SecretGuard.register("spotify_canvas", cookie, h.token)
             } finally {
                 harvesting = false
             }
@@ -178,20 +185,35 @@ object SpotifyCanvasProvider {
         // only spotify's own saved data goes, so the page asks for a new token instead of reusing one
         runCatching { WebStorage.getInstance().deleteOrigin(PlayerOrigin) }
         var view: WebView? = null
+        val currentUrl = AtomicReference<String?>(null)
         return try {
             view = WebView(context).apply {
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
+                settings.allowFileAccess = false
+                settings.allowContentAccess = false
+                @Suppress("DEPRECATION")
+                settings.allowFileAccessFromFileURLs = false
+                @Suppress("DEPRECATION")
+                settings.allowUniversalAccessFromFileURLs = false
+                settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                 settings.userAgentString = UA
+                hideAppIdentity()
                 CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
-                addJavascriptInterface(Bridge(done), BRIDGE)
+                addJavascriptInterface(Bridge(done, currentUrl), BRIDGE)
                 webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(v: WebView, request: WebResourceRequest): Boolean {
+                        return request.url?.scheme?.lowercase() != "https"
+                    }
+
                     override fun onPageStarted(v: WebView, url: String?, icon: Bitmap?) {
-                        v.evaluateJavascript(HOOK, null)
+                        currentUrl.set(url)
+                        if (isSpotifyPlayerUrl(url)) v.evaluateJavascript(HOOK, null)
                     }
 
                     override fun onPageFinished(v: WebView, url: String?) {
-                        v.evaluateJavascript(HOOK, null)
+                        currentUrl.set(url)
+                        if (isSpotifyPlayerUrl(url)) v.evaluateJavascript(HOOK, null)
                     }
                 }
                 loadUrl("$PlayerOrigin/")
@@ -210,9 +232,19 @@ object SpotifyCanvasProvider {
         }
     }
 
-    private class Bridge(private val done: CompletableDeferred<Harvest?>) {
+    private fun isSpotifyPlayerUrl(url: String?): Boolean {
+        val uri = runCatching { java.net.URI(url ?: return false) }.getOrNull() ?: return false
+        return uri.scheme.equals("https", ignoreCase = true) &&
+            uri.host.equals("open.spotify.com", ignoreCase = true)
+    }
+
+    private class Bridge(
+        private val done: CompletableDeferred<Harvest?>,
+        private val currentUrl: AtomicReference<String?>,
+    ) {
         @JavascriptInterface
         fun onTokenPayload(payload: String?) {
+            if (!isSpotifyPlayerUrl(currentUrl.get())) return
             if (payload.isNullOrBlank() || done.isCompleted) return
             runCatching {
                 val o = json.parseToJsonElement(payload).jsonObject

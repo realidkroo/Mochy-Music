@@ -130,6 +130,7 @@ class InnerTube {
 
                 protocols(listOf(okhttp3.Protocol.HTTP_2, okhttp3.Protocol.HTTP_1_1))
 
+                followSslRedirects(false)
                 retryOnConnectionFailure(true)
 
                 dns(object : Dns {
@@ -149,9 +150,13 @@ class InnerTube {
 
                 this@InnerTube.proxyAuth?.let { auth ->
                     proxyAuthenticator { _, response ->
-                        response.request.newBuilder()
-                            .header("Proxy-Authorization", auth)
-                            .build()
+                        if (response.request.header("Proxy-Authorization") != null) {
+                            null
+                        } else {
+                            response.request.newBuilder()
+                                .header("Proxy-Authorization", auth)
+                                .build()
+                        }
                     }
                 }
             }
@@ -313,7 +318,9 @@ class InnerTube {
         client: YouTubeClient = YouTubeClient.WEB_REMIX,
         extraParams: Map<String, String> = emptyMap(),
     ) = withRetry {
-        val existingParams = Url(url).parameters.names()
+        val parsedUrl = Url(url)
+        require(isTrustedYouTubeUrl(parsedUrl)) { "Refused to send YouTube credentials to untrusted URL" }
+        val existingParams = parsedUrl.parameters.names()
         httpClient.get(url) {
             ytClient(client, setLogin = true, jsonContentType = false)
             if ("ver" !in existingParams) parameter("ver", "2")
@@ -329,6 +336,14 @@ class InnerTube {
                 if ("referrer" !in existingParams) parameter("referrer", "https://music.youtube.com/playlist?list=$playlistId")
             }
         }
+    }
+
+    private fun isTrustedYouTubeUrl(parsed: Url): Boolean {
+        if (parsed.protocol != URLProtocol.HTTPS) return false
+        val host = parsed.host.lowercase().trimEnd('.')
+        return host == "youtube.com" || host.endsWith(".youtube.com") ||
+            host == "google.com" || host.endsWith(".google.com") ||
+            host == "googlevideo.com" || host.endsWith(".googlevideo.com")
     }
 
     suspend fun browse(
