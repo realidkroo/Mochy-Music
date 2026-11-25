@@ -59,7 +59,7 @@ Updating works the same way: install the new apk over the old one and your libra
 
 ---
 
-## Some Prview 
+## Some Preview 
 
 <img width="1799" height="927" alt="Frame 289" src="https://github.com/user-attachments/assets/c4c122ed-b86c-44e4-a618-417f5287bc98" />
 <img width="1799" height="927" alt="Frame 287" src="https://github.com/user-attachments/assets/186be8ac-ff3e-4e2a-ab7e-ae80bc9da7e7" />
