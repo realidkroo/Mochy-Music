@@ -1,4 +1,4 @@
-// the liveprog editor: a slot's script with line numbers, checked by the real engine before it goes live
+// the script editor: line numbers, syntax check, export and apply on a regular scaffold
 
 package com.mochyy.mochymusic.ui.screens.audiolab.mixer
 
@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,17 +39,17 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.R
 import com.mochyy.mochymusic.eq.mixer.MixerNative
-import com.mochyy.mochymusic.ui.screens.audiolab.AudioLabPage
+import com.mochyy.mochymusic.ui.component.SubSettingsScaffold
 import com.mochyy.mochymusic.ui.screens.audiolab.LabCard
 import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
 import com.mochyy.mochymusic.ui.screens.audiolab.LabTextAction
-import com.mochyy.mochymusic.ui.screens.audiolab.LabTitle
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import com.mochyy.mochymusic.viewmodels.MixerViewModel
 import kotlinx.coroutines.Dispatchers
@@ -81,77 +82,77 @@ fun LiveprogEditorScreen(
         }
     }
 
-    AudioLabPage(
-        title = LabTitle(stringResource(R.string.liveprog_title_first), stringResource(R.string.liveprog_title_second), firstSize = 40.sp, secondSize = 84.sp, firstDim = true),
+    SubSettingsScaffold(
+        title = stringResource(R.string.liveprog_page_title),
+        backLabel = stringResource(R.string.mixer_card_title),
         onBack = { navController.navigateUp() },
     ) {
-        if (slot == null) return@AudioLabPage
-        LabCard(padding = 14.dp) {
-            BasicTextField(
-                value = name,
-                onValueChange = { name = it.take(40) },
-                singleLine = true,
-                textStyle = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = LabColors.Primary),
-                cursorBrush = SolidColor(LabColors.Primary),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp),
-                decorationBox = { field ->
-                    if (name.isEmpty()) Text(stringResource(R.string.liveprog_name_hint), fontFamily = InterFontFamily, fontSize = 18.sp, color = LabColors.Faint)
-                    field()
-                },
-            )
-            Text(
-                if (parsed.knobs.isEmpty()) stringResource(R.string.liveprog_no_knobs)
-                else pluralStringResource(R.plurals.liveprog_knobs_found, parsed.knobs.size, parsed.knobs.size),
-                fontFamily = InterFontFamily,
-                fontSize = 12.sp,
-                color = LabColors.Secondary,
-                modifier = Modifier.padding(horizontal = 6.dp),
-            )
-            Spacer(Modifier.height(12.dp))
-            CodeEditor(text) {
-                text = it
-                verdict = null
-            }
-            Spacer(Modifier.height(10.dp))
-            verdict?.let { result ->
-                Text(
-                    text = if (result.isEmpty()) stringResource(R.string.liveprog_builds) else stringResource(R.string.mixer_problem_compile, result.removePrefix("compile:")),
-                    fontFamily = InterFontFamily,
-                    fontSize = 13.sp,
-                    color = if (result.isEmpty()) Color(0xFF8FD98B) else Color(0xFFF28B8B),
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+        if (slot == null) return@SubSettingsScaffold
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val minEditorHeight = if (maxWidth >= 600.dp) 420.dp else 280.dp
+            LabCard(padding = 14.dp) {
+                BasicTextField(
+                    value = name,
+                    onValueChange = { name = it.take(40) },
+                    singleLine = true,
+                    textStyle = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = LabColors.Primary),
+                    cursorBrush = SolidColor(LabColors.Primary),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp),
+                    decorationBox = { field ->
+                        if (name.isEmpty()) Text(stringResource(R.string.liveprog_name_hint), fontFamily = InterFontFamily, fontSize = 18.sp, color = LabColors.Faint)
+                        field()
+                    },
                 )
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                LabTextAction(stringResource(R.string.liveprog_check)) {
-                    scope.launch { verdict = withContext(Dispatchers.Default) { if (MixerNative.loaded) MixerNative.checkScript(text) else "" } }
+                Text(
+                    if (parsed.knobs.isEmpty()) stringResource(R.string.liveprog_no_knobs)
+                    else pluralStringResource(R.plurals.liveprog_knobs_found, parsed.knobs.size, parsed.knobs.size),
+                    fontFamily = InterFontFamily,
+                    fontSize = 12.sp,
+                    color = LabColors.Secondary,
+                    modifier = Modifier.padding(horizontal = 6.dp),
+                )
+                Spacer(Modifier.height(12.dp))
+                CodeEditor(text, minEditorHeight) {
+                    text = it
+                    verdict = null
                 }
-                LabTextAction(stringResource(R.string.liveprog_save_file)) { saveFile.launch("${name.ifBlank { "liveprog" }}.eel") }
-                Spacer(Modifier.weight(1f))
-                LabTextAction(stringResource(R.string.liveprog_apply), R.drawable.check, enabled = dirty) {
-                    store.setScript(uid, text, name.ifBlank { null })
+                Spacer(Modifier.height(10.dp))
+                verdict?.let { result ->
+                    Text(
+                        text = if (result.isEmpty()) stringResource(R.string.liveprog_builds) else stringResource(R.string.mixer_problem_compile, result.removePrefix("compile:")),
+                        fontFamily = InterFontFamily,
+                        fontSize = 13.sp,
+                        color = if (result.isEmpty()) Color(0xFF8FD98B) else Color(0xFFF28B8B),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                    )
                 }
-            }
-            if (dirty) {
-                Text(stringResource(R.string.liveprog_unsaved), fontFamily = InterFontFamily, fontSize = 12.sp, color = LabColors.Secondary, modifier = Modifier.padding(horizontal = 6.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    LabTextAction(stringResource(R.string.liveprog_check)) {
+                        scope.launch { verdict = withContext(Dispatchers.Default) { if (MixerNative.loaded) MixerNative.checkScript(text) else "" } }
+                    }
+                    LabTextAction(stringResource(R.string.liveprog_save_file)) { saveFile.launch("${name.ifBlank { "liveprog" }}.eel") }
+                    Spacer(Modifier.weight(1f))
+                    LabTextAction(stringResource(R.string.liveprog_apply), R.drawable.check, enabled = dirty) {
+                        store.setScript(uid, text, name.ifBlank { null })
+                    }
+                }
+                if (dirty) {
+                    Text(stringResource(R.string.liveprog_unsaved), fontFamily = InterFontFamily, fontSize = 12.sp, color = LabColors.Secondary, modifier = Modifier.padding(horizontal = 6.dp))
+                }
             }
         }
-        Spacer(Modifier.height(14.dp))
-        Text(stringResource(R.string.liveprog_help), fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 17.sp, color = LabColors.Secondary, modifier = Modifier.padding(horizontal = 12.dp))
-        Spacer(Modifier.height(10.dp))
-        Text(stringResource(R.string.liveprog_credit), fontFamily = InterFontFamily, fontSize = 12.sp, lineHeight = 17.sp, color = LabColors.Faint, modifier = Modifier.padding(horizontal = 12.dp))
     }
 }
 
 /** the script with its line numbers in a gutter, scrolling sideways for long lines instead of wrapping them */
 @Composable
-private fun CodeEditor(text: String, onChange: (String) -> Unit) {
+private fun CodeEditor(text: String, minHeight: Dp, onChange: (String) -> Unit) {
     val lines = remember(text) { text.count { it == '\n' } + 1 }
     val numbers = remember(lines) { (1..lines).joinToString("\n") }
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 280.dp)
+            .heightIn(min = minHeight)
             .clip(RoundedCornerShape(16.dp))
             .background(LabColors.Stage)
             .padding(vertical = 12.dp),

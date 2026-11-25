@@ -74,13 +74,13 @@ private fun AddEffectPicker(kinds: List<FxKind>, actions: AddEffectActions) {
         SheetLabel(stringResource(R.string.mixer_add_scripts), Modifier.padding(start = 4.dp, top = 8.dp))
         SheetOptionRow(
             title = stringResource(R.string.mixer_new_script),
-            subtitle = stringResource(R.string.mixer_new_script_sub),
+            subtitle = null,
             onClick = actions.onNewScript,
             leading = { Dot(LabColors.node(7)) },
         )
         SheetOptionRow(
             title = stringResource(R.string.mixer_open_script),
-            subtitle = stringResource(R.string.mixer_open_script_sub),
+            subtitle = null,
             onClick = actions.onOpenScript,
             leading = { Dot(LabColors.node(7)) },
         )
@@ -95,8 +95,7 @@ private fun AddEffectPicker(kinds: List<FxKind>, actions: AddEffectActions) {
 private fun KindRow(kind: FxKind, color: Color, onPick: (FxKind) -> Unit) {
     SheetOptionRow(
         title = fxText(kind.name),
-        subtitle = kind.description.takeIf { it.isNotBlank() }?.let { fxText(it) },
-        subtitleLines = 2,
+        subtitle = null,
         onClick = { onPick(kind) },
         leading = { Dot(color) },
     )

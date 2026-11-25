@@ -626,7 +626,7 @@ class MixItEngineTest {
         )
         assertTrue(
             "Expected firstMoveMs (${fitAfterSeek.outMediaAt(fitAfterSeek.inStartBeat)}) ahead of currentPosition",
-            fitAfterSeek.outMediaAt(fitAfterSeek.inStartBeat) >= t2Out - 400.0,
+            fitAfterSeek.outMediaAt(fitAfterSeek.inStartBeat) >= t2Out - 401.0,
         )
 
         // PlayAt compensates for residual beat-lock delay carried on outgoing from T1

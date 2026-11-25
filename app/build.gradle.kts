@@ -29,7 +29,7 @@ extensions.configure<ApplicationExtension> {
         minSdk = 24
         targetSdk = 37
         versionCode = 73
-        versionName = "-8.5.0 build#1306"
+        versionName = "8.5.0.0 build#1308"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -351,10 +351,10 @@ extensions.configure<ApplicationExtension> {
             )
         }
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            excludes += "META-INF/NOTICE.md"
+            merges += "/META-INF/{AL2.0,LGPL2.1}"
+            merges += "META-INF/NOTICE.md"
+            merges += "META-INF/LICENSE.md"
             excludes += "META-INF/CONTRIBUTORS.md"
-            excludes += "META-INF/LICENSE.md"
             excludes += "META-INF/INDEX.LIST"
             excludes += "META-INF/io.netty.versions.properties"
             excludes += "META-INF/*.version"

@@ -12,6 +12,11 @@
     <string name="about_and_more">And more \u2192</string>
     <string name="about_license">License</string>
     <string name="about_more_license">More about license</string>
+    <string name="about_license_offline_title">GNU General Public License v3.0</string>
+    <string name="about_license_offline_subtitle">Read the full GPL-3.0 license offline</string>
+    <string name="about_license_loading">Loading license text…</string>
+    <string name="about_license_open_online">View on GitHub \u2192</string>
+    <string name="about_license_failed">Couldn\'t read the bundled license file.</string>
     <string name="about_cool_contributors">Cool contributors</string>
     <string name="about_credits">Credits</string>
 

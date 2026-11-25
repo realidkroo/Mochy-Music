@@ -38,6 +38,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -61,6 +62,7 @@ import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
 import com.mochyy.mochymusic.ui.screens.audiolab.LabSegmented
 import com.mochyy.mochymusic.ui.screens.audiolab.LabSelect
 import com.mochyy.mochymusic.ui.screens.audiolab.LabTextAction
+import com.mochyy.mochymusic.ui.screens.audiolab.animatedDim
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -104,39 +106,32 @@ fun SlotCard(
             return@LabCard
         }
         problem.value?.let { code -> ProblemNote(code, onResume = { store.resume(uid); problem.value = null }) }
-        if (kind.description.isNotBlank()) {
-            Text(
-                text = fxText(kind.description),
-                fontFamily = InterFontFamily,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                color = LabColors.Secondary,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-            )
-        }
         val values = { kind.fit(slot?.values.orEmpty()) }
-        if (kind.showsTail) {
-            Spacer(Modifier.height(10.dp))
-            DecayGraph(kind, current.script ?: kind.engineSource, values, onKnob = { i, v -> store.setValue(uid, i, v) }, accent)
-        }
-        if (kind.meters.isNotEmpty()) {
-            Spacer(Modifier.height(10.dp))
-            SlotMeters(uid, kind, accent)
-        }
-        if (kind.presets.isNotEmpty()) {
-            Spacer(Modifier.height(10.dp))
-            val picked by remember(kind) { derivedStateOf { kind.presets.indexOfFirst { p -> kind.fit(p.values) == values() } } }
-            LabChips(
-                chips = kind.presets.mapIndexed { i, p -> LabChip(i.toString(), fxText(p.name)) },
-                selectedKey = picked.takeIf { it >= 0 }?.toString(),
-                onSelect = { key -> kind.presets.getOrNull(key.toInt())?.let { store.setValues(uid, it.values) } },
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        SlotKnobs(kind, values, accent) { i, v -> store.setValue(uid, i, v) }
-        if (current.isScript) {
-            Spacer(Modifier.height(10.dp))
-            ScriptFooter(uid, onEditScript)
+        val bodyAlpha = animatedDim(current.bypass)
+        Column(Modifier.fillMaxWidth().graphicsLayer { alpha = bodyAlpha }) {
+            if (kind.showsTail) {
+                Spacer(Modifier.height(10.dp))
+                DecayGraph(kind, current.script ?: kind.engineSource, values, onKnob = { i, v -> store.setValue(uid, i, v) }, accent)
+            }
+            if (kind.meters.isNotEmpty()) {
+                Spacer(Modifier.height(10.dp))
+                SlotMeters(uid, kind, accent)
+            }
+            if (kind.presets.isNotEmpty()) {
+                Spacer(Modifier.height(10.dp))
+                val picked by remember(kind) { derivedStateOf { kind.presets.indexOfFirst { p -> kind.fit(p.values) == values() } } }
+                LabChips(
+                    chips = kind.presets.mapIndexed { i, p -> LabChip(i.toString(), fxText(p.name)) },
+                    selectedKey = picked.takeIf { it >= 0 }?.toString(),
+                    onSelect = { key -> kind.presets.getOrNull(key.toInt())?.let { store.setValues(uid, it.values) } },
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            SlotKnobs(kind, values, accent) { i, v -> store.setValue(uid, i, v) }
+            if (current.isScript) {
+                Spacer(Modifier.height(10.dp))
+                ScriptFooter(uid, onEditScript)
+            }
         }
     }
 }

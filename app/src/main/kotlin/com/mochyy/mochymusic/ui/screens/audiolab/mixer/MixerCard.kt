@@ -64,7 +64,7 @@ internal fun MixerCard(onOpen: () -> Unit, viewModel: MixerViewModel = hiltViewM
         header = {
             LabToggleRow(
                 title = stringResource(R.string.mixer_card_title),
-                subtitle = stringResource(R.string.mixer_card_sub),
+                subtitle = null,
                 checked = state.enabled,
                 onCheckedChange = viewModel.store::setEnabled,
             )
