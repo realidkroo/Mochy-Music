@@ -1,9 +1,14 @@
-// the wiki: one page per #name, the sidebar and search built from the articles, copy buttons, colours for json, and the little demos
+// the wiki: one page per #name, the sidebar and search built from the articles, in-page jump pills, copy buttons, colours for json, and the little demos
 (function () {
   var pages = Array.prototype.slice.call(document.querySelectorAll(".page"));
   var toc = document.getElementById("toc");
   var next = document.getElementById("next");
   var links = {};
+
+  // keep old bookmarks working when a big page splits into focused pages
+  var aliases = {
+    "modules-floating-and-sheets": "modules-floating",
+  };
 
   // the sidebar, grouped the way the articles say
   var group = null;
@@ -24,14 +29,65 @@
     links[page.id] = a;
   });
 
+  // build an "on this page" strip for pages with 3+ sections so long guides are easy to skim
+  function slug(text) {
+    return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "section";
+  }
+  pages.forEach(function (page) {
+    var heads = Array.prototype.slice.call(page.querySelectorAll(":scope > h2"));
+    if (heads.length < 3) return;
+    var nav = document.createElement("nav");
+    nav.className = "onpage";
+    nav.setAttribute("aria-label", "On this page");
+    var label = document.createElement("small");
+    label.textContent = "on this page";
+    nav.appendChild(label);
+    var seen = {};
+    heads.forEach(function (h) {
+      var base = slug(h.textContent);
+      seen[base] = (seen[base] || 0) + 1;
+      var secId = page.id + "--" + base + (seen[base] > 1 ? "-" + seen[base] : "");
+      if (!h.id) h.id = secId;
+      var a = document.createElement("a");
+      a.href = "#" + h.id;
+      a.className = "press";
+      a.textContent = h.textContent;
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        h.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" });
+      });
+      nav.appendChild(a);
+    });
+    var sub = page.querySelector(":scope > .sub") || page.querySelector(":scope > h1");
+    if (sub && sub.nextSibling) page.insertBefore(nav, sub.nextSibling);
+    else page.appendChild(nav);
+  });
+
   var current = null;
   var leaving = 0;
 
+  function resolveTarget(raw) {
+    var clean = (raw || "").trim();
+    if (!clean) return { page: pages[0], section: null };
+    if (aliases[clean]) clean = aliases[clean];
+    var el = document.getElementById(clean);
+    if (el && el.classList.contains("page")) return { page: el, section: null };
+    if (el) {
+      var owner = el.closest(".page");
+      if (owner) return { page: owner, section: el };
+    }
+    return { page: pages[0], section: null };
+  }
+
   // the old page fades up and out first, then the new one rises in at the top
   function show(id) {
-    var page = document.getElementById(id) || pages[0];
-    if (!page.classList.contains("page")) page = pages[0];
+    var resolved = resolveTarget(id);
+    var page = resolved.page;
+    var section = resolved.section;
     Object.keys(links).forEach(function (k) { links[k].classList.toggle("on", k === page.id); });
+    if (links[page.id] && links[page.id].scrollIntoView) {
+      try { links[page.id].scrollIntoView({ block: "nearest" }); } catch (e) {}
+    }
     document.title = page.dataset.title.replace(/&amp;/g, "&").replace(/^\d+\. /, "") + " · Mochy Wiki";
     document.getElementById("side").classList.remove("open");
     document.getElementById("tocToggle").setAttribute("aria-expanded", "false");
@@ -39,14 +95,14 @@
     var old = current;
     current = page;
     if (!old || old === page || still) {
-      swap(old, page);
+      swap(old, page, section);
       return;
     }
     old.classList.add("leaving");
-    leaving = setTimeout(function () { swap(old, page); }, 160);
+    leaving = setTimeout(function () { swap(old, page, section); }, 160);
   }
 
-  function swap(old, page) {
+  function swap(old, page, section) {
     pages.forEach(function (p) { p.classList.remove("leaving"); });
     if (old && old !== page) old.classList.remove("on");
     page.classList.add("on");
@@ -59,9 +115,13 @@
     next.classList.remove("in");
     void next.offsetWidth;
     next.classList.add("in");
-    // straight to the top, not the smooth scroll the rest of the site uses, and again after the browser's own jump to the #name
-    toTop();
-    requestAnimationFrame(toTop);
+    if (section) {
+      requestAnimationFrame(function () { section.scrollIntoView({ behavior: "auto", block: "start" }); });
+    } else {
+      // straight to the top, not the smooth scroll the rest of the site uses, and again after the browser's own jump to the #name
+      toTop();
+      requestAnimationFrame(toTop);
+    }
   }
 
   function toTop() { window.scrollTo({ top: 0, behavior: "instant" }); }
@@ -76,7 +136,7 @@
 
   var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   // opening a link to a page, the browser jumps to its article once everything has loaded; the page should open at its title instead
-  window.addEventListener("load", function () { if (window.scrollY < 400) toTop(); });
+  window.addEventListener("load", function () { if (!location.hash.includes("--") && window.scrollY < 400) toTop(); });
   window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
   show(location.hash.slice(1));
 
@@ -129,30 +189,49 @@
     code.parentNode.appendChild(button);
   });
 
-  // search: titles first, then the words inside; / jumps to it, arrows and enter pick
+  // search: titles first, then headings, then the words inside; / jumps to it, arrows and enter pick
   var q = document.getElementById("q");
   var results = document.getElementById("results");
-  var index = pages.map(function (p) { return { id: p.id, title: p.dataset.title.replace(/&amp;/g, "&"), text: p.textContent.replace(/\s+/g, " ").toLowerCase() }; });
+  var index = pages.map(function (p) {
+    var headings = Array.prototype.slice.call(p.querySelectorAll("h2, h3")).map(function (h) { return h.textContent.toLowerCase(); }).join(" · ");
+    return {
+      id: p.id,
+      group: p.dataset.group || "",
+      title: p.dataset.title.replace(/&amp;/g, "&"),
+      headings: headings,
+      text: p.textContent.replace(/\s+/g, " ").toLowerCase(),
+    };
+  });
   var picked = 0;
   function search() {
     var term = q.value.trim().toLowerCase();
     if (!term) { results.classList.remove("open"); return; }
     var hits = index.map(function (e) {
       var inTitle = e.title.toLowerCase().indexOf(term) >= 0;
+      var inHead = !inTitle && e.headings.indexOf(term) >= 0;
       var at = e.text.indexOf(term);
-      if (!inTitle && at < 0) return null;
-      var snippet = at >= 0 ? "…" + e.text.slice(Math.max(0, at - 30), at + 60) + "…" : "";
-      return { e: e, score: inTitle ? 0 : 1, snippet: snippet };
-    }).filter(Boolean).sort(function (a, b) { return a.score - b.score; }).slice(0, 8);
+      if (!inTitle && !inHead && at < 0) return null;
+      var snippet = at >= 0 ? "…" + e.text.slice(Math.max(0, at - 30), at + 64) + "…" : "";
+      var score = inTitle ? 0 : (inHead ? 1 : 2);
+      return { e: e, score: score, snippet: snippet };
+    }).filter(Boolean).sort(function (a, b) { return a.score - b.score; }).slice(0, 10);
     picked = 0;
     results.innerHTML = hits.length ? "" : '<a><span>nothing found for that, try another word</span></a>';
     hits.forEach(function (h, i) {
       var a = document.createElement("a");
       a.href = "#" + h.e.id;
       if (i === 0) a.className = "sel";
-      a.innerHTML = "<b></b><span></span>";
-      a.firstChild.textContent = h.e.title;
-      a.lastChild.textContent = h.snippet;
+      var b = document.createElement("b");
+      b.textContent = h.e.title;
+      if (h.e.group) {
+        var em = document.createElement("em");
+        em.textContent = h.e.group;
+        b.appendChild(em);
+      }
+      var s = document.createElement("span");
+      s.textContent = h.snippet;
+      a.appendChild(b);
+      a.appendChild(s);
       a.addEventListener("click", function () { results.classList.remove("open"); q.value = ""; });
       results.appendChild(a);
     });
@@ -187,8 +266,27 @@
       if (!b) return;
       row.querySelectorAll(".opt").forEach(function (o) { o.classList.toggle("on", o === b); });
       if (b.dataset.bar) document.getElementById("glassBar").className = "bar " + b.dataset.bar;
+      if (b.dataset.menuLayout) {
+        var mock = document.getElementById("menuDemoMock");
+        if (mock) mock.dataset.layout = b.dataset.menuLayout;
+      }
+      if (b.dataset.floatFill || b.dataset.floatCover) {
+        var pill = document.getElementById("floatPill");
+        if (pill) {
+          if (b.dataset.floatFill) {
+            pill.classList.toggle("solid", b.dataset.floatFill === "solid");
+            pill.classList.toggle("sharp", b.dataset.floatFill === "sharp");
+          }
+          if (b.dataset.floatCover) {
+            pill.classList.remove("cov-rounded", "cov-square");
+            if (b.dataset.floatCover === "rounded") pill.classList.add("cov-rounded");
+            if (b.dataset.floatCover === "square") pill.classList.add("cov-square");
+          }
+        }
+      }
     });
   });
+
   // the states demo: a picked state is set on the demo and the css blends to it; "song" plays the pop again like an event
   document.querySelectorAll(".demo-row[data-target]").forEach(function (row) {
     row.addEventListener("click", function (e) {
@@ -203,8 +301,16 @@
       disc.classList.add("pop");
     });
   });
+
   document.querySelectorAll(".switch").forEach(function (s) {
-    s.addEventListener("click", function () { s.classList.toggle("on"); saver(); });
+    s.addEventListener("click", function () {
+      s.classList.toggle("on");
+      if (s.dataset.floatTail !== undefined) {
+        var pill = document.getElementById("floatPill");
+        if (pill) pill.classList.toggle("tail", s.classList.contains("on"));
+      }
+      saver();
+    });
   });
 
   // what data saver does with the two switches as they're set

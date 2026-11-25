@@ -89,7 +89,9 @@ enum class SkinFlag(val key: String) {
     /** repeat is set to loop this one song */
     RepeatOne("@repeatOne"),
     /** the stream playing now is lossless */
-    Lossless("@lossless");
+    Lossless("@lossless"),
+    /** the song has a few words about it to show, from {about} */
+    About("@about");
 
     companion object {
         fun of(key: String): SkinFlag? {

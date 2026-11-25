@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the mixer pages: buses, effects, the decay picture, loudness and liveprog -->
+<resources>
+    <!-- the mixer card on audio fx -->
+    <string name="mixer_card_title">Mixer</string>
+    <string name="mixer_card_sub">Buses, effects, routing and loudness meters, with Liveprog scripts and effects from modules</string>
+    <string name="mixer_open">Open mixer</string>
+    <plurals name="mixer_effect_count">
+        <item quantity="one">%d effect</item>
+        <item quantity="other">%d effects</item>
+    </plurals>
+
+    <!-- the mixer page -->
+    <string name="mixer_title_first">Bus</string>
+    <string name="mixer_title_second">Mixer</string>
+    <string name="mixer_switch">Mixer</string>
+    <string name="mixer_switch_sub">Everything below plays only while this is on</string>
+    <string name="mixer_mixes">Mixes</string>
+    <string name="mixer_save_mix">Save mix</string>
+    <string name="mixer_save_mix_hint">Name this mix</string>
+    <string name="mixer_reset_mix">Start over</string>
+    <string name="mixer_delete_mix">Delete</string>
+    <string name="mixer_rename_mix">Rename</string>
+    <string name="mixer_buses">Buses</string>
+    <string name="mixer_add_bus">Add bus</string>
+    <string name="mixer_bus_name">Bus %1$d</string>
+    <string name="mixer_master">Master</string>
+    <string name="mixer_mute">M</string>
+    <string name="mixer_solo">S</string>
+    <string name="mixer_mute_label">Mute</string>
+    <string name="mixer_solo_label">Solo</string>
+    <string name="mixer_takes_song">Song</string>
+    <string name="mixer_fader_label">%1$s level</string>
+    <string name="mixer_pan_label">%1$s pan</string>
+    <string name="mixer_clip">Clipped</string>
+    <string name="mixer_db">%1$s dB</string>
+    <string name="mixer_off_note">The mixer is off, so none of this is heard. Turn it on above.</string>
+
+    <!-- loudness -->
+    <string name="mixer_loudness">Loudness</string>
+    <string name="mixer_lufs_momentary">Momentary</string>
+    <string name="mixer_lufs_short">Short-term</string>
+    <string name="mixer_lufs_integrated">Integrated</string>
+    <string name="mixer_lufs_range">Range</string>
+    <string name="mixer_true_peak">True peak</string>
+    <string name="mixer_loudness_reset">Measure again</string>
+    <string name="mixer_loudness_note">Measured on the master the way streaming services do (EBU R128). Integrated is the whole song so far; most services aim for about −14 LUFS.</string>
+
+    <!-- routing -->
+    <string name="mixer_routing">Routing</string>
+    <string name="mixer_routing_note">Each bus can send to the master and to other buses. A route that would loop back is left out.</string>
+    <string name="mixer_send_to">To %1$s</string>
+
+    <!-- a bus's own page -->
+    <string name="mixer_bus_title">FX chain</string>
+    <string name="mixer_bus_input">Takes the song</string>
+    <string name="mixer_bus_input_sub">Off, it only hears what other buses send it</string>
+    <string name="mixer_bus_focus">Works on</string>
+    <string name="mixer_focus_all">The whole song</string>
+    <string name="mixer_focus_mid">Mid (what both sides share)</string>
+    <string name="mixer_focus_side">Side (what makes it wide)</string>
+    <string name="mixer_focus_left">Left side</string>
+    <string name="mixer_focus_right">Right side</string>
+    <string name="mixer_focus_centre">Centre channel</string>
+    <string name="mixer_focus_lfe">Subwoofer channel</string>
+    <string name="mixer_focus_rear">Rear surrounds</string>
+    <string name="mixer_focus_surround">Side surrounds</string>
+    <string name="mixer_focus_top_front">Top front</string>
+    <string name="mixer_focus_top_rear">Top rear</string>
+    <string name="mixer_focus_surround_note">The surround choices only hear surround songs; on a stereo song they stay silent.</string>
+    <string name="mixer_bus_name_hint">Bus name</string>
+    <string name="mixer_bus_colour">Colour</string>
+    <string name="mixer_remove_bus">Remove bus</string>
+    <string name="mixer_effects">Effects</string>
+    <string name="mixer_no_effects">No effects yet. Add one and it plays on this bus right away.</string>
+    <string name="mixer_add_effect">Add effect</string>
+    <string name="mixer_effects_full">This bus has as many effects as it can hold</string>
+
+    <!-- one effect -->
+    <string name="mixer_move_up">Move up</string>
+    <string name="mixer_move_down">Move down</string>
+    <string name="mixer_remove_effect">Remove</string>
+    <string name="mixer_slot_missing">Missing effect</string>
+    <string name="mixer_slot_missing_body">This effect came from a module that\'s off or removed. Turn the module back on to hear it.</string>
+    <string name="mixer_decay_whole">Decay</string>
+    <string name="mixer_decay_bass">Bass</string>
+    <string name="mixer_decay_treble">Treble</string>
+    <string name="mixer_decay_long">long</string>
+    <string name="mixer_problem_compile">This script doesn\'t build: %1$s</string>
+    <string name="mixer_problem_slow">This script couldn\'t keep up with the music, so it\'s paused. Try a lighter setting, then resume it.</string>
+    <string name="mixer_problem_numbers">This script made numbers that can\'t be played, so those moments were silenced.</string>
+    <string name="mixer_problem_no_sample">This script has no @sample section, so it has nothing to play.</string>
+    <string name="mixer_problem_memory">There wasn\'t enough memory to start this script.</string>
+    <string name="mixer_problem_other">This effect couldn\'t start.</string>
+    <string name="mixer_problem_resume">Resume</string>
+    <string name="mixer_edit_script">Edit script</string>
+    <string name="mixer_console_show">Show console</string>
+    <string name="mixer_console_hide">Hide console</string>
+    <string name="mixer_console_empty">Nothing printed yet. Use printf in the script to see values here.</string>
+
+    <!-- the add effect sheet -->
+    <string name="mixer_add_title">Add effect</string>
+    <string name="mixer_add_scripts">Liveprog scripts</string>
+    <string name="mixer_new_script">New script</string>
+    <string name="mixer_new_script_sub">Start from a small example and write your own</string>
+    <string name="mixer_open_script">Open a script file</string>
+    <string name="mixer_open_script_sub">A JamesDSP Liveprog (.eel) or JSFX-style script</string>
+    <string name="mixer_from_module">From %1$s</string>
+    <string name="mixer_script_unreadable">Couldn\'t open that file. Pick a plain text .eel script.</string>
+
+    <!-- the liveprog editor -->
+    <string name="liveprog_title_first">Live</string>
+    <string name="liveprog_title_second">prog</string>
+    <string name="liveprog_name_hint">Script name</string>
+    <string name="liveprog_check">Check</string>
+    <string name="liveprog_apply">Apply</string>
+    <string name="liveprog_builds">Builds fine</string>
+    <string name="liveprog_save_file">Save as file</string>
+    <string name="liveprog_saved">Saved</string>
+    <string name="liveprog_no_knobs">No knobs declared</string>
+    <plurals name="liveprog_knobs_found">
+        <item quantity="one">%d knob</item>
+        <item quantity="other">%d knobs</item>
+    </plurals>
+    <string name="liveprog_help">Write a JamesDSP Liveprog script: @init runs once, @sample once per sample with spl0 and spl1, @slider when a knob moves and @block once per buffer. Declare knobs above the first section, like dB:-6&lt;-24,12,0.5&gt;Gain.</string>
+    <string name="liveprog_credit">Liveprog runs JamesDSP\'s EEL2 engine by James Fung, as packaged in JDSP4Linux by Tim Schneeberger (ThePBone). Scripts can\'t open files or folders here.</string>
+    <string name="liveprog_unsaved">Unsaved changes</string>
+</resources>

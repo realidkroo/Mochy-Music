@@ -10,6 +10,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.core.content.edit
 import com.mochyy.mochymusic.constants.EnableMonochromeBackendKey
+import com.mochyy.mochymusic.eq.mixer.ModuleProcessors
 import com.mochyy.mochymusic.lyrics.LyricsProviderRegistry
 import com.mochyy.mochymusic.lyrics.ModuleLyricsProvider
 import com.mochyy.mochymusic.module.AccountState
@@ -55,6 +56,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dalvik.system.PathClassLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -133,6 +135,8 @@ data class ModuleEntry(
 @Singleton
 class ModuleRegistry @Inject constructor(
     @ApplicationContext private val context: Context,
+    /** where the mixer finds the effects modules bring */
+    private val processors: ModuleProcessors,
 ) {
     // the same file the switches always lived in, so nobody's choices are lost
     private val prefs = context.getSharedPreferences("source_modules", Context.MODE_PRIVATE)
@@ -282,6 +286,8 @@ class ModuleRegistry @Inject constructor(
                 menuStyle = looks.firstOrNull { it.skin?.menuStyle != null }?.let { entry -> entry.skin?.let { LookValues(it, entry.values) } },
                 // a page can take one of mochy's over from any module that's on, not only a look
                 pages = list.filter { it.active }.mapNotNull { entry -> entry.skin?.takeIf { it.takeovers.isNotEmpty() }?.let { LookValues(it, entry.values) } },
+                // any module that's on can bring sheets, not only a look
+                sheets = list.filter { it.active }.mapNotNull { entry -> entry.skin?.takeIf { it.sheets.isNotEmpty() }?.let { LookValues(it, entry.values) } },
             ),
             scope,
         )
@@ -291,6 +297,21 @@ class ModuleRegistry @Inject constructor(
         )
         ModuleMetadata.sources = list.filter { it.active && it.adds(ModuleFeature.Metadata) }.mapNotNull { it.module as? MetadataModule }
         ModuleMenu.publish(list.filter { it.active }.mapNotNull { (it.module as? SkinSource)?.skin })
+        publishAudio(list)
+    }
+
+    private var audioJob: Job? = null
+
+    // the mixer offers what every module that's on brings; reading scripts and opening libraries stays off the main thread, the latest list wins
+    private fun publishAudio(list: List<ModuleEntry>) {
+        audioJob?.cancel()
+        audioJob = scope.launch {
+            processors.keepOnly(list.map { it.id }.toSet())
+            for (entry in list) {
+                val audio = (entry.module as? AudioModule)?.audio
+                processors.publish(entry.id, if (entry.active && audio != null) audio.kinds else emptyList())
+            }
+        }
     }
 
     private val ModuleEntry.skin: ModuleSkin? get() = (module as? SkinSource)?.skin
@@ -408,7 +429,7 @@ class ModuleRegistry @Inject constructor(
         }
         // songs and lyrics have to come from somewhere, a file on its own can only hold a look
         if (manifest.resourceNames.any { it in ServiceResources }) return@withContext LinkCheck.NeedsUrl
-        if (!manifest.changesLook) return@withContext LinkCheck.NotAModule
+        if (!manifest.changesLook && !manifest.bringsAudio) return@withContext LinkCheck.NotAModule
         val local = LocalModule(manifest, files = null)
         LinkCheck.Ready(null, text, local.info.name, local.adds, module(local.info.id) != null, fileNameOf(uri), uri, root)
     }
@@ -423,6 +444,7 @@ class ModuleRegistry @Inject constructor(
             if (manifest.hasLyrics) add(ModuleFeature.Lyrics)
             if (manifest.hasMetadata) add(ModuleFeature.Metadata)
             if (manifest.changesLook) add(ModuleFeature.Look)
+            if (manifest.bringsAudio) add(ModuleFeature.AudioProcessor)
         }
         val name = manifest.name.ifBlank { manifest.id }
         return LinkCheck.Ready(null, text, name, adds, module(manifest.id) != null, fileNameOf(uri), uri, root, code = apk)
@@ -510,7 +532,7 @@ class ModuleRegistry @Inject constructor(
         val id = installed.module.info.id
         // unpack pictures, fonts, shaders and surface data files sitting beside module.apk in the zip
         val files = ready.zip?.let { SkinFiles.unpack(context, it, id, ready.zipRoot) }
-        val fresh = CodeSkinModule.wrap(installed.module, manifest, files)
+        val fresh = CodeSkinModule.wrap(installed.module, manifest, files, CodeModules.nativeDir(context, installed.folder))
         synchronized(this) {
             val saved = savedCodeModules().filter { it.optString("id") != id }
             val entry = JSONObject()
@@ -617,7 +639,7 @@ class ModuleRegistry @Inject constructor(
         val code = savedCode.mapNotNull { saved ->
             CodeModules.load(context, saved.optString("folder"))?.let { loadedCode ->
                 val manifest = saved.optString("manifest").takeIf { it.isNotBlank() }?.let(WebModuleManifest::parse)
-                val wrapped = CodeSkinModule.wrap(loadedCode.module, manifest, filesFor(loadedCode.module.info.id))
+                val wrapped = CodeSkinModule.wrap(loadedCode.module, manifest, filesFor(loadedCode.module.info.id), CodeModules.nativeDir(context, loadedCode.folder))
                 wrapped to ModuleOrigin.Code(saved.optString("file"))
             }
         }

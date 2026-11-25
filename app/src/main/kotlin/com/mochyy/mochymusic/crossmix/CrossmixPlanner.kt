@@ -63,6 +63,12 @@ data class CrossmixPlan(
 
     /** after this beat the incoming song is untouched */
     val inSettledBeat: Float get() = effectiveLengthBeats + 8f
+
+    /** shrinks the silent pre-roll to fit tighter room before outStartMs without moving beat 0 or swap */
+    fun withMaxPreRollBeats(maxPreRollBeats: Float): CrossmixPlan {
+        val clamped = max(inStartBeat, -maxPreRollBeats.coerceAtLeast(0f))
+        return if (clamped == inStartBeat) this else copy(inStartBeat = clamped)
+    }
 }
 
 /** what the planner sees of each song; durationMs 0 when it isn't known yet */

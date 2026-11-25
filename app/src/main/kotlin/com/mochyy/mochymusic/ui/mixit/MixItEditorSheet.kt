@@ -161,10 +161,11 @@ private fun MixItEditorContent(
         (inSong.song.duration.takeIf { it > 0 }?.toLong()?.times(1_000L)) ?: 180_000L
     }
 
-    var outAnalysis by remember(outSong.id) { mutableStateOf(playerConnection?.cachedTrackAnalysis(outSong.id)) }
-    var inAnalysis by remember(inSong.id) { mutableStateOf(playerConnection?.cachedTrackAnalysis(inSong.id)) }
-    var analyzingOut by remember(outSong.id) { mutableStateOf(outAnalysis?.complete != true || outAnalysis?.waveform?.isNotEmpty() != true) }
-    var analyzingIn by remember(inSong.id) { mutableStateOf(inAnalysis?.complete != true || inAnalysis?.waveform?.isNotEmpty() != true) }
+    // start from null and load disk/memory analysis inside LaunchedEffect so opening the sheet never blocks the main thread on disk io
+    var outAnalysis by remember(outSong.id) { mutableStateOf<TrackAnalysis?>(null) }
+    var inAnalysis by remember(inSong.id) { mutableStateOf<TrackAnalysis?>(null) }
+    var analyzingOut by remember(outSong.id) { mutableStateOf(true) }
+    var analyzingIn by remember(inSong.id) { mutableStateOf(true) }
 
     var outLyricsRaw by remember(outSong.id) { mutableStateOf<String?>(null) }
     var inLyricsRaw by remember(inSong.id) { mutableStateOf<String?>(null) }
@@ -206,37 +207,52 @@ private fun MixItEditorContent(
         }
     }
 
-    // Analyze full tracks (for waveforms + beat grids) and fetch synced lyrics in parallel
+    // run track analysis and lyrics independently so waveforms draw as soon as decoding finishes instead of waiting on slow lyrics
     LaunchedEffect(outSong.id, inSong.id) {
-        val conn = playerConnection ?: return@LaunchedEffect
-        val outLyricsJob = async { conn.fetchLyricsForMixIt(outItem) }
-        val inLyricsJob = async { conn.fetchLyricsForMixIt(inItem) }
+        val conn = playerConnection ?: run {
+            analyzingOut = false
+            analyzingIn = false
+            return@LaunchedEffect
+        }
+        val outLyricsJob = async {
+            val raw = conn.fetchLyricsForMixIt(outItem)
+            val lines = withContext(Dispatchers.Default) { parseSyncedLines(raw) }
+            outLyricsRaw = raw
+            outSyncedLines = lines
+            raw
+        }
+        val inLyricsJob = async {
+            val raw = conn.fetchLyricsForMixIt(inItem)
+            val lines = withContext(Dispatchers.Default) { parseSyncedLines(raw) }
+            inLyricsRaw = raw
+            inSyncedLines = lines
+            raw
+        }
         val outAnalyzeJob = async {
-            if (outAnalysis?.complete == true && outAnalysis?.waveform?.isNotEmpty() == true) outAnalysis
-            else conn.analyzeTrackForMixIt(outItem)
+            val cached = withContext(Dispatchers.IO) { conn.cachedTrackAnalysis(outSong.id) }
+            if (cached != null) outAnalysis = cached
+            val result = if (cached?.complete == true && cached.waveform.isNotEmpty()) cached
+            else conn.analyzeTrackForMixIt(outItem) ?: cached
+            if (result != null) outAnalysis = result
+            analyzingOut = false
+            result
         }
         val inAnalyzeJob = async {
-            if (inAnalysis?.complete == true && inAnalysis?.waveform?.isNotEmpty() == true) inAnalysis
-            else conn.analyzeTrackForMixIt(inItem)
+            val cached = withContext(Dispatchers.IO) { conn.cachedTrackAnalysis(inSong.id) }
+            if (cached != null) inAnalysis = cached
+            val result = if (cached?.complete == true && cached.waveform.isNotEmpty()) cached
+            else conn.analyzeTrackForMixIt(inItem) ?: cached
+            if (result != null) inAnalysis = result
+            analyzingIn = false
+            result
         }
 
-        val outL = outLyricsJob.await()
-        outLyricsRaw = outL
-        outSyncedLines = withContext(Dispatchers.Default) { parseSyncedLines(outL) }
-
-        val inL = inLyricsJob.await()
-        inLyricsRaw = inL
-        inSyncedLines = withContext(Dispatchers.Default) { parseSyncedLines(inL) }
-
         val oa = outAnalyzeJob.await()
-        if (oa != null) outAnalysis = oa
-        analyzingOut = false
-
         val ia = inAnalyzeJob.await()
-        if (ia != null) inAnalysis = ia
-        analyzingIn = false
+        val outL = outLyricsJob.await()
+        val inL = inLyricsJob.await()
 
-        // If user hasn't dragged anything yet on an unconfigured pair, upgrade draft with smart musical cue points!
+        // upgrade an untouched default pair with musical cue points once analysis and lyrics have landed
         if (!userTouched && existing == null && (oa != null || ia != null)) {
             draft = MixItPlanner.defaultDraft(
                 playlistId = playlistId,
@@ -860,9 +876,11 @@ private fun SyncedLyricsSnippet(
     atMsProvider: () -> Long,
     alignEnd: Boolean,
 ) {
-    val startIdx by remember(lines, atMsProvider) {
+    if (lines.isEmpty()) return
+    val currentAtMs by androidx.compose.runtime.rememberUpdatedState(atMsProvider)
+    val startIdx by remember(lines) {
         androidx.compose.runtime.derivedStateOf {
-            val atMs = atMsProvider()
+            val atMs = currentAtMs()
             // Prefer the first line beginning at/inside the start box (within 400ms tolerance),
             // falling back to the active line being sung right at the start edge.
             val upcoming = lines.indexOfFirst { it.time >= atMs - 400L }

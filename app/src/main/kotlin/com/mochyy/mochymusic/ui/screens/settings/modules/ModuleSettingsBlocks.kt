@@ -104,6 +104,7 @@ internal fun SettingsBlockSurface(
                 tint = resolved.singleOrNull() ?: Color.Black.copy(alpha = 0.28f),
                 tileMode = android.graphics.Shader.TileMode.CLAMP,
                 bleed = true,
+                fallbackBlur = true,
                 modifier = Modifier.matchParentSize(),
             )
             Box(Modifier.matchParentSize().border(0.75.dp, Color.White.copy(alpha = 0.14f), shape))

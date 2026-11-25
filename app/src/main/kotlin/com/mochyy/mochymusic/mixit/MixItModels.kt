@@ -367,13 +367,16 @@ data class MixItSpec(
     val tailBeats: Int get() = outEffect.tailBeats
 
     companion object {
+        private fun Float.finiteIn(min: Float, max: Float, fallback: Float): Float =
+            if (isFinite()) coerceIn(min, max) else fallback
+
         fun from(t: PlaylistTransition): MixItSpec {
             val outFx = MixItEffect.fromName(t.outEffect)
             val inFx = MixItEffect.fromName(t.inEffect)
-            val oStart = t.outFadeStart.coerceIn(0f, 0.95f)
-            val oEnd = t.outFadeEnd.coerceIn(oStart + 0.03f, 1f)
-            val iStart = t.inFadeStart.coerceIn(0f, 0.95f)
-            val iEnd = t.inFadeEnd.coerceIn(iStart + 0.03f, 1f)
+            val oStart = t.outFadeStart.finiteIn(0f, 0.95f, 0.2f)
+            val oEnd = t.outFadeEnd.finiteIn(oStart + 0.03f, 1f, 0.95f)
+            val iStart = t.inFadeStart.finiteIn(0f, 0.95f, 0.05f)
+            val iEnd = t.inFadeEnd.finiteIn(iStart + 0.03f, 1f, 0.8f)
             return MixItSpec(
                 outEffect = outFx,
                 inEffect = inFx,
@@ -382,24 +385,24 @@ data class MixItSpec(
                 inFadeStart = iStart,
                 inFadeEnd = iEnd,
                 bassSwap = t.bassSwap,
-                swapFrac = t.swapFrac.coerceIn(0.1f, 0.95f),
+                swapFrac = t.swapFrac.finiteIn(0.1f, 0.95f, 0.5f),
                 label = t.presetName?.takeIf { it.isNotBlank() } ?: outFx.label,
-                outVoiceLevel = t.outVoiceLevel.coerceIn(0f, 1f),
-                outBassLevel = t.outBassLevel.coerceIn(0f, 1f),
-                outInstrumentLevel = t.outInstrumentLevel.coerceIn(0f, 1f),
-                inVoiceLevel = t.inVoiceLevel.coerceIn(0f, 1f),
-                inBassLevel = t.inBassLevel.coerceIn(0f, 1f),
-                inInstrumentLevel = t.inInstrumentLevel.coerceIn(0f, 1f),
+                outVoiceLevel = t.outVoiceLevel.finiteIn(0f, 1f, 1f),
+                outBassLevel = t.outBassLevel.finiteIn(0f, 1f, 1f),
+                outInstrumentLevel = t.outInstrumentLevel.finiteIn(0f, 1f, 1f),
+                inVoiceLevel = t.inVoiceLevel.finiteIn(0f, 1f, 1f),
+                inBassLevel = t.inBassLevel.finiteIn(0f, 1f, 1f),
+                inInstrumentLevel = t.inInstrumentLevel.finiteIn(0f, 1f, 1f),
             )
         }
     }
 }
 
 object MixItLimits {
-    const val MinDurationMs = 1_500L
+    const val MinDurationMs = 500L
     const val MaxDurationMs = 28_000L
     const val DefaultDurationMs = 8_000L
-    const val MinTrackMs = 15_000L
+    const val MinTrackMs = 2_000L
     const val MaxAutoSpeedUp = 0.15f
     const val MaxManualSpeedShift = 0.25f
     const val MaxNudgeMs = 200

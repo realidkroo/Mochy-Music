@@ -23,6 +23,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -101,6 +102,16 @@ class BridgeTest {
         assertEquals(listOf("quality"), module.choices.map { it.id })
         // attach reached mochy's storage and its private folder
         assertEquals(host.folder.path, host.saved["folder"])
+    }
+
+    @Test
+    fun aSongsVideoIdCrossesAndAnOldAnswerHasNone() {
+        val crossed = Wire.trackFrom(Wire.trackToJson(song.copy(videoId = "R-hYM3BqTbA")))
+        assertEquals("R-hYM3BqTbA", crossed.videoId)
+        assertEquals(song, crossed.copy(videoId = null))
+        // a zip packed before the field existed sends a track without it
+        val old = Wire.trackFrom(Json.parseToJsonElement("""{"title":"Espresso","artists":["Sabrina Carpenter"]}""") as JsonObject)
+        assertEquals(null, old.videoId)
     }
 
     @Test

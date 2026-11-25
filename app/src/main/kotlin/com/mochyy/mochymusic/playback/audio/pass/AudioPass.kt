@@ -57,6 +57,7 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
         private set
     @Volatile private var blocked = true
     @Volatile private var allowFixedVolume = false
+    @Volatile private var driver = UsbDriver.MOCHY
 
     /** goes up whenever the answer to "may this song go exclusive" could change, so the router knows to ask again */
     @Volatile var generation = 0
@@ -84,9 +85,11 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
 
     /** the switch, the mode and whether anything shapes the sound, from the service whenever one changes */
     @Synchronized
-    fun update(enabled: Boolean, mode: AudioPassMode, blocked: Boolean, allowFixedVolume: Boolean) {
-        if (enabled == this.enabled && mode == this.mode && blocked == this.blocked && allowFixedVolume == this.allowFixedVolume) return
-        if (mode != this.mode || allowFixedVolume != this.allowFixedVolume) failed.clear()
+    fun update(enabled: Boolean, mode: AudioPassMode, blocked: Boolean, allowFixedVolume: Boolean, driver: UsbDriver = UsbDriver.MOCHY) {
+        if (enabled == this.enabled && mode == this.mode && blocked == this.blocked && allowFixedVolume == this.allowFixedVolume && driver == this.driver) return
+        // another driver gets a fresh try at every song the last one couldn't play
+        if (mode != this.mode || allowFixedVolume != this.allowFixedVolume || driver != this.driver) failed.clear()
+        this.driver = driver
         _skip.value = null
         this.enabled = enabled
         this.mode = mode
@@ -129,7 +132,7 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
         if (format.sampleMimeType != MimeTypes.AUDIO_RAW || format.channelCount !in 1..2 || format.sampleRate <= 0) return Skip.Format
         if (format.pcmEncoding !in PassPcm.Encodings) return Skip.Format
         if (!takesLossy && !isLossless(source)) return Skip.Lossy
-        val bits = PassPcm.sourceBits(format.pcmEncoding, source?.pcmEncoding)
+        val bits = PassPcm.sourceBits(format.pcmEncoding, source)
         // the decoder started before passthrough was on and already cut the song to 16 bits; sent on, the page would call that bit-perfect (issue 235)
         if (format.pcmEncoding == C.ENCODING_PCM_16BIT && bits > 16) return Skip.Decoded16
         if (key(format.sampleRate, format.channelCount, bits) in failed) return Skip.FellBefore
@@ -168,7 +171,7 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
         if (owner != null && owner !== requester) throw PassFailure("another player holds the output")
         val rate = format.sampleRate
         val channels = format.channelCount
-        val bits = PassPcm.sourceBits(format.pcmEncoding, source?.pcmEncoding)
+        val bits = PassPcm.sourceBits(format.pcmEncoding, source)
         val transport = when (mode) {
             AudioPassMode.SONG_RATE -> throw PassFailure("song's rate isn't exclusive")
             AudioPassMode.BIT_PERFECT -> {
@@ -183,7 +186,7 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
                 val manager = usb.manager ?: throw PassFailure("no usb")
                 val device = usb.device() ?: throw PassFailure("no usb dac")
                 val dac = usb.dac(device) ?: throw PassFailure("no usb access")
-                UsbPass.open(manager, device, dac, rate, channels, bits, allowFixedVolume, remembered[dacKey(device.vendorId, device.productId)])
+                UsbPass.open(manager, device, dac, rate, channels, bits, allowFixedVolume, remembered[dacKey(device.vendorId, device.productId)], driver)
             }
         }
         owner = requester
@@ -206,7 +209,7 @@ class AudioPass(context: Context, private val outputs: AudioOutputs) {
     /** this song couldn't open, so the same format isn't tried again on this dac until something changes */
     @Synchronized
     internal fun failed(format: Format, source: Format?, why: String) {
-        val bits = PassPcm.sourceBits(format.pcmEncoding, source?.pcmEncoding)
+        val bits = PassPcm.sourceBits(format.pcmEncoding, source)
         failed += key(format.sampleRate, format.channelCount, bits)
         Timber.tag("AudioPass").i("$mode fell back for ${format.sampleRate} Hz ${bits}-bit: $why")
         _status.value = Status.Fell(mode, format.sampleRate, bits)

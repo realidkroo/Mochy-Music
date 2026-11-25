@@ -2,7 +2,6 @@
 
 package com.mochyy.mochymusic.ui.component
 
-import android.os.Build
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -147,9 +146,9 @@ internal fun ModuleNavBar(
                     if (bar.outline) drawChromeOutline(Offset.Zero, size, cornerRadius = bar.corner?.toPx()?.times(factor) ?: (size.height / 2f))
                 },
         ) {
-            if (bar.glass) FrostedChromeGlass(state = glassState, pureBlack = pureBlack, accentWash = accentWash, modifier = Modifier.fillMaxSize(), pill = glassPill)
+            if (bar.glass) FrostedChromeGlass(state = glassState, pureBlack = pureBlack, accentWash = accentWash, modifier = Modifier.fillMaxSize(), pill = glassPill, fallbackBlur = true)
             if (bar.fill.isNotEmpty()) Box(Modifier.fillMaxSize().background(barBrush(bar, accent, active.values)))
-            if (active.program != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (active.program != null) {
                 BarShader(active, pill, slots.size, accent, pureBlack, obscured)
             }
             ScaledContent(factor) {

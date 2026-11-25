@@ -35,11 +35,12 @@ data class LabSound(
     val playback: PlaybackSettings,
     val volume: VolumeSettings,
     val stage: Boolean = false,
+    val mixer: Boolean = false,
 )
 
 fun passBlockersOf(prefs: Preferences, lab: LabSound, playerVolume: Float): Set<PassBlocker> = buildSet {
     if (lab.eq.enabled) add(PassBlocker.EQUALIZER)
-    if (lab.reverb.enabled || lab.loudness.enabled || lab.spatial.enabled || lab.spatial.mono || lab.stage) add(PassBlocker.AUDIO_FX)
+    if (lab.reverb.enabled || lab.loudness.enabled || lab.spatial.enabled || lab.spatial.mono || lab.stage || lab.mixer) add(PassBlocker.AUDIO_FX)
     if (playerVolume < 0.999f || (lab.volume.enabled && lab.volume.limit < 0.999f)) add(PassBlocker.VOLUME)
     if (prefs[AudioNormalizationKey] ?: true) add(PassBlocker.NORMALIZATION)
     if (!lab.playback.isNormal) add(PassBlocker.SPEED)
@@ -67,6 +68,7 @@ data class PassBlockersBefore(
     val volumeLimit: Float,
     val playerVolume: Float,
     val stage: Boolean = false,
+    val mixer: Boolean = false,
 ) {
     companion object {
         /** null keys stay null, so a setting that was never touched goes back to its default rather than to a guess */
@@ -86,6 +88,7 @@ data class PassBlockersBefore(
             volumeLimit = store.volume.value.limit,
             playerVolume = playerVolume,
             stage = store.stage.value.enabled,
+            mixer = store.mixer.state.value.enabled,
         )
     }
 }
@@ -110,6 +113,7 @@ fun AudioLabStore.restorePassBlockers(before: PassBlockersBefore) {
     updateLoudness { it.copy(enabled = before.loudness) }
     updateSpatial { it.copy(enabled = before.spatial, mono = before.mono) }
     updateStage { it.copy(enabled = before.stage) }
+    mixer.setEnabled(before.mixer)
     updatePlayback { before.playback }
     updateVolume { it.copy(limit = before.volumeLimit) }
 }
@@ -131,6 +135,7 @@ fun AudioLabStore.clearPassBlockers() {
     updateLoudness { it.copy(enabled = false) }
     updateSpatial { it.copy(enabled = false, mono = false) }
     updateStage { it.copy(enabled = false) }
+    mixer.setEnabled(false)
     updatePlayback { PlaybackSettings() }
     updateVolume { it.copy(limit = 1f) }
 }

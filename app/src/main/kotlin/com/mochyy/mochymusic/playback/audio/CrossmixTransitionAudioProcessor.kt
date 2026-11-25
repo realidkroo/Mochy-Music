@@ -74,7 +74,16 @@ class CrossmixTransitionAudioProcessor : AudioProcessor {
         val mixIt: MixItSpec? = null,
     )
 
-    @Volatile private var script: Script? = null
+    private class ArmedScript(
+        val script: Script,
+        val generation: Int,
+        val preserveDelayAndHistory: Boolean,
+    )
+
+    @Volatile private var armedScript: ArmedScript? = null
+    private var nextArmGeneration = 0
+    private var renderedGeneration = 0
+    private val script: Script? get() = armedScript?.script
     @Volatile private var pendingTimestampUs = Long.MIN_VALUE
     @Volatile private var streamOffsetUs = 0L
     @Volatile private var targetDelayMs = 0.0
@@ -109,8 +118,13 @@ class CrossmixTransitionAudioProcessor : AudioProcessor {
     private val otherParams = FxParams()
     private val dsp = Dsp()
 
-    /** start a transition on this side. allocation happens here, off the audio thread */
-    fun arm(script: Script) {
+    /**
+     * start a transition on this side. allocation happens here, off the audio thread.
+     * [preserveDelayAndHistory] keeps the beat-lock delay line, ring history, and current smoothed
+     * gain intact across a live chained hand-off (e.g. a song leaving T1's Incoming directly into
+     * T2's Outgoing) so the switch is click-free with zero time jump.
+     */
+    fun arm(script: Script, preserveDelayAndHistory: Boolean = false) {
         if (sampleRate > 0) dsp.ensure(sampleRate)
         finishing = false
         fadingOut = false
@@ -122,7 +136,8 @@ class CrossmixTransitionAudioProcessor : AudioProcessor {
         calibrated = false
         clockCorrectionMs = 0.0
         targetDelayMs = 0.0
-        this.script = script
+        val gen = ++nextArmGeneration
+        armedScript = ArmedScript(script, gen, preserveDelayAndHistory)
         idle = false
     }
 
@@ -145,8 +160,8 @@ class CrossmixTransitionAudioProcessor : AudioProcessor {
     fun fadeOutNow() { fadingOut = true }
 
     fun clear() {
-        script?.let { JointLevel.release(it.role) }
-        script = null
+        armedScript?.script?.let { JointLevel.release(it.role) }
+        armedScript = null
         finishing = false
         fadingOut = false
         silenced = false
@@ -208,14 +223,20 @@ class CrossmixTransitionAudioProcessor : AudioProcessor {
             clockValid = mediaFrame > -sampleRate
         }
 
-        val active = script
-        if (active == null || sampleRate <= 0 || !dsp.ready(sampleRate)) {
+        val armed = armedScript
+        if (armed == null || sampleRate <= 0 || !dsp.ready(sampleRate)) {
             output.put(inputBuffer)
             output.flip()
             mediaFrame += frames
-            if (active == null) idle = true
+            if (armed == null) idle = true
             return
         }
+
+        if (armed.generation != renderedGeneration) {
+            renderedGeneration = armed.generation
+            dsp.resetForNewScript(keepDelayAndHistory = armed.preserveDelayAndHistory)
+        }
+        val active = armed.script
 
         if (silenced) {
             JointLevel.release(active.role)
@@ -226,9 +247,13 @@ class CrossmixTransitionAudioProcessor : AudioProcessor {
             return
         }
         inputBuffer.order(ByteOrder.nativeOrder())
-        dsp.render(inputBuffer, output, frames, channels, active)
+        dsp.render(inputBuffer, output, frames, channels, active, armed.generation)
         output.flip()
-        if (active.role == CrossmixRole.Outgoing && !currentBeat.isNaN() && currentBeat > active.endBeat) silenced = true
+        if (active.role == CrossmixRole.Outgoing && !currentBeat.isNaN() && currentBeat > active.endBeat &&
+            armedScript?.generation == armed.generation
+        ) {
+            silenced = true
+        }
     }
 
     override fun queueEndOfStream() { inputEnded = true }
@@ -390,14 +415,49 @@ class CrossmixTransitionAudioProcessor : AudioProcessor {
             gateLevel = 1f
         }
 
-        fun render(input: ByteBuffer, output: ByteBuffer, frames: Int, channelCount: Int, s: Script) {
+        fun resetForNewScript(keepDelayAndHistory: Boolean) {
+            echoL.fill(0f); echoR.fill(0f)
+            echoCursor = 0
+            echoToneL = 0f; echoToneR = 0f; echoLowL = 0f; echoLowR = 0f
+            reverb.clear()
+            for (f in arrayOf(highPassL, highPassR, lowPassL, lowPassR, bandLowL, bandLowR, bandHighL, bandHighR, noiseFilter)) f.clear()
+            for (f in arrayOf(bassCutL1, bassCutL2, bassCutR1, bassCutR2)) f.clear()
+            bassCutOn = false
+            bassCutMix = 0f
+            flangerL.fill(0f); flangerR.fill(0f)
+            flangerCursor = 0
+            deckMode = FxParams.Deck.Live
+            loopMarkBeat = Float.NaN
+            deckFade = 1f
+            finishMix = 0f
+            outFade = 1f
+            gateLevel = 1f
+            crushCounter = 0f
+            if (!keepDelayAndHistory) {
+                historyL.fill(0f); historyR.fill(0f)
+                writeHead = 0L
+                delayFrames = 0.0
+                peak = 0f
+                duck = 1f
+                started = false
+            } else if (started) {
+                // Keep gain/delay/history intact for a click-free live hand-off; clear effect sends back to dry.
+                lowBand = 1f; midBand = 1f; highBand = 1f
+                vocalCenterCut = 0f; sideCut = 0f
+                echoSend = 0f; reverbSend = 0f
+                flangerMix = 0f; crush = 0f; panAngle = 0f; width = 1f; noiseLevel = 0f
+            }
+        }
+
+        fun render(input: ByteBuffer, output: ByteBuffer, frames: Int, channelCount: Int, s: Script, generation: Int) {
             val sr = rate.toDouble()
             var processed = 0
             while (processed < frames) {
                 val block = min(BlockFrames, frames - processed)
                 if (clockValid && !calibrated) calibrate(s, sr)
                 val beat = if (clockValid) {
-                    ((mediaFrame * 1_000.0 / sr + clockCorrectionMs - s.anchorMs) / s.mediaPerBeatMs).toFloat()
+                    val heardFrame = if (s.role == CrossmixRole.Outgoing && delayFrames > 0.0) mediaFrame - delayFrames else mediaFrame
+                    ((heardFrame * 1_000.0 / sr + clockCorrectionMs - s.anchorMs) / s.mediaPerBeatMs).toFloat()
                 } else {
                     Float.NaN
                 }
@@ -447,8 +507,10 @@ class CrossmixTransitionAudioProcessor : AudioProcessor {
             val done = !currentBeat.isNaN() && currentBeat > s.endBeat && abs(delayMs) < 0.05 && delayTargetIsZero() && tailsQuiet()
             val settledDelay = abs(delayMs) < 0.05
             if (s.role == CrossmixRole.Incoming && ((finishing && finishMix >= 1f && settledDelay) || done)) {
-                this@CrossmixTransitionAudioProcessor.script = null
-                idle = true
+                if (this@CrossmixTransitionAudioProcessor.armedScript?.generation == generation) {
+                    this@CrossmixTransitionAudioProcessor.armedScript = null
+                    idle = true
+                }
             }
         }
 

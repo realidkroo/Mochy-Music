@@ -2,6 +2,8 @@
 
 package com.mochyy.mochymusic.importer
 
+import com.mochyy.mochymusic.utils.youtubeIdOrNull
+
 /** reads playlist csvs from tunemymusic, exportify and mochy's own export, columns are found by header name so order doesn't matter */
 fun parseImportCsv(text: String, fallbackPlaylistName: String = "Imported playlist"): ParsedImport {
     val rows = parseCsvRows(text).filter { row -> row.any { it.isNotBlank() } }
@@ -41,7 +43,7 @@ fun parseImportCsv(text: String, fallbackPlaylistName: String = "Imported playli
             if (!isLiked && playlistIdx >= 0 && cell(playlistIdx) != null) playlists.getOrPut(playlistName) { mutableListOf() }
             continue
         }
-        val videoId = cell(videoIdIdx)?.takeIf { YOUTUBE_ID_REGEX.matches(it) }
+        val videoId = youtubeIdOrNull(cell(videoIdIdx))
         val artist = cell(artistIdx).orEmpty()
         // without an artist, search is a guess — only keep those rows when the exact id is known
         if (artist.isEmpty() && videoId == null) continue
@@ -91,8 +93,6 @@ fun writeMochyCsv(rows: List<CsvExportRow>): String = buildString {
         )
     }
 }
-
-private val YOUTUBE_ID_REGEX = Regex("[A-Za-z0-9_-]{11}")
 
 private fun normalizeHeader(name: String): String =
     name.removePrefix("﻿").trim().lowercase().replace(Regex("[\\s_]+"), " ")

@@ -8,6 +8,7 @@ import com.mochyy.mochymusic.importer.account.AccountService
 import com.mochyy.mochymusic.models.MediaMetadata
 import com.mochyy.mochymusic.module.TrackMetadata
 import com.mochyy.mochymusic.module.TrackQuery
+import com.mochyy.mochymusic.utils.youtubeIdOrNull
 import com.mochyy.mochymusic.modules.ModuleMetadata
 import com.mochyy.mochymusic.ui.utils.resize
 import com.music.innertube.YouTube
@@ -142,6 +143,7 @@ object SongAboutLoader {
                 artists = song.artists.map { it.name },
                 album = song.album?.title,
                 durationMs = song.duration.takeIf { it > 0 }?.times(1000L),
+                videoId = youtubeIdOrNull(song.id),
             )
             val facts = ModuleMetadata.lookup(track)
             publish { it.copy(moduleDone = true, module = facts?.metadata, moduleName = facts?.aboutFrom) }

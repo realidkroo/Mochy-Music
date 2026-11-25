@@ -35,6 +35,8 @@ internal object SkinLyricsParser {
             // the player around them is already fitted to the screen, so the words only take a scale of their own
             scale = SkinSize.of(o, scaleName = "textScale").copy(designWidth = null),
             translation = o.bool("translation") ?: false,
+            // keyframes every word plays the moment it starts being sung, on top of the sweep
+            wordEnter = (o["wordEnter"] as? JsonObject)?.let { SkinAnimationParser.timeline(it, library, SkinRepeat.Once, DefaultWordMs) }?.copy(clock = SkinClock.Time),
         )
     }
 
@@ -42,4 +44,6 @@ internal object SkinLyricsParser {
     private val DefaultNext = mapOf(PoseProp.Opacity to 0.55f, PoseProp.Scale to 0.94f)
     private val DefaultTransition = SkinTransition(450, FastOutSlowInEasing, spring = true)
     private const val DefaultEnterMs = 500
+    // a word is short, so its pop is too
+    private const val DefaultWordMs = 320
 }

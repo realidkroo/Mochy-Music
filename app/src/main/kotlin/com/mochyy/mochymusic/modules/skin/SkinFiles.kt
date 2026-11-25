@@ -73,7 +73,8 @@ internal object SkinFiles {
         compressedSize > 0L && written > ZipBombCheckThreshold && written > compressedSize * MaxCompressionRatio
 
     internal val SurfaceAssetKinds = setOf("wad", "pk3", "wl6", "wl1", "pak", "rom", "gb", "gbc", "gba", "nes", "sfc", "smc", "ch8", "dat", "bin")
-    private val Kinds = setOf("png", "jpg", "jpeg", "webp", "gif", "ttf", "otf", "agsl", "sksl") + SurfaceAssetKinds
+    // eel is an audio module's liveprog scripts; the mixer runs them sandboxed, away from files
+    private val Kinds = setOf("png", "jpg", "jpeg", "webp", "gif", "ttf", "otf", "agsl", "sksl", "eel") + SurfaceAssetKinds
     private const val MaxFiles = 200
     private const val MaxFileBytes = 24L * 1024 * 1024
     private const val MaxTotalBytes = 48L * 1024 * 1024

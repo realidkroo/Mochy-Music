@@ -125,7 +125,7 @@ private fun glassEffect(
     blur: Float,
     pill: ChromePill?,
 ): RenderEffect {
-    val shader = glass.shader
+    val shader = glass.shader ?: return android.graphics.RenderEffect.createOffsetEffect(0f, 0f).asComposeRenderEffect()
     fun set(block: () -> Unit) = runCatching(block)
     set { shader.setAgslUniform("size", size.width, size.height) }
     set { shader.setAgslUniform("margin", margin) }

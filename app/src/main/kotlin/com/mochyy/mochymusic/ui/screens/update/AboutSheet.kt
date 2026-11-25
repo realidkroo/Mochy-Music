@@ -182,6 +182,18 @@ private val MoreCredits =
             githubUser = "boidushya",
             url = "https://github.com/better-lyrics/api",
         ),
+        CreditEntry(
+            name = "James Fung",
+            subtitle = "JamesDSP · Liveprog's EEL2 engine and the Progenitor reverb",
+            githubUser = "james34602",
+            url = "https://github.com/james34602/JamesDSPManager",
+        ),
+        CreditEntry(
+            name = "Tim Schneeberger",
+            subtitle = "JDSP4Linux & RootlessJamesDSP · Liveprog scripts and knobs",
+            githubUser = "ThePBone",
+            url = "https://github.com/Audio4Linux/JDSP4Linux",
+        ),
     )
 
 private val Licenses =
@@ -221,6 +233,30 @@ private val Licenses =
             title = "RiMusic · GNU General Public License v3.0",
             subtitle = "by fast4x · InnerTube API wrapper",
             url = "https://github.com/fast4x/RiMusic/blob/master/LICENSE",
+        ),
+        LicenseEntry(
+            tag = "GPL-3.0",
+            title = "JDSP4Linux · GNU General Public License v3.0",
+            subtitle = "by Tim Schneeberger · the libjamesdsp Liveprog runs from",
+            url = "https://github.com/Audio4Linux/JDSP4Linux/blob/master/LICENSE",
+        ),
+        LicenseEntry(
+            tag = "GPL-2.0+",
+            title = "libjamesdsp · GNU General Public License v2.0 or later",
+            subtitle = "by James Fung · EEL2 extensions for Liveprog",
+            url = "https://github.com/james34602/JamesDSPManager",
+        ),
+        LicenseEntry(
+            tag = "zlib",
+            title = "EEL2 · zlib-style license",
+            subtitle = "by Cockos · the script language Liveprog runs",
+            url = "https://github.com/justinfrankel/WDL",
+        ),
+        LicenseEntry(
+            tag = "MIT",
+            title = "sndfilter · MIT License",
+            subtitle = "by Sean Connelly · Progenitor 2 reverb",
+            url = "https://github.com/voidqk/sndfilter/blob/master/LICENSE",
         ),
         LicenseEntry(
             tag = "MIT",

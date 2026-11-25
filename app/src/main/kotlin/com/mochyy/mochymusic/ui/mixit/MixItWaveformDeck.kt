@@ -177,6 +177,7 @@ internal fun MixItWaveformDeck(
     val curvePath = remember { Path() }
     val fillPath = remember { Path() }
     val shapePath = remember { Path() }
+    val windowBrushCache = remember { WindowBrushCache() }
 
     var activeDrag by remember { mutableStateOf(ActiveDrag.None) }
     var lastHapticBeat by remember { mutableStateOf(-1L) }
@@ -522,15 +523,7 @@ internal fun MixItWaveformDeck(
                 val boxCorner = CornerRadius(14.dp.toPx())
 
                 drawRoundRect(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MixItColors.Gold.copy(alpha = 0.13f + 0.08f * editHighlight),
-                            MixItColors.Gold.copy(alpha = 0.06f + 0.06f * editHighlight),
-                            MixItColors.Gold.copy(alpha = 0.13f + 0.08f * editHighlight),
-                        ),
-                        startY = boxTop,
-                        endY = boxBottom,
-                    ),
+                    brush = windowBrushCache.get(editHighlight, boxTop, boxBottom),
                     topLeft = Offset(winLeftPx, boxTop),
                     size = Size(winWidthPx, boxHeight),
                     cornerRadius = boxCorner,
@@ -712,10 +705,13 @@ internal fun MixItWaveformDeck(
                 }
             }
 
-            // Box-anchored timestamps right on the Start & End edges of the yellow box!
+            // box-anchored timestamps right on the start and end edges of the yellow box, safe at any width
             val stampW = with(density) { 40.dp.toPx() }
-            val startStampX = (winLeftPx + with(density) { 2.dp.toPx() }).coerceIn(6f, widthPx - stampW * 2f)
-            val endStampX = (winRightPx - stampW).coerceIn(startStampX + stampW + 4f, widthPx - stampW - 6f)
+            val maxStartStampX = (widthPx - stampW * 2f).coerceAtLeast(6f)
+            val startStampX = (winLeftPx + with(density) { 2.dp.toPx() }).coerceIn(6f, maxStartStampX)
+            val minEndStampX = startStampX + stampW + 4f
+            val maxEndStampX = (widthPx - stampW - 6f).coerceAtLeast(minEndStampX)
+            val endStampX = (winRightPx - stampW).coerceIn(minEndStampX, maxEndStampX)
 
             Text(
                 text = formatMixClock(draft.outStartMs),
@@ -885,7 +881,8 @@ private fun FullSongMiniScrubber(
                     val t1 = ((i + 1).toFloat() / bars * currentDur).toLong()
                     val amp = if (hasWave) {
                         analysis.waveformSliceInto(t0, t1, miniScratch)
-                        miniScratch[0].coerceIn(0.06f, 1f)
+                        val peak = miniScratch[0]
+                        if (peak.isFinite()) peak.coerceIn(0.06f, 1f) else 0.06f
                     } else if (isLoading) {
                         0.2f
                     } else {
@@ -1043,11 +1040,10 @@ private fun DrawScope.drawHighResWaveform(
                 val tCenter = (anchorMs + (x - anchorX) / pxPerMs).toLong()
                 if (tCenter < 0L || tCenter > durationMs) continue
                 analysis.waveformSliceInto(tCenter - msPerBar / 2L, tCenter + msPerBar / 2L, scratch)
-                val peak = scratch[0]
-                val body = scratch[1]
+                waveformBarNorms(scratch[0], scratch[1], scratch)
                 val inWindow = x in winLeft..winRight
-                val peakH = max(minPeakH, peak.coerceIn(0.03f, 1f) * maxHalfH)
-                val bodyH = max(minBodyH, (body * 0.72f).coerceIn(0.02f, peak) * maxHalfH)
+                val peakH = max(minPeakH, scratch[0] * maxHalfH)
+                val bodyH = max(minBodyH, scratch[1] * maxHalfH)
                 val outerCol = if (inWindow) outerActiveCol else outerBaseCol
                 val coreCol = if (inWindow) activeColor else coreBaseCol
                 // Crisp outer peak spike
@@ -1205,4 +1201,38 @@ private fun computeAutoSwapFrac(
     val outMid = (outStart + outEnd) * 0.5f
     val inMid = (inStart + inEnd) * 0.5f
     return ((outMid + inMid) * 0.5f).coerceIn(0.15f, 0.9f)
+}
+
+// clamps peak first so silent buckets (peak == 0) never hand coerceIn a max smaller than its min
+internal fun waveformBarNorms(peak: Float, body: Float, out: FloatArray) {
+    val peakNorm = if (peak.isFinite()) peak.coerceIn(0.03f, 1f) else 0.03f
+    val bodyNorm = if (body.isFinite()) (body * 0.72f).coerceIn(0.02f, peakNorm) else 0.02f
+    out[0] = peakNorm
+    out[1] = bodyNorm
+}
+
+private class WindowBrushCache {
+    private var lastHighlight = Float.NaN
+    private var lastTop = Float.NaN
+    private var lastBottom = Float.NaN
+    private var cached: Brush? = null
+
+    fun get(editHighlight: Float, boxTop: Float, boxBottom: Float): Brush {
+        val current = cached
+        if (current != null && editHighlight == lastHighlight && boxTop == lastTop && boxBottom == lastBottom) {
+            return current
+        }
+        lastHighlight = editHighlight
+        lastTop = boxTop
+        lastBottom = boxBottom
+        return Brush.verticalGradient(
+            colors = listOf(
+                MixItColors.Gold.copy(alpha = 0.13f + 0.08f * editHighlight),
+                MixItColors.Gold.copy(alpha = 0.06f + 0.06f * editHighlight),
+                MixItColors.Gold.copy(alpha = 0.13f + 0.08f * editHighlight),
+            ),
+            startY = boxTop,
+            endY = boxBottom,
+        ).also { cached = it }
+    }
 }

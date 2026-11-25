@@ -44,7 +44,7 @@ class PassSink(private val pass: AudioPass) : AudioSink {
 
     /** the router hands over the file's own format with each song, so lossless and bit depth are known */
     fun configure(format: Format, source: Format?) {
-        val bits = PassPcm.sourceBits(format.pcmEncoding, source?.pcmEncoding)
+        val bits = PassPcm.sourceBits(format.pcmEncoding, source)
         val open = transport
         // the next song in the same format keeps the output open, so an album plays gapless
         if (open != null && (open.sampleRate != format.sampleRate || open.channels != format.channelCount || open.bits < bits)) {

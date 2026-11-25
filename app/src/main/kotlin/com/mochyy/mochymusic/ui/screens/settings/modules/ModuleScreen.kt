@@ -191,10 +191,16 @@ internal fun ModuleBanner(banner: String?, icon: String?) {
                 model = artModel(banner), contentDescription = null, contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
-            // blur only exists on android 12+, older phones would get a giant sharp icon instead
+            // blur natively on android 12+, or via coil's cached box blur on older android so banners never stay sharp
             icon != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> AsyncImage(
                 model = artModel(icon), contentDescription = null, contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().graphicsLayer { alpha = 0.55f }.blur(48.dp),
+            )
+            icon != null -> AsyncImage(
+                model = com.mochyy.mochymusic.ui.player.rememberFallbackBlurredImage(artModel(icon), 48f, targetPx = 128),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize().graphicsLayer { alpha = 0.55f },
             )
         }
     }

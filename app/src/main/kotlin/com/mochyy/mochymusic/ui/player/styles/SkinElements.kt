@@ -110,7 +110,7 @@ internal fun SkinShape(block: SkinBlock.Shape, context: SkinContext, modifier: M
         ShapeKind.Pill, ShapeKind.Line -> RoundedCornerShape(percent = 50)
     }
     val colors = block.colors.map(context::color)
-    val brush = if (colors.size == 1) Brush.linearGradient(listOf(colors[0], colors[0])) else Brush.horizontalGradient(colors)
+    val brush = if (colors.size == 1) androidx.compose.ui.graphics.SolidColor(colors[0]) else Brush.horizontalGradient(colors)
     val sized = modifier
         .then(
             when {
@@ -552,7 +552,7 @@ private fun iconFor(target: SkinTarget, on: Boolean): Int = when (target) {
         is ActionTarget.Search -> R.drawable.search_filled
         is ActionTarget.Route -> R.drawable.navigate_next
         is ActionTarget.SetField, is ActionTarget.SetAppSetting -> R.drawable.tune
-        is ActionTarget.Link, is ActionTarget.Page -> R.drawable.puzzle
+        is ActionTarget.Link, is ActionTarget.Page, is ActionTarget.ModuleSheet -> R.drawable.puzzle
     }
 }
 

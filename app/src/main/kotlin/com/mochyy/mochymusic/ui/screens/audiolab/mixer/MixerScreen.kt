@@ -1,0 +1,200 @@
+// the mixer page: the switch and saved mixes, every bus as a strip, and the master's loudness
+
+package com.mochyy.mochymusic.ui.screens.audiolab.mixer
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.ui.component.TextFieldDialog
+import com.mochyy.mochymusic.ui.screens.audiolab.AudioLabPage
+import com.mochyy.mochymusic.ui.screens.audiolab.LabCard
+import com.mochyy.mochymusic.ui.screens.audiolab.LabChip
+import com.mochyy.mochymusic.ui.screens.audiolab.LabChips
+import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
+import com.mochyy.mochymusic.ui.screens.audiolab.LabSectionLabel
+import com.mochyy.mochymusic.ui.screens.audiolab.LabStage
+import com.mochyy.mochymusic.ui.screens.audiolab.LabTextAction
+import com.mochyy.mochymusic.ui.screens.audiolab.LabTitle
+import com.mochyy.mochymusic.ui.screens.audiolab.LabToggleRow
+import com.mochyy.mochymusic.ui.theme.InterFontFamily
+import com.mochyy.mochymusic.viewmodels.MixerViewModel
+
+@Composable
+fun MixerScreen(
+    navController: NavController,
+    viewModel: MixerViewModel = hiltViewModel(),
+) {
+    val store = viewModel.store
+    val state by viewModel.state.collectAsState()
+    val presets by viewModel.presets.collectAsState()
+    val meters = rememberMixerMeters(active = state.enabled)
+    var saving by rememberSaveable { mutableStateOf(false) }
+    var editing by rememberSaveable { mutableStateOf<String?>(null) }
+
+    AudioLabPage(
+        title = LabTitle(stringResource(R.string.mixer_title_first), stringResource(R.string.mixer_title_second), firstSize = 40.sp, secondSize = 84.sp, firstDim = true),
+        onBack = { navController.navigateUp() },
+    ) {
+        LabCard(padding = 14.dp) {
+            LabToggleRow(
+                title = stringResource(R.string.mixer_switch),
+                subtitle = stringResource(R.string.mixer_switch_sub),
+                checked = state.enabled,
+                onCheckedChange = store::setEnabled,
+            )
+            Spacer(Modifier.height(10.dp))
+            LabSectionLabel(stringResource(R.string.mixer_mixes), Modifier.padding(horizontal = 6.dp)) {
+                LabTextAction(stringResource(R.string.mixer_reset_mix)) { store.resetMix() }
+            }
+            LabChips(
+                chips = presets.map { LabChip(it.id, it.name) },
+                selectedKey = state.presetId,
+                onSelect = store::loadMix,
+                onLongPress = { editing = it },
+                trailing = { LabTextAction(stringResource(R.string.mixer_save_mix), R.drawable.add) { saving = true } },
+            )
+        }
+        Spacer(Modifier.height(14.dp))
+        if (!state.enabled) {
+            Text(
+                stringResource(R.string.mixer_off_note),
+                fontFamily = InterFontFamily,
+                fontSize = 13.sp,
+                color = LabColors.Secondary,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            )
+            Spacer(Modifier.height(8.dp))
+        }
+        LabCard(padding = 12.dp) {
+            LabSectionLabel(stringResource(R.string.mixer_buses), Modifier.padding(horizontal = 6.dp))
+            MixerStrips(state, meters, store, onOpen = { id -> navController.navigate("audio_mixer_bus/$id") })
+        }
+        Spacer(Modifier.height(14.dp))
+        LoudnessCard(meters)
+        Spacer(Modifier.height(14.dp))
+        Text(
+            stringResource(R.string.mixer_routing_note),
+            fontFamily = InterFontFamily,
+            fontSize = 12.sp,
+            lineHeight = 16.sp,
+            color = LabColors.Faint,
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
+    }
+
+    if (saving) {
+        TextFieldDialog(
+            title = { Text(stringResource(R.string.mixer_save_mix)) },
+            placeholder = { Text(stringResource(R.string.mixer_save_mix_hint)) },
+            onDone = store::saveMix,
+            onDismiss = { saving = false },
+        )
+    }
+    // a mix deleted elsewhere just leaves nothing to rename
+    editing?.let { id -> presets.firstOrNull { it.id == id } }?.let { preset ->
+        val id = preset.id
+        TextFieldDialog(
+            title = { Text(stringResource(R.string.mixer_rename_mix)) },
+            initialTextFieldValue = TextFieldValue(preset.name),
+            onDone = { store.renameMix(id, it) },
+            onDismiss = { editing = null },
+            extraContent = {
+                LabTextAction(stringResource(R.string.mixer_delete_mix), R.drawable.delete) {
+                    store.deleteMix(id)
+                    editing = null
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun LoudnessCard(meters: MixerMeterState) {
+    // numbers a few times a second; the line underneath draws every frame on its own
+    val reading by remember { derivedStateOf { meters.tick.longValue / 8 } }
+    LabCard(padding = 14.dp) {
+        LabSectionLabel(stringResource(R.string.mixer_loudness), Modifier.padding(horizontal = 6.dp)) {
+            LabTextAction(stringResource(R.string.mixer_loudness_reset)) { meters.resetLoudness() }
+        }
+        val values = remember(reading) { meters.loudness.copyOf() }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            Reading(stringResource(R.string.mixer_lufs_momentary), lufsText(values[0]), "LUFS")
+            Reading(stringResource(R.string.mixer_lufs_short), lufsText(values[1]), "LUFS")
+            Reading(stringResource(R.string.mixer_lufs_integrated), lufsText(values[2]), "LUFS")
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+            Reading(stringResource(R.string.mixer_lufs_range), lufsText(values[3]), "LU")
+            Reading(stringResource(R.string.mixer_true_peak), lufsText(values[4]), "dBTP")
+        }
+        Spacer(Modifier.height(12.dp))
+        LabStage(height = 96.dp) {
+            Canvas(Modifier.fillMaxWidth().height(96.dp).padding(horizontal = 10.dp, vertical = 10.dp)) {
+                meters.tick.longValue
+                val h = size.height
+                // -36 at the bottom to -6 at the top, with the usual streaming target marked
+                fun y(lufs: Float) = h * (1f - ((lufs + 36f) / 30f).coerceIn(0f, 1f))
+                drawLine(LabColors.StageLine, Offset(0f, y(-14f)), Offset(size.width, y(-14f)), strokeWidth = 1.dp.toPx())
+                val history = meters.history
+                val path = Path()
+                var started = false
+                for (i in history.indices) {
+                    val v = history[i]
+                    if (v < -150f) continue
+                    val x = i / (history.size - 1f) * size.width
+                    if (!started) path.moveTo(x, y(v)) else path.lineTo(x, y(v))
+                    started = true
+                }
+                if (started) drawPath(path, MasterColor, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round))
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.mixer_loudness_note),
+            fontFamily = InterFontFamily,
+            fontSize = 12.sp,
+            lineHeight = 16.sp,
+            color = LabColors.Secondary,
+            modifier = Modifier.padding(horizontal = 6.dp),
+        )
+    }
+}
+
+@Composable
+private fun Reading(name: String, value: String, unit: String) {
+    Column {
+        Text(name, fontFamily = InterFontFamily, fontSize = 11.sp, color = LabColors.Secondary)
+        Row {
+            Text(value, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = LabColors.Primary)
+            Spacer(Modifier.padding(start = 4.dp))
+            Text(unit, fontFamily = InterFontFamily, fontSize = 11.sp, color = LabColors.Secondary, modifier = Modifier.padding(top = 7.dp))
+        }
+    }
+}

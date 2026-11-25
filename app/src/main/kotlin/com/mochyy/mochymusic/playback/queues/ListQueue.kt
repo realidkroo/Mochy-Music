@@ -12,6 +12,8 @@ class ListQueue(
     val position: Long = 0L,
     /** Local playlist id when this queue was started from a playlist, so Mix It transitions attach to it. */
     val playlistId: String? = null,
+    /** When true (sequential play of a Mix It playlist), turns off persistent shuffle so authored track pairs play in order. */
+    val disableShuffle: Boolean = false,
 ) : Queue {
     override val preloadItem: MediaMetadata? = null
 

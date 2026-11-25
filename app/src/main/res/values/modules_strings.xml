@@ -4,6 +4,7 @@
     <string name="module_adds_songs">Songs</string>
     <string name="module_adds_lyrics">Lyrics</string>
     <string name="module_adds_look">Look</string>
+    <string name="module_adds_audio">Audio effects</string>
     <string name="module_adds_metadata">Song info</string>
     <string name="modules_beta">BETA</string>
     <string name="module_status_signed_out">Not signed in</string>
@@ -19,6 +20,7 @@
     <string name="modules_third_party_docs">See the documentation</string>
     <string name="modules_looks">Look modules</string>
     <string name="modules_looks_empty">Nothing here yet, add one</string>
+    <string name="modules_effects">Audio effect modules</string>
     <string name="modules_sources">JS &amp; source modules</string>
     <string name="modules_swipe_to_delete">Swipe to delete, hold a module to reorder</string>
     <string name="modules_add_more">Add a module</string>
@@ -73,6 +75,7 @@
     <string name="module_use_songs">Songs play from %1$s when it has them, in the order set under Audio Quality.</string>
     <string name="module_use_lyrics">Its lyrics join your lyrics sources.</string>
     <string name="module_use_look">Its look replaces your look settings while it\'s on, and yours come back when you turn it off.</string>
+    <string name="module_use_audio">Its effects show up in the mixer\'s Add effect list while it\'s on. Turning it off takes them out of your mix.</string>
     <string name="module_use_metadata">What it knows about a song shows first in About song.</string>
     <string name="module_enable">Enable</string>
     <string name="module_info">Module info</string>
@@ -84,7 +87,9 @@
     <string name="module_info_built_in">Built into Mochy</string>
     <string name="module_shader_problem">One of its shaders didn\'t load, so its player or bar shows the fallback there: %1$s</string>
     <string name="module_shader_needs_13">Its player shaders need Android 13, so this phone shows their fallbacks.</string>
+    <string name="module_lyrics_shader_needs_13">Its custom lyrics shaders need Android 13, so this phone shows plain custom lyrics.</string>
     <string name="module_glass_problem">Its glass didn\'t load, so the bars keep Mochy\'s frost: %1$s</string>
+    <string name="module_glass_needs_10">Its glass needs Android 10 or newer, so this phone uses the fallback.</string>
     <string name="module_glass_needs_13">Its glass needs Android 13 or newer, so this phone keeps Mochy\'s frost.</string>
     <string name="module_look_covered">%1$s is on above this look, so where both change the same thing, %1$s wins.</string>
     <string name="module_look_raise">Put this look on top</string>
@@ -310,4 +315,6 @@
     <string name="skin_surface_btn_use">USE</string>
     <string name="skin_surface_btn_enter">OK</string>
     <string name="skin_surface_btn_slot">S%1$d</string>
+    <string name="skin_surface_fullscreen">Fullscreen</string>
+    <string name="skin_surface_fullscreen_exit">Exit fullscreen</string>
 </resources>

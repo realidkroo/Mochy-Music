@@ -102,6 +102,10 @@
     <string name="audiopass_usb_no_dac">Plug in a USB DAC and Mochy takes it from here.</string>
     <string name="audiopass_fixed_volume">DACs without a volume of their own</string>
     <string name="audiopass_fixed_volume_desc">Plays them at full scale, so only their own knob turns them down. This can be very loud with sensitive headphones.</string>
+    <string name="audiopass_usb_driver">USB driver</string>
+    <string name="audiopass_usb_driver_mochy">Mochy\'s own</string>
+    <string name="audiopass_usb_driver_libusb">libusb</string>
+    <string name="audiopass_usb_driver_desc">Mochy\'s own talks to the DAC directly. libusb is the open source library many USB audio players use; try it if a DAC clicks, stays silent or won\'t start, then switch back if it\'s no better.</string>
     <string name="audiopass_dac_volume">DAC volume</string>
     <string name="audiopass_dac_volume_desc">Set on the DAC itself, so the music isn\'t scaled. The volume keys move it too.</string>
     <string name="audiopass_value_db">%1$s dB</string>

@@ -7,6 +7,9 @@ import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
 import java.nio.ByteBuffer
 
+/** how the direct driver reaches the dac: its own kernel calls, or libusb for dacs that behave better with it */
+enum class UsbDriver(val native: Int) { MOCHY(0), LIBUSB(1) }
+
 /** the direct driver's output: android opens the dac, the native worker streams to it and android's own driver steps aside while it plays */
 internal class UsbPass private constructor(
     private val connection: UsbDeviceConnection,
@@ -19,7 +22,8 @@ internal class UsbPass private constructor(
 ) : PassTransport {
 
     override val sampleRate = plan.rate
-    override val channels = plan.channels
+    // what the player writes: a dac with more channels gets the song in its first ones, the rest silent, done natively
+    override val channels = plan.sourceChannels
 
     // samples sit at the top of the slot, so a 24-bit dac in a 4-byte slot gets the song's bits unchanged
     override val bits = plan.subslot * 8
@@ -90,6 +94,7 @@ internal class UsbPass private constructor(
             sourceBits: Int,
             allowFixedVolume: Boolean,
             rememberedDb: Double?,
+            driver: UsbDriver = UsbDriver.MOCHY,
         ): UsbPass {
             if (!PassNative.loaded) throw PassFailure("the native part didn't load")
             val plans = UsbAudioDescriptors.plans(dac, rate, channels, sourceBits).take(16)
@@ -97,7 +102,7 @@ internal class UsbPass private constructor(
             if (dac.volume == null && !allowFixedVolume) throw PassFailure("the dac has no volume of its own")
             val connection = usb.openDevice(device) ?: throw PassFailure("android wouldn't open the dac")
             val handle = try {
-                PassNative.usbOpen(connection.fileDescriptor, encode(plans), dac.bcdUsb)
+                PassNative.usbOpen(connection.fileDescriptor, encode(plans), dac.bcdUsb, driver.native)
             } catch (error: IllegalStateException) {
                 connection.close()
                 throw PassFailure(error.message ?: "the dac wouldn't start", error)
@@ -112,12 +117,15 @@ internal class UsbPass private constructor(
             return pass
         }
 
-        // the same order the native side reads them in, 18 ints a plan
+        // the same order the native side reads them in, 26 ints a plan
         private fun encode(plans: List<UsbAudioDescriptors.Plan>): IntArray = plans.flatMap { p ->
+            val i = p.implicit
             listOf(
                 p.controlInterface, p.streamingInterface, p.alt, if (p.uac2) 1 else 0, p.clockId, p.selectorId, p.selectorPin,
                 p.endpoint, p.endpointAttributes, p.maxPacket, p.interval, if (p.rateControl) 1 else 0,
                 p.feedbackEndpoint, p.feedbackMaxPacket, p.rate, p.channels, p.subslot, p.bitResolution,
+                p.sourceChannels, i?.streamingInterface ?: -1, i?.alt ?: 0, i?.endpoint ?: -1, i?.maxPacket ?: 0, i?.interval ?: 1, i?.frameBytes ?: 0,
+                if (i?.rateControl == true) 1 else 0,
             )
         }.toIntArray()
     }

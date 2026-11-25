@@ -375,12 +375,12 @@ object MixItPlanner {
     ): CrossmixPlan {
         val durationMs = transition.durationMs.coerceIn(MixItLimits.MinDurationMs, MixItLimits.MaxDurationMs)
         val safeOutDur = if (outDurationMs > 0L) outDurationMs else (transition.outStartMs + durationMs + 5_000L)
-        val maxOutStart = (safeOutDur - 1_000L).coerceAtLeast(0L)
+        val maxOutStart = (safeOutDur - 400L).coerceAtLeast(0L)
         val outStartMs = transition.outStartMs.coerceIn(0L, maxOutStart)
-        val effectiveDurationMs = min(durationMs, (safeOutDur - outStartMs - 100L).coerceAtLeast(800L))
+        val effectiveDurationMs = min(durationMs, (safeOutDur - outStartMs - 100L).coerceAtLeast(400L))
 
         val rawInStart = transition.inStartMs.let { raw ->
-            if (inDurationMs > 2_000L) raw.coerceIn(0L, (inDurationMs - 1_500L).coerceAtLeast(0L))
+            if (inDurationMs > 1_000L) raw.coerceIn(0L, (inDurationMs - 500L).coerceAtLeast(0L))
             else raw.coerceAtLeast(0L)
         }
 
@@ -415,29 +415,31 @@ object MixItPlanner {
             // Move Song 2 so its beat phase equals Song 1's beat phase at beat 0; wrap by ±1 beat if near track bounds
             var aligned = rawInStart - deltaBeats * inPeriod
             if (aligned < 0.0) aligned += inPeriod
-            if (inDurationMs > 2_000L && aligned > inDurationMs - 1_500L) aligned -= inPeriod
+            if (inDurationMs > 1_000L && aligned > inDurationMs - 500L) aligned -= inPeriod
             aligned.toLong().coerceAtLeast(0L)
         } else {
             rawInStart
         }
 
         val nudgedInStart = (phaseAlignedInStart + transition.beatNudgeMs).let { raw ->
-            if (inDurationMs > 2_000L) raw.coerceIn(0L, (inDurationMs - 1_500L).coerceAtLeast(0L))
+            if (inDurationMs > 1_000L) raw.coerceIn(0L, (inDurationMs - 500L).coerceAtLeast(0L))
             else raw.coerceAtLeast(0L)
         }
 
-        val exactLengthBeats = (effectiveDurationMs / outBeatMs).toFloat().coerceIn(1f, 128f)
+        val exactLengthBeats = (effectiveDurationMs / outBeatMs).toFloat().coerceIn(0.5f, 128f)
         val lengthBeatsInt = exactLengthBeats.roundToInt().coerceAtLeast(1)
         val swapFrac = transition.swapFrac.coerceIn(0.1f, 0.95f)
-        val exactSwapBeat = (exactLengthBeats * swapFrac).coerceIn(0.5f, exactLengthBeats)
+        val exactSwapBeat = (exactLengthBeats * swapFrac).coerceIn(min(0.5f, exactLengthBeats * 0.5f), exactLengthBeats)
         val swapBeatInt = exactSwapBeat.roundToInt().coerceIn(1, lengthBeatsInt)
 
         val inMediaPerBeat = speeds.inMediaPerBeat
         // inCueMs is where Song 2 sits at swapBeat, so inMediaAt(0f) == nudgedInStart
         val inCueMs = (nudgedInStart + exactSwapBeat * inMediaPerBeat).toLong().coerceAtLeast(0L)
 
-        // Up to 4 beats of silent pre-roll when Song 2 starts after 0:00 so the beat lock settles before audio fades in
-        val preRollBeats = min(4f, (nudgedInStart / inMediaPerBeat).toFloat()).coerceAtLeast(0f)
+        // Up to 4 beats of silent pre-roll when both tracks have room before beat 0, never negative on Song 1
+        val maxInPreRoll = (nudgedInStart / inMediaPerBeat).toFloat()
+        val maxOutPreRoll = (outStartMs / outBeatMs).toFloat()
+        val preRollBeats = min(4f, min(maxInPreRoll, maxOutPreRoll)).coerceAtLeast(0f)
         val spec = MixItSpec.from(transition)
 
         return CrossmixPlan(
@@ -661,7 +663,7 @@ object MixItPlanner {
         return (targetBeats * beatMs).toLong().coerceIn(MixItLimits.MinDurationMs, MixItLimits.MaxDurationMs)
     }
 
-    private val MusicalBeatCounts = intArrayOf(2, 4, 6, 8, 12, 16, 24, 32)
+    private val MusicalBeatCounts = intArrayOf(1, 2, 4, 6, 8, 12, 16, 24, 32)
 
     /** Human-friendly beat-match summary for the Transition Editor UI (no confusing key codes). */
     fun describeTempoMatch(

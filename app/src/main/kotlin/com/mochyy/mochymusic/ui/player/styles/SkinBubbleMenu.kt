@@ -88,8 +88,13 @@ internal fun BoxScope.SkinBubbleMenu(
     extras: List<StyleMenuExtra>,
     atStart: Boolean,
     buttonTones: StyleTones,
+    /** the player's own chevron art, size and shape from its menuButton; the menu style's trigger icon when it has none */
+    chevron: ChevronArt? = null,
 ) {
     val atBottom = style.atBottom
+    val itemBase = buttonSize
+    @Suppress("NAME_SHADOWING")
+    val buttonSize = chevron?.size ?: buttonSize
     val corner = when {
         atStart && atBottom -> Alignment.BottomStart
         atStart -> Alignment.TopStart
@@ -101,7 +106,7 @@ internal fun BoxScope.SkinBubbleMenu(
         reveal.animateTo(if (open) 1f else 0f, spring(dampingRatio = 0.72f, stiffness = 420f))
     }
 
-    val itemSize = style.size ?: (buttonSize + 6.dp)
+    val itemSize = style.size ?: (itemBase + 6.dp)
     val itemFill = style.fill.map(context::color)
     val activeFill = style.activeFill?.let(context::color) ?: Color.White.copy(alpha = 0.32f)
     val ink = style.ink?.let(context::color) ?: context.tones.ink
@@ -128,6 +133,7 @@ internal fun BoxScope.SkinBubbleMenu(
                     tint = Color.Transparent,
                     tileMode = android.graphics.Shader.TileMode.CLAMP,
                     bleed = false,
+                    fallbackBlur = true,
                     modifier = Modifier.fillMaxSize(),
                 )
                 Box(
@@ -172,6 +178,10 @@ internal fun BoxScope.SkinBubbleMenu(
 
     if (showButton) {
         val triggerArt = style.triggerIcon?.let(context.skin::resolve)
+        // a menu style's trigger icon is a picture of its own, so it stays still unless the menuButton says otherwise
+        val art = chevron?.takeIf { it.picture != null } ?: triggerArt?.let {
+            ChevronArt(it, null, chevron?.size, chevron?.shape ?: CircleShape, chevron?.tint, chevron?.scale ?: 0.5f, turns = false, ring = chevron?.ring)
+        } ?: chevron
         Box(
             modifier = Modifier
                 .align(corner)
@@ -182,18 +192,7 @@ internal fun BoxScope.SkinBubbleMenu(
                     bottom = if (atBottom) edge else 0.dp,
                 ),
         ) {
-            val turn = remember { Animatable(if (open) 1f else 0f) }
-            LaunchedEffect(open) { turn.animateTo(if (open) 1f else 0f, spring(dampingRatio = 0.55f, stiffness = 380f)) }
-            StyleCircle(
-                icon = R.drawable.expand_less,
-                tones = buttonTones,
-                size = buttonSize,
-                picture = triggerArt,
-                onClick = { onOpenChange(!open) },
-                modifier = Modifier.graphicsLayer {
-                    if (triggerArt == null) rotationZ = (if (!atBottom) 180f else 0f) + turn.value * 180f
-                },
-            )
+            MenuChevron(open, buttonTones, buttonSize, pill = false, opensDown = !atBottom, onOpenChange = onOpenChange, art = art)
         }
     }
 }
@@ -563,6 +562,7 @@ private fun BubbleSurface(
                 tint = fill.singleOrNull() ?: Color.Black.copy(alpha = 0.25f),
                 tileMode = android.graphics.Shader.TileMode.CLAMP,
                 bleed = true,
+                fallbackBlur = true,
                 modifier = Modifier.matchParentSize(),
             )
             if (fill.size > 1) Box(Modifier.matchParentSize().background(Brush.horizontalGradient(fill)))

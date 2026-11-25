@@ -39,6 +39,8 @@ class ModuleSkin(
     val appBackground: SkinAppBackground? = null,
     /** optional default chevron/bubble menu style for players */
     val menuStyle: SkinMenuStyle? = null,
+    /** the module's own sheets, any player block inside, opened with "openSheet" from a button, a box or a menu item */
+    val sheets: List<SkinSheet> = emptyList(),
 ) {
     /** the first player, the one the look switches to when it's turned on */
     val player: SkinPlayer? get() = players.firstOrNull()
@@ -56,6 +58,22 @@ class ModuleSkin(
 
     /** a font or shader file, which only a zip can carry */
     fun fontFile(path: String?): File? = (resolve(path) as? File)
+
+    /** shaders declared only for custom lyrics fill/effect, which stay android 13+ to avoid per-line offscreen passes */
+    val customLyricShaders: Set<String> by lazy {
+        val found = mutableSetOf<String>()
+        fun walk(p: SkinPlayer) {
+            p.all.forEach { block ->
+                if (block is SkinBlock.Lyrics) {
+                    block.custom?.let { style -> listOfNotNull(style.fill, style.effect).forEach { found += it.file } }
+                }
+            }
+        }
+        players.forEach { p -> p.withPages.forEach(::walk); p.variants.forEach { v -> v.player.withPages.forEach(::walk) } }
+        mini?.let(::walk)
+        sheets.forEach { walk(it.layout) }
+        found
+    }
 
     /** every shader file the players, their sub-styles, their lyrics, boxes, app background and the nav bar draw with, so they compile off the main thread with the glass */
     val playerShaders: Set<String> by lazy {
@@ -81,10 +99,11 @@ class ModuleSkin(
             }
         }
         players.forEach { p ->
-            player(p)
-            p.variants.forEach { player(it.player) }
+            p.withPages.forEach(::player)
+            p.variants.forEach { v -> v.player.withPages.forEach(::player) }
         }
         mini?.let(::player)
+        sheets.forEach { player(it.layout) }
         bar?.shader?.let { found += it.file }
         appBackground?.let { bg ->
             pageBg(bg.background)
@@ -96,6 +115,14 @@ class ModuleSkin(
 
 // ---- the bottom bar's glass -------------------------------------------------------------------
 
+/** optional static glass styling for android 7-9 or when live blur and gles can't run */
+@Immutable
+data class SkinGlassFallback(
+    val tint: SkinColor? = null,
+    val rim: SkinColor? = null,
+    val sheen: Float = 0.08f,
+)
+
 /** a glass of the module's own for the nav bar and mini player: its agsl file, the blur it reads through, how far past the bar it may read, its own uniforms, and whether mochy still draws its hairline and shadow round the bars */
 @Immutable
 data class SkinGlass(
@@ -105,6 +132,7 @@ data class SkinGlass(
     val uniforms: Map<String, Float>,
     val outline: Boolean = true,
     val shadow: Boolean = true,
+    val fallback: SkinGlassFallback? = null,
 ) {
     fun with(change: GlassChange): SkinGlass =
         copy(blurDp = change.blurDp ?: blurDp, marginDp = change.marginDp ?: marginDp, uniforms = uniforms + change.uniforms)
@@ -151,7 +179,23 @@ data class SkinFont(val regular: String, val bold: String?, val wholeApp: Boolea
 
 /** where mochy's chevron sits and how it's dressed: [side] start or end, or hidden when the module brings its own menu button */
 @Immutable
-data class SkinMenuButton(val side: MenuSide, val color: SkinColor?, val fill: SkinColor?)
+data class SkinMenuButton(
+    val side: MenuSide,
+    val color: SkinColor?,
+    val fill: SkinColor?,
+    /** the module's own chevron art in place of mochy's arrow, and another for while the menu is open */
+    val image: String? = null,
+    val imageOpen: String? = null,
+    /** the button's size in dp, and its corner (null keeps it round) */
+    val size: Dp? = null,
+    val corner: Dp? = null,
+    /** how much of the button the art fills */
+    val imageScale: Float = 0.5f,
+    /** whether the art flips round as the menu opens, the way mochy's arrow does */
+    val turns: Boolean = true,
+    val stroke: Dp? = null,
+    val strokeColor: SkinColor? = null,
+)
 
 enum class MenuSide { Start, End, Hidden }
 
@@ -188,7 +232,15 @@ data class SkinPlayer(
     val edit: List<SkinEditPart> = emptyList(),
     /** custom styling for this player's chevron / bubble popup menu */
     val menuStyle: SkinMenuStyle? = null,
+    /** false hides the white bar at the top of the player; swiping down still closes it */
+    val handle: Boolean = true,
+    /** the module's own lyrics page and queue page, opened in place of mochy's from this player */
+    val lyricsPage: SkinPlayer? = null,
+    val queuePage: SkinPlayer? = null,
 ) {
+    /** this player and the pages it opens, for anything that has to look through all of their blocks */
+    val withPages: List<SkinPlayer> get() = listOfNotNull(this, lyricsPage, queuePage)
+
     /** whether anything in it moves with the music or a loop, so the shared clock only runs when something reads it */
     val moves: Boolean get() = layers.any { it.motion != null } || background.drawsShader || blocks.any(SkinBlock::moves) || header.any(SkinBlock::moves)
 
@@ -232,6 +284,9 @@ data class SkinPlayer(
         }
     }
 
+    /** some words name the song's facts ({about}, {genres}…) or a condition checks for them, so mochy looks the song up for this player */
+    val songInfo: Boolean by lazy { SkinFlag.About in flags || all.any { it is SkinBlock.Label && SkinSongInfoField.containsMatchIn(it.value) } }
+
     /** some words name the time, the queue or what plays next, so mochy follows those for this player */
     val playerFields: Boolean by lazy { all.any { it is SkinBlock.Label && SkinPlayerField.containsMatchIn(it.value) } }
 
@@ -261,6 +316,9 @@ val SkinAudioField = Regex("""\{(codec|khz|kbps|bits|size|quality|device|volume|
 
 /** the lyrics placeholders: the line being sung, the ones around it, its translation and the word */
 val SkinLyricField = Regex("""\{(line|nextline|prevline|translation|word)\}""", RegexOption.IGNORE_CASE)
+
+/** the song info placeholders: what it's about, its genres, when it came out, who wrote and produced it, its label */
+val SkinSongInfoField = Regex("""\{(about|genres?|released|year|writers|producers|label)\}""", RegexOption.IGNORE_CASE)
 
 /** the queue placeholders: what's coming up, what played before, where we are and the queue's name */
 val SkinQueueField = Regex("""\{(next(?:[1-9]|10)?(?:artist|length)?|prev(?:artist|length)?|queue(?:size|position|left|title)?)\}""", RegexOption.IGNORE_CASE)
@@ -393,6 +451,65 @@ enum class StackAlign { Center, Top, Bottom, Start, End }
 /** where a live surface block puts its touch gamepad: under the screen, over it, or hidden */
 enum class SurfaceControls { Below, Overlay, None }
 
+/** how a surface's frames fill its screen: stretched to its shape, whole with bars, cropped to fill it, or at the biggest whole-pixel scale */
+enum class SurfaceFit { Stretch, Contain, Cover, Pixel }
+
+/** whether a surface can cover its whole player: from a button on its pad and the chevron menu, opened that way, or never */
+enum class SurfaceFullscreen { Button, Start, Off }
+
+/** the surface fields a module can hand to one of its settings with "$key|fallback", read again whenever the setting changes */
+object SurfaceOptions {
+    const val Controls = "controls"
+    const val Fit = "fit"
+    const val Aspect = "aspect"
+    const val Fullscreen = "fullscreen"
+    val Bindable = setOf(Controls, Fit, Aspect, Fullscreen)
+
+    fun controls(raw: String?): SurfaceControls? = when (raw?.trim()?.lowercase()) {
+        "below", "under", "true" -> SurfaceControls.Below
+        "overlay", "over" -> SurfaceControls.Overlay
+        "none", "off", "false", "hidden" -> SurfaceControls.None
+        else -> null
+    }
+
+    fun fit(raw: String?): SurfaceFit? = when (raw?.trim()?.lowercase()) {
+        "stretch", "fill" -> SurfaceFit.Stretch
+        "contain", "fit", "letterbox" -> SurfaceFit.Contain
+        "cover", "crop", "zoom" -> SurfaceFit.Cover
+        "pixel", "integer", "sharp" -> SurfaceFit.Pixel
+        else -> null
+    }
+
+    fun fullscreen(raw: String?): SurfaceFullscreen? = when (raw?.trim()?.lowercase()) {
+        "button", "true", "on" -> SurfaceFullscreen.Button
+        "start", "always" -> SurfaceFullscreen.Start
+        "off", "false", "none" -> SurfaceFullscreen.Off
+        else -> null
+    }
+
+    /** "4:3", "16/10" or 1.6 as a shape, "frame" for the module's own frame shape, "fill" for all the room left */
+    fun aspect(raw: String?): SurfaceAspect? {
+        val text = raw?.trim()?.lowercase() ?: return null
+        when (text) {
+            "frame", "native", "source" -> return SurfaceAspect(ratio = null, fill = false)
+            "fill", "full", "screen" -> return SurfaceAspect(ratio = null, fill = true)
+        }
+        val sides = text.split(':', '/', 'x')
+        val ratio = if (sides.size == 2) {
+            val w = sides[0].trim().toFloatOrNull()
+            val h = sides[1].trim().toFloatOrNull()
+            if (w != null && h != null && h > 0f) w / h else null
+        } else {
+            text.toFloatOrNull()
+        }
+        return ratio?.takeIf { it.isFinite() && it > 0f }?.let { SurfaceAspect(it.coerceIn(0.25f, 4f), fill = false) }
+    }
+}
+
+/** a surface screen's shape: a fixed [ratio], the frame's own when null, or all the room left when [fill] */
+@Immutable
+data class SurfaceAspect(val ratio: Float?, val fill: Boolean)
+
 /** which way a box's colours run when it has more than one */
 enum class GradientKind { Vertical, Horizontal, Diagonal, Radial }
 
@@ -496,12 +613,31 @@ sealed interface SkinBlock {
         val title: String? = null,
         val width: Dp? = null,
         val height: Dp? = null,
-        val aspect: Float = 4f / 3f,
+        val aspect: SurfaceAspect = SurfaceAspect(4f / 3f, fill = false),
         val corner: Dp = 12.dp,
         val controls: SurfaceControls = SurfaceControls.Below,
         val crisp: Boolean = true,
         val accent: SkinColor? = null,
-    ) : SkinBlock
+        /** null picks for the shape: whole with bars in a filled screen, stretched to a fixed shape like a crt did */
+        val fit: SurfaceFit? = null,
+        val fullscreen: SurfaceFullscreen = SurfaceFullscreen.Button,
+        /** fields read from the module's settings: the field's name to the setting's key */
+        val bound: Map<String, String> = emptyMap(),
+    ) : SkinBlock {
+        val fitting: SurfaceFit get() = fit ?: if (aspect.fill) SurfaceFit.Contain else SurfaceFit.Stretch
+
+        /** the block with every bound field read from the settings as they are now, a setting that isn't a valid value keeping the fallback */
+        fun with(values: Map<String, String>): Surface {
+            if (bound.isEmpty()) return this
+            fun read(field: String) = bound[field]?.let(values::get)
+            return copy(
+                controls = SurfaceOptions.controls(read(SurfaceOptions.Controls)) ?: controls,
+                aspect = SurfaceOptions.aspect(read(SurfaceOptions.Aspect)) ?: aspect,
+                fit = SurfaceOptions.fit(read(SurfaceOptions.Fit)) ?: fit,
+                fullscreen = SurfaceOptions.fullscreen(read(SurfaceOptions.Fullscreen)) ?: fullscreen,
+            )
+        }
+    }
     /** the bar under the controls that opens the lyrics and the queue, on frosted [glass] or the module's colours */
     data class BottomBar(
         val kind: BottomBarKind,
@@ -546,6 +682,12 @@ sealed interface SkinBlock {
         val target: SkinTarget? = null,
         val glassConfig: SkinGlassConfig? = null,
     ) : SkinBlock
+    /** blocks in a box of their own that scrolls, down or sideways; with no [height] it takes the room the column has left */
+    data class Scroll(val blocks: List<SkinBlock>, val gap: Dp, val height: Dp?, val row: Boolean) : SkinBlock
+    /** mochy's own lyrics, the ones on its lyrics page with their flowing animation; with no [height] it takes the room left, [header] shows mochy's cover and title over them */
+    data class MochyLyrics(val height: Dp?, val header: Boolean) : SkinBlock
+    /** mochy's own queue with everything it does (drag to reorder, swipe away, its menus); with no [height] it takes the room left */
+    data class MochyQueue(val height: Dp?, val header: Boolean) : SkinBlock
     /** a shape drawn from svg path data, scaled from its [viewWidth] by [viewHeight] box into its own */
     data class Vector(
         val data: String,
@@ -589,6 +731,7 @@ sealed interface SkinBlock {
             is Column -> blocks.any { it.moves }
             is Stack -> blocks.any { it.moves }
             is Box -> blocks.any { it.moves }
+            is Scroll -> blocks.any { it.moves }
             else -> false
         }
 
@@ -599,9 +742,30 @@ sealed interface SkinBlock {
         is Column -> blocks.flatMap { it.walk() }
         is Stack -> blocks.flatMap { it.walk() }
         is Box -> blocks.flatMap { it.walk() }
+        is Scroll -> blocks.flatMap { it.walk() }
         else -> emptyList()
     }
 }
+
+// ---- the module's own sheets ------------------------------------------------------------------
+
+/** how a module sheet is drawn: in mochy's own sheet, or entirely the module's (its background, corners and height) */
+enum class SheetLook { Mochy, Own }
+
+/** a sheet of the module's own: [layout] is a player layout (background, blocks, scroll), so any block works inside it */
+@Immutable
+data class SkinSheet(
+    val id: String,
+    val look: SheetLook,
+    val layout: SkinPlayer,
+    /** its share of the screen's height, 0.2 to 1; null fits its blocks */
+    val height: Float?,
+    val corner: Dp,
+    /** the veil over the player behind it */
+    val dim: Float,
+    /** the little bar at its top edge, an own-look sheet only */
+    val handle: Boolean,
+)
 
 // ---- pages ------------------------------------------------------------------------------------
 
@@ -906,4 +1070,6 @@ sealed interface ActionTarget {
     data class SetField(val key: String, val value: String? = null) : ActionTarget
     /** toggles or sets an allowlisted safe Mochy app setting (validated against SafeAppSettings) */
     data class SetAppSetting(val key: String, val value: String? = null) : ActionTarget
+    /** opens one of the module's own sheets over the player */
+    data class ModuleSheet(val id: String) : ActionTarget
 }

@@ -74,7 +74,8 @@ fun ModulesScreen(navController: NavController, viewModel: ModulesViewModel = hi
     var sortingLooks by remember { mutableStateOf(false) }
     var sortingSources by remember { mutableStateOf(false) }
     val looks = entries.filter { it.isLookOnly }
-    val sources = entries.filter { !it.isLookOnly }
+    val effects = entries.filter { it.isEffectsOnly }
+    val sources = entries.filter { !it.isLookOnly && !it.isEffectsOnly }
     val open: (ModuleEntry) -> Unit = { navController.navigate(moduleRoute(it.id)) }
     val findMore = { overlay.showFindModulesSheet(viewModel) { id -> navController.navigate(moduleRoute(id)) } }
     val updating by viewModel.updating.collectAsState()
@@ -106,6 +107,16 @@ fun ModulesScreen(navController: NavController, viewModel: ModulesViewModel = hi
             )
             Spacer(Modifier.height(12.dp))
             DashedSlot(stringResource(R.string.modules_add_more), onClick = findMore, compact = true)
+        }
+
+        // modules that only bring mixer effects; the section only shows once one is added
+        if (effects.isNotEmpty()) {
+            Spacer(Modifier.height(34.dp))
+            ModuleSectionTitle(stringResource(R.string.modules_effects), showDone = false, onDone = {})
+            ModuleList(
+                effects, onOpen = open, onRemove = { removing = it }, onReorder = {},
+                updating = updating, onUpdate = update, sorting = false, onStartSorting = {},
+            )
         }
 
         Spacer(Modifier.height(34.dp))

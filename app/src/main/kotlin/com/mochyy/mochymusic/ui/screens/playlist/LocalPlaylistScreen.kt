@@ -295,8 +295,11 @@ fun LocalPlaylistScreen(
     }
 
     LaunchedEffect(songs) {
+        if (selection.isEmpty()) return@LaunchedEffect
+        val validIds = HashSet<Int>(songs.size)
+        songs.forEach { validIds.add(it.map.id) }
         selection.fastForEachReversed { mapId ->
-            if (songs.find { it.map.id == mapId } == null) {
+            if (mapId !in validIds) {
                 selection.remove(Integer.valueOf(mapId))
             }
         }
@@ -594,10 +597,13 @@ fun LocalPlaylistScreen(
                     if (selectAll) selection.addAll(songs.map { it.map.id })
                 },
                 onMore = {
+                    val byMapId = songs.associateBy { it.map.id }
+                    val selectedSongs = selection.mapNotNull { byMapId[it]?.song }
+                    val selectedMaps = selection.mapNotNull { byMapId[it]?.map }
                     menuState.show {
                         SelectionSongMenu(
-                            songSelection = selection.mapNotNull { mapId -> songs.find { it.map.id == mapId }?.song },
-                            songPosition = selection.mapNotNull { mapId -> songs.find { it.map.id == mapId }?.map },
+                            songSelection = selectedSongs,
+                            songPosition = selectedMaps,
                             onDismiss = menuState::dismiss,
                             clearAction = onExitSelectionMode
                         )
@@ -730,10 +736,7 @@ fun LocalPlaylistScreen(
                 val cachedBpm by produceState<Int?>(initialValue = null, key1 = song.song.id, key2 = isMixItMode) {
                     value = if (isMixItMode) {
                         withContext(Dispatchers.IO) {
-                            playerConnection.cachedTrackAnalysis(song.song.id)
-                                ?.takeIf { it.isBeatReliable }
-                                ?.bpm
-                                ?.roundToInt()
+                            playerConnection.cachedTrackBpm(song.song.id)
                         }
                     } else null
                 }
@@ -786,12 +789,15 @@ fun LocalPlaylistScreen(
 
                 val content: @Composable () -> Unit = {
                     val active = song.song.id == mediaMetadata?.id
+                    val baseSubtitle = remember(song.song.artists, song.song.song.duration) {
+                        "${song.song.artists.joinToString { it.name }} • ${makeTimeString(song.song.song.duration * 1000L)}"
+                    }
                     val bpmSuffix = if (isMixItMode && cachedBpm != null) " • $cachedBpm BPM" else ""
                     PlaylistTrackRow(
                         thumbnailUrl = song.song.song.thumbnailUrl,
                         songId = song.song.id,
                         title = song.song.song.title,
-                        subtitle = "${song.song.artists.joinToString { it.name }} • ${makeTimeString(song.song.song.duration * 1000L)}$bpmSuffix",
+                        subtitle = "$baseSubtitle$bpmSuffix",
                         isActive = active,
                         isPlaying = active && isPlaying,
                         modifier = Modifier.revealOnAppear(

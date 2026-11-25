@@ -38,10 +38,12 @@ import com.mochyy.mochymusic.modules.skin.ActiveSkin
 import com.mochyy.mochymusic.modules.skin.ButtonKind
 import com.mochyy.mochymusic.modules.skin.ModuleMenu
 import com.mochyy.mochymusic.modules.skin.SheetKind
+import com.mochyy.mochymusic.ui.component.LocalMenuState
 import com.mochyy.mochymusic.ui.component.RemoteFocus
 import com.mochyy.mochymusic.ui.component.SheetIcon
 import com.mochyy.mochymusic.ui.screens.search.searchRoute
 import com.mochyy.mochymusic.ui.screens.settings.devspace.openDevUrl
+import com.mochyy.mochymusic.ui.screens.settings.modules.ModulePageSheetContent
 import com.mochyy.mochymusic.ui.screens.settings.modules.modulePageRoute
 import java.net.URLEncoder
 
@@ -52,6 +54,7 @@ internal fun ModuleMenuRows(song: MediaMetadata?, onDismiss: () -> Unit, onOpenR
     val customise = ActiveSkin.style?.takeIf { it.player.customise != null && onCustomise != null }
     if (actions.isEmpty() && customise == null) return
     val context = LocalContext.current
+    val menuState = LocalMenuState.current
     Spacer(Modifier.height(16.dp))
     if (customise != null && onCustomise != null) {
         val name = customise.title
@@ -64,7 +67,26 @@ internal fun ModuleMenuRows(song: MediaMetadata?, onDismiss: () -> Unit, onOpenR
         ModuleMenuRow(item.action.title, item.skin.resolve(item.action.icon), enabled) {
             val now = song ?: return@ModuleMenuRow
             onDismiss()
-            openModuleTarget(context, item.action.target, now, item.moduleId, openRoute = { route -> onOpenRoute?.invoke(route) })
+            openModuleTarget(
+                context, item.action.target, now, item.moduleId,
+                openRoute = { route -> onOpenRoute?.invoke(route) },
+                // a module page in a sheet opens here too, once this menu is on its way out; a module sheet opens over the player by itself
+                onOpenSheet = { kind, pageId ->
+                    if (kind == SheetKind.ModulePage && pageId != null) {
+                        menuState.show {
+                            ModulePageSheetContent(
+                                moduleId = item.moduleId,
+                                pageId = pageId,
+                                onNavigateRoute = { route ->
+                                    menuState.dismissAll()
+                                    onOpenRoute?.invoke(route)
+                                },
+                                onDismiss = { menuState.dismiss() },
+                            )
+                        }
+                    }
+                },
+            )
         }
     }
 }
@@ -93,6 +115,7 @@ internal fun openModuleTarget(
         is ActionTarget.Control -> onControl?.invoke(target.kind)
         is ActionTarget.SetField -> onSetField?.invoke(target.key, target.value)
         is ActionTarget.SetAppSetting -> onSetAppSetting?.invoke(target.key, target.value)
+        is ActionTarget.ModuleSheet -> com.mochyy.mochymusic.ui.player.styles.ModuleSheets.open(moduleId, target.id)
     }
 }
 

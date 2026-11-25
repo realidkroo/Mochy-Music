@@ -94,6 +94,12 @@ internal class UsbDacAccess(context: Context, private val onChanged: () -> Unit)
         }
     }
 
+    // the configuration the device runs in, asked straight from it (GET_CONFIGURATION); null leaves the parser on the first one
+    private fun activeConfiguration(connection: android.hardware.usb.UsbDeviceConnection): Int? {
+        val answer = ByteArray(1)
+        return if (connection.controlTransfer(0x80, 0x08, 0, 0, answer, 1, 300) == 1) answer[0].toInt() and 0xff else null
+    }
+
     /** the dac's settings and volume knob, read from its descriptors the first time they're needed after it's plugged in */
     @Synchronized
     fun dac(device: UsbDevice): UsbAudioDescriptors.Dac? {
@@ -102,7 +108,7 @@ internal class UsbDacAccess(context: Context, private val onChanged: () -> Unit)
         if (!hasPermission(device)) return null
         val connection = runCatching { usb.openDevice(device) }.getOrNull() ?: return null
         return try {
-            connection.rawDescriptors?.let(UsbAudioDescriptors::parse)?.also { descriptors[device.deviceId] = it }
+            connection.rawDescriptors?.let { raw -> UsbAudioDescriptors.parse(raw, activeConfiguration(connection)) }?.also { descriptors[device.deviceId] = it }
         } catch (error: Exception) {
             Timber.tag("UsbDacAccess").w(error, "couldn't read the dac's descriptors")
             null

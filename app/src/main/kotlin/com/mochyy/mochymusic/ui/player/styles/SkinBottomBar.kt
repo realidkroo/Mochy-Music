@@ -158,13 +158,14 @@ private fun BarSurface(block: SkinBlock.BottomBar, context: SkinContext, modifie
                 bleed = cfg.bleed,
                 progressive = progressive,
                 progressiveRamp = cfg.ramp,
+                fallbackBlur = true,
                 modifier = Modifier.matchParentSize(),
             )
             cfg.shader?.let { prog -> SkinShaderSurface(prog, context, Modifier.matchParentSize()) {} }
             if (cfg.outline) Box(Modifier.matchParentSize().border(1.dp, Color.White.copy(alpha = 0.2f), shape))
         } else {
             val fill = colors.ifEmpty { listOf(context.tones.chip) }
-            Box(Modifier.matchParentSize().background(if (fill.size == 1) Brush.linearGradient(listOf(fill[0], fill[0])) else Brush.horizontalGradient(fill)))
+            Box(Modifier.matchParentSize().background(if (fill.size == 1) androidx.compose.ui.graphics.SolidColor(fill[0]) else Brush.horizontalGradient(fill)))
         }
         content()
     }

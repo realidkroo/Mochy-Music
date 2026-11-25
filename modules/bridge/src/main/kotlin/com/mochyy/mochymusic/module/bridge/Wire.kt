@@ -251,6 +251,7 @@ internal object Wire {
         put("album", track.album)
         put("durationMs", track.durationMs)
         put("isrc", track.isrc)
+        put("videoId", track.videoId)
     }
 
     fun trackFrom(o: JsonObject) = TrackQuery(
@@ -259,6 +260,7 @@ internal object Wire {
         album = o.text("album"),
         durationMs = o.long("durationMs"),
         isrc = o.text("isrc"),
+        videoId = o.text("videoId"),
     )
 
     /** a stream's license server can't cross as json, so it goes as an id the module hands out and mochy asks back with */

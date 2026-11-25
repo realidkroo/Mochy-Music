@@ -22,6 +22,7 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import kotlin.math.roundToInt
 
 /** analyses tracks for crossmix and keeps them on disk, a failed decode is never cached since an expired stream url may work next time */
 @UnstableApi
@@ -32,6 +33,8 @@ class CrossmixAnalysisRepository(
 ) {
     // bounded memory cache because every analysis is already persisted on disk
     private val memory = android.util.LruCache<String, TrackAnalysis>(16)
+    // lightweight BPM-only cache for large Mix It playlists so scrolling 1000+ songs never deserializes waveforms
+    private val bpmCache = android.util.LruCache<String, Int>(2048)
     private val inFlight = ConcurrentHashMap<String, Deferred<TrackAnalysis?>>()
     private val failures = ConcurrentHashMap<String, String>()
     private val cacheDir = File(context.cacheDir, "crossmix-analysis-v2").also { it.mkdirs() }
@@ -47,11 +50,13 @@ class CrossmixAnalysisRepository(
         scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
         dispatcher.close()
         memory.evictAll()
+        bpmCache.evictAll()
     }
 
     // keeps a few nearby track analyses hot in ram and drops older ones that are already saved on disk
     fun trimMemory() {
         memory.trimToSize(4)
+        bpmCache.trimToSize(256)
         failures.clear()
     }
 
@@ -87,6 +92,7 @@ class CrossmixAnalysisRepository(
                             // a whole-track result answers head requests too; never overwrite it with less
                             if (memory.get(mediaId)?.complete != true || analysis.complete) {
                                 memory.put(mediaId, analysis)
+                                bpmCache.put(mediaId, reliableBpmOf(analysis) ?: NoBpm)
                                 write(mediaId, analysis)
                             }
                         }
@@ -105,9 +111,42 @@ class CrossmixAnalysisRepository(
     /** what's already known in memory, without decoding or disk IO */
     fun cached(mediaId: String): TrackAnalysis? = memory.get(mediaId)
 
-    /** checks memory, then disk cache without triggering a new decode (useful for showing BPM chips in playlists) */
+    /** checks memory, then disk cache without triggering a new decode */
     fun cachedFromDisk(mediaId: String): TrackAnalysis? =
-        memory.get(mediaId) ?: read(mediaId)?.also { memory.put(mediaId, it) }
+        memory.get(mediaId) ?: read(mediaId)?.also {
+            memory.put(mediaId, it)
+            bpmCache.put(mediaId, reliableBpmOf(it) ?: NoBpm)
+        }
+
+    /** lightweight BPM lookup for playlist rows: avoids deserializing waveform/energy arrays or thrashing the 16-entry analysis cache */
+    fun cachedReliableBpm(mediaId: String): Int? {
+        memory.get(mediaId)?.let { analysis ->
+            val bpm = reliableBpmOf(analysis)
+            bpmCache.put(mediaId, bpm ?: NoBpm)
+            return bpm
+        }
+        bpmCache.get(mediaId)?.let { return it.takeIf { v -> v > 0 } }
+        val bpm = readReliableBpmHeader(mediaId)
+        bpmCache.put(mediaId, bpm ?: NoBpm)
+        return bpm
+    }
+
+    private fun reliableBpmOf(analysis: TrackAnalysis): Int? =
+        analysis.takeIf { it.isBeatReliable }?.bpm?.takeIf { it.isFinite() }?.roundToInt()
+
+    private fun readReliableBpmHeader(mediaId: String): Int? = runCatching {
+        val file = cacheFile(mediaId)
+        if (!file.exists()) return null
+        DataInputStream(BufferedInputStream(file.inputStream(), 64)).use { input ->
+            if (input.readInt() != CacheVersion) return null
+            input.readLong() // analyzedMs
+            input.readBoolean() // complete
+            val bpm = input.readFloat().takeUnless { it.isNaN() } ?: return null
+            val bpmConfidence = input.readFloat()
+            val beatsCount = input.readInt()
+            if (bpm.isFinite() && bpmConfidence >= 0.35f && beatsCount >= 16) bpm.roundToInt() else null
+        }
+    }.getOrNull()
 
     /** why the last analysis of mediaId came back empty, if it did */
     fun lastFailure(mediaId: String): String? = failures[mediaId]
@@ -205,7 +244,13 @@ class CrossmixAnalysisRepository(
 
     private fun cacheFile(mediaId: String): File {
         val digest = MessageDigest.getInstance("SHA-256").digest(mediaId.toByteArray())
-        return File(cacheDir, digest.joinToString("") { "%02x".format(it) })
+        val hex = CharArray(digest.size * 2)
+        for (i in digest.indices) {
+            val b = digest[i].toInt() and 0xFF
+            hex[i * 2] = HexChars[b ushr 4]
+            hex[i * 2 + 1] = HexChars[b and 0x0F]
+        }
+        return File(cacheDir, String(hex))
     }
 
     private fun DataInputStream.readLongArray(): LongArray = LongArray(readInt().coerceIn(0, MaxCachedArray)) { readLong() }
@@ -231,6 +276,8 @@ class CrossmixAnalysisRepository(
         // 3: one-chunk streams. 4: voice curve. 5: bars & sections. 6: 8 Hz waveform. 7: 32 Hz high-contrast waveform for Mix It
         const val CacheVersion = 7
         const val MaxCachedArray = 200_000
+        const val NoBpm = -1
+        val HexChars = "0123456789abcdef".toCharArray()
         /** the next song: two minutes of possible entry points plus room for the blend after one */
         const val HeadMs = 150_000L
         const val MaxTrackMs = 15 * 60_000L

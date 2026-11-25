@@ -163,4 +163,73 @@ class AudioDecoderPolicyTest {
             AudioDecoderPolicy.selectDecodersByName(MimeTypes.AUDIO_AAC, samsungAac, hasFfmpegFallback = true) { it },
         )
     }
+
+    @Test
+    fun `mediatek qualcomm and other vendor lossless decoders are bypassed for flac and alac`() {
+        val mtkOnlyAlac = listOf("c2.mtk.alac.decoder", "OMX.MTK.AUDIO.DECODER.ALAC")
+        assertEquals(
+            emptyList<String>(),
+            AudioDecoderPolicy.selectDecodersByName(MimeTypes.AUDIO_ALAC, mtkOnlyAlac, hasFfmpegFallback = true) { it },
+        )
+        assertEquals(
+            mtkOnlyAlac,
+            AudioDecoderPolicy.selectDecodersByName(MimeTypes.AUDIO_ALAC, mtkOnlyAlac, hasFfmpegFallback = false) { it },
+        )
+
+        val qtiFlac = listOf("c2.qti.flac.decoder", "c2.android.flac.decoder")
+        assertEquals(
+            listOf("c2.android.flac.decoder"),
+            AudioDecoderPolicy.selectDecodersByName(MimeTypes.AUDIO_FLAC, qtiFlac, hasFfmpegFallback = true) { it },
+        )
+        assertEquals(
+            listOf("c2.android.flac.decoder", "c2.qti.flac.decoder"),
+            AudioDecoderPolicy.selectDecodersByName(MimeTypes.AUDIO_FLAC, qtiFlac, hasFfmpegFallback = false) { it },
+        )
+    }
+
+    @Test
+    fun `28-byte and nested quicktime alac csd plus 38-byte and multi-block flac csd are parsed accurately`() {
+        // 28-byte MP4/FFmpeg full-box body: 4 zero bytes (version/flags) + 24-byte ALACSpecificConfig
+        val alac28Bit16 = ByteArray(28).apply {
+            this[4 + 2] = 0x10 // frameLength = 4096
+            this[4 + 4] = 0 // compatibleVersion
+            this[4 + 5] = 16 // bitDepth
+            this[4 + 9] = 2 // stereo
+        }
+        val alac28Format = Format.Builder()
+            .setSampleMimeType(MimeTypes.AUDIO_ALAC)
+            .setInitializationData(listOf(alac28Bit16))
+            .build()
+        assertEquals(16, AudioDecoderPolicy.sourceBitDepth(alac28Format))
+        assertFalse(AudioDecoderPolicy.shouldRequestFloat(alac28Format))
+        assertFalse(AudioDecoderPolicy.shouldRequestFloatForMediaCodec(alac28Format))
+
+        // Nested QuickTime cookie with "frma" prefix before "alac" atom
+        val nestedAlac24 = ByteArray(48).apply {
+            this[4] = 'f'.code.toByte(); this[5] = 'r'.code.toByte(); this[6] = 'm'.code.toByte(); this[7] = 'a'.code.toByte()
+            this[16] = 'a'.code.toByte(); this[17] = 'l'.code.toByte(); this[18] = 'a'.code.toByte(); this[19] = 'c'.code.toByte()
+            this[16 + 8 + 5] = 24
+        }
+        val nestedFormat = Format.Builder()
+            .setSampleMimeType(MimeTypes.AUDIO_ALAC)
+            .setInitializationData(listOf(nestedAlac24))
+            .build()
+        assertEquals(24, AudioDecoderPolicy.sourceBitDepth(nestedFormat))
+        assertTrue(AudioDecoderPolicy.shouldRequestFloatForMediaCodec(nestedFormat))
+
+        // 38-byte FLAC block header + STREAMINFO without leading "fLaC"
+        val flac42 = flacCsd(16)
+        val flac38 = flac42.copyOfRange(4, 42)
+        val flac38Format = Format.Builder()
+            .setSampleMimeType(MimeTypes.AUDIO_FLAC)
+            .setInitializationData(listOf(flac38))
+            .build()
+        assertEquals(16, AudioDecoderPolicy.sourceBitDepth(flac38Format))
+        assertFalse(AudioDecoderPolicy.shouldRequestFloat(flac38Format))
+
+        // Unknown-depth FLAC never requests float from platform MediaCodec
+        val unknownFlac = Format.Builder().setSampleMimeType(MimeTypes.AUDIO_FLAC).build()
+        assertNull(AudioDecoderPolicy.sourceBitDepth(unknownFlac))
+        assertFalse(AudioDecoderPolicy.shouldRequestFloatForMediaCodec(unknownFlac))
+    }
 }

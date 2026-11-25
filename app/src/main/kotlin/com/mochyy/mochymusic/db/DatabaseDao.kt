@@ -1099,6 +1099,12 @@ interface DatabaseDao {
     @Query("SELECT COUNT(*) FROM song WHERE inLibrary IS NOT NULL OR liked")
     fun librarySongCount(): Flow<Int>
 
+    @Query("SELECT COUNT(*) FROM song")
+    fun allSongCount(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM playlist WHERE bookmarkedAt IS NOT NULL")
+    fun playlistCount(): Flow<Int>
+
     // an album is only stored once something opens or saves it, so a song's album that was never opened gets a stand-in the album page fills in later
     @Query(
         "INSERT OR IGNORE INTO album (id, title, thumbnailUrl, songCount, duration, lastUpdateTime) " +

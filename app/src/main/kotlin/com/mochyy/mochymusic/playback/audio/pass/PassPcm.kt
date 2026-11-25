@@ -3,12 +3,16 @@
 package com.mochyy.mochymusic.playback.audio.pass
 
 import androidx.media3.common.C
+import androidx.media3.common.Format
+import androidx.media3.common.util.UnstableApi
+import com.mochyy.mochymusic.playback.audio.AudioDecoderPolicy
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
 /** decoder pcm into the dac's integer container: only the packing changes, never a sample's value, no gain, no dither */
+@UnstableApi
 internal object PassPcm {
 
     /** what the passthrough takes from a decoder: little-endian integers, and float, which is how 24-bit flac comes out */
@@ -20,7 +24,10 @@ internal object PassPcm {
         else -> 4
     }
 
-    /** how many bits the song really has: the file's own depth when the extractor knew it, else what the decoder handed over */
+    /** how many bits the song really has: the file's own depth (including FLAC/ALAC CSD headers) when known, else what the decoder handed over */
+    fun sourceBits(encoding: Int, source: Format?): Int =
+        AudioDecoderPolicy.sourceBitDepth(source) ?: sourceBits(encoding, source?.pcmEncoding)
+
     fun sourceBits(encoding: Int, fileEncoding: Int?): Int = when (fileEncoding) {
         C.ENCODING_PCM_16BIT -> 16
         C.ENCODING_PCM_24BIT -> 24
