@@ -14,7 +14,7 @@ on:
 
 jobs:
   build_debug:
-    name: Build Universal GMS Debug
+    name: Build Universal FOSS Debug
     runs-on: ubuntu-latest
     if: github.actor != 'dependabot[bot]'
     steps:
@@ -59,12 +59,12 @@ jobs:
           DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
           ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
         run: |
-          ./gradlew assembleUniversalGmsDebug --no-configuration-cache --console=plain --warning-mode summary
+          ./gradlew assembleUniversalFossDebug --no-configuration-cache --console=plain --warning-mode summary
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-universal-gms-debug
-          path: app/build/outputs/apk/universalGms/debug/*.apk
+          name: app-universal-foss-debug
+          path: app/build/outputs/apk/universalFoss/debug/*.apk
           # a debug apk is only for trying the build, after a week it's just eating actions storage
           retention-days: 7

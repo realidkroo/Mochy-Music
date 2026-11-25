@@ -173,10 +173,10 @@ private fun MixItEditorContent(
     var inSyncedLines by remember(inSong.id) { mutableStateOf<List<LyricsEntry>>(emptyList()) }
 
     val outDurationMs = remember(outAnalysis, fallbackOutDur) {
-        maxOf(fallbackOutDur, outAnalysis?.analyzedMs ?: 0L).coerceAtLeast(15_000L)
+        maxOf(fallbackOutDur, outAnalysis?.analyzedMs ?: 0L).coerceAtLeast(com.mochyy.mochymusic.mixit.MixItLimits.MinTrackMs)
     }
     val inDurationMs = remember(inAnalysis, fallbackInDur) {
-        maxOf(fallbackInDur, inAnalysis?.analyzedMs ?: 0L).coerceAtLeast(15_000L)
+        maxOf(fallbackInDur, inAnalysis?.analyzedMs ?: 0L).coerceAtLeast(com.mochyy.mochymusic.mixit.MixItLimits.MinTrackMs)
     }
 
     var draft by remember(playlistId, outSong.id, inSong.id) {

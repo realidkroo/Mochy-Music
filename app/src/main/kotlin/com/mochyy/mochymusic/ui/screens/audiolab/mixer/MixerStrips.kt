@@ -1,4 +1,4 @@
-// the mixer's strips: a fader and meter per bus, pan, mute and solo, and the routes between them drawn as cables
+// the mixer's channel strips: fader, meter, pan, mute/solo, effects shortcut and send cables
 
 package com.mochyy.mochymusic.ui.screens.audiolab.mixer
 
@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -45,13 +44,13 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mochyy.mochymusic.R
@@ -68,10 +67,10 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-private val StripWidth = 80.dp
+private val DefaultStripWidth = 82.dp
 private val StripGap = 10.dp
-private val FaderHeight = 220.dp
-private val CableRoom = 54.dp
+private val FaderHeight = 216.dp
+private val CableRoom = 48.dp
 
 private val MeterGreen = Color(0xFF8FD98B)
 private val MeterYellow = Color(0xFFF2D46B)
@@ -94,6 +93,8 @@ fun MixerStrips(
     meters: MixerMeterState,
     store: MixerStore,
     onOpen: (Int) -> Unit,
+    selectedBusId: Int? = null,
+    stripWidth: Dp = DefaultStripWidth,
 ) {
     val all = state.buses + state.master
     Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
@@ -101,49 +102,86 @@ fun MixerStrips(
             Row(horizontalArrangement = Arrangement.spacedBy(StripGap), modifier = Modifier.padding(horizontal = 4.dp)) {
                 for (bus in all) {
                     androidx.compose.runtime.key(bus.id) {
-                        BusStrip(bus, meters, store, onOpen = { onOpen(bus.id) })
+                        BusStrip(
+                            bus = bus,
+                            meters = meters,
+                            store = store,
+                            selected = selectedBusId == bus.id,
+                            stripWidth = stripWidth,
+                            onOpen = { onOpen(bus.id) },
+                        )
                     }
                 }
-                if (state.buses.size < MixerNative.MaxBuses) AddBusTile(onAdd = store::addBus)
+                if (state.buses.size < MixerNative.MaxBuses) AddBusTile(stripWidth, onAdd = store::addBus)
             }
-            Cables(all, Modifier.padding(horizontal = 4.dp).height(CableRoom))
+            Cables(all, stripWidth, Modifier.padding(horizontal = 4.dp).height(CableRoom))
         }
     }
 }
 
 @Composable
-private fun BusStrip(bus: MixBus, meters: MixerMeterState, store: MixerStore, onOpen: () -> Unit) {
+private fun BusStrip(
+    bus: MixBus,
+    meters: MixerMeterState,
+    store: MixerStore,
+    selected: Boolean,
+    stripWidth: Dp,
+    onOpen: () -> Unit,
+) {
     val accent = busColor(bus)
     val label = busLabel(bus)
     val meterIndex = if (bus.isMaster) MixerNative.Master else bus.id
+    val shape = RoundedCornerShape(22.dp)
+    val fxCount = bus.slots.size
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .width(StripWidth)
-            .clip(RoundedCornerShape(22.dp))
-            .background(LabColors.Row)
+            .width(stripWidth)
+            .clip(shape)
+            .background(if (selected) LabColors.RowSelected else LabColors.Row)
+            .then(if (selected) Modifier.border(1.5.dp, accent.copy(alpha = 0.85f), shape) else Modifier)
             .padding(vertical = 10.dp),
     ) {
         Box(
             Modifier
-                .size(32.dp)
+                .size(30.dp)
                 .clip(CircleShape)
                 .border(2.dp, accent, CircleShape)
                 .clickable(onClick = onOpen),
             contentAlignment = Alignment.Center,
         ) {
-            Text(if (bus.isMaster) "M" else "${bus.id + 1}", fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = LabColors.Primary)
+            Text(if (bus.isMaster) "M" else "${bus.id + 1}", fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = LabColors.Primary)
         }
         Spacer(Modifier.height(6.dp))
-        Text(label, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = LabColors.Primary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 6.dp).clickable(onClick = onOpen))
         Text(
-            pluralStringResource(R.plurals.mixer_effect_count, bus.slots.size, bus.slots.size),
+            label,
             fontFamily = InterFontFamily,
-            fontSize = 11.sp,
-            color = accent,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp,
+            color = LabColors.Primary,
             maxLines = 1,
-            modifier = Modifier.clickable(onClick = onOpen),
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 6.dp).clickable(onClick = onOpen),
         )
+        Spacer(Modifier.height(6.dp))
+        Box(
+            Modifier
+                .height(24.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (fxCount > 0) accent.copy(alpha = 0.2f) else LabColors.Chip)
+                .clickable(onClick = onOpen)
+                .padding(horizontal = 10.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                if (fxCount > 0) stringResource(R.string.mixer_strip_fx_count, fxCount) else stringResource(R.string.mixer_strip_fx),
+                fontFamily = InterFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 11.sp,
+                color = if (fxCount > 0) accent else LabColors.Secondary,
+                maxLines = 1,
+            )
+        }
         Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Fader(bus.gainDb, accent, stringResource(R.string.mixer_fader_label, label)) { store.setGain(bus.id, it) }
@@ -267,7 +305,6 @@ private fun PanDial(pan: Float, accent: Color, description: String, onChange: (F
             .pointerInput(Unit) {
                 detectDragGestures { change, drag ->
                     change.consume()
-                    // sideways or up and down both turn it, whichever the thumb finds easier
                     val delta = (drag.x - drag.y) / (size.width * 4f)
                     var next = (current + delta).coerceIn(-1f, 1f)
                     if (abs(next) < 0.03f) next = 0f
@@ -322,7 +359,6 @@ private fun SongPill(on: Boolean, accent: Color, onClick: () -> Unit) {
 
 @Composable
 private fun MasterLoudness(meters: MixerMeterState) {
-    // a few times a second is plenty for a number
     val shortTerm by remember { androidx.compose.runtime.derivedStateOf { (meters.tick.longValue / 8).let { meters.loudness[1] } } }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(lufsText(shortTerm), fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = LabColors.Primary)
@@ -331,18 +367,18 @@ private fun MasterLoudness(meters: MixerMeterState) {
 }
 
 @Composable
-private fun AddBusTile(onAdd: () -> Unit) {
+private fun AddBusTile(stripWidth: Dp, onAdd: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
-            .width(StripWidth)
-            .height(FaderHeight + 200.dp)
+            .width(stripWidth)
+            .height(FaderHeight + 210.dp)
             .clip(RoundedCornerShape(22.dp))
             .border(1.dp, LabColors.StageLine, RoundedCornerShape(22.dp))
             .clickable(onClick = onAdd),
     ) {
-        Icon(painterResource(R.drawable.add), null, tint = LabColors.Primary, modifier = Modifier.size(28.dp))
+        Icon(painterResource(R.drawable.add), null, tint = LabColors.Primary, modifier = Modifier.size(26.dp))
         Spacer(Modifier.height(6.dp))
         Text(stringResource(R.string.mixer_add_bus), fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = LabColors.Primary)
     }
@@ -350,11 +386,11 @@ private fun AddBusTile(onAdd: () -> Unit) {
 
 /** each route as a cable hanging under the strips, from the bus that sends to the one that takes it, as thick as it's loud */
 @Composable
-private fun Cables(all: List<MixBus>, modifier: Modifier) {
+private fun Cables(all: List<MixBus>, stripWidth: Dp, modifier: Modifier) {
     val count = all.size
-    Canvas(modifier.width(StripWidth * (count + 1) + StripGap * count)) {
-        val pitch = (StripWidth + StripGap).toPx()
-        fun x(index: Int) = index * pitch + StripWidth.toPx() / 2
+    Canvas(modifier.width(stripWidth * (count + 1) + StripGap * count)) {
+        val pitch = (stripWidth + StripGap).toPx()
+        fun x(index: Int) = index * pitch + stripWidth.toPx() / 2
         val indexOf = all.withIndex().associate { (i, b) -> b.id to i }
         for ((i, bus) in all.withIndex()) {
             if (bus.isMaster) continue

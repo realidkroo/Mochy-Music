@@ -48,6 +48,7 @@ import com.mochyy.mochymusic.module.applemusic.AppleMusicModule
 import com.mochyy.mochymusic.module.monochrome.MonochromeModule
 import com.mochyy.mochymusic.modules.ModuleEntry
 import com.mochyy.mochymusic.modules.ModuleOrigin
+import com.mochyy.mochymusic.modules.browser.ModuleFeed
 import com.mochyy.mochymusic.modules.security.ModuleUrlGuard
 import com.mochyy.mochymusic.ui.screens.audiolab.LabColors
 import com.mochyy.mochymusic.ui.theme.InterFontFamily
@@ -79,9 +80,12 @@ internal fun artModel(art: String?): Any? {
     return raw.takeIf(ModuleUrlGuard::isSafeRemoteUrl)
 }
 
+/** a store picture as coil reads it: the feed's host is blocked for modules, so its own pictures are let through here and only here */
+internal fun storeArtModel(art: String?): Any? = art?.trim()?.takeIf(ModuleFeed::isOwnPicture) ?: artModel(art)
+
 /** the module's own icon, a built-in logo, or its first letter on a colour of its own when it has neither */
 @Composable
-internal fun ModuleLogo(id: String, name: String, size: Int = 46, art: String? = null, corner: Float = 0.26f) {
+internal fun ModuleLogo(id: String, name: String, size: Int = 46, art: String? = null, corner: Float = 0.26f, fromStore: Boolean = false) {
     val logo = logoFor(id)
     Box(
         modifier = Modifier
@@ -92,7 +96,7 @@ internal fun ModuleLogo(id: String, name: String, size: Int = 46, art: String? =
     ) {
         when {
             art != null -> SubcomposeAsyncImage(
-                model = artModel(art),
+                model = if (fromStore) storeArtModel(art) else artModel(art),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.size(size.dp),

@@ -1,0 +1,227 @@
+THIRD-PARTY NOTICES AND CORRESPONDING SOURCE
+
+Mochy Music is licensed under the GNU General Public License v3.0 (GPL-3.0).
+The complete text of GPL-3.0 is bundled offline in this app (assets/licenses/gpl-3.0.txt)
+and available with the complete source code at:
+https://github.com/realidkroo/Mochy-Music
+
+
+=======================================================================
+1. GPL-3.0 & LGPL COMPONENTS (WITH SOURCE LOCATIONS)
+=======================================================================
+
+- ViviMusic (GPL-3.0) by vivizzz007
+  https://github.com/vivizzz007/vivi-music
+
+- Metrolist (GPL-3.0) by Mostafa Alagamy
+  https://github.com/mostafaalagamy/Metrolist
+
+- InnerTune (GPL-3.0) by Zion Huang
+  https://github.com/z-huang/InnerTune
+
+- SimpMusic (GPL-3.0) by maxrave-dev
+  https://github.com/maxrave-dev/SimpMusic
+
+- RiMusic (GPL-3.0) by fast4x
+  https://github.com/fast4x/RiMusic
+
+- ArchiveTune (GPL-3.0) by Rukamori
+  https://github.com/rukamori/ArchiveTune
+
+- Tryptify (GPL-3.0) by tryptz
+  https://github.com/tryptz/Tryptify
+
+- NewPipeExtractor (GPL-3.0-or-later, v0.25.2) by TeamNewPipe
+  https://github.com/TeamNewPipe/NewPipeExtractor
+
+- InnertubeX (GPL-3.0, v0.11.6) by MetrolistGroup / nyxiereal
+  https://github.com/MetrolistGroup/innertubex
+
+- Jellyfin Media3 FFmpeg Decoder (GPL-3.0, org.jellyfin.media3:media3-ffmpeg-decoder 1.6.1+2)
+  Provides libffmpegJNI.so (built with FFmpeg for Media3 audio decoding).
+  Corresponding source and FFmpeg build scripts:
+  https://github.com/jellyfin/jellyfin-androidx-media
+
+- JDSP4Linux / libjamesdsp (GPL-3.0 / GPL-2.0)
+  Liveprog EEL2 extensions taken from Audio4Linux/JDSP4Linux (Tim Schneeberger)
+  and JamesDSPManager (James Fung / james34602).
+  https://github.com/Audio4Linux/JDSP4Linux
+  https://github.com/james34602/JamesDSPManager
+  See assets/licenses/gpl-2.0.txt and app/src/main/cpp/third_party/NOTICE.md.
+
+- libusb (LGPL-2.1-or-later, conveyed under GPL-3.0 per LGPL-2.1 Section 3)
+  https://github.com/libusb/libusb
+  Full LGPL-2.1 text in assets/licenses/lgpl-2.1.txt.
+
+- HPA / HPFloat (LGPL-2.1-or-later, inside jamesdsp_eel2/numericSys/HPFloat)
+  Copyright (C) 2000 Daniel A. Atkinson
+  Copyright (C) 2004 Ivano Primi
+  Full LGPL-2.1 text in assets/licenses/lgpl-2.1.txt.
+
+- Android core library desugaring (desugar_jdk_libs_nio)
+  GNU General Public License v2.0 with Classpath Exception.
+  https://github.com/google/desugar_jdk_libs
+
+
+=======================================================================
+2. EEL2 / WDL (zlib-style License)
+=======================================================================
+
+Expression Evaluator Library (NS-EEL) v2 & WDL FFT
+Copyright (C) 2004-2013 Cockos Incorporated
+Copyright (C) 1999-2003 Nullsoft, Inc.
+FFT routines based on DJBFFT, Copyright 1999 D. J. Bernstein.
+Modified for Mochy (2026): sandboxed builtins under MOCHY_EEL_SANDBOX.
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+
+
+=======================================================================
+3. PROGENITOR 2 REVERB / sndfilter (MIT License)
+=======================================================================
+
+From sndfilter (https://github.com/voidqk/sndfilter) with JamesDSP changes.
+Copyright (c) 2016 Sean Connelly
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=======================================================================
+4. libsamplerate (BSD-2-Clause License, inside jamesdsp_eel2)
+=======================================================================
+
+Copyright (c) 2002-2021, Erik de Castro Lopo <erikd@mega-nerd.com>
+Copyright (c) 2023, James Fung <james34602@gmail.com>
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+
+=======================================================================
+5. BUNDLED JS SOLVER (yt-dlp/ejs, astring, meriyah)
+=======================================================================
+
+yt.solver.core.js:
+  Generated by https://github.com/yt-dlp/ejs
+  SPDX-License-Identifier: Unlicense
+
+astring (https://github.com/davidbonnet/astring):
+  MIT License
+  Copyright (c) 2015, David Bonnet <david@bonnet.cc>
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
+meriyah (https://github.com/meriyah/meriyah):
+  ISC License
+  Copyright (c) 2019 and later, KFlash and others.
+
+  Permission to use, copy, modify, and/or distribute this software for any
+  purpose with or without fee is hereby granted, provided that the above
+  copyright notice and this permission notice appear in all copies.
+
+  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+
+=======================================================================
+6. MIT MEDIA LAB KEMAR HRTF DATASET
+=======================================================================
+
+stage_hrtf.bin is derived from the MIT Media Lab KEMAR compact HRTF set
+(Bill Gardner and Keith Martin, 1994, MIT Media Laboratory).
+Copyright (c) 1994 by the MIT Media Laboratory.
+Provided free with no restrictions on research or commercial use, with
+attribution to the authors.
+
+
+=======================================================================
+7. BUNDLED FONTS (SIL Open Font License 1.1)
+=======================================================================
+
+- Inter: Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+- BBH Bartle: Copyright 2025 The BBH Project Authors (https://github.com/Studio-DRAMA/BBH)
+Full SIL OFL 1.1 text in assets/licenses/ofl-1.1.txt.
+
+
+=======================================================================
+8. OTHER OPEN-SOURCE LIBRARIES
+=======================================================================
+
+- MIT: AutoEq (Jaakko Pasanen), LRCLIB (tranxuanthang), jsoup, MaterialKolor,
+  smooth-corner-rect-android-compose (Rodrigo Alves), Brotli, dr_wav / dr_flac
+  (MIT-0 / Public Domain), SolvOpt (Alexei Kuntsevich & Franz Kappel)
+- Public Domain: stb_sprintf
+- BSD-3-Clause: Protocol Buffers (Google)
+- Apache-2.0: AndroidX, Jetpack Compose, Media3, Ktor, OkHttp, Coil, Dagger/Hilt,
+  Guava, Kotlin / kotlinx, Kuromoji, TinyPinyin, Timber, Compose Shimmer,
+  Reorderable

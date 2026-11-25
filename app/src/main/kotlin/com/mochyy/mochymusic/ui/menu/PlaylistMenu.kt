@@ -286,6 +286,7 @@ fun PlaylistMenu(
                                             title = playlist.playlist.name,
                                             items = songs.map(Song::toMediaItem),
                                             playlistId = if (autoPlaylist == false) playlist.id else null,
+                                            disableShuffle = autoPlaylist == false && playlist.playlist.mixItEnabled,
                                         )
                                     )
                                 }

@@ -349,5 +349,10 @@ class ModuleFeed @Inject constructor(
         private val SessionPattern = Regex("^[0-9a-f]{64}$")
         private val PostIdPattern = Regex("^\\d+$")
         private val ItemIdPattern = Regex("^[A-Za-z0-9_-]{1,128}$")
+        // only the feed's own icon and picture addresses, never anything else on its host
+        private val OwnPicturePattern = Regex("^" + Regex.escape(FeedUrl) + "/(icons/\\d+|pictures/\\d+/\\w+)$")
+
+        /** true for a store icon, banner or preview the feed serves itself; modules stay locked out of the feed, but the store still shows these */
+        fun isOwnPicture(url: String?): Boolean = url != null && FeedUrl.isNotBlank() && OwnPicturePattern.matches(url)
     }
 }

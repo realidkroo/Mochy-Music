@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -91,7 +95,15 @@ private data class LicenseEntry(
     val title: String,
     val subtitle: String,
     val url: String,
+    val assetPath: String? = null,
 )
+
+private const val Gpl3Asset = "licenses/gpl-3.0.txt"
+private const val Gpl2Asset = "licenses/gpl-2.0.txt"
+private const val Lgpl21Asset = "licenses/lgpl-2.1.txt"
+private const val Ofl11Asset = "licenses/ofl-1.1.txt"
+private const val ThirdPartyNoticesAsset = "licenses/third_party_notices.txt"
+private val LicenseParagraphSplit = Regex("\\r?\\n\\r?\\n")
 
 @Immutable
 private data class ContributorEntry(
@@ -194,75 +206,154 @@ private val MoreCredits =
             githubUser = "ThePBone",
             url = "https://github.com/Audio4Linux/JDSP4Linux",
         ),
+        CreditEntry(
+            name = "tryptz",
+            subtitle = "Tryptify · mixer, FX chain, decay graph & USB DAC inspiration",
+            githubUser = "tryptz",
+            url = "https://github.com/tryptz/Tryptify",
+        ),
     )
 
 private val Licenses =
     listOf(
         LicenseEntry(
-            tag = "GPL-3.0",
+            tag = "GPL-3.0 · Offline",
             title = "Mochy Music · GNU General Public License v3.0",
-            subtitle = "Free and open source software, source code on GitHub",
+            subtitle = "Free and open source software, full license bundled offline",
             url = "$GithubRepoUrl/blob/main/LICENSE",
+            assetPath = Gpl3Asset,
+        ),
+        LicenseEntry(
+            tag = "Offline",
+            title = "Third-party notices & source links",
+            subtitle = "Bundled copyrights, MIT/ISC/BSD notices and upstream repos",
+            url = "$GithubRepoUrl/blob/main/app/src/main/assets/licenses/third_party_notices.txt",
+            assetPath = ThirdPartyNoticesAsset,
         ),
         LicenseEntry(
             tag = "GPL-3.0",
             title = "ViviMusic · GNU General Public License v3.0",
             subtitle = "by vivizzz007 · base project this app was forked from",
             url = "https://github.com/vivizzz007/vivi-music/blob/main/LICENSE",
+            assetPath = Gpl3Asset,
         ),
         LicenseEntry(
             tag = "GPL-3.0",
             title = "Metrolist · GNU General Public License v3.0",
             subtitle = "by Mostafa Alagamy · base framework",
             url = "https://github.com/mostafaalagamy/Metrolist/blob/main/LICENSE",
+            assetPath = Gpl3Asset,
         ),
         LicenseEntry(
             tag = "GPL-3.0",
             title = "SimpMusic · GNU General Public License v3.0",
             subtitle = "by maxrave-dev · lyrics provider integration",
             url = "https://github.com/maxrave-dev/SimpMusic/blob/dev/LICENSE",
+            assetPath = Gpl3Asset,
         ),
         LicenseEntry(
             tag = "GPL-3.0",
             title = "ArchiveTune · GNU General Public License v3.0",
             subtitle = "by Rukamori · design and architectural inspiration",
             url = "https://github.com/rukamori/ArchiveTune/blob/main/LICENSE",
+            assetPath = Gpl3Asset,
         ),
         LicenseEntry(
             tag = "GPL-3.0",
             title = "RiMusic · GNU General Public License v3.0",
             subtitle = "by fast4x · InnerTube API wrapper",
             url = "https://github.com/fast4x/RiMusic/blob/master/LICENSE",
+            assetPath = Gpl3Asset,
+        ),
+        LicenseEntry(
+            tag = "GPL-3.0+",
+            title = "NewPipeExtractor · GNU General Public License v3.0",
+            subtitle = "by TeamNewPipe · stream extraction library",
+            url = "https://github.com/TeamNewPipe/NewPipeExtractor/blob/dev/LICENSE",
+            assetPath = Gpl3Asset,
+        ),
+        LicenseEntry(
+            tag = "GPL-3.0",
+            title = "InnertubeX · GNU General Public License v3.0",
+            subtitle = "by MetrolistGroup · YouTube stream extraction library",
+            url = "https://github.com/MetrolistGroup/innertubex",
+            assetPath = Gpl3Asset,
+        ),
+        LicenseEntry(
+            tag = "GPL-3.0",
+            title = "Jellyfin Media3 FFmpeg · GNU General Public License v3.0",
+            subtitle = "by Jellyfin · prebuilt FFmpeg audio decoder and source scripts",
+            url = "https://github.com/jellyfin/jellyfin-androidx-media",
+            assetPath = Gpl3Asset,
         ),
         LicenseEntry(
             tag = "GPL-3.0",
             title = "JDSP4Linux · GNU General Public License v3.0",
             subtitle = "by Tim Schneeberger · the libjamesdsp Liveprog runs from",
             url = "https://github.com/Audio4Linux/JDSP4Linux/blob/master/LICENSE",
+            assetPath = Gpl3Asset,
         ),
         LicenseEntry(
-            tag = "GPL-2.0+",
-            title = "libjamesdsp · GNU General Public License v2.0 or later",
-            subtitle = "by James Fung · EEL2 extensions for Liveprog",
+            tag = "GPL-2.0",
+            title = "libjamesdsp · GNU General Public License v2.0",
+            subtitle = "by James Fung · EEL2 extensions from JDSP4Linux subtree",
             url = "https://github.com/james34602/JamesDSPManager",
+            assetPath = Gpl2Asset,
         ),
         LicenseEntry(
             tag = "zlib",
             title = "EEL2 · zlib-style license",
-            subtitle = "by Cockos · the script language Liveprog runs",
+            subtitle = "by Cockos & Nullsoft · the script language Liveprog runs",
             url = "https://github.com/justinfrankel/WDL",
+            assetPath = ThirdPartyNoticesAsset,
         ),
         LicenseEntry(
             tag = "MIT",
             title = "sndfilter · MIT License",
             subtitle = "by Sean Connelly · Progenitor 2 reverb",
             url = "https://github.com/voidqk/sndfilter/blob/master/LICENSE",
+            assetPath = ThirdPartyNoticesAsset,
         ),
         LicenseEntry(
             tag = "MIT",
             title = "LRCLIB · MIT License",
             subtitle = "by tranxuanthang · synchronized lyrics database",
             url = "https://github.com/tranxuanthang/lrclib/blob/main/LICENSE",
+        ),
+        LicenseEntry(
+            tag = "GPL-3.0",
+            title = "Tryptify · GNU General Public License v3.0",
+            subtitle = "by tryptz · mixer, FX chain, decay graph & USB DAC inspiration",
+            url = "https://github.com/tryptz/Tryptify/blob/main/LICENSE",
+            assetPath = Gpl3Asset,
+        ),
+        LicenseEntry(
+            tag = "LGPL-2.1+",
+            title = "libusb · GNU Lesser General Public License v2.1",
+            subtitle = "by libusb · optional USB DAC transport (conveyed under GPL-3.0)",
+            url = "https://github.com/libusb/libusb/blob/master/COPYING",
+            assetPath = Lgpl21Asset,
+        ),
+        LicenseEntry(
+            tag = "Unlicense / MIT / ISC",
+            title = "yt-dlp/ejs, astring & meriyah",
+            subtitle = "bundled YouTube JS challenge solver libraries",
+            url = "https://github.com/yt-dlp/ejs",
+            assetPath = ThirdPartyNoticesAsset,
+        ),
+        LicenseEntry(
+            tag = "OFL-1.1",
+            title = "Inter & BBH Bartle · SIL Open Font License 1.1",
+            subtitle = "bundled app fonts by The Inter Project & Studio DRAMA",
+            url = "https://openfontlicense.org",
+            assetPath = Ofl11Asset,
+        ),
+        LicenseEntry(
+            tag = "Attribution",
+            title = "MIT KEMAR HRTF · MIT Media Laboratory",
+            subtitle = "by Bill Gardner & Keith Martin · 3D Sims ear measurements",
+            url = "https://sound.media.mit.edu/resources/KEMAR.html",
+            assetPath = ThirdPartyNoticesAsset,
         ),
         LicenseEntry(
             tag = "MIT",
@@ -356,7 +447,19 @@ private fun PopupSheetState.showCreditsSheet() {
 private fun PopupSheetState.showLicenseSheet() {
     val popup = this
     show(buttonBar = { SheetPrimaryButton(text = stringResource(R.string.done), onClick = popup::dismiss) }) {
-        LicenseSheetContent()
+        LicenseSheetContent(popup = popup)
+    }
+}
+
+private fun PopupSheetState.showLicenseTextSheet(
+    tag: String,
+    title: String,
+    assetPath: String,
+    url: String? = null,
+) {
+    val popup = this
+    show(buttonBar = { SheetPrimaryButton(text = stringResource(R.string.done), onClick = popup::dismiss) }) {
+        LicenseTextSheetContent(tag = tag, title = title, assetPath = assetPath, url = url)
     }
 }
 
@@ -532,10 +635,32 @@ private fun ColumnScope.AboutSheetContent(
             Spacer(Modifier.height(18.dp))
             SectionHeader(stringResource(R.string.about_license))
             Spacer(Modifier.height(8.dp))
-            AboutCardButton(
-                text = stringResource(R.string.about_more_license),
-                onClick = { popup.showLicenseSheet() },
-            )
+            val offlineGplTitle = stringResource(R.string.about_license_offline_title)
+            val offlineGplEntry =
+                LicenseEntry(
+                    tag = "GPL-3.0",
+                    title = offlineGplTitle,
+                    subtitle = stringResource(R.string.about_license_offline_subtitle),
+                    url = "$GithubRepoUrl/blob/main/LICENSE",
+                    assetPath = Gpl3Asset,
+                )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LicenseCard(
+                    entry = offlineGplEntry,
+                    onClick = {
+                        popup.showLicenseTextSheet(
+                            tag = offlineGplEntry.tag,
+                            title = offlineGplTitle,
+                            assetPath = Gpl3Asset,
+                            url = offlineGplEntry.url,
+                        )
+                    },
+                )
+                AboutCardButton(
+                    text = stringResource(R.string.about_more_license),
+                    onClick = { popup.showLicenseSheet() },
+                )
+            }
 
             Spacer(Modifier.height(18.dp))
             SectionHeader(stringResource(R.string.about_cool_contributors))
@@ -605,7 +730,7 @@ private fun ColumnScope.CreditsSheetContent() {
 }
 
 @Composable
-private fun ColumnScope.LicenseSheetContent() {
+private fun ColumnScope.LicenseSheetContent(popup: PopupSheetState) {
     val context = LocalContext.current
     Column(
         modifier =
@@ -627,11 +752,121 @@ private fun ColumnScope.LicenseSheetContent() {
             Licenses.forEach { entry ->
                 LicenseCard(
                     entry = entry,
-                    onClick = { context.openUrl(entry.url) },
+                    onClick = {
+                        val asset = entry.assetPath
+                        if (asset != null) {
+                            popup.showLicenseTextSheet(
+                                tag = entry.tag,
+                                title = entry.title,
+                                assetPath = asset,
+                                url = entry.url,
+                            )
+                        } else {
+                            context.openUrl(entry.url)
+                        }
+                    },
                 )
             }
         }
         Spacer(Modifier.height(8.dp))
+    }
+}
+
+// reads a bundled license from assets off the main thread and splits paragraphs so long texts scroll smoothly
+@Composable
+private fun ColumnScope.LicenseTextSheetContent(
+    tag: String,
+    title: String,
+    assetPath: String,
+    url: String?,
+) {
+    val context = LocalContext.current
+    var paragraphs by remember(assetPath) { mutableStateOf<List<String>?>(null) }
+    var failed by remember(assetPath) { mutableStateOf(false) }
+
+    LaunchedEffect(assetPath) {
+        failed = false
+        val loaded =
+            withContext(Dispatchers.IO) {
+                runCatching {
+                    context.assets.open(assetPath).bufferedReader().use { it.readText() }
+                        .trim()
+                        .split(LicenseParagraphSplit)
+                        .filter { it.isNotBlank() }
+                }.getOrNull()
+            }
+        if (loaded != null) {
+            paragraphs = loaded
+        } else {
+            failed = true
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+        contentPadding = PaddingValues(top = sheetHandleRoom(), bottom = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item(key = "header") {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = tag,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.2).sp,
+                    color = Color.White.copy(alpha = 0.55f),
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = title,
+                    fontSize = 24.sp,
+                    lineHeight = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.8).sp,
+                )
+                if (!url.isNullOrBlank()) {
+                    Spacer(Modifier.height(14.dp))
+                    AboutPillRow(
+                        text = stringResource(R.string.about_license_open_online),
+                        onClick = { context.openUrl(url) },
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+        val itemsList = paragraphs
+        when {
+            failed -> {
+                item(key = "failed") {
+                    Text(
+                        text = stringResource(R.string.about_license_failed),
+                        fontSize = 13.sp,
+                        color = Color.White.copy(alpha = 0.65f),
+                    )
+                }
+            }
+            itemsList == null -> {
+                item(key = "loading") {
+                    Text(
+                        text = stringResource(R.string.about_license_loading),
+                        fontSize = 13.sp,
+                        color = Color.White.copy(alpha = 0.65f),
+                    )
+                }
+            }
+            else -> {
+                itemsIndexed(itemsList, key = { index, _ -> index }) { _, paragraph ->
+                    Text(
+                        text = paragraph,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 11.5.sp,
+                        lineHeight = 16.sp,
+                        color = Color.White.copy(alpha = 0.85f),
+                    )
+                }
+            }
+        }
     }
 }
 

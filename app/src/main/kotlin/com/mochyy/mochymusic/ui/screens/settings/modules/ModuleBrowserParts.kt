@@ -176,7 +176,7 @@ private fun BannerArt(picture: String?, height: Dp) {
 @Composable
 private fun ModuleRow(module: FeedModule, action: BrowserAction, fetching: Boolean, onAction: (FeedModule) -> Unit, iconSize: Int, getLabel: Boolean, modifier: Modifier) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        ModuleLogo(module.moduleId ?: module.id, module.name, size = iconSize, art = module.icon, corner = 0.3f)
+        ModuleLogo(module.moduleId ?: module.id, module.name, size = iconSize, art = module.icon, corner = 0.3f, fromStore = true)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(module.name, color = Color.White, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
