@@ -85,6 +85,24 @@
   function stable(list) {
     return (list || []).filter(function (r) { return r && !r.draft && !isNightly(r); });
   }
+  // a release marked pre-release on github that isn't a nightly: an rc or a beta
+  function isPre(r) {
+    return !!(r && r.prerelease && !isNightly(r));
+  }
+  // "RC1" when the name says so, otherwise just "Pre-release"
+  function preLabel(r) {
+    var m = String((r && r.name) || "").match(/\b(rc|beta|alpha)\s*\d*/i);
+    return m ? m[0].replace(/\s+/g, "").toUpperCase() : "Pre-release";
+  }
+  function preBadge() {
+    var b = document.createElement("span");
+    b.className = "rel-badge pre";
+    return b;
+  }
+  // the newest real release, never a pre-release
+  function latestStable(list) {
+    return stable(list).filter(function (r) { return !isPre(r); })[0] || null;
+  }
   function nightlyOf(list) {
     return (list || []).filter(isNightly)[0] || null;
   }
@@ -244,7 +262,11 @@
     d.className = "rel-sub";
     d.textContent = dateOf(r.published_at);
     id.appendChild(d);
-    if (isMusicfy(r)) {
+    if (isPre(r)) {
+      var p = preBadge();
+      p.textContent = preLabel(r);
+      id.appendChild(p);
+    } else if (isMusicfy(r)) {
       var b = document.createElement("span");
       b.className = "rel-badge quiet";
       b.textContent = "Musicfy";
@@ -268,7 +290,7 @@
 
   function currentRelease() {
     if (dl.channel === "nightly") return nightlyOf(dl.list);
-    return stable(dl.list)[0] || null;
+    return latestStable(dl.list);
   }
   function fillVariant(kind, r) {
     var a = pickAsset(r, kind);
@@ -350,6 +372,16 @@
     }
     if (nightlyOn) resolveCommit(r);
     text("dlTitle", nightlyOn ? "Mochy Nightly" : "Download Mochy");
+    var pre = nightlyOn ? null : stable(dl.list).filter(isPre)[0];
+    var preNote = byId("dlPre");
+    if (preNote) {
+      preNote.hidden = !(pre && stable(dl.list).indexOf(pre) < stable(dl.list).indexOf(r));
+      if (pre) {
+        text("dlPreText", preLabel(pre) + " · " + version(pre) + " is out to test. it's a pre-release, so expect rough edges.");
+        var l = byId("dlPreLink");
+        if (l) l.href = pre.html_url || "https://github.com/realidkroo/Mochy-Music/releases";
+      }
+    }
     text("dlIntro", nightlyOn
       ? "Test builds made from the newest code. You get new things first, and new bugs too."
       : "two builds. pick the one that fits. not sure? take arm64. it fits most phones from the last 8 years.");
@@ -359,7 +391,7 @@
     var older = byId("olderList");
     if (older) {
       older.textContent = "";
-      list.slice(1).forEach(function (old) { older.appendChild(olderRow(old)); });
+      list.filter(function (old) { return old !== r; }).forEach(function (old) { older.appendChild(olderRow(old)); });
     }
     dl.page = 1;
     show("moreVersions", list.length > 1);
@@ -440,6 +472,10 @@
       latest.className = "rel-status";
       latest.textContent = "latest";
       head.appendChild(latest);
+    } else if (isPre(r)) {
+      var pre = preBadge();
+      pre.textContent = preLabel(r);
+      head.appendChild(pre);
     } else if (isMusicfy(r)) {
       var old = document.createElement("span");
       old.className = "rel-badge quiet";
@@ -474,8 +510,8 @@
       if (!list.length && !append) { show("changeSkeleton", false); show("changeError", true); return; }
       show("changeSkeleton", false);
       show("changeError", false);
-      list.forEach(function (r, i) {
-        if (listNode) listNode.appendChild(changeEntry(r, !append && i === 0));
+      list.forEach(function (r) {
+        if (listNode) listNode.appendChild(changeEntry(r, !append && r === latestStable(data)));
       });
       observeReveals();
       show("moreChanges", true);
@@ -497,7 +533,7 @@
   /* ---------- home card ---------- */
   function initHome() {
     loadReleases().then(function (data) {
-      var r = data ? stable(data)[0] : null;
+      var r = data ? latestStable(data) : null;
       show("relHomeSkeleton", false);
       if (!r) { show("relHomeError", true); show("heroTotal", false); return; }
       show("relHomeError", false);
@@ -509,8 +545,6 @@
       text("relHomeDate", dateOf(r.published_at));
       var notes = stripMd(r.body).split(/\s+/).slice(0, 32).join(" ");
       text("relHomeNotes", notes.length > 260 ? notes.slice(0, 260) + "…" : notes);
-      show("heroNew", Date.now() - new Date(r.published_at).getTime() < 14 * 24 * 60 * 60 * 1000);
-      text("heroNewText", "Mochy " + version(r) + " is out");
       var a = byId("relHomeArm");
       if (a) { a.href = "download.html"; a.textContent = "Download"; }
     });

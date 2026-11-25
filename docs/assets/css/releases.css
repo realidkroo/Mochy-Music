@@ -11,7 +11,7 @@
   --rel-display: var(--font);
   --rel-mono: var(--mono);
   --rel-ease: cubic-bezier(0.32, 0.72, 0, 1);
-  --rel-glide: cubic-bezier(0.3, 1.25, 0.5, 1);
+  --rel-glide: var(--rel-ease);
 }
 [hidden] { display: none !important; }
 
@@ -24,11 +24,11 @@
 .rel-head { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; padding: 40px 0 28px; }
 .rel-head h1 { margin: 0; font: 700 clamp(40px, 6vw, 64px)/1 var(--rel-display); letter-spacing: -0.03em; text-wrap: balance; }
 .rel-page[data-page="download"] .rel-head { padding: 28px 0 24px; gap: 12px; }
-.rel-page[data-page="download"] .rel-head h1 { font-size: clamp(30px, 4vw, 38px); }
-.rel-page[data-page="download"] .rel-intro { font-size: 16px; }
+.rel-page[data-page="download"] .rel-head h1 { font-size: clamp(40px, 5vw, 64px); font-weight: 800; letter-spacing: -0.065em; line-height: 0.96; }
+.rel-page[data-page="download"] .rel-intro { font-size: clamp(17px, 1.6vw, 22px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.25; max-width: 24em; }
 .rel-intro { margin: 0; color: var(--rel-soft); max-width: 600px; font-size: 18px; }
 .rel-segmented { display: inline-flex; gap: 6px; background: var(--rel-panel); border: 1px solid var(--rel-line); border-radius: 999px; padding: 6px; position: relative; }
-.rel-segmented button { position: relative; z-index: 1; flex: 1 1 0; min-width: 104px; border: 0; border-radius: 999px; padding: 10px 22px; font: 600 15px "Inter", sans-serif; cursor: pointer; background: transparent; color: var(--rel-soft); transition: background-color 0.2s ease, color 0.38s var(--rel-ease), transform 0.42s var(--spring); }
+.rel-segmented button { position: relative; z-index: 1; flex: 1 1 0; min-width: 104px; border: 0; border-radius: 999px; padding: 10px 22px; font: 600 15px "Inter", sans-serif; cursor: pointer; background: transparent; color: var(--rel-soft); transition: background-color 0.15s ease, color 0.38s var(--rel-ease), transform 0.42s var(--spring); }
 .rel-segmented button[aria-pressed="true"] { background: transparent; color: var(--rel-bg); }
 .rel-seg-indicator { position: absolute; top: 6px; bottom: 6px; left: 6px; width: calc((100% - 18px) / 2); border-radius: 999px; background: #ffffff; transition: transform 0.38s var(--rel-glide); }
 .rel-segmented[data-channel="nightly"] .rel-seg-indicator { transform: translateX(calc(100% + 6px)); }
@@ -38,7 +38,7 @@
 .rel-status { font: 500 12px/1.5 var(--rel-mono); letter-spacing: 0.08em; text-transform: lowercase; color: var(--rel-accent); }
 
 .rel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
-.rel-card { background: var(--rel-surface); border: 1px solid var(--rel-line); border-radius: 32px; padding: 28px; display: flex; flex-direction: column; gap: 12px; min-width: 0; transition: border-color 0.25s ease, background-color 0.25s ease, transform 0.42s var(--spring); }
+.rel-card { background: var(--rel-surface); border: 1px solid var(--rel-line); border-radius: 32px; padding: 28px; display: flex; flex-direction: column; gap: 12px; min-width: 0; transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.42s var(--spring); }
 .rel-card.outline { background: transparent; border-color: var(--rel-accent); }
 button.rel-card { width: 100%; text-align: left; color: inherit; font: inherit; cursor: pointer; padding: 14px 16px; border-radius: 12px; gap: 8px; }
 button.rel-card:hover { background: var(--rel-panel); }
@@ -57,11 +57,13 @@ button.rel-card .rel-sub { font-size: 12px; }
 .rel-cta { margin-top: 24px; border: 1px solid var(--rel-line); border-radius: 32px; background: var(--rel-surface); padding: 28px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; }
 .rel-cta-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .rel-cta-title { font: 700 22px/1.2 var(--rel-display); }
-.rel-btn { display: inline-block; background: #1d1d1f; color: #c9c9cf; text-decoration: none; font: 700 15px "Inter", sans-serif; padding: 14px 28px; border-radius: 999px; border: 0; cursor: pointer; white-space: nowrap; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05); transition: background-color 0.2s ease, color 0.2s ease, transform 0.42s var(--spring); }
+.rel-btn { display: inline-block; background: #1d1d1f; color: #c9c9cf; text-decoration: none; font: 700 15px "Inter", sans-serif; padding: 14px 28px; border-radius: 999px; border: 0; cursor: pointer; white-space: nowrap; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05); transition: background-color 0.15s ease, color 0.15s ease, transform 0.42s var(--spring); }
 .rel-btn:hover { background: #242427; color: #ffffff; }
+.rel-badge.pre { background: transparent; color: var(--rel-accent); border: 1px solid var(--rel-accent); }
+.rel-pre { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; color: var(--rel-soft); font-size: 14px; }
 .rel-btn.quiet { background: transparent; color: var(--rel-fg); border: 1px solid var(--rel-line); box-shadow: none; }
 .rel-btn.quiet:hover { background: var(--rel-panel); color: var(--rel-fg); }
-.rel-link { color: var(--rel-accent); font-size: 14px; font-weight: 600; text-decoration: none; transition: color 0.2s ease; }
+.rel-link { color: var(--rel-accent); font-size: 14px; font-weight: 600; text-decoration: none; transition: color 0.15s ease; }
 .rel-link:hover { color: var(--rel-fg); }
 
 /* nightly extras */
@@ -98,7 +100,7 @@ a.rel-chip { display: inline-flex; align-items: center; gap: 4px; }
 a.rel-chip.apk::after { content: "↗"; font-size: 0.85em; color: var(--rel-faint); }
 a.rel-chip.notes { color: var(--rel-accent); }
 a.rel-chip:hover { text-decoration: underline; text-underline-offset: 3px; }
-button.rel-chip { background: #1d1d1f; border: 1px solid var(--rel-line); border-radius: 999px; padding: 8px 18px; cursor: pointer; font: 600 14px "Inter", sans-serif; transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.42s var(--spring); }
+button.rel-chip { background: #1d1d1f; border: 1px solid var(--rel-line); border-radius: 999px; padding: 8px 18px; cursor: pointer; font: 600 14px "Inter", sans-serif; transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.42s var(--spring); }
 button.rel-chip:hover { background: var(--rel-panel); border-color: var(--rel-accent); }
 .rel-more { padding: 24px 0 64px; display: flex; justify-content: center; }
 
@@ -159,7 +161,7 @@ button.rel-chip:hover { background: var(--rel-panel); border-color: var(--rel-ac
 /* motion: only opacity and transform, revealed once by IntersectionObserver */
 @keyframes rel-rise { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
 .rel-motion .rel-page[data-page="download"] #dlContent.rel-enter { animation: rel-page-enter 0.95s var(--rel-ease) both; }
-@keyframes rel-page-enter { from { opacity: 0; transform: translateY(56px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes rel-page-enter { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
 @keyframes rel-swap-next { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
 @keyframes rel-swap-prev { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
 @keyframes rel-shimmer { to { background-position: -200% 0; } }

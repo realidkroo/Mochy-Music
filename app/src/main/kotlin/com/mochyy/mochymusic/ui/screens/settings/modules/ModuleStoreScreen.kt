@@ -229,7 +229,7 @@ private fun StoreBannerArt(picture: String?) {
             },
     ) {
         AsyncImage(
-            model = picture?.let(::artModel), contentDescription = null, contentScale = ContentScale.Crop,
+            model = storeArtModel(picture), contentDescription = null, contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().drawWithContent {
                 // recorded once, so the blurred foot draws the same picture without loading it twice
                 recorded.record { this@drawWithContent.drawContent() }
@@ -254,7 +254,7 @@ private fun StoreBannerArt(picture: String?) {
 @Composable
 private fun StoreHeader(module: FeedModule, action: BrowserAction, fetching: Boolean, onAction: () -> Unit, onRemove: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        ModuleLogo(module.moduleId ?: module.id, module.name, size = 96, art = module.icon, corner = 0.26f)
+        ModuleLogo(module.moduleId ?: module.id, module.name, size = 96, art = module.icon, corner = 0.26f, fromStore = true)
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
             Text(
@@ -418,7 +418,7 @@ private fun PackRow(item: PackItem, action: BrowserAction, fetching: Boolean, on
         remember(item) { listOfNotNull(item.version, item.size?.let { Formatter.formatShortFileSize(context, it) }).joinToString(" · ") }
     }
     Row(Modifier.fillMaxWidth().clip(CardShape).background(PageCard).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        ModuleLogo(item.moduleId ?: item.id, item.name, size = 52, art = item.icon, corner = 0.28f)
+        ModuleLogo(item.moduleId ?: item.id, item.name, size = 52, art = item.icon, corner = 0.28f, fromStore = true)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(item.name, color = Color.White, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
