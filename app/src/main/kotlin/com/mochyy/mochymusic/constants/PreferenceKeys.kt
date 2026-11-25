@@ -214,6 +214,8 @@ val AudioPassModeKey = stringPreferencesKey("audioPassMode")
 val AudioPassFixedVolumeKey = booleanPreferencesKey("audioPassFixedVolume")
 // the direct usb driver's way to the dac: MOCHY (its own usbdevfs calls) or LIBUSB
 val UsbDriverKey = stringPreferencesKey("usbDriver")
+// sends the song's rate even to a clock that doesn't advertise it, for dacs that play it anyway
+val AudioPassEveryRateKey = booleanPreferencesKey("audioPassEveryRate")
 // what "turn these off" on dac's stuff switched off, as json, until "turn these back on" puts it back
 val AudioPassRestoreKey = stringPreferencesKey("audioPassRestore")
 

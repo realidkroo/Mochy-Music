@@ -121,6 +121,7 @@ import com.mochyy.mochymusic.constants.UsbPassthroughKey
 import com.mochyy.mochymusic.constants.AudioPassMode
 import com.mochyy.mochymusic.constants.AudioPassModeKey
 import com.mochyy.mochymusic.constants.AudioPassFixedVolumeKey
+import com.mochyy.mochymusic.constants.AudioPassEveryRateKey
 import com.mochyy.mochymusic.constants.UsbDriverKey
 import com.mochyy.mochymusic.constants.AudioPassRestoreKey
 import com.mochyy.mochymusic.constants.CrossmixLength
@@ -1246,8 +1247,9 @@ class MusicService :
                 blocked = blockers.isNotEmpty(),
                 fixedVolume = prefs[AudioPassFixedVolumeKey] ?: false,
                 driver = prefs[UsbDriverKey].toEnum(com.mochyy.mochymusic.playback.audio.pass.UsbDriver.MOCHY),
+                everyRate = prefs[AudioPassEveryRateKey] ?: false,
             )
-        }.distinctUntilChanged().collect(scope) { audioPass.update(it.enabled, it.mode, it.blocked, it.fixedVolume, it.driver) }
+        }.distinctUntilChanged().collect(scope) { audioPass.update(it.enabled, it.mode, it.blocked, it.fixedVolume, it.driver, it.everyRate) }
 
         currentSong.debounce(1000).collect(scope) { song ->
             updateNotification()
@@ -6175,6 +6177,7 @@ private data class PassSettings(
     val blocked: Boolean,
     val fixedVolume: Boolean,
     val driver: com.mochyy.mochymusic.playback.audio.pass.UsbDriver,
+    val everyRate: Boolean,
 )
 
 // reads a restore point from an older version even if fields were added since

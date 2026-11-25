@@ -7,6 +7,7 @@
 #include <jni.h>
 #include <sys/resource.h>
 #include <unistd.h>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -58,6 +59,8 @@ public:
     Plan plan{};
     int chosen = -1;
     bool highSpeed = true;
+    // sends the song's rate even to a clock that doesn't advertise it (audio pass's "every rate" switch)
+    std::atomic<bool> force{false};
     uint32_t periodUs = 1000;
     uint32_t capturePeriodUs = 1000;
     int packetsPerUrb = 1;
@@ -76,6 +79,12 @@ public:
     bool playing = false;
     bool closing = false;
     std::string error;
+
+    // what a crackle actually is, counted so a logcat says which one: a packet the dac didn't take whole,
+    // and a packet that went out as silence because the queue ran dry at the wrong moment
+    uint64_t shortPackets = 0, starvedPackets = 0, failedPackets = 0, clampedPackets = 0;
+    uint64_t nextReport = 0, nextLengthReport = 0;
+    bool loggedLengths = false, loggedFeedback = false;
 
     std::vector<std::unique_ptr<Slot>> slots;
     double nominal = 0, pace = 0, remainder = 0;
@@ -108,16 +117,75 @@ public:
             }
             uint16_t index = static_cast<uint16_t>((p.clock << 8) | p.control);
             uint32_t wanted = static_cast<uint32_t>(p.rate), now = 0;
-            if (control(0xa1, 0x01, 0x0100, index, &now, 4) == 4 && now == wanted) return true;
-            control(0x21, 0x01, 0x0100, index, &wanted, 4);
-            now = 0;
-            bool ok = control(0xa1, 0x01, 0x0100, index, &now, 4) == 4 && now == wanted;
-            // many uac2 dacs need a few milliseconds for their pll to lock after a rate change, else the first audio bursts with static
-            if (ok) usleep(15000);
-            return ok;
+            // a dac's readback echoes whatever was written even on clocks that can't produce that rate. the advertised
+            // ranges are the honest answer, so a clock that doesn't list the rate is skipped and the next one tried. a dac
+            // that wants the song's rate sent anyway (some bridges do, and then play it) opts in with [force]
+            int supports = rangeSupports(index, p.clock, wanted);
+            if (supports == 0 && !force.load()) {
+                LOGI("clock %d doesn't list %u Hz, trying the next clock", p.clock, wanted);
+                return false;
+            }
+            if (control(0xa1, 0x01, 0x0100, index, &now, 4) != 4 || now != wanted) {
+                control(0x21, 0x01, 0x0100, index, &wanted, 4);
+                now = 0;
+                if (control(0xa1, 0x01, 0x0100, index, &now, 4) != 4 || now != wanted) {
+                    LOGI("clock %d: asked %u Hz, dac answers %u", p.clock, wanted, now);
+                    return false;
+                }
+            }
+            LOGI("clock %d set to %u Hz, readback %u, range %s", p.clock, wanted, now,
+                 supports > 0 ? "lists it" : supports == 0 ? "doesn't list it, sent anyway" : "unreadable");
+            settle(index, p.clock);
+            // a dac whose clock was already right is very unlikely to be re-locking; no reason to wait on it every song
+            auto t = std::chrono::steady_clock::now().time_since_epoch();
+            nextLengthReport = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(t).count());
+            return true;
         }
         if (!p.rateControl) return true;
         return setEndpointRate(p.endpoint, p.rate);
+    }
+
+    // the clock's sampling-frequency ranges: 1 when rate is listed, 0 when it isn't, -1 when the dac won't say
+    int rangeSupports(uint16_t index, int clock, uint32_t rate) {
+        uint8_t bytes[512] = {};
+        int read = control(0xa1, 0x02, 0x0100, index, bytes, sizeof(bytes));
+        if (read < 2) return -1;
+        int count = bytes[0] | (bytes[1] << 8);
+        if (count < 1 || read < 2 + count * 12) return -1;
+        std::string listed;
+        for (int i = 0; i < count; ++i) {
+            const uint8_t *r = bytes + 2 + i * 12;
+            uint32_t low = r[0] | (r[1] << 8) | (r[2] << 16) | ((uint32_t)r[3] << 24);
+            uint32_t high = r[4] | (r[5] << 8) | (r[6] << 16) | ((uint32_t)r[7] << 24);
+            if (!listed.empty()) listed += ",";
+            listed += std::to_string(low);
+            if (high != low) listed += "-" + std::to_string(high);
+            if (rate >= low && rate <= high) {
+                LOGI("clock %d GET_RANGE lists %s", clock, listed.c_str());
+                return 1;
+            }
+        }
+        LOGI("clock %d GET_RANGE lists %s", clock, listed.c_str());
+        return 0;
+    }
+
+    // waits for the clock to report itself locked: a dac can answer the rate readback while its pll is still locking, and audio
+    // sent then crackles until it does. 15 ms when the dac has no valid control, up to 300 ms when it does
+    void settle(uint16_t index, int clock) {
+        usleep(15000);
+        int lock = lockState(index);
+        for (int waited = 15; lock == 0 && waited < 300; waited += 10) {
+            usleep(10000);
+            lock = lockState(index);
+        }
+        if (lock == 0) LOGI("clock %d hasn't locked after 300 ms, playing anyway", clock);
+    }
+
+    // the clock's own valid bit: 1 locked, 0 not yet, -1 the dac has no such control and settles on its own
+    int lockState(uint16_t index) {
+        uint8_t valid = 0;
+        if (control(0xa1, 0x01, 0x0200, index, &valid, 1) != 1) return -1;
+        return valid ? 1 : 0;
     }
 
     // uac1 sets the rate on the endpoint itself
@@ -189,6 +257,11 @@ public:
         for (double candidate : {framesPerUnit, framesPerUnit * 4.0, framesPerUnit / 4.0}) {
             if (std::fabs(candidate - nominal) <= nominal * 0.02) {
                 pace = candidate;
+                if (!loggedFeedback) {
+                    loggedFeedback = true;
+                    LOGI("feedback: %zu bytes at %u Hz, %.4f raw, asking %.3f frames a packet (nominal %.3f)",
+                         (size_t)length, plan.rate, perFrame, candidate, nominal);
+                }
                 return;
             }
         }
@@ -210,8 +283,32 @@ public:
         size_t total = 0;
         for (int i = 0; i < packetsPerUrb; ++i) {
             size_t frames = nextPacketFrames();
-            slot->lengths[i] = static_cast<unsigned>(std::min(frames * frameBytes, static_cast<size_t>(plan.maxPacket) / frameBytes * frameBytes));
+            size_t wanted = frames * frameBytes, room = static_cast<size_t>(plan.maxPacket) / frameBytes * frameBytes;
+            // the queue never lets this clamp bite (see fill's ring check), so a clamp here means the dac's own
+            // packet size is smaller than its rate needs, which is heard as crackle
+            if (wanted > room) ++clampedPackets;
+            slot->lengths[i] = static_cast<unsigned>(std::min(wanted, room));
             total += slot->lengths[i];
+        }
+        // once per stream: what the dac is actually being sent, packet by packet
+        if (!loggedLengths) {
+            loggedLengths = true;
+            size_t minFrames = slot->lengths[0], maxFrames = slot->lengths[0];
+            for (int i = 1; i < packetsPerUrb; ++i) {
+                minFrames = std::min(minFrames, static_cast<size_t>(slot->lengths[i]));
+                maxFrames = std::max(maxFrames, static_cast<size_t>(slot->lengths[i]));
+            }
+            LOGI("first urb: %d packets, %zu..%zu frames each, %zu bytes a frame", packetsPerUrb,
+                 minFrames / frameBytes, maxFrames / frameBytes, frameBytes);
+        }
+        // "once" would hide a dac whose feedback keeps changing the packet size, so this one comes every 5 s
+        auto now = std::chrono::steady_clock::now().time_since_epoch();
+        auto secs = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(now).count());
+        if (secs >= nextLengthReport) {
+            nextLengthReport = secs + 5;
+            size_t music = 0;
+            for (int i = 0; i < packetsPerUrb; ++i) music += slot->lengths[i];
+            LOGI("sending %zu frames in %d packets this urb (pace %.3f, nominal %.3f)", music / frameBytes, packetsPerUrb, pace, nominal);
         }
         size_t music = 0;
         {
@@ -223,6 +320,8 @@ public:
                 memcpy(slot->bytes.data() + first, ring.data(), music - first);
                 ringStart = (ringStart + music) % ring.size();
                 ringSize -= music;
+                // silence in the middle of a song is heard as a crackle; count it so the report can name the cause
+                if (music < total) starvedPackets += (total - music + frameBytes - 1) / frameBytes;
             }
             slot->generation = generation;
             changed.notify_all();
@@ -230,6 +329,28 @@ public:
         // a short queue or a pause goes out as silence, so the dac's clock never loses lock
         memset(slot->bytes.data() + music, 0, total - music);
         slot->musicFrames = music / frameBytes;
+    }
+
+    // packets that came back shorter than asked or with an error are what a crackle sounds like
+    void countDone(const Slot &slot) {
+        for (int i = 0; i < slot.packets; ++i) {
+            if (slot.actual[i] < slot.lengths[i]) ++shortPackets;
+        }
+        if (!slot.ok) ++failedPackets;
+    }
+
+    // one line every few seconds while something is going wrong, and one closing summary, so a logcat
+    // taken during the crackle says whether it was the host starving the dac or the dac refusing packets
+    void report(bool force) {
+        auto now = std::chrono::steady_clock::now().time_since_epoch();
+        auto secs = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(now).count());
+        if (!force && secs < nextReport) return;
+        nextReport = secs + 5;
+        if (force || starvedPackets || shortPackets || failedPackets || clampedPackets) {
+            LOGI("usb pass %d Hz: starved %llu, short %llu, failed %llu, clamped %llu", plan.rate,
+                 (unsigned long long)starvedPackets, (unsigned long long)shortPackets,
+                 (unsigned long long)failedPackets, (unsigned long long)clampedPackets);
+        }
     }
 
     void prime(Slot *slot) {
@@ -298,6 +419,8 @@ public:
             {
                 std::lock_guard<std::mutex> guard(lock);
                 if (done->generation == generation) played += done->musicFrames;
+                countDone(*done);
+                report(false);
                 changed.notify_all();
                 if (closing) continue;
             }
@@ -306,6 +429,10 @@ public:
                 fail("the dac stopped taking packets");
                 break;
             }
+        }
+        {
+            std::lock_guard<std::mutex> guard(lock);
+            report(true);
         }
         // the device still owns every transfer in flight; each is cancelled and collected before its memory goes
         for (auto &s : slots) if (s->inFlight) io->cancel(s.get());
@@ -345,7 +472,7 @@ Stream *streamOf(jlong handle) { return reinterpret_cast<Stream *>(handle); }
 extern "C" {
 
 JNIEXPORT jlong JNICALL
-Java_com_mochyy_mochymusic_playback_audio_pass_PassNative_usbOpen(JNIEnv *env, jobject, jint fd, jintArray plans, jint bcdUsb, jint driver) {
+Java_com_mochyy_mochymusic_playback_audio_pass_PassNative_usbOpen(JNIEnv *env, jobject, jint fd, jintArray plans, jint bcdUsb, jint driver, jboolean force) {
     jsize count = env->GetArrayLength(plans);
     if (count <= 0 || count % kPlanInts != 0) {
         throwState(env, "no way to stream to this dac");
@@ -361,6 +488,7 @@ Java_com_mochyy_mochymusic_playback_audio_pass_PassNative_usbOpen(JNIEnv *env, j
     }
     auto *stream = new Stream(std::move(io));
     stream->highSpeed = stream->io->highSpeed(bcdUsb);
+    stream->force.store(force);
     for (int i = 0; i < count / kPlanInts; ++i) {
         Plan p = planAt(values.data() + i * kPlanInts);
         if (stream->configure(p)) {
@@ -374,6 +502,13 @@ Java_com_mochyy_mochymusic_playback_audio_pass_PassNative_usbOpen(JNIEnv *env, j
         delete stream;
         throwState(env, "the dac wouldn't run at this song's rate");
         return 0;
+    }
+    {
+        const Plan &p = stream->plan;
+        LOGI("plan %d of %d: %s %s iface %d alt %d ep 0x%02x interval %d maxPacket %d, %d ch x %d bytes, %d Hz, feedback %s, implicit %s, source %d ch",
+             stream->chosen, count / kPlanInts, stream->highSpeed ? "high" : "full", p.uac2 ? "uac2" : "uac1",
+             p.streaming, p.alt, p.endpoint, p.interval, p.maxPacket, p.channels, p.subslot, p.rate,
+             p.feedback >= 0 ? "yes" : "no", p.implicitInterface >= 0 ? "yes" : "no", p.sourceChannels);
     }
     // a second of audio waits here, so the player can sleep through a slow background wake-up; pause and seek don't wait on it
     size_t ringBytes = std::max<size_t>(static_cast<size_t>(stream->plan.rate), 4096) * stream->frameBytes;
