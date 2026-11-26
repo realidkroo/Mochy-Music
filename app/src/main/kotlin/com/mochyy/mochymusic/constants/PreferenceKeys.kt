@@ -1420,3 +1420,11 @@ val AppFontModeKey = stringPreferencesKey("appFontMode")
 val CustomFontIdKey = stringPreferencesKey("customFontId")
 val CustomFontNameKey = stringPreferencesKey("customFontName")
 val FontCustomizerConfigKey = stringPreferencesKey("fontCustomizerConfig")
+
+// Custom app wallpaper
+val CustomWallpaperPathKey = stringPreferencesKey("customWallpaperPath")
+val CustomWallpaperDimKey = floatPreferencesKey("customWallpaperDim")
+val CustomWallpaperBlurKey = floatPreferencesKey("customWallpaperBlur")
+val CustomWallpaperHomeKey = booleanPreferencesKey("customWallpaperHome")
+val CustomWallpaperLibraryKey = booleanPreferencesKey("customWallpaperLibrary")
+val CustomWallpaperSearchKey = booleanPreferencesKey("customWallpaperSearch")

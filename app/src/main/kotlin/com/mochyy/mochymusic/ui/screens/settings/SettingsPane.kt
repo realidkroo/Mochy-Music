@@ -118,7 +118,7 @@ fun SettingsPanePlaceholder() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(com.mochyy.mochymusic.ui.component.LocalWallpaperPalette.current?.surfaceDeep ?: Color.Black),
         contentAlignment = Alignment.Center,
     ) {
         Column(

@@ -636,7 +636,7 @@ class MainActivity : ComponentActivity() {
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface)
+                    .background(com.mochyy.mochymusic.ui.component.LocalWallpaperPalette.current?.surfaceDeep ?: if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface)
             ) {
                 val glassState = remember { GlassState().also { rootGlassState = it } }
                 val hideAppChrome = remember { mutableStateOf(false) }
@@ -1230,9 +1230,26 @@ class MainActivity : ComponentActivity() {
                                             .windowInsetsPadding(WindowInsets.stableSystemBars.only(WindowInsetsSides.Horizontal))
                                             .glassRoot(glassState, isActive = { playerBottomSheetState.progress < 0.999f })
                                     ) {
+                                    val globalWallpaperPath by rememberPreference(com.mochyy.mochymusic.constants.CustomWallpaperPathKey, defaultValue = "")
+                                    val wallpaperOnHome by rememberPreference(com.mochyy.mochymusic.constants.CustomWallpaperHomeKey, defaultValue = true)
+                                    val wallpaperOnLibrary by rememberPreference(com.mochyy.mochymusic.constants.CustomWallpaperLibraryKey, defaultValue = true)
+                                    val wallpaperOnSearch by rememberPreference(com.mochyy.mochymusic.constants.CustomWallpaperSearchKey, defaultValue = false)
+                                    val keepWallpaperAlive = globalWallpaperPath.isNotBlank() && (wallpaperOnHome || wallpaperOnLibrary || wallpaperOnSearch)
+                                    val showWallpaperHere = when {
+                                        currentRoute == Screens.Home.route -> wallpaperOnHome
+                                        currentRoute == "library" -> wallpaperOnLibrary
+                                        com.mochyy.mochymusic.ui.screens.search.showsSearchPane(currentRoute) -> wallpaperOnSearch
+                                        else -> false
+                                    }
                                     com.mochyy.mochymusic.ui.screens.settings.modules.ModuleAppBackground(
                                         currentRoute = currentRoute,
                                         modifier = Modifier.fillMaxSize(),
+                                    )
+                                    com.mochyy.mochymusic.ui.component.CustomWallpaperLayer(
+                                        enabled = keepWallpaperAlive,
+                                        visible = showWallpaperHere,
+                                        smoothBottomFade = true,
+                                        paletteOverlay = true,
                                     )
                                     Row(Modifier.fillMaxSize()) {
                                     if (settingsPane) {

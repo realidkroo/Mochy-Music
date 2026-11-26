@@ -109,10 +109,12 @@ fun SearchScreen(
 ) {
     // on its side the field and its history stay in the pane at the left (SearchSidePane), so this side shows the categories
     if (com.mochyy.mochymusic.ui.utils.isLandscapeLayout()) {
+        val wallpaperOnSearch = com.mochyy.mochymusic.utils.rememberPreference(com.mochyy.mochymusic.constants.CustomWallpaperSearchKey, defaultValue = false).value
+        val wallpaperPath = com.mochyy.mochymusic.utils.rememberPreference(com.mochyy.mochymusic.constants.CustomWallpaperPathKey, defaultValue = "").value
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(SearchColors.page(pureBlack))
+                .background(if (wallpaperOnSearch && wallpaperPath.isNotBlank()) Color.Transparent else SearchColors.page(pureBlack))
         ) {
             SearchBrowseContent(
                 listState = rememberLazyListState(),
@@ -232,10 +234,12 @@ fun SearchScreen(
     val showBrowse by remember { derivedStateOf { activeProgress.value < 0.995f } }
     val showActive by remember { derivedStateOf { activeProgress.value > 0.005f } }
 
+    val wallpaperOnSearchPortrait = com.mochyy.mochymusic.utils.rememberPreference(com.mochyy.mochymusic.constants.CustomWallpaperSearchKey, defaultValue = false).value
+    val wallpaperPathPortrait = com.mochyy.mochymusic.utils.rememberPreference(com.mochyy.mochymusic.constants.CustomWallpaperPathKey, defaultValue = "").value
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(SearchColors.page(pureBlack))
+            .background(if (wallpaperOnSearchPortrait && wallpaperPathPortrait.isNotBlank()) Color.Transparent else SearchColors.page(pureBlack))
     ) {
 
         Box(
