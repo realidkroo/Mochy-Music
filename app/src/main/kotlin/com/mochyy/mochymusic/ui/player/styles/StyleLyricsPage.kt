@@ -112,7 +112,7 @@ private fun StyleOverlayPage(
     LaunchedEffect(open) {
         shown.animateTo(if (open) 1f else 0f, spring(dampingRatio = 0.86f, stiffness = if (open) 260f else 420f))
     }
-    BackHandler(enabled = open, onBack = onClose)
+    if (open) BackHandler(onBack = onClose)
     val currentOnCovered by androidx.compose.runtime.rememberUpdatedState(onCoveredChange)
     LaunchedEffect(Unit) {
         androidx.compose.runtime.snapshotFlow { shown.value >= 0.999f }

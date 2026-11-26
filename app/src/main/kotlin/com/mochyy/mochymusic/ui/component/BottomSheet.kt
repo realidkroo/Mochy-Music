@@ -267,7 +267,9 @@ fun BottomSheet(
                     }
             ) {
                 if (!state.isCollapsed && !state.isDismissed) {
-                    BackHandler(onBack = state::collapseSoft)
+                    BackHandler {
+                        if (state.backInterceptor?.invoke() != true) state.collapseSoft()
+                    }
                 }
 
                 // Composing the sheet content is expensive, and gating it on `!isCollapsed`
@@ -832,7 +834,9 @@ private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.detectSh
 @Composable
 private fun SheetBackHandler(state: BottomSheetState) {
     if (!state.isCollapsed && !state.isDismissed) {
-        BackHandler(onBack = state::collapseSoft)
+        BackHandler {
+            if (state.backInterceptor?.invoke() != true) state.collapseSoft()
+        }
     }
 }
 
@@ -854,6 +858,9 @@ class BottomSheetState(
      */
     private val anchor: () -> Int = { -1 },
 ) : DraggableState by draggableState {
+    /** Optional handler run before collapsing on Back (e.g. closing Lyrics or Queue first). */
+    var backInterceptor: (() -> Boolean)? = null
+
     val dismissedBound: Dp
         get() = animatable.lowerBound!!
 
