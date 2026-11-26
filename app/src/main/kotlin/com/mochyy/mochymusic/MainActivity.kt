@@ -1352,7 +1352,8 @@ class MainActivity : ComponentActivity() {
                     // "share song" from any menu opens here, over the app and the player
                     com.mochyy.mochymusic.ui.player.share.song.SongShareHost()
 
-                    HomeUpdatePrompt(currentRoute = currentRoute)
+                    // this is the last mochy under the old id, so home asks people to move to the new app instead of offering updates
+                    com.mochyy.mochymusic.ui.screens.update.HomeMoveToNewMochyPrompt(currentRoute = currentRoute)
 
                     sharedSong?.let { song ->
                         playerConnection?.let {
@@ -1678,38 +1679,6 @@ private object AppContentNeverObscured : androidx.compose.runtime.State<Boolean>
 
 val LocalHideAppChrome = staticCompositionLocalOf { mutableStateOf(false) }
 
-private const val UpdateSnoozeWindowMillis = 24L * 60L * 60L * 1000L
-
-@Composable
-private fun HomeUpdatePrompt(currentRoute: String?) {
-    if (currentRoute != Screens.Home.route) return
-    val (noticeHidden) = rememberPreference(com.mochyy.mochymusic.constants.HideUpdateNoticeKey, defaultValue = false)
-    if (noticeHidden) return
-
-    val updateState by com.mochyy.mochymusic.ui.screens.update.rememberUpdateState()
-    val (snoozedAt, setSnoozedAt) = rememberPreference(
-        com.mochyy.mochymusic.constants.UpdatePromptSnoozedAtKey,
-        defaultValue = 0L,
-    )
-    val (userName) = rememberPreference(com.mochyy.mochymusic.constants.UsernameKey, "")
-
-    var dismissed by rememberSaveable { mutableStateOf(false) }
-
-    val release = (updateState as? com.mochyy.mochymusic.core.updater.UpdateState.Available)?.release
-    val snoozeExpired = System.currentTimeMillis() - snoozedAt > UpdateSnoozeWindowMillis
-
-    if (release != null && snoozeExpired && !dismissed) {
-        com.mochyy.mochymusic.ui.screens.update.UpdatePromptSheet(
-            release = release,
-            userName = userName,
-            onSnooze = {
-                setSnoozedAt(System.currentTimeMillis())
-                dismissed = true
-            },
-            onDismiss = { dismissed = true },
-        )
-    }
-}
 val LocalPlayerAwareWindowInsets = staticCompositionLocalOf<WindowInsets> { error("No WindowInsets provided") }
 val LocalDownloadUtil = staticCompositionLocalOf<DownloadUtil> { error("No DownloadUtil provided") }
 val LocalSyncUtils = staticCompositionLocalOf<SyncUtils> { error("No SyncUtils provided") }

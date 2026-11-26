@@ -67,6 +67,9 @@
         <package android:name="com.whatsapp" />
         <package android:name="com.whatsapp.w4b" />
         <package android:name="com.facebook.katana" />
+        <!-- the move sheet looks for the new mochy, its own app from 9.0.0 on (MoveToNewMochyViewModel) -->
+        <package android:name="com.mochy.mochymusic" />
+        <package android:name="com.mochy.mochymusic.debug" />
     </queries>
     <application
         android:name=".App"

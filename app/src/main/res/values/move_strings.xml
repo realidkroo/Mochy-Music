@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the sheet that moves people from this last old-id mochy to the new app (MoveToNewMochySheet.kt) -->
+<resources>
+    <string name="move_mark_old">Mochy</string>
+    <string name="move_mark_new">The new Mochy</string>
+    <string name="move_title">Sorry for the hassle!</string>
+    <string name="move_subtitle">Mochy is moving to a new app.</string>
+    <string name="move_intro">From 9.0.0 on, Mochy has its own signing key and a new app id, so the new Mochy installs as a separate app next to this one. Here\'s how to bring everything over:</string>
+
+    <string name="move_step_export">Export everything here: your library, listening history, recaps, playlists, settings and modules. Logins don\'t come along, so you\'ll sign in again, and code modules need adding again in the new app.</string>
+    <string name="move_step_app">Download and install the new Mochy from here. A copy is saved to Downloads too. You can keep this app as long as you like.</string>
+    <string name="move_step_import">In the new Mochy, pick Import previous data during setup and choose the .zip you exported, and you\'re set!</string>
+
+    <string name="move_export_working">Exporting…</string>
+    <string name="move_export_working_percent">Exporting… %1$d%%</string>
+    <string name="move_export_done">Exported! Keep that .zip until the new Mochy has imported it.</string>
+    <string name="move_export_first">Export your library first (step 1), so nothing gets left behind.</string>
+
+    <string name="move_app_installed">The new Mochy is installed.</string>
+    <string name="move_app_looking">Looking for the new Mochy…</string>
+    <string name="move_app_downloading_percent">Downloading the new Mochy… %1$d%%</string>
+    <string name="move_app_ready">The new Mochy is ready. Open it and pick the .zip you exported.</string>
+    <string name="move_app_not_out">The new Mochy isn\'t out yet. Check back soon!</string>
+    <string name="move_app_no_apk">This release of the new Mochy has no app attached yet. Check back soon!</string>
+    <string name="move_app_download_failed">Couldn\'t download the new Mochy. Check your connection and try again.</string>
+    <string name="move_app_allow_installs">Allow \"Install unknown apps\" for Mochy, then tap the button again.</string>
+
+    <string name="move_why_title">Why is this change necessary?</string>
+    <string name="move_why_key">Until now Mochy was signed with a debug key, the same kind of key every Android developer has. A key of its own means nobody else can make an update that passes for Mochy.</string>
+    <string name="move_why_new_app">Android never lets an app change its key, so the new Mochy has to be a new app. Its new id means this one can stay installed, and you can export from it again whenever you want.</string>
+    <string name="move_why_sorry">Sorry for the change and the hassle, we don\'t plan on doing this again &lt;3</string>
+    <string name="move_why_thanks">Thanks for using Mochy.</string>
+    <string name="move_signoff">best regards\nmochyy team\nlast changed in 2026</string>
+</resources>
