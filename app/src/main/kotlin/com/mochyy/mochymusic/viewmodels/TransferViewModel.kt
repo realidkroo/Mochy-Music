@@ -37,6 +37,14 @@ sealed interface TransferStep {
     data class Failed(val message: String) : TransferStep
 }
 
+/** the exporter's own status as a step, so every page that shows an export reads it the same way */
+internal fun TransferExportStatus.asStep(): TransferStep = when (this) {
+    TransferExportStatus.Idle -> TransferStep.Idle
+    is TransferExportStatus.Working -> TransferStep.Working(progress)
+    TransferExportStatus.Done -> TransferStep.Done
+    is TransferExportStatus.Failed -> TransferStep.Failed(message)
+}
+
 /** exporting everything to one zip and bringing a zip back in, for onboarding and the storage page */
 @HiltViewModel
 class TransferViewModel @Inject constructor(
@@ -45,14 +53,7 @@ class TransferViewModel @Inject constructor(
     private val importer: TransferImporter,
 ) : ViewModel() {
     val export: StateFlow<TransferStep> = exporter.status
-        .map { status ->
-            when (status) {
-                TransferExportStatus.Idle -> TransferStep.Idle
-                is TransferExportStatus.Working -> TransferStep.Working(status.progress)
-                TransferExportStatus.Done -> TransferStep.Done
-                is TransferExportStatus.Failed -> TransferStep.Failed(status.message)
-            }
-        }
+        .map { it.asStep() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, TransferStep.Idle)
 
     private val _import = MutableStateFlow<TransferStep>(TransferStep.Idle)

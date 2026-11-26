@@ -263,9 +263,10 @@ class AppSecurityHardeningTest {
         assertTrue(MonochromeTurnstileJwtKey.name in TransferArchive.LoginKeys)
         assertTrue(MonochromeTurnstileJwtExpiryKey.name in TransferArchive.LoginKeys)
 
+        // code modules never travel, a module's unpacked files and data do so a moved library keeps its skins and modules working
         assertFalse(TransferArchive.carriesFile("code_modules"))
-        assertFalse(TransferArchive.carriesFile("module_files"))
-        assertFalse(TransferArchive.carriesFile("module_data"))
+        assertTrue(TransferArchive.carriesFile("module_files"))
+        assertTrue(TransferArchive.carriesFile("module_data"))
         assertTrue(TransferArchive.carriesFile("local_artwork"))
 
         val legacyLinkSealed = SecretVault.seal("pair-key-abc", SecretVault.DefaultDomain)
