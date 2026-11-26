@@ -87,6 +87,9 @@ private const val CacheTtlMillis = 15L * 60L * 1000L
 // older releases in this repo are the app under its old id, so "downgrade" to one would add a second app instead
 private val FirstReleaseWithThisId = FullVersion(major = 8, minor = 2, patch = 3)
 
+// from 9.0.0 on the releases are the new mochy, a separate app this one can't update into, so only the move sheet looks at them
+private val FirstNewMochyRelease = FullVersion(major = 9, minor = 0, patch = 0)
+
 /** A release with the version it was parsed to, so it can be compared without parsing again. */
 private class ParsedRelease(val version: FullVersion, val release: GithubRelease)
 
@@ -127,7 +130,15 @@ private fun ParsedRelease.inChannel(channel: UpdateChannel) = channel == UpdateC
 
 /** The newest release on [channel], whatever is installed. */
 suspend fun getLatestRelease(channel: UpdateChannel, force: Boolean = false): Result<GithubRelease?> =
-    getReleases(force).map { list -> list.filter { it.inChannel(channel) }.maxByOrNull { it.version }?.release }
+    getReleases(force).map { list ->
+        list.filter { it.inChannel(channel) && it.version.copy(buildNumber = 0) < FirstNewMochyRelease }.maxByOrNull { it.version }?.release
+    }
+
+/** the newest new mochy on [channel], null while there's none out yet */
+suspend fun getNewMochyRelease(channel: UpdateChannel, force: Boolean = false): Result<GithubRelease?> =
+    getReleases(force).map { list ->
+        list.filter { it.inChannel(channel) && it.version.copy(buildNumber = 0) >= FirstNewMochyRelease }.maxByOrNull { it.version }?.release
+    }
 
 /**
  * What "Downgrade to" offers, null when there's none: on release, the newest release before the
@@ -248,13 +259,14 @@ fun isNewerThanInstalled(candidateVersionText: String): Boolean {
 suspend fun downloadApk(
     context: Context,
     release: GithubRelease,
+    other: ApkVerifier.OtherApp? = null,
     onProgress: (Float) -> Unit,
 ): Result<File> = withContext(Dispatchers.IO) {
     runCatching {
         val url = release.apkUrl ?: error("This release has no APK attached")
         val target = apkFileFor(context, release)
 
-        if (isDownloaded(context, release) && ApkVerifier.verifyUpdateApk(context, target)) {
+        if (isDownloaded(context, release, other) && ApkVerifier.verifyUpdateApk(context, target, other)) {
             onProgress(1f)
             return@runCatching target
         }
@@ -296,7 +308,7 @@ suspend fun downloadApk(
             temp.copyTo(target, overwrite = true)
             temp.delete()
         }
-        if (!ApkVerifier.verifyUpdateApk(context, target)) {
+        if (!ApkVerifier.verifyUpdateApk(context, target, other)) {
             target.delete()
             error("Update APK signature verification failed")
         }
@@ -308,11 +320,11 @@ suspend fun downloadApk(
 fun apkFileFor(context: Context, release: GithubRelease): File =
     ApkVerifier.safeApkFile(context, release.apkName)
 
-fun isDownloaded(context: Context, release: GithubRelease): Boolean {
+fun isDownloaded(context: Context, release: GithubRelease, other: ApkVerifier.OtherApp? = null): Boolean {
     val f = apkFileFor(context, release)
     if (!f.exists() || f.length() <= 0L) return false
     val sizeMatches = release.apkSizeBytes <= 0L || f.length() == release.apkSizeBytes
-    return sizeMatches && ApkVerifier.verifyUpdateApk(context, f)
+    return sizeMatches && ApkVerifier.verifyUpdateApk(context, f, other)
 }
 
 fun canInstallPackages(context: Context): Boolean =
@@ -332,8 +344,8 @@ fun requestInstallPermission(context: Context) {
     }
 }
 
-fun installApk(context: Context, apk: File): Boolean {
-    if (!ApkVerifier.verifyUpdateApk(context, apk)) {
+fun installApk(context: Context, apk: File, other: ApkVerifier.OtherApp? = null): Boolean {
+    if (!ApkVerifier.verifyUpdateApk(context, apk, other)) {
         runCatching { apk.delete() }
         return false
     }

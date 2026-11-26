@@ -126,11 +126,17 @@ object ApkVerifier {
         throw IOException("Too many redirects while downloading update")
     }
 
-    /**
-     * Verifies [apk] lives inside private [updatesDir], matches this app's packageName, and is
-     * signed by the exact same signing certificate(s) as the currently installed app.
-     */
-    fun verifyUpdateApk(context: Context, apk: File): Boolean {
+    /** an app other than this one an apk may be, pinned by its id and the sha-256 of its signing certificates */
+    data class OtherApp(val packageName: String, val certDigests: Set<String>)
+
+    // the new mochy from 9.0.0 on: its own id and its own release key, the only other app this one will ever hand to the installer
+    val NewMochy = OtherApp(
+        packageName = "com.mochy.mochymusic",
+        certDigests = setOf("76660fe9afde54a5850c1ea32753d3d49e9f5667dc7af09feaa1fd823de7da6a"),
+    )
+
+    /** true when [apk] sits in the private updates folder and is this app signed with its own keys, or exactly [other] when one is given */
+    fun verifyUpdateApk(context: Context, apk: File, other: OtherApp? = null): Boolean {
         if (!apk.isFile || apk.length() <= 0L || apk.length() > MaxApkBytes) {
             Timber.w("Update APK missing or invalid size")
             return false
@@ -143,8 +149,9 @@ object ApkVerifier {
         }
 
         val pm = context.packageManager
-        val installedDigests = installedSigningDigests(pm, context.packageName)
-        if (installedDigests.isEmpty()) {
+        val expectedPackage = other?.packageName ?: context.packageName
+        val expectedDigests = other?.certDigests ?: installedSigningDigests(pm, context.packageName)
+        if (expectedDigests.isEmpty()) {
             Timber.w("Could not read installed app signing certificate")
             return false
         }
@@ -153,12 +160,12 @@ object ApkVerifier {
             Timber.w("Failed to parse downloaded update APK")
             return false
         }
-        if (archiveInfo.packageName != context.packageName) {
+        if (archiveInfo.packageName != expectedPackage) {
             Timber.w("Update APK packageName mismatch: ${archiveInfo.packageName}")
             return false
         }
         val archiveDigests = signingDigestsOf(archiveInfo)
-        if (archiveDigests.isEmpty() || archiveDigests != installedDigests) {
+        if (archiveDigests.isEmpty() || archiveDigests != expectedDigests) {
             Timber.w("Update APK signing certificate does not match installed app")
             return false
         }
