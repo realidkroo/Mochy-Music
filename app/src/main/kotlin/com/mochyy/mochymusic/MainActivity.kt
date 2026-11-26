@@ -680,7 +680,7 @@ class MainActivity : ComponentActivity() {
                     introPlays = plays
                     if (introRequested && !plays) LaunchGate.skip()
                     // an anime icon's splash shows the icon itself, so the intro bounces out of it; every other launch starts from the bare mark
-                    val icon = com.mochyy.mochymusic.utils.AppIcons.launchedFrom(intent)?.takeIf(com.mochyy.mochymusic.utils.AppIcons::splashShows)
+                    val icon = (com.mochyy.mochymusic.utils.AppIcons.launchedFrom(intent) ?: com.mochyy.mochymusic.utils.AppIcons.current(this@MainActivity)).takeIf(com.mochyy.mochymusic.utils.AppIcons::splashShows)
                     LaunchIntroState(plays, icon)
                 }
 

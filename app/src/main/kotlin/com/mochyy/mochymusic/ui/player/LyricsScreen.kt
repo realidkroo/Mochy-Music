@@ -751,9 +751,13 @@ fun LyricsScreen(
                                     collapseEasing = recenterEasingFor(motionStyle),
                                     // The gap belongs to whoever sings next, so it waits on that
                                     // singer's side rather than always sitting down the middle.
-                                    alignment = lines.getOrNull(row.afterIndex + 1)
-                                        ?.let { alignmentFor(it, useAgentAlignment, mirrored) }
-                                        ?: LyricsAlignment.CENTER,
+                                    alignment = if (motionStyle.centered) {
+                                        LyricsAlignment.CENTER
+                                    } else {
+                                        lines.getOrNull(row.afterIndex + 1)
+                                            ?.let { alignmentFor(it, useAgentAlignment, mirrored) }
+                                            ?: LyricsAlignment.CENTER
+                                    },
                                 )
                             }
 
@@ -772,7 +776,7 @@ fun LyricsScreen(
 
                                 val shown = rememberShownLyric(entry)
                                 val rowIndex = rowOfLine[index]
-                                val lineAlignment = alignmentFor(entry, useAgentAlignment, mirrored)
+                                val lineAlignment = if (motionStyle.centered) LyricsAlignment.CENTER else alignmentFor(entry, useAgentAlignment, mirrored)
                                 // any alignment grows from the card: a centred or right-aligned line measures where its words start
                                 val growsFromCard by remember(index, lines, morph) {
                                     derivedStateOf { morph != null && index == cardLine }

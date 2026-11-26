@@ -290,6 +290,13 @@ fun LaunchIntroOverlay(state: LaunchIntroState, essentialsReady: Boolean) {
     val context = LocalContext.current
     // read once for the first frame: it has to match what the splash showed
     val iconArt = remember { state.icon?.let { LaunchIconArt(context, it) } }
+    val backdropColor = remember(state.icon) {
+        state.icon?.background?.let { Color(context.getColor(it)) } ?: Color.Black
+    }
+    val rippleColor = remember(state.icon) {
+        val isPale = state.icon?.color?.pale == true || state.icon?.background == com.mochyy.mochymusic.R.color.app_icon_white
+        if (isPale) Color.Black else Color.White
+    }
 
     LaunchedEffect(state) {
         val shownAt = SystemClock.uptimeMillis()
@@ -347,7 +354,7 @@ fun LaunchIntroOverlay(state: LaunchIntroState, essentialsReady: Boolean) {
                 }
                 .drawBehind {
                     val backdrop = 1f - smoothstep(0.18f, 0.7f, state.flight.value)
-                    if (backdrop > 0f) drawRect(Color.Black.copy(alpha = backdrop))
+                    if (backdrop > 0f) drawRect(backdropColor.copy(alpha = backdrop))
                 }
         )
 
@@ -359,7 +366,7 @@ fun LaunchIntroOverlay(state: LaunchIntroState, essentialsReady: Boolean) {
                     .drawBehind {
                         val ripple = rippleAt(state.prelude.value) ?: return@drawBehind
                         drawCircle(
-                            color = Color.White.copy(alpha = 0.32f * (1f - ripple)),
+                            color = rippleColor.copy(alpha = 0.32f * (1f - ripple)),
                             radius = IconCircleRadius * (0.9f + 1.3f * ripple) * frame.unit,
                             center = frame.origin + Pivot * frame.unit,
                             style = Stroke(width = (7f * (1f - ripple) + 1.5f) * frame.unit),

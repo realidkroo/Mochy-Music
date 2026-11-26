@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Mochy.Splash.BgDefault" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="android:windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgWhite" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_white</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_white</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_white</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgBlack" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_black</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_black</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_black</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgMaterial" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_material</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_material</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_material</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgRed" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_custom_red</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_custom_red</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_custom_red</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgOrange" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_custom_orange</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_custom_orange</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_custom_orange</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgYellow" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_custom_yellow</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_custom_yellow</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_custom_yellow</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgGreen" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_custom_green</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_custom_green</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_custom_green</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgTeal" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_custom_teal</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_custom_teal</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_custom_teal</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgSky" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_custom_sky</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_custom_sky</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_custom_sky</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgBlue" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_custom_blue</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_custom_blue</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_custom_blue</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgIndigo" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_custom_indigo</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_custom_indigo</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_custom_indigo</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgPurple" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_custom_purple</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_custom_purple</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_custom_purple</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgPink" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_custom_pink</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_custom_pink</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_custom_pink</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgGraphite" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_custom_graphite</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_custom_graphite</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_custom_graphite</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+    <style name="Theme.Mochy.Splash.BgCream" parent="Theme.App.Starting.Icon">
+        <item name="android:windowBackground">@color/app_icon_custom_cream</item>
+        <item name="windowSplashScreenBackground">@color/app_icon_custom_cream</item>
+        <item name="android:windowSplashScreenBackground">@color/app_icon_custom_cream</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@null</item>
+    </style>
+</resources>

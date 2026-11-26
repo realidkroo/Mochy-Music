@@ -288,6 +288,7 @@ private fun LyricsReadingToggles(modifier: Modifier = Modifier) {
 private fun lyricStyleNameRes(style: LyricsMotionStyle): Int = when (style) {
     LyricsMotionStyle.MOTION -> R.string.appearance_style_1
     LyricsMotionStyle.LEGACY -> R.string.appearance_style_2
+    LyricsMotionStyle.CENTERED -> R.string.appearance_style_3
     LyricsMotionStyle.BORING -> R.string.customise_style_boring
     LyricsMotionStyle.PLAIN -> R.string.customise_style_plain
 }

@@ -253,12 +253,13 @@ internal fun MiniLyricsTicker(
                     val synced = !lines[targetState.index].words.isNullOrEmpty()
                     val startAlpha = (NextLineAlpha / (if (synced) UnsungAlpha else 1f)).coerceAtMost(1f)
                     val startScale = UpcomingFontSize.value / TickerFontSize.value
+                    val lineOrigin = if (motionStyle.centered) TransformOrigin(0.5f, 0.5f) else LineStart
                     (slideInVertically(LineChangeSpring) { rise } +
-                        scaleIn(LineScaleSpring, startScale, LineStart) +
+                        scaleIn(LineScaleSpring, startScale, lineOrigin) +
                         fadeIn(LineFadeSpring, startAlpha))
                         .togetherWith(
                             slideOutVertically(LineChangeSpring) { -rise } +
-                                scaleOut(LineScaleSpring, LeavingScale, LineStart) +
+                                scaleOut(LineScaleSpring, LeavingScale, lineOrigin) +
                                 fadeOut(LineFadeSpring)
                         )
                         .using(SizeTransform(clip = false))
@@ -272,14 +273,14 @@ internal fun MiniLyricsTicker(
                         .using(SizeTransform(clip = false))
                 }
             },
-            contentAlignment = Alignment.CenterStart,
+            contentAlignment = if (motionStyle.centered) Alignment.Center else Alignment.CenterStart,
             label = "miniLyricsLine",
             modifier = Modifier
                 .fillMaxWidth()
                 .height(PlayerCardHeight),
         ) { current ->
             Box(
-                contentAlignment = Alignment.CenterStart,
+                contentAlignment = if (motionStyle.centered) Alignment.Center else Alignment.CenterStart,
                 modifier = Modifier.fillMaxSize(),
             ) {
                 when (current.kind) {
@@ -314,17 +315,17 @@ internal fun MiniLyricsTicker(
                             positionProvider = positionProvider,
                             bloom = waveEnabled,
                             highBloom = highBloom,
-                            alignment = LyricsAlignment.START,
+                            alignment = if (motionStyle.centered) LyricsAlignment.CENTER else LyricsAlignment.START,
                             modifier = Modifier.graphicsLayer {
                                 scaleX = DotsScale
                                 scaleY = DotsScale
-                                transformOrigin = TransformOrigin(0f, 0.5f)
-                                translationX = -DotsRowInset.toPx() * DotsScale
+                                transformOrigin = if (motionStyle.centered) TransformOrigin(0.5f, 0.5f) else TransformOrigin(0f, 0.5f)
+                                translationX = if (motionStyle.centered) 0f else -DotsRowInset.toPx() * DotsScale
                             },
                         )
                     }
 
-                    TickerSlot.LOADING -> LyricsLoadingDots(alignStart = true)
+                    TickerSlot.LOADING -> LyricsLoadingDots(alignStart = !motionStyle.centered)
 
                     else -> Text(
                         text = stringResource(R.string.video_mode_no_lyrics),
