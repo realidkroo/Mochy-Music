@@ -1160,6 +1160,16 @@ private fun PlayerSheet(
                         styleQueueOpen = false
                     }
                 }
+                androidx.compose.runtime.DisposableEffect(state, styleLyricsOpen, styleQueueOpen) {
+                    state.backInterceptor = {
+                        when {
+                            styleLyricsOpen -> { styleLyricsOpen = false; true }
+                            styleQueueOpen -> { styleQueueOpen = false; true }
+                            else -> false
+                        }
+                    }
+                    onDispose { state.backInterceptor = null }
+                }
                 // a module player can bring its own lyrics and queue pages; every other style gets mochy's
                 com.mochyy.mochymusic.ui.player.styles.StyleOrModuleLyricsPage(
                     open = styleLyricsOpen && styleOpen,
@@ -1907,6 +1917,17 @@ private fun PlayerSheet(
         // and wins over - the sheet's own back handler: back shrinks the page into its card
         // first, then collapses the player. Not while collapsed: the page is remembered then,
         // and back belongs to the app.
+        androidx.compose.runtime.DisposableEffect(state, showQueue, showLyrics) {
+            state.backInterceptor = {
+                if (showQueue || showLyrics) {
+                    transition.close()
+                    true
+                } else {
+                    false
+                }
+            }
+            onDispose { state.backInterceptor = null }
+        }
         PageBackHandler(state, pageOpen = { showQueue || showLyrics }) { transition.close() }
 
         // the sheets' flags read in a scope of their own, so opening one doesn't recompose the whole player under it
