@@ -117,7 +117,7 @@ fun PlayerProgressSlider(
         val start = Snapshot.withoutReadObservation { sliderPosition ?: pendingSeek ?: progress.value.position }
         SliderState(valueRange = 0f..rangeEnd).also { it.value = start.toFloat() }
     }
-    LaunchedEffect(active, sliderState) {
+    LaunchedEffect(active, sliderState, progressFlow) {
         if (!active) return@LaunchedEffect
         progressFlow.collect { latest ->
             progress.value = latest
