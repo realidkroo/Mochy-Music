@@ -64,8 +64,7 @@ internal object TransferArchive {
     // media3's own database, it holds the list of downloads and the index of the download folder
     const val MediaDatabaseName = "exoplayer_internal.db"
 
-    // the app's own shared preferences worth keeping (audio lab, eq profiles, the home algorithm, hidden songs, source picks, ui scale),
-    // by the name they travel under in the zip and the file name on this phone, so a renamed file still lands in the right place
+    // every shared preferences file of the app's own worth keeping, by its name in the zip and on this phone; logins, tv pairings, module storage and caches stay behind
     val PrefsToCarry = mapOf(
         "audio_lab" to "audio_lab",
         "nanosonic_eq_profiles" to "nanosonic_eq_profiles",
@@ -73,6 +72,14 @@ internal object TransferArchive {
         "not_recommended" to com.mochyy.mochymusic.utils.NotRecommended.PREFS_NAME,
         "source_modules" to "source_modules",
         "display" to "mochy_settings",
+        "mixer" to "mixer",
+        "song_eq" to "song_eq",
+        "song_tuning" to "song_tuning",
+        "recent_searches" to "recent_searches",
+        "playlist_added_here" to "playlist_added_here",
+        "module_looks" to "module_looks",
+        "app_icon" to "app_icon",
+        "updates" to com.mochyy.mochymusic.core.updater.PREFS_NAME,
     )
 
     // creds and api keys never ride along in a backup zip
@@ -86,12 +93,11 @@ internal object TransferArchive {
         OpenRouterApiKey, DeeplApiKey, ProxyUsernameKey, ProxyPasswordKey,
     ).map { it.name }.toSet()
 
-    // top-level things in the files folder that stay behind: the streaming cache, settings (sent as json),
-    // caches, crash notes, executable/untrusted module bundles, the saved queue and folder picks android won't hand over
+    // what stays behind in the files folder: the streaming cache, settings (sent as json), caches, crash notes, the saved queue, folder picks android won't hand over, and code modules, which only run signed with this app's own key
     private val FilesLeftBehind = setOf(
         "exoplayer", "datastore", "cipher_cache", "local_music_folders.txt", "last_crash.txt",
         "persistent_queue.data", "persistent_automix.data", "persistent_player_state.data",
-        "code_modules", "module_files", "module_data",
+        "code_modules",
     )
 
     // top-level folders in the files folder that hold songs: downloads and songs shared into mochy; a backup leaves them out to stay small

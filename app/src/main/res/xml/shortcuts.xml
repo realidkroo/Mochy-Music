@@ -8,7 +8,7 @@
         <intent
             android:action="com.mochyy.mochymusic.action.SEARCH"
             android:targetClass="com.mochyy.mochymusic.MainActivity"
-            android:targetPackage="com.mochyy.mochymusic" />
+            android:targetPackage="com.mochy.mochymusic" />
     </shortcut>
     <shortcut
         android:enabled="true"
@@ -18,6 +18,6 @@
         <intent
             android:action="com.mochyy.mochymusic.action.LIBRARY"
             android:targetClass="com.mochyy.mochymusic.MainActivity"
-            android:targetPackage="com.mochyy.mochymusic" />
+            android:targetPackage="com.mochy.mochymusic" />
     </shortcut>
 </shortcuts>

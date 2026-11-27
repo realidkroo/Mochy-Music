@@ -303,11 +303,11 @@ if [ "$INSTALL_ON_DEVICES" = true ]; then
     else
         DEVICES=$(adb devices | grep -v "^List" | grep -w "device" | cut -f1)
         
-        PACKAGE_NAME="com.mochyy.mochymusic"
+        PACKAGE_NAME="com.mochy.mochymusic"
         if [ "$VARIANT" == "debug" ]; then
-            PACKAGE_NAME="com.mochyy.mochymusic.debug"
+            PACKAGE_NAME="com.mochy.mochymusic.debug"
         elif [ "$VARIANT" == "profileable" ]; then
-            PACKAGE_NAME="com.mochyy.mochymusic.profileable"
+            PACKAGE_NAME="com.mochy.mochymusic.profileable"
         fi
 
         if [ -z "$DEVICES" ]; then

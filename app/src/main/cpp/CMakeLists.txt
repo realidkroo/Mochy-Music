@@ -19,6 +19,10 @@ if(DEFINED STORE_GUARD_DIR)
     target_include_directories(mochypass PRIVATE "${STORE_GUARD_DIR}")
     target_compile_definitions(mochypass PRIVATE HAS_STORE_GUARD_DATA=1)
 endif()
+# set by the release build type only, the one build signed with the release key
+if(STORE_GUARD_SIGNED)
+    target_compile_definitions(mochypass PRIVATE STORE_GUARD_SIGNED=1)
+endif()
 target_compile_options(mochypass PRIVATE -O2 -Wall -fvisibility=hidden)
 # aaudio is opened at runtime, so only the log and the loader are linked; that keeps the library loadable on android 7
 target_link_libraries(mochypass usb1 log dl)

@@ -84,8 +84,8 @@ fun parseFullVersion(text: String): FullVersion {
 
 private const val CacheTtlMillis = 15L * 60L * 1000L
 
-// older releases in this repo are the app under its old id, so "downgrade" to one would add a second app instead
-private val FirstReleaseWithThisId = FullVersion(major = 8, minor = 2, patch = 3)
+// older releases in this repo are the app under its old ids (musicfy, then com.mochyy.mochymusic), so "downgrade" to one would add a second app instead
+private val FirstReleaseWithThisId = FullVersion(major = 9, minor = 0, patch = 0)
 
 /** A release with the version it was parsed to, so it can be compared without parsing again. */
 private class ParsedRelease(val version: FullVersion, val release: GithubRelease)

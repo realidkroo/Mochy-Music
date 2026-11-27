@@ -1,6 +1,6 @@
 #!/bin/zsh
 # helpers for leak and battery checks on a device: memory counts, per-thread cpu over a window, wake locks and sensors; source it, then call mem, heap, cpu or holds
-PKG=${PKG:-com.mochyy.mochymusic.debug}
+PKG=${PKG:-com.mochy.mochymusic.debug}
 OUT=${PERF_OUT:-${TMPDIR:-/tmp}/mochy-perf}
 mkdir -p $OUT
 

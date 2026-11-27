@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="terms_of_use_title">Terms of Use</string>
+    <string name="terms_of_use_body">Mochy is a free, open-source app made by the community, so anyone can read its code, check how it works and suggest changes. It\'s a third-party app, which means it isn\'t made by, affiliated with or endorsed by any music service, record label or artist whose content you may see in it. Mochy doesn\'t host, store or own any music, videos, lyrics or artwork. Everything you play comes from outside services, and their owners keep all rights to it. You\'re responsible for how you use Mochy, so please follow the laws where you live and the rules of any service you connect to. Modules come from other people, not from us, so only add ones you trust, since they can change what the app does. Mochy is given to you as it is, with no promises. Things can break, services can change, and we can\'t be held responsible for any loss or trouble that comes from using it. Your library, settings and history stay on your phone, and we don\'t sell your data or track what you listen to. These terms can change as Mochy grows, and if they do, we\'ll show them to you again. By using Mochy, you agree to all of this.</string>
+    <string name="terms_of_use_accept">I understand</string>
+</resources>
+

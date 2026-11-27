@@ -4,7 +4,7 @@
 # traces land in $PERF_OUT (default: $TMPDIR/mochy-perf); PERF_CFG=heap.cfg swaps the frame config for the native heap one
 HERE=${0:A:h}
 OUT=${PERF_OUT:-${TMPDIR:-/tmp}/mochy-perf}
-PKG=${PERF_PKG:-com.mochyy.mochymusic.profileable}
+PKG=${PERF_PKG:-com.mochy.mochymusic.profileable}
 mkdir -p $OUT
 adb push $HERE/${PERF_CFG:-trace.cfg} /data/local/tmp/mtrace.cfg >/dev/null
 # compose tracing has to be switched on again after every app start

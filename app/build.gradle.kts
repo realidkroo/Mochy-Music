@@ -19,17 +19,23 @@ plugins {
     alias(libs.plugins.protobufPlugin)
 }
 
+// the release key's passwords sit in local.properties on this mac and in env vars on ci, without them release falls back to the debug key
+fun releaseSecret(name: String): String? = localProperties.getProperty(name) ?: System.getenv(name)
+val releaseKeystore = file("keystore/release.keystore")
+val hasReleaseSigning = releaseKeystore.exists() && listOf("STORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD").all { releaseSecret(it) != null }
+
 extensions.configure<ApplicationExtension> {
     namespace = "com.mochyy.mochymusic"
     compileSdk = 37
     ndkVersion = "27.0.12077973"
 
     defaultConfig {
-        applicationId = "com.mochyy.mochymusic"
+        // a new id since 9.0.0's new key, so it installs next to the old debug-key mochy and people can still back that one up
+        applicationId = "com.mochy.mochymusic"
         minSdk = 24
         targetSdk = 37
-        versionCode = 73
-        versionName = "8.5.0.0 build#1308"
+        versionCode = 75
+        versionName = "9.0.0 build#1308"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -43,15 +49,11 @@ extensions.configure<ApplicationExtension> {
 
         // the module store key stays out of BuildConfig/DEX and goes straight into a generated native C++ header with a per-build mask
         val storeKey = localProperties.getProperty("MODULE_STORE_KEY") ?: System.getenv("MODULE_STORE_KEY") ?: ""
-        val hasReleaseKeystore = System.getenv("STORE_PASSWORD") != null &&
-            System.getenv("KEY_ALIAS") != null &&
-            System.getenv("KEY_PASSWORD") != null &&
-            file("keystore/release.keystore").exists()
         val expectedCertBytes: ByteArray = when {
-            hasReleaseKeystore -> runCatching {
+            hasReleaseSigning -> runCatching {
                 val ks = KeyStore.getInstance(KeyStore.getDefaultType())
-                file("keystore/release.keystore").inputStream().use { ks.load(it, System.getenv("STORE_PASSWORD").toCharArray()) }
-                val cert = ks.getCertificate(System.getenv("KEY_ALIAS"))
+                releaseKeystore.inputStream().use { ks.load(it, releaseSecret("STORE_PASSWORD")!!.toCharArray()) }
+                val cert = ks.getCertificate(releaseSecret("KEY_ALIAS"))
                 MessageDigest.getInstance("SHA-256").digest(cert.encoded)
             }.getOrDefault(ByteArray(0))
             else -> (localProperties.getProperty("OFFICIAL_SIGNING_CERT_SHA256") ?: System.getenv("OFFICIAL_SIGNING_CERT_SHA256") ?: "")
@@ -96,7 +98,7 @@ extensions.configure<ApplicationExtension> {
             appendLine("constexpr size_t kStoreKeyLen = ${storeKeyBytes.size}u;")
             appendLine("constexpr uint8_t kStoreMask[${maxOf(1, keyMask.size)}] = { ${toCArray(keyMask)} };")
             appendLine("constexpr uint8_t kStoreData[${maxOf(1, maskedKey.size)}] = { ${toCArray(maskedKey)} };")
-            appendLine("constexpr int kRequireReleasePackage = ${if (hasReleaseKeystore) 1 else 0};")
+            appendLine("constexpr int kRequireReleasePackage = ${if (hasReleaseSigning) 1 else 0};")
             appendLine("constexpr int kHasExpectedCert = ${if (expectedCertBytes.size == 32) 1 else 0};")
             appendLine("constexpr uint8_t kExpectedCertMask[32] = { ${toCArray(certMask)} };")
             appendLine("constexpr uint8_t kExpectedCertData[32] = { ${toCArray(maskedCert)} };")
@@ -210,15 +212,6 @@ extensions.configure<ApplicationExtension> {
         }
     }
 
-    // Release signing only works when the CI secrets are present. Locally they are not, which
-    // used to make `assembleRelease` unbuildable and left debug as the only variant anyone ever
-    // ran — and a debug Compose build is several times slower per frame than release, so all
-    // local performance impressions were being formed against the wrong binary.
-    val hasReleaseSigning = System.getenv("STORE_PASSWORD") != null &&
-        System.getenv("KEY_ALIAS") != null &&
-        System.getenv("KEY_PASSWORD") != null &&
-        file("keystore/release.keystore").exists()
-
     signingConfigs {
         create("persistentDebug") {
             storeFile = file("persistent-debug.keystore")
@@ -228,10 +221,10 @@ extensions.configure<ApplicationExtension> {
         }
         if (hasReleaseSigning) {
             create("release") {
-                storeFile = file("keystore/release.keystore")
-                storePassword = System.getenv("STORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
+                storeFile = releaseKeystore
+                storePassword = releaseSecret("STORE_PASSWORD")
+                keyAlias = releaseSecret("KEY_ALIAS")
+                keyPassword = releaseSecret("KEY_PASSWORD")
             }
         }
         getByName("debug") {
@@ -252,13 +245,14 @@ extensions.configure<ApplicationExtension> {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Fall back to the debug keystore locally so a release-quality build is always
-            // runnable on a dev machine. CI still signs with the real key when secrets exist.
+            // a fork or a ci run without the key still gets a release build, signed with the debug key
             signingConfig = if (hasReleaseSigning) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
             }
+            // only this build type carries the release key, so only its store guard insists on the release id and certificate
+            externalNativeBuild { cmake { arguments += "-DSTORE_GUARD_SIGNED=ON" } }
         }
         debug {
             applicationIdSuffix = ".debug"
@@ -280,6 +274,8 @@ extensions.configure<ApplicationExtension> {
             applicationIdSuffix = ".profileable"
             isProfileable = true
             signingConfig = signingConfigs.getByName("debug")
+            // signed with the debug key, so the release-only store guard check would lock it out of the module store
+            externalNativeBuild { cmake { arguments -= "-DSTORE_GUARD_SIGNED=ON" } }
             // The provider modules only publish debug/release variants; without this, resolving
             // a "profileable" variant of :providers:* fails.
             matchingFallbacks += listOf("release")

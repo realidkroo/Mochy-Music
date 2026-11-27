@@ -13,6 +13,7 @@ import com.mochyy.mochymusic.markOnboardedOnThisInstall
 import com.mochyy.mochymusic.playback.MusicService
 import com.mochyy.mochymusic.playback.StoragePlaces
 import com.mochyy.mochymusic.playback.StoredKind
+import com.mochyy.mochymusic.utils.AppIcons
 import com.mochyy.mochymusic.utils.dataStore
 import com.mochyy.mochymusic.utils.isMainProcess
 import kotlinx.coroutines.runBlocking
@@ -133,20 +134,21 @@ object TransferRestore {
             val logicalName = file.name.removeSuffix(".json")
             val fileName = TransferArchive.PrefsToCarry[logicalName] ?: continue
             val json = JSONObject(file.readText())
-            if (logicalName == "source_modules") {
-                // Never let an imported archive silently register executable code modules or pre-acknowledge script security warnings
-                val toRemove = buildList {
-                    val keys = json.keys()
-                    while (keys.hasNext()) {
-                        val k = keys.next()
-                        if (k == "code_modules" || k.startsWith("script_warn_ack_")) add(k)
-                    }
-                }
-                toRemove.forEach { json.remove(it) }
-            }
+            keysLeftBehind(logicalName, json).forEach { json.remove(it) }
             val editor = context.getSharedPreferences(fileName, Context.MODE_PRIVATE).edit()
             TransferArchive.jsonIntoSharedPreferences(json, editor)
             editor.commit()
+            // the launcher icon is a switched-on alias, not just the saved pick, so flip it to match
+            if (logicalName == "app_icon") runCatching { AppIcons.apply(context, AppIcons.current(context)) }
         }
     }
+
+    // an archive never registers code modules or pre-approves a script warning here, and the old install's update check state means nothing to this one
+    private fun keysLeftBehind(logicalName: String, json: JSONObject): List<String> = json.keys().asSequence().filter { key ->
+        when (logicalName) {
+            "source_modules" -> key == "code_modules" || key.startsWith("script_warn_ack_")
+            "updates" -> key == "update_available" || key == "last_checked_time"
+            else -> false
+        }
+    }.toList()
 }

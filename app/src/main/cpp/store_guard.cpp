@@ -18,6 +18,13 @@ constexpr uint8_t kExpectedCertData[32] = {0};
 }
 #endif
 
+// only release builds are signed with the release key, debug, fast and profileable ones keep the debug key and their own ids
+#ifdef STORE_GUARD_SIGNED
+constexpr bool kSignedBuild = true;
+#else
+constexpr bool kSignedBuild = false;
+#endif
+
 namespace {
 
 inline void wipe(void* ptr, size_t len) {
@@ -172,11 +179,11 @@ bool clearIfException(JNIEnv* env) {
 }
 
 bool isAllowedPackage(const std::string& pkg) {
-    if (pkg == "com.mochyy.mochymusic") return true;
-    if (kRequireReleasePackage == 0) {
-        return pkg == "com.mochyy.mochymusic.debug" ||
-               pkg == "com.mochyy.mochymusic.fast" ||
-               pkg == "com.mochyy.mochymusic.profileable";
+    if (pkg == "com.mochy.mochymusic") return true;
+    if (kRequireReleasePackage == 0 || !kSignedBuild) {
+        return pkg == "com.mochy.mochymusic.debug" ||
+               pkg == "com.mochy.mochymusic.fast" ||
+               pkg == "com.mochy.mochymusic.profileable";
     }
     return false;
 }
@@ -208,7 +215,7 @@ bool verifyCaller(JNIEnv* env, jobject context) {
         return false;
     }
 
-    if (kHasExpectedCert == 0) {
+    if (kHasExpectedCert == 0 || !kSignedBuild) {
         env->DeleteLocalRef(pkgJstr);
         env->DeleteLocalRef(ctxCls);
         return true;

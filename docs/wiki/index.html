@@ -45,6 +45,8 @@
   <a class="press" href="#app-tour"><b>Using the app</b><span>a walk around mochy, page by page, with what every button does</span></a>
   <a class="press" href="#modules-types"><b>Making modules</b><span>new looks, your own player, liquid glass, sources, lyrics and song info</span></a>
   <a class="press" href="#modules-first"><b>Your first module</b><span>a whole module in two minutes, one json file in a zip</span></a>
+  <a class="press" href="#build"><b>Build it yourself</b><span>clone, build and run mochy, plus how to send a fix</span></a>
+  <a class="press" href="#faq"><b>FAQ &amp; safety</b><span>is it safe to log in, and the questions i get most</span></a>
   <a class="press" href="#roadmap"><b>Roadmap</b><span>what's done and what i'm working on</span></a>
   <a class="press" href="../download.html"><b>Download &amp; changelog</b><span>get the latest arm64 or Universal APK, or read every release note</span></a>
 </div>
@@ -206,6 +208,120 @@
     </div>
   </div>
 </div>
+</article>
+
+<article class="page" id="app-mixer" data-group="Using the app" data-title="Mixer &amp; 3D sims">
+<h1>Mixer &amp; 3D sims</h1>
+<p class="sub">audio lab, the deep end</p>
+<p>besides the equalizer, audio lab has two big toys. both live under <b>audio fx</b>.</p>
+<h2>The mixer</h2>
+<p>a small studio inside your phone. the song goes through <b>buses</b>, each with a fader, pan, mute, solo and a level meter. every bus has its own chain of effects, and the master has one too.</p>
+<ul>
+  <li><b>sends</b> let one bus feed another, so you can share a single reverb between a few things.</li>
+  <li>the master shows <b>loudness</b> (EBU R128), so you can see how loud the song really is.</li>
+  <li><b>liveprog</b> lets you write your own effect as a tiny script and drop it into any chain.</li>
+  <li>modules can bring effects too, they show up in the same list (see <a href="#modules-audio">audio effects</a>).</li>
+</ul>
+<div class="note">adding an effect fades it in from the dry sound and bypass fades too, so nothing clicks while you play with it.</div>
+<h2>3D sims</h2>
+<p>mochy pulls the song apart into parts (vocal, center, left, right, ambience, sub) and puts each one somewhere around your head, inside a little room you can turn, walk around in and resize.</p>
+<div class="tbl"><table>
+<tr><th>on</th><th>what happens</th></tr>
+<tr><td>headphones</td><td>real 3D, using measured ear responses</td></tr>
+<tr><td>a speaker</td><td>plain stereo, or off, or keep the 3D, whichever you picked</td></tr>
+</table></div>
+<p>you can add up to four copies of each part from the plus button under the room. adding one never makes the song louder, the copies share the level. the last copy of a part can't be removed, mute it instead.</p>
+<div class="note">3D sims takes about 21 ms of delay (one frame of the splitter), you wont notice it for music but it is there. surround songs skip the splitting and start in the room from the next song.</div>
+</article>
+
+<article class="page" id="app-output" data-group="Using the app" data-title="Formats &amp; outputs">
+<h1>Formats &amp; outputs</h1>
+<p class="sub">what can play, and where it comes out</p>
+<h2>Decoders</h2>
+<p>mochy asks your phone's own decoders first. when the phone can't play a format, a built-in ffmpeg decoder takes over. thats mostly <b>ALAC</b> (apple's lossless) on most phones, FLAC on very old ones, and masters above your phone's top sample rate.</p>
+<p>if a module's stream is something no decoder here can play, mochy skips it and tries the next provider, instead of playing silence.</p>
+<h2>Stream info</h2>
+<p>the little badge next to the title in the player says the format (opus, aac, flac), and the stream info sheet tells you more about what is playing.</p>
+<div class="note">pick your outputs from the player's device sheet (<b>change playback</b>). your phone's outputs are listed there, and so are cast receivers on your wifi (see <a href="#app-cast">cast, car &amp; tv</a>).</div>
+</article>
+
+<article class="page" id="app-cast" data-group="Using the app" data-title="Cast, car &amp; TV">
+<h1>Cast, car &amp; TV</h1>
+<p class="sub">mochy on bigger screens</p>
+<div class="cards">
+  <a class="press" href="#app-cast"><b>Casting</b><span>send the song to a chromecast, google tv, smart tv or network speaker</span></a>
+  <a class="press" href="#app-cast"><b>Android auto</b><span>a car screen made by google, so it fits every head unit</span></a>
+  <a class="press" href="#app-cast"><b>Mochy on TV</b><span>a real tv app, driven with the remote, paired to your phone</span></a>
+</div>
+<h2>Casting</h2>
+<p>open the player's device sheet (<b>change playback</b>). receivers on your wifi are listed under <b>other devices on your network</b>. tap one and the song plays there, tap a phone output and casting stops.</p>
+<ul>
+  <li>the <b>gms</b> build uses google cast.</li>
+  <li>the <b>foss</b> build has no play services, so mochy speaks the protocols itself: chromecasts and google tvs, and dlna/upnp (smart tvs, network speakers).</li>
+  <li>the seek bar, the times and the synced lyrics follow the tv while casting.</li>
+</ul>
+<h2>Android auto</h2>
+<p>there are four tabs on the car screen: <b>home</b>, <b>remote control</b>, <b>recent</b> and <b>library</b>. picking a song opens the player like any other media app, and its header has <b>lyrics</b>, the whole lyrics as a list with the sung line marked, tap a line to seek there.</p>
+<div class="note">android auto only lets an app send about five new screens before it shows an error, so mochy keeps each tab as it was and only refreshes its text. if something feels static in the car, thats on purpose.</div>
+<h2>Mochy on TV</h2>
+<p>on a tv, mochy opens its own app made for a remote. it has its own pages (home, search, library, album, artist) and shows the same picks as your phone.</p>
+<div class="tbl"><table>
+<tr><th>remote</th><th>does</th></tr>
+<tr><td>OK</td><td>play or pause</td></tr>
+<tr><td>left / right</td><td>seek 10 seconds</td></tr>
+<tr><td>up</td><td>"playing next", the queue as a row</td></tr>
+<tr><td>down</td><td>the control bar: seek, lyrics, song info, source, looks</td></tr>
+</table></div>
+<p>each tv profile has its own library. only some player styles work on a tv (flagship, full video, poster, timeline and the bedsides).</p>
+</article>
+
+<article class="page" id="app-around" data-group="Using the app" data-title="Widgets, voice &amp; floating lyrics">
+<h1>Widgets, voice &amp; floating lyrics</h1>
+<p class="sub">mochy outside the app</p>
+<h2>Widgets</h2>
+<p>there are now-playing widgets in three sizes (2x2, 4x1 and 4x2). the 2x2 and 4x2 show the line being sung, and change right on time. widgets pause drawing while the screen is off so they dont eat battery.</p>
+<h2>Floating lyrics</h2>
+<p>the line being sung in a little bubble over other apps. its <b>off</b> until you turn it on, in the player menu, customisation's lyrics card or settings → now playing. android will send you to its "show over other apps" screen the first time.</p>
+<ul>
+  <li>it only shows while mochy is out of sight and a song is loaded.</li>
+  <li><b>tap</b> the cover for the controls (play, pause, seek bar), <b>hold</b> it to open mochy.</li>
+  <li><b>drag</b> it anywhere, it flies to the nearer side when you let go. drag it to the bottom to close it, or to turn it off for good.</li>
+</ul>
+<h2>Hey google</h2>
+<p>say "play … on mochy" and it works from the phone and from android auto.</p>
+<div class="tbl"><table>
+<tr><th>you say</th><th>mochy plays</th></tr>
+<tr><td>"play music"</td><td>the queue that's there, or quick picks</td></tr>
+<tr><td>"my liked songs"</td><td>your liked songs</td></tr>
+<tr><td>"my downloads"</td><td>your downloaded songs</td></tr>
+<tr><td>an artist</td><td>their top songs</td></tr>
+<tr><td>an album</td><td>that album</td></tr>
+<tr><td>a playlist</td><td>your playlist with that name, then one from youtube</td></tr>
+<tr><td>a song or a genre</td><td>the best match, with its radio after it</td></tr>
+</table></div>
+<p>say "shuffle …" to shuffle what it finds. if it finds nothing, your queue stays as it was.</p>
+<div class="note">gemini might not reach this, its said to only play from its own list of linked services.</div>
+</article>
+
+<article class="page" id="app-backup" data-group="Using the app" data-title="Backup &amp; updates">
+<h1>Backup &amp; updates</h1>
+<p class="sub">keep your stuff, keep it fresh</p>
+<h2>Cloud backup</h2>
+<p><b>settings → integrations → backup</b> sends a copy of everything that's yours to <b>dropbox</b> or any <b>webdav</b> server, by hand or on a schedule, and brings one back.</p>
+<div class="tbl"><table>
+<tr><th>in the backup</th><th>left out on purpose</th></tr>
+<tr><td>playlists, likes, play history (stats and recap come from it), lyrics edits<br>settings, home algorithm, audio lab, eq profiles<br>profile photo, covers, modules<br>where your local songs live</td><td>downloaded songs, so a backup is megabytes and not gigabytes<br>every login, and the backup account itself</td></tr>
+</table></div>
+<p>backups are named <code>mochy-backup-&lt;phone&gt;-&lt;date&gt;.zip</code>. after each one the phone deletes its own oldest ones past the "keep" number (1 to 10). the cloud login stays on your phone and is never put in a backup zip.</p>
+<div class="note">only one cloud is connected at a time, connecting another replaces it. the dropbox app is still in development mode, so it takes up to 500 people for now.</div>
+<h2>Update channels</h2>
+<p>tap the version card on the profile page to pick one.</p>
+<div class="tbl"><table>
+<tr><th>channel</th><th>you get</th></tr>
+<tr><td>release</td><td>normal github releases only</td></tr>
+<tr><td>nightly</td><td>prereleases too, and the next release once its newer than your nightly</td></tr>
+</table></div>
+<p>a release is <code>x.y.z</code> and a nightly adds a fourth number, so <code>9.0.0.2</code> is the second nightly after 9.0.0. going back from nightly to release only works once a release newer than your nightly is out, because an older release over a nightly can break your library.</p>
 </article>
 
 <!-- ============================== MODULES ============================== -->
@@ -3871,6 +3987,107 @@ unzip -l neon-night.mochyymodule.zip</code></pre>
   <iframe title="Mochy's roadmap board on Figma" src="https://embed.figma.com/board/NWTElXRZ21LaaJotjuOe8D/Untitled?node-id=0-1&amp;embed-host=share" loading="lazy" allowfullscreen></iframe>
 </div>
 <p class="aside">plans may change as development progresses. <a href="https://www.figma.com/board/NWTElXRZ21LaaJotjuOe8D/Untitled?node-id=0-1">open the board in figma</a> to see it full screen.</p>
+</article>
+
+<article class="page" id="faq" data-group="More" data-title="FAQ &amp; safety">
+<h1>FAQ</h1>
+<p class="sub">the questions i get most</p>
+<h2>Is it safe to log in?</h2>
+<p>you never have to log in to use mochy. search, play, lyrics and downloads work without an account. signing in is only for syncing your youtube music library, importing playlists from spotify, apple music or tidal, and discord status.</p>
+<ul>
+  <li>mochy opens the <b>real login page</b> of the service inside the app. you type your password on <b>their</b> page, not in a mochy form.</li>
+  <li>after that the app keeps the session token the service hands out, not your password.</li>
+  <li>it stays in the app's private storage on your phone. mochy has no account system and no server collecting logins.</li>
+  <li>its open source (GPL-3.0), you can read exactly what it does.</li>
+</ul>
+<div class="note">only download mochy from the <a href="https://github.com/realidkroo/Mochy-Music/releases">releases page</a>. a random mediafire or telegram link can be a modified app.</div>
+<h2>Quick answers</h2>
+<div class="tbl"><table>
+<tr><th>question</th><th>answer</th></tr>
+<tr><td>pls add liquid glass</td><td>not in the app itself, but its possible as a module, see <a href="#modules-interface-example">example: liquid glass</a></td></tr>
+<tr><td>flac / monochrome stream doesn't work</td><td>their server is down, its on their side. use another source, or join the discord</td></tr>
+<tr><td>animation is too slow</td><td>speed it up in customisation</td></tr>
+<tr><td>the app is laggy</td><td>turn blur off or set it to low, it helps a lot</td></tr>
+<tr><td>less spacing in the player?</td><td>you can customise it yourself</td></tr>
+<tr><td>official desktop app?</td><td>later</td></tr>
+<tr><td>can i contribute?</td><td>ofc, see <a href="#contributing">contributing</a></td></tr>
+<tr><td>does it work on android 7?</td><td>unofficially. officially its android 8 and newer</td></tr>
+</table></div>
+</article>
+
+<article class="page" id="build" data-group="More" data-title="Build it yourself">
+<h1>Build it yourself</h1>
+<p class="sub">only if you want to change the code</p>
+<p>if you just want to use mochy, use <a href="#install">installing</a>. this is for the code.</p>
+<h2>What you need</h2>
+<ul>
+  <li>a mac, linux or windows computer</li>
+  <li><a href="https://developer.android.com/studio">android studio</a> (latest stable), it brings jdk 21 and the android sdk</li>
+  <li>android sdk 36 and ndk <code>27.0.12077973</code>, android studio offers both on first open</li>
+  <li>around 10 gb of free disk, the first build downloads a lot</li>
+  <li>a phone with usb debugging, or an emulator</li>
+</ul>
+<h2>Steps</h2>
+<pre><code>git clone https://github.com/realidkroo/mochy-music.git
+cd mochy-music</code></pre>
+<ol>
+  <li>open the folder in android studio once and let it sync. this creates <code>local.properties</code> with your sdk path.</li>
+  <li>build and install on your phone: <code>./build.sh --debug -i</code></li>
+  <li>or only build the apk, it lands in <code>apk-generated/</code>: <code>./build.sh --debug</code> then <code>adb install -r apk-generated/*-debug.apk</code></li>
+</ol>
+<div class="tbl"><table>
+<tr><th>command</th><th>what it does</th></tr>
+<tr><td><code>./build.sh --debug -i</code></td><td>debug build, installs and opens it on your phone</td></tr>
+<tr><td><code>./build.sh --release -cc</code></td><td>release build for arm64 and universal</td></tr>
+<tr><td><code>./build.sh -fd --release</code></td><td>f-droid flavor, without the self-update permission</td></tr>
+<tr><td><code>./build.sh -n 4 --release -cc</code></td><td>a nightly (<code>&lt;version&gt;.4</code>)</td></tr>
+<tr><td><code>./build.sh -k</code></td><td>stops stuck gradle builds</td></tr>
+</table></div>
+<p><code>./build.sh --help</code> lists everything. use <b>debug</b> while you play around, it builds much faster. a debug build installs next to the real app so it wont touch your normal install, but it runs slower. judge smoothness on a release build.</p>
+<h2>Optional keys</h2>
+<p>mochy builds fine without these, only the matching feature is off. put them in <code>local.properties</code> (never committed):</p>
+<pre><code>LASTFM_API_KEY=...
+LASTFM_SECRET=...
+DISCORD_CLIENT_ID=...</code></pre>
+<p>libre.fm works without any key.</p>
+<h2>If the build fails</h2>
+<ul>
+  <li><code>Unresolved reference</code> or hilt errors that make no sense: delete the <code>build/</code> folders and <code>.gradle/</code> and build again.</li>
+  <li>stuck or weird gradle: <code>./build.sh -k</code>, then try again.</li>
+  <li>wrong java: gradle must use jdk 21 (android studio → settings → build tools → gradle → gradle jdk).</li>
+  <li>still stuck? open an <a href="https://github.com/realidkroo/Mochy-Music/issues">issue</a> with the error text.</li>
+</ul>
+<h2>Checking your change</h2>
+<pre><code>./gradlew :app:compileArm64FossDebugKotlin
+./gradlew testDebugUnitTest</code></pre>
+</article>
+
+<article class="page" id="contributing" data-group="More" data-title="Contributing">
+<h1>Contributing</h1>
+<p class="sub">the process is light</p>
+<ol>
+  <li><b>fork and branch</b> with a short name, like <code>fix/player-crash</code>.</li>
+  <li><b>keep it focused.</b> one fix or feature per pull request.</li>
+  <li><b>match the code around it.</b> same names, same comment style, dont reformat lines you didn't change.</li>
+  <li><b>check older phones.</b> mochy supports android 8+, so a newer platform api needs an <code>SDK_INT</code> guard. default arguments and property types count too.</li>
+  <li><b>dont trade a feature for speed.</b> keep every animation and visual, and show before/after screenshots if you touched the ui.</li>
+  <li><b>test it</b> on a device, and run <code>./gradlew testDebugUnitTest</code> if you touched logic with tests.</li>
+  <li><b>open the pull request</b>, fill the template and link the issue.</li>
+</ol>
+<div class="note">ai written code is fine, blind ai slop is not. read it, run it, and understand it before you send it.</div>
+<h2>Comments in the code</h2>
+<p>one line, lowercase, and say <b>why</b>, not what. the code already says what.</p>
+<pre><code>// wait until the cover has loaded, otherwise the open spring jumps
+val cover = rememberCover(song)</code></pre>
+<h2>Rules that are not up for debate</h2>
+<ul>
+  <li>no api keys, tokens, cookies or logins in commits.</li>
+  <li>nothing that bypasses drm, paywalls or access controls.</li>
+  <li>no trackers or analytics. not collecting your data is a goal of the project.</li>
+</ul>
+<h2>Bugs</h2>
+<p>open an <a href="https://github.com/realidkroo/Mochy-Music/issues">issue</a> with your mochy version, android version and device, what you did, what you expected, and what happened. logs (<code>adb logcat</code>) and a screenshot help a lot.</p>
+<p>mochy is GPL-3.0. by contributing, your work is under the same license. forks are welcome: keep the credits, and keep it free.</p>
 </article>
 
 <article class="page" id="devs" data-group="More" data-title="For mochy devs">
