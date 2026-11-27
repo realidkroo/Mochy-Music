@@ -5,6 +5,8 @@
 
 package com.mochyy.mochymusic.ui.screens.library
 
+import androidx.compose.ui.graphics.Color
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -69,12 +71,14 @@ fun LibraryScaffold(
     trailing: (@Composable () -> Unit)? = null,
     content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit,
 ) {
+    val wallpaperOnLibrary = com.mochyy.mochymusic.utils.rememberPreference(com.mochyy.mochymusic.constants.CustomWallpaperLibraryKey, defaultValue = true).value
+    val wallpaperPath = com.mochyy.mochymusic.utils.rememberPreference(com.mochyy.mochymusic.constants.CustomWallpaperPathKey, defaultValue = "").value
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(SearchColors.page(pureBlack)),
+            .background(if (wallpaperOnLibrary && wallpaperPath.isNotBlank()) Color.Transparent else SearchColors.page(pureBlack)),
     ) {
-        // Only the list is recorded. The top bar draws this recording as its glass, so recording
+// Only the list is recorded. The top bar draws this recording as its glass, so recording
         // the bar too made the node draw itself: a native stack overflow the moment a scroll
         // settled with the title collapsed. The bar stays a sibling, as on Search.
         // Recorded while scrolling too: the bar's blur stays up through a scroll instead of

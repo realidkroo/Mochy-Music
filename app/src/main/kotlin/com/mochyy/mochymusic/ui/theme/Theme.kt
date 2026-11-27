@@ -41,30 +41,56 @@ fun MochyTheme(
     pureBlack: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val context = LocalContext.current
+    val wallpaperPalette = com.mochyy.mochymusic.ui.component.rememberWallpaperPalette()
 
-    // Dynamic (Material You) colour is deliberately not used - the app ships its own palette.
-    // The branch is gone rather than dead-but-present: dynamic*ColorScheme is API 31.
-    val baseColorScheme = run {
-
+    val baseColorScheme = remember(darkTheme, wallpaperPalette) {
         if (darkTheme) {
-            darkColorScheme(
-                primary = Color(0xFFE0E0E0),
-                onPrimary = Color.Black,
-                primaryContainer = Color(0xFF333333),
-                onPrimaryContainer = Color.White,
-                secondary = Color(0xFFB0B0B0),
-                onSecondary = Color.Black,
-                secondaryContainer = Color(0xFF2C2C2C),
-                onSecondaryContainer = Color.White,
-                background = Color.Black,
-                onBackground = Color.White,
-                surface = Color.Black,
-                onSurface = Color.White,
-                surfaceVariant = Color(0xFF1A1A1A),
-                onSurfaceVariant = Color.White,
-                surfaceTint = Color.Black
-            )
+            if (wallpaperPalette != null) {
+                darkColorScheme(
+                    primary = wallpaperPalette.primary,
+                    onPrimary = wallpaperPalette.onPrimary,
+                    primaryContainer = wallpaperPalette.primaryContainer,
+                    onPrimaryContainer = Color.White,
+                    secondary = wallpaperPalette.secondary,
+                    onSecondary = wallpaperPalette.onSecondary,
+                    secondaryContainer = wallpaperPalette.secondaryContainer,
+                    onSecondaryContainer = Color.White,
+                    tertiary = wallpaperPalette.secondary,
+                    onTertiary = wallpaperPalette.onSecondary,
+                    background = wallpaperPalette.surfaceDeep,
+                    onBackground = Color.White,
+                    surface = wallpaperPalette.surfaceDeep,
+                    onSurface = Color.White,
+                    surfaceVariant = wallpaperPalette.surfaceContainer,
+                    onSurfaceVariant = wallpaperPalette.onSurfaceVariant,
+                    surfaceContainerLowest = wallpaperPalette.surfaceDeep,
+                    surfaceContainerLow = wallpaperPalette.surface,
+                    surfaceContainer = wallpaperPalette.surfaceContainer,
+                    surfaceContainerHigh = wallpaperPalette.surfaceContainerHigh,
+                    surfaceContainerHighest = wallpaperPalette.chipSelected,
+                    surfaceTint = wallpaperPalette.primary,
+                    outline = wallpaperPalette.divider,
+                    outlineVariant = wallpaperPalette.divider.copy(alpha = 0.6f),
+                )
+            } else {
+                darkColorScheme(
+                    primary = Color(0xFFE0E0E0),
+                    onPrimary = Color.Black,
+                    primaryContainer = Color(0xFF333333),
+                    onPrimaryContainer = Color.White,
+                    secondary = Color(0xFFB0B0B0),
+                    onSecondary = Color.Black,
+                    secondaryContainer = Color(0xFF2C2C2C),
+                    onSecondaryContainer = Color.White,
+                    background = Color.Black,
+                    onBackground = Color.White,
+                    surface = Color.Black,
+                    onSurface = Color.White,
+                    surfaceVariant = Color(0xFF1A1A1A),
+                    onSurfaceVariant = Color.White,
+                    surfaceTint = Color.Black
+                )
+            }
         } else {
             lightColorScheme(
                 primary = Color.Black,
@@ -86,8 +112,8 @@ fun MochyTheme(
         }
     }
 
-    val colorScheme = remember(baseColorScheme, pureBlack, darkTheme) {
-        if (darkTheme && pureBlack) {
+    val colorScheme = remember(baseColorScheme, pureBlack, darkTheme, wallpaperPalette) {
+        if (darkTheme && pureBlack && wallpaperPalette == null) {
             baseColorScheme.pureBlack(true)
         } else {
             baseColorScheme
@@ -96,14 +122,18 @@ fun MochyTheme(
 
     val resolvedFonts = AppFonts.resolvedFonts()
     val typography = remember(resolvedFonts) { appTypography(resolvedFonts) }
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = typography,
+    androidx.compose.runtime.CompositionLocalProvider(
+        com.mochyy.mochymusic.ui.component.LocalWallpaperPalette provides wallpaperPalette,
     ) {
-        ProvideTextStyle(
-            value = typography.bodyLarge,
-            content = content
-        )
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = typography,
+        ) {
+            ProvideTextStyle(
+                value = typography.bodyLarge,
+                content = content
+            )
+        }
     }
 }
 

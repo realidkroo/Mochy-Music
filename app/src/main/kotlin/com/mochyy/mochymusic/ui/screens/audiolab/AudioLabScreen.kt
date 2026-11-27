@@ -2,6 +2,8 @@
 
 package com.mochyy.mochymusic.ui.screens.audiolab
 
+import com.mochyy.mochymusic.ui.component.LocalWallpaperPalette
+
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -249,7 +251,7 @@ private fun BigHubCard(
             .heightIn(min = 128.dp)
             .pressBounce(interaction, pressedScale = 0.97f)
             .clip(RoundedCornerShape(26.dp))
-            .background(HubCard)
+            .background(LocalWallpaperPalette.current?.surfaceContainer ?: HubCard)
             .clickable(interaction, null, onClick = onClick)
             .damageBoundary(),
     ) {
@@ -282,7 +284,7 @@ private fun SmallHubCard(
             .heightIn(min = 60.dp)
             .pressBounce(interaction, pressedScale = 0.97f)
             .clip(RoundedCornerShape(20.dp))
-            .background(HubCard)
+            .background(LocalWallpaperPalette.current?.surfaceContainer ?: HubCard)
             .clickable(interaction, null, onClick = onClick)
             .damageBoundary(),
         contentAlignment = Alignment.CenterStart,

@@ -2,6 +2,8 @@
 
 package com.mochyy.mochymusic.ui.screens.audiolab
 
+import com.mochyy.mochymusic.ui.component.LocalWallpaperPalette
+
 import android.os.Build
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -115,7 +117,7 @@ fun AudioLabPage(
         modifier = modifier
             .fillMaxSize()
             // what shows round the backdrop's edges as it shrinks back
-            .background(Color.Black),
+            .background(LocalWallpaperPalette.current?.surfaceDeep ?: Color.Black),
     ) {
         val wide = maxWidth > ContentMaxWidth + SideMargin * 2
         // on a tablet the title lines up with the sheet's content, not the screen's edge
@@ -220,7 +222,7 @@ private fun LabBackdrop(scroll: ScrollState, headerHeight: Int, content: @Compos
                     null
                 }
             }
-            .background(PageBackdrop)
+            .background(LocalWallpaperPalette.current?.surface ?: PageBackdrop)
             .dotGrid(),
         content = content,
     )

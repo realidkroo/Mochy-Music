@@ -18,6 +18,7 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -323,7 +324,15 @@ fun LibraryCategoryCard(
         modifier = modifier
             .height(78.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(SearchColors.Tile)
+            .background(
+                com.mochyy.mochymusic.ui.component.LocalWallpaperPalette.current?.surfaceContainer?.copy(alpha = 0.68f)
+                    ?: SearchColors.Tile
+            )
+            .then(
+                com.mochyy.mochymusic.ui.component.LocalWallpaperPalette.current?.let { wp ->
+                    Modifier.border(1.dp, wp.primary.copy(alpha = 0.16f), RoundedCornerShape(16.dp))
+                } ?: Modifier
+            )
             .clickable(onClick = onClick),
     ) {
         // The covers sit flush in the corner and are allowed to run past the card's edge — the
@@ -378,7 +387,15 @@ fun LibraryWideCard(
                 coverUrl = covers.firstOrNull { it != null },
             )
             .clip(RoundedCornerShape(18.dp))
-            .background(SearchColors.Tile)
+            .background(
+                com.mochyy.mochymusic.ui.component.LocalWallpaperPalette.current?.surfaceContainer?.copy(alpha = 0.68f)
+                    ?: SearchColors.Tile
+            )
+            .then(
+                com.mochyy.mochymusic.ui.component.LocalWallpaperPalette.current?.let { wp ->
+                    Modifier.border(1.dp, wp.primary.copy(alpha = 0.16f), RoundedCornerShape(18.dp))
+                } ?: Modifier
+            )
             .clickable(onClick = onClick),
     ) {
         LibraryCoverStack(
