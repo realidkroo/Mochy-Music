@@ -303,20 +303,21 @@ fun LyricsGlowLine(
     val subLineColor = remember(lineColor) { ColorProducer { lineColor.value.copy(alpha = 0.6f) } }
     val translationColor = remember(lineColor) { ColorProducer { lineColor.value.copy(alpha = 0.5f) } }
 
+    val resolvedAlignment = if (motionStyle.centered) LyricsAlignment.CENTER else alignment
     // the side on screen, not the text's own start: Start on an arabic line is its right edge
-    val onLeft = (alignment == LyricsAlignment.START) !=
+    val onLeft = (resolvedAlignment == LyricsAlignment.START) !=
         (androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl)
-    val textAlign = when (alignment) {
+    val textAlign = when (resolvedAlignment) {
         LyricsAlignment.CENTER -> TextAlign.Center
         else -> if (onLeft) TextAlign.Left else TextAlign.Right
     }
-    val columnAlign = when (alignment) {
+    val columnAlign = when (resolvedAlignment) {
         LyricsAlignment.START -> androidx.compose.ui.Alignment.Start
         LyricsAlignment.CENTER -> androidx.compose.ui.Alignment.CenterHorizontally
         LyricsAlignment.END -> androidx.compose.ui.Alignment.End
     }
 
-    val insets = lyricsLineInsets(alignment)
+    val insets = lyricsLineInsets(resolvedAlignment)
 
     // the pieces as the source timed them: this style sweeps along the line's own text,
     // syllable by syllable, so it never shows the gaps other styles put between them
@@ -369,7 +370,7 @@ fun LyricsGlowLine(
                 // aligned to.
                 transformOrigin = androidx.compose.ui.graphics.TransformOrigin(
                     pivotFractionX = when {
-                        alignment == LyricsAlignment.CENTER -> 0.5f
+                        resolvedAlignment == LyricsAlignment.CENTER -> 0.5f
                         onLeft -> 0f
                         else -> 1f
                     },

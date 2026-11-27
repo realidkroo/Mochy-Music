@@ -984,12 +984,16 @@ enum class LyricsMotionStyle(
     val description: String,
     val risesWords: Boolean,
     val shaded: Boolean,
+    val centered: Boolean = false,
 ) {
     /** Style 1: words rise into place as they're sung, held notes swell and glow, lines cascade. */
     MOTION("Style 1", "Words rise as they're sung, long notes swell, lines cascade", risesWords = true, shaded = true),
 
     /** Style 2: the original - a wave across the sung letters, the list scrolls as one piece. */
     LEGACY("Style 2", "The original wave across the sung letters", risesWords = false, shaded = true),
+
+    /** Style 3: Style 1's smooth word rise and glow, centered in the middle. */
+    CENTERED("Style 3", "Style 1's smooth word rise and glow, centered", risesWords = true, shaded = true, centered = true),
 
     // style 1 without the shader, for phones that struggle with it
     BORING("Boring", "Style 1's rise, without the glow", risesWords = true, shaded = false),

@@ -109,14 +109,33 @@ object AppIcons {
         return AppIcon.entries.firstOrNull { started.endsWith(".${it.alias}") }
     }
 
-    /** whether this launch's splash showed [icon] itself: only an anime one, and only on android 13+, which can pick a splash per launch */
-    fun splashShows(icon: AppIcon?): Boolean = icon?.family == AppIconFamily.Anime && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    /** whether this launch's splash showed [icon] itself on android 13+, which picks a splash theme per icon */
+    fun splashShows(icon: AppIcon?): Boolean = icon != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
-    // the next launch's splash: the launcher icon for an anime one to bounce out of, the bare mark for the rest
+    private fun splashThemeFor(icon: AppIcon): Int = when (icon.background) {
+        R.color.ic_launcher_background -> R.style.Theme_Mochy_Splash_BgDefault
+        R.color.app_icon_white -> R.style.Theme_Mochy_Splash_BgWhite
+        R.color.app_icon_black, null -> R.style.Theme_Mochy_Splash_BgBlack
+        R.color.app_icon_material -> R.style.Theme_Mochy_Splash_BgMaterial
+        R.color.app_icon_custom_red -> R.style.Theme_Mochy_Splash_BgRed
+        R.color.app_icon_custom_orange -> R.style.Theme_Mochy_Splash_BgOrange
+        R.color.app_icon_custom_yellow -> R.style.Theme_Mochy_Splash_BgYellow
+        R.color.app_icon_custom_green -> R.style.Theme_Mochy_Splash_BgGreen
+        R.color.app_icon_custom_teal -> R.style.Theme_Mochy_Splash_BgTeal
+        R.color.app_icon_custom_sky -> R.style.Theme_Mochy_Splash_BgSky
+        R.color.app_icon_custom_blue -> R.style.Theme_Mochy_Splash_BgBlue
+        R.color.app_icon_custom_indigo -> R.style.Theme_Mochy_Splash_BgIndigo
+        R.color.app_icon_custom_purple -> R.style.Theme_Mochy_Splash_BgPurple
+        R.color.app_icon_custom_pink -> R.style.Theme_Mochy_Splash_BgPink
+        R.color.app_icon_custom_graphite -> R.style.Theme_Mochy_Splash_BgGraphite
+        R.color.app_icon_custom_cream -> R.style.Theme_Mochy_Splash_BgCream
+        else -> R.style.Theme_Mochy_Splash_BgDefault
+    }
+
+    // match the next cold launch's splash background and icon to whichever app icon is active
     fun syncSplash(activity: Activity, icon: AppIcon = current(activity)) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        val theme = if (icon.family == AppIconFamily.Anime) R.style.Theme_App_Starting_Icon else R.style.Theme_App_Starting
-        runCatching { activity.splashScreen.setSplashScreenTheme(theme) }
+        runCatching { activity.splashScreen.setSplashScreenTheme(splashThemeFor(icon)) }
     }
 
     /** switches the launcher to [icon]; the launcher redraws it on its own time, a few seconds on some phones */
