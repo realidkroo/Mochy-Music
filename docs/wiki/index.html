@@ -342,6 +342,7 @@
   <a class="press" href="#modules-lyrics"><b>💬 Lyrics</b><span>a lyrics provider: line by line, word by word, duets and background vocals.</span></a>
   <a class="press" href="#modules-metadata"><b>ℹ️ Song info</b><span>a metadata provider: genre, release date, writers, producers, the label and what the song is about, shown in about song and module players.</span></a>
   <a class="press" href="#modules-js"><b>📜 Scripts</b><span>javascript for JS Modules: songs, lyrics or song info from a script, no server needed.</span></a>
+  <a class="press" href="#packs"><b>📦 Packs</b><span>a <code>.mochypck</code> with kotlin code inside: a whole catalog, streams, lyrics, covers, canvas and song info in one file.</span></a>
 </div>
 <p>every module can also have an <a href="#modules-art">icon and a banner</a>, <a href="#modules-settings">settings</a> people change on its page, and an <a href="#modules-install">update button</a> that shows up by itself when you publish a new version.</p>
 
@@ -371,11 +372,12 @@
 <tr><td>any of those three from javascript</td><td><a href="#modules-js"><b>script</b></a> for JS Modules</td><td>no</td><td>anyone</td></tr>
 <tr><td>add another monochrome server</td><td>not a module: monochrome's page → servers</td><td>no</td><td>anyone</td></tr>
 <tr><td>code that runs inside mochy</td><td><a href="#modules-zip"><b>zip with its own code</b></a></td><td>no</td><td>only me (it has to be signed with mochy's key)</td></tr>
+<tr><td>a whole catalog, streams, lyrics or covers in kotlin</td><td><a href="#packs"><b>pack</b></a>: a <code>.mochypck</code> made with <a href="#packs-make">mochypck</a></td><td>no</td><td>anyone (mochy asks before adding a community pack)</td></tr>
 </table></div>
 
 <h2>Why it's safe</h2>
 <p>nothing from a look, a player, a page, a web module or a plain zip runs inside mochy as code. they only hand back json, stream links and look values, and mochy draws everything with its own parts. that's why anyone can make one and nobody has to trust it with the app.</p>
-<div class="note">the only exceptions: code modules (only loaded when they're signed with mochy's own key, so only i can make them), JS Modules scripts (sandboxed inside that module, no access to your phone or the app, only the internet through mochy), and shaders, which run on the gpu and can only paint pixels.</div>
+<div class="note">the only exceptions: code modules (only loaded when they're signed with mochy's own key, so only i can make them), JS Modules scripts (sandboxed inside that module, no access to your phone or the app, only the internet through mochy), shaders, which run on the gpu and can only paint pixels, and <a href="#packs">packs</a>, which mochy checks byte by byte and only adds a community one after you say yes.</div>
 </article>
 
 <article class="page" id="modules-how" data-group="Modules" data-title="How modules work">
@@ -3822,6 +3824,226 @@ module.exports = {
   <li>adding a script with the same <code>id</code> again updates it.</li>
 </ul>
 <p>a server's link pasted on JS Modules' page stays in its list instead of becoming a module of its own, so it's asked together with the scripts, going by the <code>resources</code> and <code>icon</code> in its manifest. a zip or link with no script, but a manifest that names a <code>url</code>, is added as its own module instead.</p>
+</article>
+
+<!-- ============================== MODULE PACKS ============================== -->
+
+<article class="page" id="packs" data-group="Module packs" data-title="What's a pack?">
+<h1>Module packs</h1>
+<p class="sub">a <code>.mochypck</code> brings the online stuff, you pick which one</p>
+<p>a <b>pack</b> is one file that adds the parts of mochy that need the internet: search, home, artist and album pages, streaming, lyrics, covers, animated canvas and song info. without one, mochy is a local player that plays the music on your phone. add a pack and all of that switches on. remove it and mochy goes back to local only, nothing else changes.</p>
+<div class="note warn">packs need a mochy with <b>settings → modules → module packs (.mochypck)</b>. if you don't see that row, your mochy is too old for packs.</div>
+<p>a pack is different from the other modules in one big way: it's real kotlin code that runs inside mochy, not a json file mochy reads. that's why it can do things a manifest can't, like a whole catalog with its own login. and that's why mochy checks it so carefully before it runs anything.</p>
+
+<h2>What a pack can add</h2>
+<p>one pack can hold several <b>providers</b>, each adding one or more of these. they share one copy of their code and one connection, so a pack with five providers is not five times slower.</p>
+<div class="tbl"><table>
+<tr><th>a provider that…</th><th>adds in mochy</th></tr>
+<tr><td><code>CatalogModule</code></td><td>search, home and explore, charts, moods, artist, album and playlist pages, radio and up next, audio and video streams, captions, account sync</td></tr>
+<tr><td><code>SourceModule</code></td><td>just a place to play songs from</td></tr>
+<tr><td><code>LyricsModule</code> / <code>MultiLyricsModule</code></td><td>lyrics from one source, or a bundle of many sources each with its own name and order</td></tr>
+<tr><td><code>CoverModule</code></td><td>big album covers and artist photos</td></tr>
+<tr><td><code>CanvasModule</code></td><td>animated covers, artist banners and wordmarks, artist video loops</td></tr>
+<tr><td><code>MetadataModule</code> / <code>ExtendedMetadataModule</code></td><td>about song: the story, credits, genres, release date, album notes</td></tr>
+</table></div>
+
+<h2>Adding one</h2>
+<ol>
+  <li>open <b>settings → modules → module packs</b>, or tap <b>manage modules &amp; packs</b> on the offline home screen.</li>
+  <li>tap <b>choose .mochypck or .zip</b> and pick the file, or paste the link to a github project that has a pack in its newest release.</li>
+  <li>mochy checks the file and shows you what it adds, its providers, who made it and its sha-256 fingerprint. tap <b>add</b>.</li>
+</ol>
+<p>everything the pack adds works straight away. to take it out, tap remove on its card on the same page.</p>
+
+<h2>Official and community packs</h2>
+<div class="cards">
+  <div><b>✅ Verified official pack</b><span>signed with mochy's own key, so it comes from me. you get the green badge.</span></div>
+  <div><b>⚠️ Community pack</b><span>made by anyone else. mochy shows an amber warning with everything the pack can do, and only adds it once you say yes. only add packs from people you trust.</span></div>
+</div>
+
+<h2>How mochy keeps it safe</h2>
+<ul>
+  <li><b>every byte is checked.</b> the file carries a sha-256 for itself, its index and every file inside. if one byte is off, mochy refuses it before a single line of its code runs.</li>
+  <li><b>checked again on every launch.</b> mochy remembers the fingerprint you said yes to, and a pack that changed since then doesn't load.</li>
+  <li><b>it can't reach the rest of the app.</b> pack code only sees android, java and mochy's bridge. it can't touch your library, your saved logins or mochy's screens, it only answers what mochy asks it.</li>
+  <li><b>read-only on the phone.</b> the code mochy unpacks is locked read-only before it's loaded, which is also what android 14 and newer ask for.</li>
+</ul>
+</article>
+
+<article class="page" id="packs-make" data-group="Module packs" data-title="Make your own pack">
+<h1>Make your own pack</h1>
+<p class="sub">kotlin in, one <code>.mochypck</code> out</p>
+<p>anyone can make a pack. you write your providers in kotlin, build them into an apk, and the <code>mochypck</code> tool turns that apk plus a small <code>pack.json</code> into the file people add. you don't need mochy's own code for any of it, everything lives in <a href="https://github.com/realidkroo/mochypck">realidkroo/mochypck</a>.</p>
+<div class="flow"><div>your kotlin<small>a provider class</small></div><i>→</i><div>an apk<small>never installed</small></div><i>→</i><div>pack.json<small>what's inside</small></div><i>→</i><div>mochypck compile</div><i>→</i><div>my-pack.mochypck</div></div>
+
+<h2>1: get the tool</h2>
+<p>you need jdk 21.</p>
+<pre><code>git clone https://github.com/realidkroo/mochypck
+cd mochypck
+./gradlew :compiler:installDist
+# the tool is now at compiler/build/install/mochypck/bin/mochypck
+
+mochypck init my-pack   # makes my-pack/pack.json and my-pack/assets/</code></pre>
+
+<h2>2: an android module for your code</h2>
+<p>make a normal android app module. mochy never installs it as an app, it only loads the code out of it, so the apk is just the easiest way to get kotlin turned into something a phone can run. then add the sdk:</p>
+<pre><code>repositories {
+    maven("https://jitpack.io")
+}
+
+dependencies {
+    // main-SNAPSHOT follows the newest commit, swap it for a release tag once there is one
+    implementation("com.github.realidkroo.mochypck:api:main-SNAPSHOT")
+    implementation("com.github.realidkroo.mochypck:bridge:main-SNAPSHOT")
+}</code></pre>
+
+<h2>3: write a provider</h2>
+<p>pick the interfaces for what you're adding (the table on <a href="#packs">what's a pack</a>) and implement them. this one is the starter pack: lyrics from your own server, and a spot for covers.</p>
+<pre><code>class StarterProvider : LyricsModule, CoverModule {
+
+    override val info = ModuleInfo(
+        id = "example.starter_lyrics",
+        name = "Starter Lyrics &amp; Covers",
+        version = "1.0.0",
+        description = "Lyrics from my own server.",
+        apiVersion = MODULE_API_VERSION,
+        author = "your-name",
+    )
+
+    override val adds = setOf(ModuleFeature.Lyrics, ModuleFeature.Cover)
+
+    private var host: ModuleHost? = null
+
+    // mochy hands you its host once, keep it for http calls and storage
+    override fun attach(host: ModuleHost) {
+        this.host = host
+    }
+
+    override suspend fun lyrics(track: TrackQuery): String? {
+        val h = host ?: return null
+        val artist = track.artists.firstOrNull().orEmpty()
+        val res = h.http(HttpRequest("https://example.invalid/lyrics?title=${track.title}&amp;artist=$artist"))
+        return if (res.code == 200) res.body.takeIf { it.isNotBlank() } else null
+    }
+
+    // best and biggest covers first
+    override suspend fun searchCovers(track: TrackQuery): List&lt;CoverCandidate&gt; = emptyList()
+}</code></pre>
+<ul>
+  <li><code>host.http</code> is the easiest way to make network calls, you don't need an http library of your own.</li>
+  <li>return <code>null</code> (or an empty list) when you don't know the song, and mochy uses another provider's answer.</li>
+  <li><code>TrackMatcher</code> in the api compares titles, artists and durations for you, so a cover or lyric for the wrong version of a song doesn't win.</li>
+</ul>
+
+<h2>4: say what's inside, in pack.json</h2>
+<pre><code class="json">{
+  "id": "example.starter",
+  "name": "Starter Source Pack",
+  "version": "1.0.0",
+  "versionCode": 1,
+  "author": "your-name",
+  "minAppVersion": "9.0.0",
+  "assetsDir": "assets",
+  "providers": [
+    {
+      "id": "example.starter_lyrics",
+      "name": "Starter Lyrics &amp; Covers",
+      "capabilities": ["lyrics", "cover"],
+      "entryClass": "com.example.starterpack.StarterProvider"
+    }
+  ]
+}</code></pre>
+<p><code>entryClass</code> is the full name of your provider class. every field is on <a href="#packs-json">pack.json</a>.</p>
+
+<h2>5: build and compile</h2>
+<ul>
+  <li>keep <code>isMinifyEnabled = false</code>. if you do turn r8 on, keep your <code>entryClass</code> names and <code>com.mochyy.mochymusic.module.bridge.ModuleSide</code>, or mochy can't find them.</li>
+  <li>turn on v1 and v2 apk signing if you want your signing fingerprint shown in the pack.</li>
+</ul>
+<pre><code>./gradlew :app:assembleRelease
+
+mochypck compile \
+  --spec my-pack/pack.json \
+  --apk app/build/outputs/apk/release/app-release.apk \
+  --out my-pack.mochypck</code></pre>
+<p>before it writes anything, the tool checks that your apk really has <code>ModuleSide</code> and every <code>entryClass</code>, that every id is fine and every capability is one mochy knows. then it reads the finished pack back and checks every hash, the same way mochy will. a pack that comes out of <code>compile</code> is one mochy accepts.</p>
+
+<h2>6: look inside before you share it</h2>
+<pre><code>mochypck inspect my-pack.mochypck   # name, providers, capabilities, files
+mochypck verify my-pack.mochypck    # every hash, exactly like mochy does
+mochypck extract my-pack.mochypck --out ./unpacked</code></pre>
+<p><code>inspect</code> prints something like this:</p>
+<pre><code>Mochy Pack: Starter Source Pack (example.starter) v1.0.0
+  Format / API : MPCK v1 / Module API 4
+  Signed       : false
+  Capabilities : Lyrics, Covers
+  Providers (1):
+    - example.starter_lyrics: Starter Lyrics &amp; Covers [lyrics, cover]</code></pre>
+
+<h2>7: put it on github</h2>
+<p>attach the <code>.mochypck</code> to a github release. people paste your project's link once, and mochy grabs the pack from your newest release, just like <a href="#modules-github">module zips</a>.</p>
+<ul>
+  <li>the file name has to end in <code>.mochypck</code>, and it can be up to 96 MB.</li>
+  <li>with two packs in one release, mochy takes the one with <code>debug</code> in its name on a debug mochy, and the other one on a release mochy.</li>
+  <li>shipping an update: keep the <code>id</code>, bump <code>version</code> and <code>versionCode</code>, publish a new release.</li>
+</ul>
+<pre><code>gh release create v1.0.0 my-pack.mochypck --title "My Pack 1.0.0"</code></pre>
+</article>
+
+<article class="page" id="packs-json" data-group="Module packs" data-title="pack.json">
+<h1>pack.json</h1>
+<p class="sub">every field, and every capability</p>
+<p>you write <code>pack.json</code> by hand, and <code>mochypck compile</code> turns it into the small index at the front of the file. that index is what mochy reads to show the add sheet, so it never has to open your code just to tell people what the pack is.</p>
+
+<h2>The pack</h2>
+<div class="tbl"><table>
+<tr><th>field</th><th>what it is</th></tr>
+<tr><td><code>id</code></td><td>never changes, it's how updates find the old pack. lowercase letters, numbers, <code>.</code> <code>_</code> <code>-</code>, up to 64. needed.</td></tr>
+<tr><td><code>name</code></td><td>what people see. needed.</td></tr>
+<tr><td><code>version</code></td><td>the version people see, like <code>1.2.0</code>. needed.</td></tr>
+<tr><td><code>versionCode</code></td><td>a number that goes up with every release. default 1.</td></tr>
+<tr><td><code>description</code>, <code>author</code></td><td>shown on the add sheet and the pack's page.</td></tr>
+<tr><td><code>sourceUrl</code></td><td>a link to your project.</td></tr>
+<tr><td><code>minAppVersion</code></td><td>the oldest mochy you made it for, like <code>9.0.0</code>.</td></tr>
+<tr><td><code>assetsDir</code></td><td>a folder next to pack.json whose files go into the pack (icons, banners).</td></tr>
+<tr><td><code>icon</code>, <code>banner</code></td><td>paths inside that folder.</td></tr>
+<tr><td><code>providers</code></td><td>at least one, see below.</td></tr>
+</table></div>
+
+<h2>Each provider</h2>
+<div class="tbl"><table>
+<tr><th>field</th><th>what it is</th></tr>
+<tr><td><code>id</code></td><td>same rules as the pack's id, and no two providers can share one. needed.</td></tr>
+<tr><td><code>name</code>, <code>displayName</code></td><td>its name, and the one shown in lists like the lyrics sources (same as <code>name</code> if you leave it out).</td></tr>
+<tr><td><code>entryClass</code></td><td>the full name of your kotlin class. the tool checks it's really in your apk. needed.</td></tr>
+<tr><td><code>capabilities</code></td><td>what it adds, from the table below. at least one.</td></tr>
+<tr><td><code>defaultPriority</code></td><td>a priority number for the provider. default 100.</td></tr>
+<tr><td><code>enabledByDefault</code></td><td>on as soon as the pack is added. default true.</td></tr>
+<tr><td><code>requiresAccount</code></td><td>true when it only works after signing in.</td></tr>
+<tr><td><code>isLastResort</code></td><td>for lyrics: only asked when no other source found any, handy for auto captions.</td></tr>
+<tr><td><code>icon</code>, <code>banner</code>, <code>projectName</code>, <code>projectUrl</code>, <code>websiteUrl</code></td><td>for the provider's own page, so people know where the data comes from.</td></tr>
+<tr><td><code>choices</code>, <code>fields</code></td><td>settings for the provider: <code>choices</code> are picks from a list (like a quality), <code>fields</code> are text boxes and switches (like a server link).</td></tr>
+</table></div>
+
+<h2>Capabilities</h2>
+<div class="tbl"><table>
+<tr><th>name</th><th>shows as</th><th>what it means</th></tr>
+<tr><td><code>audio</code></td><td>Audio streams</td><td>finds a link mochy can play</td></tr>
+<tr><td><code>catalog</code></td><td>Catalog &amp; browse</td><td>a whole catalog through <code>CatalogModule</code></td></tr>
+<tr><td><code>search</code></td><td>Search</td><td>search and suggestions</td></tr>
+<tr><td><code>home</code></td><td>Home feed</td><td>home shelves, explore, charts, moods and genres</td></tr>
+<tr><td><code>artist</code>, <code>album</code>, <code>playlist</code></td><td>Artist / Album pages, Playlists</td><td>those pages and their songs</td></tr>
+<tr><td><code>radio</code></td><td>Radio &amp; up next</td><td>what plays after a song</td></tr>
+<tr><td><code>video</code></td><td>Music videos</td><td>video streams</td></tr>
+<tr><td><code>lyrics</code></td><td>Lyrics</td><td>one source or a bundle</td></tr>
+<tr><td><code>metadata</code></td><td>Song info</td><td>stories, credits, album notes, genres</td></tr>
+<tr><td><code>cover</code></td><td>Covers</td><td>album and song covers</td></tr>
+<tr><td><code>canvas</code></td><td>Animated covers</td><td>covers that move</td></tr>
+<tr><td><code>artist_image</code>, <code>artist_video</code></td><td>Artist photos, Artist videos</td><td>pictures and loops on artist pages</td></tr>
+<tr><td><code>account_sync</code></td><td>Account sync</td><td>likes, playlists and history synced with an account</td></tr>
+<tr><td><code>look</code>, <code>audio_fx</code></td><td>Looks &amp; skins, Audio effects</td><td>looks and mixer effects, from code</td></tr>
+</table></div>
+<p>the byte-by-byte layout of the file is in <a href="https://github.com/realidkroo/mochypck/blob/main/docs/SPEC.md">docs/SPEC.md</a> on github, if you want to write your own reader.</p>
 </article>
 
 <article class="page" id="modules-share" data-group="Sharing &amp; help" data-title="Sharing &amp; the catalog">
