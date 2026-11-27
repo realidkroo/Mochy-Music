@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.mochyy.mochymusic.LocalPlayerConnection
 import com.mochyy.mochymusic.R
+import com.mochyy.mochymusic.constants.AudioPassEveryRateKey
 import com.mochyy.mochymusic.constants.AudioPassFixedVolumeKey
 import com.mochyy.mochymusic.constants.UsbDriverKey
 import com.mochyy.mochymusic.constants.AudioPassMode
@@ -526,8 +527,21 @@ private fun DirectUsbCard(
             checked = fixedVolume,
             onCheckedChange = onFixedVolume,
         )
+        EveryRateToggle()
         UsbDriverPicker()
     }
+}
+
+// for a dac whose advertised rates are shorter than what it truly plays, like a bridge that echoes any SET_CUR
+@Composable
+private fun EveryRateToggle() {
+    val (everyRate, onEveryRate) = rememberPreference(AudioPassEveryRateKey, defaultValue = false)
+    LabToggleRow(
+        title = stringResource(R.string.audiopass_every_rate),
+        subtitle = stringResource(R.string.audiopass_every_rate_desc),
+        checked = everyRate,
+        onCheckedChange = onEveryRate,
+    )
 }
 
 // mochy's own way to the dac, or libusb for one that clicks, stays silent or won't start with it

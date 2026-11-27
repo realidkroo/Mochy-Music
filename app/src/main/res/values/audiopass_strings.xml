@@ -106,6 +106,8 @@
     <string name="audiopass_usb_driver_mochy">Mochy\'s own</string>
     <string name="audiopass_usb_driver_libusb">libusb</string>
     <string name="audiopass_usb_driver_desc">Mochy\'s own talks to the DAC directly. libusb is the open source library many USB audio players use; try it if a DAC clicks, stays silent or won\'t start, then switch back if it\'s no better.</string>
+    <string name="audiopass_every_rate">Every rate, even ones the DAC doesn\'t list</string>
+    <string name="audiopass_every_rate_desc">Sends a song at its own rate even when the DAC says it can\'t play it. Some DACs play it perfectly; others crackle. Try it, and turn it back off if a rate sounds worse.</string>
     <string name="audiopass_dac_volume">DAC volume</string>
     <string name="audiopass_dac_volume_desc">Set on the DAC itself, so the music isn\'t scaled. The volume keys move it too.</string>
     <string name="audiopass_value_db">%1$s dB</string>

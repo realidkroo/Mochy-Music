@@ -10,8 +10,8 @@ internal object PassNative {
     /** loads the library the first time a native output is wanted, so nobody else pays for it */
     val loaded: Boolean by lazy { runCatching { System.loadLibrary("mochypass") }.isSuccess }
 
-    /** [driver] is [UsbDriver.native]: mochy's own usbdevfs calls or libusb */
-    external fun usbOpen(fd: Int, plans: IntArray, bcdUsb: Int, driver: Int): Long
+    /** [driver] is [UsbDriver.native]: mochy's own usbdevfs calls or libusb; [everyRate] also sends rates the dac doesn't list */
+    external fun usbOpen(fd: Int, plans: IntArray, bcdUsb: Int, driver: Int, everyRate: Boolean): Long
     external fun usbChosen(handle: Long): Int
     external fun usbCapacity(handle: Long): Int
     external fun usbWrite(handle: Long, buffer: ByteBuffer, offset: Int, length: Int): Int

@@ -95,14 +95,19 @@ internal class UsbPass private constructor(
             allowFixedVolume: Boolean,
             rememberedDb: Double?,
             driver: UsbDriver = UsbDriver.MOCHY,
+            everyRate: Boolean = false,
         ): UsbPass {
             if (!PassNative.loaded) throw PassFailure("the native part didn't load")
             val plans = UsbAudioDescriptors.plans(dac, rate, channels, sourceBits).take(16)
+            // one line per song so a logcat names the dac and the exact settings it offers for this rate
+            android.util.Log.i("UsbPass", "${device.productName} ${device.vendorId.toString(16)}:${device.productId.toString(16)} " +
+                "for $rate Hz ${sourceBits}-bit ${channels}ch: " + plans.joinToString { "iface${it.streamingInterface}/alt${it.alt} ${it.channels}ch " +
+                "${it.subslot * 8}bit-subslot/${it.bitResolution}bit clock${it.clockId} fb=${it.feedbackEndpoint}" })
             if (plans.isEmpty()) throw PassFailure("the dac has no setting for $rate Hz ${sourceBits}-bit")
             if (dac.volume == null && !allowFixedVolume) throw PassFailure("the dac has no volume of its own")
             val connection = usb.openDevice(device) ?: throw PassFailure("android wouldn't open the dac")
             val handle = try {
-                PassNative.usbOpen(connection.fileDescriptor, encode(plans), dac.bcdUsb, driver.native)
+                PassNative.usbOpen(connection.fileDescriptor, encode(plans), dac.bcdUsb, driver.native, everyRate)
             } catch (error: IllegalStateException) {
                 connection.close()
                 throw PassFailure(error.message ?: "the dac wouldn't start", error)
